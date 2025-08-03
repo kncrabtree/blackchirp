@@ -76,18 +76,20 @@ public:
     // ========================================================================
     
     /*!
-     * \brief Get hardware selection for a hardware type
-     * \param hardwareType Hardware type key (e.g., "ftmwDigitizer")
+     * \brief Get hardware implementation for a specific label
+     * \param hardwareType Hardware type key (e.g., "FlowController")
+     * \param label Hardware label (e.g., "frontPanel", "backup")
      * \return Implementation key, or empty string if not set or disabled
      */
-    QString getHardwareSelection(const QString& hardwareType) const;
+    QString getHardwareImplementation(const QString& hardwareType, const QString& label) const;
+    
     
     /*!
-     * \brief Check if hardware type is enabled
+     * \brief Get all active labels for a hardware type
      * \param hardwareType Hardware type key
-     * \return True if hardware type is enabled
+     * \return List of labels for currently active hardware devices
      */
-    bool isHardwareEnabled(const QString& hardwareType) const;
+    QStringList getActiveLabels(const QString& hardwareType) const;
     
     /*!
      * \brief Get current hardware configuration as map
@@ -110,12 +112,6 @@ public:
      */
     QHash<QString, HardwareValidationResult> validateConfiguration() const;
     
-    /*!
-     * \brief Validate specific hardware type configuration
-     * \param hardwareType Hardware type key
-     * \return Validation result for the specified hardware type
-     */
-    HardwareValidationResult validateHardwareType(const QString& hardwareType) const;
     
     /*!
      * \brief Check if entire configuration is valid
@@ -192,85 +188,103 @@ private:
     // ========================================================================
     
     /*!
-     * \brief Set hardware selection for a hardware type
-     * \param hardwareType Hardware type key (e.g., "ftmwDigitizer")
-     * \param implementation Implementation key (e.g., "m4i2220x8")
-     * \param enabled Whether this hardware should be enabled
+     * \brief Set hardware selection for a specific label
+     * \param hardwareType Hardware type key (e.g., "FlowController") 
+     * \param label Hardware label (e.g., "frontPanel", "backup")
+     * \param implementation Implementation key (e.g., "mks647c")
      * \return True if selection was set successfully
      */
     bool setHardwareSelection(const QString& hardwareType, 
-                             const QString& implementation,
-                             bool enabled = true);
+                             const QString& label,
+                             const QString& implementation);
+    
     
     /*!
-     * \brief Enable or disable a hardware type
+     * \brief Remove hardware selection for a specific label
      * \param hardwareType Hardware type key
-     * \param enabled Whether to enable the hardware
-     * \return True if setting was applied successfully
-     */
-    bool setHardwareEnabled(const QString& hardwareType, bool enabled);
-    
-    /*!
-     * \brief Remove hardware selection for a hardware type
-     * \param hardwareType Hardware type key
+     * \param label Hardware label
      * \return True if selection was removed
      */
-    bool removeHardwareSelection(const QString& hardwareType);
+    bool removeHardwareSelection(const QString& hardwareType, const QString& label);
     
     /*!
      * \brief Clear all hardware selections
      */
     void clearConfiguration();
     
-    
     /*!
-     * \brief Load configuration from SettingsStorage
+     * \brief TEMPORARY: Register hardware using stable test labels during migration
      * 
-     * Reads the saved hardware configuration from persistent storage
-     * into the in-memory data structures. Called automatically during
-     * initialization.
+     * This is a temporary method to support migration from the old index-based system.
+     * It creates stable labels like "test00", "test01", etc. based on hardware map position
+     * to avoid issues with unpredictable auto-incrementing indices during testing.
+     * 
+     * TODO: Remove this method once UI selection is implemented (Phase 3)
+     * 
+     * \param hardwareType Hardware type (e.g., "FlowController")
+     * \param implementation Implementation key (e.g., "mks647c")
+     * \param mapIndex Position in hardware map (stable, compile-time constant)
      */
-    void loadFromSettings();
+    void registerHardwareForTesting(const QString& hardwareType, const QString& implementation, int mapIndex);
     
-    /*!
-     * \brief Save current configuration to SettingsStorage
-     * 
-     * Writes the current in-memory hardware configuration to persistent
-     * storage. Should be called when configuration changes need to be
-     * persisted (e.g., when settings dialog closes, program exit).
-     */
-    void saveToSettings();
+    
     
     // ========================================================================
     // PRIVATE IMPLEMENTATION
     // ========================================================================
     
     /*!
-     * \brief Hardware configuration entry
+     * \brief Hardware selection entry for a specific device
      */
-    struct HardwareConfig {
+    struct HardwareSelection {
+        QString type;               /*!< Hardware type (stored for easy filtering) */
         QString implementation;     /*!< Selected implementation key */
-        bool enabled = true;        /*!< Whether hardware is enabled */
     };
     
     static RuntimeHardwareConfig* s_instance;  /*!< Singleton instance */
     mutable QReadWriteLock d_configLock;       /*!< Thread-safe access control */
     
-    QHash<QString, HardwareConfig> d_hardwareConfig; /*!< In-memory hardware configuration */
+    QHash<QString, HardwareSelection> d_activeHardware; /*!< "type.label" key -> selection */
     
     /*!
      * \brief Internal validation helper that assumes caller holds lock
      * \param hardwareType Hardware type key
-     * \param config Hardware configuration to validate
+     * \param label Hardware label
+     * \param selection Hardware selection to validate
      * \return Validation result
      */
-    HardwareValidationResult validateHardwareTypeInternal(const QString& hardwareType, const HardwareConfig& config) const;
+    HardwareValidationResult validateHardwareSelectionInternal(const QString& hardwareType, 
+                                                               const QString& label,
+                                                               const HardwareSelection& selection) const;
     
     /*!
      * \brief Internal helper to get missing required hardware (assumes caller holds lock)
      * \return List of missing required hardware types
      */
     QStringList getMissingRequiredHardwareInternal() const;
+    
+    /*!
+     * \brief Sync with HardwareProfileManager - load active profiles
+     * 
+     * Updates the runtime configuration to match active profiles from
+     * HardwareProfileManager. Called during initialization and when
+     * profiles are activated/deactivated.
+     */
+    void syncWithProfiles();
+    
+    /*!
+     * \brief Activate profile in HardwareProfileManager
+     * \param hardwareType Hardware type key
+     * \param label Hardware label 
+     */
+    void activateProfile(const QString& hardwareType, const QString& label);
+    
+    /*!
+     * \brief Deactivate profile in HardwareProfileManager
+     * \param hardwareType Hardware type key
+     * \param label Hardware label 
+     */
+    void deactivateProfile(const QString& hardwareType, const QString& label);
 };
 
 /*!

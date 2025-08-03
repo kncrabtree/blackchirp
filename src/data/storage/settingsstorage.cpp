@@ -34,7 +34,7 @@ SettingsStorage::SettingsStorage(const QString orgName, const QString appName, c
         if( (type == Hardware) && (keys.size() == 1) )
         {
             d_settings.beginGroup(keys.first());
-            d_settings.beginGroup(d_settings.value("subKey","virtual").toString());
+            d_settings.beginGroup(d_settings.value("subKey","invalid").toString());
         }
         else
         {
@@ -51,6 +51,7 @@ SettingsStorage::SettingsStorage(const QString key, Type type) :
 {
 
 }
+
 
 SettingsStorage::~SettingsStorage()
 {

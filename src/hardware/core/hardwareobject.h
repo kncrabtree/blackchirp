@@ -196,13 +196,26 @@ class HardwareObject : public QObject, public SettingsStorage
 	friend class HardwareCommunicationTest;
 public:
     /*!
-     * \brief Constructor. Does nothing.
+     * \brief Constructor using traditional parameters (legacy)
      *
      * \param parent Pointer to parent QObject. Should be 0 if it will be in its own thread.
      */
     explicit HardwareObject(const QString hwType, const QString subKey, const QString name,
                             CommunicationProtocol::CommType commType, QObject *parent = nullptr,
                             bool threaded = true, bool critical = true, int index=0);
+
+    /*!
+     * \brief Constructor using Qt metaobject system (new)
+     *
+     * This constructor takes hardware type and implementation derived from the
+     * derived class's metaobject system. All other parameters are loaded from settings.
+     *
+     * \param hwType Hardware type (e.g., "FtmwScope") from base class
+     * \param hwImpl Implementation (e.g., "VirtualFtmwScope") from concrete class  
+     * \param label User-provided label for hardware instance identification
+     * \param parent Pointer to parent QObject. Should be 0 if it will be in its own thread.
+     */
+    explicit HardwareObject(const QString& hwType, const QString& hwImpl, const QString& label, QObject *parent = nullptr);
     virtual ~HardwareObject();
 
     QString d_name; /*!< Name to be displayed on UI */

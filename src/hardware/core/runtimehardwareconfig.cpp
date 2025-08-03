@@ -1,5 +1,6 @@
 #include "runtimehardwareconfig.h"
 #include "hardwareregistry.h"
+#include "hardwareprofilemanager.h"
 
 #include <QReadLocker>
 #include <QWriteLocker>
@@ -12,7 +13,7 @@ RuntimeHardwareConfig::RuntimeHardwareConfig()
     : SettingsStorage(BC::Key::RuntimeHw::runtimeHw)
 {
     qDebug() << "Initializing RuntimeHardwareConfig...";
-    loadFromSettings();
+    syncWithProfiles();
 }
 
 const RuntimeHardwareConfig& RuntimeHardwareConfig::constInstance()
@@ -35,24 +36,33 @@ RuntimeHardwareConfig& RuntimeHardwareConfig::instance()
 // READ-ONLY OPERATIONS
 // ============================================================================
 
-QString RuntimeHardwareConfig::getHardwareSelection(const QString& hardwareType) const
+QString RuntimeHardwareConfig::getHardwareImplementation(const QString& hardwareType, const QString& label) const
 {
     QReadLocker locker(&d_configLock);
     
-    auto it = d_hardwareConfig.find(hardwareType);
-    if (it == d_hardwareConfig.end() || !it->enabled) {
-        return QString(); // Not configured or disabled
+    QString key = BC::Key::hwKey(hardwareType, label);
+    auto it = d_activeHardware.find(key);
+    
+    if (it != d_activeHardware.end()) {
+        return it->implementation;
     }
     
-    return it->implementation;
+    return QString(); // Not found
 }
 
-bool RuntimeHardwareConfig::isHardwareEnabled(const QString& hardwareType) const
+QStringList RuntimeHardwareConfig::getActiveLabels(const QString& hardwareType) const
 {
     QReadLocker locker(&d_configLock);
     
-    auto it = d_hardwareConfig.find(hardwareType);
-    return it != d_hardwareConfig.end() && it->enabled;
+    QStringList activeLabels;
+    for (auto it = d_activeHardware.cbegin(); it != d_activeHardware.cend(); ++it) {
+        if (it->type == hardwareType) {
+            auto [parsedType, label] = BC::Key::parseKey(it.key());
+            activeLabels.append(label);
+        }
+    }
+    
+    return activeLabels;
 }
 
 std::map<QString, QString> RuntimeHardwareConfig::getCurrentHardware() const
@@ -61,9 +71,12 @@ std::map<QString, QString> RuntimeHardwareConfig::getCurrentHardware() const
     
     std::map<QString, QString> hardware;
     
-    for (auto it = d_hardwareConfig.cbegin(); it != d_hardwareConfig.cend(); ++it) {
-        if (it->enabled && !it->implementation.isEmpty()) {
-            hardware[it.key()] = it->implementation;
+    for (auto it = d_activeHardware.cbegin(); it != d_activeHardware.cend(); ++it) {
+        const QString& hwKey = it.key(); // Already in "type.label" format
+        const HardwareSelection& selection = it.value();
+        
+        if (!selection.implementation.isEmpty()) {
+            hardware[hwKey] = selection.implementation;
         }
     }
     
@@ -76,39 +89,28 @@ QHash<QString, HardwareValidationResult> RuntimeHardwareConfig::validateConfigur
     
     QHash<QString, HardwareValidationResult> results;
     
-    for (auto it = d_hardwareConfig.cbegin(); it != d_hardwareConfig.cend(); ++it) {
-        results[it.key()] = validateHardwareTypeInternal(it.key(), it.value());
+    for (auto it = d_activeHardware.cbegin(); it != d_activeHardware.cend(); ++it) {
+        const QString& hwKey = it.key(); // "type.label" format
+        const HardwareSelection& selection = it.value();
+        auto [type, label] = BC::Key::parseKey(hwKey);
+        
+        results[hwKey] = validateHardwareSelectionInternal(type, label, selection);
     }
     
     return results;
 }
 
-HardwareValidationResult RuntimeHardwareConfig::validateHardwareType(const QString& hardwareType) const
-{
-    QReadLocker locker(&d_configLock);
-    
-    auto it = d_hardwareConfig.find(hardwareType);
-    if (it == d_hardwareConfig.end()) {
-        HardwareValidationResult result;
-        result.isValid = false;
-        result.errors << QString("Hardware type '%1' is not configured").arg(hardwareType);
-        return result;
-    }
-    
-    return validateHardwareTypeInternal(hardwareType, it.value());
-}
 
 bool RuntimeHardwareConfig::isConfigurationValid() const
 {
     QReadLocker locker(&d_configLock);
     
     // Check all configured hardware
-    for (auto it = d_hardwareConfig.cbegin(); it != d_hardwareConfig.cend(); ++it) {
-        if (it->enabled) {
-            HardwareValidationResult result = validateHardwareTypeInternal(it.key(), it.value());
-            if (!result.isValid) {
-                return false;
-            }
+    for (auto it = d_activeHardware.cbegin(); it != d_activeHardware.cend(); ++it) {
+        auto [type, label] = BC::Key::parseKey(it.key());
+        HardwareValidationResult result = validateHardwareSelectionInternal(type, label, it.value());
+        if (!result.isValid) {
+            return false;
         }
     }
     
@@ -121,7 +123,12 @@ QStringList RuntimeHardwareConfig::getConfiguredHardwareTypes() const
 {
     QReadLocker locker(&d_configLock);
     
-    return d_hardwareConfig.keys();
+    QSet<QString> types;
+    for (auto it = d_activeHardware.cbegin(); it != d_activeHardware.cend(); ++it) {
+        types.insert(it->type);
+    }
+    
+    return QStringList(types.begin(), types.end());
 }
 
 bool RuntimeHardwareConfig::isHardwareRequired(const QString& hardwareType) const
@@ -175,13 +182,13 @@ QStringList RuntimeHardwareConfig::getAllValidationWarnings() const
 // ============================================================================
 
 bool RuntimeHardwareConfig::setHardwareSelection(const QString& hardwareType, 
-                                                 const QString& implementation,
-                                                 bool enabled)
+                                                 const QString& label,
+                                                 const QString& implementation)
 {
     QWriteLocker locker(&d_configLock);
     
-    if (hardwareType.isEmpty()) {
-        qWarning() << "Cannot set hardware selection: hardware type is empty";
+    if (hardwareType.isEmpty() || label.isEmpty()) {
+        qWarning() << "Cannot set hardware selection: hardware type or label is empty";
         return false;
     }
     
@@ -197,55 +204,41 @@ bool RuntimeHardwareConfig::setHardwareSelection(const QString& hardwareType,
     }
     
     // Update in-memory configuration
-    HardwareConfig config;
-    config.implementation = implementation;
-    config.enabled = enabled;
+    QString key = BC::Key::hwKey(hardwareType, label);
+    HardwareSelection selection;
+    selection.type = hardwareType;
+    selection.implementation = implementation;
     
-    d_hardwareConfig[hardwareType] = config;
+    d_activeHardware[key] = selection;
     
-    qDebug() << "Set hardware selection:" << hardwareType << "=" << implementation 
-             << "(enabled:" << enabled << ")";
+    qDebug() << "Set hardware selection:" << key << "=" << implementation;
     
-    return true;
-}
-
-bool RuntimeHardwareConfig::setHardwareEnabled(const QString& hardwareType, bool enabled)
-{
-    QWriteLocker locker(&d_configLock);
-    
-    if (hardwareType.isEmpty()) {
-        qWarning() << "Cannot set hardware enabled state: hardware type is empty";
-        return false;
-    }
-    
-    auto it = d_hardwareConfig.find(hardwareType);
-    if (it != d_hardwareConfig.end()) {
-        it->enabled = enabled;
-    } else {
-        // Create new entry with empty implementation
-        HardwareConfig config;
-        config.enabled = enabled;
-        d_hardwareConfig[hardwareType] = config;
-    }
-    
-    qDebug() << "Set hardware enabled state:" << hardwareType << "=" << enabled;
+    // Update the profile manager
+    activateProfile(hardwareType, label);
     
     return true;
 }
 
-bool RuntimeHardwareConfig::removeHardwareSelection(const QString& hardwareType)
+
+bool RuntimeHardwareConfig::removeHardwareSelection(const QString& hardwareType, const QString& label)
 {
     QWriteLocker locker(&d_configLock);
     
-    if (hardwareType.isEmpty()) {
+    if (hardwareType.isEmpty() || label.isEmpty()) {
         return false;
     }
     
-    d_hardwareConfig.remove(hardwareType);
+    QString key = BC::Key::hwKey(hardwareType, label);
+    bool removed = d_activeHardware.remove(key) > 0;
     
-    qDebug() << "Removed hardware selection for:" << hardwareType;
+    if (removed) {
+        qDebug() << "Removed hardware selection for:" << key;
+        
+        // Update the profile manager
+        deactivateProfile(hardwareType, label);
+    }
     
-    return true;
+    return removed;
 }
 
 void RuntimeHardwareConfig::clearConfiguration()
@@ -253,105 +246,112 @@ void RuntimeHardwareConfig::clearConfiguration()
     QWriteLocker locker(&d_configLock);
     
     qDebug() << "Clearing all hardware configuration...";
-    d_hardwareConfig.clear();
+    d_activeHardware.clear();
 }
 
-
-void RuntimeHardwareConfig::saveToSettings()
+void RuntimeHardwareConfig::registerHardwareForTesting(const QString& hardwareType, const QString& implementation, int mapIndex)
 {
     QWriteLocker locker(&d_configLock);
     
-    qDebug() << "Saving runtime hardware configuration to settings...";
+    // Create stable test label based on map position (zero-padded for sorting)
+    QString testLabel = QString("test%1").arg(mapIndex, 2, 10, QChar('0'));
+    QString key = BC::Key::hwKey(hardwareType, testLabel);
     
-    // Clear existing settings - remove all previous hardware configuration keys
-    for (auto it = d_hardwareConfig.cbegin(); it != d_hardwareConfig.cend(); ++it) {
-        QString typeKey = it.key();
-        clearValue(QString("%1_%2").arg(typeKey, BC::Key::RuntimeHw::selection));
-        clearValue(QString("%1_%2").arg(typeKey, BC::Key::RuntimeHw::enabled));
-    }
+    HardwareSelection selection;
+    selection.type = hardwareType;
+    selection.implementation = implementation;
     
-    // Save current configuration
-    for (auto it = d_hardwareConfig.cbegin(); it != d_hardwareConfig.cend(); ++it) {
-        QString typeKey = it.key();
-        const HardwareConfig& config = it.value();
-        
-        set(QString("%1_%2").arg(typeKey, BC::Key::RuntimeHw::selection), config.implementation);
-        set(QString("%1_%2").arg(typeKey, BC::Key::RuntimeHw::enabled), config.enabled);
-    }
+    d_activeHardware[key] = selection;
     
-    qDebug() << "Saved" << d_hardwareConfig.size() << "hardware configurations to settings";
+    qDebug() << "TEMPORARY: Registered test hardware:" << key << "=" << implementation;
     
-    // Persist changes to storage
-    save();
+    // Create corresponding profile in HardwareProfileManager for consistency
+    HardwareProfileManager& profileManager = HardwareProfileManager::instance();
+    profileManager.createHardwareProfile(hardwareType, implementation, testLabel);
+    profileManager.activateHardwareProfile(hardwareType, testLabel);
 }
 
-void RuntimeHardwareConfig::loadFromSettings()
+
+
+// ============================================================================
+// INTEGRATION WITH HARDWAREPROFILEMANAGER
+// ============================================================================
+
+void RuntimeHardwareConfig::syncWithProfiles()
 {
-    qDebug() << "Loading runtime hardware configuration from settings...";
-    
-    // Get all setting keys without holding the config lock
-    QStringList allKeys = keys();
+    qDebug() << "Syncing RuntimeHardwareConfig with active hardware profiles...";
     
     QWriteLocker locker(&d_configLock);
-    d_hardwareConfig.clear();
+    d_activeHardware.clear();
+    
+    // Get HardwareProfileManager singleton instance and load active profiles
+    HardwareProfileManager& profileManager = HardwareProfileManager::instance();
+    QStringList hardwareTypes = profileManager.keys(); // Get all hardware types with profiles
     
     int loadedCount = 0;
-    
-    // Parse existing settings directly rather than querying registry
-    for (const QString& key : allKeys) {
-        if (key.endsWith(QString("_%1").arg(BC::Key::RuntimeHw::selection))) {
-            QString type = key.left(key.length() - BC::Key::RuntimeHw::selection.length() - 1);
-            QString enabledKey = QString("%1_%2").arg(type, BC::Key::RuntimeHw::enabled);
-            
-            HardwareConfig config;
-            config.implementation = get<QString>(key, QString());
-            config.enabled = get<bool>(enabledKey, true);
-            
-            d_hardwareConfig[type] = config;
-            loadedCount++;
-            
-            qDebug() << "Loaded hardware config:" << type << "=" << config.implementation 
-                     << "(enabled:" << config.enabled << ")";
+    for (const QString& type : hardwareTypes) {
+        QStringList activeLabels = profileManager.getActiveProfiles(type);
+        
+        for (const QString& label : activeLabels) {
+            QString implementation = profileManager.getImplementation(type, label);
+            if (!implementation.isEmpty()) {
+                QString key = BC::Key::hwKey(type, label);
+                
+                HardwareSelection selection;
+                selection.type = type;
+                selection.implementation = implementation;
+                
+                d_activeHardware[key] = selection;
+                loadedCount++;
+                
+                qDebug() << "Loaded active profile:" << key << "=" << implementation;
+            }
         }
     }
     
-    if (loadedCount == 0) {
-        qDebug() << "No saved hardware configuration found, will use defaults when needed";
-    } else {
-        qDebug() << "Loaded" << loadedCount << "hardware configurations from settings";
-    }
+    qDebug() << "Loaded" << loadedCount << "active hardware profiles into runtime config";
+}
+
+void RuntimeHardwareConfig::activateProfile(const QString& hardwareType, const QString& label)
+{
+    // Activate profile in HardwareProfileManager
+    // Note: This doesn't hold the config lock since it's called from methods that already hold it
+    
+    HardwareProfileManager& profileManager = HardwareProfileManager::instance();
+    profileManager.activateHardwareProfile(hardwareType, label);
+}
+
+void RuntimeHardwareConfig::deactivateProfile(const QString& hardwareType, const QString& label)
+{
+    // Deactivate profile in HardwareProfileManager
+    // Note: This doesn't hold the config lock since it's called from methods that already hold it
+    
+    HardwareProfileManager& profileManager = HardwareProfileManager::instance();
+    profileManager.deactivateHardwareProfile(hardwareType, label);
 }
 
 // ============================================================================
 // PRIVATE HELPERS
 // ============================================================================
 
-HardwareValidationResult RuntimeHardwareConfig::validateHardwareTypeInternal(const QString& hardwareType, const HardwareConfig& config) const
+HardwareValidationResult RuntimeHardwareConfig::validateHardwareSelectionInternal(const QString& hardwareType, const QString& label, const HardwareSelection& selection) const
 {
     // Note: This method assumes the caller already holds the appropriate lock
     
     HardwareValidationResult result;
     
-    // Check if hardware is enabled
-    if (!config.enabled) {
-        result.isValid = true; // Disabled hardware is considered "valid" (just not used)
-        result.selectedImplementation = QString();
-        result.warnings << QString("Hardware type '%1' is disabled").arg(hardwareType);
-        return result;
-    }
-    
-    if (config.implementation.isEmpty()) {
+    if (selection.implementation.isEmpty()) {
         result.isValid = false;
-        result.errors << QString("No implementation selected for hardware type '%1'").arg(hardwareType);
+        result.errors << QString("No implementation selected for hardware '%1.%2'").arg(hardwareType, label);
         return result;
     }
     
     // Check if implementation is registered (simple validation only)
     HardwareRegistry& registry = HardwareRegistry::instance();
-    if (!registry.isRegistered(hardwareType, config.implementation)) {
+    if (!registry.isRegistered(hardwareType, selection.implementation)) {
         result.isValid = false;
-        result.errors << QString("Selected implementation '%1' for hardware type '%2' is not registered")
-                         .arg(config.implementation, hardwareType);
+        result.errors << QString("Selected implementation '%1' for hardware '%2.%3' is not registered")
+                         .arg(selection.implementation, hardwareType, label);
         return result;
     }
     
@@ -360,11 +360,11 @@ HardwareValidationResult RuntimeHardwareConfig::validateHardwareTypeInternal(con
     
     // Validation passed
     result.isValid = true;
-    result.selectedImplementation = config.implementation;
+    result.selectedImplementation = selection.implementation;
     
     // Check if this is required hardware
     if (isHardwareRequired(hardwareType)) {
-        result.warnings << QString("Required hardware '%1' is configured and available").arg(hardwareType);
+        result.warnings << QString("Required hardware '%1.%2' is configured and available").arg(hardwareType, label);
     }
     
     return result;
@@ -380,14 +380,21 @@ QStringList RuntimeHardwareConfig::getMissingRequiredHardwareInternal() const
     
     for (const QString& type : allTypes) {
         if (isHardwareRequired(type)) {
-            auto it = d_hardwareConfig.find(type);
-            if (it == d_hardwareConfig.end() || !it->enabled) {
-                missing.append(type);
-            } else {
-                HardwareValidationResult result = validateHardwareTypeInternal(type, it.value());
-                if (!result.isValid) {
-                    missing.append(type);
+            // Check if we have any active hardware of this type
+            bool hasValidHardware = false;
+            for (auto it = d_activeHardware.cbegin(); it != d_activeHardware.cend(); ++it) {
+                if (it->type == type) {
+                    auto [hwType, label] = BC::Key::parseKey(it.key());
+                    HardwareValidationResult result = validateHardwareSelectionInternal(hwType, label, it.value());
+                    if (result.isValid) {
+                        hasValidHardware = true;
+                        break;
+                    }
                 }
+            }
+            
+            if (!hasValidHardware) {
+                missing.append(type);
             }
         }
     }

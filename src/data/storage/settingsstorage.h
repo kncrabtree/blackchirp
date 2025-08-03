@@ -835,7 +835,8 @@ protected:
      * \brief Write all values to `QSettings`.
      */
     void save();
-
+    
+    
     /*!
      * \brief Reads all values from settings file (see note about getters)
      *

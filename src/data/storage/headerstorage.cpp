@@ -8,7 +8,7 @@ HeaderStorage::HeaderStorage(const QString objKey, const QString hwSubKey) :
 
 int HeaderStorage::headerIndex() const
 {
-    auto p = BC::Key::parseKey(d_headerKey);
+    auto p = BC::Key::parseIndexKey(d_headerKey);
     return p.second;
 }
 

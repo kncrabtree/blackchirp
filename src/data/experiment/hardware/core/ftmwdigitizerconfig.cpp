@@ -7,6 +7,11 @@ FtmwDigitizerConfig::FtmwDigitizerConfig(const QString subKey) : DigitizerConfig
 
 }
 
+FtmwDigitizerConfig::FtmwDigitizerConfig(const QString& hwType, const QString& subKey, const QString& label) : DigitizerConfig(hwType + BC::Key::hwIndexSep + label, subKey)
+{
+
+}
+
 
 void FtmwDigitizerConfig::storeValues()
 {

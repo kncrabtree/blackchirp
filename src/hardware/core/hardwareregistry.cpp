@@ -20,8 +20,8 @@ HardwareRegistry& HardwareRegistry::instance()
 }
 
 bool HardwareRegistry::registerHardware(const QString& key, const QString& subKey, 
-                                       const QString& prettyName, const QString& description,
-                                       std::function<HardwareObject*()> factory)
+                                       const QString& description,
+                                       std::function<HardwareObject*(const QString&)> factory)
 {
     QMutexLocker locker(&d_registryMutex);
     
@@ -34,18 +34,18 @@ bool HardwareRegistry::registerHardware(const QString& key, const QString& subKe
     }
     
     // Validate required parameters
-    if (key.isEmpty() || subKey.isEmpty() || prettyName.isEmpty() || !factory) {
+    if (key.isEmpty() || subKey.isEmpty() || description.isEmpty() || !factory) {
         qWarning() << "Invalid hardware registration parameters for" << key << subKey;
         return false;
     }
     
     // Create registration
-    HardwareRegistration reg(key, subKey, prettyName, description, factory);
+    HardwareRegistration reg(key, subKey, description, factory);
     
     // Store registration
     d_registrations.insert(registryKey, reg);
     
-    qDebug() << "Registered hardware:" << key << subKey << "(" << prettyName << ")";
+    qDebug() << "Registered hardware:" << key << subKey << "(" << description << ")";
     
     // Signal registration
     emit hardwareRegistered(key, subKey);
@@ -53,7 +53,7 @@ bool HardwareRegistry::registerHardware(const QString& key, const QString& subKe
     return true;
 }
 
-HardwareObject* HardwareRegistry::createHardware(const QString& key, const QString& subKey)
+HardwareObject* HardwareRegistry::createHardware(const QString& key, const QString& subKey, const QString& label)
 {
     QMutexLocker locker(&d_registryMutex);
     
@@ -71,9 +71,9 @@ HardwareObject* HardwareRegistry::createHardware(const QString& key, const QStri
     HardwareObject* hardware = nullptr;
     if (reg.factory) {
         try {
-            hardware = reg.factory();
+            hardware = reg.factory(label);
             if (hardware) {
-                qDebug() << "Created hardware instance:" << key << subKey;
+                qDebug() << "Created hardware instance:" << key << subKey << "with label:" << label;
             } else {
                 qWarning() << "Factory returned null for" << key << subKey;
             }

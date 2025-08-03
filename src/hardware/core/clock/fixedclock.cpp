@@ -2,10 +2,10 @@
 #include <hardware/core/hardwareregistration.h>
 
 // Register hardware implementation
-REGISTER_HARDWARE(FixedClock, BC::Key::Clock::fixedName, "Fixed Frequency Clock")
+REGISTER_HARDWARE_META(FixedClock, "Fixed Frequency Clock")
 
-FixedClock::FixedClock(QObject *parent) :
-    Clock(6,true,BC::Key::Clock::fixed,BC::Key::Clock::fixedName,CommunicationProtocol::None,parent)
+FixedClock::FixedClock(const QString& label, QObject *parent) :
+    Clock(6, true, QString(FixedClock::staticMetaObject.className()), label, parent)
 {
     using namespace BC::Key::Clock;
     if(containsArray(ch))

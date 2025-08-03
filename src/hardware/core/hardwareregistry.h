@@ -17,15 +17,14 @@ class HardwareObject;
 struct HardwareRegistration {
     QString key;                                               /*!< Hardware type key (e.g., "ftmwDigitizer") */
     QString subKey;                                            /*!< Implementation key (e.g., "m4i2220x8") */
-    QString prettyName;                                        /*!< Display name for UI */
     QString description;                                       /*!< Description of the hardware */
-    std::function<HardwareObject*()> factory;                 /*!< Factory function to create hardware instance */
+    std::function<HardwareObject*(const QString&)> factory;   /*!< Factory function to create hardware instance with label */
     
     // Constructor
     HardwareRegistration() = default;
-    HardwareRegistration(const QString& k, const QString& sk, const QString& name,
-                        const QString& desc, std::function<HardwareObject*()> fact)
-        : key(k), subKey(sk), prettyName(name), description(desc), factory(fact) {}
+    HardwareRegistration(const QString& k, const QString& sk, const QString& desc, 
+                        std::function<HardwareObject*(const QString&)> fact)
+        : key(k), subKey(sk), description(desc), factory(fact) {}
 };
 
 /*!
@@ -73,21 +72,21 @@ public:
      * \brief Register a hardware implementation
      * \param key Hardware type key (e.g., "ftmwDigitizer")
      * \param subKey Implementation key (e.g., "m4i2220x8")
-     * \param prettyName Display name for UI
-     * \param description Description of the hardware
-     * \param factory Factory function to create hardware instances
+     * \param description Description of the hardware (should include manufacturer and model)
+     * \param factory Factory function to create hardware instances with label
      * \return True if registration was successful
      */
-    bool registerHardware(const QString& key, const QString& subKey, const QString& prettyName,
-                          const QString& description, std::function<HardwareObject*()> factory);
+    bool registerHardware(const QString& key, const QString& subKey, const QString& description,
+                          std::function<HardwareObject*(const QString&)> factory);
     
     /*!
      * \brief Create an instance of the specified hardware
      * \param key Hardware type key
      * \param subKey Implementation key
+     * \param label Label to use for hardware instance identification
      * \return Pointer to created hardware object, or nullptr if factory fails
      */
-    HardwareObject* createHardware(const QString& key, const QString& subKey);
+    HardwareObject* createHardware(const QString& key, const QString& subKey, const QString& label);
     
     /*!
      * \brief Get list of all registered hardware implementations for a type

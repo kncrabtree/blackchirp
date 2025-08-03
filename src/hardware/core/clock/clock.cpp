@@ -2,9 +2,8 @@
 
 #include <QMetaEnum>
 
-Clock::Clock(int numOutputs, bool tunable, const QString subKey, const QString name, CommunicationProtocol::CommType commType,
-             QObject *parent) :
-    HardwareObject(BC::Key::Clock::clock,subKey,name,commType,parent,false,true,d_count), d_numOutputs(numOutputs),
+Clock::Clock(int numOutputs, bool tunable, const QString& impl, const QString& label, QObject *parent) :
+    HardwareObject(QString(Clock::staticMetaObject.className()), impl, label, parent), d_numOutputs(numOutputs),
     d_isTunable(tunable)
 {
     using namespace BC::Key::Clock;
@@ -27,8 +26,6 @@ Clock::Clock(int numOutputs, bool tunable, const QString subKey, const QString n
             setMultFactor(factor,i);
         }
     }
-
-    d_count++;
 }
 
 Clock::~Clock()

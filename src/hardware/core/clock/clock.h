@@ -38,8 +38,7 @@ class Clock : public HardwareObject
 {
     Q_OBJECT
 public:
-    explicit Clock(int numOutputs, bool tunable, const QString subKey, const QString name,
-                   CommunicationProtocol::CommType commType, QObject *parent = nullptr);
+    explicit Clock(int numOutputs, bool tunable, const QString& impl, const QString& label, QObject *parent = nullptr);
     virtual ~Clock();
 
     int numOutputs() { return d_numOutputs; }

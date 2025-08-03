@@ -1,5 +1,6 @@
 #include <hardware/core/hardwareobject.h>
 #include <hardware/core/hardwaremanager.h>
+#include <hardware/core/hardwareregistration.h>
 #include <QMetaEnum>
 
 #ifdef BC_GPIBCONTROLLER
@@ -34,6 +35,43 @@ HardwareObject::HardwareObject(const QString hwType, const QString subKey, const
     d_critical = get(BC::Key::HW::critical,critical);
     d_name = get(BC::Key::HW::name,name);
 
+}
+
+HardwareObject::HardwareObject(const QString& hwType, const QString& hwImpl, const QString& label, QObject *parent) :
+    QObject(parent),
+    SettingsStorage(QStringList{hwType + BC::Key::hwIndexSep + label, hwImpl}),
+    d_key(hwType + BC::Key::hwIndexSep + label),
+    d_subKey(hwImpl),
+    d_index(0), // Always 0 for new metaobject-based system (marked for future removal)
+    d_threaded(false), // Default to false, may be moved to profile system later
+    d_commType(CommunicationProtocol::Virtual), // Default, will be determined from supportedProtocols()
+    d_enabledForExperiment(true),
+    d_isConnected(false),
+    p_comm(nullptr)
+{    
+    // Set basic identifying keys
+    set(BC::Key::HW::key, d_key);
+    set(BC::Key::HW::subKey, d_subKey);
+    
+    // Load or set default values from settings
+    d_name = get(BC::Key::HW::name, hwImpl); // Use implementation name as default
+    d_critical = get(BC::Key::HW::critical, true); // Default to critical
+    setDefault(BC::Key::HW::rInterval, 0);
+    
+    // Determine default communication type from supported protocols
+    auto supportedProtos = supportedProtocols();
+    if (!supportedProtos.isEmpty()) {
+        d_commType = supportedProtos.first();
+    }
+    setDefault(BC::Key::HW::commType, static_cast<int>(d_commType));
+    
+    save();
+    
+    // Write subKey one level above the SettingsStorage group for lookup
+    QSettings s(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    s.setFallbacksEnabled(false);
+    s.setValue(d_key + "/" + BC::Key::HW::subKey, d_subKey);
+    s.sync();
 }
 
 HardwareObject::~HardwareObject()

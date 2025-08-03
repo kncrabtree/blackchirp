@@ -10,6 +10,21 @@
 #include <QReadLocker>
 #include <QWriteLocker>
 
+// Static member definitions
+HardwareProfileManager* HardwareProfileManager::s_instance = nullptr;
+
+// ========================================================================
+// SINGLETON MANAGEMENT
+// ========================================================================
+
+HardwareProfileManager& HardwareProfileManager::instance()
+{
+    if (!s_instance) {
+        s_instance = new HardwareProfileManager();
+    }
+    return *s_instance;
+}
+
 // ========================================================================
 // CONSTRUCTOR / DESTRUCTOR
 // ========================================================================

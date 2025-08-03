@@ -40,6 +40,46 @@ FtmwScope::FtmwScope(const QString subKey, const QString name, CommunicationProt
     d_fidChannel = get(fidCh,0);
 }
 
+FtmwScope::FtmwScope(const QString& impl, const QString& label, QObject *parent) :
+    HardwareObject(QString(FtmwScope::staticMetaObject.className()), impl, label, parent),
+    FtmwDigitizerConfig(QString(FtmwScope::staticMetaObject.className()), impl, label)
+{
+    using namespace BC::Key::Digi;
+    using namespace BC::Store::Digi;
+
+    for(int i=0; i<get(numAnalogChannels,0); ++i)
+    {
+        auto idx = getArrayValue(dwAnChannels,i,chIndex,i+1);
+        bool b = getArrayValue(dwAnChannels,i,en,false);
+        auto fullScale = getArrayValue(dwAnChannels,i,fs,0.0);
+        auto off = getArrayValue(dwAnChannels,i,offset,0.0);
+        d_analogChannels.insert({idx,{b,fullScale,off}});
+    }
+
+    for(int i=0; i<get(numDigitalChannels,0); ++i)
+    {
+        auto idx = getArrayValue(dwDigChannels,i,chIndex,i+1);
+        bool b = getArrayValue(dwDigChannels,i,en,false);
+        bool in = getArrayValue(dwDigChannels,i,digInp,true);
+        int role = getArrayValue(dwDigChannels,i,digRole,-1);
+        d_digitalChannels.insert({idx,{b,in,role}});
+    }
+
+    d_triggerChannel = get(trigCh,0);
+    d_triggerSlope = get(trigSlope,RisingEdge);
+    d_triggerDelayUSec = get(trigDelay,0.0);
+    d_triggerLevel = get(trigLevel,0.0);
+    d_bytesPerPoint = get(bpp,1);
+    d_byteOrder = get(bo,LittleEndian);
+    d_sampleRate = get(sRate,0.0);
+    d_recordLength = get(recLen,0);
+    d_blockAverage = get(blockAvg,false);
+    d_numAverages = get(numAvg,1);
+    d_multiRecord = get(multiRec,false);
+    d_numRecords = get(multiRecNum,1);
+    d_fidChannel = get(fidCh,0);
+}
+
 FtmwScope::~FtmwScope()
 {
 

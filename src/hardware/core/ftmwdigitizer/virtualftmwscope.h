@@ -7,7 +7,6 @@
 #include <QTimer>
 
 namespace BC::Key::FtmwScope {
-static const QString vftmwName("Virtual FTMW Oscilloscope");
 static const QString interval{"shotIntervalMs"};
 }
 
@@ -15,7 +14,7 @@ class VirtualFtmwScope : public FtmwScope
 {
     Q_OBJECT
 public:
-    explicit VirtualFtmwScope(QObject *parent = nullptr);
+    explicit VirtualFtmwScope(const QString& label, QObject *parent = nullptr);
     ~VirtualFtmwScope();
 
     // HardwareObject interface

@@ -534,6 +534,7 @@ if(BC_BUILD_TESTS)
         tst_xiamparser
         tst_hardwareregistrytest
         tst_runtimehardwareconfigtest
+        tst_hardwareprofilemanagertest
         # tst_hardwarecommunication  # Disabled until HardwareManager migration complete
     )
     

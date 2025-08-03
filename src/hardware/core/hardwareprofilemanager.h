@@ -89,6 +89,14 @@ class HardwareProfileManager : public SettingsStorage
     
 public:
     /*!
+     * \brief Get singleton instance
+     * 
+     * All operations are thread-safe due to internal QReadWriteLock usage.
+     * 
+     * \return Reference to the singleton instance
+     */
+    static HardwareProfileManager& instance();
+    /*!
      * \brief Collision resolution strategies when labels conflict
      */
     enum CollisionAction {
@@ -111,18 +119,6 @@ public:
         StartsWithUnderscore, /*!< Label starts with underscore */
         ContainsDots        /*!< Label contains dots (conflicts with key format) */
     };
-    
-    /*!
-     * \brief Standard constructor using default application settings
-     */
-    HardwareProfileManager();
-    
-    /*!
-     * \brief Constructor with custom organization and application names
-     * \param orgName Organization name for QSettings
-     * \param appName Application name for QSettings
-     */
-    HardwareProfileManager(const QString& orgName, const QString& appName);
     
     /*!
      * \brief Destructor - saves profiles to persistent storage
@@ -539,6 +535,28 @@ private:
      * \return Alternative label that is available
      */
     QString resolveCollisionByRenameInternal(const QString& type, const QString& baseLabel) const;
+    
+    // ========================================================================
+    // SINGLETON INFRASTRUCTURE
+    // ========================================================================
+    
+    /*!
+     * \brief Private constructor for singleton pattern
+     */
+    HardwareProfileManager();
+    
+    /*!
+     * \brief Private constructor with custom organization and application names
+     * \param orgName Organization name for QSettings
+     * \param appName Application name for QSettings
+     */
+    HardwareProfileManager(const QString& orgName, const QString& appName);
+    
+    // Disable copy/assignment for singleton
+    HardwareProfileManager(const HardwareProfileManager&) = delete;
+    HardwareProfileManager& operator=(const HardwareProfileManager&) = delete;
+    
+    static HardwareProfileManager* s_instance;  /*!< Singleton instance */
 };
 
 /*!

@@ -42,7 +42,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     QMutexLocker locker(&d_accessMutex);
     
     //Required hardware: FtmwScope and Clocks
-    auto ftmwScope = new BC_FTMWDIGITIZER;
+    auto ftmwScope = new VirtualFtmwScope("test_ftmw_scope");
     connect(ftmwScope,&FtmwScope::shotAcquired,this,&HardwareManager::ftmwScopeShotAcquired);
     d_hardwareMap.emplace(ftmwScope->d_key,ftmwScope);
 
@@ -246,13 +246,20 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
             obj->setParent(this);
     }
 
-    // Populate RuntimeHardwareConfig with currently compiled-in hardware selections
-    // This validates the runtime configuration system works with existing external API changes
+    // TEMPORARY: Populate RuntimeHardwareConfig with currently compiled-in hardware selections
+    // This creates stable test labels during migration period before UI is implemented
     auto& runtimeConfig = RuntimeHardwareConfig::instance();
+    int mapIndex = 0;
     for(auto &[key, obj] : d_hardwareMap) {
-        runtimeConfig.setHardwareSelection(obj->d_key, obj->d_subKey, true);
+        // Extract hardware type from old d_key format (e.g., "FlowController.0" -> "FlowController")
+        auto [hardwareType, index] = BC::Key::parseIndexKey(obj->d_key);
+        
+        // For now, use d_subKey as implementation (this may need refinement)
+        // TODO: Replace with proper implementation detection once we understand the mapping
+        QString implementation = obj->d_subKey.isEmpty() ? "virtual" : obj->d_subKey;
+        
+        runtimeConfig.registerHardwareForTesting(hardwareType, implementation, mapIndex++);
     }
-    runtimeConfig.saveToSettings();
 
     save();
 }
@@ -686,9 +693,11 @@ IOBoardConfig HardwareManager::getIOBoardConfig(const QString key)
 
 void HardwareManager::storeAllOptHw(Experiment *exp, std::map<QString, bool> hw)
 {
+    // TODO: This nested if/else pattern could be improved - consider refactoring to use
+    // a dispatch table or visitor pattern to reduce complexity and improve maintainability
     for(auto const &[hwKey,_] : d_hardwareMap)
     {
-        auto t = BC::Key::parseKey(hwKey);
+        auto t = BC::Key::parseIndexKey(hwKey);
         auto type = t.first;
         auto index = t.second;
 

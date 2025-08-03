@@ -8,14 +8,10 @@ using namespace BC::Key::FtmwScope;
 using namespace BC::Key::Digi;
 
 // Register this hardware implementation
-REGISTER_HARDWARE(
-    VirtualFtmwScope,
-    "Virtual FTMW Scope",
-    "Virtual FTMW digitizer for testing and development"
-)
+REGISTER_HARDWARE_META(VirtualFtmwScope, "Virtual FTMW digitizer for testing and development")
 
-VirtualFtmwScope::VirtualFtmwScope(QObject *parent) :
-    FtmwScope(BC::Key::Comm::hwVirtual,vftmwName,CommunicationProtocol::Virtual,parent)
+VirtualFtmwScope::VirtualFtmwScope(const QString& label, QObject *parent) :
+    FtmwScope(QString(VirtualFtmwScope::staticMetaObject.className()), label, parent)
 {
     setDefault(numAnalogChannels,4);
     setDefault(numDigitalChannels,0);

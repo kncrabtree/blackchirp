@@ -7,10 +7,21 @@ namespace BC::Key {
 
 static const QString hwIndexSep(".");
 
-QString hwKey(const QString k, const int index);
-QString widgetKey(const QString widgetKey, const QString hwKey, const QString hwSubKey);
+// New label-based API
+QString hwKey(const QString& type, const QString& label);
+QString widgetKey(const QString& widgetKey, const QString& hwKey, const QString& hwSubKey);
 
-std::pair<QString,int> parseKey(const QString key);
+// Parse functions (supports both label and index formats)
+std::pair<QString, QString> parseKey(const QString& key);  // Returns {type, label}
+std::pair<QString, int> parseIndexKey(const QString& key); // Legacy: returns {type, index}
+
+// Migration utilities
+QString migrateIndexKey(const QString& oldKey, const QString& type, int index);
+bool isIndexKey(const QString& key);
+QString generateDefaultLabel(const QString& type, const QStringList& existingLabels);
+
+// Legacy index-based API (deprecated)
+QString hwKey(const QString& k, const int index);
 
 }
 
