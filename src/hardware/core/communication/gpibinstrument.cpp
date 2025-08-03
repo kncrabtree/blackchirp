@@ -1,4 +1,5 @@
 #include "gpibinstrument.h"
+#include <data/settings/hardwarekeys.h>
 
 #include <hardware/optional/gpibcontroller/gpibcontroller.h>
 

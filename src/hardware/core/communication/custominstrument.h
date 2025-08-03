@@ -2,21 +2,8 @@
 #define CUSTOMINSTRUMENT_H
 
 #include <hardware/core/communication/communicationprotocol.h>
+#include <data/settings/hardwarekeys.h>
 
-/*!
- * Namespace for CustomInstrument communication details
- */
-namespace BC::Key::Custom {
-static const QString comm{"comm"}; /*!< Key for communication array. */
-static const QString type{"type"}; /*!< Type of data entry field (stringKey or intKey). */
-static const QString key{"key"}; /*!< Identifier key for this data field. */
-static const QString intKey{"int"}; /*!< Key for integer data entry type. */
-static const QString intMin{"min"}; /*!< Minimum allowed integer value. */
-static const QString intMax{"max"}; /*!< Maximum allowed integer value. */
-static const QString stringKey{"string"}; /*!< Key for string data entry type. */
-static const QString maxLen{"length"}; /*!< Maximum allowed length of string. */
-static const QString label{"name"}; /*!< Label displayed to user for this data field. */
-}
 
 
 /*!

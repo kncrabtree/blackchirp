@@ -1,5 +1,6 @@
 #include <gui/widget/rs232protocolwidget.h>
 #include <hardware/core/communication/rs232instrument.h>
+#include <data/settings/hardwarekeys.h>
 
 #include <QFormLayout>
 #include <QComboBox>

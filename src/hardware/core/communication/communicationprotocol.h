@@ -9,22 +9,6 @@
 #include <data/loghandler.h>
 #include <data/storage/settingsstorage.h>
 
-/*!
- * CommunicationProtocol keys for SettingsStorage
- * 
- * These keys are used by the HardwareManager to create groups of settings for
- * the CommunicationDialog.
- * 
- */
-namespace BC::Key::Comm {
-static const QString rs232{"rs232"}; /*!< Rs232Instrument */
-static const QString tcp{"tcp"}; /*!< TcpInstrument */
-static const QString gpib{"gpib"}; /*!< GpibInstrument */
-static const QString custom{"custom"}; /*!< CustomInstrument */
-static const QString hwVirtual{"virtual"}; /*!< VirtaulInstrument */
-static const QString timeout{"timeout"}; /*!< Read timeout in ms (<=0 disables timeout) */
-static const QString termChar{"termChar"}; /*!< Termination character(s) (empty disables termChar) */
-}
 
 /*!
  * \brief Represents a communication interface for a HardwareObject

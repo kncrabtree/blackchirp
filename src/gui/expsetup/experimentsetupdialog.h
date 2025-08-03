@@ -8,6 +8,7 @@
 #include <hardware/core/hardwareobject.h>
 #include <hardware/core/runtimehardwareconfig.h>
 #include <data/experiment/rfconfig.h>
+#include <data/settings/hardwarekeys.h>
 
 class QTreeWidget;
 class QStackedWidget;

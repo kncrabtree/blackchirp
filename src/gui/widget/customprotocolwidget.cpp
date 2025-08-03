@@ -1,5 +1,6 @@
 #include <gui/widget/customprotocolwidget.h>
 #include <hardware/core/communication/custominstrument.h>
+#include <data/settings/hardwarekeys.h>
 
 #include <QVBoxLayout>
 #include <QFormLayout>

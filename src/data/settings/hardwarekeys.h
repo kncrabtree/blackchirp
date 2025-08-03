@@ -27,6 +27,52 @@ namespace HW {
     static const QString rInterval{"rollingDataIntervalSec"}; /*!< Timer interval for rolling data (seconds) */
 }
 
+// Communication protocol keys (from CommunicationProtocol)
+namespace Comm {
+    static const QString rs232{"rs232"}; /*!< Rs232Instrument */
+    static const QString tcp{"tcp"}; /*!< TcpInstrument */
+    static const QString gpib{"gpib"}; /*!< GpibInstrument */
+    static const QString custom{"custom"}; /*!< CustomInstrument */
+    static const QString hwVirtual{"virtual"}; /*!< VirtualInstrument */
+    static const QString timeout{"timeout"}; /*!< Read timeout in ms (<=0 disables timeout) */
+    static const QString termChar{"termChar"}; /*!< Termination character(s) (empty disables termChar) */
+}
+
+// RS232 protocol specific keys (from Rs232Instrument)
+namespace RS232 {
+    static const QString baud{"baudrate"};
+    static const QString id{"id"};
+    static const QString dataBits{"databits"};
+    static const QString parity{"parity"};
+    static const QString stopBits{"stopbits"};
+    static const QString flowControl{"flowControl"};
+}
+
+// TCP protocol specific keys (from TcpInstrument)
+namespace TCP {
+    static const QString ip{"ip"};
+    static const QString port{"port"};
+}
+
+// GPIB protocol specific keys (from GpibInstrument)
+namespace GPIB {
+    static const QString gpibAddress{"address"};
+    static const QString gpibController{"controller"}; // Future support for multiple controllers
+}
+
+// Custom protocol specific keys (from CustomInstrument)
+namespace Custom {
+    static const QString comm{"comm"}; /*!< Key for communication array. */
+    static const QString type{"type"}; /*!< Type of data entry field (stringKey or intKey). */
+    static const QString key{"key"}; /*!< Identifier key for this data field. */
+    static const QString intKey{"int"}; /*!< Key for integer data entry type. */
+    static const QString intMin{"min"}; /*!< Minimum allowed integer value. */
+    static const QString intMax{"max"}; /*!< Maximum allowed integer value. */
+    static const QString stringKey{"string"}; /*!< Key for string data entry type. */
+    static const QString maxLen{"length"}; /*!< Maximum allowed length of string. */
+    static const QString label{"name"}; /*!< Label displayed to user for this data field. */
+}
+
 } // namespace BC::Key
 
 #endif // HARDWAREKEYS_H

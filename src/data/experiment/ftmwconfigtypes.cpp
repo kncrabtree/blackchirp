@@ -11,7 +11,7 @@
  *
  * ****************************************/
 
-FtmwConfigSingle::FtmwConfigSingle() : FtmwConfig()
+FtmwConfigSingle::FtmwConfigSingle(const QString& hwType, const QString& implementation, const QString& label) : FtmwConfig(hwType, implementation, label)
 {
 }
 
@@ -60,7 +60,7 @@ std::shared_ptr<FidStorageBase> FtmwConfigSingle::createStorage(int num, QString
  * ****************************************/
 
 
-FtmwConfigPeakUp::FtmwConfigPeakUp() : FtmwConfig()
+FtmwConfigPeakUp::FtmwConfigPeakUp(const QString& hwType, const QString& implementation, const QString& label) : FtmwConfig(hwType, implementation, label)
 {
 
 }
@@ -119,7 +119,7 @@ std::shared_ptr<FidStorageBase> FtmwConfigPeakUp::createStorage(int num, QString
  * ****************************************/
 
 
-FtmwConfigDuration::FtmwConfigDuration() : FtmwConfig()
+FtmwConfigDuration::FtmwConfigDuration(const QString& hwType, const QString& implementation, const QString& label) : FtmwConfig(hwType, implementation, label)
 {
 
 }
@@ -175,7 +175,7 @@ std::shared_ptr<FidStorageBase> FtmwConfigDuration::createStorage(int num, QStri
 }
 
 
-FtmwConfigForever::FtmwConfigForever() : FtmwConfig()
+FtmwConfigForever::FtmwConfigForever(const QString& hwType, const QString& implementation, const QString& label) : FtmwConfig(hwType, implementation, label)
 {
 
 }
@@ -222,7 +222,7 @@ std::shared_ptr<FidStorageBase> FtmwConfigForever::createStorage(int num, QStrin
     return std::make_shared<FidSingleStorage>(scopeConfig().d_numRecords,num,path);
 }
 
-FtmwConfigLOScan::FtmwConfigLOScan() : FtmwConfig()
+FtmwConfigLOScan::FtmwConfigLOScan(const QString& hwType, const QString& implementation, const QString& label) : FtmwConfig(hwType, implementation, label)
 {
 }
 
@@ -300,11 +300,11 @@ std::shared_ptr<FidStorageBase> FtmwConfigLOScan::createStorage(int num, QString
     return out;
 }
 
-FtmwConfigDRScan::FtmwConfigDRScan() : FtmwConfig()
+FtmwConfigDRScan::FtmwConfigDRScan(const QString& hwType, const QString& implementation, const QString& label) : FtmwConfig(hwType, implementation, label)
 {
 }
 
-FtmwConfigDRScan::FtmwConfigDRScan(const FtmwConfig &other)
+FtmwConfigDRScan::FtmwConfigDRScan(const FtmwConfig &other) : FtmwConfig(other)
 {
     auto o = dynamic_cast<const FtmwConfigDRScan*>(&other);
     if(o)

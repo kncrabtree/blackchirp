@@ -1,4 +1,5 @@
 #include "tcpinstrument.h"
+#include <data/settings/hardwarekeys.h>
 #include <QTime>
 
 TcpInstrument::TcpInstrument(QString key, QObject *parent) : CommunicationProtocol(key,parent)

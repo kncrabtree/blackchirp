@@ -260,24 +260,43 @@ FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)
 
     disableFtmw();
 
+    // TODO: Replace this string-based hardware lookup with a type-safe hardware container
+    // that provides structured access methods for each hardware type while maintaining
+    // backward compatibility with the current map format for serialization
+    QString hwType = "FtmwDigitizer";
+    QString implementation = "virtual";
+    QString label = "default";
+    
+    // Look for FTMW digitizer in hardware map
+    for (const auto& [key, impl] : d_hardware) {
+        if (key.startsWith("FtmwDigitizer.")) {
+            auto parts = key.split(".");
+            if (parts.size() == 2) {
+                label = parts[1];
+                implementation = impl;
+                break;
+            }
+        }
+    }
+
     switch(type) {
     case FtmwConfig::Target_Shots:
-        ps_ftmwConfig = std::make_shared<FtmwConfigSingle>();
+        ps_ftmwConfig = std::make_shared<FtmwConfigSingle>(hwType, implementation, label);
         break;
     case FtmwConfig::Target_Duration:
-        ps_ftmwConfig = std::make_shared<FtmwConfigDuration>();
+        ps_ftmwConfig = std::make_shared<FtmwConfigDuration>(hwType, implementation, label);
         break;
     case FtmwConfig::Peak_Up:
-        ps_ftmwConfig = std::make_shared<FtmwConfigPeakUp>();
+        ps_ftmwConfig = std::make_shared<FtmwConfigPeakUp>(hwType, implementation, label);
         break;
     case FtmwConfig::Forever:
-        ps_ftmwConfig = std::make_shared<FtmwConfigForever>();
+        ps_ftmwConfig = std::make_shared<FtmwConfigForever>(hwType, implementation, label);
         break;
     case FtmwConfig::LO_Scan:
-        ps_ftmwConfig = std::make_shared<FtmwConfigLOScan>();
+        ps_ftmwConfig = std::make_shared<FtmwConfigLOScan>(hwType, implementation, label);
         break;
     case FtmwConfig::DR_Scan:
-        ps_ftmwConfig = std::make_shared<FtmwConfigDRScan>();
+        ps_ftmwConfig = std::make_shared<FtmwConfigDRScan>(hwType, implementation, label);
         break;
     default:
         break;

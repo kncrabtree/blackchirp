@@ -1,6 +1,5 @@
 #include "hwsettingsmodel.h"
-
-#include <hardware/core/hardwareobject.h>
+#include <data/settings/hardwarekeys.h>
 
 HWSettingsModel::HWSettingsModel(QString key, QStringList forbiddenKeys, QObject *parent) :
     QAbstractItemModel(parent), SettingsStorage(key,Hardware)

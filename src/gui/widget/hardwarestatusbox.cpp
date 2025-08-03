@@ -1,4 +1,5 @@
 #include "hardwarestatusbox.h"
+#include <data/settings/hardwarekeys.h>
 
 #include <data/storage/settingsstorage.h>
 #include <hardware/core/hardwareobject.h>

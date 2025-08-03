@@ -1,4 +1,6 @@
 #include "experimenttypepage.h"
+#include <hardware/core/runtimehardwareconfig.h>
+#include <hardware/core/ftmwdigitizer/ftmwscope.h>
 
 #include <data/experiment/experiment.h>
 
@@ -455,9 +457,23 @@ void ExperimentTypePage::apply()
      {
          RfConfig cfg;
 
-         SettingsStorage s(BC::Key::hwKey(BC::Key::FtmwScope::ftmwScope,0),SettingsStorage::Hardware);
-         auto sk = s.get(BC::Key::HW::subKey,BC::Key::Comm::hwVirtual);
-         FtmwDigitizerConfig ftc{sk};
+         // Use RuntimeHardwareConfig to find the currently active FTMW scope
+         const auto& config = RuntimeHardwareConfig::constInstance();
+         auto ftmwLabels = config.getActiveLabels<FtmwScope>();
+         
+         FtmwDigitizerConfig ftc = [&]() {
+             if (!ftmwLabels.isEmpty()) {
+                 // Use the first active FTMW scope (in practice, usually only one)
+                 QString label = ftmwLabels.first();
+                 QString implementation = config.getHardwareImplementation<FtmwScope>(label);
+                 auto ftmwType = RuntimeHardwareConfig::hardwareTypeOf<FtmwScope>();
+                 return FtmwDigitizerConfig(ftmwType, implementation, label);
+             } else {
+                 // Fallback to virtual implementation if no hardware configured
+                 auto ftmwType = RuntimeHardwareConfig::hardwareTypeOf<FtmwScope>();
+                 return FtmwDigitizerConfig(ftmwType, "virtual", "default");
+             }
+         }();
 
          if(e->d_number > 0 && e->ftmwEnabled())
          {

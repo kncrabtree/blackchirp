@@ -6,6 +6,7 @@
 #include <gui/widget/customprotocolwidget.h>
 #include <gui/widget/gpibprotocolwidget.h>
 #include <gui/style/themecolors.h>
+#include <data/settings/hardwarekeys.h> // TODO: Migrate CommunicationDialog to use RuntimeHardwareConfig instead of SettingsStorage
 
 #include <QApplication>
 #include <QMessageBox>

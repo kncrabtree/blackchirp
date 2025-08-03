@@ -1,5 +1,6 @@
 #include <gui/widget/tcpprotocolwidget.h>
 #include <hardware/core/communication/tcpinstrument.h>
+#include <data/settings/hardwarekeys.h>
 
 #include <QFormLayout>
 #include <QLineEdit>

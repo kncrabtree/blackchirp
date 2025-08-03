@@ -2,13 +2,10 @@
 #define TCPINSTRUMENT_H
 
 #include <hardware/core/communication/communicationprotocol.h>
+#include <data/settings/hardwarekeys.h>
 
 #include <QTcpSocket>
 
-namespace BC::Key::TCP {
-static const QString ip{"ip"};
-static const QString port{"port"};
-}
 
 class TcpInstrument : public CommunicationProtocol
 {

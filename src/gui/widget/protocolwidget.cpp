@@ -1,6 +1,7 @@
 #include <gui/widget/protocolwidget.h>
 #include <hardware/core/communication/communicationprotocol.h>
 #include <hardware/core/hardwareobject.h>
+#include <data/settings/hardwarekeys.h>
 #include <QCoreApplication>
 #include <QSettings>
 

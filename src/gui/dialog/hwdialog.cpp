@@ -1,4 +1,5 @@
 #include "hwdialog.h"
+#include <data/settings/hardwarekeys.h>
 
 #include <QTreeView>
 #include <QVBoxLayout>

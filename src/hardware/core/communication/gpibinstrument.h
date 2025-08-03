@@ -2,13 +2,10 @@
 #define GPIBINSTRUMENT_H
 
 #include <hardware/core/communication/communicationprotocol.h>
+#include <data/settings/hardwarekeys.h>
 
 class GpibController;
 
-namespace BC::Key::GPIB {
-static const QString gpibAddress{"address"};
-static const QString gpibController{"controller"}; // Future support for multiple controllers
-}
 
 class GpibInstrument : public CommunicationProtocol
 {

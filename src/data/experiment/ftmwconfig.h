@@ -50,7 +50,7 @@ public:
     };
     Q_ENUM(FtmwType)
 
-    FtmwConfig();
+    FtmwConfig(const QString& hwType, const QString& implementation, const QString& label);
     FtmwConfig(const FtmwConfig &) =default;
     FtmwConfig &operator=(const FtmwConfig &) =default;
     virtual ~FtmwConfig();

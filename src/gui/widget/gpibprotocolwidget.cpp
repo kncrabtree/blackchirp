@@ -3,6 +3,7 @@
 #include <hardware/optional/gpibcontroller/gpibcontroller.h>
 #include <hardware/core/hardwaremanager.h>
 #include <data/storage/settingsstorage.h>
+#include <data/settings/hardwarekeys.h>
 
 #include <QFormLayout>
 #include <QComboBox>

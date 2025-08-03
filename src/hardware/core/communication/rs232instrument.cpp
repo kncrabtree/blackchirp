@@ -1,4 +1,5 @@
 #include "rs232instrument.h"
+#include <data/settings/hardwarekeys.h>
 
 Rs232Instrument::Rs232Instrument(QString key, QObject *parent) :
     CommunicationProtocol(key,parent)
