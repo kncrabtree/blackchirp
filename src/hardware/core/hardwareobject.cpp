@@ -1,6 +1,7 @@
 #include <hardware/core/hardwareobject.h>
 #include <hardware/core/hardwaremanager.h>
 #include <hardware/core/hardwareregistration.h>
+#include <data/settings/hardwarekeys.h>
 #include <QMetaEnum>
 
 #ifdef BC_GPIBCONTROLLER

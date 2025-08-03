@@ -8,13 +8,26 @@
 #include <data/storage/blackchirpcsv.h>
 #include <data/storage/fidpeakupstorage.h>
 #include <data/storage/settingsstorage.h>
+#include <hardware/core/runtimehardwareconfig.h>
 #include <hardware/core/ftmwdigitizer/ftmwscope.h>
 
 FtmwConfig::FtmwConfig() : HeaderStorage(BC::Store::FTMW::key)
 {
-    SettingsStorage s(BC::Key::hwKey(BC::Key::FtmwScope::ftmwScope,0),SettingsStorage::Hardware);
-    QString sk = s.get(BC::Key::HW::subKey,BC::Key::Comm::hwVirtual);
-    ps_scopeConfig = std::make_shared<FtmwDigitizerConfig>(sk);
+    // Use RuntimeHardwareConfig to find the currently active FTMW scope
+    const auto& config = RuntimeHardwareConfig::constInstance();
+    auto ftmwLabels = config.getActiveLabels<FtmwScope>();
+    
+    if (!ftmwLabels.isEmpty()) {
+        // Use the first active FTMW scope (in practice, usually only one)
+        QString label = ftmwLabels.first();
+        QString implementation = config.getHardwareImplementation<FtmwScope>(label);
+        auto ftmwType = RuntimeHardwareConfig::hardwareTypeOf<FtmwScope>();
+        ps_scopeConfig = std::make_shared<FtmwDigitizerConfig>(ftmwType, implementation, label);
+    } else {
+        // Fallback to virtual implementation if no hardware configured
+        auto ftmwType = RuntimeHardwareConfig::hardwareTypeOf<FtmwScope>();
+        ps_scopeConfig = std::make_shared<FtmwDigitizerConfig>(ftmwType, "virtual", "default");
+    }
 }
 
 FtmwConfig::~FtmwConfig()

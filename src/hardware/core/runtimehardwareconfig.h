@@ -71,25 +71,47 @@ public:
      */
     static const RuntimeHardwareConfig& constInstance();
     
+    /*!
+     * \brief Template helper for compile-time type-safe hardware type resolution
+     * 
+     * Extracts the hardware type string from the class name using Qt's meta-object system.
+     * This provides compile-time type safety and automatic updates when classes are renamed.
+     * 
+     * \tparam T Hardware class type (e.g., VirtualFtmwScope, FixedClock)
+     * \return Hardware type string for use with RuntimeHardwareConfig
+     * 
+     * \example
+     * auto labels = RuntimeHardwareConfig::constInstance().getActiveLabels(hardwareTypeOf<VirtualFtmwScope>());
+     */
+    template<typename T>
+    static QString hardwareTypeOf() {
+        return QString(T::staticMetaObject.className());
+    }
+    
     // ========================================================================
     // READ-ONLY OPERATIONS (Thread-safe, public access)
     // ========================================================================
     
     /*!
-     * \brief Get hardware implementation for a specific label
-     * \param hardwareType Hardware type key (e.g., "FlowController")
+     * \brief Get hardware implementation for a specific label (type-safe)
+     * \tparam T Hardware class type (e.g., FtmwScope, PulseGenerator)
      * \param label Hardware label (e.g., "frontPanel", "backup")
      * \return Implementation key, or empty string if not set or disabled
      */
-    QString getHardwareImplementation(const QString& hardwareType, const QString& label) const;
-    
+    template<typename T>
+    QString getHardwareImplementation(const QString& label) const {
+        return getHardwareImplementation(hardwareTypeOf<T>(), label);
+    }
     
     /*!
-     * \brief Get all active labels for a hardware type
-     * \param hardwareType Hardware type key
+     * \brief Get all active labels for a hardware type (type-safe)
+     * \tparam T Hardware class type (e.g., FtmwScope, PulseGenerator)
      * \return List of labels for currently active hardware devices
      */
-    QStringList getActiveLabels(const QString& hardwareType) const;
+    template<typename T>
+    QStringList getActiveLabels() const {
+        return getActiveLabels(hardwareTypeOf<T>());
+    }
     
     /*!
      * \brief Get current hardware configuration as map
@@ -182,6 +204,25 @@ private:
     // Disable copy/assignment for singleton
     RuntimeHardwareConfig(const RuntimeHardwareConfig&) = delete;
     RuntimeHardwareConfig& operator=(const RuntimeHardwareConfig&) = delete;
+    
+    // ========================================================================
+    // INTERNAL READ OPERATIONS (String-based, used by template functions)
+    // ========================================================================
+    
+    /*!
+     * \brief Get hardware implementation for a specific label (string-based)
+     * \param hardwareType Hardware type key (e.g., "FlowController")
+     * \param label Hardware label (e.g., "frontPanel", "backup")
+     * \return Implementation key, or empty string if not set or disabled
+     */
+    QString getHardwareImplementation(const QString& hardwareType, const QString& label) const;
+    
+    /*!
+     * \brief Get all active labels for a hardware type (string-based)
+     * \param hardwareType Hardware type key
+     * \return List of labels for currently active hardware devices
+     */
+    QStringList getActiveLabels(const QString& hardwareType) const;
     
     // ========================================================================
     // WRITE OPERATIONS (Friend class access only)

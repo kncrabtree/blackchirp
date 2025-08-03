@@ -1,5 +1,6 @@
 #include <hardware/core/liflaser/liflaser.h>
 #include <hardware/core/lifdigitizer/lifscope.h>
+#include <hardware/core/runtimehardwareconfig.h>
 #include <data/lif/lifconfig.h>
 
 #include <data/lif/liftrace.h>
@@ -9,8 +10,26 @@
 
 LifConfig::LifConfig() : HeaderStorage(BC::Store::LIF::key)
 {
+    // TODO: Uncomment when LifDigitizerConfig has label-based constructor
+    // Use RuntimeHardwareConfig to find the currently active LIF scope
+    // const auto& config = RuntimeHardwareConfig::constInstance();
+    // auto lifLabels = config.getActiveLabels<LifScope>();
+    // 
+    // if (!lifLabels.isEmpty()) {
+    //     // Use the first active LIF scope (in practice, usually only one)
+    //     QString label = lifLabels.first();
+    //     QString implementation = config.getHardwareImplementation<LifScope>(label);
+    //     auto lifType = RuntimeHardwareConfig::hardwareTypeOf<LifScope>();
+    //     ps_scopeConfig = std::make_shared<LifDigitizerConfig>(lifType, implementation, label);
+    // } else {
+    //     // Fallback to virtual implementation if no hardware configured
+    //     auto lifType = RuntimeHardwareConfig::hardwareTypeOf<LifScope>();
+    //     ps_scopeConfig = std::make_shared<LifDigitizerConfig>(lifType, "virtual", "default");
+    // }
+    
+    // Temporary: Use old approach with string literals (will be removed after migration)
     SettingsStorage s(BC::Key::hwKey(BC::Key::LifDigi::lifScope,0),SettingsStorage::Hardware);
-    QString sk = s.get(BC::Key::HW::subKey,BC::Key::Comm::hwVirtual);
+    QString sk = s.get("subKey",QString("virtual"));
     ps_scopeConfig = std::make_shared<LifDigitizerConfig>(sk);
 }
 

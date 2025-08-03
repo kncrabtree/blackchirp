@@ -1,6 +1,7 @@
 #include <hardware/core/hardwaremanager.h>
 #include <hardware/core/runtimehardwareconfig.h>
 #include <hardware/core/hardwareregistry.h>
+#include <data/settings/hardwarekeys.h>
 
 #include <hardware/core/hardwareobject.h>
 #include <hardware/core/ftmwdigitizer/ftmwscope.h>
