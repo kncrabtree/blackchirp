@@ -19,7 +19,7 @@ class AWG7122B : public AWG
 {
     Q_OBJECT
 public:
-    explicit AWG7122B(QObject *parent = nullptr);
+    explicit AWG7122B(const QString& label, QObject *parent = nullptr);
 
     // HardwareObject interface
 public slots:

@@ -130,6 +130,22 @@ namespace ClockManager {
     static const QString clockName{"name"}; /*!< Clock display name */
 }
 
+// AWG/Chirp source keys (from AWG base class)
+namespace AWG {
+    static const QString key{"AWG"}; /*!< AWG hardware type key */
+    static const QString prot{"hasProtectionPulse"}; /*!< Whether AWG has protection pulse digital output */
+    static const QString amp{"hasAmpEnablePulse"}; /*!< Whether AWG has amplifier enable pulse digital output */
+    static const QString min{"minFreqMHz"}; /*!< Minimum frequency in MHz */
+    static const QString max{"maxFreqMHz"}; /*!< Maximum frequency in MHz */
+    static const QString rampOnly{"rampOnly"}; /*!< Whether AWG can only generate frequency ramps */
+    static const QString rate{"sampleRateHz"}; /*!< Sample rate in Hz */
+    static const QString samples{"maxSamples"}; /*!< Maximum number of samples per waveform */
+    static const QString triggered{"triggered"}; /*!< Whether AWG is externally triggered */
+    static const QString hashes{"wfmHashes"}; /*!< Waveform hashes array */
+    static const QString wfmName{"name"}; /*!< Waveform name */
+    static const QString wfmHash{"hash"}; /*!< Waveform hash */
+}
+
 } // namespace BC::Key
 
 #endif // HARDWAREKEYS_H

@@ -18,7 +18,7 @@ class M8190 : public AWG
 {
     Q_OBJECT
 public:
-    explicit M8190(QObject *parent=nullptr);
+    explicit M8190(const QString& label, QObject *parent=nullptr);
 
     // HardwareObject interface
 public slots:

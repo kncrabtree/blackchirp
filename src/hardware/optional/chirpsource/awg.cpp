@@ -1,7 +1,7 @@
 #include <hardware/optional/chirpsource/awg.h>
 
-AWG::AWG(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent, bool threaded, bool critical) :
-    HardwareObject(BC::Key::AWG::key,subKey,name,commType,parent,threaded,critical)
+AWG::AWG(const QString& impl, const QString& label, QObject *parent) :
+    HardwareObject(QString(AWG::staticMetaObject.className()), impl, label, parent)
 {
 
 }

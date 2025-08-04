@@ -18,7 +18,7 @@ class M8195A : public AWG
 {
     Q_OBJECT
 public:
-    explicit M8195A(QObject *parent=nullptr);
+    explicit M8195A(const QString& label, QObject *parent=nullptr);
 
     // HardwareObject interface
 public slots:

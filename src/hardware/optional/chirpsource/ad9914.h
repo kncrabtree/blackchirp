@@ -12,7 +12,7 @@ class AD9914 : public AWG
 {
     Q_OBJECT
 public:
-    explicit AD9914(QObject *parent = nullptr);
+    explicit AD9914(const QString& label, QObject *parent = nullptr);
 
     // HardwareObject interface
 public slots:

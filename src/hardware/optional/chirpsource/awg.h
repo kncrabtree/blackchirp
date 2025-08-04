@@ -2,21 +2,7 @@
 #define AWG_H
 
 #include <hardware/core/hardwareobject.h>
-
-namespace BC::Key::AWG {
-static const QString key{"AWG"};
-static const QString prot{"hasProtectionPulse"};
-static const QString amp{"hasAmpEnablePulse"};
-static const QString min{"minFreqMHz"};
-static const QString max{"maxFreqMHz"};
-static const QString rampOnly{"rampOnly"};
-static const QString rate{"sampleRateHz"};
-static const QString samples{"maxSamples"};
-static const QString triggered{"triggered"};
-static const QString hashes{"wfmHashes"};
-static const QString wfmName{"name"};
-static const QString wfmHash{"hash"};
-}
+#include <data/settings/hardwarekeys.h>
 
 /**
  * @brief The AWG class
@@ -46,8 +32,7 @@ class AWG : public HardwareObject
 {
     Q_OBJECT
 public:
-    AWG(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
-        QObject *parent = nullptr, bool threaded = false, bool critical = true);
+    AWG(const QString& impl, const QString& label, QObject *parent = nullptr);
     virtual ~AWG();
 };
 

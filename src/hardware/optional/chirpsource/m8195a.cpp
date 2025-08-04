@@ -4,9 +4,9 @@
 #include <math.h>
 
 // Register hardware implementation
-REGISTER_HARDWARE(M8195A, BC::Key::AWG::m8195aName, "Keysight M8195A high-speed AWG")
+REGISTER_HARDWARE_META(M8195A, "Keysight M8195A high-speed AWG")
 
-M8195A::M8195A(QObject *parent) : AWG(BC::Key::AWG::m8195a,BC::Key::AWG::m8195aName,CommunicationProtocol::Tcp,parent)
+M8195A::M8195A(const QString& label, QObject *parent) : AWG(QString(M8195A::staticMetaObject.className()), label, parent)
 {
     setDefault(BC::Key::AWG::rate,65e9);
     setDefault(BC::Key::AWG::samples,2e9);

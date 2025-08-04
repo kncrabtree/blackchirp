@@ -6,10 +6,10 @@
 #include <QTimer>
 
 // Register hardware implementation
-REGISTER_HARDWARE(AWG5204, BC::Key::AWG::awg5204Name, "Tektronix AWG5204 AWG")
+REGISTER_HARDWARE_META(AWG5204, "Tektronix AWG5204 AWG")
 
-AWG5204::AWG5204(QObject *parent) :
-    AWG(BC::Key::AWG::awg5204,BC::Key::AWG::awg5204Name,CommunicationProtocol::Tcp,parent)
+AWG5204::AWG5204(const QString& label, QObject *parent) :
+    AWG(QString(AWG5204::staticMetaObject.className()), label, parent)
 {
     setDefault(BC::Key::AWG::rate,10e9);
     setDefault(BC::Key::AWG::samples,2e9);

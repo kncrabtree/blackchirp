@@ -13,7 +13,7 @@ class AWG5204 : public AWG
 {
     Q_OBJECT
 public:
-    explicit AWG5204(QObject *parent = nullptr);
+    explicit AWG5204(const QString& label, QObject *parent = nullptr);
 
     // HardwareObject interface
 public slots:

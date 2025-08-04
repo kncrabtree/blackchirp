@@ -5,10 +5,10 @@
 #include <math.h>
 
 // Register hardware implementation
-REGISTER_HARDWARE(AWG70002a, BC::Key::AWG::awg70002aName, "Tektronix AWG70002A high-performance AWG")
+REGISTER_HARDWARE_META(AWG70002a, "Tektronix AWG70002A high-performance AWG")
 
-AWG70002a::AWG70002a(QObject *parent) :
-    AWG(BC::Key::AWG::awg70002a,BC::Key::AWG::awg70002aName,CommunicationProtocol::Tcp,parent)
+AWG70002a::AWG70002a(const QString& label, QObject *parent) :
+    AWG(QString(AWG70002a::staticMetaObject.className()), label, parent)
 {
     setDefault(BC::Key::AWG::rate,16e9);
     setDefault(BC::Key::AWG::samples,2e9);

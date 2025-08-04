@@ -2,10 +2,10 @@
 #include <hardware/core/hardwareregistration.h>
 
 // Register hardware implementation
-REGISTER_HARDWARE(VirtualAwg, BC::Key::AWG::virtualAwgName, "Virtual AWG for testing and simulation")
+REGISTER_HARDWARE_META(VirtualAwg, "Virtual AWG for testing and simulation")
 
-VirtualAwg::VirtualAwg(QObject *parent) :
-    AWG(BC::Key::Comm::hwVirtual,BC::Key::AWG::virtualAwgName,CommunicationProtocol::Virtual,parent)
+VirtualAwg::VirtualAwg(const QString& label, QObject *parent) :
+    AWG(QString(VirtualAwg::staticMetaObject.className()), label, parent)
 {
     setDefault(BC::Key::AWG::rate,16e9);
     setDefault(BC::Key::AWG::samples,2e9);

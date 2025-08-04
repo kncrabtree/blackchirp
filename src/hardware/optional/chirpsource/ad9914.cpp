@@ -7,9 +7,9 @@
 #include <math.h>
 
 // Register hardware implementation
-REGISTER_HARDWARE(AD9914, BC::Key::AWG::ad9914Name, "Analog Devices AD9914 Direct Digital Synthesizer")
+REGISTER_HARDWARE_META(AD9914, "Analog Devices AD9914 Direct Digital Synthesizer")
 
-AD9914::AD9914(QObject *parent) : AWG(BC::Key::AWG::ad9914,BC::Key::AWG::ad9914Name,CommunicationProtocol::Rs232,parent)
+AD9914::AD9914(const QString& label, QObject *parent) : AWG(QString(AD9914::staticMetaObject.className()), label, parent)
 {
     setDefault(BC::Key::AWG::rate,3.75e9);
     setDefault(BC::Key::AWG::samples,1e9);

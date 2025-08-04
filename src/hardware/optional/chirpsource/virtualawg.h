@@ -12,7 +12,7 @@ class VirtualAwg : public AWG
 {
     Q_OBJECT
 public:
-    explicit VirtualAwg(QObject *parent = nullptr);
+    explicit VirtualAwg(const QString& label, QObject *parent = nullptr);
     ~VirtualAwg();
 
 protected:
