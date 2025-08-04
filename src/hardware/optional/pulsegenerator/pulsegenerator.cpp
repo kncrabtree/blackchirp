@@ -1,8 +1,8 @@
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 
-PulseGenerator::PulseGenerator(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int numChannels, QObject *parent, bool threaded, bool critical) :
-    HardwareObject(BC::Key::PGen::key,subKey,name,commType,parent,threaded,critical,d_count),
-    d_numChannels{numChannels}, d_config(subKey,d_count)
+PulseGenerator::PulseGenerator(const QString& impl, const QString& label, int numChannels, QObject *parent) :
+    HardwareObject(QString(PulseGenerator::staticMetaObject.className()), impl, label, parent),
+    d_numChannels{numChannels}, d_config(QString(PulseGenerator::staticMetaObject.className()), impl, label)
 {
     set(BC::Key::PGen::numChannels,d_numChannels,true);
 
@@ -18,8 +18,6 @@ PulseGenerator::PulseGenerator(const QString subKey, const QString name, Communi
             d_config.setCh(i,PulseGenConfig::RoleSetting,getArrayValue(channels,i,chRole,PulseGenConfig::None));
         }
     }
-
-    d_count++;
 }
 
 PulseGenerator::~PulseGenerator()

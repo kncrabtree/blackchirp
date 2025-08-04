@@ -9,7 +9,7 @@
 #include <QMetaEnum>
 
 PulseStatusBox::PulseStatusBox(QString key, QWidget *parent) :
-    HardwareStatusBox(key,parent)
+    HardwareStatusBox(key,parent), d_config(key.split('.').at(0), "virtual", key.split('.').size() > 1 ? key.split('.').at(1) : "default")
 {
     QGridLayout *gl = new QGridLayout;
 

@@ -2,7 +2,7 @@
 
 #include <QThread>
 
-QCPulseGenerator::QCPulseGenerator(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int numChannels, QObject *parent, bool threaded, bool critical) : PulseGenerator(subKey,name,commType,numChannels,parent,threaded,critical)
+QCPulseGenerator::QCPulseGenerator(const QString& impl, const QString& label, int numChannels, QObject *parent) : PulseGenerator(impl, label, numChannels, parent)
 {
 }
 

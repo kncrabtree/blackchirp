@@ -2,34 +2,15 @@
 #define PULSEGENERATOR_H
 
 #include <hardware/core/hardwareobject.h>
+#include <data/settings/hardwarekeys.h>
 
 #include <data/experiment/hardware/optional/pulsegenerator/pulsegenconfig.h>
-
-namespace BC::Key::PGen {
-static const QString key{"PulseGenerator"};
-static const QString numChannels{"numChannels"};
-static const QString minWidth{"minWidth"};
-static const QString maxWidth{"maxWidth"};
-static const QString minDelay{"minDelay"};
-static const QString maxDelay{"maxDelay"};
-static const QString minRepRate{"minRepRateHz"};
-static const QString maxRepRate{"maxRepRateHz"};
-static const QString lockExternal{"lockExternal"};
-static const QString canDutyCycle{"canDutyCycle"};
-static const QString canTrigger{"canTrigger"};
-static const QString dutyMax{"dutyMaxPulses"};
-static const QString canSyncToChannel{"canSyncToChannel"};
-static const QString canDisableChannels{"canDisableChannels"};
-static const QString channels{"channels"};
-static const QString chName{"name"};
-static const QString chRole{"role"};
-}
 
 class PulseGenerator : public HardwareObject
 {
     Q_OBJECT
 public:
-    PulseGenerator(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int numChannels, QObject *parent = nullptr, bool threaded = false, bool critical = true);
+    PulseGenerator(const QString& impl, const QString& label, int numChannels, QObject *parent = nullptr);
     virtual ~PulseGenerator();
 
 public slots:
@@ -104,7 +85,6 @@ public slots:
 
 private:
     PulseGenConfig d_config;
-    inline static uint d_count = 0;
 
     friend class VirtualPulseGenerator;
 };

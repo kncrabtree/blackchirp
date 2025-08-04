@@ -1,10 +1,14 @@
 #include "bnc577.h"
+#include <hardware/core/hardwareregistration.h>
 
 using namespace BC::Key::PGen;
 
-Bnc577_4::Bnc577_4(QObject *parent)
-    : QCPulseGenerator{bnc577_4,bnc577Name,CommunicationProtocol::Rs232,
-                       4,parent,false,true}
+// Register hardware implementations
+REGISTER_HARDWARE_META(Bnc577_4, "BNC 577 4-channel pulse generator")
+REGISTER_HARDWARE_META(Bnc577_8, "BNC 577 8-channel pulse generator")
+
+Bnc577_4::Bnc577_4(const QString& label, QObject *parent)
+    : QCPulseGenerator{QString(Bnc577_4::staticMetaObject.className()), label, 4, parent}
 {
     setDefault(minWidth,0.01);
     setDefault(maxWidth,1e5);
@@ -48,9 +52,8 @@ QByteArray Bnc577_4::pGenQueryCmd(QString cmd)
 }
 
 
-Bnc577_8::Bnc577_8(QObject *parent)
-    : QCPulseGenerator{bnc577_8,bnc577Name,CommunicationProtocol::Rs232,
-                       8,parent,false,true}
+Bnc577_8::Bnc577_8(const QString& label, QObject *parent)
+    : QCPulseGenerator{QString(Bnc577_8::staticMetaObject.className()), label, 8, parent}
 {
     setDefault(minWidth,0.01);
     setDefault(maxWidth,1e5);

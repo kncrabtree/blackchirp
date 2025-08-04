@@ -2,10 +2,10 @@
 #include <hardware/core/hardwareregistration.h>
 
 // Register hardware implementation
-REGISTER_HARDWARE(VirtualPulseGenerator, BC::Key::PGen::vpGen, "Virtual PulseGenerator for Testing")
+REGISTER_HARDWARE_META(VirtualPulseGenerator, "Virtual PulseGenerator for Testing")
 
-VirtualPulseGenerator::VirtualPulseGenerator(QObject *parent) :
-    PulseGenerator(BC::Key::Comm::hwVirtual,BC::Key::PGen::vpGen,CommunicationProtocol::Virtual,8,parent)
+VirtualPulseGenerator::VirtualPulseGenerator(const QString& label, QObject *parent) :
+    PulseGenerator(QString(VirtualPulseGenerator::staticMetaObject.className()), label, 8, parent)
 {
     using namespace BC::Key::PGen;
     setDefault(minWidth,0.010);

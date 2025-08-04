@@ -69,7 +69,11 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
                 }
                 case BC::Data::HardwareType::PulseGenerator:
                 {
-                    PulseGenConfig cfg(implementation, index);
+                    // Extract label from key (everything after the first dot)
+                    QString label = keyParts.size() >= 2 ? keyParts.at(1) : QString::number(index);
+                    // Hardware type is the first part of the key
+                    QString hwTypeString = keyParts.at(0);
+                    PulseGenConfig cfg(hwTypeString, implementation, label);
                     addOptHwConfig(cfg);
                     break;
                 }

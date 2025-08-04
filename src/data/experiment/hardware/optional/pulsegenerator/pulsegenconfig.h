@@ -71,7 +71,7 @@ public:
     bool d_pulseEnabled{true};
 
 
-    PulseGenConfig(QString subKey=QString(""), int index=-1);
+    PulseGenConfig(const QString& hwType, const QString& impl, const QString& label);
     ~PulseGenConfig();
 
     ChannelConfig at(const int i) const;

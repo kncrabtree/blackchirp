@@ -11,7 +11,7 @@ class VirtualPulseGenerator : public PulseGenerator
 {
     Q_OBJECT
 public:
-    explicit VirtualPulseGenerator(QObject *parent = nullptr);
+    explicit VirtualPulseGenerator(const QString& label, QObject *parent = nullptr);
     ~VirtualPulseGenerator();
 
     // PulseGenerator interface

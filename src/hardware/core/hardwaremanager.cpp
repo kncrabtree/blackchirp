@@ -526,7 +526,7 @@ void HardwareManager::setPGenConfig(const QString key, const PulseGenConfig &c)
 
 PulseGenConfig HardwareManager::getPGenConfig(const QString key)
 {
-    PulseGenConfig out;
+    PulseGenConfig out("PulseGenerator", "virtual", "temp"); // Dummy constructor, will be overwritten
     auto pg = findHardware<PulseGenerator>(key);
     if(pg)
     {

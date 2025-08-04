@@ -2,10 +2,10 @@
 #include <hardware/core/hardwareregistration.h>
 
 // Register hardware implementation
-REGISTER_HARDWARE(Qc9214, BC::Key::PGen::qc9214Name, "QuantumComposers 9214 Pulse Generator")
+REGISTER_HARDWARE_META(Qc9214, "QuantumComposers 9214 Pulse Generator")
 
-Qc9214::Qc9214(QObject *parent) :
-    QCPulseGenerator(BC::Key::PGen::qc9214,BC::Key::PGen::qc9214Name,CommunicationProtocol::Rs232,4,parent)
+Qc9214::Qc9214(const QString& label, QObject *parent) :
+    QCPulseGenerator(QString(Qc9214::staticMetaObject.className()), label, 4, parent)
 {
     using namespace BC::Key::PGen;
     setDefault(minWidth,0.01);

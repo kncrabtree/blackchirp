@@ -146,6 +146,27 @@ namespace AWG {
     static const QString wfmHash{"hash"}; /*!< Waveform hash */
 }
 
+// Pulse generator keys (from PulseGenerator base class)
+namespace PGen {
+    static const QString key{"PulseGenerator"}; /*!< Pulse generator hardware type key */
+    static const QString numChannels{"numChannels"}; /*!< Number of pulse generator channels */
+    static const QString minWidth{"minWidth"}; /*!< Minimum pulse width */
+    static const QString maxWidth{"maxWidth"}; /*!< Maximum pulse width */
+    static const QString minDelay{"minDelay"}; /*!< Minimum pulse delay */
+    static const QString maxDelay{"maxDelay"}; /*!< Maximum pulse delay */
+    static const QString minRepRate{"minRepRateHz"}; /*!< Minimum repetition rate in Hz */
+    static const QString maxRepRate{"maxRepRateHz"}; /*!< Maximum repetition rate in Hz */
+    static const QString lockExternal{"lockExternal"}; /*!< Whether to lock to external reference */
+    static const QString canDutyCycle{"canDutyCycle"}; /*!< Whether duty cycle mode is supported */
+    static const QString canTrigger{"canTrigger"}; /*!< Whether external triggering is supported */
+    static const QString dutyMax{"dutyMaxPulses"}; /*!< Maximum duty cycle pulses */
+    static const QString canSyncToChannel{"canSyncToChannel"}; /*!< Whether channels can be synchronized */
+    static const QString canDisableChannels{"canDisableChannels"}; /*!< Whether individual channels can be disabled */
+    static const QString channels{"channels"}; /*!< Channel configuration array */
+    static const QString chName{"name"}; /*!< Channel name */
+    static const QString chRole{"role"}; /*!< Channel role assignment */
+}
+
 } // namespace BC::Key
 
 #endif // HARDWAREKEYS_H

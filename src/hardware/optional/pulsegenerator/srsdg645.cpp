@@ -1,9 +1,13 @@
 #include "srsdg645.h"
+#include <hardware/core/hardwareregistration.h>
 
 using namespace BC::Key::PGen;
 
-SRSDG645::SRSDG645(QObject *parent)
-    : PulseGenerator{dg645,dg645Name,CommunicationProtocol::Rs232,4,parent,false,true}
+// Register hardware implementation
+REGISTER_HARDWARE_META(SRSDG645, "Stanford Research Systems DG645 delay generator")
+
+SRSDG645::SRSDG645(const QString& label, QObject *parent)
+    : PulseGenerator{QString(SRSDG645::staticMetaObject.className()), label, 4, parent}
 {
     setDefault(minWidth,0.0000);
     setDefault(maxWidth,1e5);

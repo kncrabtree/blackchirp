@@ -23,7 +23,7 @@ class QCPulseGenerator : public PulseGenerator
 {
     Q_OBJECT
 public:
-    explicit QCPulseGenerator(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int numChannels, QObject *parent = nullptr, bool threaded = false, bool critical = false);
+    explicit QCPulseGenerator(const QString& impl, const QString& label, int numChannels, QObject *parent = nullptr);
     virtual ~QCPulseGenerator();
 
 
@@ -78,7 +78,7 @@ class Qc9518 : public QCPulseGenerator
 {
     Q_OBJECT
 public:
-    explicit Qc9518(QObject *parent = nullptr);
+    explicit Qc9518(const QString& label, QObject *parent = nullptr);
     ~Qc9518();
 
     // HardwareObject interface
@@ -114,7 +114,7 @@ class Qc9528 : public QCPulseGenerator
 {
     Q_OBJECT
 public:
-    explicit Qc9528(QObject *parent = nullptr);
+    explicit Qc9528(const QString& label, QObject *parent = nullptr);
     ~Qc9528();
 
     // HardwareObject interface
@@ -151,7 +151,7 @@ class Qc9214 : public QCPulseGenerator
 {
     Q_OBJECT
 public:
-    explicit Qc9214(QObject *parent = nullptr);
+    explicit Qc9214(const QString& label, QObject *parent = nullptr);
     ~Qc9214();
 
     // HardwareObject interface

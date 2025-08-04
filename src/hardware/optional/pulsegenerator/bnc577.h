@@ -13,7 +13,7 @@ class Bnc577_4 : public QCPulseGenerator
 {
     Q_OBJECT
 public:
-    explicit Bnc577_4(QObject *parent = nullptr);
+    explicit Bnc577_4(const QString& label, QObject *parent = nullptr);
 
     // PulseGenerator interface
 protected:
@@ -34,7 +34,7 @@ class Bnc577_8 : public QCPulseGenerator
 {
     Q_OBJECT
 public:
-    explicit Bnc577_8(QObject *parent = nullptr);
+    explicit Bnc577_8(const QString& label, QObject *parent = nullptr);
 
     // PulseGenerator interface
 protected:

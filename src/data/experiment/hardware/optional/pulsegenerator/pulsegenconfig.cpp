@@ -1,9 +1,9 @@
 #include <data/experiment/hardware/optional/pulsegenerator/pulsegenconfig.h>
 
 #include <QMetaEnum>
-#include <hardware/optional/pulsegenerator/pulsegenerator.h>
+#include <data/settings/hardwarekeys.h>
 
-PulseGenConfig::PulseGenConfig(QString subKey, int index) : HeaderStorage(BC::Key::hwKey(BC::Key::PGen::key,index),subKey)
+PulseGenConfig::PulseGenConfig(const QString& hwType, const QString& impl, const QString& label) : HeaderStorage(BC::Key::hwKey(hwType, label), impl)
 {
 }
 

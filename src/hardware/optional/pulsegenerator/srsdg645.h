@@ -12,7 +12,7 @@ class SRSDG645 : public PulseGenerator
 {
     Q_OBJECT
 public:
-    explicit SRSDG645(QObject *parent = nullptr);
+    explicit SRSDG645(const QString& label, QObject *parent = nullptr);
 
     // HardwareObject interface
 protected:
