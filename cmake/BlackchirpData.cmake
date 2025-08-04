@@ -32,6 +32,7 @@ set(BLACKCHIRP_DATA_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/experiment/chirpconfig.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/experiment/digitizerconfig.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/experiment/experiment.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/experiment/hardwaredatacontainer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/experiment/experimentobjective.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/experiment/experimentvalidator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/experiment/fid.cpp

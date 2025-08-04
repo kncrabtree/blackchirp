@@ -389,7 +389,7 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
     }
 
     exp->d_hardwareSuccess = success;
-    exp->d_hardware = RuntimeHardwareConfig::constInstance().getCurrentHardware();
+    exp->d_hardwareData = RuntimeHardwareConfig::constInstance().createHardwareDataContainer();
 
 #ifdef BC_LIF
     if(exp->lifEnabled())

@@ -38,71 +38,68 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
 
     ps_validator = std::make_shared<ExperimentValidator>();
 
-    //load hardware list
-    QFile hw(d.absoluteFilePath(BC::CSV::hwFile));
-    if(hw.open(QIODevice::ReadOnly|QIODevice::Text))
-    {
-       while(!hw.atEnd())
-       {
-           auto l = csv->readLine(hw);
-           if(l.size() != 2)
-               continue;
+    //load hardware list using HardwareDataContainer
+    d_hardwareData = BC::Data::HardwareDataContainer::loadFromFile(d.absoluteFilePath(BC::CSV::hwFile));
+    if (d_hardwareData.hasAnyHardware()) {
+        d_hardwareSuccess = true;
+        
+        // Create optional HW configs as needed using robust enum-based hardware type identification
+        for (auto it = d_hardwareData.hardwareMap.begin(); it != d_hardwareData.hardwareMap.end(); ++it) {
+            const QString& key = it.key();
+            const auto& entry = it.value();
+            const QString& implementation = entry.implementation;
+            BC::Data::HardwareType hwType = entry.type;
+            
+            // Extract index for legacy configuration constructors (needed until they're migrated)
+            int index = 0;
+            auto keyParts = key.split(".");
+            if (keyParts.size() >= 2) {
+                bool ok = false;
+                index = keyParts.at(1).toInt(&ok);
+                if (!ok) index = 0; // Default to 0 for non-numeric labels
+            }
 
-           auto key = l.constFirst().toString();
-           auto subKey = l.constLast().toString();
-           if(key == QString("key"))
-               continue;
-
-           d_hardware.insert_or_assign(key,subKey);
-
-           auto hwl = key.split(".");
-           int index = 0;
-           QString hwType;
-           if(hwl.isEmpty())
-               continue;
-           else if(hwl.size() == 1) //backwards compatibility with beta version
-               hwType = hwl.constFirst();
-           else
-           {
-               bool ok = false;
-               index = hwl.at(1).toInt(&ok);
-               if (!ok || index < 0)
-                   continue;
-               hwType = hwl.first();
-           }
-
-           //create optional HW configs as needed
-           if(hwType == BC::Key::IOB::ioboard)
-           {
-               IOBoardConfig cfg(subKey,index);
-               addOptHwConfig(cfg);
-           }
-
-           if(hwType == BC::Key::PGen::key)
-           {
-               PulseGenConfig cfg(subKey,index);
-               addOptHwConfig(cfg);
-           }
-
-           if(hwType == BC::Key::Flow::flowController)
-           {
-               FlowConfig cfg(subKey,index);
-               addOptHwConfig(cfg);
-           }
-
-           if(hwType == BC::Key::PController::key)
-           {
-               PressureControllerConfig cfg(subKey,index);
-               addOptHwConfig(cfg);
-           }
-
-           if(hwType == BC::Key::TC::key)
-           {
-               TemperatureControllerConfig cfg(subKey,index);
-               addOptHwConfig(cfg);
-           }
-
-       }
+            // Create optional HW configs using robust enum-based type identification
+            switch (hwType) {
+                case BC::Data::HardwareType::IOBoard:
+                {
+                    IOBoardConfig cfg(implementation, index);
+                    addOptHwConfig(cfg);
+                    break;
+                }
+                case BC::Data::HardwareType::PulseGenerator:
+                {
+                    PulseGenConfig cfg(implementation, index);
+                    addOptHwConfig(cfg);
+                    break;
+                }
+                case BC::Data::HardwareType::FlowController:
+                {
+                    FlowConfig cfg(implementation, index);
+                    addOptHwConfig(cfg);
+                    break;
+                }
+                case BC::Data::HardwareType::PressureController:
+                {
+                    PressureControllerConfig cfg(implementation, index);
+                    addOptHwConfig(cfg);
+                    break;
+                }
+                case BC::Data::HardwareType::TemperatureController:
+                {
+                    TemperatureControllerConfig cfg(implementation, index);
+                    addOptHwConfig(cfg);
+                    break;
+                }
+                case BC::Data::HardwareType::Unknown:
+                case BC::Data::HardwareType::FtmwScope:
+                case BC::Data::HardwareType::Clock:
+                case BC::Data::HardwareType::AWG:
+                case BC::Data::HardwareType::GPIBController:
+                    // These types don't need optional hardware config objects (yet)
+                    break;
+            }
+        }
     }
 
     //load objectives
@@ -242,8 +239,8 @@ HeaderStorage::HeaderStrings Experiment::getSummary()
     QString _{""};
 
     //add hardware information
-    for(auto const &[headerStorageKey,val] : d_hardware)
-        out.insert({"Hardware",{_,_,headerStorageKey,val,_}});
+    for(auto it = d_hardwareData.hardwareMap.cbegin(); it != d_hardwareData.hardwareMap.cend(); ++it)
+        out.insert({"Hardware",{_,_,it.key(),it.value().implementation,_}});
 
     return out;
 }
@@ -267,13 +264,13 @@ FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)
     QString implementation = "virtual";
     QString label = "default";
     
-    // Look for FTMW digitizer in hardware map
-    for (const auto& [key, impl] : d_hardware) {
-        if (key.startsWith("FtmwDigitizer.")) {
-            auto parts = key.split(".");
+    // Look for FTMW digitizer in hardware map using robust type identification
+    for (auto it = d_hardwareData.hardwareMap.cbegin(); it != d_hardwareData.hardwareMap.cend(); ++it) {
+        if (it.value().type == BC::Data::HardwareType::FtmwScope) {
+            auto parts = it.key().split(".");
             if (parts.size() == 2) {
                 label = parts[1];
-                implementation = impl;
+                implementation = it.value().implementation;
                 break;
             }
         }
@@ -560,20 +557,9 @@ bool Experiment::saveObjectives()
 bool Experiment::saveHardware()
 {
     QDir d(BlackchirpCSV::exptDir(d_number));
-    QFile hw(d.absoluteFilePath(BC::CSV::hwFile));
-    if(!hw.open(QIODevice::WriteOnly|QIODevice::Text))
-    {
-        d_errorString = QString("Could not open the file %1 for writing.")
-                .arg(d.absoluteFilePath(BC::CSV::hwFile));
-        return false;
-    }
-
-    QTextStream t(&hw);
-    BlackchirpCSV::writeLine(t,{"key","subKey"});
-    for(auto &[headerStorageKey,subKey] : d_hardware)
-        BlackchirpCSV::writeLine(t,{headerStorageKey,subKey});
-
-    return true;
+    
+    // Use HardwareDataContainer's saveToFile method for proper new format serialization
+    return d_hardwareData.saveToFile(d.absoluteFilePath(BC::CSV::hwFile));
 }
 
 bool Experiment::saveHeader()

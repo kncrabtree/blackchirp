@@ -147,14 +147,14 @@ void QuickExptDialog::loadExperiment(int num)
     p_esw->setExperiment(&exp);
 
     bool hwIdentical = true;
-    if(d_hardware.size() != exp.d_hardware.size())
+    if(d_hardware.size() != exp.d_hardwareData.hardwareMap.size())
         hwIdentical = false;
     else
     {
         for(auto const &[key,val] : d_hardware)
         {
-            auto it = exp.d_hardware.find(key);
-            if(it == exp.d_hardware.end() || it->second != val)
+            auto it = exp.d_hardwareData.hardwareMap.find(key);
+            if(it == exp.d_hardwareData.hardwareMap.end() || it.value().implementation != val)
             {
                 hwIdentical = false;
                 break;

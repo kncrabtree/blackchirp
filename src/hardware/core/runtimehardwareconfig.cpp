@@ -2,6 +2,11 @@
 #include "hardwareregistry.h"
 #include "hardwareprofilemanager.h"
 
+// Hardware class includes for template type resolution
+#include "ftmwdigitizer/ftmwscope.h"
+#include "clock/clock.h"
+// TODO: Add other hardware includes as they become available during migration
+
 #include <QReadLocker>
 #include <QWriteLocker>
 #include <QDebug>
@@ -81,6 +86,89 @@ std::map<QString, QString> RuntimeHardwareConfig::getCurrentHardware() const
     }
     
     return hardware;
+}
+
+BC::Data::HardwareDataContainer RuntimeHardwareConfig::createHardwareDataContainer() const
+{
+    QReadLocker locker(&d_configLock);
+    
+    BC::Data::HardwareDataContainer container;
+    
+    // Populate hardware map with all active hardware selections
+    for (auto it = d_activeHardware.cbegin(); it != d_activeHardware.cend(); ++it) {
+        const QString& hwKey = it.key(); // Already in "type.label" format
+        const HardwareSelection& selection = it.value();
+        
+        if (!selection.implementation.isEmpty()) {
+            // Extract hardware type from the selection.type field or from the key
+            auto keyParts = hwKey.split('.');
+            QString typeString = keyParts.isEmpty() ? hwKey : keyParts.first();
+            BC::Data::HardwareType hwType = BC::Data::HardwareDataContainer::legacyStringToHardwareType(typeString);
+            
+            container.hardwareMap[hwKey] = BC::Data::HardwareDataContainer::HardwareEntry(selection.implementation, hwType);
+        }
+    }
+    
+    // Populate type keys using hardwareTypeOf template method for type safety
+    // This uses Qt's metaobject system to automatically derive type keys
+    // Only populate the types that are actually available in the current build
+    
+    // NOTE: The hardware classes must be available at compile time for hardwareTypeOf<>() to work
+    // This is a fundamental requirement for the type-safe architecture
+    
+    // Core hardware types (always available)
+    try {
+        container.typeKeys.ftmwScope = hardwareTypeOf<FtmwScope>();
+    } catch (...) {
+        // Type not available in current build - leave empty
+    }
+    
+    try {
+        container.typeKeys.clock = hardwareTypeOf<Clock>();
+    } catch (...) {
+        // Type not available in current build - leave empty  
+    }
+    
+    // Optional hardware types (availability depends on build configuration)
+    // TODO: Add these as they become available during migration:
+    // container.typeKeys.awg = hardwareTypeOf<AWG>();
+    // container.typeKeys.pulseGenerator = hardwareTypeOf<PulseGenerator>();  
+    // container.typeKeys.flowController = hardwareTypeOf<FlowController>();
+    // container.typeKeys.ioBoard = hardwareTypeOf<IOBoard>();
+    // container.typeKeys.gpibController = hardwareTypeOf<GPIBController>();
+    // container.typeKeys.pressureController = hardwareTypeOf<PressureController>();
+    // container.typeKeys.temperatureController = hardwareTypeOf<TemperatureController>();
+    
+    // For now, we'll use the HardwareRegistry to dynamically populate type keys
+    // This is a temporary solution until all hardware types are migrated to the new system
+    auto& registry = HardwareRegistry::instance();
+    QStringList allTypes = registry.getHardwareTypes();
+    
+    for (const QString& type : allTypes) {
+        // Map known hardware types to their corresponding fields
+        // This provides a fallback when template methods aren't available yet
+        if (type == "FtmwScope" && container.typeKeys.ftmwScope.isEmpty()) {
+            container.typeKeys.ftmwScope = type;
+        } else if (type == "Clock" && container.typeKeys.clock.isEmpty()) {
+            container.typeKeys.clock = type;
+        } else if (type == "AWG" && container.typeKeys.awg.isEmpty()) {
+            container.typeKeys.awg = type;
+        } else if (type == "PulseGenerator" && container.typeKeys.pulseGenerator.isEmpty()) {
+            container.typeKeys.pulseGenerator = type;
+        } else if (type == "FlowController" && container.typeKeys.flowController.isEmpty()) {
+            container.typeKeys.flowController = type;
+        } else if (type == "IOBoard" && container.typeKeys.ioBoard.isEmpty()) {
+            container.typeKeys.ioBoard = type;
+        } else if (type == "GPIBController" && container.typeKeys.gpibController.isEmpty()) {
+            container.typeKeys.gpibController = type;
+        } else if (type == "PressureController" && container.typeKeys.pressureController.isEmpty()) {
+            container.typeKeys.pressureController = type;
+        } else if (type == "TemperatureController" && container.typeKeys.temperatureController.isEmpty()) {
+            container.typeKeys.temperatureController = type;
+        }
+    }
+    
+    return container;
 }
 
 QHash<QString, HardwareValidationResult> RuntimeHardwareConfig::validateConfiguration() const

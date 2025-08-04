@@ -8,6 +8,7 @@
 #include <map>
 
 #include <data/storage/settingsstorage.h>
+#include <data/experiment/hardwaredatacontainer.h>
 
 // Forward declarations for friend classes
 class HardwareManager;
@@ -123,6 +124,25 @@ public:
      * \return Map of hardware type key to implementation key (enabled hardware only)
      */
     std::map<QString, QString> getCurrentHardware() const;
+    
+    /*!
+     * \brief Create hardware data container for experiment classes
+     * 
+     * Creates a BC::Data::HardwareDataContainer populated with both hardware
+     * selections and type keys. This provides a clean interface between the
+     * hardware layer and data layer without creating circular dependencies.
+     * 
+     * The container includes:
+     * - All active hardware selections in "type.label" -> "implementation" format
+     * - Hardware type keys populated using template methods for type safety
+     * - Convenience methods for type-safe hardware access
+     * 
+     * This method is used by application layer code when creating new experiments
+     * to pass hardware information to data layer classes like Experiment.
+     * 
+     * \return HardwareDataContainer with populated hardware map and type keys
+     */
+    BC::Data::HardwareDataContainer createHardwareDataContainer() const;
     
     /*!
      * \brief Validate entire hardware configuration

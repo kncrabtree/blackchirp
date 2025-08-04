@@ -16,6 +16,7 @@
 #include <data/storage/overlaystorage.h>
 #include <data/experiment/experimentvalidator.h>
 #include <data/experiment/ftmwconfig.h>
+#include <data/experiment/hardwaredatacontainer.h>
 #include <data/loghandler.h>
 #include <data/experiment/hardware/optional/pulsegenerator/pulsegenconfig.h>
 #include <data/experiment/hardware/optional/flowcontroller/flowconfig.h>
@@ -56,7 +57,7 @@ public:
 
     bool d_hardwareSuccess{false};
     bool d_initSuccess{false};
-    std::map<QString,QString> d_hardware;
+    BC::Data::HardwareDataContainer d_hardwareData;
     int d_number{0};
     QDateTime d_startTime;
     QDateTime d_lastBackupTime;
