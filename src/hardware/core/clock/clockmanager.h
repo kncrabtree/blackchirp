@@ -6,16 +6,9 @@
 
 #include <data/storage/settingsstorage.h>
 #include <data/experiment/experiment.h>
+#include <data/settings/hardwarekeys.h>
 
 class Clock;
-
-namespace BC::Key::Clock {
-static const QString clockManager{"ClockManager"};
-static const QString hwClocks{"hwClocks"};
-static const QString clockKey{"key"};
-static const QString clockOutput{"output"};
-static const QString clockName{"name"};
-}
 
 /**
  * @brief The ClockManager class associates hardware clocks with their purposes

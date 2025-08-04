@@ -6,7 +6,7 @@
 #include <hardware/core/clock/clock.h>
 #include <boost/preprocessor/iteration/local.hpp>
 
-using namespace BC::Key::Clock;
+using namespace BC::Key::ClockManager;
 
 ClockManager::ClockManager(QObject *parent) : QObject(parent),
     SettingsStorage(clockManager)

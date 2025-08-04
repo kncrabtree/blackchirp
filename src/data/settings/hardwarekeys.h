@@ -108,6 +108,28 @@ namespace Digi {
     static const QString srValue{"val"}; /*!< Sample rate numeric value */
 }
 
+// Clock configuration keys (from Clock base class)
+namespace Clock {
+    static const QString clock{"Clock"}; /*!< Clock hardware type key */
+    static const QString minFreq{"minFreqMHz"}; /*!< Minimum frequency in MHz */
+    static const QString maxFreq{"maxFreqMHz"}; /*!< Maximum frequency in MHz */
+    static const QString lock{"lockExternal"}; /*!< Whether to lock to external reference */
+    static const QString outputs{"outputs"}; /*!< Number of outputs */
+    static const QString mf{"multFactor"}; /*!< Multiplication factor */
+    static const QString role{"role"}; /*!< Clock role assignment */
+    static const QString tunable{"tunable"}; /*!< Whether clock is tunable */
+    static const QString manualTune{"manualTune"}; /*!< Manual tuning enabled */
+}
+
+// Clock manager keys (from ClockManager)
+namespace ClockManager {
+    static const QString clockManager{"ClockManager"}; /*!< Clock manager settings key */
+    static const QString hwClocks{"hwClocks"}; /*!< Hardware clocks array */
+    static const QString clockKey{"key"}; /*!< Clock key identifier */
+    static const QString clockOutput{"output"}; /*!< Clock output number */
+    static const QString clockName{"name"}; /*!< Clock display name */
+}
+
 } // namespace BC::Key
 
 #endif // HARDWAREKEYS_H

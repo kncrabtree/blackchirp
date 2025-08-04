@@ -3,17 +3,10 @@
 
 #include <hardware/core/clock/clock.h>
 
-namespace BC {
-namespace Key {
-static const QString valon5009{"valon5009"};
-static const QString valon5009Name("Valon Synthesizer 5009");
-}
-}
-
 class Valon5009 : public Clock
 {
 public:
-    explicit Valon5009(QObject *parent = nullptr);
+    explicit Valon5009(const QString& label, QObject *parent = nullptr);
 
     // Clock interface
 public:

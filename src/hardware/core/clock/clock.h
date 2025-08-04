@@ -2,18 +2,7 @@
 #define CLOCK_H
 
 #include <hardware/core/hardwareobject.h>
-
-namespace BC::Key::Clock {
-static const QString clock{"Clock"};
-static const QString minFreq{"minFreqMHz"};
-static const QString maxFreq{"maxFreqMHz"};
-static const QString lock{"lockExternal"};
-static const QString outputs{"outputs"};
-static const QString mf{"multFactor"};
-static const QString role{"role"};
-static const QString tunable{"tunable"};
-static const QString manualTune{"manualTune"};
-}
+#include <data/settings/hardwarekeys.h>
 
 /**
  * @brief The Clock class defines an interface for an oscillator

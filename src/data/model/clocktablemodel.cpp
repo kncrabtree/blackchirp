@@ -19,8 +19,8 @@ ClockTableModel::ClockTableModel(QObject *parent) :
         d_clockConfigs.insert(static_cast<RfConfig::ClockType>(ct.value(i)),{});
     }
 
-    SettingsStorage s(BC::Key::Clock::clockManager);
-    QString arrKey(BC::Key::Clock::hwClocks);
+    SettingsStorage s(BC::Key::ClockManager::clockManager);
+    QString arrKey(BC::Key::ClockManager::hwClocks);
     auto count = s.getArraySize(arrKey);
     QStringList keys;
     for(std::size_t i = 0; i < count; ++i)
@@ -28,9 +28,9 @@ ClockTableModel::ClockTableModel(QObject *parent) :
         ClockHwInfo hw;
         hw.used = false;
         hw.index = d_hwInfo.size();
-        hw.hwKey = s.getArrayValue<QString>(arrKey,i,BC::Key::Clock::clockKey,"");
-        hw.output = s.getArrayValue<int>(arrKey,i,BC::Key::Clock::clockOutput,0);
-        hw.name = s.getArrayValue<QString>(arrKey,i,BC::Key::Clock::clockName,QString("%1-%2").arg(hw.hwKey).arg(hw.output));
+        hw.hwKey = s.getArrayValue<QString>(arrKey,i,BC::Key::ClockManager::clockKey,"");
+        hw.output = s.getArrayValue<int>(arrKey,i,BC::Key::ClockManager::clockOutput,0);
+        hw.name = s.getArrayValue<QString>(arrKey,i,BC::Key::ClockManager::clockName,QString("%1-%2").arg(hw.hwKey).arg(hw.output));
         if(!hw.hwKey.isEmpty())
         {
             d_hwInfo << hw;

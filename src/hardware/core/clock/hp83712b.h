@@ -3,16 +3,11 @@
 
 #include "clock.h"
 
-namespace BC::Key {
-static const QString hp83712b{"hp83712b"};
-static const QString hp83712bName{"HP 83712B Synthesizer"};
-}
-
 class HP83712B : public Clock
 {
     Q_OBJECT
 public:
-    explicit HP83712B(QObject *parent = nullptr);
+    explicit HP83712B(const QString& label, QObject *parent = nullptr);
 
     // Clock interface
 protected:

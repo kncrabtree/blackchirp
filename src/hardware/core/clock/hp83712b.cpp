@@ -2,10 +2,10 @@
 #include <hardware/core/hardwareregistration.h>
 
 // Register hardware implementation
-REGISTER_HARDWARE(HP83712B, BC::Key::hp83712bName, "HP 83712B Signal Generator")
+REGISTER_HARDWARE_META(HP83712B, "Hewlett-Packard 83712B Synthesized Signal Generator (1-20000 MHz)")
 
-HP83712B::HP83712B(QObject *parent)
-    : Clock{1,true,BC::Key::hp83712b,BC::Key::hp83712bName,CommunicationProtocol::Gpib,parent}
+HP83712B::HP83712B(const QString& label, QObject *parent)
+    : Clock{1, true, QString(HP83712B::staticMetaObject.className()), label, parent}
 {
     setDefault(BC::Key::Clock::minFreq,1.0);
     setDefault(BC::Key::Clock::maxFreq,20000.0);

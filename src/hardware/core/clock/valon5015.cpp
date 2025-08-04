@@ -2,10 +2,10 @@
 #include <hardware/core/hardwareregistration.h>
 
 // Register hardware implementation
-REGISTER_HARDWARE(Valon5015, BC::Key::valon5015Name, "Valon 5015 Signal Generator")
+REGISTER_HARDWARE_META(Valon5015, "Valon Technology 5015 Single Channel Synthesizer (500-15000 MHz)")
 
-Valon5015::Valon5015(QObject *parent) :
-    Clock(1,true,BC::Key::valon5015,BC::Key::valon5015Name,CommunicationProtocol::Rs232,parent)
+Valon5015::Valon5015(const QString& label, QObject *parent) :
+    Clock(1, true, QString(Valon5015::staticMetaObject.className()), label, parent)
 {
     setDefault(BC::Key::Clock::minFreq,500.0);
     setDefault(BC::Key::Clock::maxFreq,15000.0);
