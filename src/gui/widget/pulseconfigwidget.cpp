@@ -24,7 +24,7 @@
 
 PulseConfigWidget::PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent) :
     QWidget(parent),
-    SettingsStorage(BC::Key::widgetKey(BC::Key::PulseWidget::key,cfg.headerKey(),cfg.hwSubKey())),
+    SettingsStorage(BC::Key::widgetKey(BC::Key::PulseWidget::key,cfg.headerKey())),
     d_key{cfg.headerKey()}
 {
 

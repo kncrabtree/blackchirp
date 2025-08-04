@@ -9,7 +9,7 @@ static const QString hwIndexSep(".");
 
 // New label-based API
 QString hwKey(const QString& type, const QString& label);
-QString widgetKey(const QString& widgetKey, const QString& hwKey, const QString& hwSubKey);
+QString widgetKey(const QString& widgetKey, const QString& hwKey);
 
 // Parse functions (supports both label and index formats)
 std::pair<QString, QString> parseKey(const QString& key);  // Returns {type, label}

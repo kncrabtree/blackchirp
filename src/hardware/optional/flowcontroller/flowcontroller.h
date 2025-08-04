@@ -2,36 +2,18 @@
 #define FLOWCONTROLLER_H
 
 #include <hardware/core/hardwareobject.h>
+#include <data/settings/hardwarekeys.h>
+#include <data/experiment/auxdatakeys.h>
 
 #include <QTimer>
 
 #include <data/experiment/hardware/optional/flowcontroller/flowconfig.h>
 
-namespace BC::Key::Flow {
-static const QString flowController{"FlowController"};
-static const QString flowChannels{"numChannels"};
-static const QString interval{"intervalMs"};
-static const QString pUnits{"pressureUnits"};
-static const QString pDec{"pressureDecimals"};
-static const QString pMax{"pressureMax"};
-static const QString channels{"channels"};
-static const QString chUnits{"units"};
-static const QString chDecimals{"decimals"};
-static const QString chMax{"max"};
-static const QString chName{"name"};
-}
-
-namespace BC::Aux::Flow {
-static const QString pressure{"Pressure"};
-static const QString flow{"Flow%1"};
-}
-
 class FlowController : public HardwareObject
 {
     Q_OBJECT
 public:
-    FlowController(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
-                   QObject *parent = nullptr, bool threaded = false, bool critical = false);
+    FlowController(const QString& impl, const QString& label, QObject *parent = nullptr);
     virtual ~FlowController();
 
     QStringList validationKeys() const override;
@@ -88,7 +70,6 @@ protected:
 
 private:
     friend class VirtualFlowController;
-    inline static int d_count = 0;
 
 
 };

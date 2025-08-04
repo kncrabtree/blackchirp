@@ -1,32 +1,33 @@
 #include "mks946.h"
 #include <hardware/core/hardwareregistration.h>
 
-using namespace BC::Key::Flow;
+using namespace BC::Key;
 
-// Register hardware implementation
-REGISTER_HARDWARE(Mks946, BC::Key::Flow::mks947Name, "MKS 946 FlowController")
-Mks946::Mks946(QObject *parent) :
-    FlowController(mks947,mks947Name,CommunicationProtocol::Rs232,parent),
+// Register hardware implementation using new metaobject system
+REGISTER_HARDWARE_META(Mks946, "MKS 946 vacuum transducer controller")
+
+Mks946::Mks946(const QString& label, QObject *parent) :
+    FlowController(QString(Mks946::staticMetaObject.className()), label, parent),
     d_nextRead(0)
 {
-    if(!containsArray(channels))
+    if(!containsArray(Flow::channels))
     {
         std::vector<SettingsMap> l;
-        int ch = get(flowChannels,4);
+        int ch = get(Flow::flowChannels,4);
         l.reserve(ch);
         for(int i=0; i<ch; ++i)
-            l.push_back({{chUnits,QString("sccm")},{chMax,10000.0},{chDecimals,1}});
+            l.push_back({{Flow::chUnits,QString("sccm")},{Flow::chMax,10000.0},{Flow::chDecimals,1}});
 
-        setArray(channels,l,true);
+        setArray(Flow::channels,l,true);
     }
 
-    setDefault(address,253);
-    setDefault(offset,1);
-    setDefault(pressureChannel,5);
+    setDefault(Flow::address,253);
+    setDefault(Flow::offset,1);
+    setDefault(Flow::pressureChannel,5);
 
-    setDefault(pUnits,QString("kTorr"));
-    setDefault(pMax,10.0);
-    setDefault(pDec,3);
+    setDefault(Flow::pUnits,QString("kTorr"));
+    setDefault(Flow::pMax,10.0);
+    setDefault(Flow::pDec,3);
 
     // Communication defaults  
     setDefault(BC::Key::Comm::timeout, 100);

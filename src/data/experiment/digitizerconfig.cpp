@@ -2,9 +2,9 @@
 
 #include <cmath>
 
-DigitizerConfig::DigitizerConfig(const QString key, const QString subKey) : HeaderStorage(key,subKey)
+DigitizerConfig::DigitizerConfig(const QString key, const QString subKey) : HeaderStorage(key)
 {
-
+    Q_UNUSED(subKey)
 }
 
 double DigitizerConfig::xIncr() const

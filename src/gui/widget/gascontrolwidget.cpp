@@ -10,7 +10,7 @@
 
 GasControlWidget::GasControlWidget(const FlowConfig &cfg, QWidget *parent) :
     QWidget(parent),
-    SettingsStorage(BC::Key::widgetKey(BC::Key::GasControl::key,cfg.headerKey(),cfg.hwSubKey())),
+    SettingsStorage(BC::Key::widgetKey(BC::Key::GasControl::key,cfg.headerKey())),
     d_config{cfg}
 {
     using namespace BC::Key::GasControl;

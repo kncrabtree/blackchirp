@@ -3,15 +3,11 @@
 
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 
-namespace BC::Key::Flow {
-static const QString mks647c{"mks647c"};
-static const QString mks647cName("MKS 647C Flow Control Unit");
-}
-
 class Mks647c : public FlowController
 {
+    Q_OBJECT
 public:
-    explicit Mks647c(QObject *parent = nullptr);
+    explicit Mks647c(const QString& label, QObject *parent = nullptr);
 
     // FlowController interface
 public slots:

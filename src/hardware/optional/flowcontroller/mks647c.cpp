@@ -3,13 +3,13 @@
 
 #include <math.h>
 
-using namespace BC::Key::Flow;
+using namespace BC::Key;
 
-// Register hardware implementation
-REGISTER_HARDWARE(Mks647c, BC::Key::Flow::mks647cName, "MKS 647C FlowController")
+// Register hardware implementation using new metaobject system
+REGISTER_HARDWARE_META(Mks647c, "MKS 647C mass flow controller")
 
-Mks647c::Mks647c(QObject *parent) :
-    FlowController(mks647c,mks647cName,CommunicationProtocol::Rs232,parent),
+Mks647c::Mks647c(const QString& label, QObject *parent) :
+    FlowController(QString(Mks647c::staticMetaObject.className()), label, parent),
     d_maxTries(5), d_nextRead(0)
 {
     double b = 28316.847; //scfm --> sccm conversion

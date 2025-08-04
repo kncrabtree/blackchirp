@@ -1,15 +1,9 @@
 #include "headerstorage.h"
 
-HeaderStorage::HeaderStorage(const QString objKey, const QString hwSubKey) :
-    d_headerKey{objKey}, d_hwSubKey{hwSubKey}
+HeaderStorage::HeaderStorage(const QString objKey) :
+    d_headerKey{objKey}
 {
 
-}
-
-int HeaderStorage::headerIndex() const
-{
-    auto p = BC::Key::parseIndexKey(d_headerKey);
-    return p.second;
 }
 
 void HeaderStorage::store(const QString key, const QVariant val, const QString unit)

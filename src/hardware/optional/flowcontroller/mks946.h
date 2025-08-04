@@ -4,8 +4,7 @@
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 
 namespace BC::Key::Flow {
-static const QString mks947{"mks947"};
-static const QString mks947Name("MKS 946 Flow Controller");
+// Implementation-specific keys for MKS946
 static const QString address{"mksaddress"};
 static const QString pressureChannel{"pressureChannel"};
 static const QString offset{"channelOffset"};
@@ -15,7 +14,7 @@ class Mks946 : public FlowController
 {
     Q_OBJECT
 public:
-    Mks946(QObject *parent = nullptr);
+    Mks946(const QString& label, QObject *parent = nullptr);
 
     // HardwareObject interface
 protected:

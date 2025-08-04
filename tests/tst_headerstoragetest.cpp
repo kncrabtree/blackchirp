@@ -99,7 +99,6 @@ private slots:
     void testCSV();
     
     // Enhanced coverage tests
-    void testHeaderIndexAndHwSubKey();
     void testArrayBoundaryConditions();
     void testEdgeCases();
     // void testChildManagement();  // Complex test - skip for now
@@ -279,17 +278,6 @@ void HeaderStorageTest::testCSV()
     t << "\n\n" << b << "\n\n";
 }
 
-void HeaderStorageTest::testHeaderIndexAndHwSubKey()
-{
-    // Test headerIndex() - should return -1 for keys without index separator
-    QCOMPARE(headerIndex(), -1); // "Test" should return -1 (no index)
-    
-    // Test hwSubKey() - should return empty for non-hardware objects
-    QCOMPARE(hwSubKey(), QString(""));
-    
-    // Test parsing keys with indices would require different constructor
-    // The current test verifies the basic functionality works
-}
 
 /*
 void HeaderStorageTest::testChildManagement()

@@ -569,7 +569,7 @@ void HardwareManager::setGasPressureControlMode(const QString key, bool en)
 
 FlowConfig HardwareManager::getFlowConfig(const QString key)
 {
-    FlowConfig out;
+    FlowConfig out("FlowController", "virtual", "temp"); // Dummy constructor, will be overwritten
     auto fc = findHardware<FlowController>(key);
     if(fc)
     {

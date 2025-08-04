@@ -3,8 +3,9 @@
 #include <QMetaEnum>
 #include <data/settings/hardwarekeys.h>
 
-PulseGenConfig::PulseGenConfig(const QString& hwType, const QString& impl, const QString& label) : HeaderStorage(BC::Key::hwKey(hwType, label), impl)
+PulseGenConfig::PulseGenConfig(const QString& hwType, const QString& impl, const QString& label) : HeaderStorage(BC::Key::hwKey(hwType, label))
 {
+    Q_UNUSED(impl)
 }
 
 PulseGenConfig::~PulseGenConfig()

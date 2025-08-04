@@ -1,29 +1,27 @@
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 
-using namespace BC::Key::Flow;
+using namespace BC::Key;
 
-FlowController::FlowController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent, bool threaded, bool critical) :
-    HardwareObject(flowController,subKey,name,commType,parent,threaded,critical,d_count),
-    d_config(subKey,d_count),
-    d_numChannels(getOrSetDefault(flowChannels,4))
+FlowController::FlowController(const QString& impl, const QString& label, QObject *parent) :
+    HardwareObject(QString(FlowController::staticMetaObject.className()), impl, label, parent),
+    d_config(Flow::flowController, impl, label),
+    d_numChannels(getOrSetDefault(Flow::flowChannels,4))
 {
     for(int i=0; i<d_numChannels; ++i)
         d_config.addCh({});
 
-    setDefault(interval,333);
+    setDefault(Flow::interval,333);
 
-    if(containsArray(channels))
+    if(containsArray(Flow::channels))
     {
         for(int i=0; i<d_numChannels; i++)
-            d_config.setCh(i,FlowConfig::Name,getArrayValue(channels,i,chName,QString("Ch%1").arg(i+1)));
+            d_config.setCh(i,FlowConfig::Name,getArrayValue(Flow::channels,i,Flow::chName,QString("Ch%1").arg(i+1)));
     }
-
-    d_count++;
 }
 
 FlowController::~FlowController()
 {
-    setArray(channels, {});
+    setArray(Flow::channels, {});
 
     for(int i=0; i<d_numChannels; i++)
     {
@@ -31,9 +29,9 @@ FlowController::~FlowController()
         if(n.isEmpty())
             n = QString("Ch%1").arg(i+1);
         SettingsMap m {
-            {chName,n},
+            {Flow::chName,n},
         };
-        appendArrayMap(channels,m);
+        appendArrayMap(Flow::channels,m);
     }
     save();
 }
@@ -61,7 +59,7 @@ void FlowController::initialize()
 bool FlowController::testConnection()
 {
     p_readTimer->stop();
-    p_readTimer->setInterval(get(interval,333));
+    p_readTimer->setInterval(get(Flow::interval,333));
     bool success = fcTestConnection();
     if(success)
     {

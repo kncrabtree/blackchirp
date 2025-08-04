@@ -9,7 +9,7 @@
 
 TemperatureControlWidget::TemperatureControlWidget(const TemperatureControllerConfig &cfg, QWidget *parent) :
     QWidget(parent),
-    SettingsStorage(BC::Key::widgetKey(BC::Key::TCW::key,cfg.headerKey(),cfg.hwSubKey())),
+    SettingsStorage(BC::Key::widgetKey(BC::Key::TCW::key,cfg.headerKey())),
     d_config{cfg}
 {
     auto gl = new QGridLayout(this);

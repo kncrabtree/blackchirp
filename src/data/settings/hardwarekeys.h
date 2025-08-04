@@ -167,6 +167,21 @@ namespace PGen {
     static const QString chRole{"role"}; /*!< Channel role assignment */
 }
 
+// Flow controller keys (from FlowController base class)
+namespace Flow {
+    static const QString flowController{"FlowController"}; /*!< Flow controller hardware type key */
+    static const QString flowChannels{"numChannels"}; /*!< Number of flow channels */
+    static const QString interval{"intervalMs"}; /*!< Polling interval in milliseconds */
+    static const QString pUnits{"pressureUnits"}; /*!< Pressure units string */
+    static const QString pDec{"pressureDecimals"}; /*!< Pressure decimal places */
+    static const QString pMax{"pressureMax"}; /*!< Maximum pressure value */
+    static const QString channels{"channels"}; /*!< Channel configuration array */
+    static const QString chUnits{"units"}; /*!< Channel flow units */
+    static const QString chDecimals{"decimals"}; /*!< Channel decimal places */
+    static const QString chMax{"max"}; /*!< Channel maximum flow */
+    static const QString chName{"name"}; /*!< Channel name */
+}
+
 } // namespace BC::Key
 
 #endif // HARDWAREKEYS_H

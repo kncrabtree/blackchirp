@@ -3,15 +3,11 @@
 
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 
-namespace BC::Key::Flow {
-static const QString virtFCName("Virtual Flow Controller");
-}
-
 class VirtualFlowController : public FlowController
 {
     Q_OBJECT
 public:
-    explicit VirtualFlowController(QObject *parent = nullptr);
+    explicit VirtualFlowController(const QString& label, QObject *parent = nullptr);
     ~VirtualFlowController();
 
 public slots:

@@ -1,29 +1,29 @@
 #include "virtualflowcontroller.h"
 #include <hardware/core/hardwareregistration.h>
 
-using namespace BC::Key::Flow;
+using namespace BC::Key;
 
-// Register hardware implementation
-REGISTER_HARDWARE(VirtualFlowController, BC::Key::Flow::virtFCName, "Virtual FlowController for Testing")
+// Register hardware implementation using new metaobject system
+REGISTER_HARDWARE_META(VirtualFlowController, "Virtual flow controller for testing and development")
 
-VirtualFlowController::VirtualFlowController(QObject *parent) :
-    FlowController(BC::Key::Comm::hwVirtual,virtFCName,CommunicationProtocol::Virtual,parent)
+VirtualFlowController::VirtualFlowController(const QString& label, QObject *parent) :
+    FlowController(QString(VirtualFlowController::staticMetaObject.className()), label, parent)
 {
 
-    if(!containsArray(channels))
+    if(!containsArray(Flow::channels))
     {
         std::vector<SettingsMap> l;
-        int ch = get(flowChannels,4);
+        int ch = get(Flow::flowChannels,4);
         l.reserve(ch);
         for(int i=0; i<ch; ++i)
-            l.push_back({{chUnits,QString("sccm")},{chMax,10000.0},{chDecimals,3}});
+            l.push_back({{Flow::chUnits,QString("sccm")},{Flow::chMax,10000.0},{Flow::chDecimals,3}});
 
-        setArray(channels,l,true);
+        setArray(Flow::channels,l,true);
     }
 
-    setDefault(pUnits,QString("kTorr"));
-    setDefault(pMax,10.0);
-    setDefault(pDec,3);
+    setDefault(Flow::pUnits,QString("kTorr"));
+    setDefault(Flow::pMax,10.0);
+    setDefault(Flow::pDec,3);
 
     save();
 }

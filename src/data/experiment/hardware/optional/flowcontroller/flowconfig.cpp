@@ -1,10 +1,11 @@
 #include <data/experiment/hardware/optional/flowcontroller/flowconfig.h>
 
 #include <data/storage/settingsstorage.h>
-#include <hardware/optional/flowcontroller/flowcontroller.h>
+#include <data/settings/hardwarekeys.h>
 
-FlowConfig::FlowConfig(QString hwSubKey, int index) : HeaderStorage(BC::Key::hwKey(BC::Key::Flow::flowController,index),hwSubKey)
+FlowConfig::FlowConfig(const QString& hwType, const QString& impl, const QString& label) : HeaderStorage(BC::Key::hwKey(hwType, label))
 {
+    Q_UNUSED(impl)
 }
 
 FlowConfig::~FlowConfig()
@@ -80,7 +81,7 @@ void FlowConfig::storeValues()
 {
     //no need to store flow rates or actual pressure; those change with time and
     //don't make sense to record in the experiment header
-    SettingsStorage s(BC::Key::Flow::flowController,SettingsStorage::Hardware);
+    SettingsStorage s(d_headerKey,SettingsStorage::Hardware);
     using namespace BC::Store::FlowConfig;
 
     store(pSetPoint,d_pressureSetpoint,s.get(BC::Key::Flow::pUnits,QString("")));

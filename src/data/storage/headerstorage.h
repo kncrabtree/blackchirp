@@ -65,11 +65,8 @@ public:
      * most derived class
      * 
      * \param objKey The object key. Values written to the header file will be
-     * associated with this string
-     * \param hwSubKey For data storage associated with a HardwareObject,
-     * contains the subKey of that object
      */
-    HeaderStorage(const QString objKey, const QString hwSubKey = QString(""));
+    HeaderStorage(const QString objKey);
     
     /*!
      * \brief Destructor. Does nothing
@@ -82,27 +79,10 @@ public:
      */
     QString headerKey() const { return d_headerKey; }
     
-    /*!
-     * \brief Parses ::d_headerKey and returns the index
-     * 
-     * This function is only useful if the header key is a
-     * HardwareOject::d_key. Otherwise, it simply returns 0.
-     * 
-     * \return Index or 0
-     */
-    int headerIndex() const;
-
-    /*!
-     * \brief Acceses ::d_hwSubKey
-     * 
-     * \return Subkey or empty string
-     */
-    QString hwSubKey() const { return d_hwSubKey; }
 
 protected:
 
     QString d_headerKey; /*!< Object key used for storage. Should not be modified! */
-    QString d_hwSubKey; /*!< Key used for settings in some hardware config objects */
 
     /*!
      * \brief Function called before saving.

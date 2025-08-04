@@ -37,7 +37,7 @@ public:
     };
     Q_ENUM(FlowChSetting)
 
-    FlowConfig(QString hwSubKey=QString(""), int index = -1);
+    FlowConfig(const QString& hwType, const QString& impl, const QString& label);
     ~FlowConfig();
 
     double d_pressureSetpoint{0.0};

@@ -36,9 +36,9 @@ std::pair<QString, int> BC::Key::parseIndexKey(const QString& key)
    }
 }
 
-QString BC::Key::widgetKey(const QString& widgetKey, const QString& hwKey, const QString& hwSubKey)
+QString BC::Key::widgetKey(const QString& widgetKey, const QString& hwKey)
 {
-    return QString("%1%2%3%4%5").arg(widgetKey, hwIndexSep, hwKey, hwIndexSep, hwSubKey);
+    return QString("%1%2%3").arg(widgetKey, hwIndexSep, hwKey);
 }
 
 // Migration utilities
