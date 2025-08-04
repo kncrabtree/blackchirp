@@ -5,16 +5,12 @@
 
 class QTcpSocket;
 
-namespace BC::Key::FtmwScope {
-static const QString dsox92004a{"DSOx92004A"};
-static const QString dsox92004aName("Keysight DSOx92004A Infiniium Oscilloscope");
-}
 
 class DSOx92004A : public FtmwScope
 {
     Q_OBJECT
 public:
-    explicit DSOx92004A(QObject *parent = nullptr);
+    explicit DSOx92004A(const QString& label, QObject *parent = nullptr);
 
     // HardwareObject interface
 public slots:

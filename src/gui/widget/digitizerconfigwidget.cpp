@@ -12,6 +12,7 @@
 #include <QScrollArea>
 
 #include <data/experiment/digitizerconfig.h>
+#include <data/settings/hardwarekeys.h>
 
 using namespace BC::Key::Digi;
 using namespace BC::Store::Digi;

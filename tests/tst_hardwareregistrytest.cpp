@@ -12,7 +12,7 @@ class MockHardware : public HardwareObject
 {
 public:
     MockHardware(const QString &hardwareKey, const QString &subKey, QObject *parent = nullptr)
-        : HardwareObject(hardwareKey, subKey, "Mock Hardware", CommunicationProtocol::Virtual, parent)
+        : HardwareObject(hardwareKey, subKey, "testLabel", parent)
     {
     }
     
@@ -27,7 +27,7 @@ class FailingMockHardware : public HardwareObject
 {
 public:
     FailingMockHardware(const QString &hardwareKey, const QString &subKey, QObject *parent = nullptr)
-        : HardwareObject(hardwareKey, subKey, "Failing Mock Hardware", CommunicationProtocol::Virtual, parent)
+        : HardwareObject(hardwareKey, subKey, "testLabel", parent)
     {
         // Simulate a hardware that fails during construction
         throw std::runtime_error("Simulated hardware failure");
@@ -131,8 +131,9 @@ void HardwareRegistryTest::testHardwareRegistration()
     
     // Register hardware
     bool success = d_registry->registerHardware(
-        testKey, testSubKey, testName, testDesc,
-        [testKey, testSubKey]() -> HardwareObject* { 
+        testKey, testSubKey, testDesc,
+        [testKey, testSubKey](const QString& label) -> HardwareObject* { 
+            Q_UNUSED(label)
             return new MockHardware(testKey, testSubKey); 
         }
     );
@@ -145,7 +146,7 @@ void HardwareRegistryTest::testHardwareRegistration()
     QVERIFY(info != nullptr);
     QCOMPARE(info->key, testKey);
     QCOMPARE(info->subKey, testSubKey);
-    QCOMPARE(info->prettyName, testName);
+    QCOMPARE(info->description, testDesc);
     QCOMPARE(info->description, testDesc);
     QVERIFY(info->factory != nullptr);
 }
@@ -159,7 +160,7 @@ void HardwareRegistryTest::testHardwareCreation()
     registerTestHardware(testKey, testSubKey, "Creation Test Hardware");
     
     // Create hardware instance
-    HardwareObject* hw = d_registry->createHardware(testKey, testSubKey);
+    HardwareObject* hw = d_registry->createHardware(testKey, testSubKey, "testLabel");
     QVERIFY(hw != nullptr);
     QVERIFY(hw->d_key.startsWith(testKey));  // Key gets index suffix like ".0"
     QCOMPARE(hw->d_subKey, testSubKey);
@@ -175,8 +176,9 @@ void HardwareRegistryTest::testDuplicateRegistration()
     
     // Register hardware first time
     bool success1 = d_registry->registerHardware(
-        testKey, testSubKey, "First Registration", "First registration",
-        [testKey, testSubKey]() -> HardwareObject* { 
+        testKey, testSubKey, "First registration",
+        [testKey, testSubKey](const QString& label) -> HardwareObject* { 
+            Q_UNUSED(label)
             return new MockHardware(testKey, testSubKey); 
         }
     );
@@ -184,8 +186,9 @@ void HardwareRegistryTest::testDuplicateRegistration()
     
     // Try to register the same hardware again
     bool success2 = d_registry->registerHardware(
-        testKey, testSubKey, "Second Registration", "Duplicate registration",
-        [testKey, testSubKey]() -> HardwareObject* { 
+        testKey, testSubKey, "Duplicate registration",
+        [testKey, testSubKey](const QString& label) -> HardwareObject* { 
+            Q_UNUSED(label)
             return new MockHardware(testKey, testSubKey); 
         }
     );
@@ -198,29 +201,29 @@ void HardwareRegistryTest::testInvalidRegistration()
     
     // Test with empty key
     bool success1 = d_registry->registerHardware(
-        "", "subkey", "Name", "Description",
-        []() -> HardwareObject* { return nullptr; }
+        "", "subkey", "Description",
+        [](const QString& label) -> HardwareObject* { Q_UNUSED(label) return nullptr; }
     );
     QVERIFY(!success1);
     
     // Test with empty subkey
     bool success2 = d_registry->registerHardware(
-        testKey, "", "Name", "Description",
-        []() -> HardwareObject* { return nullptr; }
+        testKey, "", "Description",
+        [](const QString& label) -> HardwareObject* { Q_UNUSED(label) return nullptr; }
     );
     QVERIFY(!success2);
     
-    // Test with empty name
+    // Test with empty description
     bool success3 = d_registry->registerHardware(
-        testKey, "subkey", "", "Description",
-        []() -> HardwareObject* { return nullptr; }
+        testKey, "subkey", "",
+        [](const QString& label) -> HardwareObject* { Q_UNUSED(label) return nullptr; }
     );
     QVERIFY(!success3);
     
     // Test with null factory
     bool success4 = d_registry->registerHardware(
-        testKey, "subkey", "Name", "Description",
-        std::function<HardwareObject*()>()  // null function
+        testKey, "subkey", "Description",
+        std::function<HardwareObject*(const QString&)>()  // null function
     );
     QVERIFY(!success4);
 }
@@ -267,7 +270,7 @@ void HardwareRegistryTest::testGetRegistration()
     QVERIFY(info != nullptr);
     QCOMPARE(info->key, testKey);
     QCOMPARE(info->subKey, testSubKey);
-    QCOMPARE(info->prettyName, testName);
+    QCOMPARE(info->description, testName);
     
     // Test non-existent registration
     const HardwareRegistration* nullInfo = d_registry->getRegistration("NonExistent", "none");
@@ -305,8 +308,9 @@ void HardwareRegistryTest::testConcurrentRegistration()
         QThread* thread = QThread::create([this, testKey, i, &semaphore, &resultMutex, &results]() {
             QString subKey = QString("thread_%1").arg(i);
             bool success = d_registry->registerHardware(
-                testKey, subKey, QString("Thread %1 Hardware").arg(i), "Concurrent test",
-                [testKey, subKey]() -> HardwareObject* { 
+                testKey, subKey, "Concurrent test",
+                [testKey, subKey](const QString& label) -> HardwareObject* { 
+                    Q_UNUSED(label)
                     return new MockHardware(testKey, subKey); 
                 }
             );
@@ -357,8 +361,8 @@ void HardwareRegistryTest::testConcurrentCreation()
     
     // Launch multiple threads that try to create hardware
     for (int i = 0; i < numThreads; ++i) {
-        QThread* thread = QThread::create([this, testKey, testSubKey, &semaphore, &resultMutex, &successCount]() {
-            HardwareObject* hw = d_registry->createHardware(testKey, testSubKey);
+        QThread* thread = QThread::create([this, testKey, testSubKey, &semaphore, &resultMutex, &successCount, i]() {
+            HardwareObject* hw = d_registry->createHardware(testKey, testSubKey, QString("testLabel%1").arg(i));
             
             QMutexLocker locker(&resultMutex);
             if (hw) {
@@ -389,7 +393,7 @@ void HardwareRegistryTest::testConcurrentCreation()
 
 void HardwareRegistryTest::testCreateNonexistentHardware()
 {
-    HardwareObject* hw = d_registry->createHardware("NonExistent", "none");
+    HardwareObject* hw = d_registry->createHardware("NonExistent", "none", "testLabel");
     QVERIFY(hw == nullptr);
 }
 
@@ -400,8 +404,8 @@ void HardwareRegistryTest::testNullFactoryFunction()
     
     // This is already tested in testInvalidRegistration, but let's be explicit
     bool success = d_registry->registerHardware(
-        testKey, testSubKey, "Null Factory Test", "Test with null factory",
-        std::function<HardwareObject*()>()  // null function
+        testKey, testSubKey, "Test with null factory",
+        std::function<HardwareObject*(const QString&)>()  // null function
     );
     
     QVERIFY(!success);  // Should fail during registration
@@ -414,8 +418,9 @@ void HardwareRegistryTest::testFactoryFailure()
     
     // Register hardware with factory that throws
     bool success = d_registry->registerHardware(
-        testKey, testSubKey, "Failing Factory Test", "Test factory that throws",
-        [testKey, testSubKey]() -> HardwareObject* { 
+        testKey, testSubKey, "Test factory that throws",
+        [testKey, testSubKey](const QString& label) -> HardwareObject* { 
+            Q_UNUSED(label)
             return new FailingMockHardware(testKey, testSubKey); 
         }
     );
@@ -423,15 +428,16 @@ void HardwareRegistryTest::testFactoryFailure()
     QVERIFY(success);  // Registration should succeed
     
     // But creation should fail gracefully
-    HardwareObject* hw = d_registry->createHardware(testKey, testSubKey);
+    HardwareObject* hw = d_registry->createHardware(testKey, testSubKey, "testLabel");
     QVERIFY(hw == nullptr);  // Should return null instead of crashing
 }
 
 void HardwareRegistryTest::registerTestHardware(const QString &key, const QString &subKey, const QString &name)
 {
     bool success = d_registry->registerHardware(
-        key, subKey, name, "Test hardware",
-        [key, subKey]() -> HardwareObject* { 
+        key, subKey, name,
+        [key, subKey](const QString& label) -> HardwareObject* { 
+            Q_UNUSED(label)
             return new MockHardware(key, subKey); 
         }
     );

@@ -5,16 +5,12 @@
 
 class QTcpSocket;
 
-namespace BC::Key::FtmwScope {
-static const QString dsov204a{"DSOV204A"};
-static const QString dsov204aName("Keysight DSOv204A V-Series Oscilloscope");
-}
 
 class DSOv204A : public FtmwScope
 {
     Q_OBJECT
 public:
-    explicit DSOv204A(QObject *parent = nullptr);
+    explicit DSOv204A(const QString& label, QObject *parent = nullptr);
 
     // HardwareObject interface
 public slots:

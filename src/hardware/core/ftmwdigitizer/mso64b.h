@@ -6,10 +6,6 @@
 #include <QTimer>
 #include <QAbstractSocket>
 
-namespace BC::Key::FtmwScope {
-static const QString mso64b{"mso64b"};
-static const QString mso64bName("Tektronix MSO64B Mixed Signal Oscilloscope");
-}
 
 class QTcpSocket;
 
@@ -17,7 +13,7 @@ class MSO64B : public FtmwScope
 {
     Q_OBJECT
 public:
-    explicit MSO64B(QObject *parent = nullptr);
+    explicit MSO64B(const QString& label, QObject *parent = nullptr);
     ~MSO64B();
 
     // HardwareObject interface

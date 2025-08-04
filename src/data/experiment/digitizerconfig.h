@@ -6,33 +6,7 @@
 #include <set>
 
 #include <data/storage/headerstorage.h>
-
-namespace BC::Key::Digi {
-static const QString dwAnChannels{"channels"};
-static const QString dwDigChannels{"digitalChannels"};
-static const QString numAnalogChannels{"numAnalogChannels"};
-static const QString hasAuxTriggerChannel{"hasAuxTriggerChannel"};
-static const QString numDigitalChannels{"numDigitalChannels"};
-static const QString minFullScale{"minFullScale"};
-static const QString maxFullScale{"maxFullScale"};
-static const QString minVOffset{"minVOffset"};
-static const QString maxVOffset{"maxVOffset"};
-static const QString isTriggered{"isTriggered"};
-static const QString minTrigDelay{"minTrigDelayUs"};
-static const QString maxTrigDelay{"maxTrigDelayUs"};
-static const QString minTrigLevel{"minTrigLevel"};
-static const QString maxTrigLevel{"maxTrigLevel"};
-static const QString maxRecordLength{"maxRecordLength"};
-static const QString canMultiRecord{"canMultiRecord"};
-static const QString maxRecords{"maxRecords"};
-static const QString canBlockAverage{"canBlockAverage"};
-static const QString maxAverages{"maxAverages"};
-static const QString multiBlock{"canBlockAndMultiRecord"};
-static const QString maxBytes{"maxBytesPerPoint"};
-static const QString sampleRates{"sampleRates"};
-static const QString srText{"text"};
-static const QString srValue{"val"};
-}
+#include <data/settings/hardwarekeys.h>
 
 namespace BC::Store::Digi {
 static const QString an{"AnalogChannel"};

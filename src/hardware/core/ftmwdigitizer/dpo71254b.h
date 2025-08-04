@@ -8,16 +8,12 @@
 
 class QTcpSocket;
 
-namespace BC::Key::FtmwScope {
-static const QString dpo71254b{"DPO71254B"};
-static const QString dpo71254bName("Tektronix DPO71254B Digital Phosphor Oscilloscope");
-}
 
 class Dpo71254b : public FtmwScope
 {
     Q_OBJECT
 public:
-    Dpo71254b(QObject *parent = nullptr);
+    Dpo71254b(const QString& label, QObject *parent = nullptr);
     ~Dpo71254b();
 
     // HardwareObject interface

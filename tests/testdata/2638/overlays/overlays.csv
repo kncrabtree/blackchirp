@@ -1,6 +1,6 @@
 ObjKey;Value
-BCBuildVersion;BC_BUILD_VERSION
-BCMajorVersion;BC_MAJOR_VERSION
-BCMinorVersion;BC_MINOR_VERSION
-BCPatchVersion;BC_PATCH_VERSION
-BCReleaseVersion;BC_RELEASE_VERSION
+BCBuildVersion;"v1.0.0-release-178-g3433d64"
+BCMajorVersion;1
+BCMinorVersion;1
+BCPatchVersion;0
+BCReleaseVersion;devel

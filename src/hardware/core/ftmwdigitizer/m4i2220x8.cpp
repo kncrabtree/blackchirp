@@ -10,11 +10,7 @@ using namespace BC::Key::Digi;
 using namespace Spectrum::M4i;
 
 // Register this hardware implementation
-REGISTER_HARDWARE(
-    M4i2220x8,
-    "Spectrum M4i.2220-x8",
-    "High-speed digitizer for FTMW spectroscopy (2.5 GS/s, 1.25 GHz bandwidth)"
-)
+REGISTER_HARDWARE_META(M4i2220x8, "Spectrum Instrumentation M4i.2220-x8 FTMW Digitizer (2.5 GS/s, 1.25 GHz Bandwidth)")
 
 /*!
  * \brief Helper function to get SpectrumLibrary instance with availability check
@@ -30,8 +26,8 @@ static SpectrumLibrary* getSpectrumLibrary()
     return &lib;
 }
 
-M4i2220x8::M4i2220x8(QObject *parent) :
-    FtmwScope(BC::Key::FtmwScope::m4i2220x8,BC::Key::FtmwScope::m4i2220x8Name,CommunicationProtocol::Custom,parent), p_handle(nullptr)
+M4i2220x8::M4i2220x8(const QString& label, QObject *parent) :
+    FtmwScope(QString(M4i2220x8::staticMetaObject.className()), label, parent), p_handle(nullptr)
 {
     setDefault(numAnalogChannels,1);
     setDefault(numDigitalChannels,0);

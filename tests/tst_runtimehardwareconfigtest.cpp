@@ -118,20 +118,20 @@ void RuntimeHardwareConfigTest::clearTestSettings()
 void RuntimeHardwareConfigTest::setupTestRegistry()
 {
     // Register some test hardware for validation tests
-    auto factory1 = []() -> HardwareObject* { return nullptr; }; // Mock factory
+    auto factory1 = [](const QString& label) -> HardwareObject* { Q_UNUSED(label) return nullptr; }; // Mock factory
     
     d_registry->registerHardware(
-        "TestHardware1", "impl1", "Test Hardware 1", "Test implementation 1",
+        "TestHardware1", "impl1", "Test Hardware 1 implementation 1",
         factory1
     );
     
     d_registry->registerHardware(
-        "TestHardware1", "impl2", "Test Hardware 1 Alt", "Alternative implementation",
+        "TestHardware1", "impl2", "Test Hardware 1 Alternative implementation",
         factory1
     );
     
     d_registry->registerHardware(
-        "TestHardware2", "impl1", "Test Hardware 2", "Test implementation 2",
+        "TestHardware2", "impl1", "Test Hardware 2 implementation 2",
         factory1
     );
 }

@@ -8,16 +8,11 @@
 
 class QTcpSocket;
 
-namespace BC::Key::FtmwScope {
-static const QString dsa71604c{"dsa71604c"};
-static const QString dsa71064cName("Tektronix DSA71604C Digital Serial Analyzer");
-}
-
 class Dsa71604c : public FtmwScope
 {
     Q_OBJECT
 public:
-    Dsa71604c(QObject *parent = nullptr);
+    Dsa71604c(const QString& label, QObject *parent = nullptr);
     ~Dsa71604c();
 
     // HardwareObject interface

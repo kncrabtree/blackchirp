@@ -313,12 +313,10 @@ void HardwareProfileManagerTest::initTestCase()
     
     // Register test hardware implementations for validation
     HardwareRegistry& registry = HardwareRegistry::instance();
-    registry.registerHardware(d_testTypeFlow, d_testImplVirtual, "Virtual Flow Controller", 
-                             "Virtual implementation for testing", 
-                             []() -> HardwareObject* { return nullptr; }); // Dummy factory for testing
-    registry.registerHardware(d_testTypeFlow, d_testImplMks647c, "MKS 647C Flow Controller", 
-                             "MKS 647C implementation for testing", 
-                             []() -> HardwareObject* { return nullptr; }); // Dummy factory for testing
+    registry.registerHardware(d_testTypeFlow, d_testImplVirtual, "Virtual Flow Controller for testing", 
+                             [](const QString& label) -> HardwareObject* { Q_UNUSED(label) return nullptr; }); // Dummy factory for testing
+    registry.registerHardware(d_testTypeFlow, d_testImplMks647c, "MKS 647C Flow Controller for testing", 
+                             [](const QString& label) -> HardwareObject* { Q_UNUSED(label) return nullptr; }); // Dummy factory for testing
 }
 
 void HardwareProfileManagerTest::cleanupTestCase()

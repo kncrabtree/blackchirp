@@ -8,16 +8,12 @@
 
 class QTcpSocket;
 
-namespace BC::Key::FtmwScope {
-static const QString mso72004c{"MSO72004C"};
-static const QString mso72004cName("Tektronix MSO72004C Mixed Signal Oscilloscope");
-}
 
 class MSO72004C : public FtmwScope
 {
     Q_OBJECT
 public:
-    MSO72004C(QObject *parent = nullptr);
+    MSO72004C(const QString& label, QObject *parent = nullptr);
     ~MSO72004C();
 
     // HardwareObject interface

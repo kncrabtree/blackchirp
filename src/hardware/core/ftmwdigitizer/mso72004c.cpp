@@ -9,14 +9,10 @@ using namespace BC::Key::FtmwScope;
 using namespace BC::Key::Digi;
 
 // Register this hardware implementation
-REGISTER_HARDWARE(
-    MSO72004C,
-    mso72004cName,
-    "Mixed signal oscilloscope for FTMW spectroscopy (20 GHz, 50 GS/s)"
-)
+REGISTER_HARDWARE_META(MSO72004C, "Tektronix MSO72004C FTMW Digitizer (20 GHz, 50 GS/s)")
 
-MSO72004C::MSO72004C(QObject *parent) :
-    FtmwScope(mso72004c,mso72004cName,CommunicationProtocol::Tcp,parent),
+MSO72004C::MSO72004C(const QString& label, QObject *parent) :
+    FtmwScope(QString(MSO72004C::staticMetaObject.className()), label, parent),
     d_waitingForReply(false), d_foundHeader(false),
     d_headerNumBytes(0), d_waveformBytes(0)
 {

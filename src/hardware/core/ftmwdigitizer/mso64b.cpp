@@ -9,14 +9,10 @@ using namespace BC::Key::FtmwScope;
 using namespace BC::Key::Digi;
 
 // Register this hardware implementation
-REGISTER_HARDWARE(
-    MSO64B,
-    mso64bName,
-    "Mixed signal oscilloscope for FTMW spectroscopy (1 GHz, 6.25 GS/s)"
-)
+REGISTER_HARDWARE_META(MSO64B, "Tektronix MSO64B FTMW Digitizer (1 GHz, 6.25 GS/s)")
 
-MSO64B::MSO64B(QObject *parent) :
-    FtmwScope(mso64b,mso64bName,CommunicationProtocol::Tcp,parent),
+MSO64B::MSO64B(const QString& label, QObject *parent) :
+    FtmwScope(QString(MSO64B::staticMetaObject.className()), label, parent),
     d_waitingForReply(false), d_foundHeader(false),
     d_headerNumBytes(0), d_waveformBytes(0)
 {

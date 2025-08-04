@@ -73,6 +73,41 @@ namespace Custom {
     static const QString label{"name"}; /*!< Label displayed to user for this data field. */
 }
 
+// FTMW digitizer keys (from FtmwScope)
+namespace FtmwScope {
+    static const QString ftmwScope{"FtmwDigitizer"}; /*!< FTMW digitizer hardware type key */
+    static const QString bandwidth{"bandwidthMHz"}; /*!< Analog bandwidth in MHz */
+    static const QString fidCh{"fidChannel"}; /*!< FID recording channel */
+}
+
+// Digitizer configuration keys (from DigitizerConfig)
+namespace Digi {
+    static const QString dwAnChannels{"channels"}; /*!< Analog channels configuration array */
+    static const QString dwDigChannels{"digitalChannels"}; /*!< Digital channels configuration array */
+    static const QString numAnalogChannels{"numAnalogChannels"}; /*!< Number of analog channels */
+    static const QString hasAuxTriggerChannel{"hasAuxTriggerChannel"}; /*!< Whether auxiliary trigger channel exists */
+    static const QString numDigitalChannels{"numDigitalChannels"}; /*!< Number of digital channels */
+    static const QString minFullScale{"minFullScale"}; /*!< Minimum full scale voltage */
+    static const QString maxFullScale{"maxFullScale"}; /*!< Maximum full scale voltage */
+    static const QString minVOffset{"minVOffset"}; /*!< Minimum vertical offset */
+    static const QString maxVOffset{"maxVOffset"}; /*!< Maximum vertical offset */
+    static const QString isTriggered{"isTriggered"}; /*!< Whether digitizer supports triggering */
+    static const QString minTrigDelay{"minTrigDelayUs"}; /*!< Minimum trigger delay in microseconds */
+    static const QString maxTrigDelay{"maxTrigDelayUs"}; /*!< Maximum trigger delay in microseconds */
+    static const QString minTrigLevel{"minTrigLevel"}; /*!< Minimum trigger level */
+    static const QString maxTrigLevel{"maxTrigLevel"}; /*!< Maximum trigger level */
+    static const QString maxRecordLength{"maxRecordLength"}; /*!< Maximum record length */
+    static const QString canMultiRecord{"canMultiRecord"}; /*!< Whether multi-record mode is supported */
+    static const QString maxRecords{"maxRecords"}; /*!< Maximum number of records */
+    static const QString canBlockAverage{"canBlockAverage"}; /*!< Whether block averaging is supported */
+    static const QString maxAverages{"maxAverages"}; /*!< Maximum number of averages */
+    static const QString multiBlock{"canBlockAndMultiRecord"}; /*!< Whether block and multi-record modes can be combined */
+    static const QString maxBytes{"maxBytesPerPoint"}; /*!< Maximum bytes per data point */
+    static const QString sampleRates{"sampleRates"}; /*!< Supported sample rates array */
+    static const QString srText{"text"}; /*!< Sample rate display text */
+    static const QString srValue{"val"}; /*!< Sample rate numeric value */
+}
+
 } // namespace BC::Key
 
 #endif // HARDWAREKEYS_H

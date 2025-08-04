@@ -10,14 +10,10 @@ using namespace BC::Key::FtmwScope;
 using namespace BC::Key::Digi;
 
 // Register this hardware implementation
-REGISTER_HARDWARE(
-    Dpo71254b,
-    dpo71254bName,
-    "Digital phosphor oscilloscope for FTMW spectroscopy (12.5 GHz, 50 GS/s)"
-)
+REGISTER_HARDWARE_META(Dpo71254b, "Tektronix DPO71254B FTMW Digitizer (12.5 GHz, 50 GS/s)")
 
-Dpo71254b::Dpo71254b(QObject *parent) :
-    FtmwScope(dpo71254b,dpo71254bName,CommunicationProtocol::Tcp,parent),
+Dpo71254b::Dpo71254b(const QString& label, QObject *parent) :
+    FtmwScope(QString(Dpo71254b::staticMetaObject.className()), label, parent),
     d_waitingForReply(false), d_foundHeader(false),
     d_headerNumBytes(0), d_waveformBytes(0)
 {

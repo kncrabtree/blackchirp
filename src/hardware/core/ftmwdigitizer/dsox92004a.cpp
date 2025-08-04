@@ -8,14 +8,10 @@ using namespace BC::Key::FtmwScope;
 using namespace BC::Key::Digi;
 
 // Register this hardware implementation
-REGISTER_HARDWARE(
-    DSOx92004A,
-    dsox92004aName,
-    "High-performance real-time oscilloscope for FTMW spectroscopy (20 GHz, 80 GS/s)"
-)
+REGISTER_HARDWARE_META(DSOx92004A, "Keysight DSOx92004A FTMW Digitizer (20 GHz, 80 GS/s)")
 
-DSOx92004A::DSOx92004A(QObject *parent) :
-    FtmwScope(BC::Key::FtmwScope::dsox92004a,BC::Key::FtmwScope::dsox92004aName,CommunicationProtocol::Tcp,parent)
+DSOx92004A::DSOx92004A(const QString& label, QObject *parent) :
+    FtmwScope(QString(DSOx92004A::staticMetaObject.className()), label, parent)
 {
     setDefault(numAnalogChannels,4);
     setDefault(numDigitalChannels,0);

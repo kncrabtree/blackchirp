@@ -2,6 +2,7 @@
 #define FTMWDIGITIZERCONFIG_H
 
 #include <data/experiment/digitizerconfig.h>
+#include <data/settings/hardwarekeys.h>
 
 namespace BC::Store::Digi {
 static const QString fidCh{"FidChannel"};

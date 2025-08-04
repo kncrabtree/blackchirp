@@ -2,18 +2,12 @@
 #define FTMWSCOPE_H
 
 #include <hardware/core/hardwareobject.h>
+#include <data/settings/hardwarekeys.h>
 
 #include <QByteArray>
 
 #include <data/experiment/ftmwconfig.h>
 #include <data/experiment/hardware/core/ftmwdigitizerconfig.h>
-
-
-namespace BC::Key::FtmwScope {
-static const QString ftmwScope{"FtmwDigitizer"};
-static const QString bandwidth{"bandwidthMHz"};
-static const QString fidCh{"fidChannel"};
-}
 
 class FtmwScope : public HardwareObject, protected FtmwDigitizerConfig
 {

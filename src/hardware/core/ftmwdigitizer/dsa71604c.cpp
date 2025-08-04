@@ -10,14 +10,10 @@ using namespace BC::Key::FtmwScope;
 using namespace BC::Key::Digi;
 
 // Register this hardware implementation
-REGISTER_HARDWARE(
-    Dsa71604c,
-    dsa71064cName,
-    "Digital Serial Analyzer oscilloscope for FTMW spectroscopy (16 GHz, 50 GS/s)"
-)
+REGISTER_HARDWARE_META(Dsa71604c, "Tektronix DSA71604C Digital Serial Analyzer FTMW Digitizer (16 GHz, 50 GS/s)")
 
-Dsa71604c::Dsa71604c(QObject *parent) :
-    FtmwScope(dsa71604c,dsa71064cName,CommunicationProtocol::Tcp,parent),
+Dsa71604c::Dsa71604c(const QString& label, QObject *parent) :
+    FtmwScope(QString(Dsa71604c::staticMetaObject.className()), label, parent),
     d_waitingForReply(false), d_foundHeader(false),
     d_headerNumBytes(0), d_waveformBytes(0)
 {
