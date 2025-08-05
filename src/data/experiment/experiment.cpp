@@ -12,6 +12,10 @@
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
+#ifdef BC_LIF
+#include <hardware/core/lifdigitizer/lifscope.h>
+#endif
+
 #include <QFile>
 #include <QSaveFile>
 #include <QDir>
@@ -116,6 +120,8 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
                 case BC::Data::HardwareType::Clock:
                 case BC::Data::HardwareType::AWG:
                 case BC::Data::HardwareType::GPIBController:
+                case BC::Data::HardwareType::LifScope:
+                case BC::Data::HardwareType::LifLaser:
                     // These types don't need optional hardware config objects (yet)
                     break;
             }
@@ -280,9 +286,9 @@ FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)
     // TODO: Replace this string-based hardware lookup with a type-safe hardware container
     // that provides structured access methods for each hardware type while maintaining
     // backward compatibility with the current map format for serialization
-    QString hwType = "FtmwDigitizer";
-    QString implementation = "virtual";
-    QString label = "default";
+    QString hwType = BC::Data::HardwareDataContainer::hardwareTypeToLegacyString(BC::Data::HardwareType::FtmwScope);
+    QString implementation = "invalid";
+    QString label = "invalid";
     
     // Look for FTMW digitizer in hardware map using robust type identification
     for (auto it = d_hardwareData.hardwareMap.cbegin(); it != d_hardwareData.hardwareMap.cend(); ++it) {
@@ -527,7 +533,35 @@ LifConfig *Experiment::enableLif()
 {
     disableLif();
 
-    ps_lifCfg = std::make_shared<LifConfig>();
+    // Look for LIF scope in hardware map using robust type identification
+    QString hwType = BC::Data::HardwareDataContainer::hardwareTypeToLegacyString(BC::Data::HardwareType::LifScope);
+    QString implementation = "invalid";
+    QString label = "invalid";
+    
+    for (auto it = d_hardwareData.hardwareMap.cbegin(); it != d_hardwareData.hardwareMap.cend(); ++it) {
+        if (it.value().type == BC::Data::HardwareType::LifScope) {
+            auto parts = it.key().split(".");
+            if (parts.size() == 2) {
+                label = parts[1];
+                implementation = it.value().implementation;
+                break;
+            }
+        }
+    }
+
+    ps_lifCfg = std::make_shared<LifConfig>(hwType, implementation, label);
+    
+    // Look for LIF laser to get units information
+    for (auto it = d_hardwareData.hardwareMap.cbegin(); it != d_hardwareData.hardwareMap.cend(); ++it) {
+        if (it.value().type == BC::Data::HardwareType::LifLaser) {
+            // Get laser units from hardware settings
+            SettingsStorage s(it.key(), SettingsStorage::Hardware);
+            QString units = s.get("units", QString("nm"));
+            ps_lifCfg->setLaserUnits(units);
+            break;
+        }
+    }
+    
     d_objectives.insert(ps_lifCfg.get());
     return ps_lifCfg.get();
 }

@@ -10,7 +10,7 @@ class LifLaserWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit LifLaserWidget(QWidget *parent = nullptr);
+    explicit LifLaserWidget(const QString& lifLaserKey, QWidget *parent = nullptr);
 
     void setPosition(const double d);
     void setFlashlamp(bool b);

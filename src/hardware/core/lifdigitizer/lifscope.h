@@ -5,15 +5,11 @@
 #include <data/lif/lifdigitizerconfig.h>
 #include <data/lif/lifconfig.h>
 
-namespace BC::Key::LifDigi {
-static const QString lifScope{"LifDigitizer"};
-}
-
 class LifScope : public HardwareObject, protected LifDigitizerConfig
 {
     Q_OBJECT
 public:
-    LifScope(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent = nullptr, bool threaded=true,bool critical=true);
+    LifScope(const QString& impl, const QString& label, QObject *parent = nullptr);
     virtual ~LifScope();
 
 signals:

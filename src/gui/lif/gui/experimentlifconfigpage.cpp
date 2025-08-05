@@ -9,7 +9,7 @@ using namespace BC::Key::WizLif;
 ExperimentLifConfigPage::ExperimentLifConfigPage(Experiment *exp, QWidget *parent) :
     ExperimentConfigPage(key,title,exp,parent)
 {
-    p_lcw = new LifControlWidget;
+    p_lcw = new LifControlWidget(*exp->lifConfig());
 
     auto vbl = new QVBoxLayout;
     vbl->addWidget(p_lcw);

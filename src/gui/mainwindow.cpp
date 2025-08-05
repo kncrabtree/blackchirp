@@ -267,9 +267,9 @@ MainWindow::MainWindow(QWidget *parent) :
             });
         }
 #ifdef BC_LIF
-        else if(hwType == BC::Key::LifLaser::key)
+        else if(hwType == QString(LifLaser::staticMetaObject.className()))
         {
-            auto lsb = new LifLaserStatusBox;
+            auto lsb = new LifLaserStatusBox(key);
             lsb->setObjectName(key+Ui::sbStr);
             ui->hwStatusLayout->addWidget(lsb);
             // ui->instrumentStatusLayout->insertWidget(ui->instrumentStatusLayout->indexOf(ui->statusSpacer),lsb,0);
@@ -392,7 +392,7 @@ void MainWindow::startExperiment()
         d.mapped()->reject();
     }
 
-    auto exp = std::make_shared<Experiment>();
+    auto exp = createExperiment();
     QMetaObject::invokeMethod(p_hwm,[this,exp]{
         p_hwm->storeAllOptHw(exp.get());
     },Qt::BlockingQueuedConnection);
@@ -465,7 +465,7 @@ void MainWindow::startSequence()
     if(ret == QDialog::Rejected)
         return;
 
-    std::shared_ptr<Experiment> exp = std::make_shared<Experiment>();
+    std::shared_ptr<Experiment> exp = createExperiment();
 
     if(ret == d.quickCode)
     {
@@ -787,10 +787,23 @@ void MainWindow::launchLifConfigDialog()
         return;
     }
 
+    // Check if LIF hardware is available before creating dialog
+    auto& runtimeConfig = RuntimeHardwareConfig::constInstance();
+    auto activeLabels = runtimeConfig.getActiveLabels<LifScope>();
+    if (activeLabels.isEmpty()) {
+        QMessageBox::warning(this, "LIF Configuration", "No LIF digitizer hardware is available. Please configure LIF hardware before opening this dialog.");
+        return;
+    }
+
     auto d = new QDialog;
     d->setWindowTitle("LIF Configuration");
 
-    auto w = new LifControlWidget(d);
+    // Create LifControlWidget with hardware parameters
+    QString hwType = QString(LifScope::staticMetaObject.className());
+    QString label = activeLabels.first();
+    QString implementation = runtimeConfig.getHardwareImplementation<LifScope>(label);
+    
+    auto w = new LifControlWidget(hwType, implementation, label, d);
     configureLifWidget(w);
 
     auto vbl = new QVBoxLayout;
@@ -1316,4 +1329,12 @@ void MainWindow::setupThemeAwareIconStyling()
     // Set menu icons
     ui->menuRollingData->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-path-rounded-square.svg", ThemeColors::IconSecondary, this));
     ui->menuAuxData->setIcon(ThemeColors::createThemedIcon(":/icons/chart-bar.svg", ThemeColors::IconSecondary, this));
+}
+
+std::shared_ptr<Experiment> MainWindow::createExperiment()
+{
+    auto exp = std::make_shared<Experiment>();
+    // Populate hardware data from RuntimeHardwareConfig
+    exp->d_hardwareData = RuntimeHardwareConfig::constInstance().createHardwareDataContainer();
+    return exp;
 }

@@ -6,15 +6,11 @@
 
 class QTimer;
 
-namespace BC::Key::LifDigi {
-static const QString vLifScopeName("Virtual LIF Oscilloscope");
-}
-
 class VirtualLifScope : public LifScope
 {
     Q_OBJECT
 public:
-    VirtualLifScope(QObject *parent = nullptr);
+    VirtualLifScope(const QString& label, QObject *parent = nullptr);
     ~VirtualLifScope();
 
 

@@ -4,7 +4,6 @@
 #include <hardware/core/hardwareobject.h>
 
 namespace BC::Key::LifLaser {
-static const QString key{"LifLaser"};
 static const QString units{"units"};
 static const QString decimals{"decimals"};
 static const QString minPos{"minPos"};
@@ -16,7 +15,7 @@ class LifLaser : public HardwareObject
 {
     Q_OBJECT
 public:
-    LifLaser(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent = nullptr, bool threaded=false,bool critical=true);
+    LifLaser(const QString& impl, const QString& label, QObject *parent = nullptr);
     ~LifLaser() override;
 
 signals:

@@ -3,16 +3,11 @@
 
 #include "liflaser.h"
 
-namespace BC::Key::LifLaser {
-static const QString opo("opolette");
-static const QString opoName("OPOTEK Opolette");
-}
-
 class Opolette : public LifLaser
 {
     Q_OBJECT
 public:
-    explicit Opolette(QObject *parent = nullptr);
+    explicit Opolette(const QString& label, QObject *parent = nullptr);
 
     // HardwareObject interface
 protected:

@@ -2,10 +2,10 @@
 #include <hardware/core/hardwareregistration.h>
 
 // Register hardware implementation
-REGISTER_HARDWARE(VirtualLifLaser, BC::Key::vLifLaser, "Virtual LIF Laser for Testing")
+REGISTER_HARDWARE_META(VirtualLifLaser, "Virtual LIF Laser for Testing")
 
-VirtualLifLaser::VirtualLifLaser(QObject *parent) :
-    LifLaser (BC::Key::Comm::hwVirtual,BC::Key::vLifLaser,CommunicationProtocol::Virtual,parent), d_pos(0.0), d_fl(false)
+VirtualLifLaser::VirtualLifLaser(const QString& label, QObject *parent) :
+    LifLaser(QString(VirtualLifLaser::staticMetaObject.className()), label, parent), d_pos(0.0), d_fl(false)
 {
     using namespace BC::Key::LifLaser;
     setDefault(minPos,250.);

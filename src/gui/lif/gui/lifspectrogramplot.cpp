@@ -20,10 +20,8 @@ LifSpectrogramPlot::LifSpectrogramPlot(QWidget *parent) :
 {
     setSpectrogramMode(true);
 
-    SettingsStorage s(BC::Key::LifLaser::key,SettingsStorage::Hardware);
     setPlotAxisTitle(QwtPlot::yLeft,QString::fromUtf16(u"Delay (µs)"));
-    setPlotAxisTitle(QwtPlot::xBottom,
-                 QString("Laser Postiion (")+s.get<QString>(BC::Key::LifLaser::units,"nm")+QString(")"));
+    setPlotAxisTitle(QwtPlot::xBottom, QString("Laser Position"));
 
     p_spectrogram = new QwtPlotSpectrogram();
     p_spectrogram->setDisplayMode(QwtPlotSpectrogram::ImageMode);

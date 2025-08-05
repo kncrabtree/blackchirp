@@ -27,7 +27,8 @@ class LifControlWidget : public QWidget, public SettingsStorage
     Q_OBJECT
 
 public:
-    explicit LifControlWidget(QWidget *parent = nullptr);
+    explicit LifControlWidget(const QString& scopeHwType, const QString& scopeImpl, const QString& scopeLabel, QWidget *parent = nullptr);
+    explicit LifControlWidget(const LifConfig& config, QWidget *parent = nullptr);
     ~LifControlWidget() override;
 
     void startAcquisition();
@@ -48,6 +49,8 @@ signals:
     void changeLaserFlashlampSignal(bool);
 
 private:
+    void initializeWidget(); // Common initialization for both constructors
+    
     LifTracePlot *p_lifTracePlot;
     DigitizerConfigWidget *p_digWidget;
     LifLaserWidget *p_laserWidget;

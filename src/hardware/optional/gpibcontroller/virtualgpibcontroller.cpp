@@ -2,10 +2,10 @@
 #include <hardware/core/hardwareregistration.h>
 
 // Register hardware implementation
-REGISTER_HARDWARE(VirtualGpibController, BC::Key::vgpibName, "Virtual GPIB Controller for Testing")
+REGISTER_HARDWARE_META(VirtualGpibController, "Virtual GPIB Controller for Testing")
 
-VirtualGpibController::VirtualGpibController(QObject *parent) :
-    GpibController(BC::Key::Comm::hwVirtual,BC::Key::vgpibName,CommunicationProtocol::Virtual,parent)
+VirtualGpibController::VirtualGpibController(const QString& label, QObject *parent) :
+    GpibController(QString(VirtualGpibController::staticMetaObject.className()), label, parent)
 {
     // Initialize communication protocol for testing
     buildCommunication();

@@ -5,16 +5,11 @@
 #include <QThread>
 #include <QDebug>
 
-namespace BC::Key {
-static const QString vgpibName("Virtual GPIB Controller");
-}
-
 class VirtualGpibController : public GpibController
 {
 	Q_OBJECT
 public:
-	VirtualGpibController(QObject *parent = 0);
-	VirtualGpibController(const QString& subKey, QObject *parent = 0);
+	VirtualGpibController(const QString& label, QObject *parent = nullptr);
 	~VirtualGpibController();
 
     // Override communication methods for debug output and multi-threading testing

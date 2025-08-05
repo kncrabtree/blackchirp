@@ -4,15 +4,12 @@
 
 #include <hardware/core/liflaser/liflaser.h>
 
-namespace BC::Key {
-static const QString vLifLaser("Virtual LIF Laser");
-}
 
 class VirtualLifLaser : public LifLaser
 {
     Q_OBJECT
 public:
-    VirtualLifLaser(QObject *parent = nullptr);
+    VirtualLifLaser(const QString& label, QObject *parent = nullptr);
 
 protected:
     void initialize() override;

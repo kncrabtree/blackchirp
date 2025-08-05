@@ -10,6 +10,21 @@
 #include <data/storage/settingsstorage.h>
 #include <data/experiment/hardwaredatacontainer.h>
 
+// Include all hardware headers so template methods work properly
+#include <hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/optional/chirpsource/awg.h>
+#include <hardware/optional/pulsegenerator/pulsegenerator.h>
+#include <hardware/optional/flowcontroller/flowcontroller.h>
+#include <hardware/optional/ioboard/ioboard.h>
+#include <hardware/optional/gpibcontroller/gpibcontroller.h>
+#include <hardware/optional/pressurecontroller/pressurecontroller.h>
+#include <hardware/optional/tempcontroller/temperaturecontroller.h>
+
+#ifdef BC_LIF
+#include <hardware/core/lifdigitizer/lifscope.h>
+#include <hardware/core/liflaser/liflaser.h>
+#endif
+
 // Forward declarations for friend classes
 class HardwareManager;
 class RuntimeHardwareConfigTest;

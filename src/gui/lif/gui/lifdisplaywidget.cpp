@@ -21,12 +21,8 @@ LifDisplayWidget::LifDisplayWidget(QWidget *parent) :
     QWidget(parent), SettingsStorage(BC::Key::LifDW::lifDwKey)
 {
 
-    SettingsStorage s(BC::Key::LifLaser::key,SettingsStorage::Hardware);
-
     p_laserSlicePlot = new LifSlicePlot(BC::Key::LifDW::lifSpectrumPlot,this);
-    p_laserSlicePlot->setPlotAxisTitle(QwtPlot::xBottom,
-                                      QString("Laser Position (%1)")
-                                      .arg(s.get<QString>(BC::Key::LifLaser::units,"nm")));
+    p_laserSlicePlot->setPlotAxisTitle(QwtPlot::xBottom,"Laser Position");
 
     p_delaySlicePlot = new LifSlicePlot(BC::Key::LifDW::lifTimePlot,this);
     p_delaySlicePlot->setPlotAxisTitle(QwtPlot::xBottom,QString::fromUtf16(u"Delay (µs)"));
@@ -105,10 +101,18 @@ void LifDisplayWidget::prepareForExperiment(const Experiment &e)
 
     d_dString = QString("Delay: %1 ")+BC::Unit::us;
     d_lString = QString("Laser: %1 ");
-    auto it = e.d_hardware.find(BC::Key::LifLaser::key);
-    if(it != e.d_hardware.end())
+    // Find LifLaser hardware in the new hardware data container
+    QString lifLaserKey;
+    for (auto it = e.d_hardwareData.hardwareMap.cbegin(); it != e.d_hardwareData.hardwareMap.cend(); ++it) {
+        if (it.value().type == BC::Data::HardwareType::LifLaser) {
+            lifLaserKey = it.key();
+            break;
+        }
+    }
+    
+    if (!lifLaserKey.isEmpty())
     {
-        SettingsStorage s(it->first,SettingsStorage::Hardware);
+        SettingsStorage s(lifLaserKey,SettingsStorage::Hardware);
         d_lString.append(s.get(BC::Key::LifLaser::units,QString("nm")));
         d_lDec = s.get(BC::Key::LifLaser::decimals,2);
     }

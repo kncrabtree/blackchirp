@@ -12,10 +12,10 @@
 using namespace BC::Key::LifLaser;
 
 // Register hardware implementation
-REGISTER_HARDWARE(SirahCobra, BC::Key::LifLaser::sCobraName, "Sirah Cobra LIF Laser")
+REGISTER_HARDWARE_META(SirahCobra, "Sirah Cobra LIF Laser")
 
-SirahCobra::SirahCobra(QObject *parent)
-    : LifLaser{sCobra,sCobraName,CommunicationProtocol::Rs232,parent,true,true}
+SirahCobra::SirahCobra(const QString& label, QObject *parent)
+    : LifLaser(QString(SirahCobra::staticMetaObject.className()), label, parent)
 {
     setDefault(units,QString("nm"));
     setDefault(decimals,4);

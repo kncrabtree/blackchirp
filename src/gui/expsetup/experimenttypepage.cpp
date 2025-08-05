@@ -226,13 +226,29 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     auto ll = new QGridLayout;
     llg->setLayout(ll);
 
-    SettingsStorage lset(BC::Key::hwKey(BC::Key::LifLaser::key,0),SettingsStorage::Hardware);
+    // Initialize with default values
+    int decimals = 2;
+    double minPos = 250.0;
+    double maxPos = 2000.0;
+    QString units = "nm";
+    
+    // Find LifLaser hardware key from experiment's hardware data and update if found
+    for (auto it = p_exp->d_hardwareData.hardwareMap.cbegin(); it != p_exp->d_hardwareData.hardwareMap.cend(); ++it) {
+        if (it.value().type == BC::Data::HardwareType::LifLaser) {
+            SettingsStorage lset(it.key(), SettingsStorage::Hardware);
+            decimals = lset.get(BC::Key::LifLaser::decimals, decimals);
+            minPos = lset.get(BC::Key::LifLaser::minPos, minPos);
+            maxPos = lset.get(BC::Key::LifLaser::maxPos, maxPos);
+            units = lset.get(BC::Key::LifLaser::units, units);
+            break;
+        }
+    }
 
     p_lStartBox = new QDoubleSpinBox(this);
-    p_lStartBox->setDecimals(lset.get(BC::Key::LifLaser::decimals,2));
+    p_lStartBox->setDecimals(decimals);
     p_lStartBox->setKeyboardTracking(false);
-    p_lStartBox->setRange(lset.get(BC::Key::LifLaser::minPos,250.0),lset.get(BC::Key::LifLaser::maxPos,2000.0));
-    p_lStartBox->setSuffix(QString(" ").append(lset.get(BC::Key::LifLaser::units,QString("nm"))));
+    p_lStartBox->setRange(minPos, maxPos);
+    p_lStartBox->setSuffix(QString(" ").append(units));
     p_lStartBox->setValue(get(lifLaserStart,p_lStartBox->minimum()));
     registerGetter(lifLaserStart,p_lStartBox,&QDoubleSpinBox::value);
     ll->addWidget(new QLabel("Start"),0,0,Qt::AlignRight);
@@ -242,9 +258,9 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
 
     p_lStepBox = new QDoubleSpinBox(this);
     p_lStepBox->setKeyboardTracking(false);
-    p_lStepBox->setDecimals(lset.get(BC::Key::LifLaser::decimals,2));
+    p_lStepBox->setDecimals(decimals);
     p_lStepBox->setRange(-range,range);
-    p_lStepBox->setSuffix(QString(" ").append(lset.get(BC::Key::LifLaser::units,QString("nm"))));
+    p_lStepBox->setSuffix(QString(" ").append(units));
     p_lStepBox->setValue(get(lifLaserStep,0.0));
     registerGetter(lifLaserStep,p_lStepBox,&QDoubleSpinBox::value);
     ll->addWidget(new QLabel("Step"),0,2,Qt::AlignRight);
@@ -252,8 +268,8 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
 
     p_lEndBox = new QDoubleSpinBox(this);
     p_lEndBox->setDecimals(3);
-    p_lEndBox->setRange(lset.get(BC::Key::LifLaser::minPos,250.0),lset.get(BC::Key::LifLaser::maxPos,2000.0));
-    p_lEndBox->setSuffix(QString(" ").append(lset.get(BC::Key::LifLaser::units,QString("nm"))));
+    p_lEndBox->setRange(minPos, maxPos);
+    p_lEndBox->setSuffix(QString(" ").append(units));
     p_lEndBox->setReadOnly(true);
     p_lEndBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
     ll->addWidget(new QLabel("End"),1,0,Qt::AlignRight);

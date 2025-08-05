@@ -55,7 +55,7 @@ void GpibProtocolWidget::populateControllerList()
     bool foundController = false;
     for(std::size_t i = 0; i < allHwCount; ++i) {
         QString hwKey = hwStorage.getArrayValue<QString>(BC::Key::allHw, i, BC::Key::HW::key);
-        if(hwKey.startsWith(BC::Key::gpibController)) {
+        if(hwKey.startsWith(QString(GpibController::staticMetaObject.className()))) {
             QString hwName = hwStorage.getArrayValue<QString>(BC::Key::allHw, i, BC::Key::HW::name);
             p_controllerCombo->addItem(hwName, hwKey);
             foundController = true;

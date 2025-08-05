@@ -4,11 +4,10 @@
 #include <QThread>
 
 // Register hardware implementation
-REGISTER_HARDWARE(RigolDS2302A, BC::Key::LifDigi::rds2302aName, "Rigol DS2302A LIF Scope")
+REGISTER_HARDWARE_META(RigolDS2302A, "Rigol DS2302A LIF Scope")
 
-RigolDS2302A::RigolDS2302A(QObject *parent)
-    : LifScope{BC::Key::LifDigi::rds2302a,BC::Key::LifDigi::rds2302aName,
-               CommunicationProtocol::Tcp,parent}
+RigolDS2302A::RigolDS2302A(const QString& label, QObject *parent)
+    : LifScope(QString(RigolDS2302A::staticMetaObject.className()), label, parent)
 {
     using namespace BC::Key::Digi;
 

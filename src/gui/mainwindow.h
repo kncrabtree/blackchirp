@@ -99,6 +99,9 @@ private:
     void updateViewExperimentMenu();
     void showExistingExperiment(const QString& path);
     void setupThemeAwareIconStyling();
+    
+    // Factory method for creating experiments with proper hardware data
+    std::shared_ptr<Experiment> createExperiment();
 
     ProgramState d_state{Idle};
     int d_logCount{0};

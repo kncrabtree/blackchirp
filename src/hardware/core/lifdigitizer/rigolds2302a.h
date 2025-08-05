@@ -4,8 +4,6 @@
 #include "lifscope.h"
 
 namespace BC::Key::LifDigi {
-static const QString rds2302a{"ds2302a"};
-static const QString rds2302aName{"Rigol DS2302A Oscilloscope"};
 static const QString queryIntervalMs{"queryInterval_ms"};
 }
 
@@ -13,7 +11,7 @@ class RigolDS2302A : public LifScope
 {
     Q_OBJECT
 public:
-    explicit RigolDS2302A(QObject *parent = nullptr);
+    explicit RigolDS2302A(const QString& label, QObject *parent = nullptr);
 
     // HardwareObject interface
 protected:

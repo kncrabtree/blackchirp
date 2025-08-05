@@ -14,8 +14,21 @@
 #include <QLabel>
 #include <QSpinBox>
 
-LifControlWidget::LifControlWidget(QWidget *parent) :
-    QWidget(parent), SettingsStorage(BC::Key::LifControl::key)
+LifControlWidget::LifControlWidget(const QString& scopeHwType, const QString& scopeImpl, const QString& scopeLabel, QWidget *parent) :
+    QWidget(parent), SettingsStorage(BC::Key::LifControl::key), 
+    d_cfg(scopeHwType, scopeImpl, scopeLabel)
+{
+    initializeWidget();
+}
+
+LifControlWidget::LifControlWidget(const LifConfig& config, QWidget *parent) :
+    QWidget(parent), SettingsStorage(BC::Key::LifControl::key), 
+    d_cfg(config)
+{
+    initializeWidget();
+}
+
+void LifControlWidget::initializeWidget()
 {
     auto vbl = new QVBoxLayout;
 
@@ -33,7 +46,7 @@ LifControlWidget::LifControlWidget(QWidget *parent) :
     vbl2->addWidget(dl);
 
     p_digWidget = new DigitizerConfigWidget(BC::Key::LifControl::lifDigWidget,
-                                            BC::Key::hwKey(BC::Key::LifDigi::lifScope,0),dgb);
+                                            d_cfg.headerKey(),dgb);
     vbl2->addWidget(p_digWidget);
 
     auto hbl2 = new QHBoxLayout;
@@ -68,7 +81,7 @@ LifControlWidget::LifControlWidget(QWidget *parent) :
 
     auto lgb = new QGroupBox("Laser",this);
     auto vbl3 = new QVBoxLayout;
-    p_laserWidget = new LifLaserWidget(lgb);
+    p_laserWidget = new LifLaserWidget(d_cfg.headerKey(), lgb);
     vbl3->addWidget(p_laserWidget);
     lgb->setLayout(vbl3);
     rightvbl->addWidget(lgb,0);

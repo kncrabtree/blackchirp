@@ -1,8 +1,8 @@
 #include <hardware/core/lifdigitizer/lifscope.h>
 
-LifScope::LifScope(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent, bool threaded, bool critical) :
-    HardwareObject(BC::Key::LifDigi::lifScope,subKey,name,commType,parent,threaded,critical),
-    LifDigitizerConfig(subKey)
+LifScope::LifScope(const QString& impl, const QString& label, QObject *parent) :
+    HardwareObject(QString(LifScope::staticMetaObject.className()), impl, label, parent),
+    LifDigitizerConfig(QString(LifScope::staticMetaObject.className()), impl, label)
 {
     using namespace BC::Key::Digi;
     using namespace BC::Store::Digi;

@@ -6,8 +6,6 @@
 class QSerialPort;
 
 namespace BC::Key::LifLaser {
-static const QString sCobra{"sirahCobra"};
-static const QString sCobraName{"Sirah Cobra Dye Laser"};
 static const QString mFactor{"multFactor"};
 static const QString stages{"stages"};
 static const QString sStart{"stageStartFreqHz"};
@@ -74,7 +72,7 @@ public:
         std::map<double,double> coefs;
     };
 
-    explicit SirahCobra(QObject *parent = nullptr);
+    explicit SirahCobra(const QString& label, QObject *parent = nullptr);
 
     // HardwareObject interface
 protected:

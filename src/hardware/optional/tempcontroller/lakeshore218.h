@@ -2,16 +2,11 @@
 #define LAKESHORE218_H
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
-namespace BC::Key::TC {
-static const QString lakeshore218{"lakeshore218"};
-static const QString lakeshore218Name("Lakeshore 218 Temperature Controller");
-}
-
 class Lakeshore218 : public TemperatureController
 {
     Q_OBJECT
 public:
-    explicit Lakeshore218(QObject* parent = nullptr);
+    explicit Lakeshore218(const QString& label, QObject* parent = nullptr);
 
     // HardwareObject interface
 public slots:

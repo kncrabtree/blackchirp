@@ -6,11 +6,10 @@
 #include <QRandomGenerator>
 
 // Register hardware implementation
-REGISTER_HARDWARE(VirtualLifScope, BC::Key::LifDigi::vLifScopeName, "Virtual LIF Scope for Testing")
+REGISTER_HARDWARE_META(VirtualLifScope, "Virtual LIF Scope for Testing")
 
-
-VirtualLifScope::VirtualLifScope(QObject *parent) :
-    LifScope(BC::Key::Comm::hwVirtual,BC::Key::LifDigi::vLifScopeName,CommunicationProtocol::Virtual,parent)
+VirtualLifScope::VirtualLifScope(const QString& label, QObject *parent) :
+    LifScope(QString(VirtualLifScope::staticMetaObject.className()), label, parent)
 {
     using namespace BC::Key::Digi;
 

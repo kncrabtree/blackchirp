@@ -2,81 +2,20 @@
 #include <hardware/core/hardwareregistration.h>
 
 // Register hardware implementation
-REGISTER_HARDWARE(PrologixGpibUsb, BC::Key::prologixUsbName, "Prologix GPIB-USB Controller")
+REGISTER_HARDWARE_META(PrologixGpibUsb, "Prologix GPIB-USB Controller")
 
-PrologixGpibUsb::PrologixGpibUsb(QObject *parent)
-    : GpibController{BC::Key::prologixUsb,BC::Key::prologixUsbName,CommunicationProtocol::Rs232,parent}
-{
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 1000);
-    setDefault(BC::Key::Comm::termChar, QString("\n"));
-
-    save();
-}
-
-
-void PrologixGpibUsb::initialize()
+PrologixGpibUsb::PrologixGpibUsb(const QString& label, QObject *parent) :
+    PrologixGpibController(QString(PrologixGpibUsb::staticMetaObject.className()), label, 
+                          CommunicationProtocol::Rs232, parent)
 {
 }
 
-bool PrologixGpibUsb::testConnection()
+QString PrologixGpibUsb::expectedIdResponse() const
 {
-
-    QByteArray resp = p_comm->queryCmd(QString("++ver\n"));
-    if(resp.isEmpty())
-    {
-        d_errorString = QString("%1 gave a null response to ID query").arg(d_name);
-        return false;
-    }
-    if(!resp.startsWith("Prologix GPIB-USB Controller"))
-    {
-        d_errorString = QString("%1 response invalid. Received: %2").arg(d_name).arg(QString(resp));
-        return false;
-    }
-
-    emit logMessage(QString("%1 ID response: %2").arg(d_name).arg(QString(resp)));
-
-    p_comm->writeCmd(QString("++auto 0\n"));
-//    p_comm->writeCmd(QString("++savecfg 0\n"));
-    p_comm->writeCmd(QString("++read_tmo_ms 50\n"));
-
-    readAddress();
-
-    return true;
+    return QString("Prologix GPIB-USB Controller");
 }
 
-QString PrologixGpibUsb::queryTerminator() const
+bool PrologixGpibUsb::shouldSendSaveCfg() const
 {
-    return QString("++read eoi\n");
-}
-
-bool PrologixGpibUsb::readAddress()
-{
-    bool success = false;
-    QByteArray resp = p_comm->queryCmd(QString("++addr\n"));
-    d_currentAddress = resp.trimmed().toInt(&success);
-    if(!success)
-    {
-        emit hardwareFailure();
-        emit logMessage(QString("Could not read address. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())));
-    }
-    return success;
-}
-
-bool PrologixGpibUsb::setAddress(int a)
-{
-    if(!p_comm->writeCmd(QString("++addr %1\n").arg(a)))
-        return false;
-
-    if(!readAddress())
-        return false;
-
-    if(d_currentAddress != a)
-    {
-        emit hardwareFailure();
-        emit logMessage(QString("Address was not set to %1. Current address: %2").arg(a).arg(d_currentAddress),LogHandler::Error);
-        return false;
-    }
-
-    return true;
+    return false;  // USB version doesn't send savecfg command
 }

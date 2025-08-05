@@ -8,29 +8,14 @@
 #include <cmath>
 
 
-LifConfig::LifConfig() : HeaderStorage(BC::Store::LIF::key)
+LifConfig::LifConfig(const QString& scopeHwType, const QString& scopeImpl, const QString& scopeLabel) : HeaderStorage(BC::Store::LIF::key)
 {
-    // TODO: Uncomment when LifDigitizerConfig has label-based constructor
-    // Use RuntimeHardwareConfig to find the currently active LIF scope
-    // const auto& config = RuntimeHardwareConfig::constInstance();
-    // auto lifLabels = config.getActiveLabels<LifScope>();
-    // 
-    // if (!lifLabels.isEmpty()) {
-    //     // Use the first active LIF scope (in practice, usually only one)
-    //     QString label = lifLabels.first();
-    //     QString implementation = config.getHardwareImplementation<LifScope>(label);
-    //     auto lifType = RuntimeHardwareConfig::hardwareTypeOf<LifScope>();
-    //     ps_scopeConfig = std::make_shared<LifDigitizerConfig>(lifType, implementation, label);
-    // } else {
-    //     // Fallback to virtual implementation if no hardware configured
-    //     auto lifType = RuntimeHardwareConfig::hardwareTypeOf<LifScope>();
-    //     ps_scopeConfig = std::make_shared<LifDigitizerConfig>(lifType, "virtual", "default");
-    // }
-    
-    // Temporary: Use old approach with string literals (will be removed after migration)
-    SettingsStorage s(BC::Key::hwKey(BC::Key::LifDigi::lifScope,0),SettingsStorage::Hardware);
-    QString sk = s.get("subKey",QString("virtual"));
-    ps_scopeConfig = std::make_shared<LifDigitizerConfig>(sk);
+    ps_scopeConfig = std::make_shared<LifDigitizerConfig>(scopeHwType, scopeImpl, scopeLabel);
+}
+
+void LifConfig::setLaserUnits(const QString& units)
+{
+    d_laserUnits = units;
 }
 
 bool LifConfig::isComplete() const
@@ -99,17 +84,14 @@ void LifConfig::loadLifData()
 
 void LifConfig::storeValues()
 {
-    SettingsStorage s(BC::Key::LifLaser::key,SettingsStorage::Hardware);
-    auto lUnits = s.get(BC::Key::LifLaser::units,QString("nm"));
-
     using namespace BC::Store::LIF;
     store(order,d_order);
     store(completeMode,d_completeMode);
     store(dStart,d_delayStartUs,BC::Unit::us);
     store(dStep,d_delayStepUs,BC::Unit::us);
     store(dPoints,d_delayPoints);
-    store(lStart,d_laserPosStart,lUnits);
-    store(lStep,d_laserPosStep,lUnits);
+    store(lStart,d_laserPosStart,d_laserUnits);
+    store(lStep,d_laserPosStep,d_laserUnits);
     store(lPoints,d_laserPosPoints);
     store(shotsPerPoint,d_shotsPerPoint);
 

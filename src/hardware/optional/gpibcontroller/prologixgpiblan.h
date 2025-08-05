@@ -1,33 +1,18 @@
 #ifndef PROLOGIXGPIBLAN_H
 #define PROLOGIXGPIBLAN_H
 
-#include <hardware/optional/gpibcontroller/gpibcontroller.h>
+#include <hardware/optional/gpibcontroller/prologixgpibcontroller.h>
 
-namespace BC::Key {
-static const QString prologix{"prologixGpibLan"};
-static const QString prologixName("Prologix GPIB-LAN Controller");
-}
-
-class PrologixGpibLan : public GpibController
+class PrologixGpibLan : public PrologixGpibController
 {
     Q_OBJECT
 public:
-    explicit PrologixGpibLan(QObject *parent = nullptr);
-
-    // GpibController interface
-public:
-    QString queryTerminator() const override;
+    explicit PrologixGpibLan(const QString& label, QObject *parent = nullptr);
 
 protected:
-    // HardwareObject interface
-    bool testConnection() override;
-    void initialize() override;
-
-    // GpibController interface
-    bool readAddress() override;
-    bool setAddress(int a) override;
-
-
+    // PrologixGpibController interface
+    QString expectedIdResponse() const override;
+    bool shouldSendSaveCfg() const override;
 };
 
 #endif // PROLOGIXGPIBLAN_H

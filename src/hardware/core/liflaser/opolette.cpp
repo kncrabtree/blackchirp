@@ -2,10 +2,10 @@
 #include <hardware/core/hardwareregistration.h>
 
 // Register hardware implementation
-REGISTER_HARDWARE(Opolette, BC::Key::LifLaser::opoName, "Opolette LIF Laser")
+REGISTER_HARDWARE_META(Opolette, "Opolette LIF Laser")
 
-Opolette::Opolette(QObject *parent)
-    : LifLaser{BC::Key::LifLaser::opo,BC::Key::LifLaser::opoName,CommunicationProtocol::Tcp,parent,true,true}
+Opolette::Opolette(const QString& label, QObject *parent)
+    : LifLaser(QString(Opolette::staticMetaObject.className()), label, parent)
 {
     using namespace BC::Key::LifLaser;
     setDefault(decimals,2);

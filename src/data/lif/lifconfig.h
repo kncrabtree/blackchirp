@@ -45,7 +45,7 @@ public:
     };
     Q_ENUM(LifCompleteMode)
 
-    LifConfig();
+    LifConfig(const QString& scopeHwType, const QString& scopeImpl, const QString& scopeLabel);
     ~LifConfig() = default;
 
     bool d_complete {false};
@@ -81,12 +81,14 @@ public:
 
     void addWaveform(const QVector<qint8> d);
     void loadLifData();
+    void setLaserUnits(const QString& units);
 
 
 
 private:
     std::shared_ptr<LifStorage> ps_storage;
     std::shared_ptr<LifDigitizerConfig> ps_scopeConfig;
+    QString d_laserUnits{"nm"};
     int d_currentDelayIndex {0};
     int d_currentLaserIndex {0};
     int d_completedSweeps{0};

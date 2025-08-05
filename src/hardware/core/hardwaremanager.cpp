@@ -60,7 +60,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #endif
 
 #ifdef BC_GPIBCONTROLLER
-    auto gpib = new BC_GPIBCONTROLLER;
+    auto gpib = new BC_GPIBCONTROLLER("temp");
     d_hardwareMap.emplace(gpib->d_key,gpib);
 #else
     auto gpib = nullptr;
@@ -180,12 +180,12 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #endif
 
 #ifdef BC_LIF
-    auto lsc = new BC_LIFDIGITIZER;
+    auto lsc = new BC_LIFDIGITIZER("temp");
     connect(lsc,&LifScope::waveformRead,this,&HardwareManager::lifScopeShotAcquired);
     connect(lsc,&LifScope::configAcqComplete,this,&HardwareManager::lifConfigAcqStarted);
     d_hardwareMap.emplace(lsc->d_key,lsc);
 
-    auto ll = new BC_LIFLASER;
+    auto ll = new BC_LIFLASER("temp");
     connect(ll,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserPosUpdate);
     connect(ll,&LifLaser::laserFlashlampUpdate,this,&HardwareManager::lifLaserFlashlampUpdate);
     d_hardwareMap.emplace(ll->d_key,ll);
@@ -389,12 +389,11 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
     }
 
     exp->d_hardwareSuccess = success;
-    exp->d_hardwareData = RuntimeHardwareConfig::constInstance().createHardwareDataContainer();
 
 #ifdef BC_LIF
     if(exp->lifEnabled())
     {
-        auto ll = findHardware<LifLaser>(BC::Key::hwKey(BC::Key::LifLaser::key,0));
+        auto ll = findHardware<LifLaser>(BC::Key::hwKey(QString(LifLaser::staticMetaObject.className()), "temp"));
         if(!ll)
         {
             emit logMessage(QString("Could not perform LIF experiment because no laser is avaialble."),LogHandler::Error);
@@ -415,7 +414,7 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
 void HardwareManager::experimentComplete()
 {
 #ifdef BC_LIF
-    auto ll = findHardware<LifLaser>(BC::Key::hwKey(BC::Key::LifLaser::key,0));
+    auto ll = findHardware<LifLaser>(BC::Key::hwKey(QString(LifLaser::staticMetaObject.className()), "temp"));
     if(ll)
         disconnect(ll,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserSetComplete);
 #endif
@@ -779,7 +778,7 @@ bool HardwareManager::setPGenLifDelay(double d)
 
 bool HardwareManager::setLifLaserPos(double pos)
 {
-    auto ll = findHardware<LifLaser>(BC::Key::hwKey(BC::Key::LifLaser::key,0));
+    auto ll = findHardware<LifLaser>(BC::Key::hwKey(QString(LifLaser::staticMetaObject.className()), "temp"));
     if(!ll)
     {
         emit logMessage(QString("Could not set LIF Laser position because no laser is avaialble."),LogHandler::Error);
@@ -802,7 +801,7 @@ void HardwareManager::lifLaserSetComplete(double pos)
 
 void HardwareManager::startLifConfigAcq(const LifConfig &c)
 {
-    auto ld = findHardware<LifScope>(BC::Key::hwKey(BC::Key::LifDigi::lifScope,0));
+    auto ld = findHardware<LifScope>(BC::Key::hwKey(QString(LifScope::staticMetaObject.className()), "temp"));
     if(!ld)
     {
         emit logMessage("Could not initialize LIF acquisition because no digitizer was found.",LogHandler::Error);
@@ -817,7 +816,7 @@ void HardwareManager::startLifConfigAcq(const LifConfig &c)
 
 void HardwareManager::stopLifConfigAcq()
 {
-    auto ld = findHardware<LifScope>(BC::Key::hwKey(BC::Key::LifDigi::lifScope,0));
+    auto ld = findHardware<LifScope>(BC::Key::hwKey(QString(LifScope::staticMetaObject.className()), "temp"));
     if(!ld)
     {
         emit logMessage("Could not stop LIF acquisition because no digitizer was found.",LogHandler::Error);
@@ -832,7 +831,7 @@ void HardwareManager::stopLifConfigAcq()
 
 double HardwareManager::lifLaserPos()
 {
-    auto ll = findHardware<LifLaser>(BC::Key::hwKey(BC::Key::LifLaser::key,0));
+    auto ll = findHardware<LifLaser>(BC::Key::hwKey(QString(LifLaser::staticMetaObject.className()), "temp"));
     if(!ll)
     {
         emit logMessage(QString("Could not read LIF Laser position because no laser is available."),LogHandler::Error);
@@ -849,7 +848,7 @@ double HardwareManager::lifLaserPos()
 
 bool HardwareManager::lifLaserFlashlampEnabled()
 {
-    auto ll = findHardware<LifLaser>(BC::Key::hwKey(BC::Key::LifLaser::key,0));
+    auto ll = findHardware<LifLaser>(BC::Key::hwKey(QString(LifLaser::staticMetaObject.className()), "temp"));
     if(!ll)
     {
         emit logMessage(QString("Could not read LIF Laser flashlamp status because no laser is available."),LogHandler::Error);
@@ -866,7 +865,7 @@ bool HardwareManager::lifLaserFlashlampEnabled()
 
 void HardwareManager::setLifLaserFlashlampEnabled(bool en)
 {
-    auto ll = findHardware<LifLaser>(BC::Key::hwKey(BC::Key::LifLaser::key,0));
+    auto ll = findHardware<LifLaser>(BC::Key::hwKey(QString(LifLaser::staticMetaObject.className()), "temp"));
     if(!ll)
     {
         emit logMessage(QString("Could not read LIF Laser flashlamp status because no laser is available."),LogHandler::Error);

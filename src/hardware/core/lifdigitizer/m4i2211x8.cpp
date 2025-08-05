@@ -6,7 +6,7 @@
 using namespace Spectrum::M4i;
 
 // Register hardware implementation
-REGISTER_HARDWARE(M4i2211x8, BC::Key::LifDigi::m4i2211x8Name, "Spectrum M4i.2211-x8 LIF Digitizer")
+REGISTER_HARDWARE_META(M4i2211x8, "Spectrum M4i.2211-x8 LIF Digitizer")
 
 /*!
  * \brief Helper function to get SpectrumLibrary instance with availability check
@@ -22,8 +22,8 @@ static SpectrumLibrary* getSpectrumLibrary()
     return &lib;
 }
 
-M4i2211x8::M4i2211x8(QObject *parent) :
-    LifScope (BC::Key::LifDigi::m4i2211x8,BC::Key::LifDigi::m4i2211x8Name,CommunicationProtocol::Custom,parent),
+M4i2211x8::M4i2211x8(const QString& label, QObject *parent) :
+    LifScope(QString(M4i2211x8::staticMetaObject.className()), label, parent),
     p_handle(nullptr)
 {
     using namespace BC::Key::Digi;

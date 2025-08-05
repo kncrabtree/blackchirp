@@ -35,7 +35,9 @@ enum class HardwareType {
     FtmwScope,
     Clock,
     AWG,
-    GPIBController
+    GPIBController,
+    LifScope,
+    LifLaser
     // Add other types as needed during migration
 };
 
@@ -160,7 +162,9 @@ struct HardwareDataContainer {
             {"FtmwScope", HardwareType::FtmwScope},
             {"Clock", HardwareType::Clock},
             {"AWG", HardwareType::AWG},
-            {"GPIBController", HardwareType::GPIBController}
+            {"GPIBController", HardwareType::GPIBController},
+            {"LifScope", HardwareType::LifScope},
+            {"LifLaser", HardwareType::LifLaser}
         };
         return legacyTypeMap.value(legacyTypeString, HardwareType::Unknown);
     }
@@ -182,7 +186,9 @@ struct HardwareDataContainer {
             {HardwareType::FtmwScope, "FtmwScope"},
             {HardwareType::Clock, "Clock"},
             {HardwareType::AWG, "AWG"},
-            {HardwareType::GPIBController, "GPIBController"}
+            {HardwareType::GPIBController, "GPIBController"},
+            {HardwareType::LifScope, "LifScope"},
+            {HardwareType::LifLaser, "LifLaser"}
         };
         return legacyStringMap.value(hwType, QString());
     }

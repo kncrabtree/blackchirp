@@ -8,7 +8,7 @@
 #include <gui/widget/led.h>
 #include <data/storage/settingsstorage.h>
 
-LifLaserStatusBox::LifLaserStatusBox(QWidget *parent) : HardwareStatusBox(BC::Key::LifLaser::key,parent)
+LifLaserStatusBox::LifLaserStatusBox(QString key, QWidget *parent) : HardwareStatusBox(key,parent)
 {
     auto hbl = new QHBoxLayout;
 
@@ -23,7 +23,7 @@ LifLaserStatusBox::LifLaserStatusBox(QWidget *parent) : HardwareStatusBox(BC::Ke
     hbl->addWidget(p_posBox,1);
 
     using namespace BC::Key::LifLaser;
-    SettingsStorage s(BC::Key::hwKey(key,0),SettingsStorage::Hardware);
+    SettingsStorage s(d_key,SettingsStorage::Hardware);
     if(s.get(hasFl,true))
     {
         p_led = new Led(this);
@@ -40,7 +40,7 @@ LifLaserStatusBox::LifLaserStatusBox(QWidget *parent) : HardwareStatusBox(BC::Ke
 void LifLaserStatusBox::applySettings()
 {
     using namespace BC::Key::LifLaser;
-    SettingsStorage s(BC::Key::hwKey(key,0),SettingsStorage::Hardware);
+    SettingsStorage s(d_key,SettingsStorage::Hardware);
     p_posBox->setMinimum(s.get(minPos,200.0));
     p_posBox->setMaximum(s.get(maxPos,2000.0));
     p_posBox->setSuffix(QString(" ").append(s.get(units,"nm").toString()));

@@ -52,8 +52,8 @@ set(BLACKCHIRP_LIF_HEADERS)
 
 if(BC_LIF)
     set(BLACKCHIRP_LIF_SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/modules/lif/data/lifconfig.cpp
-        # Add other LIF sources as needed
+        # LIF data layer sources are in BlackchirpData.cmake
+        # Add application-specific LIF sources here if needed
     )
     
     set(BLACKCHIRP_LIF_HEADERS

@@ -10,14 +10,14 @@
 #include <data/storage/settingsstorage.h>
 #include <hardware/core/liflaser/liflaser.h>
 
-LifLaserWidget::LifLaserWidget(QWidget *parent)
+LifLaserWidget::LifLaserWidget(const QString& lifLaserKey, QWidget *parent)
     : QWidget{parent}
 {
 
     using namespace BC::Key::LifLaser;
     auto gl = new QGridLayout;
 
-    SettingsStorage s(BC::Key::hwKey(key,0),SettingsStorage::Hardware);
+    SettingsStorage s(lifLaserKey, SettingsStorage::Hardware);
 
     p_posBox = new QDoubleSpinBox;
     p_posBox->setMinimum(s.get(minPos,200.0));
