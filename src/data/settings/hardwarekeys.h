@@ -148,7 +148,6 @@ namespace AWG {
 
 // Pulse generator keys (from PulseGenerator base class)
 namespace PGen {
-    static const QString key{"PulseGenerator"}; /*!< Pulse generator hardware type key */
     static const QString numChannels{"numChannels"}; /*!< Number of pulse generator channels */
     static const QString minWidth{"minWidth"}; /*!< Minimum pulse width */
     static const QString maxWidth{"maxWidth"}; /*!< Maximum pulse width */
@@ -169,7 +168,6 @@ namespace PGen {
 
 // Flow controller keys (from FlowController base class)
 namespace Flow {
-    static const QString flowController{"FlowController"}; /*!< Flow controller hardware type key */
     static const QString flowChannels{"numChannels"}; /*!< Number of flow channels */
     static const QString interval{"intervalMs"}; /*!< Polling interval in milliseconds */
     static const QString pUnits{"pressureUnits"}; /*!< Pressure units string */

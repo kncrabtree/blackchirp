@@ -4,10 +4,10 @@
 #include <QRandomGenerator>
 
 // Register hardware implementation
-REGISTER_HARDWARE(VirtualIOBoard, BC::Key::IOB::viobName, "Virtual IOBoard for Testing")
+REGISTER_HARDWARE_META(VirtualIOBoard, "Virtual IOBoard for Testing")
 
-VirtualIOBoard::VirtualIOBoard(QObject *parent) :
-    IOBoard(BC::Key::Comm::hwVirtual,BC::Key::IOB::viobName,CommunicationProtocol::Virtual,parent)
+VirtualIOBoard::VirtualIOBoard(const QString& label, QObject *parent) :
+    IOBoard(QString(VirtualIOBoard::staticMetaObject.className()), label, parent)
 {
     using namespace BC::Key::Digi;
 

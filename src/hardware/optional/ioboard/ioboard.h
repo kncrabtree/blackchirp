@@ -5,15 +5,12 @@
 
 #include <data/experiment/hardware/optional/ioboard/ioboardconfig.h>
 
-namespace BC::Key::IOB {
-static const QString ioboard{"IOBoard"};
-}
 
 class IOBoard : public HardwareObject, public IOBoardConfig
 {
     Q_OBJECT
 public:
-    explicit IOBoard(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent = nullptr, bool threaded=true, bool critical=false);
+    explicit IOBoard(const QString& impl, const QString& label, QObject *parent = nullptr);
     virtual ~IOBoard();
 
     virtual QStringList validationKeys() const override;
@@ -27,7 +24,6 @@ private:
     AuxDataStorage::AuxDataMap readValidationData() override;
     void writeSettings();
 
-    inline static int d_count = 0;
 
     // HardwareObject interface
 public slots:

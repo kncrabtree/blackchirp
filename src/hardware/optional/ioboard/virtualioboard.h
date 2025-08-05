@@ -3,15 +3,12 @@
 
 #include <hardware/optional/ioboard/ioboard.h>
 
-namespace BC::Key::IOB {
-static const QString viobName("Virtual IO Board");
-}
 
 class VirtualIOBoard : public IOBoard
 {
     Q_OBJECT
 public:
-    explicit VirtualIOBoard(QObject *parent = nullptr);
+    explicit VirtualIOBoard(const QString& label, QObject *parent = nullptr);
 
     // HardwareObject interface
 protected:

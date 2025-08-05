@@ -157,7 +157,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
 
-        if(hwType == BC::Key::Flow::flowController)
+        if(hwType == QString(FlowController::staticMetaObject.className()))
         {
             auto w = new GasFlowDisplayBox(key);
             w->setObjectName(key+Ui::sbStr);
@@ -216,7 +216,7 @@ MainWindow::MainWindow(QWidget *parent) :
                 connect(d,&QDialog::accepted,psb,&PressureStatusBox::updateFromSettings);
             });
         }
-        else if(hwType == BC::Key::PGen::key)
+        else if(hwType == QString(PulseGenerator::staticMetaObject.className()))
         {
             auto psb = new PulseStatusBox(key);
             psb->setObjectName(key+Ui::sbStr);

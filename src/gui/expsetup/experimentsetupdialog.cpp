@@ -134,11 +134,11 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const QHash<RfConf
 
 #endif
 
-    addOptHwPages<ExperimentPulseGenConfigPage>(BC::Key::PGen::key,expTypeItem);
-    addOptHwPages<ExperimentFlowConfigPage>(BC::Key::Flow::flowController,expTypeItem);
+    addOptHwPages<ExperimentPulseGenConfigPage>(QString(PulseGenerator::staticMetaObject.className()),expTypeItem);
+    addOptHwPages<ExperimentFlowConfigPage>(QString(FlowController::staticMetaObject.className()),expTypeItem);
     addOptHwPages<ExperimentTemperatureControllerConfigPage>(BC::Key::TC::key,expTypeItem);
     addOptHwPages<ExperimentPressureControllerConfigPage>(BC::Key::PController::key,expTypeItem);
-    addOptHwPages<ExperimentIOBoardConfigPage>(BC::Key::IOB::ioboard,expTypeItem);
+    addOptHwPages<ExperimentIOBoardConfigPage>(QString(IOBoard::staticMetaObject.className()),expTypeItem);
 
     auto valp = new ExperimentValidatorConfigPage(p_exp,valKeys);
     k = BC::Key::WizardVal::key;

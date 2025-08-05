@@ -63,7 +63,11 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
             switch (hwType) {
                 case BC::Data::HardwareType::IOBoard:
                 {
-                    IOBoardConfig cfg(implementation, index);
+                    // Extract label from key (everything after the first dot)
+                    QString label = keyParts.size() >= 2 ? keyParts.at(1) : QString::number(index);
+                    // Hardware type is the first part of the key
+                    QString hwType = keyParts.at(0);
+                    IOBoardConfig cfg(hwType, implementation, label);
                     addOptHwConfig(cfg);
                     break;
                 }

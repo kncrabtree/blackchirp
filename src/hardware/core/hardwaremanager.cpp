@@ -34,7 +34,7 @@
 HardwareManager* HardwareManager::s_instance = nullptr;
 
 HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsStorage(BC::Key::hw),
-    d_optHwTypes{BC::Key::Flow::flowController,BC::Key::IOB::ioboard,BC::Key::PController::key,BC::Key::PGen::key,BC::Key::TC::key}
+    d_optHwTypes{QString(FlowController::staticMetaObject.className()),QString(IOBoard::staticMetaObject.className()),QString(PressureController::staticMetaObject.className()),QString(PulseGenerator::staticMetaObject.className()),QString(TemperatureController::staticMetaObject.className())}
 {
     // Set static instance for const access
     s_instance = this;
@@ -55,7 +55,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
         d_hardwareMap.emplace(cl.at(i)->d_key,cl.at(i));
 
 #ifdef BC_CHIRPSOURCE
-    auto awg = new BC_CHIRPSOURCE;
+    auto awg = new BC_CHIRPSOURCE("temp");
     d_hardwareMap.emplace(awg->d_key,awg);
 #endif
 
@@ -69,7 +69,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #ifdef BC_PGEN
     QList<PulseGenerator*> pGenList;
 
-#define BOOST_PP_LOCAL_MACRO(n) pGenList << new BC_PULSEGENERATOR_##n;
+#define BOOST_PP_LOCAL_MACRO(n) pGenList << new BC_PULSEGENERATOR_##n("temp");
 #define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_PGEN-1)
 #include BOOST_PP_LOCAL_ITERATE()
 #undef BOOST_PP_LOCAL_MACRO
@@ -91,7 +91,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #ifdef BC_FLOWCONTROLLER
     QList<FlowController*> fcList;
 
-#define BOOST_PP_LOCAL_MACRO(n) fcList << new BC_FLOWCONTROLLER_##n;
+#define BOOST_PP_LOCAL_MACRO(n) fcList << new BC_FLOWCONTROLLER_##n("temp");
 #define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_FLOWCONTROLLER-1)
 #include BOOST_PP_LOCAL_ITERATE()
 #undef BOOST_PP_LOCAL_MACRO
@@ -169,7 +169,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #ifdef BC_IOBOARD
     QList<IOBoard*> iobList;
 
-#define BOOST_PP_LOCAL_MACRO(n) iobList << new BC_IOBOARD_##n;
+#define BOOST_PP_LOCAL_MACRO(n) iobList << new BC_IOBOARD_##n("temp");
 #define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_IOBOARD-1)
 #include BOOST_PP_LOCAL_ITERATE()
 #undef BOOST_PP_LOCAL_MACRO
@@ -678,7 +678,7 @@ TemperatureControllerConfig HardwareManager::getTemperatureControllerConfig(cons
 
 IOBoardConfig HardwareManager::getIOBoardConfig(const QString key)
 {
-    IOBoardConfig out;
+    IOBoardConfig out("IOBoard", "virtual", "temp"); // Dummy constructor, will be overwritten
     auto iob = findHardware<IOBoard>(key);
     if(iob)
     {
@@ -712,15 +712,15 @@ void HardwareManager::storeAllOptHw(Experiment *exp, std::map<QString, bool> hw)
 
         if(read)
         {
-            if(type == BC::Key::PGen::key)
+            if(type == QString(PulseGenerator::staticMetaObject.className()))
                 exp->addOptHwConfig(getPGenConfig(hwKey));
-            else if(type == BC::Key::Flow::flowController)
+            else if(type == QString(FlowController::staticMetaObject.className()))
                 exp->addOptHwConfig(getFlowConfig(hwKey));
             else if(type == BC::Key::TC::key)
                 exp->addOptHwConfig(getTemperatureControllerConfig(hwKey));
             else if(type == BC::Key::PController::key)
                 exp->addOptHwConfig(getPressureControllerConfig(hwKey));
-            else if(type == BC::Key::IOB::ioboard)
+            else if(type == QString(IOBoard::staticMetaObject.className()))
                 exp->addOptHwConfig(getIOBoardConfig(hwKey));
         }
     }
@@ -761,9 +761,10 @@ bool HardwareManager::setPGenLifDelay(double d)
     return false;
 #else
     bool out = true;
-    for(uint i=0; i<BC_NUM_PGEN; i++)
+    auto activeLabels = RuntimeHardwareConfig::constInstance().getActiveLabels<PulseGenerator>();
+    for(const auto& label : activeLabels)
     {
-        auto pGen = findHardware<PulseGenerator>(BC::Key::hwKey(BC::Key::PGen::key,i));
+        auto pGen = findHardware<PulseGenerator>(BC::Key::hwKey(QString(PulseGenerator::staticMetaObject.className()), label));
 
 
         if(pGen->thread() == QThread::currentThread())

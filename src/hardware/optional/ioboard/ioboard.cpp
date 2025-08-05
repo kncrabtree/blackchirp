@@ -1,13 +1,11 @@
 #include <hardware/optional/ioboard/ioboard.h>
 
-IOBoard::IOBoard(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent, bool threaded, bool critical)  :
-    HardwareObject(BC::Key::IOB::ioboard, subKey, name, commType, parent, threaded, critical,d_count), IOBoardConfig(subKey,d_count)
+IOBoard::IOBoard(const QString& impl, const QString& label, QObject *parent) :
+    HardwareObject(QString(IOBoard::staticMetaObject.className()), impl, label, parent), IOBoardConfig(QString(IOBoard::staticMetaObject.className()), impl, label)
 {
     using namespace BC::Key::Digi;
     using namespace BC::Store::Digi;
     setDefault(isTriggered,false);
-
-    d_count++;
 
     for(int i=0; i<get(numAnalogChannels,0); ++i)
     {

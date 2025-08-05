@@ -15,7 +15,7 @@ class LabjackU3 : public IOBoard
 {
     Q_OBJECT
 public:
-    explicit LabjackU3(QObject *parent = nullptr);
+    explicit LabjackU3(const QString& label, QObject *parent = nullptr);
 
 private:
     HANDLE d_handle;

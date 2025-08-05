@@ -2,10 +2,10 @@
 #include <hardware/core/hardwareregistration.h>
 
 // Register hardware implementation
-REGISTER_HARDWARE(LabjackU3, BC::Key::IOB::labjacku3Name, "Labjack U3 IOBoard")
+REGISTER_HARDWARE_META(LabjackU3, "Labjack U3 IOBoard")
 
-LabjackU3::LabjackU3(QObject *parent) :
-    IOBoard(BC::Key::IOB::labjacku3,BC::Key::IOB::labjacku3Name,CommunicationProtocol::Custom,parent),
+LabjackU3::LabjackU3(const QString& label, QObject *parent) :
+    IOBoard(QString(LabjackU3::staticMetaObject.className()), label, parent),
     d_handle(nullptr), d_serialNo(3)
 {
     //For the U3, there are 16 FIO lines (FIO0-7 and EIO0-7)

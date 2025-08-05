@@ -112,7 +112,7 @@ void GasControlWidget::initialize(const FlowConfig &cfg)
 void GasControlWidget::applySettings()
 {
     using namespace BC::Key::Flow;
-    SettingsStorage fc(flowController,Hardware);
+    SettingsStorage fc(d_config.headerKey(),Hardware);
 
     p_pressureSetpointBox->setDecimals(fc.get(pDec,3));
     p_pressureSetpointBox->setMaximum(fc.get(pMax,10.0));

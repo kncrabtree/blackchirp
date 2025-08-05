@@ -501,7 +501,7 @@ void PulseConfigWidget::setFromConfig(QString key, const PulseGenConfig &c)
 
 void PulseConfigWidget::updateFromSettings()
 {
-    SettingsStorage s(BC::Key::PGen::key,Hardware);
+    SettingsStorage s(d_key,Hardware);
     for(int i=0; i<d_widgetList.size(); i++)
     {
         auto chw = d_widgetList.at(i);

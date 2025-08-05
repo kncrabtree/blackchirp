@@ -2,7 +2,7 @@
 
 #include <hardware/optional/ioboard/ioboard.h>
 
-IOBoardConfig::IOBoardConfig(const QString subKey, int index) : DigitizerConfig(BC::Key::hwKey(BC::Key::IOB::ioboard,index),subKey)
+IOBoardConfig::IOBoardConfig(const QString& hwType, const QString& impl, const QString& label) : DigitizerConfig(BC::Key::hwKey(hwType, label), impl)
 {
 }
 

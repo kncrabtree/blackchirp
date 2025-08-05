@@ -6,7 +6,7 @@ using namespace BC::Key::WizIOB;
 #include <gui/widget/ioboardconfigwidget.h>
 
 ExperimentIOBoardConfigPage::ExperimentIOBoardConfigPage(const QString hwKey, const QString title, Experiment *exp, QWidget *parent) :
-    ExperimentConfigPage(key,title,exp,parent), d_config(hwKey)
+    ExperimentConfigPage(key,title,exp,parent), d_config("IOBoard", "virtual", "temp")
 {
     auto vbl = new QVBoxLayout;
 
