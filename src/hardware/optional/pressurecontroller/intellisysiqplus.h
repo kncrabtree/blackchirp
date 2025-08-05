@@ -5,16 +5,11 @@
 
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
 
-namespace BC::Key::PController {
-static const QString iqplus{"IntellisysIQPlus"};
-static const QString iqplusName("Intellisys IQ Plus Pressure Controller");
-}
-
 class IntellisysIQPlus : public PressureController
 {
     Q_OBJECT
 public:
-    IntellisysIQPlus(QObject *parent =nullptr);
+    IntellisysIQPlus(const QString& label, QObject *parent = nullptr);
 
     // PressureController interface
 public slots:

@@ -189,7 +189,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
             });
         }
-        else if(hwType == BC::Key::PController::key)
+        else if(hwType == QString(PressureController::staticMetaObject.className()))
         {
             auto psb = new PressureStatusBox(key);
             psb->setObjectName(key);
@@ -240,7 +240,7 @@ MainWindow::MainWindow(QWidget *parent) :
             });
 
         }
-        else if(hwType == BC::Key::TC::key)
+        else if(hwType == QString(TemperatureController::staticMetaObject.className()))
         {
             auto tsb = new TemperatureStatusBox(key);
             tsb->setObjectName(key+Ui::sbStr);

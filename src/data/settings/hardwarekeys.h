@@ -180,6 +180,28 @@ namespace Flow {
     static const QString chName{"name"}; /*!< Channel name */
 }
 
+// Pressure controller keys (from PressureController base class)
+namespace PController {
+    static const QString min{"min"}; /*!< Minimum pressure value */
+    static const QString max{"max"}; /*!< Maximum pressure value */
+    static const QString decimals{"decimal"}; /*!< Pressure decimal places */
+    static const QString units{"units"}; /*!< Pressure units string */
+    static const QString readOnly{"readOnly"}; /*!< Whether controller is read-only */
+    static const QString readInterval{"intervalMs"}; /*!< Polling interval in milliseconds */
+    static const QString hasValve{"hasValve"}; /*!< Whether controller has gate valve */
+}
+
+// Temperature controller keys (from TemperatureController base class)
+namespace TC {
+    static const QString interval{"pollIntervalMs"}; /*!< Polling interval in milliseconds */
+    static const QString numChannels{"numChannels"}; /*!< Number of temperature channels */
+    static const QString channels{"channels"}; /*!< Channel configuration array */
+    static const QString units{"units"}; /*!< Temperature units string */
+    static const QString chName{"name"}; /*!< Channel name */
+    static const QString enabled{"enabled"}; /*!< Channel enabled state */
+    static const QString decimals{"decimal"}; /*!< Temperature decimal places */
+}
+
 } // namespace BC::Key
 
 #endif // HARDWAREKEYS_H

@@ -3,15 +3,11 @@
 
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
 
-namespace BC::Key::PController {
-static const QString vpcName("Virtual Pressure Controller");
-}
-
 class VirtualPressureController : public PressureController
 {
    Q_OBJECT
 public:
-    VirtualPressureController(QObject *parent =nullptr);
+    VirtualPressureController(const QString& label, QObject *parent = nullptr);
     ~VirtualPressureController();
 
     // PressureController interface

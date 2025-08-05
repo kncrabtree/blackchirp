@@ -104,7 +104,7 @@ QuickExptDialog::QuickExptDialog(QWidget *parent) :
     setLayout(vbl);
 
     ///TODO: Move optional hardware concept to runtime config
-    std::set<QString> optHw{ BC::Key::PController::key, QString(FlowController::staticMetaObject.className()), QString(PulseGenerator::staticMetaObject.className()), QString(IOBoard::staticMetaObject.className()), BC::Key::TC::key};
+    std::set<QString> optHw{ QString(PressureController::staticMetaObject.className()), QString(FlowController::staticMetaObject.className()), QString(PulseGenerator::staticMetaObject.className()), QString(IOBoard::staticMetaObject.className()), QString(TemperatureController::staticMetaObject.className())};
 
     for(auto &[key,subKey] : d_hardware)
     {

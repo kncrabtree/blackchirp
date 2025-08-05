@@ -1,10 +1,11 @@
 #include "temperaturecontrollerconfig.h"
 
+#include <data/settings/hardwarekeys.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
-TemperatureControllerConfig::TemperatureControllerConfig(const QString subKey, int index) : HeaderStorage(BC::Key::hwKey(BC::Key::TC::key,index))
+TemperatureControllerConfig::TemperatureControllerConfig(const QString& hwType, const QString& impl, const QString& label) : HeaderStorage(BC::Key::hwKey(hwType, label))
 {
-    Q_UNUSED(subKey)
+    Q_UNUSED(impl)
 }
 
 void TemperatureControllerConfig::setNumChannels(int n)

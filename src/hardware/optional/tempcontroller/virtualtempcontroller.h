@@ -2,15 +2,11 @@
 #define VIRTUALTEMPCONTROLLER_H
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
-namespace BC::Key::TC {
-static const QString vtcName("Virtual Temperature Controller");
-}
-
 class VirtualTemperatureController : public TemperatureController
 {
    Q_OBJECT
 public:
-    VirtualTemperatureController(QObject *parent =nullptr);
+    VirtualTemperatureController(const QString& label, QObject *parent = nullptr);
     ~VirtualTemperatureController();
 
 

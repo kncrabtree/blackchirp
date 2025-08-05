@@ -1,13 +1,14 @@
 #include "intellisysiqplus.h"
 #include <hardware/core/hardwareregistration.h>
+#include <data/settings/hardwarekeys.h>
 
 using namespace BC::Key::PController;
 
 // Register hardware implementation
-REGISTER_HARDWARE(IntellisysIQPlus, BC::Key::PController::iqplusName, "Intellisys IQ+ Pressure Controller")
+REGISTER_HARDWARE_META(IntellisysIQPlus, "Intellisys IQ+ Pressure Controller")
 
-IntellisysIQPlus::IntellisysIQPlus(QObject *parent) :
-    PressureController(iqplus,iqplusName,CommunicationProtocol::Rs232,false,parent)
+IntellisysIQPlus::IntellisysIQPlus(const QString& label, QObject *parent) :
+    PressureController(QString(IntellisysIQPlus::staticMetaObject.className()), label, false, parent)
 {
     setDefault(min,0.0);
     setDefault(max,20.0);

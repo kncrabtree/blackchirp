@@ -4,16 +4,6 @@
 #include <hardware/core/hardwareobject.h>
 #include <data/experiment/hardware/optional/pressurecontroller/pressurecontrollerconfig.h>
 
-namespace BC::Key::PController {
-static const QString key{"PressureController"};
-static const QString min{"min"};
-static const QString max{"max"};
-static const QString decimals{"decimal"};
-static const QString units{"units"};
-static const QString readOnly{"readOnly"};
-static const QString readInterval{"intervalMs"};
-static const QString hasValve{"hasValve"};
-}
 
 namespace BC::Aux::PController {
 static const QString pressure{"ChamberPressure"};
@@ -23,8 +13,7 @@ class PressureController : public HardwareObject
 {
     Q_OBJECT
 public:
-    PressureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
-                       bool ro, QObject *parent =nullptr, bool threaded = false, bool critical=false);
+    PressureController(const QString& impl, const QString& label, bool ro, QObject *parent = nullptr);
     virtual ~PressureController();
 
 signals:

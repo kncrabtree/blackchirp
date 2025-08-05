@@ -1,5 +1,6 @@
 #include "virtualtempcontroller.h"
 #include <hardware/core/hardwareregistration.h>
+#include <data/settings/hardwarekeys.h>
 
 #include <QTimer>
 #include <QRandomGenerator>
@@ -7,11 +8,10 @@
 using namespace BC::Key::TC;
 
 // Register hardware implementation
-REGISTER_HARDWARE(VirtualTemperatureController, BC::Key::TC::vtcName, "Virtual TemperatureController for Testing")
+REGISTER_HARDWARE_META(VirtualTemperatureController, "Virtual Temperature Controller for testing and development")
 
-VirtualTemperatureController::VirtualTemperatureController(QObject *parent) :
-    TemperatureController(BC::Key::Comm::hwVirtual,BC::Key::TC::vtcName,
-                          CommunicationProtocol::Virtual,4,parent)
+VirtualTemperatureController::VirtualTemperatureController(const QString& label, QObject *parent) :
+    TemperatureController(QString(VirtualTemperatureController::staticMetaObject.className()), label, 4, parent)
 {
     save();
 }

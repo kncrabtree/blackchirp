@@ -1,16 +1,14 @@
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
 
 #include <QTimer>
+#include <data/settings/hardwarekeys.h>
 
 using namespace BC::Key::PController;
 
-PressureController::PressureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
-                                       bool ro, QObject *parent, bool threaded, bool critical) :
-    HardwareObject(key,subKey,name,commType,parent,threaded,critical,d_count), d_readOnly(ro), d_config{subKey,d_count}
+PressureController::PressureController(const QString& impl, const QString& label, bool ro, QObject *parent) :
+    HardwareObject(QString(PressureController::staticMetaObject.className()), impl, label, parent), d_readOnly(ro), d_config{QString(PressureController::staticMetaObject.className()), impl, label}
 {
     set(readOnly,d_readOnly);
-
-    d_count++;
 }
 
 PressureController::~PressureController()

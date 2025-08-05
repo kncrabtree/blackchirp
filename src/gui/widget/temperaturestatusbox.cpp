@@ -12,7 +12,7 @@ TemperatureStatusBox::TemperatureStatusBox(const QString key, QWidget *parent) :
 {
     auto gl = new QGridLayout;
 
-    SettingsStorage tc(BC::Key::TC::key,SettingsStorage::Hardware);
+    SettingsStorage tc(d_key,SettingsStorage::Hardware);
     auto nc = tc.get(BC::Key::TC::numChannels,4);
 
     for(int i=0; i<nc; ++i)
@@ -45,7 +45,7 @@ TemperatureStatusBox::TemperatureStatusBox(const QString key, QWidget *parent) :
 
 void TemperatureStatusBox::loadFromSettings()
 {
-    SettingsStorage tc(BC::Key::TC::key,SettingsStorage::Hardware);
+    SettingsStorage tc(d_key,SettingsStorage::Hardware);
     for(std::size_t i=0; i<d_widgets.size(); ++i)
     {
         d_widgets[i].box->setDecimals(tc.getArrayValue(BC::Key::TC::channels,i,BC::Key::TC::decimals,4));

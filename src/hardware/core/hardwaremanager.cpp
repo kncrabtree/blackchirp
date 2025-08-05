@@ -122,7 +122,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #ifdef BC_PCONTROLLER
     QList<PressureController*> pcList;
 
-#define BOOST_PP_LOCAL_MACRO(n) pcList << new BC_PRESSURECONTROLLER_##n;
+#define BOOST_PP_LOCAL_MACRO(n) pcList << new BC_PRESSURECONTROLLER_##n("temp");
 #define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_PCONTROLLER-1)
 #include BOOST_PP_LOCAL_ITERATE()
 #undef BOOST_PP_LOCAL_MACRO
@@ -147,7 +147,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #ifdef BC_TEMPCONTROLLER
     QList<TemperatureController*> tcList;
 
-#define BOOST_PP_LOCAL_MACRO(n) tcList << new BC_TEMPCONTROLLER_##n;
+#define BOOST_PP_LOCAL_MACRO(n) tcList << new BC_TEMPCONTROLLER_##n("temp");
 #define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_TEMPCONTROLLER-1)
 #include BOOST_PP_LOCAL_ITERATE()
 #undef BOOST_PP_LOCAL_MACRO
@@ -633,7 +633,7 @@ void HardwareManager::closeGateValve(const QString key)
 
 PressureControllerConfig HardwareManager::getPressureControllerConfig(const QString key)
 {
-    PressureControllerConfig out;
+    PressureControllerConfig out("PressureController", "virtual", "temp"); // Dummy constructor, will be overwritten
     auto pc = findHardware<PressureController>(key);
     if(pc)
     {
@@ -663,7 +663,7 @@ void HardwareManager::setTemperatureChannelName(const QString key, uint ch, cons
 
 TemperatureControllerConfig HardwareManager::getTemperatureControllerConfig(const QString key)
 {
-    TemperatureControllerConfig out;
+    TemperatureControllerConfig out("TemperatureController", "virtual", "temp"); // Dummy constructor, will be overwritten
     auto tc = findHardware<TemperatureController>(key);
     if(tc)
     {
@@ -716,9 +716,9 @@ void HardwareManager::storeAllOptHw(Experiment *exp, std::map<QString, bool> hw)
                 exp->addOptHwConfig(getPGenConfig(hwKey));
             else if(type == QString(FlowController::staticMetaObject.className()))
                 exp->addOptHwConfig(getFlowConfig(hwKey));
-            else if(type == BC::Key::TC::key)
+            else if(type == QString(TemperatureController::staticMetaObject.className()))
                 exp->addOptHwConfig(getTemperatureControllerConfig(hwKey));
-            else if(type == BC::Key::PController::key)
+            else if(type == QString(PressureController::staticMetaObject.className()))
                 exp->addOptHwConfig(getPressureControllerConfig(hwKey));
             else if(type == QString(IOBoard::staticMetaObject.className()))
                 exp->addOptHwConfig(getIOBoardConfig(hwKey));

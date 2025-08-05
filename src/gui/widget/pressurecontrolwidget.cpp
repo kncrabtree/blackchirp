@@ -14,7 +14,7 @@ PressureControlWidget::PressureControlWidget(const PressureControllerConfig &cfg
     auto vbl = new QVBoxLayout;
 
     using namespace BC::Key::PController;
-    SettingsStorage s(key,SettingsStorage::Hardware);
+    SettingsStorage s(d_config.headerKey(),SettingsStorage::Hardware);
 
     QLabel *psLabel = new QLabel("Setpoint");
     psLabel->setAlignment(Qt::AlignRight);

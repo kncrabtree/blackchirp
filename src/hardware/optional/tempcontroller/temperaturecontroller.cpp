@@ -1,11 +1,12 @@
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
 #include <QTimer>
+#include <data/settings/hardwarekeys.h>
 
 using namespace BC::Key::TC;
 
-TemperatureController::TemperatureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, uint numChannels, QObject *parent, bool threaded, bool critical) :
-    HardwareObject(key,subKey,name,commType,parent,threaded,critical,d_count), d_numChannels(numChannels), d_config{subKey,d_count}
+TemperatureController::TemperatureController(const QString& impl, const QString& label, uint numChannels, QObject *parent) :
+    HardwareObject(QString(TemperatureController::staticMetaObject.className()), impl, label, parent), d_numChannels(numChannels), d_config{QString(TemperatureController::staticMetaObject.className()), impl, label}
 {
     d_config.setNumChannels(d_numChannels);
 
@@ -31,8 +32,6 @@ TemperatureController::TemperatureController(const QString subKey, const QString
         d_config.setEnabled(i,getArrayValue(channels,i,enabled,false));
         setChannelName(i,getArrayValue(channels,i,chName,QString("")));
     }
-
-    d_count++;
 }
 
 TemperatureController::~TemperatureController()

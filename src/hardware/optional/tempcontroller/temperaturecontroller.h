@@ -6,16 +6,6 @@
 
 class QTimer;
 
-namespace BC::Key::TC {
-static const QString key{"TemperatureController"};
-static const QString interval{"pollIntervalMs"};
-static const QString numChannels{"numChannels"};
-static const QString channels{"channels"};
-static const QString units{"units"};
-static const QString chName{"name"};
-static const QString enabled{"enabled"};
-static const QString decimals{"decimal"};
-}
 
 namespace BC::Aux::TC {
 static const QString temperature("Temperature%1");
@@ -25,7 +15,7 @@ class TemperatureController : public HardwareObject
 {
     Q_OBJECT
 public:
-    explicit TemperatureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, uint channels, QObject *parent =nullptr, bool threaded = false, bool critical = false);
+    explicit TemperatureController(const QString& impl, const QString& label, uint channels, QObject *parent = nullptr);
     virtual ~TemperatureController();
 
     uint numChannels() const { return d_numChannels; }
