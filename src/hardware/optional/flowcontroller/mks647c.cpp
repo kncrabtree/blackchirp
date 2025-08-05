@@ -3,7 +3,7 @@
 
 #include <math.h>
 
-using namespace BC::Key;
+using namespace BC::Key::Flow;
 
 // Register hardware implementation using new metaobject system
 REGISTER_HARDWARE_META(Mks647c, "MKS 647C mass flow controller")

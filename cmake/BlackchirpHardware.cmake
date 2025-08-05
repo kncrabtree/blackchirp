@@ -474,6 +474,7 @@ if(BC_GPIBCONTROLLER OR BC_ALLHARDWARE)
         add_single_hardware("gpibcontroller" "virtualgpibcontroller" "VirtualGpibController" FALSE)
         
         # Add all other GPIB controller sources without preprocessor definitions
+        add_hardware_sources_only("gpibcontroller" "prologixgpibcontroller" FALSE)
         add_hardware_sources_only("gpibcontroller" "prologixgpiblan" FALSE)
         add_hardware_sources_only("gpibcontroller" "prologixgpibusb" FALSE)
     else()
@@ -486,10 +487,12 @@ if(BC_GPIBCONTROLLER OR BC_ALLHARDWARE)
         HARDWARE_EQUALS("${BC_GPIBCONTROLLER}" "prologixlan" IS_PROLOGIXLAN)
 
         elseif(IS_PROLOGIXLAN)
+            add_hardware_sources_only("gpibcontroller" "prologixgpibcontroller" FALSE)
             add_single_hardware("gpibcontroller" "prologixgpiblan" "PrologixGpibLan" FALSE)
         HARDWARE_EQUALS("${BC_GPIBCONTROLLER}" "prologixusb" IS_PROLOGIXUSB)
 
         elseif(IS_PROLOGIXUSB)
+            add_hardware_sources_only("gpibcontroller" "prologixgpibcontroller" FALSE)
             add_single_hardware("gpibcontroller" "prologixgpibusb" "PrologixGpibUsb" FALSE)
         else()
             message(FATAL_ERROR "Unknown GPIB controller implementation: ${BC_GPIBCONTROLLER}")
