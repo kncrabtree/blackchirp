@@ -6,7 +6,7 @@
 #include <gui/widget/customprotocolwidget.h>
 #include <gui/widget/gpibprotocolwidget.h>
 #include <gui/style/themecolors.h>
-#include <data/settings/hardwarekeys.h> // TODO: Migrate CommunicationDialog to use RuntimeHardwareConfig instead of SettingsStorage
+#include <data/settings/hardwarekeys.h> // Hardware discovery now uses RuntimeHardwareConfig; settings access still uses SettingsStorage
 
 #include <QApplication>
 #include <QMessageBox>
@@ -156,25 +156,28 @@ void CommunicationDialog::connectSignals()
 
 void CommunicationDialog::loadDeviceInfo()
 {
-    // Load all hardware devices from settings
-    SettingsStorage storage(BC::Key::hw);
-    auto allHwCount = storage.getArraySize(BC::Key::allHw);
+    // Get hardware discovery from RuntimeHardwareConfig instead of SettingsStorage
+    const auto& config = RuntimeHardwareConfig::constInstance();
+    auto currentHardware = config.getCurrentHardware();
     
     d_deviceInfo.clear();
     
-    for(std::size_t i = 0; i < allHwCount; ++i) {
+    for(const auto& [hwKey, implementation] : currentHardware) {
         DeviceInfo info;
-        info.hwKey = storage.getArrayValue<QString>(BC::Key::allHw, i, BC::Key::HW::key);
-        info.subKey = storage.getArrayValue<QString>(BC::Key::allHw, i, BC::Key::HW::subKey);
-        info.name = storage.getArrayValue<QString>(BC::Key::allHw, i, BC::Key::HW::name);
+        info.hwKey = hwKey;               // hwKey is in "type.label" format
+        info.subKey = implementation;     // implementation is the subKey (e.g., "mks647c")
         
-        // Load device-specific settings
+        // Load device-specific settings from SettingsStorage (unchanged)
         SettingsStorage hwSettings(info.hwKey, SettingsStorage::Hardware);
+        
+        // Load display name from SettingsStorage
+        info.name = hwSettings.get(BC::Key::HW::name, info.hwKey); // Fall back to hwKey if name not found
+        
         info.currentProtocol = static_cast<CommunicationProtocol::CommType>(
             hwSettings.get(BC::Key::HW::commType, static_cast<int>(CommunicationProtocol::Virtual))
         );
         
-        // Load supported protocols
+        // Load supported protocols from SettingsStorage (unchanged)
         auto supportedProtocolsVar = hwSettings.get(BC::Key::HW::supportedProtocols, QVariantList());
         auto supportedProtocolsList = supportedProtocolsVar.toList();
         for(const auto& protocolVar : supportedProtocolsList) {

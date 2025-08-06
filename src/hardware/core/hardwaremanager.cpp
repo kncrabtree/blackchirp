@@ -225,14 +225,8 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 
 
 
-        appendArrayMap(BC::Key::allHw,{
-                           {BC::Key::HW::key,obj->d_key},
-                           {BC::Key::HW::subKey,obj->d_subKey},
-                           {BC::Key::HW::name,obj->d_name},
-                           {BC::Key::HW::critical,obj->d_critical}
-                       });
-        // Protocol-specific arrays removed - CommunicationDialog now reads from allHw
-        // and determines current protocol dynamically from individual hardware settings
+        // Hardware discovery arrays removed - CommunicationDialog now gets hardware discovery
+        // directly from RuntimeHardwareConfig instead of SettingsStorage
 
         obj->buildCommunication(gpib);
 

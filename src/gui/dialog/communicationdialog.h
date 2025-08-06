@@ -5,6 +5,7 @@
 #include <QMap>
 #include <data/storage/settingsstorage.h>
 #include <hardware/core/communication/communicationprotocol.h>
+#include <hardware/core/runtimehardwareconfig.h>
 
 class QListWidget;
 class QListWidgetItem;
