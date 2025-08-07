@@ -70,6 +70,7 @@ set(BLACKCHIRP_DATA_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/presentation/curveappearance.cpp
     
     # Storage system
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/storage/applicationconfigmanager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/storage/auxdatastorage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/storage/blackchirpcsv.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/storage/datastoragebase.cpp
@@ -134,6 +135,7 @@ set(BLACKCHIRP_DATA_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/presentation/curveappearance.h
     
     # Storage system
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/storage/applicationconfigmanager.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/storage/auxdatastorage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/storage/blackchirpcsv.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/storage/datastoragebase.h
