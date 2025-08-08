@@ -33,9 +33,7 @@
 #include <gui/widget/clockdisplaybox.h>
 #include <gui/widget/toolbarwidgetaction.h>
 
-#ifdef BC_LIF
 #include <gui/lif/gui/lifdisplaywidget.h>
-#endif
 
 class Ui_MainWindow
 {
@@ -100,13 +98,11 @@ public:
     QVBoxLayout *hwStatusLayout;
 
 
-#ifdef BC_LIF
     QWidget *lifTab;
     QAction *actionLifConfig;
     QProgressBar *lifProgressBar;
     QLayout *lifTabLayout;
     LifDisplayWidget *lifDisplayWidget;
-#endif
 
     void setupUi(QMainWindow *MainWindow)
     {
@@ -161,12 +157,10 @@ public:
         actionStart_Sequence = new QAction(MainWindow);
         actionStart_Sequence->setObjectName(QString::fromUtf8("actionStart_Sequence"));
         // Icon set programmatically in setupThemeAwareIconStyling()
-#ifdef BC_LIF
         actionLifConfig = new QAction("LIF Configuration",MainWindow);
         // Icon set programmatically in setupThemeAwareIconStyling()
         actionLifConfig->setObjectName("ActionLifConfig");
         // Icon set programmatically in setupThemeAwareIconStyling()
-#endif
 
         centralWidget = new QWidget(MainWindow);
         centralWidget->setObjectName(QString::fromUtf8("centralWidget"));
@@ -316,7 +310,6 @@ public:
 
         mainTabWidget->addTab(ftmwTab, QIcon(), QString()); // Icon set programmatically
 
-#ifdef BC_LIF
         lifTab = new QWidget();
         lifTab->setObjectName(QString("lifTab"));
         lifTabLayout = new QVBoxLayout(lifTab);
@@ -331,7 +324,6 @@ public:
         lifProgressBar->setValue(0);
         instrumentStatusLayout->addWidget(new QLabel(QString("LIF Progress")),0,Qt::AlignCenter);
         instrumentStatusLayout->addWidget(lifProgressBar);
-#endif
 
         rollingDataTab = new QWidget();
         rollingDataTab->setObjectName(QString::fromUtf8("rollingDataTab"));
@@ -438,9 +430,7 @@ public:
         menuHardware->addAction(actionTest_All_Connections);
         menuHardware->addSeparator();
         menuHardware->addAction(actionRfConfig);
-#ifdef BC_LIF
         menuHardware->addAction(actionLifConfig);
-#endif
         menuHardware->addSeparator();
         menuAcquisition->addAction(actionStart_Experiment);
         menuAcquisition->addAction(actionQuick_Experiment);

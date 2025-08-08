@@ -33,9 +33,7 @@ public slots:
     bool hasRole(PulseGenConfig::Role r);
 
 
-#ifdef BC_LIF
     virtual bool setLifDelay(double d);
-#endif
 
 signals:
     void settingUpdate(int,PulseGenConfig::Setting,QVariant,QPrivateSignal);

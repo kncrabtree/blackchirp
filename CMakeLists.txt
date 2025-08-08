@@ -236,10 +236,7 @@ function(add_blackchirp_definitions target_name)
     
     # All hardware definitions are now handled by BlackchirpHardware.cmake module
     
-    # LIF definitions
-    if(BC_ENABLE_LIF)
-        target_compile_definitions(${target_name} PRIVATE BC_LIF)
-    endif()
+    # LIF is now handled at runtime - no compile-time flag needed
     
     # CUDA definitions
     if(BC_ENABLE_CUDA)

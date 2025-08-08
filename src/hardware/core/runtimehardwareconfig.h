@@ -20,10 +20,8 @@
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
-#ifdef BC_LIF
 #include <hardware/core/lifdigitizer/lifscope.h>
 #include <hardware/core/liflaser/liflaser.h>
-#endif
 
 // Forward declarations for friend classes
 class HardwareManager;

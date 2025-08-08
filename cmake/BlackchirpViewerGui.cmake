@@ -73,6 +73,13 @@ set(BLACKCHIRP_VIEWER_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/overlaytablemodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/peaklistmodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/validationmodel.cpp
+    
+    # LIF GUI components (needed for viewing LIF experiment data)
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifdisplaywidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifprocessingwidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifsliceplot.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifspectrogramplot.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/liftraceplot.cpp
 )
 
 set(BLACKCHIRP_VIEWER_GUI_HEADERS
@@ -130,6 +137,13 @@ set(BLACKCHIRP_VIEWER_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/overlaytablemodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/peaklistmodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/validationmodel.h
+    
+    # LIF GUI components (needed for viewing LIF experiment data)
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifdisplaywidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifprocessingwidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifsliceplot.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifspectrogramplot.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/liftraceplot.h
 )
 
 # UI Forms (only the ones safe for viewer)

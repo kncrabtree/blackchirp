@@ -49,12 +49,11 @@
 #include <acquisition/batch/batchsingle.h>
 #include <acquisition/batch/batchsequence.h>
 
-#ifdef BC_LIF
 #include <gui/lif/gui/lifdisplaywidget.h>
 #include <gui/lif/gui/lifcontrolwidget.h>
 #include <gui/lif/gui/liflaserstatusbox.h>
 #include <hardware/core/liflaser/liflaser.h>
-#endif
+#include <data/storage/applicationconfigmanager.h>
 
 #include <hardware/core/hardwaremanager.h>
 #include <hardware/core/runtimehardwareconfig.h>
@@ -266,7 +265,6 @@ MainWindow::MainWindow(QWidget *parent) :
                connect(d,&QDialog::accepted,tsb,&TemperatureStatusBox::loadFromSettings);
             });
         }
-#ifdef BC_LIF
         else if(hwType == QString(LifLaser::staticMetaObject.className()))
         {
             auto lsb = new LifLaserStatusBox(key);
@@ -282,8 +280,8 @@ MainWindow::MainWindow(QWidget *parent) :
                auto d = createHWDialog(key);
                connect(d,&QDialog::accepted,lsb,&LifLaserStatusBox::applySettings);
             });
+            
         }
-#endif
         else
         {
             connect(act,&QAction::triggered,[this,key](){
@@ -354,14 +352,12 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionTest_All_Connections,&QAction::triggered,p_hwm,&HardwareManager::testAll);
     connect(ui->viewExperimentAction,&QAction::triggered,this,&MainWindow::viewExperiment);
 
-#ifdef BC_LIF
     connect(ui->actionLifConfig,&QAction::triggered,this,&MainWindow::launchLifConfigDialog);
     connect(p_hwm,&HardwareManager::lifSettingsComplete,p_am,&AcquisitionManager::lifHardwareReady);
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,p_am,&AcquisitionManager::processLifScopeShot);
     connect(p_am,&AcquisitionManager::nextLifPoint,p_hwm,&HardwareManager::setLifParameters);
     connect(p_am,&AcquisitionManager::lifShotAcquired,ui->lifProgressBar,&QProgressBar::setValue);
     connect(p_am,&AcquisitionManager::lifPointUpdate,ui->lifDisplayWidget,&LifDisplayWidget::updatePoint);
-#endif
 
     SettingsStorage bc;
     ui->exptSpinBox->setValue(bc.get<int>(BC::Key::exptNum,0));
@@ -519,9 +515,9 @@ bool MainWindow::runExperimentWizard(Experiment *exp, QuickExptDialog *qed)
 
     ExperimentSetupDialog d(exp,clocks,p_hwm->validationKeys(),this);
 
-#ifdef BC_LIF
-    configureLifWidget(d.lifControlWidget());
-#endif
+    if(ApplicationConfigManager::instance().isLifEnabled()) {
+        configureLifWidget(d.lifControlWidget());
+    }
 
     if(d.exec() != QDialog::Accepted)
         return false;
@@ -545,9 +541,9 @@ void MainWindow::batchComplete(bool aborted)
     disconnect(p_am,&AcquisitionManager::auxData,ui->auxDataViewWidget,&AuxDataViewWidget::pointUpdated);
     disconnect(p_hwm,&HardwareManager::abortAcquisition,p_am,&AcquisitionManager::abort);
 
-#ifdef BC_LIF
-    ui->lifTab->setEnabled(true);
-#endif
+    if(ApplicationConfigManager::instance().isLifEnabled()) {
+        ui->lifTab->setEnabled(true);
+    }
 
     if(aborted)
         ui->statusBar->showMessage(QString("Experiment aborted"));
@@ -613,19 +609,19 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
         ui->ftmwProgressBar->setValue(1);
     }
 
-#ifdef BC_LIF
-    ui->lifDisplayWidget->prepareForExperiment(*exp);
-    if(exp->lifEnabled())
-    {
-        ui->lifTab->setEnabled(true);
-        ui->lifProgressBar->setValue(0);
+    if(ApplicationConfigManager::instance().isLifEnabled()) {
+        ui->lifDisplayWidget->prepareForExperiment(*exp);
+        if(exp->lifEnabled())
+        {
+            ui->lifTab->setEnabled(true);
+            ui->lifProgressBar->setValue(0);
+        }
+        else
+        {
+            ui->lifTab->setEnabled(false);
+            ui->lifProgressBar->setValue(1000);
+        }
     }
-    else
-    {
-        ui->lifTab->setEnabled(false);
-        ui->lifProgressBar->setValue(1000);
-    }
-#endif
 
     if(!exp->isDummy())
         p_lh->beginExperimentLog(exp->d_number,exp->d_startLogMessage);
@@ -775,7 +771,6 @@ void MainWindow::launchRfConfigDialog()
 
 }
 
-#ifdef BC_LIF
 void MainWindow::launchLifConfigDialog()
 {
     auto it = d_openDialogs.find("LifConfig");
@@ -844,7 +839,6 @@ void MainWindow::configureLifWidget(LifControlWidget *w)
     }
 
 }
-#endif
 
 void MainWindow::setLogIcon(LogHandler::MessageCode c)
 {
@@ -1116,6 +1110,25 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
     ui->sleepButton->setEnabled(false);
     ui->savePathAction->setEnabled(false);
 
+    // Configure LIF UI visibility based on application configuration
+    bool lifEnabled = ApplicationConfigManager::instance().isLifEnabled();
+    ui->lifTab->setVisible(lifEnabled);
+    ui->actionLifConfig->setVisible(lifEnabled);
+    ui->lifProgressBar->setVisible(lifEnabled);
+    
+    // Also control LifLaserStatusBox and related action visibility if they exist
+    auto lifLaserStatusBox = findChild<LifLaserStatusBox*>();
+    if (lifLaserStatusBox) {
+        lifLaserStatusBox->setVisible(lifEnabled);
+    }
+    
+    // Control LifLaser hardware action visibility using metaobject classname
+    QString lifLaserClassName = QString(LifLaser::staticMetaObject.className());
+    for (auto act : ui->menuHardware->actions()) {
+        if (act->objectName().contains(lifLaserClassName)) {
+            act->setVisible(lifEnabled);
+        }
+    }
 
     switch(s)
     {
@@ -1177,9 +1190,7 @@ void MainWindow::startBatch(BatchManager *bm)
     connect(bm,&BatchManager::batchComplete,this,&MainWindow::checkSleep);
     connect(bm,&BatchManager::batchComplete,p_lh,&LogHandler::endExperimentLog);
 
-#ifdef BC_LIF
     connect(p_am,&AcquisitionManager::experimentComplete,ui->lifDisplayWidget,&LifDisplayWidget::experimentComplete);
-#endif
 
     connect(p_am,&AcquisitionManager::auxData,ui->auxDataViewWidget,&AuxDataViewWidget::pointUpdated,Qt::UniqueConnection);
     connect(p_hwm,&HardwareManager::abortAcquisition,p_am,&AcquisitionManager::abort,Qt::UniqueConnection);
@@ -1295,9 +1306,7 @@ void MainWindow::setupThemeAwareIconStyling()
     ui->actionQuick_Experiment->setIcon(ThemeColors::createThemedIcon(":/icons/quickexpt.svg", ThemeColors::IconPrimary, this));
     ui->actionStart_Sequence->setIcon(ThemeColors::createThemedIcon(":/icons/sequence.svg", ThemeColors::IconPrimary, this));
     
-#ifdef BC_LIF
     ui->actionLifConfig->setIcon(ThemeColors::createThemedIcon(":/icons/lif.svg", ThemeColors::IconPrimary, this));
-#endif
 
     ui->actionRfConfig->setIcon(ThemeColors::createThemedIcon(":/icons/rf.svg", ThemeColors::IconPrimary, this));
     
@@ -1318,9 +1327,7 @@ void MainWindow::setupThemeAwareIconStyling()
     ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->ftmwTab), ThemeColors::createThemedIcon(":/icons/signal.svg", ThemeColors::IconPrimary, this));
     ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->rollingDataTab), ThemeColors::createThemedIcon(":/icons/arrow-path-rounded-square.svg", ThemeColors::IconSecondary, this));
     ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->auxDataTab), ThemeColors::createThemedIcon(":/icons/chart-bar.svg", ThemeColors::IconSecondary, this));
-#ifdef BC_LIF
     ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->lifTab), ThemeColors::createThemedIcon(":/icons/sparkles.svg", ThemeColors::IconSecondary, this));
-#endif
     
     // Set autoscale action icons
     ui->actionAutoscale_Rolling->setIcon(ThemeColors::createThemedIcon(":/icons/arrows-pointing-out.svg", ThemeColors::IconSecondary, this));

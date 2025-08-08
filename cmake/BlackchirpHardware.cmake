@@ -47,8 +47,7 @@ set(BC_TEMPCONTROLLER "" CACHE STRING "Temperature controller implementation")
 # Optional hardware (multiple selection)
 set(BC_PGEN "virtual" CACHE STRING "Pulse generator implementations (semicolon-separated)")
 
-# Special configuration flags
-option(BC_LIF "Enable LIF-specific hardware support" OFF)
+# Special configuration flags  
 option(BC_ALLHARDWARE "Compile all available hardware implementations" OFF)
 
 # ============================================================================
@@ -709,79 +708,77 @@ if(BC_PGEN OR BC_ALLHARDWARE)
 endif()
 
 # ============================================================================
-# Process LIF Hardware (Core when enabled)
+# Process LIF Hardware (Always included for runtime configuration)
 # ============================================================================
 
-if(BC_ENABLE_LIF)
-    if(BC_ALLHARDWARE)
-        # In allhardware mode with LIF enabled: force selections to virtual, add all sources
-        set(BC_LIFSCOPE "virtual")
-        set(BC_LIFLASER "virtual")
-        
-        # Add virtual implementations with definitions (since they're selected)
-        add_single_hardware("lifdigitizer" "virtuallifscope" "VirtualLifScope" TRUE)
-        add_single_hardware("liflaser" "virtualliflaser" "VirtualLifLaser" TRUE)
-        
-        # Add all other LIF hardware sources without preprocessor definitions
-        # NOTE: m4i2211x8 requires Spectrum driver SDK headers to compile
-        add_hardware_sources_only("lifdigitizer" "m4i2211x8" TRUE)
-        add_hardware_sources_only("lifdigitizer" "rigolds2302a" TRUE)
-        add_hardware_sources_only("liflaser" "opolette" TRUE)
-        add_hardware_sources_only("liflaser" "sirahcobra" TRUE)
-    else()
-        # Normal operation - process the selected implementations
-        # LIF Digitizer/Oscilloscope (Required when LIF is enabled)
-        if(BC_LIFSCOPE)
-            string(TOUPPER ${BC_LIFSCOPE} LIFSCOPE_UPPER)
-            HARDWARE_EQUALS("${BC_LIFSCOPE}" "virtual" IS_VIRTUAL)
+if(BC_ALLHARDWARE)
+    # In allhardware mode: force selections to virtual, add all sources
+    set(BC_LIFSCOPE "virtual")
+    set(BC_LIFLASER "virtual")
+    
+    # Add virtual implementations with definitions (since they're selected)
+    add_single_hardware("lifdigitizer" "virtuallifscope" "VirtualLifScope" TRUE)
+    add_single_hardware("liflaser" "virtualliflaser" "VirtualLifLaser" TRUE)
+    
+    # Add all other LIF hardware sources without preprocessor definitions
+    # NOTE: m4i2211x8 requires Spectrum driver SDK headers to compile
+    add_hardware_sources_only("lifdigitizer" "m4i2211x8" TRUE)
+    add_hardware_sources_only("lifdigitizer" "rigolds2302a" TRUE)
+    add_hardware_sources_only("liflaser" "opolette" TRUE)
+    add_hardware_sources_only("liflaser" "sirahcobra" TRUE)
+else()
+    # Normal operation - process the selected implementations
+    # LIF Digitizer/Oscilloscope (Optional)
+    if(BC_LIFSCOPE)
+        string(TOUPPER ${BC_LIFSCOPE} LIFSCOPE_UPPER)
+        HARDWARE_EQUALS("${BC_LIFSCOPE}" "virtual" IS_VIRTUAL)
 
-            if(IS_VIRTUAL)
-                add_single_hardware("lifdigitizer" "virtuallifscope" "VirtualLifScope" TRUE)
-            HARDWARE_EQUALS("${BC_LIFSCOPE}" "m4i2211x8" IS_M4I2211X8)
+        if(IS_VIRTUAL)
+            add_single_hardware("lifdigitizer" "virtuallifscope" "VirtualLifScope" TRUE)
+        HARDWARE_EQUALS("${BC_LIFSCOPE}" "m4i2211x8" IS_M4I2211X8)
 
-            elseif(IS_M4I2211X8)
-                add_single_hardware("lifdigitizer" "m4i2211x8" "M4i2211x8" TRUE)
-            HARDWARE_EQUALS("${BC_LIFSCOPE}" "rigolds2302a" IS_RIGOLDS2302A)
+        elseif(IS_M4I2211X8)
+            add_single_hardware("lifdigitizer" "m4i2211x8" "M4i2211x8" TRUE)
+        HARDWARE_EQUALS("${BC_LIFSCOPE}" "rigolds2302a" IS_RIGOLDS2302A)
 
-            elseif(IS_RIGOLDS2302A)
-                add_single_hardware("lifdigitizer" "rigolds2302a" "RigolDS2302A" TRUE)
-            else()
-                message(FATAL_ERROR "Unknown LIF digitizer implementation: ${BC_LIFSCOPE}")
-            endif()
-        endif()
-        
-        # LIF Laser (Required when LIF is enabled)
-        if(BC_LIFLASER)
-            string(TOUPPER ${BC_LIFLASER} LIFLASER_UPPER)
-            HARDWARE_EQUALS("${BC_LIFLASER}" "virtual" IS_VIRTUAL)
-
-            if(IS_VIRTUAL)
-                add_single_hardware("liflaser" "virtualliflaser" "VirtualLifLaser" TRUE)
-            HARDWARE_EQUALS("${BC_LIFLASER}" "opolette" IS_OPOLETTE)
-
-            elseif(IS_OPOLETTE)
-                add_single_hardware("liflaser" "opolette" "Opolette" TRUE)
-            HARDWARE_EQUALS("${BC_LIFLASER}" "sirahcobra" IS_SIRAHCOBRA)
-
-            elseif(IS_SIRAHCOBRA)
-                add_single_hardware("liflaser" "sirahcobra" "SirahCobra" TRUE)
-            else()
-                message(FATAL_ERROR "Unknown LIF laser implementation: ${BC_LIFLASER}")
-            endif()
+        elseif(IS_RIGOLDS2302A)
+            add_single_hardware("lifdigitizer" "rigolds2302a" "RigolDS2302A" TRUE)
+        else()
+            message(FATAL_ERROR "Unknown LIF digitizer implementation: ${BC_LIFSCOPE}")
         endif()
     endif()
     
-    # Add LIF base classes to core sources (always needed when LIF is enabled)
-    list(APPEND BLACKCHIRP_HARDWARE_CORE_SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/lifdigitizer/lifscope.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/liflaser.cpp
-    )
-    
-    list(APPEND BLACKCHIRP_HARDWARE_CORE_HEADERS
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/lifdigitizer/lifscope.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/liflaser.h
-    )
+    # LIF Laser (Optional)
+    if(BC_LIFLASER)
+        string(TOUPPER ${BC_LIFLASER} LIFLASER_UPPER)
+        HARDWARE_EQUALS("${BC_LIFLASER}" "virtual" IS_VIRTUAL)
+
+        if(IS_VIRTUAL)
+            add_single_hardware("liflaser" "virtualliflaser" "VirtualLifLaser" TRUE)
+        HARDWARE_EQUALS("${BC_LIFLASER}" "opolette" IS_OPOLETTE)
+
+        elseif(IS_OPOLETTE)
+            add_single_hardware("liflaser" "opolette" "Opolette" TRUE)
+        HARDWARE_EQUALS("${BC_LIFLASER}" "sirahcobra" IS_SIRAHCOBRA)
+
+        elseif(IS_SIRAHCOBRA)
+            add_single_hardware("liflaser" "sirahcobra" "SirahCobra" TRUE)
+        else()
+            message(FATAL_ERROR "Unknown LIF laser implementation: ${BC_LIFLASER}")
+        endif()
+    endif()
 endif()
+
+# Add LIF base classes to core sources (always included for runtime configuration)
+list(APPEND BLACKCHIRP_HARDWARE_CORE_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/lifdigitizer/lifscope.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/liflaser.cpp
+)
+
+list(APPEND BLACKCHIRP_HARDWARE_CORE_HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/lifdigitizer/lifscope.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/liflaser.h
+)
 
 # ============================================================================
 # Clean Old QMake Generated Files
@@ -911,10 +908,6 @@ target_compile_definitions(blackchirp-hardware PRIVATE
 )
 
 # Special configuration modes
-if(BC_LIF)
-    target_compile_definitions(blackchirp-hardware PRIVATE BC_LIF)
-endif()
-
 if(BC_ALLHARDWARE)
     target_compile_definitions(blackchirp-hardware PRIVATE BC_ALLHARDWARE)
 endif()
@@ -947,9 +940,6 @@ if(BC_PRESSURECONTROLLER)
 endif()
 if(BC_TEMPCONTROLLER)
     message(STATUS "  Temperature Controller: ${BC_TEMPCONTROLLER}")
-endif()
-if(BC_LIF)
-    message(STATUS "  LIF Support: ENABLED")
 endif()
 if(BC_ALLHARDWARE)
     message(STATUS "  All Hardware Mode: ENABLED")

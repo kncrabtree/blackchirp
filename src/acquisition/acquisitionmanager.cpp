@@ -41,11 +41,9 @@ void AcquisitionManager::beginExperiment(std::shared_ptr<Experiment> exp)
 
     emit beginAcquisition();
 
-#ifdef BC_LIF
     if(ps_currentExperiment->lifEnabled())
         emit nextLifPoint(ps_currentExperiment->lifConfig()->currentDelay(),
                       ps_currentExperiment->lifConfig()->currentLaserPos());
-#endif
 }
 
 void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
@@ -79,7 +77,6 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
     checkComplete();
 }
 
-#ifdef BC_LIF
 void AcquisitionManager::processLifScopeShot(const QVector<qint8> b)
 {
     if(d_state == Acquiring
@@ -115,7 +112,6 @@ void AcquisitionManager::lifHardwareReady(bool success)
         }
     }
 }
-#endif
 
 void AcquisitionManager::processAuxData(AuxDataStorage::AuxDataMap m)
 {

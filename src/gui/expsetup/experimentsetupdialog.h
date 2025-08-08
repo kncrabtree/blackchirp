@@ -19,9 +19,7 @@ class Experiment;
 class ExperimentConfigPage;
 class QTreeWidgetItem;
 
-#ifdef BC_LIF
 class LifControlWidget;
-#endif
 
 class ExperimentSetupDialog : public QDialog
 {
@@ -29,9 +27,7 @@ class ExperimentSetupDialog : public QDialog
 public:
     explicit ExperimentSetupDialog(Experiment *exp, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList> &valKeys, QWidget *parent = nullptr);
 
-#ifdef BC_LIF
     LifControlWidget *lifControlWidget();
-#endif
 
 signals:
 

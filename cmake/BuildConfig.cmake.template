@@ -21,11 +21,6 @@
 # Optional Modules
 # ============================================================================
 
-# LIF (Laser-Induced Fluorescence) Module
-# Enable this if you have LIF-specific hardware and want LIF functionality
-# This adds LIF data structures, GUI components, and hardware support
-# Note: Specific LIF hardware selection is configured in HardwareConfig.cmake
-option(BC_ENABLE_LIF "Enable LIF (Laser-Induced Fluorescence) functionality" OFF)
 
 # CUDA GPU Acceleration Module
 # Enable this if you have CUDA-capable hardware and want GPU acceleration
@@ -113,13 +108,11 @@ endif()
 #
 # 1. Development Build (default):
 #    - BC_BUILD_TESTS=ON for testing
-#    - BC_ENABLE_LIF=OFF unless needed
 #    - BC_ENABLE_CUDA=OFF unless developing GPU features
 #    - CMAKE_BUILD_TYPE=Debug for debugging
 #
 # 2. Production Laboratory Build:
 #    - BC_BUILD_TESTS=OFF to reduce binary size
-#    - BC_ENABLE_LIF=ON if using LIF hardware
 #    - BC_ENABLE_CUDA=ON if GPU acceleration desired
 #    - CMAKE_BUILD_TYPE=Release for performance
 #

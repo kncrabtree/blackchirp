@@ -9,9 +9,7 @@
 #include <data/experiment/hardware/optional/pulsegenerator/pulsegenconfig.h>
 #include <data/experiment/ftmwconfig.h>
 
-#ifdef BC_LIF
 #include <data/lif/lifconfig.h>
-#endif
 
 class QLabel;
 class QDoubleSpinBox;

@@ -28,9 +28,7 @@
 #include <data/analysis/ft.h>
 #include <data/analysis/ftworker.h>
 
-#ifdef BC_LIF
 #include <data/lif/lifconfig.h>
-#endif
 
 namespace BC::Store::Exp {
 static const QString key{"Experiment"};
@@ -107,12 +105,10 @@ public:
     void setValidationMap(const ExperimentValidator::ValidationMap &m);
     bool validateItem(const QString key, const QVariant val);
 
-#ifdef BC_LIF
     inline bool lifEnabled() const { return ps_lifCfg.get() != nullptr; }
     inline LifConfig* lifConfig() const { return ps_lifCfg.get(); }
     LifConfig *enableLif();
     void disableLif();
-#endif
 
     bool initialize();
     void abort();
@@ -142,9 +138,7 @@ private:
 
     QString d_path;
 
-#ifdef BC_LIF
     std::shared_ptr<LifConfig> ps_lifCfg;
-#endif
 
     // HeaderStorage interface
 protected:

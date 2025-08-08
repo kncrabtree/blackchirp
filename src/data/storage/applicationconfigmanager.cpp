@@ -42,12 +42,7 @@ void ApplicationConfigManager::initializeFromCompileTimeFlags()
     // Initialize configuration state from compile-time flags
     // This provides compatibility during the development transition phase
 
-    // Initialize LIF state from BC_LIF compilation flag
-#ifdef BC_LIF
     d_currentConfig.lifEnabled = true;
-#else
-    d_currentConfig.lifEnabled = false;
-#endif
 
     // Initialize CUDA state from BC_CUDA compilation flag
 #ifdef BC_CUDA

@@ -16,9 +16,7 @@
 #include <data/experiment/hardware/optional/tempcontroller/temperaturecontrollerconfig.h>
 #include <data/experiment/hardware/optional/ioboard/ioboardconfig.h>
 
-#ifdef BC_LIF
 #include <data/lif/lifconfig.h>
-#endif
 
 class HardwareObject;
 class ClockManager;
@@ -86,13 +84,11 @@ signals:
     void temperatureUpdate(QString,uint,double);
     void temperatureEnableUpdate(QString,uint,bool);
 
-#ifdef BC_LIF
     void lifScopeShotAcquired(QVector<qint8>);
     void lifSettingsComplete(bool success = true);
     void lifLaserPosUpdate(double);
     void lifConfigAcqStarted();
     void lifLaserFlashlampUpdate(bool);
-#endif
 
 public slots:
     void initialize();
@@ -153,7 +149,6 @@ public slots:
 
     void storeAllOptHw(Experiment *exp, std::map<QString,bool> hw = {});
 
-#ifdef BC_LIF
     void setLifParameters(double delay, double pos);
     bool setPGenLifDelay(double d);
     bool setLifLaserPos(double pos);
@@ -163,7 +158,6 @@ public slots:
     double lifLaserPos();
     bool lifLaserFlashlampEnabled();
     void setLifLaserFlashlampEnabled(bool en);
-#endif
 
 public:
     std::map<QString,QStringList> validationKeys() const;

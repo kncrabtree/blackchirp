@@ -131,10 +131,10 @@ set(BC_PRESSURECONTROLLER "" CACHE STRING "Pressure controller implementations (
 set(BC_TEMPCONTROLLER "" CACHE STRING "Temperature controller implementations (semicolon-separated)")
 
 # ============================================================================
-# LIF Hardware (only relevant if BC_ENABLE_LIF is ON in BuildConfig.cmake)
+# LIF Hardware (Always available - controlled at runtime)
 # ============================================================================
 
-# LIF Digitizer/Oscilloscope (REQUIRED when BC_ENABLE_LIF is ON - choose ONE)
+# LIF Digitizer/Oscilloscope (OPTIONAL - choose ONE or leave empty)
 # Available implementations: (LIF-specific digitizers only)
 #   virtual        - Virtual LIF scope for testing
 #   m4i2211x8      - Spectrum M4i.2211-x8 PCIe digitizer (requires Spectrum driver SDK)
@@ -142,7 +142,7 @@ set(BC_TEMPCONTROLLER "" CACHE STRING "Temperature controller implementations (s
 
 set(BC_LIFSCOPE "virtual" CACHE STRING "LIF oscilloscope implementation")
 
-# LIF Laser (REQUIRED when BC_ENABLE_LIF is ON - choose ONE)
+# LIF Laser (OPTIONAL - choose ONE or leave empty)
 # Available implementations:
 #   virtual        - Virtual laser for testing
 #   opolette       - Opolette laser system

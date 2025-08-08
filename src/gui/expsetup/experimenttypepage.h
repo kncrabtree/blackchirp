@@ -24,7 +24,6 @@ static const QString ftmwThresh{"FtmwChirpScoringThreshold"};
 static const QString ftmwOffset{"FtmwChirpOffset"};
 static const QString auxInterval{"AuxDataInterval"};
 static const QString backup{"BackupInterval"};
-#ifdef BC_LIF
 static const QString lif{"LifEnabled"};
 static const QString lifDelayStart{"LifDelayStart"};
 static const QString lifDelayStep{"LifDelayStep"};
@@ -35,7 +34,6 @@ static const QString lifLaserPoints{"LifLaserPoints"};
 static const QString lifOrder{"LifOrder"};
 static const QString lifCompleteMode{"LifCompleteMode"};
 static const QString lifFlashlampDisable{"LifFlashlampDisable"};
-#endif
 }
 
 class ExperimentTypePage : public ExperimentConfigPage
@@ -46,9 +44,7 @@ public:
 
     bool ftmwEnabled() const ;
     FtmwConfig::FtmwType getFtmwType() const;
-#ifdef BC_LIF
     bool lifEnabled() const;
-#endif
 
 signals:
     void typeChanged();
@@ -62,7 +58,6 @@ public slots:
 
 private:
     QGroupBox *p_ftmw;
-#ifdef BC_LIF
     QGroupBox *p_lif;
     QDoubleSpinBox *p_dStartBox, *p_dStepBox, *p_dEndBox, *p_lStartBox, *p_lStepBox, *p_lEndBox;
     QSpinBox *p_dNumStepsBox, *p_lNumStepsBox;
@@ -70,7 +65,6 @@ private:
     QCheckBox *p_flBox;
 
     void updateLifRanges();
-#endif
 
     QSpinBox *p_auxDataIntervalBox, *p_backupBox, *p_ftmwShotsBox, *p_ftmwTargetDurationBox;
     QComboBox *p_ftmwTypeBox;

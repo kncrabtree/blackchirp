@@ -460,7 +460,6 @@ bool PulseGenerator::hasRole(PulseGenConfig::Role r)
     return d_config.channelsForRole(r).size()>0;
 }
 
-#ifdef BC_LIF
 bool PulseGenerator::setLifDelay(double d)
 {
     bool out = true;
@@ -473,7 +472,6 @@ bool PulseGenerator::setLifDelay(double d)
 
     return out;
 }
-#endif
 
 void PulseGenerator::readAll()
 {

@@ -40,9 +40,7 @@ private:
     QWidget *buildTrackingWidget();
     QWidget *buildLogWidget(QString path = QString(""));
 
-#ifdef BC_LIF
     QWidget *buildLifWidget();
-#endif
 
 protected:
     void closeEvent(QCloseEvent *event) override;

@@ -60,10 +60,8 @@ int main(int argc, char *argv[])
     qRegisterMetaType<PulseGenConfig::Setting>();
     qRegisterMetaType<AuxDataStorage::AuxDataMap>();
     qRegisterMetaType<FlowConfig::FlowChSetting>();
-#ifdef BC_LIF
     qRegisterMetaType<LifTrace>("LifTrace");
     qRegisterMetaType<LifConfig>("LifConfig");
-#endif
 
 #ifndef QT_DEBUG
     gsl_set_error_handler_off();

@@ -19,11 +19,11 @@
 
 #include <hardware/core/ftmwdigitizer/ftmwscope.h>
 
-#ifdef BC_LIF
 #include <hardware/core/hardwaremanager.h>
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 #include <hardware/core/liflaser/liflaser.h>
-#endif
+#include <data/storage/applicationconfigmanager.h>
+#include <hardware/core/runtimehardwareconfig.h>
 
 using namespace BC::Key::WizStart;
 
@@ -162,10 +162,10 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     auto *hbl = new QHBoxLayout();
     hbl->addWidget(p_ftmw);
 
-#ifndef BC_LIF
-    p_ftmw->setChecked(true);
-    p_ftmw->setCheckable(false);
-#else
+    if(!ApplicationConfigManager::instance().isLifEnabled()) {
+        p_ftmw->setChecked(true);
+        p_ftmw->setCheckable(false);
+    } else {
     p_lif = new QGroupBox(QString("LIF"),this);
     p_lif->setCheckable(true);
     p_lif->setChecked(get(lif,false));
@@ -333,8 +333,7 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     connect(p_lNumStepsBox,qOverload<int>(&QSpinBox::valueChanged),this,&ExperimentTypePage::updateLifRanges);
 
     hbl->addWidget(p_lif);
-
-#endif
+    }
 
     auto *vbl = new QVBoxLayout();
     vbl->addLayout(hbl,1);
@@ -345,10 +344,10 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     if(p_exp->d_number > 0)
     {
 
-#ifdef BC_LIF
-        p_ftmw->setChecked(p_exp->ftmwEnabled());
-        p_lif->setChecked(p_exp->lifEnabled());
-#endif
+        if(ApplicationConfigManager::instance().isLifEnabled()) {
+            p_ftmw->setChecked(p_exp->ftmwEnabled());
+            p_lif->setChecked(p_exp->lifEnabled());
+        }
         if(p_exp->ftmwEnabled())
         {
             auto type = p_exp->ftmwConfig()->d_type;
@@ -397,12 +396,13 @@ FtmwConfig::FtmwType ExperimentTypePage::getFtmwType() const
     return p_ftmwTypeBox->currentData().value<FtmwConfig::FtmwType>();
 }
 
-#ifdef BC_LIF
 bool ExperimentTypePage::lifEnabled() const
 {
-    return p_lif->isChecked();
+    if(!ApplicationConfigManager::instance().isLifEnabled()) {
+        return false;
+    }
+    return p_lif && p_lif->isChecked();
 }
-#endif
 
 void ExperimentTypePage::initialize()
 {
@@ -415,31 +415,37 @@ bool ExperimentTypePage::validate()
         return true;
 
     bool out = p_ftmw->isChecked();
-#ifdef BC_LIF
-    out = out || p_lif->isChecked();
+    
+    if(ApplicationConfigManager::instance().isLifEnabled()) {
+        out = out || p_lif->isChecked();
 
-    p_completeModeBox->setEnabled(p_ftmw->isChecked());
-    if(!out)
-        emit error("Either FTMW or LIF must be enabled.");
+        p_completeModeBox->setEnabled(p_ftmw->isChecked());
+        if(!out)
+            emit error("Either FTMW or LIF must be enabled.");
 
-    if(p_ftmw->isChecked() && p_lif->isChecked())
-    {
-        if(getFtmwType() == FtmwConfig::Peak_Up)
+        if(p_ftmw->isChecked() && p_lif->isChecked())
         {
-            emit error("Cannot combine LIF acquisition with Peak Up mode.");
+            if(getFtmwType() == FtmwConfig::Peak_Up)
+            {
+                emit error("Cannot combine LIF acquisition with Peak Up mode.");
+                out = false;
+            }
+        }
+    } else {
+        // When LIF is not available, only FTMW validation applies
+        if(!out)
+            emit error("FTMW must be enabled.");
+    }
+
+    // Check if pulse generator is available for LIF delay stepping
+    if(ApplicationConfigManager::instance().isLifEnabled() && p_dNumStepsBox && p_dNumStepsBox->value() > 1)
+    {
+        auto activeLabels = RuntimeHardwareConfig::constInstance().getActiveLabels<PulseGenerator>();
+        if(activeLabels.isEmpty()) {
             out = false;
+            emit error("A pulse generator is required to step the LIF delay.");
         }
     }
-
-#ifndef BC_PGEN
-    if(p_dNumStepsBox->value() > 1)
-    {
-        out = false;
-        emit error("A pulse generator is required to step the LIF delay.");
-    }
-#endif
-
-#endif
 
     return out;
 }
@@ -448,8 +454,7 @@ void ExperimentTypePage::apply()
 {
     auto e = p_exp;
 
-#ifdef BC_LIF
-     if(p_lif->isChecked())
+     if(ApplicationConfigManager::instance().isLifEnabled() && p_lif && p_lif->isChecked())
      {
          e->enableLif();
 
@@ -467,7 +472,6 @@ void ExperimentTypePage::apply()
      }
      else
          e->disableLif();
-#endif
 
      if(p_ftmw->isChecked() || !p_ftmw->isCheckable())
      {
@@ -554,40 +558,54 @@ void ExperimentTypePage::configureUI()
     p_thresholdBox->setEnabled(p_chirpScoringBox->isChecked());
 }
 
-#ifdef BC_LIF
 void ExperimentTypePage::updateLifRanges()
 {
+    if(!ApplicationConfigManager::instance().isLifEnabled()) {
+        return;
+    }
+    
     auto maxdSteps = 1;
-    if(p_dStepBox->value() < -1e-14)
+    if(p_dStepBox && p_dStepBox->value() < -1e-14)
         maxdSteps = static_cast<int>(floor((p_dEndBox->minimum() - p_dStartBox->value())/p_dStepBox->value()))+1;
-    else if(p_dStepBox->value() > 1e-14)
+    else if(p_dStepBox && p_dStepBox->value() > 1e-14)
         maxdSteps = static_cast<int>(floor((p_dEndBox->maximum() - p_dStartBox->value())/p_dStepBox->value()))+1;
     else
         maxdSteps = 1;
-    p_dNumStepsBox->blockSignals(true);
-    p_dNumStepsBox->setMaximum(qMax(1,maxdSteps));
-    p_dNumStepsBox->blockSignals(false);
+        
+    if(p_dNumStepsBox) {
+        p_dNumStepsBox->blockSignals(true);
+        p_dNumStepsBox->setMaximum(qMax(1,maxdSteps));
+        p_dNumStepsBox->blockSignals(false);
+    }
 
-    auto dEnd = p_dStartBox->value() + (p_dNumStepsBox->value()-1)*p_dStepBox->value();
-    p_dEndBox->setValue(dEnd);
+    if(p_dEndBox && p_dStartBox && p_dNumStepsBox && p_dStepBox) {
+        auto dEnd = p_dStartBox->value() + (p_dNumStepsBox->value()-1)*p_dStepBox->value();
+        p_dEndBox->setValue(dEnd);
+    }
 
     auto maxlSteps = 1;
-    if(p_lStepBox->value() < -1e-14)
+    if(p_lStepBox && p_lStepBox->value() < -1e-14)
         maxlSteps = static_cast<int>(floor((p_lEndBox->minimum() - p_lStartBox->value())/p_lStepBox->value()))+1;
-    else if(p_lStepBox->value() > 1e-14)
+    else if(p_lStepBox && p_lStepBox->value() > 1e-14)
         maxlSteps = static_cast<int>(floor((p_lEndBox->maximum() - p_lStartBox->value())/p_lStepBox->value()))+1;
     else
         maxlSteps = 1;
-    p_lNumStepsBox->blockSignals(true);
-    p_lNumStepsBox->setMaximum(qMax(1,maxlSteps));
-    p_lNumStepsBox->blockSignals(false);
+        
+    if(p_lNumStepsBox) {
+        p_lNumStepsBox->blockSignals(true);
+        p_lNumStepsBox->setMaximum(qMax(1,maxlSteps));
+        p_lNumStepsBox->blockSignals(false);
+    }
 
-    auto lEnd = p_lStartBox->value() + (p_lNumStepsBox->value()-1)*p_lStepBox->value();
-    p_lEndBox->setValue(lEnd);
+    if(p_lEndBox && p_lStartBox && p_lNumStepsBox && p_lStepBox) {
+        auto lEnd = p_lStartBox->value() + (p_lNumStepsBox->value()-1)*p_lStepBox->value();
+        p_lEndBox->setValue(lEnd);
+    }
 
-    p_orderBox->setDisabled(p_lNumStepsBox->value() == 1 || p_dNumStepsBox->value() == 1);
+    if(p_orderBox && p_lNumStepsBox && p_dNumStepsBox) {
+        p_orderBox->setDisabled(p_lNumStepsBox->value() == 1 || p_dNumStepsBox->value() == 1);
+    }
 }
-#endif
 
 void ExperimentTypePage::updateLabel()
 {

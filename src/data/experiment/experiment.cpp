@@ -12,9 +12,7 @@
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
-#ifdef BC_LIF
 #include <hardware/core/lifdigitizer/lifscope.h>
-#endif
 
 #include <QFile>
 #include <QSaveFile>
@@ -151,10 +149,8 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
                 obj = enableFtmw(type);
             }
 
-#ifdef BC_LIF
             if(key == BC::Config::Exp::lifType)
                 obj = enableLif();
-#endif
 
             if(obj != nullptr)
             {
@@ -222,10 +218,8 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
             ps_ftmwConfig->loadFids();
     }
 
-#ifdef BC_LIF
     if(lifEnabled())
         ps_lifCfg->loadLifData();
-#endif
 
     //load aux data
     if(!headerOnly)
@@ -356,11 +350,7 @@ bool Experiment::initialize()
     num = s.get(BC::Key::exptNum,0)+1;
     d_number = num;
 
-#ifdef BC_LIF
     if(ftmwEnabled() && ps_ftmwConfig->d_type == FtmwConfig::Peak_Up && !lifEnabled())
-#else
-    if(ftmwEnabled() && ps_ftmwConfig->d_type == FtmwConfig::Peak_Up)
-#endif
     {
         d_number = -1;
         d_startLogMessage = QString("Peak up mode started.");
@@ -528,7 +518,6 @@ bool Experiment::validateItem(const QString key, const QVariant val)
     return out;
 }
 
-#ifdef BC_LIF
 LifConfig *Experiment::enableLif()
 {
     disableLif();
@@ -575,7 +564,6 @@ void Experiment::disableLif()
         ps_lifCfg.reset();
     }
 }
-#endif
 
 void Experiment::finalSave()
 {
@@ -675,8 +663,6 @@ void Experiment::prepareChildren()
     for(const auto &[k,p] : d_optHwData)
         addChild(p.get());
 
-#ifdef BC_LIF
     addChild(ps_lifCfg.get());
-#endif
 
 }

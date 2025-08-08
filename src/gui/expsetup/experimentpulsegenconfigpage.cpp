@@ -74,7 +74,6 @@ bool ExperimentPulseGenConfigPage::validate()
         }
     }
 
-#ifdef BC_LIF
     if(p_exp->lifEnabled())
     {
         auto lifCh = c.channelsForRole(PulseGenConfig::LIF);
@@ -84,7 +83,6 @@ bool ExperimentPulseGenConfigPage::validate()
                 emit warning(QString("LIF channel on %1 will be enabled automatically.").arg(d_title));
         }
     }
-#endif
 
     return out;
 }

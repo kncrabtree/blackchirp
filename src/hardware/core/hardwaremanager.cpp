@@ -22,13 +22,11 @@
 
 #include <QThread>
 
-#ifdef BC_LIF
 #include <hardware/core/lifdigitizer/lifscope.h>
 #include <hardware/core/liflaser/liflaser.h>
 #include <QtConcurrent/QtConcurrent>
 #include <QFuture>
 #include <QFutureWatcher>
-#endif
 
 // Static instance for const access
 HardwareManager* HardwareManager::s_instance = nullptr;
@@ -179,7 +177,6 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
         d_hardwareMap.emplace(iob->d_key,iob);
 #endif
 
-#ifdef BC_LIF
     auto lsc = new BC_LIFDIGITIZER("temp");
     connect(lsc,&LifScope::waveformRead,this,&HardwareManager::lifScopeShotAcquired);
     connect(lsc,&LifScope::configAcqComplete,this,&HardwareManager::lifConfigAcqStarted);
@@ -189,7 +186,6 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     connect(ll,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserPosUpdate);
     connect(ll,&LifLaser::laserFlashlampUpdate,this,&HardwareManager::lifLaserFlashlampUpdate);
     d_hardwareMap.emplace(ll->d_key,ll);
-#endif
 
     //write array of all connected devices for use in the Hardware Settings menu
     setArray(BC::Key::allHw,{},false);
@@ -384,7 +380,6 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
 
     exp->d_hardwareSuccess = success;
 
-#ifdef BC_LIF
     if(exp->lifEnabled())
     {
         auto ll = findHardware<LifLaser>(BC::Key::hwKey(QString(LifLaser::staticMetaObject.className()), "temp"));
@@ -397,7 +392,6 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
         else
             connect(ll,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserSetComplete,Qt::UniqueConnection);
     }
-#endif
     //any additional synchronous initialization can be performed here, before experimentInitialized() is emitted
 
 
@@ -407,11 +401,9 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
 
 void HardwareManager::experimentComplete()
 {
-#ifdef BC_LIF
     auto ll = findHardware<LifLaser>(BC::Key::hwKey(QString(LifLaser::staticMetaObject.className()), "temp"));
     if(ll)
         disconnect(ll,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserSetComplete);
-#endif
 }
 
 void HardwareManager::testAll()
@@ -736,7 +728,6 @@ void HardwareManager::checkStatus()
     emit allHardwareConnected(success);
 }
 
-#ifdef BC_LIF
 void HardwareManager::setLifParameters(double delay, double pos)
 {
     bool success = true;
@@ -875,7 +866,6 @@ void HardwareManager::setLifLaserFlashlampEnabled(bool en)
     QMetaObject::invokeMethod(ll,[ll,en](){ ll->setFlashLamp(en); },Qt::BlockingQueuedConnection);
 
 }
-#endif
 
 const HardwareManager& HardwareManager::constInstance()
 {

@@ -42,11 +42,9 @@ signals:
     void doFinalSave(std::shared_ptr<Experiment>);
     void backupComplete();
 
-#ifdef BC_LIF
     void lifPointUpdate();
     void nextLifPoint(double delay, double frequency);
     void lifShotAcquired(int);
-#endif
 
 public slots:
     void beginExperiment(std::shared_ptr<Experiment> exp);
@@ -58,10 +56,8 @@ public slots:
     void resume();
     void abort();
 
-#ifdef BC_LIF
     void processLifScopeShot(const QVector<qint8> b);
     void lifHardwareReady(bool success);
-#endif
 
 private:
     std::unique_ptr<QFutureWatcher<void> > pu_fw;

@@ -21,9 +21,7 @@
 #include <data/storage/blackchirpcsv.h>
 #include <data/loghandler.h>
 
-#ifdef BC_LIF
 #include <gui/lif/gui/lifdisplaywidget.h>
-#endif
 
 ExperimentViewWidget::ExperimentViewWidget(int num, QString path, bool overlaysEnabled, QWidget *parent) : QWidget(parent), p_ftmw(nullptr), p_lh(nullptr), d_overlaysEnabled(overlaysEnabled)
 {
@@ -61,14 +59,12 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, bool overlaysE
             p_tabWidget->addTab(ftmw, ThemeColors::createThemedIcon(":/icons/signal.svg", ThemeColors::IconPrimary, this), QString("CP-FTMW"));
     }
 
-#ifdef BC_LIF
     if(pu_experiment->lifEnabled())
     {
         QWidget *lif = buildLifWidget();
         if(lif != nullptr)
             p_tabWidget->addTab(lif, ThemeColors::createThemedIcon(":/icons/lif.svg", ThemeColors::IconSecondary, this), QString("LIF"));
     }
-#endif
 
     QWidget *tracking = buildTrackingWidget();
     if(tracking != nullptr)
@@ -120,7 +116,6 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
     return out;
 }
 
-#ifdef BC_LIF
 QWidget *ExperimentViewWidget::buildLifWidget()
 {
     QWidget *out = nullptr;
@@ -139,7 +134,6 @@ QWidget *ExperimentViewWidget::buildLifWidget()
 
     return out;
 }
-#endif
 
 QWidget *ExperimentViewWidget::buildTrackingWidget()
 {

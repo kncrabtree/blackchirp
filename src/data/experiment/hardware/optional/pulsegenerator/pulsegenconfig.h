@@ -38,10 +38,8 @@ public:
         Prot,
         Amp,
         Laser,
-        XMer
-#ifdef BC_LIF
-        ,LIF = 999
-#endif
+        XMer,
+        LIF = 999
     };
     enum PGenMode { Continuous, Triggered_Rising, Triggered_Falling };
     enum ChannelMode { Normal, DutyCycle };
