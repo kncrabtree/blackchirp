@@ -28,6 +28,18 @@
 #include <QFuture>
 #include <QFutureWatcher>
 
+// Phase 2.4.2: Virtual hardware includes for capability discovery
+#include <hardware/core/ftmwdigitizer/virtualftmwscope.h>
+#include <hardware/optional/chirpsource/virtualawg.h>
+#include <hardware/optional/pulsegenerator/virtualpulsegenerator.h>
+#include <hardware/optional/flowcontroller/virtualflowcontroller.h>
+#include <hardware/optional/ioboard/virtualioboard.h>
+#include <hardware/optional/gpibcontroller/virtualgpibcontroller.h>
+#include <hardware/optional/pressurecontroller/virtualpressurecontroller.h>
+#include <hardware/optional/tempcontroller/virtualtempcontroller.h>
+#include <hardware/core/lifdigitizer/virtuallifscope.h>
+#include <hardware/core/liflaser/virtualliflaser.h>
+
 // Static instance for const access
 HardwareManager* HardwareManager::s_instance = nullptr;
 
@@ -40,219 +52,12 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     // Lock mutex for entire initialization - no concurrency issues during startup
     QMutexLocker locker(&d_accessMutex);
     
-    //Required hardware: FtmwScope and Clocks
-    auto ftmwScope = new VirtualFtmwScope("test_ftmw_scope");
-    connect(ftmwScope,&FtmwScope::shotAcquired,this,&HardwareManager::ftmwScopeShotAcquired);
-    d_hardwareMap.emplace(ftmwScope->d_key,ftmwScope);
-
-    pu_clockManager = std::make_unique<ClockManager>();
-    connect(pu_clockManager.get(),&ClockManager::logMessage,this,&HardwareManager::logMessage);
-    connect(pu_clockManager.get(),&ClockManager::clockFrequencyUpdate,this,&HardwareManager::clockFrequencyUpdate);
-    auto cl = pu_clockManager->d_clockList;
-    for(int i=0; i<cl.size(); i++)
-        d_hardwareMap.emplace(cl.at(i)->d_key,cl.at(i));
-
-#ifdef BC_CHIRPSOURCE
-    auto awg = new BC_CHIRPSOURCE("temp");
-    d_hardwareMap.emplace(awg->d_key,awg);
-#endif
-
-#ifdef BC_GPIBCONTROLLER
-    auto gpib = new BC_GPIBCONTROLLER("temp");
-    d_hardwareMap.emplace(gpib->d_key,gpib);
-#else
-    auto gpib = nullptr;
-#endif
-
-#ifdef BC_PGEN
-    QList<PulseGenerator*> pGenList;
-
-#define BOOST_PP_LOCAL_MACRO(n) pGenList << new BC_PULSEGENERATOR_##n("temp");
-#define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_PGEN-1)
-#include BOOST_PP_LOCAL_ITERATE()
-#undef BOOST_PP_LOCAL_MACRO
-#undef BOOST_PP_LOCAL_LIMITS
-
-    for( auto &pGen : pGenList)
-    {
-        auto k = pGen->d_key;
-        connect(pGen,&PulseGenerator::settingUpdate,[this,k](const int ch, const PulseGenConfig::Setting set, const QVariant val){
-            emit pGenSettingUpdate(k,ch,set,val);
-        });
-        connect(pGen,&PulseGenerator::configUpdate,[this,k](const PulseGenConfig cfg){
-            emit pGenConfigUpdate(k,cfg);
-        });
-        d_hardwareMap.emplace(k,pGen);
-    }
-#endif
-
-#ifdef BC_FLOWCONTROLLER
-    QList<FlowController*> fcList;
-
-#define BOOST_PP_LOCAL_MACRO(n) fcList << new BC_FLOWCONTROLLER_##n("temp");
-#define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_FLOWCONTROLLER-1)
-#include BOOST_PP_LOCAL_ITERATE()
-#undef BOOST_PP_LOCAL_MACRO
-#undef BOOST_PP_LOCAL_LIMITS
-
-    for(auto flow : fcList)
-    {
-        auto k = flow->d_key;
-        connect(flow,&FlowController::flowUpdate,[this,k](int i, double d){
-            emit flowUpdate(k,i,d);
-        });
-        connect(flow,&FlowController::flowSetpointUpdate,[this,k](int i, double d){
-            emit flowSetpointUpdate(k,i,d);
-        });
-        connect(flow,&FlowController::pressureUpdate,[this,k](double d){
-            emit gasPressureUpdate(k,d);
-        });
-        connect(flow,&FlowController::pressureSetpointUpdate,[this,k](double d){
-           emit gasPressureSetpointUpdate(k,d);
-        });
-        connect(flow,&FlowController::pressureControlMode,[this,k](bool b){
-            emit gasPressureControlMode(k,b);
-        });
-        d_hardwareMap.emplace(k,flow);
-    }
-#endif
-
-#ifdef BC_PCONTROLLER
-    QList<PressureController*> pcList;
-
-#define BOOST_PP_LOCAL_MACRO(n) pcList << new BC_PRESSURECONTROLLER_##n("temp");
-#define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_PCONTROLLER-1)
-#include BOOST_PP_LOCAL_ITERATE()
-#undef BOOST_PP_LOCAL_MACRO
-#undef BOOST_PP_LOCAL_LIMITS
-
-    for(auto pc : pcList)
-    {
-        auto k = pc->d_key;
-        connect(pc,&PressureController::pressureUpdate,this,[this,k](double d){
-            emit pressureUpdate(k,d);
-        });
-        connect(pc,&PressureController::pressureSetpointUpdate,this,[this,k](double d){
-            emit pressureSetpointUpdate(k,d);
-        });
-        connect(pc,&PressureController::pressureControlMode,this,[this,k](bool b){
-            emit pressureControlMode(k,b);
-        });
-        d_hardwareMap.emplace(pc->d_key,pc);
-    }
-#endif
-
-#ifdef BC_TEMPCONTROLLER
-    QList<TemperatureController*> tcList;
-
-#define BOOST_PP_LOCAL_MACRO(n) tcList << new BC_TEMPCONTROLLER_##n("temp");
-#define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_TEMPCONTROLLER-1)
-#include BOOST_PP_LOCAL_ITERATE()
-#undef BOOST_PP_LOCAL_MACRO
-#undef BOOST_PP_LOCAL_LIMITS
-
-    for(auto tc : tcList)
-    {
-        auto k = tc->d_key;
-        connect(tc,&TemperatureController::channelEnableUpdate,this,[this,k](uint i,bool en){
-            emit temperatureEnableUpdate(k,i,en);
-        });
-        connect(tc,&TemperatureController::temperatureUpdate,this,[this,k](uint i, double t) {
-            emit temperatureUpdate(k,i,t);
-        });
-        d_hardwareMap.emplace(k,tc);
-    }
-#endif
-
-#ifdef BC_IOBOARD
-    QList<IOBoard*> iobList;
-
-#define BOOST_PP_LOCAL_MACRO(n) iobList << new BC_IOBOARD_##n("temp");
-#define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_IOBOARD-1)
-#include BOOST_PP_LOCAL_ITERATE()
-#undef BOOST_PP_LOCAL_MACRO
-#undef BOOST_PP_LOCAL_LIMITS
-
-    for(auto iob : iobList)
-        d_hardwareMap.emplace(iob->d_key,iob);
-#endif
-
-    auto lsc = new BC_LIFDIGITIZER("temp");
-    connect(lsc,&LifScope::waveformRead,this,&HardwareManager::lifScopeShotAcquired);
-    connect(lsc,&LifScope::configAcqComplete,this,&HardwareManager::lifConfigAcqStarted);
-    d_hardwareMap.emplace(lsc->d_key,lsc);
-
-    auto ll = new BC_LIFLASER("temp");
-    connect(ll,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserPosUpdate);
-    connect(ll,&LifLaser::laserFlashlampUpdate,this,&HardwareManager::lifLaserFlashlampUpdate);
-    d_hardwareMap.emplace(ll->d_key,ll);
-
-    //write array of all connected devices for use in the Hardware Settings menu
-    setArray(BC::Key::allHw,{},false);
-    for(auto hwit = d_hardwareMap.cbegin(); hwit != d_hardwareMap.cend(); ++hwit)
-    {        
-        auto obj = hwit->second;
-        connect(obj,&HardwareObject::logMessage,[this,obj](QString msg, LogHandler::MessageCode mc){
-            emit logMessage(QString("%1: %2").arg(obj->d_name).arg(msg),mc);
-        });
-        connect(obj,&HardwareObject::connected,[obj,this](bool success, QString msg){
-            connectionResult(obj,success,msg);
-        });
-        connect(obj,&HardwareObject::auxDataRead,[obj,this](AuxDataStorage::AuxDataMap m){
-            AuxDataStorage::AuxDataMap out;
-            for(auto it = m.cbegin(); it != m.cend(); ++it)
-                out.insert({AuxDataStorage::makeKey(obj->d_key,obj->d_subKey,it->first),it->second});
-            emit auxData(out);
-        });
-        connect(obj,&HardwareObject::auxDataRead,[obj,this](AuxDataStorage::AuxDataMap m){
-            AuxDataStorage::AuxDataMap out;
-            for(auto it = m.cbegin(); it != m.cend(); ++it)
-                out.insert({AuxDataStorage::makeKey(obj->d_key,obj->d_subKey,it->first),it->second});
-            emit validationData(out);
-        });
-        connect(obj,&HardwareObject::rollingDataRead,[obj,this](AuxDataStorage::AuxDataMap m){
-            AuxDataStorage::AuxDataMap out;
-            for(auto it = m.cbegin(); it != m.cend(); ++it)
-                out.insert({AuxDataStorage::makeKey(obj->d_key,obj->d_subKey,it->first),it->second});
-            emit rollingData(out,QDateTime::currentDateTime());
-        });
-        connect(this,&HardwareManager::beginAcquisition,obj,&HardwareObject::beginAcquisition);
-        connect(this,&HardwareManager::endAcquisition,obj,&HardwareObject::endAcquisition);
-
-
-
-        // Hardware discovery arrays removed - CommunicationDialog now gets hardware discovery
-        // directly from RuntimeHardwareConfig instead of SettingsStorage
-
-        obj->buildCommunication(gpib);
-
-        if(obj->d_threaded)
-        {
-            auto t = new QThread(this);
-            t->setObjectName(obj->d_key+"Thread");
-            obj->moveToThread(t);
-            connect(t,&QThread::started,obj,&HardwareObject::bcInitInstrument);
-        }
-        else
-            obj->setParent(this);
-    }
-
-    // TEMPORARY: Populate RuntimeHardwareConfig with currently compiled-in hardware selections
-    // This creates stable test labels during migration period before UI is implemented
-    auto& runtimeConfig = RuntimeHardwareConfig::instance();
-    int mapIndex = 0;
-    for(auto &[key, obj] : d_hardwareMap) {
-        // Extract hardware type from old d_key format (e.g., "FlowController.0" -> "FlowController")
-        auto [hardwareType, index] = BC::Key::parseIndexKey(obj->d_key);
-        
-        // For now, use d_subKey as implementation (this may need refinement)
-        // TODO: Replace with proper implementation detection once we understand the mapping
-        QString implementation = obj->d_subKey.isEmpty() ? "virtual" : obj->d_subKey;
-        
-        runtimeConfig.registerHardwareForTesting(hardwareType, implementation, mapIndex++);
-    }
-
-    save();
+    // Phase 2.4.2: Refactored constructor using extracted methods
+    // Create virtual hardware for capability discovery (replaces compile-time flags)
+    createVirtualHardwareForCapabilityDiscovery();
+    
+    // Finalize initialization with signal connections and threading setup
+    finalizeInitialization();
 }
 
 HardwareManager::~HardwareManager()
@@ -888,4 +693,198 @@ void HardwareManager::resolveGpibController(const QString& controllerKey, std::f
     
     // Call the callback with the resolved controller (or nullptr if not found)
     callback(controller);
+}
+
+// Phase 2.4.2: Constructor refactoring methods
+
+void HardwareManager::createVirtualHardwareForCapabilityDiscovery()
+{
+    // Create virtual instances of all hardware types to discover capabilities
+    // This replaces the compile-time flag-based hardware creation
+    
+    // Required hardware: FtmwScope (always virtual for discovery)
+    auto ftmwScope = new VirtualFtmwScope("temp");
+    d_hardwareMap.emplace(ftmwScope->d_key, ftmwScope);
+
+    // Clock Manager (creates FixedClock instances)
+    pu_clockManager = std::make_unique<ClockManager>();
+    auto cl = pu_clockManager->d_clockList;
+    for(int i = 0; i < cl.size(); i++)
+        d_hardwareMap.emplace(cl.at(i)->d_key, cl.at(i));
+
+    // Optional hardware - create virtual instances of each type
+    // This ensures all hardware types are available for discovery
+    
+    // Chirp Source (AWG)
+    auto awg = new VirtualAwg("temp");
+    d_hardwareMap.emplace(awg->d_key, awg);
+    
+    // GPIB Controller
+    auto gpib = new VirtualGpibController("temp");
+    d_hardwareMap.emplace(gpib->d_key, gpib);
+    
+    // Pulse Generator
+    auto pGen = new VirtualPulseGenerator("temp");
+    d_hardwareMap.emplace(pGen->d_key, pGen);
+    
+    // Flow Controller
+    auto flowController = new VirtualFlowController("temp");
+    d_hardwareMap.emplace(flowController->d_key, flowController);
+    
+    // Pressure Controller
+    auto pressureController = new VirtualPressureController("temp");
+    d_hardwareMap.emplace(pressureController->d_key, pressureController);
+    
+    // Temperature Controller
+    auto tempController = new VirtualTemperatureController("temp");
+    d_hardwareMap.emplace(tempController->d_key, tempController);
+    
+    // IO Board
+    auto ioBoard = new VirtualIOBoard("temp");
+    d_hardwareMap.emplace(ioBoard->d_key, ioBoard);
+    
+    // LIF Hardware
+    auto lifScope = new VirtualLifScope("temp");
+    d_hardwareMap.emplace(lifScope->d_key, lifScope);
+    
+    auto lifLaser = new VirtualLifLaser("temp");
+    d_hardwareMap.emplace(lifLaser->d_key, lifLaser);
+}
+
+void HardwareManager::setupHardwareObject(HardwareObject* obj)
+{
+    // Common signal connections for all hardware objects
+    connect(obj, &HardwareObject::logMessage, [this, obj](QString msg, LogHandler::MessageCode mc){
+        emit logMessage(QString("%1: %2").arg(obj->d_name).arg(msg), mc);
+    });
+    connect(obj, &HardwareObject::connected, [obj, this](bool success, QString msg){
+        connectionResult(obj, success, msg);
+    });
+    connect(obj, &HardwareObject::auxDataRead, [obj, this](AuxDataStorage::AuxDataMap m){
+        AuxDataStorage::AuxDataMap out;
+        for(auto it = m.cbegin(); it != m.cend(); ++it)
+            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_subKey, it->first), it->second});
+        emit auxData(out);
+    });
+    connect(obj, &HardwareObject::auxDataRead, [obj, this](AuxDataStorage::AuxDataMap m){
+        AuxDataStorage::AuxDataMap out;
+        for(auto it = m.cbegin(); it != m.cend(); ++it)
+            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_subKey, it->first), it->second});
+        emit validationData(out);
+    });
+    connect(obj, &HardwareObject::rollingDataRead, [obj, this](AuxDataStorage::AuxDataMap m){
+        AuxDataStorage::AuxDataMap out;
+        for(auto it = m.cbegin(); it != m.cend(); ++it)
+            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_subKey, it->first), it->second});
+        emit rollingData(out, QDateTime::currentDateTime());
+    });
+    connect(this, &HardwareManager::beginAcquisition, obj, &HardwareObject::beginAcquisition);
+    connect(this, &HardwareManager::endAcquisition, obj, &HardwareObject::endAcquisition);
+}
+
+void HardwareManager::finalizeInitialization()
+{
+    // Resolve GPIB controller for communication setup
+    GpibController* gpib = nullptr;
+    auto gpibIt = std::find_if(d_hardwareMap.begin(), d_hardwareMap.end(), 
+        [](const auto& pair) { return qobject_cast<GpibController*>(pair.second) != nullptr; });
+    if (gpibIt != d_hardwareMap.end()) {
+        gpib = static_cast<GpibController*>(gpibIt->second);
+    }
+
+    // Setup hardware-specific signal connections and communication
+    for(auto& [key, obj] : d_hardwareMap) {
+        // Setup common hardware object
+        setupHardwareObject(obj);
+        
+        // Setup hardware-specific signal connections
+        if (auto ftmwScope = qobject_cast<FtmwScope*>(obj)) {
+            connect(ftmwScope, &FtmwScope::shotAcquired, this, &HardwareManager::ftmwScopeShotAcquired);
+        }
+        else if (auto pGen = qobject_cast<PulseGenerator*>(obj)) {
+            QString k = pGen->d_key;
+            connect(pGen, &PulseGenerator::settingUpdate, [this, k](const int ch, const PulseGenConfig::Setting set, const QVariant val){
+                emit pGenSettingUpdate(k, ch, set, val);
+            });
+            connect(pGen, &PulseGenerator::configUpdate, [this, k](const PulseGenConfig cfg){
+                emit pGenConfigUpdate(k, cfg);
+            });
+        }
+        else if (auto flowController = qobject_cast<FlowController*>(obj)) {
+            QString k = flowController->d_key;
+            connect(flowController, &FlowController::flowUpdate, [this, k](int i, double d){
+                emit flowUpdate(k, i, d);
+            });
+            connect(flowController, &FlowController::flowSetpointUpdate, [this, k](int i, double d){
+                emit flowSetpointUpdate(k, i, d);
+            });
+            connect(flowController, &FlowController::pressureUpdate, [this, k](double d){
+                emit gasPressureUpdate(k, d);
+            });
+            connect(flowController, &FlowController::pressureSetpointUpdate, [this, k](double d){
+               emit gasPressureSetpointUpdate(k, d);
+            });
+            connect(flowController, &FlowController::pressureControlMode, [this, k](bool b){
+                emit gasPressureControlMode(k, b);
+            });
+        }
+        else if (auto pressureController = qobject_cast<PressureController*>(obj)) {
+            QString k = pressureController->d_key;
+            connect(pressureController, &PressureController::pressureUpdate, this, [this, k](double d){
+                emit pressureUpdate(k, d);
+            });
+            connect(pressureController, &PressureController::pressureSetpointUpdate, this, [this, k](double d){
+                emit pressureSetpointUpdate(k, d);
+            });
+            connect(pressureController, &PressureController::pressureControlMode, this, [this, k](bool b){
+                emit pressureControlMode(k, b);
+            });
+        }
+        else if (auto tempController = qobject_cast<TemperatureController*>(obj)) {
+            QString k = tempController->d_key;
+            connect(tempController, &TemperatureController::channelEnableUpdate, this, [this, k](uint i, bool en){
+                emit temperatureEnableUpdate(k, i, en);
+            });
+            connect(tempController, &TemperatureController::temperatureUpdate, this, [this, k](uint i, double t) {
+                emit temperatureUpdate(k, i, t);
+            });
+        }
+        else if (auto lifScope = qobject_cast<LifScope*>(obj)) {
+            connect(lifScope, &LifScope::waveformRead, this, &HardwareManager::lifScopeShotAcquired);
+            connect(lifScope, &LifScope::configAcqComplete, this, &HardwareManager::lifConfigAcqStarted);
+        }
+        else if (auto lifLaser = qobject_cast<LifLaser*>(obj)) {
+            connect(lifLaser, &LifLaser::laserPosUpdate, this, &HardwareManager::lifLaserPosUpdate);
+            connect(lifLaser, &LifLaser::laserFlashlampUpdate, this, &HardwareManager::lifLaserFlashlampUpdate);
+        }
+
+        // Build communication protocol for hardware object
+        obj->buildCommunication(gpib);
+
+        // Handle threaded hardware
+        if(obj->d_threaded) {
+            auto t = new QThread(this);
+            t->setObjectName(obj->d_key + "Thread");
+            obj->moveToThread(t);
+            connect(t, &QThread::started, obj, &HardwareObject::bcInitInstrument);
+        } else {
+            obj->setParent(this);
+        }
+    }
+    
+    // Setup ClockManager signals
+    if (pu_clockManager) {
+        connect(pu_clockManager.get(), &ClockManager::logMessage, this, &HardwareManager::logMessage);
+        connect(pu_clockManager.get(), &ClockManager::clockFrequencyUpdate, this, &HardwareManager::clockFrequencyUpdate);
+    }
+
+    // TEMPORARY: Populate RuntimeHardwareConfig with virtual hardware selections
+    auto& runtimeConfig = RuntimeHardwareConfig::instance();
+    int mapIndex = 0;
+    for(auto& [key, obj] : d_hardwareMap) {
+        auto [hardwareType, index] = BC::Key::parseIndexKey(obj->d_key);
+        QString implementation = obj->d_subKey.isEmpty() ? "virtual" : obj->d_subKey;
+        runtimeConfig.registerHardwareForTesting(hardwareType, implementation, mapIndex++);
+    }
+    
 }

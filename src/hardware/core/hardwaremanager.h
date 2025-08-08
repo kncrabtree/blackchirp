@@ -169,6 +169,11 @@ public:
 private:
     std::size_t d_responseCount{0};
     void checkStatus();
+    
+    // Phase 2.4.2: Constructor refactoring methods
+    void createVirtualHardwareForCapabilityDiscovery();
+    void setupHardwareObject(HardwareObject* obj);
+    void finalizeInitialization();
 
     std::map<QString,HardwareObject*> d_hardwareMap;
     std::unique_ptr<ClockManager> pu_clockManager;

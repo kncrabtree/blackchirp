@@ -15,6 +15,7 @@
 #include <QDir>
 #include <QFontDialog>
 #include <QScreen>
+#include <QTimer>
 #include <functional>
 
 #include <gui/widget/digitizerconfigwidget.h>
@@ -361,7 +362,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     SettingsStorage bc;
     ui->exptSpinBox->setValue(bc.get<int>(BC::Key::exptNum,0));
-    configureUi(Idle);
+    
+    // Defer UI configuration until after the widget is fully rendered
+    // This prevents LIF widgets from briefly appearing on wrong tabs during initialization
+    QTimer::singleShot(0, this, [this]() { configureUi(Idle); });
 }
 
 MainWindow::~MainWindow()
@@ -1111,10 +1115,21 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
     ui->savePathAction->setEnabled(false);
 
     // Configure LIF UI visibility based on application configuration
+    // TEMPORARILY COMMENTED OUT - testing for visual artifacts
+    /*
     bool lifEnabled = ApplicationConfigManager::instance().isLifEnabled();
-    ui->lifTab->setVisible(lifEnabled);
-    ui->actionLifConfig->setVisible(lifEnabled);
-    ui->lifProgressBar->setVisible(lifEnabled);
+    if (ui->lifTab->isVisible() != lifEnabled) {
+        ui->lifTab->setVisible(lifEnabled);
+    }
+    if (ui->lifDisplayWidget->isVisible() != lifEnabled) {
+        ui->lifDisplayWidget->setVisible(lifEnabled);  // Hide the display widget directly
+    }
+    if (ui->actionLifConfig->isVisible() != lifEnabled) {
+        ui->actionLifConfig->setVisible(lifEnabled);
+    }
+    if (ui->lifProgressBar->isVisible() != lifEnabled) {
+        ui->lifProgressBar->setVisible(lifEnabled);
+    }
     
     // Also control LifLaserStatusBox and related action visibility if they exist
     auto lifLaserStatusBox = findChild<LifLaserStatusBox*>();
@@ -1129,6 +1144,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
             act->setVisible(lifEnabled);
         }
     }
+    */
 
     switch(s)
     {
