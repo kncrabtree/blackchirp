@@ -742,9 +742,9 @@ void HardwareManager::createVirtualHardwareForCapabilityDiscovery()
     auto ftmwScope = new VirtualFtmwScope("temp");
     d_hardwareMap.emplace(ftmwScope->d_key, ftmwScope);
 
-    // Clock Manager (creates FixedClock instances)
+    // Clock Manager (creates virtual Clock instances for discovery)
     pu_clockManager = std::make_unique<ClockManager>();
-    auto cl = pu_clockManager->d_clockList;
+    auto cl = pu_clockManager->getClockList();
     for(int i = 0; i < cl.size(); i++)
         d_hardwareMap.emplace(cl.at(i)->d_key, cl.at(i));
 

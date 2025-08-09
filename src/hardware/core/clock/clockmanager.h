@@ -42,11 +42,15 @@ public slots:
     bool configureClocks(QHash<RfConfig::ClockType,RfConfig::ClockFreq> clocks);
     bool prepareForExperiment(Experiment &exp);
 
+    // Public API for HardwareManager integration
+    QVector<Clock*> getClockList() const;
+    void createClocksFromRuntimeConfig();
+
 private:
     QVector<Clock*> d_clockList;
     QHash<RfConfig::ClockType,Clock*> d_clockRoles;
-
-    friend class HardwareManager;
+    
+    void setupClocks();
 
 };
 

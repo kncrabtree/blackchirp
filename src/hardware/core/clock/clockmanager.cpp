@@ -4,52 +4,27 @@
 
 #include "clock_h.h"
 #include <hardware/core/clock/clock.h>
-#include <boost/preprocessor/iteration/local.hpp>
+#include <hardware/core/clock/fixedclock.h>
+#include <hardware/core/runtimehardwareconfig.h>
+#include <hardware/core/hardwareregistry.h>
+#include <data/settings/hardwarekeys.h>
 
 using namespace BC::Key::ClockManager;
 
 ClockManager::ClockManager(QObject *parent) : QObject(parent),
     SettingsStorage(clockManager)
 {
-
-//use some preprocessor tricks to automate creation of all clocks
-#define BOOST_PP_LOCAL_MACRO(n) d_clockList << new BC_CLOCK_##n(QString("test_clock_%1").arg(n));
-#define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_CLOCKS-1)
-#include BOOST_PP_LOCAL_ITERATE()
-
-    auto ct = QMetaEnum::fromType<RfConfig::ClockType>();
-
-    setArray(hwClocks,{});
-
-    for(auto c : d_clockList)
-    {
-        auto names = c->channelNames();
-        for(int j=0; j<c->numOutputs(); j++)
-        {
-            QString pn = c->d_name;
-            pn.append(QString(" "));
-            if(j < names.size())
-                pn.append(names.at(j));
-            else
-                pn.append(QString("Output %1").arg(j+1));
-
-            appendArrayMap(hwClocks,{
-                               {clockKey,c->d_key},
-                               {clockOutput,j},
-                               {clockName,pn}
-                           });
-        }
-
-        for(int i=0; i<ct.keyCount(); ++i)
-        {
-            auto type = static_cast<RfConfig::ClockType>(ct.value(i));
-            if(c->hasRole(type))
-                d_clockRoles.insert(type,c);
-        }
-        connect(c,&Clock::frequencyUpdate,this,&ClockManager::clockFrequencyUpdate);
-    }
-    save();
-
+    // Phase 2.4.5: Create virtual clocks for capability discovery (matches other hardware pattern)
+    // This replaces the compile-time Boost.Preprocessor macro system
+    
+    // Create 2 FixedClock instances with "temp" labels for discovery
+    // (matches the default BC_CLOCKS "fixed;fixed" configuration)
+    auto clock1 = new FixedClock("temp");
+    auto clock2 = new FixedClock("temp"); 
+    d_clockList << clock1 << clock2;
+    
+    // Set up clocks (role assignments and signal connections)
+    setupClocks();
 }
 
 void ClockManager::readActiveClocks()
@@ -263,4 +238,82 @@ bool ClockManager::prepareForExperiment(Experiment &exp)
 
     return true;
 
+}
+
+QVector<Clock*> ClockManager::getClockList() const
+{
+    return d_clockList;
+}
+
+void ClockManager::createClocksFromRuntimeConfig()
+{
+    // Get active Clock configurations from RuntimeHardwareConfig
+    const auto& config = RuntimeHardwareConfig::constInstance();
+    auto activeClockKeys = config.getActiveKeys<Clock>();
+    
+    // Clear any existing clocks
+    d_clockList.clear();
+    
+    // Create clocks based on RuntimeHardwareConfig only
+    // RuntimeHardwareConfig is the authoritative source - no fallback behavior
+    for (const QString& clockKey : activeClockKeys) {
+        auto [type, label] = BC::Key::parseKey(clockKey);
+        QString implementation = config.getHardwareImplementation<Clock>(label);
+        
+        // Create clock using HardwareRegistry
+        HardwareObject* hwObj = HardwareRegistry::instance().createHardware(type, implementation, label);
+        Clock* clock = qobject_cast<Clock*>(hwObj);
+        
+        if (clock) {
+            clock->setParent(this);
+            d_clockList << clock;
+            emit logMessage(QString("Created clock: %1 (implementation: %2)").arg(label).arg(implementation));
+        } else {
+            emit logMessage(QString("Failed to create clock: type=%1, implementation=%2, label=%3")
+                           .arg(type).arg(implementation).arg(label), LogHandler::Error);
+            // Clean up failed creation
+            if (hwObj) {
+                hwObj->deleteLater();
+            }
+        }
+    }
+    
+    // Set up clocks (role assignments and signal connections)
+    setupClocks();
+}
+
+void ClockManager::setupClocks()
+{
+    auto ct = QMetaEnum::fromType<RfConfig::ClockType>();
+
+    setArray(hwClocks,{});
+
+    for(auto c : d_clockList)
+    {
+        auto names = c->channelNames();
+        for(int j=0; j<c->numOutputs(); j++)
+        {
+            QString pn = c->d_name;
+            pn.append(QString(" "));
+            if(j < names.size())
+                pn.append(names.at(j));
+            else
+                pn.append(QString("Output %1").arg(j+1));
+
+            appendArrayMap(hwClocks,{
+                               {clockKey,c->d_key},
+                               {clockOutput,j},
+                               {clockName,pn}
+                           });
+        }
+
+        for(int i=0; i<ct.keyCount(); ++i)
+        {
+            auto type = static_cast<RfConfig::ClockType>(ct.value(i));
+            if(c->hasRole(type))
+                d_clockRoles.insert(type,c);
+        }
+        connect(c,&Clock::frequencyUpdate,this,&ClockManager::clockFrequencyUpdate);
+    }
+    save();
 }
