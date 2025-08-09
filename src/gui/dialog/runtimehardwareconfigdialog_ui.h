@@ -108,6 +108,8 @@ public:
         configOverviewTree->setRootIsDecorated(true);
         configOverviewTree->setSelectionMode(QAbstractItemView::SingleSelection);
         configOverviewTree->setContextMenuPolicy(Qt::CustomContextMenu);
+        configOverviewTree->setSortingEnabled(true);
+        configOverviewTree->sortByColumn(0, Qt::AscendingOrder);
         configOverviewLayout->addWidget(configOverviewTree);
         
         hardwareConfigSplitter->addWidget(configOverviewWidget);
@@ -196,8 +198,7 @@ public:
         buttonBox->button(QDialogButtonBox::Ok)->setText("Apply Configuration");
         mainLayout->addWidget(buttonBox);
         
-        // Add placeholder content to demonstrate layout
-        addPlaceholderContent();
+        // Phase 2: No placeholder content - will be populated from RuntimeHardwareConfig
         
         // Set initial tab
         mainTabWidget->setCurrentIndex(0);
@@ -206,32 +207,7 @@ public:
     } // setupUi
     
 private:
-    void addPlaceholderContent()
-    {
-        // Add placeholder items to Configuration Overview Tree
-        (void) new QTreeWidgetItem(configOverviewTree, {"FtmwScope: mainScope (M4i2220x8)"});
-        
-        auto clockParentItem = new QTreeWidgetItem(configOverviewTree, {"Clock"});
-        (void) new QTreeWidgetItem(clockParentItem, {"rfSource (Valon5009)"});
-        (void) new QTreeWidgetItem(clockParentItem, {"loSource (HP83712B)"});
-        
-        configOverviewTree->expandAll();
-        
-        // Add placeholder items to Hardware Browser List
-        hardwareBrowserList->addItem("Clock (2)");
-        hardwareBrowserList->addItem("AWG (0)");
-        hardwareBrowserList->addItem("FtmwScope (1)");
-        hardwareBrowserList->addItem("FlowCtrl (0)");
-        hardwareBrowserList->addItem("PulseGen (0)");
-        
-        // Add placeholder content to configuration panel
-        auto placeholderLayout = new QVBoxLayout(configurationContentWidget);
-        auto placeholderLabel = new QLabel("Select a hardware type from the browser to configure.");
-        placeholderLabel->setAlignment(Qt::AlignCenter);
-        placeholderLabel->setStyleSheet(QString::fromUtf8("QLabel { color: gray; font-style: italic; }"));
-        placeholderLayout->addWidget(placeholderLabel);
-        placeholderLayout->addStretch();
-    }
+    // Placeholder content removed in Phase 2 - actual configuration populated from RuntimeHardwareConfig
 
     void retranslateUi(QDialog *RuntimeHardwareConfigDialog)
     {

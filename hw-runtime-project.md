@@ -104,27 +104,33 @@ All hardware types now follow consistent pattern:
 
 **Foundation Ready**: Phase 3.2 Runtime Hardware Configuration Dialog can now rely on complete hardware catalog being available.
 
-### Phase 3.2: Runtime Hardware Configuration Dialog ✅ **PHASE 1 COMPLETED**
+### Phase 3.2: Runtime Hardware Configuration Dialog ✅ **PHASE 1 & 2 COMPLETED**
 **Goal**: Provide user-friendly interface for runtime hardware selection and profile management.
 
 **Design**: A comprehensive hybrid tabbed/overview interface that provides at-a-glance configuration visibility while enabling intuitive hardware management.
 
-**Current Status**: **UI Foundation Complete** - Phase 1 of the detailed specification has been successfully implemented.
+**Current Status**: **Configuration Overview Complete** - Phase 2 of the detailed specification has been successfully implemented.
 
-**Phase 1 Accomplishments**:
+**Phase 1 Accomplishments** (✅ **COMPLETED**):
 - ✅ **Complete Dialog Structure**: Tabbed interface with Hardware Configuration and Library Status tabs
 - ✅ **3-Panel Splitter Layout**: Configuration Overview, Hardware Browser, and Context-Sensitive Configuration panels (33% each)
 - ✅ **MainWindow Integration**: "Hardware Selection" menu item added to Hardware menu
 - ✅ **Validation Status Bar**: ThemeColors-styled status feedback with success/error states
 - ✅ **Proper Architecture**: Clean UI separation with dedicated header files and structured layout
-- ✅ **Ready for Phase 2**: Foundation established for configuration overview population
+
+**Phase 2 Accomplishments** (✅ **COMPLETED**):
+- ✅ **RuntimeHardwareConfig Integration**: Configuration Overview TreeWidget now displays actual hardware data from `RuntimeHardwareConfig::getCurrentHardware()`
+- ✅ **Data-Driven Population**: Eliminated placeholder content, implemented live configuration parsing using `BC::Key::parseKey()`
+- ✅ **Hierarchical Display**: Proper single vs multi-instance hardware detection and formatting
+- ✅ **Tree Management**: Full tree population with sorting enabled and auto-expansion
+- ✅ **Code Quality**: Fixed malformed implementation, clean API integration without custom parsing logic
+- ✅ **Foundation Ready**: Established patterns for Phase 3 Hardware Browser implementation
 
 **Detailed Specification**: See [hw-selection-dialog.md](hw-selection-dialog.md) for complete UI/UX design, implementation phases, and technical specifications.
 
 **Next Steps**: 
-- **Phase 2**: Implement Configuration Overview with RuntimeHardwareConfig integration
-- **Phase 3**: Implement Hardware Browser with registry integration
-- **Phase 4**: Context-sensitive configuration panels
+- **Phase 3**: Implement Hardware Browser with registry integration and hardware type counting
+- **Phase 4**: Context-sensitive configuration panels for hardware management
 - **Phase 5**: Real-time validation and configuration persistence
 
 **Integration**: Dialog will update RuntimeHardwareConfig upon acceptance, triggering hardware synchronization in Phase 3.3.

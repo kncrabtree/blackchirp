@@ -2,6 +2,11 @@
 #define RUNTIMEHARDWARECONFIGDIALOG_H
 
 #include <QDialog>
+#include <QTreeWidgetItem>
+#include <QStringList>
+#include <QPair>
+#include <hardware/core/runtimehardwareconfig.h>
+#include <data/bcglobals.h>
 
 // Forward declare UI class
 namespace Ui {
@@ -27,6 +32,22 @@ private slots:
     // Future implementation: add slots for hardware selection, validation, etc.
     
 private:
+    /*!
+     * \brief Populate configuration overview tree with actual hardware configuration
+     * 
+     * Reads current hardware configuration from RuntimeHardwareConfig and populates
+     * the left panel tree with properly formatted hardware display
+     */
+    void populateConfigurationOverview();
+    
+    /*!
+     * \brief Clear and repopulate the configuration overview tree
+     * 
+     * Helper method to refresh the tree display after configuration changes
+     */
+    void refreshConfigurationOverview();
+    
+
     Ui::RuntimeHardwareConfigDialog *pu_ui;
 };
 
