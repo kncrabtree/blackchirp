@@ -222,50 +222,13 @@ p_statusLabel->setStyleSheet(QString("QLabel { color: %1; font-style: italic; }"
 ## Implementation Phases
 
 ### Phase 1: Dialog Structure ✅ **COMPLETED**
-**Achievement**: Complete dialog UI foundation with clean tabbed interface and 3-panel splitter layout.
-
-**Accomplishments**:
-- ✅ **Tabbed Interface**: Created main tab widget with "Hardware Configuration" and "Library Status" tabs
-- ✅ **3-Panel Splitter Layout**: Horizontal splitter with Configuration Overview (33%), Hardware Browser (33%), and Context-Sensitive Configuration (33%) panels
-- ✅ **Validation Status Bar**: ThemeColors-styled status bar with success/error state management
-- ✅ **MainWindow Integration**: Added "Hardware Selection" menu item and dialog launch functionality
-- ✅ **Proper UI Architecture**: Clean separation of concerns with dedicated UI header file and structured layout
-- ✅ **Placeholder Content**: Demonstrates proper panel behavior and proportions
-- ✅ **Dialog Foundation**: Ready for Phase 2 implementation (configuration overview population)
+Complete dialog UI foundation with tabbed interface and 3-panel splitter layout. Ready for Phase 2.
 
 ### Phase 2: Configuration Overview ✅ **COMPLETED**
-**Achievement**: Successfully integrated Configuration Overview TreeWidget with RuntimeHardwareConfig for real-time hardware configuration display.
+Left panel TreeWidget now integrates with RuntimeHardwareConfig to display actual hardware configuration with proper single/multi-instance formatting and sorting. Uses existing BC::Key::parseKey() API. Ready for Phase 3.
 
-**Accomplishments**:
-- ✅ **RuntimeHardwareConfig Integration**: Left panel TreeWidget now populates from `RuntimeHardwareConfig::getCurrentHardware()` using actual configuration data
-- ✅ **Data-Driven Architecture**: Eliminated hardcoded hardware examples in favor of live configuration parsing using `BC::Key::parseKey()`
-- ✅ **Hierarchical Display Logic**: Implemented proper single vs multi-instance hardware detection and display formatting
-- ✅ **Tree Population Algorithm**: Created `populateConfigurationOverview()` method with proper grouping by hardware type
-- ✅ **Sorting Functionality**: Enabled alphabetical sorting (ascending) for better organization with `setSortingEnabled(true)`
-- ✅ **Empty State Handling**: Graceful display when no hardware is configured
-- ✅ **Auto-Expansion**: Tree automatically expands all items for maximum visibility
-- ✅ **Clean API Integration**: Proper use of existing BlackChirp APIs without custom key parsing logic
-- ✅ **Foundation for Real-time Updates**: `refreshConfigurationOverview()` method ready for Phase 3+ integration
-
-**Technical Implementation**:
-- **Single Instance Format**: `"HardwareType: label (implementation)"` (e.g., `"FtmwScope: mainScope (M4i2220x8)"`)
-- **Multi-Instance Format**: Parent `"HardwareType"` with children `"label (implementation)"` 
-- **Data Source**: `RuntimeHardwareConfig::constInstance().getCurrentHardware()`
-- **Key Parsing**: Uses `BC::Key::parseKey()` for proper hardware type and label extraction
-- **Display Grouping**: QHash-based grouping by hardware type to determine single vs multi-instance display
-
-**Code Quality Improvements**:
-- Fixed malformed/incomplete code from previous implementation attempts
-- Removed placeholder content in favor of data-driven population
-- Eliminated custom key parsing logic in favor of existing BC::Key utilities
-- Clean separation between UI setup and data population phases
-
-**Ready for Phase 3**: Configuration overview now provides complete foundation for Hardware Browser implementation with proper data integration patterns established.
-
-### Phase 3: Hardware Browser  
-- Add hardware type display and counts from registry and runtime configuration.
-- Implement selection handling and visual state management
-- Connect browser selection to right panel updates
+### Phase 3: Hardware Browser ✅ **COMPLETED**
+Hardware Browser now integrates with HardwareRegistry and RuntimeHardwareConfig to display hardware types with instance counts. Selection flow to right panel established and verified. Ready for Phase 4.
 
 ### Phase 4: Context-Sensitive Configuration
 - Implement dynamic right panel with interfaces for single vs. multi-instance HW (this determination should be the domain of the hardware registry; may need to add functionality there to look up whether selected is single or multi)

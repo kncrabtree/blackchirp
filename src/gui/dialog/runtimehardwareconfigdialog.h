@@ -8,7 +8,9 @@
 #include <hardware/core/runtimehardwareconfig.h>
 #include <data/bcglobals.h>
 
-// Forward declare UI class
+// Forward declarations
+class QListWidgetItem;
+
 namespace Ui {
 class RuntimeHardwareConfigDialog;
 }
@@ -29,7 +31,12 @@ public:
     ~RuntimeHardwareConfigDialog();
     
 private slots:
-    // Future implementation: add slots for hardware selection, validation, etc.
+    /*!
+     * \brief Handle hardware browser selection changes
+     * \param current Currently selected item
+     * \param previous Previously selected item (unused)
+     */
+    void onHardwareBrowserSelectionChanged(QListWidgetItem* current, QListWidgetItem* previous);
     
 private:
     /*!
@@ -46,6 +53,21 @@ private:
      * Helper method to refresh the tree display after configuration changes
      */
     void refreshConfigurationOverview();
+    
+    /*!
+     * \brief Populate hardware browser with available hardware types and counts
+     * 
+     * Connects middle panel QListWidget to HardwareRegistry::getHardwareTypes()
+     * and displays format: "HardwareType (count)" where count shows active instances
+     * from RuntimeHardwareConfig::getCurrentHardware() data
+     */
+    void populateHardwareBrowser();
+    
+    /*!
+     * \brief Update right panel display based on hardware selection
+     * \param selectedHardwareType Hardware type that was selected (e.g., "Clock")
+     */
+    void updateSelectionDisplay(const QString& selectedHardwareType);
     
 
     Ui::RuntimeHardwareConfigDialog *pu_ui;
