@@ -174,6 +174,9 @@ private:
     void createVirtualHardwareForCapabilityDiscovery();
     void setupHardwareObject(HardwareObject* obj);
     void finalizeInitialization();
+    
+    // Phase 2.4.3: Runtime configuration integration
+    HardwareObject* createSpecificHardware(const QString& type, const QString& implementation, const QString& label);
 
     std::map<QString,HardwareObject*> d_hardwareMap;
     std::unique_ptr<ClockManager> pu_clockManager;
@@ -189,7 +192,31 @@ private:
     T* findHardware(const QString key) const {
         QMutexLocker locker(&d_accessMutex);
         auto it = d_hardwareMap.find(key);
-        return it == d_hardwareMap.end() ? nullptr : static_cast<T*>(it->second);
+        if (it == d_hardwareMap.end()) {
+            return nullptr;
+        }
+        
+        // Use safe casting instead of static_cast
+        return qobject_cast<T*>(it->second);
+    }
+
+    // Utility function to find all hardware of a specific type using runtime configuration
+    template<class T>
+    QVector<T*> findHardwareByType() const {
+        QMutexLocker locker(&d_accessMutex);
+        
+        QVector<T*> result;
+
+        for (const auto& [key,hwObj] : d_hardwareMap) {
+            QString hwType = BC::Key::parseKey(key).first;
+            if (hwType == T::staticMetaObject.className()) {
+                if (T* hw = qobject_cast<T*>(hwObj)) {  // Safe casting
+                    result.append(hw);
+                }
+            }
+        }
+        
+        return result;
     }
 
 };

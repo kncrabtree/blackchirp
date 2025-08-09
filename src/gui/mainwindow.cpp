@@ -789,8 +789,9 @@ void MainWindow::launchLifConfigDialog()
     // Check if LIF hardware is available before creating dialog
     auto& runtimeConfig = RuntimeHardwareConfig::constInstance();
     auto activeLabels = runtimeConfig.getActiveLabels<LifScope>();
-    if (activeLabels.isEmpty()) {
-        QMessageBox::warning(this, "LIF Configuration", "No LIF digitizer hardware is available. Please configure LIF hardware before opening this dialog.");
+    auto activeLabels2 = runtimeConfig.getActiveLabels<LifLaser>();
+    if (activeLabels.isEmpty() || activeLabels2.isEmpty()) {
+        QMessageBox::warning(this, "LIF Configuration", "Please configure LIF hardware before opening this dialog.");
         return;
     }
 

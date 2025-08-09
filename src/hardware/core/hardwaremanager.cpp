@@ -187,15 +187,22 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
 
     if(exp->lifEnabled())
     {
-        auto ll = findHardware<LifLaser>(BC::Key::hwKey(QString(LifLaser::staticMetaObject.className()), "temp"));
-        if(!ll)
-        {
-            emit logMessage(QString("Could not perform LIF experiment because no laser is avaialble."),LogHandler::Error);
+        auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifLaser>();
+        if (activeKeys.isEmpty()) {
+            emit logMessage(QString("Could not perform LIF experiment because no LIF laser is configured."),LogHandler::Error);
             emit lifSettingsComplete(false);
             exp->d_hardwareSuccess = false;
+        } else {
+            auto ll = findHardware<LifLaser>(activeKeys.first());
+            if(!ll)
+            {
+                emit logMessage(QString("Could not perform LIF experiment because no laser is available."),LogHandler::Error);
+                emit lifSettingsComplete(false);
+                exp->d_hardwareSuccess = false;
+            }
+            else
+                connect(ll,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserSetComplete,Qt::UniqueConnection);
         }
-        else
-            connect(ll,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserSetComplete,Qt::UniqueConnection);
     }
     //any additional synchronous initialization can be performed here, before experimentInitialized() is emitted
 
@@ -206,9 +213,12 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
 
 void HardwareManager::experimentComplete()
 {
-    auto ll = findHardware<LifLaser>(BC::Key::hwKey(QString(LifLaser::staticMetaObject.className()), "temp"));
-    if(ll)
-        disconnect(ll,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserSetComplete);
+    auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifLaser>();
+    if (!activeKeys.isEmpty()) {
+        auto ll = findHardware<LifLaser>(activeKeys.first());
+        if(ll)
+            disconnect(ll,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserSetComplete);
+    }
 }
 
 void HardwareManager::testAll()
@@ -550,11 +560,10 @@ bool HardwareManager::setPGenLifDelay(double d)
     return false;
 #else
     bool out = true;
-    auto activeLabels = RuntimeHardwareConfig::constInstance().getActiveLabels<PulseGenerator>();
-    for(const auto& label : activeLabels)
+    auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<PulseGenerator>();
+    for(const auto& key : activeKeys)
     {
-        auto pGen = findHardware<PulseGenerator>(BC::Key::hwKey(QString(PulseGenerator::staticMetaObject.className()), label));
-
+        auto pGen = findHardware<PulseGenerator>(key);
 
         if(pGen->thread() == QThread::currentThread())
             out &= pGen->setLifDelay(d);
@@ -568,10 +577,16 @@ bool HardwareManager::setPGenLifDelay(double d)
 
 bool HardwareManager::setLifLaserPos(double pos)
 {
-    auto ll = findHardware<LifLaser>(BC::Key::hwKey(QString(LifLaser::staticMetaObject.className()), "temp"));
+    auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifLaser>();
+    if (activeKeys.isEmpty()) {
+        emit logMessage("Could not set LIF Laser position because no laser is configured.", LogHandler::Error);
+        return false;
+    }
+    
+    auto ll = findHardware<LifLaser>(activeKeys.first());
     if(!ll)
     {
-        emit logMessage(QString("Could not set LIF Laser position because no laser is avaialble."),LogHandler::Error);
+        emit logMessage(QString("Could not set LIF Laser position because no laser is available."),LogHandler::Error);
         return false;
     }
 
@@ -591,7 +606,13 @@ void HardwareManager::lifLaserSetComplete(double pos)
 
 void HardwareManager::startLifConfigAcq(const LifConfig &c)
 {
-    auto ld = findHardware<LifScope>(BC::Key::hwKey(QString(LifScope::staticMetaObject.className()), "temp"));
+    auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifScope>();
+    if (activeKeys.isEmpty()) {
+        emit logMessage("Could not initialize LIF acquisition because no LIF digitizer is configured.", LogHandler::Error);
+        return;
+    }
+    
+    auto ld = findHardware<LifScope>(activeKeys.first());
     if(!ld)
     {
         emit logMessage("Could not initialize LIF acquisition because no digitizer was found.",LogHandler::Error);
@@ -606,7 +627,13 @@ void HardwareManager::startLifConfigAcq(const LifConfig &c)
 
 void HardwareManager::stopLifConfigAcq()
 {
-    auto ld = findHardware<LifScope>(BC::Key::hwKey(QString(LifScope::staticMetaObject.className()), "temp"));
+    auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifScope>();
+    if (activeKeys.isEmpty()) {
+        emit logMessage("Could not stop LIF acquisition because no LIF digitizer is configured.", LogHandler::Error);
+        return;
+    }
+    
+    auto ld = findHardware<LifScope>(activeKeys.first());
     if(!ld)
     {
         emit logMessage("Could not stop LIF acquisition because no digitizer was found.",LogHandler::Error);
@@ -621,7 +648,13 @@ void HardwareManager::stopLifConfigAcq()
 
 double HardwareManager::lifLaserPos()
 {
-    auto ll = findHardware<LifLaser>(BC::Key::hwKey(QString(LifLaser::staticMetaObject.className()), "temp"));
+    auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifLaser>();
+    if (activeKeys.isEmpty()) {
+        emit logMessage("Could not read LIF Laser position because no laser is configured.", LogHandler::Error);
+        return -1.0;
+    }
+    
+    auto ll = findHardware<LifLaser>(activeKeys.first());
     if(!ll)
     {
         emit logMessage(QString("Could not read LIF Laser position because no laser is available."),LogHandler::Error);
@@ -638,7 +671,13 @@ double HardwareManager::lifLaserPos()
 
 bool HardwareManager::lifLaserFlashlampEnabled()
 {
-    auto ll = findHardware<LifLaser>(BC::Key::hwKey(QString(LifLaser::staticMetaObject.className()), "temp"));
+    auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifLaser>();
+    if (activeKeys.isEmpty()) {
+        emit logMessage("Could not read LIF Laser flashlamp status because no laser is configured.", LogHandler::Error);
+        return false;
+    }
+    
+    auto ll = findHardware<LifLaser>(activeKeys.first());
     if(!ll)
     {
         emit logMessage(QString("Could not read LIF Laser flashlamp status because no laser is available."),LogHandler::Error);
@@ -655,7 +694,13 @@ bool HardwareManager::lifLaserFlashlampEnabled()
 
 void HardwareManager::setLifLaserFlashlampEnabled(bool en)
 {
-    auto ll = findHardware<LifLaser>(BC::Key::hwKey(QString(LifLaser::staticMetaObject.className()), "temp"));
+    auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifLaser>();
+    if (activeKeys.isEmpty()) {
+        emit logMessage("Could not set LIF Laser flashlamp status because no laser is configured.", LogHandler::Error);
+        return;
+    }
+    
+    auto ll = findHardware<LifLaser>(activeKeys.first());
     if(!ll)
     {
         emit logMessage(QString("Could not read LIF Laser flashlamp status because no laser is available."),LogHandler::Error);
@@ -887,4 +932,26 @@ void HardwareManager::finalizeInitialization()
         runtimeConfig.registerHardwareForTesting(hardwareType, implementation, mapIndex++);
     }
     
+}
+
+// Phase 2.4.3: Runtime configuration integration methods
+
+HardwareObject* HardwareManager::createSpecificHardware(const QString& type, const QString& implementation, const QString& label)
+{
+    // Use HardwareRegistry to create hardware dynamically
+    HardwareObject* hwObj = HardwareRegistry::instance().createHardware(type, implementation, label);
+    
+    if (!hwObj) {
+        emit logMessage(QString("Failed to create hardware: type=%1, implementation=%2, label=%3")
+                       .arg(type, implementation, label), LogHandler::Error);
+        return nullptr;
+    }
+    
+    // Set up the hardware object with common signal connections
+    setupHardwareObject(hwObj);
+    
+    emit logMessage(QString("Successfully created hardware: %1 (%2.%3)")
+                   .arg(hwObj->d_name, type, label), LogHandler::Normal);
+    
+    return hwObj;
 }

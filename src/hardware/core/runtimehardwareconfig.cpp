@@ -70,6 +70,20 @@ QStringList RuntimeHardwareConfig::getActiveLabels(const QString& hardwareType) 
     return activeLabels;
 }
 
+QStringList RuntimeHardwareConfig::getActiveKeys(const QString& hardwareType) const
+{
+    QReadLocker locker(&d_configLock);
+    
+    QStringList activeKeys;
+    for (auto it = d_activeHardware.cbegin(); it != d_activeHardware.cend(); ++it) {
+        if (it->type == hardwareType) {
+            activeKeys.append(it.key());
+        }
+    }
+    
+    return activeKeys;
+}
+
 std::map<QString, QString> RuntimeHardwareConfig::getCurrentHardware() const
 {
     QReadLocker locker(&d_configLock);

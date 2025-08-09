@@ -128,6 +128,16 @@ public:
     }
     
     /*!
+     * \brief Get all active hardware keys for a hardware type (type-safe)
+     * \tparam T Hardware class type (e.g., FtmwScope, PulseGenerator)
+     * \return List of full hwType.label keys for currently active hardware devices
+     */
+    template<typename T>
+    QStringList getActiveKeys() const {
+        return getActiveKeys(hardwareTypeOf<T>());
+    }
+    
+    /*!
      * \brief Get current hardware configuration as map
      * 
      * Returns the hardware configuration in the same format used by
@@ -256,6 +266,13 @@ private:
      * \return List of labels for currently active hardware devices
      */
     QStringList getActiveLabels(const QString& hardwareType) const;
+    
+    /*!
+     * \brief Get all active hardware keys for a hardware type (string-based)
+     * \param hardwareType Hardware type key
+     * \return List of full hwType.label keys for currently active hardware devices
+     */
+    QStringList getActiveKeys(const QString& hardwareType) const;
     
     // ========================================================================
     // WRITE OPERATIONS (Friend class access only)
