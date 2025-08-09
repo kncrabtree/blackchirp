@@ -100,6 +100,7 @@ public:
 
     QWidget *lifTab;
     QAction *actionLifConfig;
+    QAction *actionRuntimeHardwareConfig;
     QProgressBar *lifProgressBar;
     QLayout *lifTabLayout;
     LifDisplayWidget *lifDisplayWidget;
@@ -160,6 +161,10 @@ public:
         actionLifConfig = new QAction("LIF Configuration",MainWindow);
         // Icon set programmatically in setupThemeAwareIconStyling()
         actionLifConfig->setObjectName("ActionLifConfig");
+        // Icon set programmatically in setupThemeAwareIconStyling()
+        
+        actionRuntimeHardwareConfig = new QAction("Hardware Selection",MainWindow);
+        actionRuntimeHardwareConfig->setObjectName("ActionRuntimeHardwareConfig");
         // Icon set programmatically in setupThemeAwareIconStyling()
 
         centralWidget = new QWidget(MainWindow);
@@ -426,6 +431,8 @@ public:
         rollingGraphsBox->setIcon(icon7);
         rollingGraphsBox->setRange(1,9);
 
+        menuHardware->addAction(actionRuntimeHardwareConfig);
+        menuHardware->addSeparator();
         menuHardware->addAction(actionCommunication);
         menuHardware->addAction(actionTest_All_Connections);
         menuHardware->addSeparator();

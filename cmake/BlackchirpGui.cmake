@@ -30,6 +30,7 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/hwdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/peaklistexportdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/quickexptdialog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/runtimehardwareconfigdialog.cpp
     
     # Experiment setup pages
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentchirpconfigpage.cpp

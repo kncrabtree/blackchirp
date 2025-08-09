@@ -73,6 +73,7 @@ public slots:
     void launchCommunicationDialog(bool parent = true);
     void launchRfConfigDialog();
     void launchLifConfigDialog();
+    void launchRuntimeHardwareConfigDialog();
     void configureLifWidget(LifControlWidget *w);
     void setLogIcon(LogHandler::MessageCode c);
     void sleep(bool s);

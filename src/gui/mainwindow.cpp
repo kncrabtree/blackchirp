@@ -39,6 +39,7 @@
 #include <gui/dialog/bcsavepathdialog.h>
 #include <gui/dialog/quickexptdialog.h>
 #include <gui/dialog/batchsequencedialog.h>
+#include <gui/dialog/runtimehardwareconfigdialog.h>
 
 // #include <gui/wizard/experimentwizard.h>
 #include <gui/expsetup/experimentsetupdialog.h>
@@ -354,6 +355,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->viewExperimentAction,&QAction::triggered,this,&MainWindow::viewExperiment);
 
     connect(ui->actionLifConfig,&QAction::triggered,this,&MainWindow::launchLifConfigDialog);
+    connect(ui->actionRuntimeHardwareConfig,&QAction::triggered,this,&MainWindow::launchRuntimeHardwareConfigDialog);
     connect(p_hwm,&HardwareManager::lifSettingsComplete,p_am,&AcquisitionManager::lifHardwareReady);
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,p_am,&AcquisitionManager::processLifScopeShot);
     connect(p_am,&AcquisitionManager::nextLifPoint,p_hwm,&HardwareManager::setLifParameters);
@@ -823,6 +825,30 @@ void MainWindow::launchLifConfigDialog()
     });
 
     d_openDialogs.insert({"LifConfig",d});
+    d->show();
+}
+
+void MainWindow::launchRuntimeHardwareConfigDialog()
+{
+    auto it = d_openDialogs.find("RuntimeHardwareConfig");
+    if(it != d_openDialogs.end())
+    {
+        it->second->setWindowState(Qt::WindowActive);
+        it->second->raise();
+        it->second->show();
+        return;
+    }
+
+    auto d = new RuntimeHardwareConfigDialog(this);
+    
+    connect(d, &QDialog::finished, d, &QDialog::deleteLater);
+    connect(d, &QDialog::destroyed, [this](){
+        auto it = d_openDialogs.find("RuntimeHardwareConfig");
+        if(it != d_openDialogs.end())
+            d_openDialogs.erase(it);
+    });
+    
+    d_openDialogs.insert({"RuntimeHardwareConfig", d});
     d->show();
 }
 
@@ -1324,6 +1350,7 @@ void MainWindow::setupThemeAwareIconStyling()
     ui->actionStart_Sequence->setIcon(ThemeColors::createThemedIcon(":/icons/sequence.svg", ThemeColors::IconPrimary, this));
     
     ui->actionLifConfig->setIcon(ThemeColors::createThemedIcon(":/icons/lif.svg", ThemeColors::IconPrimary, this));
+    ui->actionRuntimeHardwareConfig->setIcon(ThemeColors::createThemedIcon(":/icons/cpu-chip.svg", ThemeColors::IconPrimary, this));
 
     ui->actionRfConfig->setIcon(ThemeColors::createThemedIcon(":/icons/rf.svg", ThemeColors::IconPrimary, this));
     

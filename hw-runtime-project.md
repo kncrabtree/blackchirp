@@ -26,7 +26,7 @@ BlackChirp **originally** required hardware selection at compile time, creating 
 - **Thread-Safe Configuration**: QReadWriteLock protection for concurrent hardware configuration access
 - **Profile Management**: HardwareProfileManager for persistent, label-based hardware configurations
 
-**Current State**: The core runtime hardware system is fully functional. BlackChirp can create, manage, and configure hardware dynamically without compilation dependencies.
+**Current State**: The runtime hardware configuration infrastructure is complete, but the synchronization mechanism to apply configuration changes dynamically is not yet implemented. Hardware objects are still created only at startup.
 
 ## Solution Strategy
 
@@ -104,43 +104,35 @@ All hardware types now follow consistent pattern:
 
 **Foundation Ready**: Phase 3.2 Runtime Hardware Configuration Dialog can now rely on complete hardware catalog being available.
 
-### Phase 3.2: Runtime Hardware Configuration Dialog ⚠️ **READY TO IMPLEMENT**
+### Phase 3.2: Runtime Hardware Configuration Dialog ✅ **PHASE 1 COMPLETED**
 **Goal**: Provide user-friendly interface for runtime hardware selection and profile management.
 
-**Key Components:**
-1. **Hardware Selection Dialog**:
-   ```cpp
-   class RuntimeHardwareConfigDialog : public QDialog {
-   public:
-       RuntimeHardwareConfigDialog(HardwareRegistry& registry, QWidget* parent = nullptr);
-       
-   private:
-       // Hardware selection UI (shows all implementations, indicates availability)
-       QComboBox* p_ftmwScopeCombo;    // Virtual, DSA71604C, M4i2220x8 (grayed if library missing)
-       QListWidget* p_clocksList;       // Fixed, Valon5009, HP83712B
-       QComboBox* p_awgCombo;          // Virtual, M8195A, AWG70002A
-       
-       // Status and validation UI
-       QListWidget* p_validationMessages;   // Configuration validation results
-       QTreeWidget* p_libraryStatusTree;    // Library availability status
-       QPushButton* p_applyButton;          // Apply configuration button
-   };
-   ```
+**Design**: A comprehensive hybrid tabbed/overview interface that provides at-a-glance configuration visibility while enabling intuitive hardware management.
 
-2. **Library Status System**:
-   - Real-time vendor library availability checking
-   - Clear user feedback for missing dependencies
-   - Installation guidance for required libraries
+**Current Status**: **UI Foundation Complete** - Phase 1 of the detailed specification has been successfully implemented.
 
-3. **Profile Management**:
-   - Save/load hardware configurations as named profiles
-   - Export/import configurations for deployment
-   - Default configuration validation
+**Phase 1 Accomplishments**:
+- ✅ **Complete Dialog Structure**: Tabbed interface with Hardware Configuration and Library Status tabs
+- ✅ **3-Panel Splitter Layout**: Configuration Overview, Hardware Browser, and Context-Sensitive Configuration panels (33% each)
+- ✅ **MainWindow Integration**: "Hardware Selection" menu item added to Hardware menu
+- ✅ **Validation Status Bar**: ThemeColors-styled status feedback with success/error states
+- ✅ **Proper Architecture**: Clean UI separation with dedicated header files and structured layout
+- ✅ **Ready for Phase 2**: Foundation established for configuration overview population
 
-**Integration**: Dialog updates RuntimeHardwareConfig upon acceptance, triggering hardware synchronization.
+**Detailed Specification**: See [hw-selection-dialog.md](hw-selection-dialog.md) for complete UI/UX design, implementation phases, and technical specifications.
 
-### Phase 3.3: Dynamic Hardware Synchronization ⚠️ **READY TO IMPLEMENT** 
+**Next Steps**: 
+- **Phase 2**: Implement Configuration Overview with RuntimeHardwareConfig integration
+- **Phase 3**: Implement Hardware Browser with registry integration
+- **Phase 4**: Context-sensitive configuration panels
+- **Phase 5**: Real-time validation and configuration persistence
+
+**Integration**: Dialog will update RuntimeHardwareConfig upon acceptance, triggering hardware synchronization in Phase 3.3.
+
+### Phase 3.3: Dynamic Hardware Synchronization ⚠️ **CRITICAL MISSING FUNCTIONALITY**
 **Goal**: Enable live hardware reconfiguration without application restart.
+
+**Current Limitation**: While the runtime configuration infrastructure is complete (RuntimeHardwareConfig, profiles, etc.), the actual synchronization mechanism is **not yet implemented**. Hardware objects are still created only at application startup. This phase implements the essential missing capability to create/destroy hardware objects and manage signal connections at runtime.
 
 **Core Method**:
 ```cpp
