@@ -161,7 +161,6 @@ public slots:
 
 public:
     std::map<QString,QStringList> validationKeys() const;
-    std::map<QString,QString> currentHardware() const;
     
     // Thread-safe GPIB controller resolution with callback
     void resolveGpibController(const QString& controllerKey, std::function<void(GpibController*)> callback) const;

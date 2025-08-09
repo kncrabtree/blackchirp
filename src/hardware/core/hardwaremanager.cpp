@@ -392,15 +392,6 @@ std::map<QString, QStringList> HardwareManager::validationKeys() const
     return out;
 }
 
-std::map<QString, QString> HardwareManager::currentHardware() const
-{
-    QMutexLocker locker(&d_accessMutex);
-    std::map<QString,QString> out;
-    for(auto &[key,obj] : d_hardwareMap)
-        out.insert_or_assign(key,obj->d_subKey);
-
-    return out;
-}
 
 
 void HardwareManager::setPressureSetpoint(const QString key, double val)

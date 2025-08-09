@@ -140,9 +140,7 @@ public:
     /*!
      * \brief Get current hardware configuration as map
      * 
-     * Returns the hardware configuration in the same format used by
-     * HardwareManager::currentHardware() for compatibility with existing
-     * experiment validation and UI code.
+     * Returns the hardware configuration for experiment validation and UI code.
      * 
      * \return Map of hardware type key to implementation key (enabled hardware only)
      */
