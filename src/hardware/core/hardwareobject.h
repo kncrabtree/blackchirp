@@ -35,22 +35,15 @@
  * CommunicationProtocol in the class constructor. Other options, including
  * whether the HardwareObject is pushed to its own thread of execution or
  * whether the hardware is critical to program operation may be optionally set
- * as well. Finally, each HardwareObject has a ::d_index which is fused with
- * its ::d_key to distinguish objects of the same type. The ::d_index value is
- * initialized in the constructor and should be assigned using a static
- * variable in the derived class for the hardware type which is incremented in
- * its constructor. This ensures that each object of that type is given a
- * unique index corresponding to its order of construction. Example:
+ * as well. Each HardwareObject uses a user-provided label for identification,
+ * eliminating the need for creation-order indices. Example:
  * 
  *     class NewHwType : public HardwareObject
  *     {
  *     public:
- *         NewHwType(QString subKey, QObject *parent) :
- *           HardwareObject("newType",subKey,"Name",CommunicationProtocol::Rs232,
- *                          parent,false,false,d_newIndex) { d_newIndex++; }
- *                           
- *     private:
- *         inline static int d_newIndex = 0;
+ *         NewHwType(const QString& label, QObject *parent = nullptr) :
+ *           HardwareObject(QString(NewHwType::staticMetaObject.className()), 
+ *                         "implementation_key", label, parent) {}
  *     }
  * 
  * For instruments that do not communicate by GPIB, RS232, or TCP (i.e., a
@@ -181,17 +174,9 @@ class HardwareObject : public QObject, public SettingsStorage
 	Q_OBJECT
 	friend class HardwareCommunicationTest;
 public:
-    /*!
-     * \brief Constructor using traditional parameters (legacy)
-     *
-     * \param parent Pointer to parent QObject. Should be 0 if it will be in its own thread.
-     */
-    explicit HardwareObject(const QString hwType, const QString subKey, const QString name,
-                            CommunicationProtocol::CommType commType, QObject *parent = nullptr,
-                            bool threaded = true, bool critical = true, int index=0);
 
     /*!
-     * \brief Constructor using Qt metaobject system (new)
+     * \brief Constructor using Qt metaobject system
      *
      * This constructor takes hardware type and implementation derived from the
      * derived class's metaobject system. All other parameters are loaded from settings.
@@ -207,7 +192,6 @@ public:
     QString d_name; /*!< Name to be displayed on UI */
     const QString d_key; /*!< Name to be used in settings for abstract hardware. */
     const QString d_subKey; /*!< Name to be used in settings for real hardware. */
-    const int d_index; /*!< Index used if multiple objects of same type are present. */
 
     bool d_critical; /*!< Whether a communication error should abort an experiment. */
     const bool d_threaded; /*!< Whether the object should have its own thread of execution. */

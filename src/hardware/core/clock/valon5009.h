@@ -5,6 +5,7 @@
 
 class Valon5009 : public Clock
 {
+    Q_OBJECT
 public:
     explicit Valon5009(const QString& label, QObject *parent = nullptr);
 

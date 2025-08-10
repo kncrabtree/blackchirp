@@ -50,7 +50,8 @@ option(BC_BUILD_VIEWER_ONLY "Build only the viewer application" OFF)
 option(BC_BUILD_TESTS "Build test executables" ON)
 option(BC_BUILD_DOCUMENTATION "Build documentation" OFF)
 
-# Hardware and build configuration is now handled by dedicated config files
+# Build configuration is now handled by dedicated config files
+# Hardware configuration eliminated - all hardware always compiled in
 
 # ============================================================================
 # Compiler Configuration
@@ -179,43 +180,23 @@ endif()
 # Include user build configuration
 include(${BUILD_CONFIG_FILE})
 
-# Check for user hardware configuration file
-set(HARDWARE_CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/HardwareConfig.cmake")
-set(HARDWARE_CONFIG_TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/HardwareConfig.cmake.template")
+# Hardware configuration eliminated - all hardware implementations always compiled in
+# This enables true single-binary distribution with runtime hardware selection
 
-if(NOT EXISTS ${HARDWARE_CONFIG_FILE})
-    message(STATUS "")
-    message(STATUS "=== HARDWARE CONFIGURATION REQUIRED ===")
-    message(STATUS "")
-    message(STATUS "No hardware configuration file found. Creating default configuration...")
-    message(STATUS "")
-    message(STATUS "IMPORTANT: Please edit the following file to configure your hardware:")
-    message(STATUS "  ${HARDWARE_CONFIG_FILE}")
-    message(STATUS "")
-    message(STATUS "The file contains detailed instructions and lists all available")
-    message(STATUS "hardware implementations. Default 'virtual' implementations are")
-    message(STATUS "provided for testing, but you should configure real hardware")
-    message(STATUS "for actual experiments.")
-    message(STATUS "")
-    message(STATUS "After editing the configuration, re-run cmake to apply changes.")
-    message(STATUS "")
-    
-    # Copy template to create user config file
-    configure_file(${HARDWARE_CONFIG_TEMPLATE} ${HARDWARE_CONFIG_FILE} COPYONLY)
-endif()
+message(STATUS "")
+message(STATUS "=== HARDWARE CONFIGURATION ===")
+message(STATUS "")
+message(STATUS "BlackChirp now uses runtime hardware configuration!")
+message(STATUS "ALL hardware implementations are compiled in and available.")
+message(STATUS "Hardware selection is done at runtime via RuntimeHardwareConfig.")
+message(STATUS "")
+message(STATUS "Benefits:")
+message(STATUS "  - Single binary contains all hardware support")
+message(STATUS "  - No compilation needed for hardware changes")
+message(STATUS "  - Runtime hardware switching")
+message(STATUS "")
 
-# Include user hardware configuration
-include(${HARDWARE_CONFIG_FILE})
-
-# Include hardware validation
-include(cmake/HardwareValidation.cmake)
-
-# Process clock configuration
-string(REPLACE ";" " " BC_CLOCKS_SPACE_SEPARATED "${BC_CLOCKS}")
-list(LENGTH BC_CLOCKS BC_NUM_CLOCKS)
-
-# Validate hardware configuration
-validate_hardware_configuration()
+# No hardware validation needed - all hardware always available
 
 # ============================================================================
 # Version and Configuration Definitions
@@ -229,16 +210,13 @@ function(add_blackchirp_definitions target_name)
         BC_PATCH_VERSION=${BC_PATCH_VERSION}
         BC_RELEASE_VERSION=${BC_RELEASE_VERSION}
         BC_BUILD_VERSION="${BC_BUILD_VERSION}"
-        BC_NUM_CLOCKS=${BC_NUM_CLOCKS}
     )
     
-    # Hardware-specific definitions are now handled by BlackchirpHardware.cmake module
+    # Hardware-specific definitions ELIMINATED
+    # All hardware configuration is now runtime-only via RuntimeHardwareConfig
+    # No more BC_NUM_* or BC_* hardware flags
     
-    # All hardware definitions are now handled by BlackchirpHardware.cmake module
-    
-    # LIF is now handled at runtime - no compile-time flag needed
-    
-    # CUDA definitions
+    # CUDA definitions (remains compile-time for now as specified)
     if(BC_ENABLE_CUDA)
         target_compile_definitions(${target_name} PRIVATE BC_CUDA)
     endif()
@@ -499,8 +477,7 @@ if(BC_BUILD_TESTS)
     
     add_blackchirp_definitions(blackchirp-test-hardware)
     
-    # Enable GPIB controller for comprehensive testing
-    target_compile_definitions(blackchirp-test-hardware PRIVATE BC_GPIBCONTROLLER)
+    # No hardware-specific compile definitions needed - all hardware available at runtime
 
     # Hardware Communication Test
     # TODO: Temporarily disabled due to HardwareManager dependencies in HardwareObject

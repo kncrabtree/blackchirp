@@ -5,11 +5,19 @@
 #include <QTreeWidgetItem>
 #include <QStringList>
 #include <QPair>
+#include <QMap>
 #include <hardware/core/runtimehardwareconfig.h>
 #include <data/bcglobals.h>
 
 // Forward declarations
 class QListWidgetItem;
+class QComboBox;
+class QLineEdit;
+class QListWidget;
+class QPushButton;
+class QButtonGroup;
+class QCheckBox;
+class QRadioButton;
 
 namespace Ui {
 class RuntimeHardwareConfigDialog;
@@ -69,8 +77,54 @@ private:
      */
     void updateSelectionDisplay(const QString& selectedHardwareType);
     
+    /*!
+     * \brief Create and update the right panel UI for the specified hardware type
+     * \param hardwareType Hardware type to create UI for (e.g., "Clock", "FtmwScope")
+     * 
+     * Uses HardwareRegistry::isMultiInstanceType() to determine whether to show
+     * single-instance UI or multi-instance UI layout
+     */
+    void updateRightPanelForHardwareType(const QString& hardwareType);
+    
+    /*!
+     * \brief Handle profile selection changes and update preview state
+     * \param hardwareType Hardware type being configured
+     */
+    void onProfileSelectionChanged(const QString& hardwareType);
+    
+    /*!
+     * \brief Update preview state and refresh left panel display
+     */
+    void updatePreviewConfiguration();
+    
+    /*!
+     * \brief Handle Add Profile button click
+     * \param hardwareType Hardware type to add profile for
+     */
+    void onAddProfile(const QString& hardwareType);
+    
+    /*!
+     * \brief Handle Remove Profile button click
+     * \param hardwareType Hardware type to remove profile from
+     */
+    void onRemoveProfile(const QString& hardwareType);
+    
+    /*!
+     * \brief Handle dialog accept - apply preview configuration to RuntimeHardwareConfig
+     */
+    void onDialogAccepted();
+    
+    /*!
+     * \brief Handle dialog cancel - restore original runtime configuration
+     */
+    void onDialogRejected();
 
     Ui::RuntimeHardwareConfigDialog *pu_ui;
+    
+    // State management for Phase 4.3
+    std::map<QString, QString> d_originalRuntimeConfig;  // Original runtime configuration for cancel functionality
+    std::map<QString, QString> d_previewRuntimeConfig;   // Preview of runtime configuration changes
+    QString d_currentHardwareType;  // Currently selected hardware type in browser
 };
 
 #endif // RUNTIMEHARDWARECONFIGDIALOG_H

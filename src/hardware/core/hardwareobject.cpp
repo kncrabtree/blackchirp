@@ -4,51 +4,21 @@
 #include <data/settings/hardwarekeys.h>
 #include <QMetaEnum>
 
-#ifdef BC_GPIBCONTROLLER
+// GPIB support included
 #include <hardware/optional/gpibcontroller/gpibcontroller.h>
 #include <hardware/core/communication/gpibinstrument.h>
-#endif
 
-HardwareObject::HardwareObject(const QString hwType, const QString subKey, const QString name,
-                               CommunicationProtocol::CommType commType,
-                               QObject *parent, bool threaded, bool critical, int index) :
-    QObject(parent),
-    SettingsStorage({BC::Key::hwKey(hwType,index),subKey},General),
-    d_name(name), d_key(BC::Key::hwKey(hwType,index)),
-    d_subKey(subKey), d_index(index), d_threaded(threaded), d_commType(commType),
-    d_enabledForExperiment(true), d_isConnected(false), p_comm(nullptr)
-{
-    set(BC::Key::HW::key,d_key);
-    setDefault(BC::Key::HW::name,d_name);
-    setDefault(BC::Key::HW::critical,critical);
-    setDefault(BC::Key::HW::rInterval,0);
-    setDefault(BC::Key::HW::commType,static_cast<int>(commType));
-    save();
-
-    //it is necessary to write the subKey one level above the SettingsStorage group, which
-    //is referenced to d_key/d_subKey, so that other parts of the application can determine
-    //the current subKey for looking up settings.
-    QSettings s(QCoreApplication::organizationName(),QCoreApplication::applicationName());
-    s.setFallbacksEnabled(false);
-    s.setValue(d_key + "/" + BC::Key::HW::subKey,d_subKey);
-    s.sync();
-
-    d_critical = get(BC::Key::HW::critical,critical);
-    d_name = get(BC::Key::HW::name,name);
-
-}
 
 HardwareObject::HardwareObject(const QString& hwType, const QString& hwImpl, const QString& label, QObject *parent) :
     QObject(parent),
     SettingsStorage(QStringList{hwType + BC::Key::hwIndexSep + label, hwImpl}),
     d_key(hwType + BC::Key::hwIndexSep + label),
     d_subKey(hwImpl),
-    d_index(0), // Always 0 for new metaobject-based system (marked for future removal)
-    d_threaded(false), // Default to false, may be moved to profile system later
-    d_commType(CommunicationProtocol::Virtual), // Default, will be determined from supportedProtocols()
+    d_threaded(false),
+    d_commType(CommunicationProtocol::Virtual),
     d_enabledForExperiment(true),
-    d_isConnected(false),
-    p_comm(nullptr)
+    p_comm(nullptr),
+    d_isConnected(false)
 {    
     // Set basic identifying keys
     set(BC::Key::HW::key, d_key);
@@ -237,7 +207,7 @@ void HardwareObject::bcReadSettings()
 
 void HardwareObject::buildCommunication(QObject *gc, CommunicationProtocol::CommType commType)
 {
-#ifdef BC_GPIBCONTROLLER
+    // GPIB support included
     GpibController *c = dynamic_cast<GpibController*>(gc);
     
     // If no GPIB controller provided and we need GPIB, try to resolve from settings
@@ -262,9 +232,6 @@ void HardwareObject::buildCommunication(QObject *gc, CommunicationProtocol::Comm
             return;
         }
     }
-#else
-    Q_UNUSED(gc)
-#endif
 
     // Use provided commType, or fall back to member variable
     CommunicationProtocol::CommType protocolType = (commType == CommunicationProtocol::None) ? d_commType : commType;
@@ -283,11 +250,9 @@ void HardwareObject::buildCommunication(QObject *gc, CommunicationProtocol::Comm
     case CommunicationProtocol::Tcp:
         p_comm = new TcpInstrument(d_key,this);
         break;
-#ifdef BC_GPIBCONTROLLER
     case CommunicationProtocol::Gpib:
         p_comm = new GpibInstrument(d_key,c,this);
         break;
-#endif
     case CommunicationProtocol::Custom:
         p_comm = new CustomInstrument(d_key,this);
         break;

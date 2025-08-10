@@ -31,7 +31,8 @@ Qc9518::~Qc9518()
 
 void Qc9518::initializePGen()
 {
-    p_comm->setReadOptions(100,true,QByteArray("\r\n"));
+    setDefault(BC::Key::Comm::timeout, 100);
+    setDefault(BC::Key::Comm::termChar, QString("\r\n"));
 }
 
 bool Qc9518::pGenWriteCmd(QString cmd)

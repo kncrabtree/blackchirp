@@ -4,6 +4,12 @@
 #include <QMutexLocker>
 #include <QDebug>
 
+// Include base hardware classes for type-safe hardware type determination
+#include <hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/optional/chirpsource/awg.h>
+#include <hardware/core/liflaser/liflaser.h>
+#include <hardware/core/lifdigitizer/lifscope.h>
+
 HardwareRegistry* HardwareRegistry::s_instance = nullptr;
 
 HardwareRegistry::HardwareRegistry(QObject *parent)
@@ -138,6 +144,27 @@ bool HardwareRegistry::isRegistered(const QString& key, const QString& subKey)
     
     QString registryKey = makeRegistryKey(key, subKey);
     return d_registrations.contains(registryKey);
+}
+
+bool HardwareRegistry::isMultiInstanceType(const QString& hardwareType)
+{
+    // Type-safe helper function to extract hardware type from class
+    auto hardwareTypeOf = [](auto* typePtr) -> QString {
+        using T = std::remove_pointer_t<decltype(typePtr)>;
+        return QString(T::staticMetaObject.className());
+    };
+    
+    // Single-instance hardware types (only one instance allowed)
+    static const QStringList singleInstanceTypes = {
+        hardwareTypeOf(static_cast<FtmwScope*>(nullptr)),
+        hardwareTypeOf(static_cast<AWG*>(nullptr)),
+        hardwareTypeOf(static_cast<LifLaser*>(nullptr)),
+        hardwareTypeOf(static_cast<LifScope*>(nullptr))
+    };
+    
+    // If hardware type is in the single-instance list, return false
+    // All other types are multi-instance by default
+    return !singleInstanceTypes.contains(hardwareType);
 }
 
 QString HardwareRegistry::makeRegistryKey(const QString& key, const QString& subKey) const

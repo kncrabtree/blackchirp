@@ -117,6 +117,16 @@ public:
      */
     bool isRegistered(const QString& key, const QString& subKey);
 
+    /*!
+     * \brief Check if hardware type supports multiple instances
+     * \param hardwareType Hardware type key (e.g., "Clock", "FtmwScope")
+     * \return True if hardware type can have multiple labeled instances, false for single-instance types
+     * 
+     * Single-instance types: FtmwScope, Awg, LifLaser, LifScope
+     * Multi-instance types: Clock, PulseGenerator, FlowController, PressureController, TemperatureController, IOBoard, GPIBController
+     */
+    static bool isMultiInstanceType(const QString& hardwareType);
+
 signals:
     /*!
      * \brief Emitted when hardware is successfully registered

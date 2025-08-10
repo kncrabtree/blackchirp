@@ -4,41 +4,14 @@
 #include <data/settings/hardwarekeys.h>
 
 #include <hardware/core/hardwareobject.h>
-#include <hardware/core/ftmwdigitizer/ftmwscope.h>
 #include <hardware/core/clock/clockmanager.h>
-#include <hardware/optional/chirpsource/awg.h>
-#include <hardware/optional/pulsegenerator/pulsegenerator.h>
-#include <hardware/optional/flowcontroller/flowcontroller.h>
-#include <hardware/optional/ioboard/ioboard.h>
-#include <hardware/optional/gpibcontroller/gpibcontroller.h>
-#include <hardware/optional/pressurecontroller/pressurecontroller.h>
-#include <hardware/optional/tempcontroller/temperaturecontroller.h>
-
-#include <hardware/hw_h.h>
-#include <hardware/opthw_h.h>
-#include <hardware/core/clock/clock_h.h>
-
-#include <boost/preprocessor/iteration/local.hpp>
+#include <hardware/core/hw_h.h> // Generated at build time
 
 #include <QThread>
 
-#include <hardware/core/lifdigitizer/lifscope.h>
-#include <hardware/core/liflaser/liflaser.h>
 #include <QtConcurrent/QtConcurrent>
 #include <QFuture>
 #include <QFutureWatcher>
-
-// Phase 2.4.2: Virtual hardware includes for capability discovery
-#include <hardware/core/ftmwdigitizer/virtualftmwscope.h>
-#include <hardware/optional/chirpsource/virtualawg.h>
-#include <hardware/optional/pulsegenerator/virtualpulsegenerator.h>
-#include <hardware/optional/flowcontroller/virtualflowcontroller.h>
-#include <hardware/optional/ioboard/virtualioboard.h>
-#include <hardware/optional/gpibcontroller/virtualgpibcontroller.h>
-#include <hardware/optional/pressurecontroller/virtualpressurecontroller.h>
-#include <hardware/optional/tempcontroller/virtualtempcontroller.h>
-#include <hardware/core/lifdigitizer/virtuallifscope.h>
-#include <hardware/core/liflaser/virtualliflaser.h>
 
 // Static instance for const access
 HardwareManager* HardwareManager::s_instance = nullptr;
@@ -546,12 +519,14 @@ void HardwareManager::setLifParameters(double delay, double pos)
 
 bool HardwareManager::setPGenLifDelay(double d)
 {
-#ifndef BC_PGEN
-    emit logMessage(QString("Could not set LIF delay because no pulse generator is avaialble."),LogHandler::Error);
-    return false;
-#else
-    bool out = true;
+    // Check for pulse generator availability
     auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<PulseGenerator>();
+    if (activeKeys.isEmpty()) {
+        emit logMessage(QString("Could not set LIF delay because no pulse generator is available."), LogHandler::Error);
+        return false;
+    }
+
+    bool out = true;
     for(const auto& key : activeKeys)
     {
         auto pGen = findHardware<PulseGenerator>(key);
@@ -563,7 +538,6 @@ bool HardwareManager::setPGenLifDelay(double d)
     }
 
     return out;
-#endif
 }
 
 bool HardwareManager::setLifLaserPos(double pos)
@@ -731,25 +705,27 @@ void HardwareManager::resolveGpibController(const QString& controllerKey, std::f
     callback(controller);
 }
 
-// Phase 2.4.2: Constructor refactoring methods
-
 void HardwareManager::createVirtualHardwareForCapabilityDiscovery()
 {
-    // Create virtual instances of all hardware types to discover capabilities
-    // This replaces the compile-time flag-based hardware creation
+    // Create virtual instances of all hardware types for capability discovery
     
-    // Required hardware: FtmwScope (always virtual for discovery)
+    // Required hardware: FtmwScope
     auto ftmwScope = new VirtualFtmwScope("temp");
     d_hardwareMap.emplace(ftmwScope->d_key, ftmwScope);
 
-    // Clock Manager (creates virtual Clock instances for discovery)
+    // Clock Generators - Create Clock instances like other hardware
+    // (matches the default BC_CLOCKS "fixed;fixed" configuration)
+    auto clock1 = new FixedClock("temp");
+    auto clock2 = new FixedClock("temp"); 
+    d_hardwareMap.emplace(clock1->d_key, clock1);
+    d_hardwareMap.emplace(clock2->d_key, clock2);
+    
+    // Create ClockManager and give it the clocks
     pu_clockManager = std::make_unique<ClockManager>();
-    auto cl = pu_clockManager->getClockList();
-    for(int i = 0; i < cl.size(); i++)
-        d_hardwareMap.emplace(cl.at(i)->d_key, cl.at(i));
+    QVector<Clock*> clocks = {clock1, clock2};
+    pu_clockManager->setClocksFromHardwareManager(clocks);
 
     // Optional hardware - create virtual instances of each type
-    // This ensures all hardware types are available for discovery
     
     // Chirp Source (AWG)
     auto awg = new VirtualAwg("temp");

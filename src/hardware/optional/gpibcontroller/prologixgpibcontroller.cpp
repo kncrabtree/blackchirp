@@ -25,7 +25,7 @@ bool PrologixGpibController::testConnection()
         return false;
     }
     
-    if(!resp.startsWith(expectedIdResponse()))
+    if(!resp.startsWith(expectedIdResponse().toUtf8()))
     {
         d_errorString = QString("%1 response invalid. Received: %2").arg(d_name).arg(QString(resp));
         return false;

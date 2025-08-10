@@ -31,7 +31,8 @@ Qc9214::~Qc9214()
 
 void Qc9214::initializePGen()
 {
-    p_comm->setReadOptions(200,true,QByteArray("\r\n"));
+    setDefault(BC::Key::Comm::timeout, 200);
+    setDefault(BC::Key::Comm::termChar, QString("\r\n"));
 }
 
 void Qc9214::beginAcquisition()

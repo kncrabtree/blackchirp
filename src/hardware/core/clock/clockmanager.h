@@ -43,8 +43,11 @@ public slots:
     bool prepareForExperiment(Experiment &exp);
 
     // Public API for HardwareManager integration
+    void setClocksFromHardwareManager(const QVector<Clock*>& clocks);
+    void reconfigureFromRuntimeConfig(); // Updates based on current runtime config
+    
+    // Legacy getter for transition period (can be removed after full migration)
     QVector<Clock*> getClockList() const;
-    void createClocksFromRuntimeConfig();
 
 private:
     QVector<Clock*> d_clockList;

@@ -51,11 +51,11 @@ Dedicated interface for vendor library management and diagnostics (future implem
 
 ## Panel Specifications
 
-### Left Panel: Configuration Overview (33% width)
+### Left Panel: Runtime Configuration Preview (33% width)
 
-**Component**: `QTreeWidget` with custom styling and context menu
+**Component**: `QTreeWidget` with hardware preset management buttons
 
-**Purpose**: Provide hierarchical view of currently configured hardware
+**Purpose**: Show preview of runtime hardware configuration and manage hardware presets
 
 **Display Format**:
 - **Single Instance Hardware**: `"HardwareType: label (implementation)"`
@@ -70,77 +70,93 @@ Dedicated interface for vendor library management and diagnostics (future implem
     └─ loSource (HP83712B)
     ```
 
+**Hardware Preset Management**:
+- **Save as Preset** button: Save current configuration as named preset
+- **Load Preset** button: Load existing preset into preview
 
 **Behavior**:
+- **Initialization**: Shows current `RuntimeHardwareConfig` state
+- **During Editing**: Shows preview of configuration changes from right panel
+- **Real-time Updates**: Refreshes when profiles are checked/unchecked in right panel
 - Always fully expanded for maximum visibility
 
-**Data Sources**:
-- Populate from `RuntimeHardwareConfig::getCurrentHardware()`
+**Backend Integration**:
+- **Initialization**: `RuntimeHardwareConfig::getCurrentHardware()`
+- **Preview Updates**: Internal dialog preview state
+- **Preset Management**: `HardwareProfileManager` preset functionality (future implementation)
 
-### Middle Panel: Hardware Browser (33% width)
+### Middle Panel: Hardware Registry Browser (33% width)
 
 **Component**: `QListWidget` with custom item formatting
 
-**Purpose**: Browse available hardware types and see configuration status at-a-glance
+**Purpose**: Browse available hardware types from registry and see configuration status at-a-glance
 
 **Display Format**: 
-- `"HardwareType (count)"` where count shows active instances
+- `"HardwareType (count)"` where count shows active instances in preview
 - Examples: `"Clock (2)"`, `"AWG (0)"`, `"FtmwScope (1)"`
 
 **Visual Indicators**:
-- ☑ (configured): Hardware type has active instances
-- ☐ (unconfigured): Hardware type available but not configured
-- Different styling (bold, color) for configured vs unconfigured
+- **Bold text**: Hardware type has active instances in current preview
+- **Normal text**: Hardware type available but not configured in preview
 
 **Behavior**:
 - Single selection triggers right panel update
 - Selection persists during configuration changes
+- Instance counts update as profiles are checked/unchecked in right panel
 
-**Data Sources**:
-- Hardware types from `HardwareRegistry::getHardwareTypes()`
-- Instance counts from `RuntimeHardwareConfig::getActiveKeys<T>()`
+**Backend Integration**:
+- **Hardware Types**: `HardwareRegistry::getHardwareTypes()`
+- **Instance Counts**: Internal dialog preview state (updated from profile selections)
 
-### Right Panel: Context-Sensitive Configuration (33% width)
+### Right Panel: Hardware Profile Management (33% width)
 
-**Component**: Dynamic widget container that updates based on middle panel selection
+**Component**: Hardware profile management interface that updates based on middle panel selection
 
-**Purpose**: Provide appropriate interface for adding/editing hardware of the selected type
+**Purpose**: Manage hardware profiles (type + label + implementation combinations) and control their activation in runtime configuration
 
 #### Single Instance Hardware UI:
 ```
-┌─FtmwScope Configuration────────┐
-│ Implementation: [ComboBox  v]  │
-│ Label:         [LineEdit    ]  │
+┌─FtmwScope Profiles─────────────┐
+│ Available Profiles:            │
+│ ◉ mainScope (M4i2220x8)        │
+│ ○ backup (VirtualFtmwScope)    │
 │                                │
-│ Current: mainScope (M4i2220x8) │
+│ [Add Profile] [Remove Profile] │
 └────────────────────────────────┘
 ```
 
 #### Multiple Instance Hardware UI:
 ```
-┌─Clock Configuration─────────────┐
-│ Implementation: [ComboBox   v]  │
-│ Label:         [LineEdit     ]  │
-│                                 │
-│ [Add Instance]                  │
-│                                 │
-│ Active Instances:               │
-│ • rfSource (Valon5009)          │
-│ • loSource (HP83712B)           │
-│                                 │
-│ [Edit Selected] [Remove]        │
-└─────────────────────────────────┘
+┌─Clock Profiles─────────────────┐
+│ Available Profiles:            │
+│ ☑ rfSource (Valon5009)         │
+│ ☐ backup (HP83712B)            │
+│ ☑ loSource (FixedClock)        │
+│                                │
+│ [Add Profile] [Remove Profile] │
+└────────────────────────────────┘
 ```
 
-**Components**:
-- **Implementation ComboBox**: Populated from `HardwareRegistry::getImplementations(hwType)`
-- **Label LineEdit**: User-defined label for hardware identification
-- **Add**: Adds new instance to runtime config
-- **Active Instances List**: Show current instances with status (multiple instance hardware only)
+**Profile Selection Behavior**:
+- **Single Instance**: Radio button behavior (only one profile active at a time)
+- **Multiple Instance**: Checkbox behavior (multiple profiles can be active simultaneously)
+- **Immediate Preview**: Checking/unchecking updates preview state and refreshes left panel
 
-**Behavior**:
-- Real-time validation of label uniqueness
-- Implementation selection enables/disables options based on library availability
+**Profile Operations**:
+- **Add Profile**: Opens modal dialog with implementation selection and label validation
+- **Remove Profile**: Confirms deletion and removes profile + associated settings permanently
+
+**Backend Integration**:
+- **Profile Storage**: `HardwareProfileManager` for persistent profile management
+- **Profile List**: `HardwareProfileManager::getAllProfiles(hardwareType)`
+- **Available Implementations**: `HardwareRegistry::getImplementations(hardwareType)`
+- **Preview Updates**: Updates internal dialog preview state
+- **Settings Management**: Profile deletion clears associated QSettings collections
+
+**State Management**:
+- **Profile Creation**: Immediate persistence via HardwareProfileManager
+- **Profile Deletion**: Immediate deletion with settings cleanup + removal from both preview and original runtime configs
+- **Activation Changes**: Update preview state only until dialog acceptance
 
 
 ### Bottom Panel: Validation Status Bar
@@ -231,13 +247,46 @@ Left panel TreeWidget now integrates with RuntimeHardwareConfig to display actua
 Hardware Browser now integrates with HardwareRegistry and RuntimeHardwareConfig to display hardware types with instance counts. Selection flow to right panel established and verified. Ready for Phase 4.
 
 ### Phase 4: Context-Sensitive Configuration
-- Implement dynamic right panel with interfaces for single vs. multi-instance HW (this determination should be the domain of the hardware registry; may need to add functionality there to look up whether selected is single or multi)
-- Add real-time validation and user input handling
-- Implement Add/Edit/Remove operations
+#### Phase 4.1: Hardware Type Classification ✅ **COMPLETED**
+HardwareRegistry now has static `isMultiInstanceType()` method using type-safe hardware class names via staticMetaObject.
 
-### Phase 5: Validation Integration
-- Connect all UI changes to validation system
-- Implement comprehensive error messaging
-- Add Apply button logic and configuration persistence
+#### Phase 4.2: Profile Management UI ✅ **COMPLETED**
+- Replace right panel with Profile management interface
+- Checkable QListWidget showing existing profiles as "label (implementation)"
+- Single-instance: Radio button behavior (mutually exclusive selection)
+- Multi-instance: Checkbox behavior (multiple selections allowed)
+- Add/Remove buttons for profile creation/deletion
+- Preview state management for runtime configuration changes
+
+#### Phase 4.3: Profile Operations & State Management ✅ **COMPLETED**
+- **Add Profile**: Modal dialog with implementation ComboBox + label validation
+- **Remove Profile**: Immediate deletion with settings cleanup and confirmation dialog
+- **Profile Deletion Edge Case**: Remove deleted profiles from both preview AND original runtime configs
+- **Preview State**: Maintain separate preview vs original runtime configuration
+- **Check/Uncheck**: Update preview state only, refresh left panel display
+- Integration with HardwareProfileManager for persistent profile storage
+
+### Phase 5: Validation Status Bar & Hardware Preset Management
+#### Phase 5.1: Validation Status Bar ⚠️ **PENDING**
+- **Status Bar Implementation**: Bottom panel validation status bar with ThemeColors styling
+- **Real-time Validation**: Connect to `RuntimeHardwareConfig::validateConfiguration()` 
+- **Validation Feedback**: Success/Error/Info states with specific error messages
+- **Apply Button Logic**: Enable/disable Apply button based on validation state
+- **User Feedback**: Clear indication of configuration validity and blocking issues
+
+#### Phase 5.2: Hardware Preset Management ⚠️ **PENDING** 
+- **Save as Preset**: Button in left panel to save current preview configuration as named preset
+- **Load Preset**: Button in left panel to load existing preset into preview state
+- **Preset Storage**: Integration with HardwareProfileManager preset functionality
+- **Preset UI**: Modal dialogs for preset naming and selection
+- **Preset Validation**: Ensure loaded presets are valid and handle conflicts
+
+#### Phase 5.3: MainWindow Integration & Final Polish ⚠️ **PENDING**
+- **Dialog Integration**: Ensure MainWindow properly instantiates and connects dialog  
+- **Invalid Config Handling**: MainWindow handles invalid runtime configs after dialog completion
+- **Error Recovery**: Graceful handling of hardware initialization failures
+- **Final Testing**: Comprehensive validation of all dialog functionality
+
+**Note**: Core dialog state management (Accept/Cancel/Preview) was completed in Phase 4.3
 
 This design provides a comprehensive, user-friendly interface for runtime hardware configuration while maintaining clear separation of concerns and leveraging BlackChirp's existing architectural patterns.

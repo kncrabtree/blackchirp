@@ -503,3 +503,35 @@ QStringList RuntimeHardwareConfig::getMissingRequiredHardwareInternal() const
     
     return missing;
 }
+
+bool RuntimeHardwareConfig::applyConfiguration(const std::map<QString, QString>& config)
+{
+    QWriteLocker locker(&d_configLock);
+    
+    // Clear current active hardware
+    d_activeHardware.clear();
+    
+    // Apply new configuration
+    for (auto it = config.begin(); it != config.end(); ++it) {
+        const QString& key = it->first;
+        const QString& implementation = it->second;
+        
+        // Parse hardware type and label from key
+        auto [hardwareType, label] = BC::Key::parseKey(key);
+        
+        if (hardwareType.isEmpty() || label.isEmpty() || implementation.isEmpty()) {
+            qWarning() << "RuntimeHardwareConfig::applyConfiguration: Invalid configuration entry:"
+                      << "key=" << key << "implementation=" << implementation;
+            continue;
+        }
+        
+        // Set hardware selection using internal method
+        HardwareSelection selection;
+        selection.type = hardwareType;
+        selection.implementation = implementation;
+        
+        d_activeHardware[key] = selection;
+    }
+    
+    return true;
+}

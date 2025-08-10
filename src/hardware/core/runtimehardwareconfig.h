@@ -27,6 +27,7 @@
 class HardwareManager;
 class RuntimeHardwareConfigTest;
 class RuntimeHardwareConfigSimpleTest;
+class RuntimeHardwareConfigDialog;
 
 /*!
  * \brief Runtime hardware configuration validation result
@@ -72,6 +73,7 @@ class RuntimeHardwareConfig : public SettingsStorage
     // Friend classes that can modify configuration
     friend class HardwareManager;
     friend class RuntimeHardwareConfigTest;  /*!< Test class needs access to private methods */
+    friend class RuntimeHardwareConfigDialog;  /*!< Dialog needs access for preview/accept operations */
     // TODO: Add HardwareSettingsDialog and other authorized writers as needed
     
 public:
@@ -300,6 +302,13 @@ private:
      * \brief Clear all hardware selections
      */
     void clearConfiguration();
+    
+    /*!
+     * \brief Apply complete hardware configuration (for dialog accept operations)
+     * \param config Hardware configuration map (hwType.label -> implementation)
+     * \return True if configuration was applied successfully
+     */
+    bool applyConfiguration(const std::map<QString, QString>& config);
     
     /*!
      * \brief TEMPORARY: Register hardware using stable test labels during migration
