@@ -48,6 +48,9 @@ RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
     // Initialize both original and preview state from current runtime configuration
     d_originalRuntimeConfig = RuntimeHardwareConfig::constInstance().getCurrentHardware();
     d_previewRuntimeConfig = d_originalRuntimeConfig;
+    
+    // Initialize validation status
+    validatePreviewConfiguration();
 }
 
 RuntimeHardwareConfigDialog::~RuntimeHardwareConfigDialog()
@@ -401,6 +404,9 @@ void RuntimeHardwareConfigDialog::updatePreviewConfiguration()
     
     // Refresh the hardware browser to show updated instance counts
     populateHardwareBrowser();
+    
+    // Validate the configuration and update status
+    validatePreviewConfiguration();
 }
 
 void RuntimeHardwareConfigDialog::onAddProfile(const QString& hardwareType)
@@ -646,4 +652,52 @@ void RuntimeHardwareConfigDialog::onDialogRejected()
     
     // Close dialog without applying preview changes
     reject();
+}
+
+void RuntimeHardwareConfigDialog::validatePreviewConfiguration()
+{
+    // Use the new static validation method to validate the preview configuration
+    QStringList validationErrors = RuntimeHardwareConfig::validateHardwareConfiguration(d_previewRuntimeConfig);
+    
+    if (validationErrors.isEmpty()) {
+        // Configuration is valid
+        updateValidationStatus("Configuration is valid", "Success");
+        // Enable Apply button
+        pu_ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(true);
+    } else {
+        // Configuration has errors
+        QString errorMessage;
+        if (validationErrors.size() == 1) {
+            errorMessage = QString("Error: %1").arg(validationErrors.first());
+        } else {
+            errorMessage = QString("Error: %1 (+%2 more)").arg(validationErrors.first()).arg(validationErrors.size() - 1);
+        }
+        updateValidationStatus(errorMessage, "Error");
+        // Disable Apply button
+        pu_ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+    }
+}
+
+void RuntimeHardwareConfigDialog::updateValidationStatus(const QString& message, const QString& state)
+{
+    pu_ui->validationStatusLabel->setText(message);
+    
+    // Apply ThemeColors styling based on state
+    QString styleSheet;
+    if (state == "Success") {
+        styleSheet = QString("QLabel { color: %1; }")
+            .arg(ThemeColors::getCSSColor(ThemeColors::StatusSuccess, this));
+    } else if (state == "Error") {
+        styleSheet = QString("QLabel { color: %1; }")
+            .arg(ThemeColors::getCSSColor(ThemeColors::StatusError, this));
+    } else if (state == "Info") {
+        styleSheet = QString("QLabel { color: %1; font-style: italic; }")
+            .arg(ThemeColors::getCSSColor(ThemeColors::StatusInfo, this));
+    } else {
+        // Default styling
+        styleSheet = QString("QLabel { color: %1; }")
+            .arg(ThemeColors::getCSSColor(ThemeColors::StatusSuccess, this));
+    }
+    
+    pu_ui->validationStatusLabel->setStyleSheet(styleSheet);
 }

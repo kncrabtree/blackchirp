@@ -118,6 +118,22 @@ private:
      * \brief Handle dialog cancel - restore original runtime configuration
      */
     void onDialogRejected();
+    
+    /*!
+     * \brief Validate current preview configuration and update status bar
+     * 
+     * Updates the validation status bar with real-time feedback based on 
+     * RuntimeHardwareConfig::validateConfiguration() results and controls
+     * Apply button enablement based on validation state.
+     */
+    void validatePreviewConfiguration();
+    
+    /*!
+     * \brief Update validation status bar with specified message and state
+     * \param message Status message to display
+     * \param state Validation state (Success/Error/Info)
+     */
+    void updateValidationStatus(const QString& message, const QString& state);
 
     Ui::RuntimeHardwareConfigDialog *pu_ui;
     

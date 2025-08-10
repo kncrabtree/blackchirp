@@ -3,9 +3,8 @@
 #include "hardwareprofilemanager.h"
 
 // Hardware class includes for template type resolution
-#include "ftmwdigitizer/ftmwscope.h"
-#include "clock/clock.h"
-// TODO: Add other hardware includes as they become available during migration
+#include "hw_base.h"
+#include <data/storage/applicationconfigmanager.h>
 
 #include <QReadLocker>
 #include <QWriteLocker>
@@ -124,65 +123,108 @@ BC::Data::HardwareDataContainer RuntimeHardwareConfig::createHardwareDataContain
     }
     
     // Populate type keys using hardwareTypeOf template method for type safety
-    // This uses Qt's metaobject system to automatically derive type keys
-    // Only populate the types that are actually available in the current build
+    // All hardware types are always compiled in with runtime hardware configuration
+    container.typeKeys.ftmwScope = hardwareTypeOf<FtmwScope>();
+    container.typeKeys.clock = hardwareTypeOf<Clock>();
+    container.typeKeys.awg = hardwareTypeOf<AWG>();
+    container.typeKeys.pulseGenerator = hardwareTypeOf<PulseGenerator>();
+    container.typeKeys.flowController = hardwareTypeOf<FlowController>();
+    container.typeKeys.ioBoard = hardwareTypeOf<IOBoard>();
+    container.typeKeys.gpibController = hardwareTypeOf<GpibController>();
+    container.typeKeys.pressureController = hardwareTypeOf<PressureController>();
+    container.typeKeys.temperatureController = hardwareTypeOf<TemperatureController>();
+    container.typeKeys.lifScope = hardwareTypeOf<LifScope>();
+    container.typeKeys.lifLaser = hardwareTypeOf<LifLaser>();
     
-    // NOTE: The hardware classes must be available at compile time for hardwareTypeOf<>() to work
-    // This is a fundamental requirement for the type-safe architecture
+    return container;
+}
+
+QStringList RuntimeHardwareConfig::validateHardwareConfiguration(const std::map<QString, QString>& hardwareMap)
+{
+    QStringList errors;
     
-    // Core hardware types (always available)
-    try {
-        container.typeKeys.ftmwScope = hardwareTypeOf<FtmwScope>();
-    } catch (...) {
-        // Type not available in current build - leave empty
-    }
-    
-    try {
-        container.typeKeys.clock = hardwareTypeOf<Clock>();
-    } catch (...) {
-        // Type not available in current build - leave empty  
-    }
-    
-    // Optional hardware types (availability depends on build configuration)
-    // TODO: Add these as they become available during migration:
-    // container.typeKeys.awg = hardwareTypeOf<AWG>();
-    // container.typeKeys.pulseGenerator = hardwareTypeOf<PulseGenerator>();  
-    // container.typeKeys.flowController = hardwareTypeOf<FlowController>();
-    // container.typeKeys.ioBoard = hardwareTypeOf<IOBoard>();
-    // container.typeKeys.gpibController = hardwareTypeOf<GPIBController>();
-    // container.typeKeys.pressureController = hardwareTypeOf<PressureController>();
-    // container.typeKeys.temperatureController = hardwareTypeOf<TemperatureController>();
-    
-    // For now, we'll use the HardwareRegistry to dynamically populate type keys
-    // This is a temporary solution until all hardware types are migrated to the new system
-    auto& registry = HardwareRegistry::instance();
-    QStringList allTypes = registry.getHardwareTypes();
-    
-    for (const QString& type : allTypes) {
-        // Map known hardware types to their corresponding fields
-        // This provides a fallback when template methods aren't available yet
-        if (type == "FtmwScope" && container.typeKeys.ftmwScope.isEmpty()) {
-            container.typeKeys.ftmwScope = type;
-        } else if (type == "Clock" && container.typeKeys.clock.isEmpty()) {
-            container.typeKeys.clock = type;
-        } else if (type == "AWG" && container.typeKeys.awg.isEmpty()) {
-            container.typeKeys.awg = type;
-        } else if (type == "PulseGenerator" && container.typeKeys.pulseGenerator.isEmpty()) {
-            container.typeKeys.pulseGenerator = type;
-        } else if (type == "FlowController" && container.typeKeys.flowController.isEmpty()) {
-            container.typeKeys.flowController = type;
-        } else if (type == "IOBoard" && container.typeKeys.ioBoard.isEmpty()) {
-            container.typeKeys.ioBoard = type;
-        } else if (type == "GPIBController" && container.typeKeys.gpibController.isEmpty()) {
-            container.typeKeys.gpibController = type;
-        } else if (type == "PressureController" && container.typeKeys.pressureController.isEmpty()) {
-            container.typeKeys.pressureController = type;
-        } else if (type == "TemperatureController" && container.typeKeys.temperatureController.isEmpty()) {
-            container.typeKeys.temperatureController = type;
+    // Check each hardware selection in the map
+    for (auto it = hardwareMap.begin(); it != hardwareMap.end(); ++it) {
+        const QString& hwKey = it->first;  // "type.label" format
+        const QString& implementation = it->second;
+        
+        // Parse hardware type and label from key
+        auto [hardwareType, label] = BC::Key::parseKey(hwKey);
+        
+        if (hardwareType.isEmpty() || label.isEmpty()) {
+            errors << QString("Invalid hardware key format: '%1'").arg(hwKey);
+            continue;
+        }
+        
+        if (implementation.isEmpty()) {
+            errors << QString("No implementation selected for hardware '%1.%2'")
+                         .arg(hardwareType, label);
+            continue;
+        }
+        
+        // Check if implementation is registered
+        HardwareRegistry& registry = HardwareRegistry::instance();
+        if (!registry.isRegistered(hardwareType, implementation)) {
+            errors << QString("Implementation '%1' for hardware '%2.%3' is not registered")
+                         .arg(implementation, hardwareType, label);
+            continue;
         }
     }
     
-    return container;
+    // Check for missing required hardware types using the static isHardwareRequired method
+    HardwareRegistry& registry = HardwareRegistry::instance();
+    QStringList allTypes = registry.getHardwareTypes();
+    
+    for (const QString& hwType : allTypes) {
+        if (!isHardwareRequired(hwType)) {
+            continue; // Not a required type
+        }
+        
+        // Check if we have any valid hardware of this required type
+        bool hasValidHardware = false;
+        for (auto it = hardwareMap.begin(); it != hardwareMap.end(); ++it) {
+            auto [configHwType, label] = BC::Key::parseKey(it->first);
+            if (configHwType == hwType && !it->second.isEmpty()) {
+                // Check if implementation is valid
+                if (registry.isRegistered(configHwType, it->second)) {
+                    hasValidHardware = true;
+                    break;
+                }
+            }
+        }
+        
+        if (!hasValidHardware) {
+            errors << QString("Required hardware type '%1' is not configured or has no valid implementation")
+                         .arg(hwType);
+        }
+    }
+    
+    // Check for duplicate labels within the same hardware type
+    QHash<QString, QStringList> labelsByType;
+    for (auto it = hardwareMap.begin(); it != hardwareMap.end(); ++it) {
+        auto [hwType, label] = BC::Key::parseKey(it->first);
+        if (!hwType.isEmpty() && !label.isEmpty()) {
+            labelsByType[hwType].append(label);
+        }
+    }
+    
+    for (auto typeIt = labelsByType.begin(); typeIt != labelsByType.end(); ++typeIt) {
+        const QString& hwType = typeIt.key();
+        QStringList& labels = typeIt.value();
+        
+        // Check for duplicate labels
+        QSet<QString> seenLabels;
+        for (const QString& label : labels) {
+            if (seenLabels.contains(label)) {
+                errors << QString("Duplicate label '%1' for hardware type '%2'")
+                             .arg(label, hwType);
+            } else {
+                seenLabels.insert(label);
+            }
+        }
+    }
+    
+    return errors;
 }
 
 QHash<QString, HardwareValidationResult> RuntimeHardwareConfig::validateConfiguration() const
@@ -203,22 +245,28 @@ QHash<QString, HardwareValidationResult> RuntimeHardwareConfig::validateConfigur
 }
 
 
+bool RuntimeHardwareConfig::isHardwareConfigurationValid(const std::map<QString, QString>& hardwareMap)
+{
+    QStringList errors = validateHardwareConfiguration(hardwareMap);
+    return errors.isEmpty();
+}
+
 bool RuntimeHardwareConfig::isConfigurationValid() const
 {
     QReadLocker locker(&d_configLock);
     
-    // Check all configured hardware
+    // Convert internal hardware configuration to map format
+    std::map<QString, QString> currentConfig;
     for (auto it = d_activeHardware.cbegin(); it != d_activeHardware.cend(); ++it) {
-        auto [type, label] = BC::Key::parseKey(it.key());
-        HardwareValidationResult result = validateHardwareSelectionInternal(type, label, it.value());
-        if (!result.isValid) {
-            return false;
+        const QString& hwKey = it.key();
+        const HardwareSelection& selection = it.value();
+        if (!selection.implementation.isEmpty()) {
+            currentConfig[hwKey] = selection.implementation;
         }
     }
     
-    // Check that all required hardware is configured
-    QStringList missing = getMissingRequiredHardwareInternal();
-    return missing.isEmpty();
+    // Use the static validation method
+    return isHardwareConfigurationValid(currentConfig);
 }
 
 QStringList RuntimeHardwareConfig::getConfiguredHardwareTypes() const
@@ -233,16 +281,33 @@ QStringList RuntimeHardwareConfig::getConfiguredHardwareTypes() const
     return QStringList(types.begin(), types.end());
 }
 
-bool RuntimeHardwareConfig::isHardwareRequired(const QString& hardwareType) const
+bool RuntimeHardwareConfig::isHardwareRequired(const QString& hardwareType)
 {
-    // Define required hardware types at compile time
+    // Define required hardware types using type-safe hardwareTypeOf<T>()
     // These are hardware types that must be configured for the system to operate
-    static const QStringList requiredTypes = {
-        "ftmwDigitizer",  // Required for FTMW spectroscopy
-        "clock"           // Required for timing
+    static const QStringList coreRequiredTypes = {
+        hardwareTypeOf<FtmwScope>(),  // Required for FTMW spectroscopy
+        hardwareTypeOf<Clock>()       // Required for timing
     };
     
-    return requiredTypes.contains(hardwareType);
+    // Check core required types
+    if (coreRequiredTypes.contains(hardwareType)) {
+        return true;
+    }
+    
+    // Check LIF-specific required types if LIF is enabled
+    if (ApplicationConfigManager::instance().isLifEnabled()) {
+        static const QStringList lifRequiredTypes = {
+            hardwareTypeOf<LifScope>(),   // Required for LIF data acquisition
+            hardwareTypeOf<LifLaser>()    // Required for LIF laser control
+        };
+        
+        if (lifRequiredTypes.contains(hardwareType)) {
+            return true;
+        }
+    }
+    
+    return false;
 }
 
 QStringList RuntimeHardwareConfig::getMissingRequiredHardware() const

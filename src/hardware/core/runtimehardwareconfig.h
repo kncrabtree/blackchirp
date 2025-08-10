@@ -74,7 +74,6 @@ class RuntimeHardwareConfig : public SettingsStorage
     friend class HardwareManager;
     friend class RuntimeHardwareConfigTest;  /*!< Test class needs access to private methods */
     friend class RuntimeHardwareConfigDialog;  /*!< Dialog needs access for preview/accept operations */
-    // TODO: Add HardwareSettingsDialog and other authorized writers as needed
     
 public:
     /*!
@@ -168,6 +167,18 @@ public:
     BC::Data::HardwareDataContainer createHardwareDataContainer() const;
     
     /*!
+     * \brief Static method to validate any hardware configuration map
+     * 
+     * Checks all hardware selections in the provided configuration map against available implementations.
+     * Does NOT perform automatic fallbacks - reports errors that must be handled explicitly.
+     * This method can be used to validate arbitrary configuration maps without needing the singleton state.
+     * 
+     * \param hardwareMap Hardware configuration map ("hwType.label" -> "implementation")
+     * \return List of validation error messages (empty list means configuration is valid)
+     */
+    static QStringList validateHardwareConfiguration(const std::map<QString, QString>& hardwareMap);
+    
+    /*!
      * \brief Validate entire hardware configuration
      * 
      * Checks all configured hardware selections against available implementations.
@@ -177,6 +188,14 @@ public:
      */
     QHash<QString, HardwareValidationResult> validateConfiguration() const;
     
+    
+    /*!
+     * \brief Static method to check if hardware configuration is valid
+     * 
+     * \param hardwareMap Hardware configuration map ("hwType.label" -> "implementation")
+     * \return True if configuration is valid (no validation errors)
+     */
+    static bool isHardwareConfigurationValid(const std::map<QString, QString>& hardwareMap);
     
     /*!
      * \brief Check if entire configuration is valid
@@ -199,7 +218,7 @@ public:
      * \param hardwareType Hardware type key
      * \return True if hardware type is required
      */
-    bool isHardwareRequired(const QString& hardwareType) const;
+    static bool isHardwareRequired(const QString& hardwareType);
     
     /*!
      * \brief Get list of missing required hardware
@@ -317,7 +336,7 @@ private:
      * It creates stable labels like "test00", "test01", etc. based on hardware map position
      * to avoid issues with unpredictable auto-incrementing indices during testing.
      * 
-     * TODO: Remove this method once UI selection is implemented (Phase 3)
+     * TODO: Remove this method once Phase 3.3 dynamic hardware sync is implemented
      * 
      * \param hardwareType Hardware type (e.g., "FlowController")
      * \param implementation Implementation key (e.g., "mks647c")

@@ -84,6 +84,8 @@ struct HardwareDataContainer {
         QString gpibController;         /*!< GPIB controller type key (e.g., "GPIBController") */
         QString pressureController;     /*!< Pressure controller type key (e.g., "PressureController") */
         QString temperatureController;  /*!< Temperature controller type key (e.g., "TemperatureController") */
+        QString lifScope;               /*!< LIF digitizer type key (e.g., "LifScope") */
+        QString lifLaser;               /*!< LIF laser type key (e.g., "LifLaser") */
         
         /*!
          * \brief Check if type keys are populated
@@ -92,7 +94,8 @@ struct HardwareDataContainer {
         bool isPopulated() const {
             return !ftmwScope.isEmpty() || !clock.isEmpty() || !awg.isEmpty() ||
                    !pulseGenerator.isEmpty() || !flowController.isEmpty() || !ioBoard.isEmpty() ||
-                   !gpibController.isEmpty() || !pressureController.isEmpty() || !temperatureController.isEmpty();
+                   !gpibController.isEmpty() || !pressureController.isEmpty() || !temperatureController.isEmpty() ||
+                   !lifScope.isEmpty() || !lifLaser.isEmpty();
         }
         
         /*!
