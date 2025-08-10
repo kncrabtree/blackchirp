@@ -2,6 +2,7 @@
 #include <hardware/core/runtimehardwareconfig.h>
 #include <hardware/core/hardwareregistry.h>
 #include <data/settings/hardwarekeys.h>
+#include <data/bcglobals.h>
 
 #include <hardware/core/hardwareobject.h>
 #include <hardware/core/clock/clockmanager.h>
@@ -921,4 +922,322 @@ HardwareObject* HardwareManager::createSpecificHardware(const QString& type, con
                    .arg(hwObj->d_name, type, label), LogHandler::Normal);
     
     return hwObj;
+}
+
+// Phase 3.3: Dynamic hardware synchronization methods
+
+void HardwareManager::removeHardwareInternal(const QString& hwKey)
+{
+    HardwareObject* obj = nullptr;
+    
+    // Find and remove from map under mutex protection
+    {
+        QMutexLocker locker(&d_accessMutex);
+        auto it = d_hardwareMap.find(hwKey);
+        if (it == d_hardwareMap.end()) {
+            emit logMessage(QString("Hardware removal failed: Hardware key '%1' not found").arg(hwKey), LogHandler::Warning);
+            return;
+        }
+        
+        obj = it->second;
+        d_hardwareMap.erase(it);
+    }
+    
+    if (!obj) {
+        return;
+    }
+    
+    emit logMessage(QString("Removing hardware: %1 (%2)").arg(obj->d_name, hwKey), LogHandler::Normal);
+    
+    // Step 2b: Use stored connection information for robust disconnection
+    disconnectStoredConnections(hwKey);
+    
+    // Thread cleanup for threaded hardware objects (based on destructor pattern lines 42-50)
+    if (obj->d_threaded) {
+        QThread* thread = obj->thread();
+        if (thread && thread != this->thread()) {
+            // Stop the thread gracefully
+            thread->quit();
+            if (!thread->wait(5000)) { // 5 second timeout
+                emit logMessage(QString("Warning: Thread for hardware %1 did not stop gracefully, terminating").arg(obj->d_name), LogHandler::Warning);
+                thread->terminate();
+                thread->wait(1000); // Give it 1 more second after terminate
+            }
+            // Delete the thread
+            thread->deleteLater();
+        }
+    }
+    
+    // Clean up the hardware object
+    obj->deleteLater();
+    
+    emit logMessage(QString("Successfully removed hardware: %1 (%2)").arg(obj->d_name, hwKey), LogHandler::Normal);
+}
+
+// Phase 3.3.2: Connection tracking infrastructure implementation
+
+void HardwareManager::storeConnection(const QString& hwKey, const QMetaObject::Connection& connection)
+{
+    d_hardwareConnections[hwKey].append(connection);
+}
+
+void HardwareManager::setupHardwareObjectWithTracking(HardwareObject* obj)
+{
+    QString hwKey = obj->d_key;
+    
+    // Clear any existing connections for this hardware key (safety measure)
+    d_hardwareConnections[hwKey].clear();
+    
+    // Common signal connections for all hardware objects - store each connection
+    storeConnection(hwKey, connect(obj, &HardwareObject::logMessage, [this, obj](QString msg, LogHandler::MessageCode mc){
+        emit logMessage(QString("%1: %2").arg(obj->d_name).arg(msg), mc);
+    }));
+    
+    storeConnection(hwKey, connect(obj, &HardwareObject::connected, [obj, this](bool success, QString msg){
+        connectionResult(obj, success, msg);
+    }));
+    
+    storeConnection(hwKey, connect(obj, &HardwareObject::auxDataRead, [obj, this](AuxDataStorage::AuxDataMap m){
+        AuxDataStorage::AuxDataMap out;
+        for(auto it = m.cbegin(); it != m.cend(); ++it)
+            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_subKey, it->first), it->second});
+        emit auxData(out);
+    }));
+    
+    storeConnection(hwKey, connect(obj, &HardwareObject::auxDataRead, [obj, this](AuxDataStorage::AuxDataMap m){
+        AuxDataStorage::AuxDataMap out;
+        for(auto it = m.cbegin(); it != m.cend(); ++it)
+            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_subKey, it->first), it->second});
+        emit validationData(out);
+    }));
+    
+    storeConnection(hwKey, connect(obj, &HardwareObject::rollingDataRead, [obj, this](AuxDataStorage::AuxDataMap m){
+        AuxDataStorage::AuxDataMap out;
+        for(auto it = m.cbegin(); it != m.cend(); ++it)
+            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_subKey, it->first), it->second});
+        emit rollingData(out, QDateTime::currentDateTime());
+    }));
+    
+    storeConnection(hwKey, connect(this, &HardwareManager::beginAcquisition, obj, &HardwareObject::beginAcquisition));
+    storeConnection(hwKey, connect(this, &HardwareManager::endAcquisition, obj, &HardwareObject::endAcquisition));
+}
+
+void HardwareManager::setupHardwareSpecificConnectionsWithTracking(HardwareObject* obj)
+{
+    QString hwKey = obj->d_key;
+    
+    // Setup hardware-specific signal connections and store each connection
+    if (auto ftmwScope = qobject_cast<FtmwScope*>(obj)) {
+        storeConnection(hwKey, connect(ftmwScope, &FtmwScope::shotAcquired, this, &HardwareManager::ftmwScopeShotAcquired));
+    }
+    else if (auto pGen = qobject_cast<PulseGenerator*>(obj)) {
+        QString k = pGen->d_key;
+        storeConnection(hwKey, connect(pGen, &PulseGenerator::settingUpdate, [this, k](const int ch, const PulseGenConfig::Setting set, const QVariant val){
+            emit pGenSettingUpdate(k, ch, set, val);
+        }));
+        storeConnection(hwKey, connect(pGen, &PulseGenerator::configUpdate, [this, k](const PulseGenConfig cfg){
+            emit pGenConfigUpdate(k, cfg);
+        }));
+    }
+    else if (auto flowController = qobject_cast<FlowController*>(obj)) {
+        QString k = flowController->d_key;
+        storeConnection(hwKey, connect(flowController, &FlowController::flowUpdate, [this, k](int i, double d){
+            emit flowUpdate(k, i, d);
+        }));
+        storeConnection(hwKey, connect(flowController, &FlowController::flowSetpointUpdate, [this, k](int i, double d){
+            emit flowSetpointUpdate(k, i, d);
+        }));
+        storeConnection(hwKey, connect(flowController, &FlowController::pressureUpdate, [this, k](double d){
+            emit gasPressureUpdate(k, d);
+        }));
+        storeConnection(hwKey, connect(flowController, &FlowController::pressureSetpointUpdate, [this, k](double d){
+           emit gasPressureSetpointUpdate(k, d);
+        }));
+        storeConnection(hwKey, connect(flowController, &FlowController::pressureControlMode, [this, k](bool b){
+            emit gasPressureControlMode(k, b);
+        }));
+    }
+    else if (auto pressureController = qobject_cast<PressureController*>(obj)) {
+        QString k = pressureController->d_key;
+        storeConnection(hwKey, connect(pressureController, &PressureController::pressureUpdate, this, [this, k](double d){
+            emit pressureUpdate(k, d);
+        }));
+        storeConnection(hwKey, connect(pressureController, &PressureController::pressureSetpointUpdate, this, [this, k](double d){
+            emit pressureSetpointUpdate(k, d);
+        }));
+        storeConnection(hwKey, connect(pressureController, &PressureController::pressureControlMode, this, [this, k](bool b){
+            emit pressureControlMode(k, b);
+        }));
+    }
+    else if (auto tempController = qobject_cast<TemperatureController*>(obj)) {
+        QString k = tempController->d_key;
+        storeConnection(hwKey, connect(tempController, &TemperatureController::channelEnableUpdate, this, [this, k](uint i, bool en){
+            emit temperatureEnableUpdate(k, i, en);
+        }));
+        storeConnection(hwKey, connect(tempController, &TemperatureController::temperatureUpdate, this, [this, k](uint i, double t) {
+            emit temperatureUpdate(k, i, t);
+        }));
+    }
+    else if (auto lifScope = qobject_cast<LifScope*>(obj)) {
+        storeConnection(hwKey, connect(lifScope, &LifScope::waveformRead, this, &HardwareManager::lifScopeShotAcquired));
+        storeConnection(hwKey, connect(lifScope, &LifScope::configAcqComplete, this, &HardwareManager::lifConfigAcqStarted));
+    }
+    else if (auto lifLaser = qobject_cast<LifLaser*>(obj)) {
+        storeConnection(hwKey, connect(lifLaser, &LifLaser::laserPosUpdate, this, &HardwareManager::lifLaserPosUpdate));
+        storeConnection(hwKey, connect(lifLaser, &LifLaser::laserFlashlampUpdate, this, &HardwareManager::lifLaserFlashlampUpdate));
+    }
+}
+
+void HardwareManager::disconnectStoredConnections(const QString& hwKey)
+{
+    auto it = d_hardwareConnections.find(hwKey);
+    if (it != d_hardwareConnections.end()) {
+        // Disconnect all stored connections for this hardware
+        for (const auto& connection : it->second) {
+            QObject::disconnect(connection);
+        }
+        // Remove the connection list for this hardware
+        d_hardwareConnections.erase(it);
+    }
+}
+
+void HardwareManager::addHardwareInternal(const QString& hwKey, const QString& implementation)
+{
+    QMutexLocker locker(&d_accessMutex);
+    
+    // Parse the hardware key to get type and label
+    auto [hardwareType, label] = BC::Key::parseKey(hwKey);
+    
+    emit logMessage(QString("Adding hardware: %1 (type=%2, implementation=%3, label=%4)")
+                   .arg(hwKey, hardwareType, implementation, label), LogHandler::Normal);
+    
+    // Check if hardware already exists
+    if (d_hardwareMap.find(hwKey) != d_hardwareMap.end()) {
+        emit logMessage(QString("Hardware addition failed: Hardware key '%1' already exists").arg(hwKey), LogHandler::Warning);
+        return;
+    }
+    
+    // Create hardware using HardwareRegistry
+    HardwareObject* hwObj = HardwareRegistry::instance().createHardware(hardwareType, implementation, label);
+    
+    if (!hwObj) {
+        QString errorMsg = QString("Hardware creation failed: Unable to create hardware (type=%1, implementation=%2, label=%3). Implementation may not be registered or factory failed.")
+                          .arg(hardwareType, implementation, label);
+        emit logMessage(errorMsg, LogHandler::Error);
+        
+        // Remove from RuntimeHardwareConfig on critical error
+        auto& runtimeConfig = RuntimeHardwareConfig::instance();
+        runtimeConfig.removeHardwareSelection(hardwareType, label);
+        emit logMessage(QString("Removed failed hardware from configuration: %1.%2").arg(hardwareType, label), LogHandler::Warning);
+        return;
+    }
+    
+    // Validate the created hardware object
+    if (hwObj->d_key != hwKey) {
+        QString errorMsg = QString("Hardware creation failed: Key mismatch (expected=%1, actual=%2)").arg(hwKey, hwObj->d_key);
+        emit logMessage(errorMsg, LogHandler::Error);
+        
+        // Clean up the created object and remove from config
+        hwObj->deleteLater();
+        auto& runtimeConfig = RuntimeHardwareConfig::instance();
+        runtimeConfig.removeHardwareSelection(hardwareType, label);
+        emit logMessage(QString("Removed failed hardware from configuration: %1.%2").arg(hardwareType, label), LogHandler::Warning);
+        return;
+    }
+    
+    try {
+        // Add to hardware map early so signal connections can find it
+        d_hardwareMap.emplace(hwKey, hwObj);
+        
+        // Set up all signal connections with tracking
+        setupHardwareObjectWithTracking(hwObj);
+        setupHardwareSpecificConnectionsWithTracking(hwObj);
+        
+        // Resolve GPIB controller for communication setup
+        GpibController* gpib = nullptr;
+        auto gpibIt = std::find_if(d_hardwareMap.begin(), d_hardwareMap.end(), 
+            [](const auto& pair) { return qobject_cast<GpibController*>(pair.second) != nullptr; });
+        if (gpibIt != d_hardwareMap.end()) {
+            gpib = static_cast<GpibController*>(gpibIt->second);
+        }
+        
+        // Build communication protocol for hardware object
+        hwObj->buildCommunication(gpib);
+        
+        // Handle threading setup
+        if (hwObj->d_threaded) {
+            auto thread = new QThread(this);
+            thread->setObjectName(hwObj->d_key + "Thread");
+            hwObj->moveToThread(thread);
+            storeConnection(hwKey, connect(thread, &QThread::started, hwObj, &HardwareObject::bcInitInstrument));
+            
+            // Start the thread
+            thread->start();
+            
+            emit logMessage(QString("Started thread for hardware: %1").arg(hwObj->d_name), LogHandler::Normal);
+        } else {
+            hwObj->setParent(this);
+            // Initialize non-threaded hardware directly
+            QMetaObject::invokeMethod(hwObj, &HardwareObject::bcInitInstrument);
+        }
+        
+        // Note: Connection testing is deferred until all hardware changes are complete
+        // to avoid GPIB controller resolution issues during dynamic creation
+        emit logMessage(QString("Hardware created and initialized: %1 (connection testing deferred)").arg(hwObj->d_name), LogHandler::Normal);
+        
+        emit logMessage(QString("Successfully added hardware: %1 (%2)").arg(hwObj->d_name, hwKey), LogHandler::Normal);
+        
+    } catch (const std::exception& e) {
+        QString errorMsg = QString("Hardware initialization failed with exception: %1").arg(e.what());
+        emit logMessage(errorMsg, LogHandler::Error);
+        
+        // Clean up on failure
+        disconnectStoredConnections(hwKey);
+        d_hardwareMap.erase(hwKey);
+        
+        // Handle threaded cleanup
+        if (hwObj->d_threaded) {
+            QThread* thread = hwObj->thread();
+            if (thread && thread != this->thread()) {
+                thread->quit();
+                if (!thread->wait(5000)) {
+                    thread->terminate();
+                    thread->wait(1000);
+                }
+                thread->deleteLater();
+            }
+        }
+        
+        hwObj->deleteLater();
+        
+        // Remove from RuntimeHardwareConfig on failure
+        auto& runtimeConfig = RuntimeHardwareConfig::instance();
+        runtimeConfig.removeHardwareSelection(hardwareType, label);
+        emit logMessage(QString("Removed failed hardware from configuration: %1.%2").arg(hardwareType, label), LogHandler::Warning);
+    } catch (...) {
+        QString errorMsg = QString("Hardware initialization failed with unknown exception");
+        emit logMessage(errorMsg, LogHandler::Error);
+        
+        // Clean up on failure - same as above
+        disconnectStoredConnections(hwKey);
+        d_hardwareMap.erase(hwKey);
+        
+        if (hwObj->d_threaded) {
+            QThread* thread = hwObj->thread();
+            if (thread && thread != this->thread()) {
+                thread->quit();
+                if (!thread->wait(5000)) {
+                    thread->terminate();
+                    thread->wait(1000);
+                }
+                thread->deleteLater();
+            }
+        }
+        
+        hwObj->deleteLater();
+        
+        auto& runtimeConfig = RuntimeHardwareConfig::instance();
+        runtimeConfig.removeHardwareSelection(hardwareType, label);
+        emit logMessage(QString("Removed failed hardware from configuration: %1.%2").arg(hardwareType, label), LogHandler::Warning);
+    }
 }

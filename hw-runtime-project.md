@@ -104,50 +104,120 @@ All hardware types now follow consistent pattern:
 
 **Foundation Ready**: Phase 3.2 Runtime Hardware Configuration Dialog can now rely on complete hardware catalog being available.
 
-### Phase 3.2: Runtime Hardware Configuration Dialog ✅ **PHASE 1 & 2 COMPLETED**
+### ✅ Phase 3.2: Runtime Hardware Configuration Dialog ✅ **COMPLETED**
 **Goal**: Provide user-friendly interface for runtime hardware selection and profile management.
 
-**Design**: A comprehensive hybrid tabbed/overview interface that provides at-a-glance configuration visibility while enabling intuitive hardware management.
+**Achievement**: Complete runtime hardware configuration dialog with comprehensive profile management, real-time validation, and MainWindow integration.
 
-**Current Status**: **Configuration Overview Complete** - Phase 2 of the detailed specification has been successfully implemented.
+**Complete Implementation** (✅ **FULLY ACCOMPLISHED**):
+- ✅ **Dialog Structure**: Hybrid tabbed interface with Hardware Configuration and Library Status tabs
+- ✅ **3-Panel Layout**: Configuration Overview (live preview), Hardware Browser (type selection), Profile Management (CRUD operations)  
+- ✅ **Profile Management**: Full hardware profile lifecycle with HardwareProfileManager integration
+- ✅ **Real-time Validation**: Live configuration validation with ThemeColors status feedback and Apply button control
+- ✅ **State Management**: Advanced preview/original configuration handling with atomic accept/cancel operations
+- ✅ **MainWindow Integration**: Complete integration with dialog lifecycle management and error handling
+- ✅ **Type Safety**: Modern hardwareTypeOf<T>() integration with LIF conditional support via ApplicationConfigManager
 
-**Phase 1 Accomplishments** (✅ **COMPLETED**):
-- ✅ **Complete Dialog Structure**: Tabbed interface with Hardware Configuration and Library Status tabs
-- ✅ **3-Panel Splitter Layout**: Configuration Overview, Hardware Browser, and Context-Sensitive Configuration panels (33% each)
-- ✅ **MainWindow Integration**: "Hardware Selection" menu item added to Hardware menu
-- ✅ **Validation Status Bar**: ThemeColors-styled status feedback with success/error states
-- ✅ **Proper Architecture**: Clean UI separation with dedicated header files and structured layout
+**Architectural Excellence**: 
+- **Clean API Integration**: Uses existing RuntimeHardwareConfig and HardwareRegistry systems without custom parsing
+- **Error Recovery**: Robust error handling for configuration failures with user-friendly feedback
+- **Theme Integration**: Consistent ThemeColors styling throughout the interface
+- **Future Ready**: TODO markers placed for Phase 3.3 hardware synchronization integration
 
-**Phase 2 Accomplishments** (✅ **COMPLETED**):
-- ✅ **RuntimeHardwareConfig Integration**: Configuration Overview TreeWidget now displays actual hardware data from `RuntimeHardwareConfig::getCurrentHardware()`
-- ✅ **Data-Driven Population**: Eliminated placeholder content, implemented live configuration parsing using `BC::Key::parseKey()`
-- ✅ **Hierarchical Display**: Proper single vs multi-instance hardware detection and formatting
-- ✅ **Tree Management**: Full tree population with sorting enabled and auto-expansion
-- ✅ **Code Quality**: Fixed malformed implementation, clean API integration without custom parsing logic
-- ✅ **Foundation Ready**: Established patterns for Phase 3 Hardware Browser implementation
-
-**Detailed Specification**: See [hw-selection-dialog.md](hw-selection-dialog.md) for complete UI/UX design, implementation phases, and technical specifications.
-
-**Phase 3 Accomplishments** (✅ **COMPLETED**):
-- ✅ **Hardware Browser Integration**: Hardware Browser now displays hardware types from HardwareRegistry with active instance counts from RuntimeHardwareConfig
-- ✅ **Visual State Management**: Configured hardware types display in bold, unconfigured in normal text
-- ✅ **Selection Flow**: Hardware browser selection triggers right panel updates with placeholder content
-- ✅ **Foundation Ready**: Selection handling and data integration patterns established for Phase 4 implementation
-
-**Next Steps**: 
-- **Phase 4**: Context-sensitive configuration panels for hardware management
-- **Phase 5**: Real-time validation and configuration persistence
-
-**Integration**: Dialog will update RuntimeHardwareConfig upon acceptance, triggering hardware synchronization in Phase 3.3.
+**Result**: Users can now configure hardware at runtime through an intuitive interface with immediate visual feedback and comprehensive validation.
 
 ### Phase 3.3: Dynamic Hardware Synchronization ⚠️ **CRITICAL MISSING FUNCTIONALITY**
 **Goal**: Enable live hardware reconfiguration without application restart.
 
 **Current Limitation**: While the runtime configuration infrastructure is complete (RuntimeHardwareConfig, profiles, etc.), the actual synchronization mechanism is **not yet implemented**. Hardware objects are still created only at application startup. This phase implements the essential missing capability to create/destroy hardware objects and manage signal connections at runtime.
 
-**Core Method**:
+#### **Phase 3.3 Task Breakdown:**
+
+#### **Task 3.3.1: Hardware Removal Infrastructure** [COMPLETE]
+**Scope**: Implement safe hardware object removal with proper cleanup
+- **Implementation Target**: `removeHardwareInternal(const QString& hwKey)` method
+- **Key Requirements**:
+  - Proper signal disconnection (HardwareObject signals to HardwareManager)
+  - Thread cleanup for threaded hardware objects (quit/wait pattern)
+  - Remove from `d_hardwareMap` safely with mutex protection
+  - Preserve non-hardware-specific signals (don't break MainWindow connections)
+- **Complexity**: Medium - Thread cleanup and signal management
+- **Dependencies**: None
+
+#### **Task 3.3.2: Hardware Creation & Initialization Pipeline**
+**Scope**: Implement dynamic hardware creation with full initialization and connection tracking
+- **Implementation Target**: `addHardwareInternal(const QString& hwKey, const QString& implementation)` method  
+- **Key Requirements**:
+  - **Step 2a**: Implement connection tracking infrastructure - store all signal connections for each hardware object to enable robust disconnection
+  - **Step 2b**: Modify Task 3.3.1 removal function to use stored connection information instead of manual signal disconnection
+  - Use HardwareRegistry to create instances dynamically
+  - Apply complete initialization sequence (communication setup, threading, signal connections)
+  - **Store All Connections**: Track every signal connection made during hardware setup for later disconnection
+  - Test connection and set connection status
+  - **Error Handling**: Critical errors notify user and remove from RuntimeHardwareConfig (no silent fallback)
+  - Integration with existing hardware setup patterns
+- **Complexity**: High - Must replicate complex constructor initialization logic plus implement connection tracking system
+- **Dependencies**: Task 3.3.1 (removal patterns inform creation patterns)
+
+#### **Task 3.3.3: Connection Status Tracking Enhancement**
+**Scope**: Enhance connection tracking for dynamic hardware changes
+- **Implementation Target**: Modify connection status logic for dynamic hardware maps
+- **Key Requirements**:
+  - Fix `allHardwareConnected()` to work with changing hardware sets
+  - Handle critical vs non-critical hardware distinction dynamically
+  - **Critical Hardware Logic**: `d_critical` is user-configured via HwDialog (program idle only), takes effect on next `testConnection()` call
+  - Ensure proper `isConnected()` state tracking after hardware changes
+  - Thread-safe connection status updates
+- **Complexity**: High - Dynamic hardware set validation with user-configurable criticality
+- **Dependencies**: Task 3.3.2 (creation affects connection states)
+
+#### **Task 3.3.4: Hardware Replacement Logic**
+**Scope**: Handle hardware replacement (same type/label, different implementation)  
+**Design Note**: No settings migration - different implementations are treated as completely different hardware objects
+- **Implementation Target**: `replaceHardwareInternal(const QString& hwKey, const QString& newImplementation)`
+- **Key Requirements**:
+  - Remove old hardware completely (Task 3.3.1 logic)
+  - Create new hardware from scratch (Task 3.3.2 logic)
+  - No state transfer - clean slate approach
+  - Maintain signal routing to MainWindow
+- **Complexity**: Medium - Combination of removal + creation
+- **Dependencies**: Tasks 3.3.1 and 3.3.2
+
+#### **Task 3.3.5: Atomic Synchronization Orchestrator**
+**Scope**: Implement main synchronization method with change detection
+- **Implementation Target**: `syncWithRuntimeConfig()` and change detection helpers
+- **Key Requirements**:
+  - `findHardwareToAdd()`, `findHardwareToRemove()`, `findHardwareToReplace()` helpers
+  - Atomic application of all changes with full mutex protection
+  - **UI Integration Point**: Called when hardware configuration dialog closes
+  - **Connection Testing**: Must call `testConnectionToAll()` after all hardware changes are complete to ensure GPIB controllers are available before GPIB instruments test connections
+  - Proper error handling with user notification
+  - Signal emission for status updates
+- **Complexity**: Medium - Orchestration logic with thread safety
+- **Dependencies**: Tasks 3.3.1, 3.3.2, 3.3.3, 3.3.4
+
+#### **Task 3.3.6: Temporary Registration Code Cleanup**
+**Scope**: Remove all temporary/testing hardware registration code
+- **Implementation Target**: Clean up `createVirtualHardwareForCapabilityDiscovery()` and `registerHardwareForTesting()`
+- **Key Requirements**:
+  - Remove from HardwareManager constructor
+  - Remove testing methods from RuntimeHardwareConfig
+  - Ensure all hardware creation goes through dynamic system
+  - Verify no functionality regression
+- **Complexity**: Low-Medium - Code removal with verification
+- **Dependencies**: Task 3.3.5 (dynamic system must work first)
+
+#### **Implementation Principles:**
+1. **No Settings Migration**: Different implementations are distinct hardware objects
+2. **No Silent Fallback**: Critical errors notify user and remove from runtime config  
+3. **UI Synchronization**: Hardware changes only occur when dialog closes
+4. **User-Controlled Criticality**: `d_critical` configured in HwDialog, effective on next connection test
+5. **Thread Safety**: Full mutex protection during all synchronization operations
+
+#### **Core Synchronization Method:**
 ```cpp
 void HardwareManager::syncWithRuntimeConfig() {
+    QMutexLocker locker(&d_accessMutex);
     const auto& config = RuntimeHardwareConfig::constInstance();
     auto targetHardware = config.getCurrentHardware();
     
@@ -160,14 +230,11 @@ void HardwareManager::syncWithRuntimeConfig() {
     for(const auto& hwKey : toRemove) removeHardwareInternal(hwKey);
     for(const auto& [hwKey, impl] : toReplace) replaceHardwareInternal(hwKey, impl);
     for(const auto& [hwKey, impl] : toAdd) addHardwareInternal(hwKey, impl);
+    
+    // Update connection status and notify UI
+    testConnectionToAll();
 }
 ```
-
-**Key Features**:
-1. **Safe Hardware Removal**: Proper signal disconnection and thread cleanup
-2. **Connection Testing Integration**: Fixed response counting for dynamic hardware maps
-3. **Atomic Updates**: All changes applied together to prevent inconsistent states
-4. **UI Integration**: MainWindow updates hardware-dependent elements after reconfiguration
 
 ### Phase 3.4: GUI Dynamic Updates
 **Goal**: Make MainWindow adapt to hardware configuration changes.
@@ -176,6 +243,22 @@ void HardwareManager::syncWithRuntimeConfig() {
 1. **Dynamic UI Construction**: Replace constructor-time hardware-dependent UI building with runtime methods
 2. **Status Display Updates**: Hardware menu items, status boxes, control widgets adapt to active hardware
 3. **Signal Routing Preservation**: Existing MainWindow→HardwareManager connections remain unchanged
+
+### Phase 3.5: Library Configuration Interface ⚠️ **PLANNED AFTER PHASE 3.4**
+**Goal**: Complete the "Library Status" tab in RuntimeHardwareConfigDialog for vendor library management and diagnostics.
+
+**Purpose**: Provide users with comprehensive vendor library status information, installation guidance, and configuration options.
+
+**Planned Features**:
+- **Library Detection Status**: Real-time display of available vendor libraries (Spectrum, LabJack, etc.)
+- **Installation Guidance**: Clear instructions for installing missing vendor libraries
+- **Library Configuration**: Settings for library paths and configuration options
+- **Diagnostics Interface**: Library version information, compatibility checks, and error reporting
+- **Integration with Hardware Tab**: Cross-reference library status with hardware availability
+
+**Implementation Strategy**: Build upon the existing VendorLibrary infrastructure and integrate with the completed hardware configuration functionality from Phase 3.2.
+
+**Timing**: Planned implementation after Phase 3.4 (Dynamic UI Construction) is complete to ensure proper integration with the dynamic UI system.
 
 ## Phase 4: Testing & Validation
 
@@ -209,6 +292,7 @@ void HardwareManager::syncWithRuntimeConfig() {
 8. **Vendor Extension Support**: Third-party hardware plugins without compilation
 9. **Hot-Swapping Capability**: Runtime plugin loading/unloading (future enhancement)
 10. **Plugin Marketplace**: Centralized distribution of hardware extensions (future)
+11. **Hardware Configuration Presets**: Save/load complete hardware configurations including RF parameters, clock assignments, and cross-system validation (requires dedicated project due to RfConfig integration complexity)
 
 ## Architecture Benefits
 

@@ -210,27 +210,12 @@ void HardwareObject::buildCommunication(QObject *gc, CommunicationProtocol::Comm
     // GPIB support included
     GpibController *c = dynamic_cast<GpibController*>(gc);
     
-    // If no GPIB controller provided and we need GPIB, try to resolve from settings
+    // If no GPIB controller provided and we need GPIB, connection will fail during testing
+    // GPIB controller resolution is handled during the synchronization phase when all hardware exists
     if (!c && (commType == CommunicationProtocol::Gpib || 
                (commType == CommunicationProtocol::None && d_commType == CommunicationProtocol::Gpib))) {
-        // Try to get controller key from GPIB settings
-        QString controllerKey = getGroupValue(BC::Key::Comm::gpib, BC::Key::GPIB::gpibController, QString());
-        if (!controllerKey.isEmpty()) {
-            try {
-                // Use callback-based resolution to maintain thread safety
-                HardwareManager::constInstance().resolveGpibController(controllerKey, 
-                    [&c](GpibController* controller) { c = controller; });
-            } catch (const std::runtime_error&) {
-                // HardwareManager not initialized - controller resolution failed
-                c = nullptr;
-            }
-        }
-        
-        // If controller still not found, emit connection failure
-        if (!c) {
-            emit connected(false, "GPIB controller not available", QPrivateSignal());
-            return;
-        }
+        // Defer GPIB controller resolution until connection testing phase
+        // This avoids initialization order dependencies during dynamic hardware creation
     }
 
     // Use provided commType, or fall back to member variable
