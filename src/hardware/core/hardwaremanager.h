@@ -176,8 +176,21 @@ private:
     
     // Phase 2.4.3: Runtime configuration integration
     HardwareObject* createSpecificHardware(const QString& type, const QString& implementation, const QString& label);
+    
+    // Phase 3.3: Dynamic hardware synchronization
+    void removeHardwareInternal(const QString& hwKey);
+    void addHardwareInternal(const QString& hwKey, const QString& implementation);
+    
+    // Connection tracking helpers for Task 3.3.2
+    void storeConnection(const QString& hwKey, const QMetaObject::Connection& connection);
+    void setupHardwareObjectWithTracking(HardwareObject* obj);
+    void setupHardwareSpecificConnectionsWithTracking(HardwareObject* obj);
+    void disconnectStoredConnections(const QString& hwKey);
 
     std::map<QString,HardwareObject*> d_hardwareMap;
+    
+    // Connection tracking infrastructure for Task 3.3.2
+    std::map<QString, QVector<QMetaObject::Connection>> d_hardwareConnections;
     std::unique_ptr<ClockManager> pu_clockManager;
     
     // Static instance management for const access

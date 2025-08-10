@@ -191,6 +191,7 @@ All hardware types now follow consistent pattern:
   - Atomic application of all changes with full mutex protection
   - **UI Integration Point**: Called when hardware configuration dialog closes
   - **Connection Testing**: Must call `testConnectionToAll()` after all hardware changes are complete to ensure GPIB controllers are available before GPIB instruments test connections
+  - **GPIB Controller Resolution**: Investigate proper usage of existing `resolveGpibController()` callback-based function for GPIB instrument-controller relationships during connection testing phase
   - Proper error handling with user notification
   - Signal emission for status updates
 - **Complexity**: Medium - Orchestration logic with thread safety

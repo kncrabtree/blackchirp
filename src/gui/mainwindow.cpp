@@ -841,6 +841,10 @@ void MainWindow::launchRuntimeHardwareConfigDialog()
 
     auto d = new RuntimeHardwareConfigDialog(this);
     
+    // TODO: Phase 3.3 - Add hardware synchronization integration
+    // When dialog is accepted with configuration changes, trigger HardwareManager::syncWithRuntimeConfig()
+    // to dynamically apply hardware changes without requiring application restart
+    
     connect(d, &QDialog::finished, d, &QDialog::deleteLater);
     connect(d, &QDialog::destroyed, [this](){
         auto it = d_openDialogs.find("RuntimeHardwareConfig");
