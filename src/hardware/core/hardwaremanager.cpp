@@ -84,10 +84,26 @@ void HardwareManager::initialize()
     emit hwInitializationComplete();
 }
 
-void HardwareManager::connectionResult(HardwareObject *obj, bool success, QString msg)
+void HardwareManager::handleConnectionResult(const QString& hwKey, bool success, const QString& msg)
 {
-    if(d_responseCount < d_hardwareMap.size())
-        d_responseCount++;
+    // Find the hardware object for logging and connection management
+    HardwareObject* obj = nullptr;
+    {
+        QMutexLocker locker(&d_accessMutex);
+        auto it = d_hardwareMap.find(hwKey);
+        if (it != d_hardwareMap.end()) {
+            obj = it->second;
+            // Thread-safe response counting
+            if(d_connectionState.responseCount < d_hardwareMap.size())
+                d_connectionState.recordResponse();
+        }
+    }
+
+    if (!obj) {
+        // Hardware not found - emit signal anyway for UI feedback
+        emit connectionResult(hwKey, false, QString("Hardware not found: %1").arg(hwKey));
+        return;
+    }
 
     if(success)
     {
@@ -105,7 +121,8 @@ void HardwareManager::connectionResult(HardwareObject *obj, bool success, QStrin
             emit logMessage(msg,code);
     }
 
-    emit testComplete(obj->d_name,success,msg);
+    // Emit unified connectionResult signal for both test results and connection changes
+    emit connectionResult(hwKey, success, msg);
     checkStatus();
 }
 
@@ -116,6 +133,9 @@ void HardwareManager::hardwareFailure()
         return;
 
     disconnect(obj,&HardwareObject::hardwareFailure,this,&HardwareManager::hardwareFailure);
+    
+    // Emit unified connectionResult signal (hardware failed = disconnected)
+    emit connectionResult(obj->d_key, false, QString("Hardware failure"));
 
     if(obj->d_critical)
         emit abortAcquisition();
@@ -197,13 +217,19 @@ void HardwareManager::experimentComplete()
 
 void HardwareManager::testAll()
 {
+    QMutexLocker locker(&d_accessMutex);
+    
+    // Reset connection test state for current hardware set
+    d_connectionState.reset();
+    
     for(auto it = d_hardwareMap.cbegin(); it != d_hardwareMap.cend(); ++it)
     {
         auto obj = it->second;
         QMetaObject::invokeMethod(obj,&HardwareObject::bcTestConnection);
     }
 
-    checkStatus();
+    // checkStatus() will be called by connectionResult() as each hardware responds
+    // and will reset testsInProgress when all hardware has responded
 }
 
 void HardwareManager::testObjectConnection(const QString hwKey)
@@ -213,7 +239,7 @@ void HardwareManager::testObjectConnection(const QString hwKey)
         QMutexLocker locker(&d_accessMutex);
         auto it = d_hardwareMap.find(hwKey);
         if(it == d_hardwareMap.end()) {
-            emit testComplete(hwKey,false,QString("Device not found!"));
+            emit connectionResult(hwKey,false,QString("Device not found!"));
             return;
         }
         obj = it->second;
@@ -493,19 +519,44 @@ void HardwareManager::storeAllOptHw(Experiment *exp, std::map<QString, bool> hw)
 
 void HardwareManager::checkStatus()
 {
+    QMutexLocker locker(&d_accessMutex);
+    
     //gotta wait until all instruments have responded
-    if(d_responseCount < d_hardwareMap.size())
+    if(!d_connectionState.allResponded(d_hardwareMap.size()))
         return;
+
+    // All hardware has responded, tests are complete
+    d_connectionState.markComplete();
 
     bool success = true;
     for(auto &[key,obj] : d_hardwareMap)
     {
-        Q_UNUSED(key)
+        // Handle critical vs non-critical hardware distinction dynamically
+        // using individual obj->isConnected() and obj->d_critical states  
         if(!obj->isConnected() && obj->d_critical)
             success = false;
     }
 
     emit allHardwareConnected(success);
+}
+
+void HardwareManager::initializeConnectionTesting()
+{
+    QMutexLocker locker(&d_accessMutex);
+    d_connectionState.reset();
+}
+
+void HardwareManager::resetConnectionTestState()
+{
+    QMutexLocker locker(&d_accessMutex);
+    d_connectionState.responseCount = 0;
+    d_connectionState.testsInProgress = false;
+}
+
+void HardwareManager::finalizeConnectionTesting()
+{
+    QMutexLocker locker(&d_accessMutex);
+    d_connectionState.markComplete();
 }
 
 void HardwareManager::setLifParameters(double delay, double pos)
@@ -771,7 +822,7 @@ void HardwareManager::setupHardwareObject(HardwareObject* obj)
         emit logMessage(QString("%1: %2").arg(obj->d_name).arg(msg), mc);
     });
     connect(obj, &HardwareObject::connected, [obj, this](bool success, QString msg){
-        connectionResult(obj, success, msg);
+        handleConnectionResult(obj->d_key, success, msg);
     });
     connect(obj, &HardwareObject::auxDataRead, [obj, this](AuxDataStorage::AuxDataMap m){
         AuxDataStorage::AuxDataMap out;
@@ -971,6 +1022,9 @@ void HardwareManager::removeHardwareInternal(const QString& hwKey)
     // Clean up the hardware object
     obj->deleteLater();
     
+    // Emit unified connectionResult signal (hardware removed = disconnected)  
+    emit connectionResult(hwKey, false, QString("Hardware removed"));
+    
     emit logMessage(QString("Successfully removed hardware: %1 (%2)").arg(obj->d_name, hwKey), LogHandler::Normal);
 }
 
@@ -994,7 +1048,7 @@ void HardwareManager::setupHardwareObjectWithTracking(HardwareObject* obj)
     }));
     
     storeConnection(hwKey, connect(obj, &HardwareObject::connected, [obj, this](bool success, QString msg){
-        connectionResult(obj, success, msg);
+        handleConnectionResult(obj->d_key, success, msg);
     }));
     
     storeConnection(hwKey, connect(obj, &HardwareObject::auxDataRead, [obj, this](AuxDataStorage::AuxDataMap m){
@@ -1116,6 +1170,9 @@ void HardwareManager::addHardwareInternal(const QString& hwKey, const QString& i
         emit logMessage(QString("Hardware addition failed: Hardware key '%1' already exists").arg(hwKey), LogHandler::Warning);
         return;
     }
+    
+    // Reset connection test state for dynamic hardware changes
+    resetConnectionTestState();
     
     // Create hardware using HardwareRegistry
     HardwareObject* hwObj = HardwareRegistry::instance().createHardware(hardwareType, implementation, label);

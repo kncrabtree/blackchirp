@@ -4,6 +4,7 @@
 #include <QObject>
 #include <memory>
 #include <functional>
+#include <atomic>
 #include <data/loghandler.h>
 #include <data/storage/auxdatastorage.h>
 #include <data/storage/settingsstorage.h>
@@ -48,12 +49,12 @@ signals:
 
     void allHardwareConnected(bool);
     /*!
-     * \brief Emitted when a connection is being tested from the communication dialog
-     * \param QString The HardwareObject key
-     * \param bool Whether connection was successful
-     * \param QString Error message
+     * \brief Unified signal for all connection status changes and test results
+     * \param hwKey Hardware key (e.g., "FtmwScope.mainScope") 
+     * \param success Whether connection was successful
+     * \param msg Status or error message
      */
-    void testComplete(QString,bool,QString);
+    void connectionResult(const QString& hwKey, bool success, const QString& msg);
     void beginAcquisition();
     void abortAcquisition();
     void experimentInitialized(std::shared_ptr<Experiment>);
@@ -95,11 +96,11 @@ public slots:
 
     /*!
      * \brief Records whether hardware connection was successful
-     * \param obj A HardwareObject that was tested
-     * \param success Whether communication was sucessful
+     * \param hwKey Hardware key of the tested object
+     * \param success Whether communication was successful
      * \param msg Error message
      */
-    void connectionResult(HardwareObject *obj, bool success, QString msg);
+    void handleConnectionResult(const QString& hwKey, bool success, const QString& msg);
 
     /*!
      * \brief Sets hardware status in d_status to false, disables program
@@ -164,10 +165,27 @@ public:
     
     // Thread-safe GPIB controller resolution with callback
     void resolveGpibController(const QString& controllerKey, std::function<void(GpibController*)> callback) const;
+    
+    // Connection status tracking for UI
+    bool connectionTestsInProgress() const { return d_connectionState.testsInProgress; }
 
 private:
-    std::size_t d_responseCount{0};
+    // Connection test state management
+    struct ConnectionTestState {
+        std::atomic<size_t> responseCount{0};
+        std::atomic<bool> testsInProgress{false};
+        
+        void reset() { responseCount = 0; testsInProgress = true; }
+        void recordResponse() { responseCount++; }
+        bool allResponded(size_t expected) const { return responseCount >= expected; }
+        void markComplete() { testsInProgress = false; }
+    };
+    ConnectionTestState d_connectionState;
+
     void checkStatus();
+    void initializeConnectionTesting();
+    void resetConnectionTestState(); 
+    void finalizeConnectionTesting();
     
     // Phase 2.4.2: Constructor refactoring methods
     void createVirtualHardwareForCapabilityDiscovery();

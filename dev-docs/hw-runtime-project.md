@@ -144,7 +144,7 @@ All hardware types now follow consistent pattern:
 - **Complexity**: Medium - Thread cleanup and signal management
 - **Dependencies**: None
 
-#### **Task 3.3.2: Hardware Creation & Initialization Pipeline**
+#### **Task 3.3.2: Hardware Creation & Initialization Pipeline** [COMPLETE]
 **Scope**: Implement dynamic hardware creation with full initialization and connection tracking
 - **Implementation Target**: `addHardwareInternal(const QString& hwKey, const QString& implementation)` method  
 - **Key Requirements**:
@@ -160,15 +160,17 @@ All hardware types now follow consistent pattern:
 - **Dependencies**: Task 3.3.1 (removal patterns inform creation patterns)
 
 #### **Task 3.3.3: Connection Status Tracking Enhancement**
-**Scope**: Enhance connection tracking for dynamic hardware changes
+**Scope**: Enhance connection tracking for dynamic hardware changes in HardwareManager
 - **Implementation Target**: Modify connection status logic for dynamic hardware maps
 - **Key Requirements**:
-  - Fix `allHardwareConnected()` to work with changing hardware sets
-  - Handle critical vs non-critical hardware distinction dynamically
-  - **Critical Hardware Logic**: `d_critical` is user-configured via HwDialog (program idle only), takes effect on next `testConnection()` call
-  - Ensure proper `isConnected()` state tracking after hardware changes
-  - Thread-safe connection status updates
-- **Complexity**: High - Dynamic hardware set validation with user-configurable criticality
+  - Fix `allHardwareConnected()` to work with changing hardware sets - properly reset `d_responseCount` when hardware changes
+  - Handle critical vs non-critical hardware distinction dynamically using individual `obj->isConnected()` and `obj->d_critical` states  
+  - **Critical Hardware Logic**: `d_critical` is user-configured via HwDialog (program idle only), updated when bcReadSettings is called after user closes dialog
+  - **Connection Test State**: Add pending test state tracking (`d_connectionTestsInProgress`) to prevent premature experiment start
+  - **Individual Hardware Signals**: Emit new `hardwareConnectionChanged(QString hwKey, bool connected)` signal for UI consumption
+  - Thread-safe connection status updates with proper mutex protection
+- **Architecture Note**: Leverage existing HardwareObject `isConnected()` method and `connected(bool, QString)` signal rather than maintaining separate state maps
+- **Complexity**: High - Dynamic hardware set validation with user-configurable criticality and pending test state management
 - **Dependencies**: Task 3.3.2 (creation affects connection states)
 
 #### **Task 3.3.4: Hardware Replacement Logic**
@@ -238,12 +240,27 @@ void HardwareManager::syncWithRuntimeConfig() {
 ```
 
 ### Phase 3.4: GUI Dynamic Updates
-**Goal**: Make MainWindow adapt to hardware configuration changes.
+**Goal**: Make MainWindow adapt to hardware configuration changes and provide fine-grained connection status feedback.
 
 **Required Changes**:
 1. **Dynamic UI Construction**: Replace constructor-time hardware-dependent UI building with runtime methods
 2. **Status Display Updates**: Hardware menu items, status boxes, control widgets adapt to active hardware
-3. **Signal Routing Preservation**: Existing MainWindow→HardwareManager connections remain unchanged
+3. **Fine-Grained Connection Status UI**: 
+   - Replace binary `d_hardwareConnected` with per-hardware connection state checking
+   - Modify `configureUi()` to only disable experiment start for critical hardware failures, not all hardware controls
+   - Connect individual hardware status boxes to `hardwareConnectionChanged()` signals for real-time visual feedback
+   - Gray out/disable status boxes for disconnected hardware while preserving access to working hardware
+4. **Connection Testing State Management**:
+   - Add UI state for "connection tests in progress" to prevent experiment start during testing
+   - Show clear feedback when connection tests are pending vs completed
+   - Ensure users can still access hardware controls for connected devices during testing
+5. **Signal Routing Preservation**: Existing MainWindow→HardwareManager connections remain unchanged
+
+**Benefits**: 
+- **User-Friendly**: Users can access working hardware even when other hardware fails
+- **Clear Feedback**: Individual status boxes show per-hardware connection state  
+- **Safe Operations**: Still prevents experiments when critical hardware unavailable
+- **Dynamic Compatibility**: Works correctly with runtime hardware configuration changes
 
 ### Phase 3.5: Library Configuration Interface ⚠️ **PLANNED AFTER PHASE 3.4**
 **Goal**: Complete the "Library Status" tab in RuntimeHardwareConfigDialog for vendor library management and diagnostics.

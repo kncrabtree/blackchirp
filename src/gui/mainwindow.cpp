@@ -724,7 +724,7 @@ void MainWindow::launchCommunicationDialog(bool parent)
 
     CommunicationDialog d(p);
     connect(&d,&CommunicationDialog::testConnection,p_hwm,&HardwareManager::testObjectConnection);
-    connect(p_hwm,&HardwareManager::testComplete,&d,&CommunicationDialog::testComplete);
+    connect(p_hwm,&HardwareManager::connectionResult,&d,&CommunicationDialog::testComplete);
 
     d.exec();
 }
