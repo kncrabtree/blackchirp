@@ -179,7 +179,7 @@ All hardware types now follow consistent pattern:
 - **Connection State Management**: Added `ConnectionTestState` struct with centralized state management functions (`initializeConnectionTesting()`, `resetConnectionTestState()`, `finalizeConnectionTesting()`)
 - **Dynamic Hardware Set Support**: Enhanced `allHardwareConnected()` and `checkStatus()` methods to work correctly with changing hardware maps during runtime configuration
 
-#### **Task 3.3.4: Hardware Replacement Logic**
+#### **Task 3.3.4: Hardware Replacement Logic** [COMPLETE]
 **Scope**: Handle hardware replacement (same type/label, different implementation)  
 **Design Note**: No settings migration - different implementations are treated as completely different hardware objects
 - **Implementation Target**: `replaceHardwareInternal(const QString& hwKey, const QString& newImplementation)`
@@ -191,19 +191,37 @@ All hardware types now follow consistent pattern:
 - **Complexity**: Medium - Combination of removal + creation
 - **Dependencies**: Tasks 3.3.1 and 3.3.2
 
-#### **Task 3.3.5: Atomic Synchronization Orchestrator**
+#### **Task 3.3.5: Atomic Synchronization Orchestrator** ✅ **COMPLETED**
 **Scope**: Implement main synchronization method with change detection
 - **Implementation Target**: `syncWithRuntimeConfig()` and change detection helpers
 - **Key Requirements**:
   - `findHardwareToAdd()`, `findHardwareToRemove()`, `findHardwareToReplace()` helpers
   - Atomic application of all changes with full mutex protection
   - **UI Integration Point**: Called when hardware configuration dialog closes
-  - **Connection Testing**: Must call `testConnectionToAll()` after all hardware changes are complete to ensure GPIB controllers are available before GPIB instruments test connections
+  - **Connection Testing**: Must call `testAll()` _after_ all hardware changes are complete to ensure GPIB controllers are available before GPIB instruments test connections
   - **GPIB Controller Resolution**: Investigate proper usage of existing `resolveGpibController()` callback-based function for GPIB instrument-controller relationships during connection testing phase
   - Proper error handling with user notification
   - Signal emission for status updates
 - **Complexity**: Medium - Orchestration logic with thread safety
 - **Dependencies**: Tasks 3.3.1, 3.3.2, 3.3.3, 3.3.4
+
+**Implementation Summary**: ✅ **FULLY ACCOMPLISHED**
+- **Complete Synchronization Orchestrator**: Implemented `syncWithRuntimeConfig()` method providing atomic application of all hardware configuration changes with comprehensive mutex protection
+- **Change Detection System**: Added three helper methods for precise difference detection:
+  - `findHardwareToRemove()`: Hardware in current but not target configuration
+  - `findHardwareToAdd()`: Hardware in target but not current configuration  
+  - `findHardwareToReplace()`: Hardware in both with different implementations
+- **Atomic Operations**: All hardware changes applied under mutex protection before connection testing begins
+- **GPIB Controller Resolution**: Implemented critical `resolveGpibControllersForInstruments()` method that:
+  - Completes deferred GPIB controller initialization using existing `resolveGpibController()` callback system
+  - Resolves GPIB controllers from hardware settings before connection testing
+  - Provides informative error messages when controllers can't be resolved
+  - Uses `buildCommunication()` to complete deferred initialization elegantly
+- **Proper Orchestration**: Synchronization applies all changes atomically, resolves GPIB controllers, then releases mutex for connection testing
+- **Thread Safety**: Full integration with existing mutex protection patterns and proper unlock before `testAll()`
+- **Clean Architecture**: Leverages all existing `*Internal` methods from previous tasks (3.3.1-3.3.4)
+
+**Result**: BlackChirp now has complete dynamic hardware synchronization capability, enabling users to change hardware configurations at runtime without application restart.
 
 #### **Task 3.3.6: Temporary Registration Code Cleanup**
 **Scope**: Remove all temporary/testing hardware registration code

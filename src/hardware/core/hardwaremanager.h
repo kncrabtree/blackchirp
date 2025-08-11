@@ -198,6 +198,14 @@ private:
     // Phase 3.3: Dynamic hardware synchronization
     void removeHardwareInternal(const QString& hwKey);
     void addHardwareInternal(const QString& hwKey, const QString& implementation);
+    void replaceHardwareInternal(const QString& hwKey, const QString& newImplementation);
+    
+    // Task 3.3.5: Synchronization orchestration
+    void syncWithRuntimeConfig();
+    std::vector<QString> findHardwareToRemove(const std::map<QString, QString>& targetHardware);
+    std::vector<std::pair<QString, QString>> findHardwareToAdd(const std::map<QString, QString>& targetHardware);
+    std::vector<std::pair<QString, QString>> findHardwareToReplace(const std::map<QString, QString>& targetHardware);
+    void resolveGpibControllersForInstruments();
     
     // Connection tracking helpers for Task 3.3.2
     void storeConnection(const QString& hwKey, const QMetaObject::Connection& connection);

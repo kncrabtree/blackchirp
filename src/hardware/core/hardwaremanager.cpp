@@ -13,6 +13,7 @@
 #include <QtConcurrent/QtConcurrent>
 #include <QFuture>
 #include <QFutureWatcher>
+#include <vector>
 
 // Static instance for const access
 HardwareManager* HardwareManager::s_instance = nullptr;
@@ -1297,4 +1298,155 @@ void HardwareManager::addHardwareInternal(const QString& hwKey, const QString& i
         runtimeConfig.removeHardwareSelection(hardwareType, label);
         emit logMessage(QString("Removed failed hardware from configuration: %1.%2").arg(hardwareType, label), LogHandler::Warning);
     }
+}
+
+void HardwareManager::replaceHardwareInternal(const QString& hwKey, const QString& newImplementation)
+{
+    emit logMessage(QString("Replacing hardware: %1 with new implementation: %2")
+                   .arg(hwKey, newImplementation), LogHandler::Normal);
+    
+    // Step 1: Remove old hardware completely (handles its own mutex protection)
+    removeHardwareInternal(hwKey);
+    
+    // Step 2: Create new hardware from scratch (handles its own mutex protection)
+    addHardwareInternal(hwKey, newImplementation);
+    
+    emit logMessage(QString("Successfully replaced hardware: %1 with implementation: %2")
+                   .arg(hwKey, newImplementation), LogHandler::Normal);
+}
+
+// Task 3.3.5: Atomic Synchronization Orchestrator implementation
+
+void HardwareManager::syncWithRuntimeConfig()
+{
+    QMutexLocker locker(&d_accessMutex);
+    
+    emit logMessage("Starting hardware synchronization with runtime configuration", LogHandler::Normal);
+    
+    const auto& config = RuntimeHardwareConfig::constInstance();
+    auto targetHardware = config.getCurrentHardware();
+    
+    // Find differences between current and target states
+    auto toRemove = findHardwareToRemove(targetHardware);
+    auto toAdd = findHardwareToAdd(targetHardware);
+    auto toReplace = findHardwareToReplace(targetHardware);
+    
+    emit logMessage(QString("Hardware synchronization plan: %1 to remove, %2 to add, %3 to replace")
+                   .arg(toRemove.size()).arg(toAdd.size()).arg(toReplace.size()), LogHandler::Normal);
+    
+    // Apply changes atomically
+    for(const auto& hwKey : toRemove) {
+        removeHardwareInternal(hwKey);
+    }
+    
+    for(const auto& [hwKey, impl] : toReplace) {
+        replaceHardwareInternal(hwKey, impl);
+    }
+    
+    for(const auto& [hwKey, impl] : toAdd) {
+        addHardwareInternal(hwKey, impl);
+    }
+    
+    emit logMessage("Hardware synchronization changes applied successfully", LogHandler::Normal);
+    
+    // Resolve GPIB controllers for instruments before connection testing
+    resolveGpibControllersForInstruments();
+    
+    // Test connections after all changes are complete
+    // Release mutex for connection testing to prevent deadlock
+    locker.unlock();
+    
+    emit logMessage("Starting connection testing after hardware synchronization", LogHandler::Normal);
+    testAll();
+    
+    emit logMessage("Hardware synchronization with runtime configuration complete", LogHandler::Normal);
+}
+
+std::vector<QString> HardwareManager::findHardwareToRemove(const std::map<QString, QString>& targetHardware)
+{
+    std::vector<QString> toRemove;
+    
+    // Hardware in current map but not in target should be removed
+    for(const auto& [currentKey, hwObj] : d_hardwareMap) {
+        Q_UNUSED(hwObj)
+        if(targetHardware.find(currentKey) == targetHardware.end()) {
+            toRemove.push_back(currentKey);
+        }
+    }
+    
+    return toRemove;
+}
+
+std::vector<std::pair<QString, QString>> HardwareManager::findHardwareToAdd(const std::map<QString, QString>& targetHardware)
+{
+    std::vector<std::pair<QString, QString>> toAdd;
+    
+    // Hardware in target but not in current map should be added
+    for(const auto& [targetKey, targetImpl] : targetHardware) {
+        if(d_hardwareMap.find(targetKey) == d_hardwareMap.end()) {
+            toAdd.emplace_back(targetKey, targetImpl);
+        }
+    }
+    
+    return toAdd;
+}
+
+std::vector<std::pair<QString, QString>> HardwareManager::findHardwareToReplace(const std::map<QString, QString>& targetHardware)
+{
+    std::vector<std::pair<QString, QString>> toReplace;
+    
+    // Hardware in both maps but with different implementations should be replaced
+    for(const auto& [targetKey, targetImpl] : targetHardware) {
+        auto currentIt = d_hardwareMap.find(targetKey);
+        if(currentIt != d_hardwareMap.end()) {
+            // Hardware exists in current map, check if implementation differs
+            HardwareObject* currentObj = currentIt->second;
+            QString currentImpl = currentObj->d_subKey;
+            
+            if(currentImpl != targetImpl) {
+                toReplace.emplace_back(targetKey, targetImpl);
+            }
+        }
+    }
+    
+    return toReplace;
+}
+
+void HardwareManager::resolveGpibControllersForInstruments()
+{
+    // Note: Assumes mutex is already locked by caller (syncWithRuntimeConfig)
+    
+    emit logMessage("Resolving GPIB controllers for GPIB instruments", LogHandler::Normal);
+    
+    // Iterate through all hardware objects to find GPIB instruments
+    for(auto& [hwKey, hwObj] : d_hardwareMap) {
+        // Check if this hardware uses GPIB communication
+        if(hwObj->d_commType != CommunicationProtocol::Gpib) {
+            continue;  // Skip non-GPIB hardware
+        }
+        
+        // Read the controller key from the instrument's settings
+        SettingsStorage s(hwKey, SettingsStorage::Hardware);
+        QString controllerKey = s.getGroupValue(BC::Key::Comm::gpib, BC::Key::GPIB::gpibController, QString());
+        
+        if(controllerKey.isEmpty()) {
+            emit logMessage(QString("GPIB instrument %1 has no controller configured - connection testing will fail").arg(hwKey), LogHandler::Warning);
+            continue;
+        }
+        
+        // Use the callback-based resolution to safely get the controller
+        resolveGpibController(controllerKey, [this, hwKey, hwObj, controllerKey](GpibController* controller) {
+            if(controller) {
+                // Controller found - complete the deferred initialization
+                emit logMessage(QString("Resolved GPIB controller %1 for instrument %2").arg(controllerKey, hwKey), LogHandler::Normal);
+                hwObj->buildCommunication(controller);
+            } else {
+                // Controller not found - emit informative error message
+                emit logMessage(QString("GPIB controller %1 not found for instrument %2 - connection testing will fail").arg(controllerKey, hwKey), LogHandler::Warning);
+                // Allow testConnection to fail naturally - don't force failure here
+            }
+        });
+    }
+    
+    emit logMessage("GPIB controller resolution complete", LogHandler::Normal);
 }
