@@ -159,6 +159,9 @@ public slots:
     double lifLaserPos();
     bool lifLaserFlashlampEnabled();
     void setLifLaserFlashlampEnabled(bool en);
+    
+    // Dynamic hardware synchronization
+    void syncWithRuntimeConfig();
 
 public:
     std::map<QString,QStringList> validationKeys() const;
@@ -200,7 +203,6 @@ private:
     void replaceHardwareInternal(const QString& hwKey, const QString& newImplementation);
     
     // Task 3.3.5: Synchronization orchestration
-    void syncWithRuntimeConfig();
     std::vector<QString> findHardwareToRemove(const std::map<QString, QString>& targetHardware);
     std::vector<std::pair<QString, QString>> findHardwareToAdd(const std::map<QString, QString>& targetHardware);
     std::vector<std::pair<QString, QString>> findHardwareToReplace(const std::map<QString, QString>& targetHardware);

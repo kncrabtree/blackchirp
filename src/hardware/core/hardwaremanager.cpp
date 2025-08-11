@@ -746,13 +746,11 @@ const HardwareManager& HardwareManager::constInstance()
 
 void HardwareManager::resolveGpibController(const QString& controllerKey, std::function<void(GpibController*)> callback) const
 {
+    // Note: Assumes mutex is already locked by caller (resolveGpibControllersForInstruments)
     GpibController* controller = nullptr;
-    {
-        QMutexLocker locker(&d_accessMutex);
-        auto it = d_hardwareMap.find(controllerKey);
-        if (it != d_hardwareMap.end()) {
-            controller = static_cast<GpibController*>(it->second);
-        }
+    auto it = d_hardwareMap.find(controllerKey);
+    if (it != d_hardwareMap.end()) {
+        controller = static_cast<GpibController*>(it->second);
     }
     
     // Call the callback with the resolved controller (or nullptr if not found)
@@ -1109,7 +1107,9 @@ void HardwareManager::addHardwareInternal(const QString& hwKey, const QString& i
     }
     
     // Reset connection test state for dynamic hardware changes
+    locker.unlock();
     resetConnectionTestState();
+    locker.relock();
     
     // Create hardware using HardwareRegistry
     HardwareObject* hwObj = HardwareRegistry::instance().createHardware(hardwareType, implementation, label);
@@ -1255,22 +1255,27 @@ void HardwareManager::replaceHardwareInternal(const QString& hwKey, const QStrin
 
 void HardwareManager::syncWithRuntimeConfig()
 {
-    QMutexLocker locker(&d_accessMutex);
-    
     emit logMessage("Starting hardware synchronization with runtime configuration", LogHandler::Normal);
     
     const auto& config = RuntimeHardwareConfig::constInstance();
     auto targetHardware = config.getCurrentHardware();
     
-    // Find differences between current and target states
-    auto toRemove = findHardwareToRemove(targetHardware);
-    auto toAdd = findHardwareToAdd(targetHardware);
-    auto toReplace = findHardwareToReplace(targetHardware);
+    // Find differences between current and target states (with temporary mutex lock)
+    std::vector<QString> toRemove;
+    std::vector<std::pair<QString, QString>> toAdd;
+    std::vector<std::pair<QString, QString>> toReplace;
+    
+    {
+        QMutexLocker locker(&d_accessMutex);
+        toRemove = findHardwareToRemove(targetHardware);
+        toAdd = findHardwareToAdd(targetHardware);
+        toReplace = findHardwareToReplace(targetHardware);
+    }
     
     emit logMessage(QString("Hardware synchronization plan: %1 to remove, %2 to add, %3 to replace")
                    .arg(toRemove.size()).arg(toAdd.size()).arg(toReplace.size()), LogHandler::Normal);
     
-    // Apply changes atomically
+    // Apply changes atomically - internal methods handle their own mutex locking
     for(const auto& hwKey : toRemove) {
         removeHardwareInternal(hwKey);
     }
@@ -1286,11 +1291,10 @@ void HardwareManager::syncWithRuntimeConfig()
     emit logMessage("Hardware synchronization changes applied successfully", LogHandler::Normal);
     
     // Resolve GPIB controllers for instruments before connection testing
-    resolveGpibControllersForInstruments();
-    
-    // Test connections after all changes are complete
-    // Release mutex for connection testing to prevent deadlock
-    locker.unlock();
+    {
+        QMutexLocker locker(&d_accessMutex);
+        resolveGpibControllersForInstruments();
+    }
     
     emit logMessage("Starting connection testing after hardware synchronization", LogHandler::Normal);
     testAll();

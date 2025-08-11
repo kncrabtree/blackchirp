@@ -115,6 +115,12 @@ void RuntimeHardwareConfigDialog::refreshConfigurationOverview()
 
 void RuntimeHardwareConfigDialog::populateHardwareBrowser()
 {
+    // Preserve current selection to prevent right panel from closing
+    QString currentSelectedHardwareType = d_currentHardwareType;
+    
+    // Block signals to prevent unwanted selection change events during repopulation
+    pu_ui->hardwareBrowserList->blockSignals(true);
+    
     // Clear the list
     pu_ui->hardwareBrowserList->clear();
     
@@ -135,6 +141,7 @@ void RuntimeHardwareConfigDialog::populateHardwareBrowser()
     hardwareTypes.sort();
     
     // Populate the list with hardware types and counts
+    QListWidgetItem* itemToSelect = nullptr;
     for(const QString& hwType : hardwareTypes) {
         int count = typeCounts.value(hwType, 0);
         QString displayText = QString("%1 (%2)").arg(hwType).arg(count);
@@ -153,7 +160,20 @@ void RuntimeHardwareConfigDialog::populateHardwareBrowser()
         } else {
             // Unconfigured hardware: normal text (default)
         }
+        
+        // Remember this item if it matches the previously selected hardware type
+        if (hwType == currentSelectedHardwareType) {
+            itemToSelect = item;
+        }
     }
+    
+    // Restore selection if we had one previously
+    if (itemToSelect != nullptr) {
+        pu_ui->hardwareBrowserList->setCurrentItem(itemToSelect);
+    }
+    
+    // Re-enable signals
+    pu_ui->hardwareBrowserList->blockSignals(false);
 }
 
 void RuntimeHardwareConfigDialog::onHardwareBrowserSelectionChanged(QListWidgetItem* current, QListWidgetItem* previous)
@@ -250,8 +270,8 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
         QString displayText = QString("%1 (%2)").arg(profileLabel, implementation);
         
         auto* listItem = new QListWidgetItem(profilesList);
-        listItem->setText(displayText);
         listItem->setData(Qt::UserRole, profileLabel); // Store label for easy retrieval
+        // Don't set text on listItem to avoid duplication with custom widget text
         
         // Create appropriate selection widget based on instance type
         QWidget* selectionWidget = nullptr;
@@ -325,6 +345,14 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
     removeProfileButton->setObjectName("removeProfileButton");
     connect(removeProfileButton, &QPushButton::clicked, this, [this, hardwareType]() {
         onRemoveProfile(hardwareType);
+    });
+    
+    // Initially disable Remove button (no selection)
+    removeProfileButton->setEnabled(false);
+    
+    // Connect to list selection changes to enable/disable Remove button
+    connect(profilesList, &QListWidget::itemSelectionChanged, this, [removeProfileButton, profilesList]() {
+        removeProfileButton->setEnabled(!profilesList->selectedItems().isEmpty());
     });
     
     buttonLayout->addWidget(addProfileButton);
@@ -522,29 +550,31 @@ void RuntimeHardwareConfigDialog::onAddProfile(const QString& hardwareType)
         QString actualLabel = profileManager.createHardwareProfile(hardwareType, implementation, label);
         
         if (!actualLabel.isEmpty()) {
-            // Success - refresh the right panel to show the new profile
-            updateRightPanelForHardwareType(hardwareType);
-            
             // For single-instance hardware, automatically activate the new profile in preview
+            // but only if no other profile is already selected
             if (!HardwareRegistry::isMultiInstanceType(hardwareType)) {
-                // Clear existing entries for this hardware type in preview
-                auto it = d_previewRuntimeConfig.begin();
-                while (it != d_previewRuntimeConfig.end()) {
+                // Check if any profile already exists for this hardware type
+                bool hasExistingProfile = false;
+                for (auto it = d_previewRuntimeConfig.begin(); it != d_previewRuntimeConfig.end(); ++it) {
                     auto [hwType, label] = BC::Key::parseKey(it->first);
                     if (hwType == hardwareType) {
-                        it = d_previewRuntimeConfig.erase(it);
-                    } else {
-                        ++it;
+                        hasExistingProfile = true;
+                        break;
                     }
                 }
                 
-                // Add the new profile to preview configuration
-                QString profileKey = BC::Key::hwKey(hardwareType, actualLabel);
-                d_previewRuntimeConfig[profileKey] = implementation;
-                
-                // Update preview display
-                updatePreviewConfiguration();
+                // Only add to preview if no existing profile is selected
+                if (!hasExistingProfile) {
+                    QString profileKey = BC::Key::hwKey(hardwareType, actualLabel);
+                    d_previewRuntimeConfig[profileKey] = implementation;
+                }
             }
+            
+            // Refresh the right panel to show the new profile with correct radio button state
+            updateRightPanelForHardwareType(hardwareType);
+            
+            // Update preview display
+            updatePreviewConfiguration();
         } else {
             QMessageBox::warning(this, "Add Profile", "Failed to create profile. Please try again.");
         }

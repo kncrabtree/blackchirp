@@ -841,9 +841,12 @@ void MainWindow::launchRuntimeHardwareConfigDialog()
 
     auto d = new RuntimeHardwareConfigDialog(this);
     
-    // TODO: Phase 3.3 - Add hardware synchronization integration
-    // When dialog is accepted with configuration changes, trigger HardwareManager::syncWithRuntimeConfig()
-    // to dynamically apply hardware changes without requiring application restart
+    // Phase 3.3 - Hardware synchronization integration
+    // Sync hardware when dialog closes (accept or reject) due to profile deletion edge case
+    // Use QMetaObject::invokeMethod to execute on HardwareManager's thread, not UI thread
+    connect(d, &QDialog::finished, [this]() {
+        QMetaObject::invokeMethod(p_hwm, &HardwareManager::syncWithRuntimeConfig, Qt::QueuedConnection);
+    });
     
     connect(d, &QDialog::finished, d, &QDialog::deleteLater);
     connect(d, &QDialog::destroyed, [this](){

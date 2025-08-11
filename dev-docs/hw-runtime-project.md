@@ -244,11 +244,19 @@ All hardware types now follow consistent pattern:
 
 #### **Task 3.3.7: Testing & Bug Fixes** ⚠️ **ACTIVE DEVELOPMENT**
 **Scope**: Address UI issues and bugs discovered during testing of the dynamic hardware configuration system
-- **Priority Issues**:
-  - **RuntimeHardwareConfigDialog UI Problems**: Right panel closes unexpectedly when hardware profiles are selected, list widget displays overlapping text/checkbox rendering errors
-  - **Multi-instance vs Single-instance Behavior**: Inconsistent behavior between single and multi-instance hardware selection
-  - **List Widget Rendering**: Fix display errors with checkbox and text positioning
-- **Status**: Active testing and bug fixing phase
+- **Issues Fixed**:
+  - ✅ **Text Duplication**: Fixed overlapping text by removing setText() on QListWidgetItem 
+  - ✅ **Remove Profile Button**: Fixed to work on list selection with proper enable/disable logic
+  - ✅ **Right Panel Closing**: Fixed by preserving selection during browser updates with signal blocking
+  - ✅ **Single-Instance Radio Button**: Fixed activation when profile added to preview
+  - ✅ **Single-Instance Logic**: Only auto-activate new profile if no existing profile selected
+  - ✅ **MainWindow Integration**: Added missing hardware sync trigger on dialog close
+  - ✅ **HardwareManager Interface**: Made syncWithRuntimeConfig() public for MainWindow access
+- **Current Focus**: **Critical Mutex Deadlock Issues** - See [`dev-docs/hw-mutex.md`](hw-mutex.md) for comprehensive refactoring plan
+  - **Problem**: Single mutex protecting multiple resources causes deadlock chains in hardware creation/testing
+  - **Solution**: Multi-lock architecture with `QReadWriteLock` for hardware map and separate connection state mutex
+  - **Status**: Plan approved, implementation pending agent delegation
+- **Status**: UI issues resolved, addressing fundamental threading architecture
 - **Dependencies**: Tasks 3.3.1-3.3.6 (core functionality complete)
 
 #### **Implementation Principles:**
