@@ -191,6 +191,10 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
     if (pu_ui->configurationContentWidget->layout()) {
         QLayoutItem* item;
         while ((item = pu_ui->configurationContentWidget->layout()->takeAt(0)) != nullptr) {
+            // Properly disconnect all signals from the widget before deletion to prevent crashes
+            if (item->widget()) {
+                item->widget()->disconnect();
+            }
             delete item->widget();
             delete item;
         }

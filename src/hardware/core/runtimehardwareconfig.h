@@ -329,20 +329,6 @@ private:
      */
     bool applyConfiguration(const std::map<QString, QString>& config);
     
-    /*!
-     * \brief TEMPORARY: Register hardware using stable test labels during migration
-     * 
-     * This is a temporary method to support migration from the old index-based system.
-     * It creates stable labels like "test00", "test01", etc. based on hardware map position
-     * to avoid issues with unpredictable auto-incrementing indices during testing.
-     * 
-     * TODO: Remove this method once Phase 3.3 dynamic hardware sync is implemented
-     * 
-     * \param hardwareType Hardware type (e.g., "FlowController")
-     * \param implementation Implementation key (e.g., "mks647c")
-     * \param mapIndex Position in hardware map (stable, compile-time constant)
-     */
-    void registerHardwareForTesting(const QString& hardwareType, const QString& implementation, int mapIndex);
     
     
     

@@ -416,27 +416,6 @@ void RuntimeHardwareConfig::clearConfiguration()
     d_activeHardware.clear();
 }
 
-void RuntimeHardwareConfig::registerHardwareForTesting(const QString& hardwareType, const QString& implementation, int mapIndex)
-{
-    QWriteLocker locker(&d_configLock);
-    
-    // Create stable test label based on map position (zero-padded for sorting)
-    QString testLabel = QString("test%1").arg(mapIndex, 2, 10, QChar('0'));
-    QString key = BC::Key::hwKey(hardwareType, testLabel);
-    
-    HardwareSelection selection;
-    selection.type = hardwareType;
-    selection.implementation = implementation;
-    
-    d_activeHardware[key] = selection;
-    
-    qDebug() << "TEMPORARY: Registered test hardware:" << key << "=" << implementation;
-    
-    // Create corresponding profile in HardwareProfileManager for consistency
-    HardwareProfileManager& profileManager = HardwareProfileManager::instance();
-    profileManager.createHardwareProfile(hardwareType, implementation, testLabel);
-    profileManager.activateHardwareProfile(hardwareType, testLabel);
-}
 
 
 

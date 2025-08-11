@@ -188,7 +188,6 @@ private:
     void finalizeConnectionTesting();
     
     // Phase 2.4.2: Constructor refactoring methods
-    void createVirtualHardwareForCapabilityDiscovery();
     void setupHardwareObject(HardwareObject* obj);
     void finalizeInitialization();
     

@@ -1186,6 +1186,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
     case Disconnected:
         ui->actionCommunication->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
+        ui->actionRuntimeHardwareConfig->setEnabled(true);
         ui->savePathAction->setEnabled(true);
         break;
     case Paused:

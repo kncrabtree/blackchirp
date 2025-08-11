@@ -27,12 +27,9 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     // Lock mutex for entire initialization - no concurrency issues during startup
     QMutexLocker locker(&d_accessMutex);
     
-    // Phase 2.4.2: Refactored constructor using extracted methods
-    // Create virtual hardware for capability discovery (replaces compile-time flags)
-    createVirtualHardwareForCapabilityDiscovery();
-    
-    // Finalize initialization with signal connections and threading setup
-    finalizeInitialization();
+    // Phase 3.3.6: Clean constructor - all hardware creation now goes through dynamic system
+    // HardwareManager starts with empty d_hardwareMap and will be populated via syncWithRuntimeConfig()
+    emit logMessage("HardwareManager created. Hardware will be loaded from runtime configuration.", LogHandler::Normal);
 }
 
 HardwareManager::~HardwareManager()
@@ -63,6 +60,10 @@ QString HardwareManager::getHwName(const QString key)
 
 void HardwareManager::initialize()
 {
+    // Phase 3.3.6: Load hardware from runtime configuration before starting threads
+    emit logMessage("Loading hardware configuration from runtime profiles...", LogHandler::Normal);
+    syncWithRuntimeConfig();
+    
     //start all threads and initialize hw
     for(auto it = d_hardwareMap.cbegin(); it != d_hardwareMap.cend(); ++it)
     {
@@ -758,63 +759,6 @@ void HardwareManager::resolveGpibController(const QString& controllerKey, std::f
     callback(controller);
 }
 
-void HardwareManager::createVirtualHardwareForCapabilityDiscovery()
-{
-    // Create virtual instances of all hardware types for capability discovery
-    
-    // Required hardware: FtmwScope
-    auto ftmwScope = new VirtualFtmwScope("temp");
-    d_hardwareMap.emplace(ftmwScope->d_key, ftmwScope);
-
-    // Clock Generators - Create Clock instances like other hardware
-    // (matches the default BC_CLOCKS "fixed;fixed" configuration)
-    auto clock1 = new FixedClock("temp");
-    auto clock2 = new FixedClock("temp"); 
-    d_hardwareMap.emplace(clock1->d_key, clock1);
-    d_hardwareMap.emplace(clock2->d_key, clock2);
-    
-    // Create ClockManager and give it the clocks
-    pu_clockManager = std::make_unique<ClockManager>();
-    QVector<Clock*> clocks = {clock1, clock2};
-    pu_clockManager->setClocksFromHardwareManager(clocks);
-
-    // Optional hardware - create virtual instances of each type
-    
-    // Chirp Source (AWG)
-    auto awg = new VirtualAwg("temp");
-    d_hardwareMap.emplace(awg->d_key, awg);
-    
-    // GPIB Controller
-    auto gpib = new VirtualGpibController("temp");
-    d_hardwareMap.emplace(gpib->d_key, gpib);
-    
-    // Pulse Generator
-    auto pGen = new VirtualPulseGenerator("temp");
-    d_hardwareMap.emplace(pGen->d_key, pGen);
-    
-    // Flow Controller
-    auto flowController = new VirtualFlowController("temp");
-    d_hardwareMap.emplace(flowController->d_key, flowController);
-    
-    // Pressure Controller
-    auto pressureController = new VirtualPressureController("temp");
-    d_hardwareMap.emplace(pressureController->d_key, pressureController);
-    
-    // Temperature Controller
-    auto tempController = new VirtualTemperatureController("temp");
-    d_hardwareMap.emplace(tempController->d_key, tempController);
-    
-    // IO Board
-    auto ioBoard = new VirtualIOBoard("temp");
-    d_hardwareMap.emplace(ioBoard->d_key, ioBoard);
-    
-    // LIF Hardware
-    auto lifScope = new VirtualLifScope("temp");
-    d_hardwareMap.emplace(lifScope->d_key, lifScope);
-    
-    auto lifLaser = new VirtualLifLaser("temp");
-    d_hardwareMap.emplace(lifLaser->d_key, lifLaser);
-}
 
 void HardwareManager::setupHardwareObject(HardwareObject* obj)
 {
@@ -943,14 +887,6 @@ void HardwareManager::finalizeInitialization()
         connect(pu_clockManager.get(), &ClockManager::clockFrequencyUpdate, this, &HardwareManager::clockFrequencyUpdate);
     }
 
-    // TEMPORARY: Populate RuntimeHardwareConfig with virtual hardware selections
-    auto& runtimeConfig = RuntimeHardwareConfig::instance();
-    int mapIndex = 0;
-    for(auto& [key, obj] : d_hardwareMap) {
-        auto [hardwareType, index] = BC::Key::parseIndexKey(obj->d_key);
-        QString implementation = obj->d_subKey.isEmpty() ? "virtual" : obj->d_subKey;
-        runtimeConfig.registerHardwareForTesting(hardwareType, implementation, mapIndex++);
-    }
     
 }
 
