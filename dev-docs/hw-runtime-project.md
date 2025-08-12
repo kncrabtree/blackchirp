@@ -242,7 +242,7 @@ All hardware types now follow consistent pattern:
 - **Initialization Workflow Verified**: Hardware loading through runtime configuration system confirmed working correctly
 - **UI Fixes Applied**: Fixed MainWindow Runtime Hardware Configuration action availability and RuntimeHardwareConfigDialog crash issues
 
-#### **Task 3.3.7: Testing & Bug Fixes** ⚠️ **ACTIVE DEVELOPMENT**
+#### **Task 3.3.7: Testing & Bug Fixes** ✅ **COMPLETED**
 **Scope**: Address UI issues and bugs discovered during testing of the dynamic hardware configuration system
 - **Issues Fixed**:
   - ✅ **Text Duplication**: Fixed overlapping text by removing setText() on QListWidgetItem 
@@ -252,12 +252,51 @@ All hardware types now follow consistent pattern:
   - ✅ **Single-Instance Logic**: Only auto-activate new profile if no existing profile selected
   - ✅ **MainWindow Integration**: Added missing hardware sync trigger on dialog close
   - ✅ **HardwareManager Interface**: Made syncWithRuntimeConfig() public for MainWindow access
-- **Current Focus**: **Critical Mutex Deadlock Issues** - See [`dev-docs/hw-mutex.md`](hw-mutex.md) for comprehensive refactoring plan
-  - **Problem**: Single mutex protecting multiple resources causes deadlock chains in hardware creation/testing
-  - **Solution**: Multi-lock architecture with `QReadWriteLock` for hardware map and separate connection state mutex
-  - **Status**: Plan approved, implementation pending agent delegation
-- **Status**: UI issues resolved, addressing fundamental threading architecture
+  - ✅ **Critical Mutex Deadlock Issues**: Implemented comprehensive mutex refactoring
+    - **Solution Implemented**: Multi-lock architecture with `QReadWriteLock` for hardware map and separate `QMutex` for connection state
+    - **Deadlocks Eliminated**: Fixed deadlock chains in hardware creation, testing, and synchronization
+    - **Improved Concurrency**: Multiple threads can now read hardware map simultaneously during connection testing
+    - **Thread Safety**: Proper lock separation prevents use-after-free issues during dynamic hardware changes
+  - ✅ **QObject Disconnect Warnings**: Fixed "wildcard call disconnects from destroyed signal" warnings in RuntimeHardwareConfigDialog
+    - **Problem**: Widget destruction was causing Qt disconnect warnings due to automatic signal cleanup
+    - **Solution**: Removed explicit disconnect calls and let Qt handle signal cleanup automatically when widgets are destroyed
+    - **Method**: Simplified widget cleanup to rely on Qt's built-in signal disconnection during object destruction
+  - ✅ **Multi-Instance Profile Auto-Activation**: Fixed new profile activation logic for all hardware types
+    - **Problem**: Auto-activation only worked for single-instance hardware types
+    - **Solution**: Removed single-instance restriction - now auto-activates first profile for ANY hardware type (single or multi-instance)
+  - ✅ **Hardware Profile Persistence**: Fixed profiles not being loaded correctly at application startup
+    - **Problem**: `syncWithProfiles()` was calling `profileManager.keys()` instead of `profileManager.getConfiguredHardwareTypes()`
+    - **Solution**: Corrected method call to properly load active profiles from HardwareProfileManager into RuntimeHardwareConfig
+    - **Result**: Profiles now persist correctly between application sessions
+  - ✅ **Profile Save/Load on Dialog Close**: Added explicit profile persistence when dialog finishes
+    - **Enhancement**: Added `profileManager.saveProfiles()` calls in both `onDialogAccepted()` and `onDialogRejected()`
+    - **Result**: Profile changes are immediately persisted when dialog closes, not just at program exit
+  - ✅ **Configuration Overview Display**: Fixed left panel not showing current configuration on dialog open
+    - **Problem**: `populateConfigurationOverview()` was called before `d_previewRuntimeConfig` was initialized
+    - **Solution**: Reordered constructor to initialize configuration state before populating UI elements
+  - ✅ **Implementation Sorting**: Added alphabetical sorting to implementation combo box in add profile dialog
+    - **Enhancement**: Implementations now appear in alphabetical order for better user experience
+- **Status**: All discovered issues resolved and tested.
 - **Dependencies**: Tasks 3.3.1-3.3.6 (core functionality complete)
+
+#### **Task 3.3.8: Communication Protocol Dialog Workflow Refactor** ⚠️ **PLANNED**
+**Scope**: Modernize communication protocol configuration to use direct HardwareManager APIs instead of indirect SettingsStorage synchronization
+- **Current Problem**: 
+  - Communication dialog uses settings as authoritative source with `buildCommunication(parent())` calls
+  - This causes GPIB controller resolution issues (`parent()` is HardwareManager, not GpibController)
+  - Settings persistence and runtime protocol switching are conflated
+- **Solution Approach**:
+  - **Settings Role**: Only handle disk persistence between application sessions
+  - **Runtime Authority**: HardwareManager holds authoritative protocol state
+  - **Dialog Integration**: Communication dialog accesses HardwareManager directly via public methods
+  - **Eliminate**: `buildCommunication(parent())` calls and indirect settings-based protocol switching
+- **Implementation Strategy**:
+  - Add public HardwareManager methods for protocol configuration
+  - Update communication dialog to use HardwareManager APIs directly
+  - Separate settings persistence from runtime protocol management
+  - Remove legacy `parent()` usage in `bcInitInstrument` and `bcReadSettings`
+- **Status**: Documented for future implementation after other minor bug fixes
+- **Priority**: Medium - affects GPIB hardware but not blocking for basic functionality
 
 #### **Implementation Principles:**
 1. **No Settings Migration**: Different implementations are distinct hardware objects

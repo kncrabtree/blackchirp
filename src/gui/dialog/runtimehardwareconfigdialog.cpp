@@ -31,6 +31,10 @@ RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
     // Apply theme-aware styling to validation status label
     pu_ui->applyValidationStatusStyling(this);
     
+    // Initialize both original and preview state from current runtime configuration FIRST
+    d_originalRuntimeConfig = RuntimeHardwareConfig::constInstance().getCurrentHardware();
+    d_previewRuntimeConfig = d_originalRuntimeConfig;
+    
     // Phase 2: Populate configuration overview with actual hardware data
     populateConfigurationOverview();
     
@@ -44,10 +48,6 @@ RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
     // Connect hardware browser selection changes
     connect(pu_ui->hardwareBrowserList, &QListWidget::currentItemChanged,
             this, &RuntimeHardwareConfigDialog::onHardwareBrowserSelectionChanged);
-    
-    // Initialize both original and preview state from current runtime configuration
-    d_originalRuntimeConfig = RuntimeHardwareConfig::constInstance().getCurrentHardware();
-    d_previewRuntimeConfig = d_originalRuntimeConfig;
     
     // Initialize validation status
     validatePreviewConfiguration();
@@ -211,11 +211,10 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
     if (pu_ui->configurationContentWidget->layout()) {
         QLayoutItem* item;
         while ((item = pu_ui->configurationContentWidget->layout()->takeAt(0)) != nullptr) {
-            // Properly disconnect all signals from the widget before deletion to prevent crashes
+            // Let Qt handle signal cleanup automatically when parent is destroyed
             if (item->widget()) {
-                item->widget()->disconnect();
+                delete item->widget();
             }
-            delete item->widget();
             delete item;
         }
         delete pu_ui->configurationContentWidget->layout();
@@ -454,6 +453,9 @@ void RuntimeHardwareConfigDialog::onAddProfile(const QString& hardwareType)
         return;
     }
     
+    // Sort implementations alphabetically for better user experience
+    implementations.sort();
+    
     // Create a simple dialog for adding a profile
     QDialog addDialog(this);
     addDialog.setWindowTitle("Add " + hardwareType + " Profile");
@@ -550,24 +552,21 @@ void RuntimeHardwareConfigDialog::onAddProfile(const QString& hardwareType)
         QString actualLabel = profileManager.createHardwareProfile(hardwareType, implementation, label);
         
         if (!actualLabel.isEmpty()) {
-            // For single-instance hardware, automatically activate the new profile in preview
-            // but only if no other profile is already selected
-            if (!HardwareRegistry::isMultiInstanceType(hardwareType)) {
-                // Check if any profile already exists for this hardware type
-                bool hasExistingProfile = false;
-                for (auto it = d_previewRuntimeConfig.begin(); it != d_previewRuntimeConfig.end(); ++it) {
-                    auto [hwType, label] = BC::Key::parseKey(it->first);
-                    if (hwType == hardwareType) {
-                        hasExistingProfile = true;
-                        break;
-                    }
+            // Automatically activate the new profile if it's the first profile of this hardware type
+            // Check if any profile already exists for this hardware type in preview configuration
+            bool hasExistingProfile = false;
+            for (auto it = d_previewRuntimeConfig.begin(); it != d_previewRuntimeConfig.end(); ++it) {
+                auto [hwType, label] = BC::Key::parseKey(it->first);
+                if (hwType == hardwareType) {
+                    hasExistingProfile = true;
+                    break;
                 }
-                
-                // Only add to preview if no existing profile is selected
-                if (!hasExistingProfile) {
-                    QString profileKey = BC::Key::hwKey(hardwareType, actualLabel);
-                    d_previewRuntimeConfig[profileKey] = implementation;
-                }
+            }
+            
+            // Only add to preview if this is the first profile for this hardware type
+            if (!hasExistingProfile) {
+                QString profileKey = BC::Key::hwKey(hardwareType, actualLabel);
+                d_previewRuntimeConfig[profileKey] = implementation;
             }
             
             // Refresh the right panel to show the new profile with correct radio button state
@@ -663,6 +662,10 @@ void RuntimeHardwareConfigDialog::onDialogAccepted()
     auto& runtimeConfig = RuntimeHardwareConfig::instance();
     
     if (runtimeConfig.applyConfiguration(d_previewRuntimeConfig)) {
+        // Save all hardware profiles to persistent storage now that dialog is finished
+        auto& profileManager = HardwareProfileManager::instance();
+        profileManager.saveProfiles();
+        
         // Configuration applied successfully
         accept();
     } else {
@@ -683,6 +686,10 @@ void RuntimeHardwareConfigDialog::onDialogRejected()
     // Apply the original configuration (which may have fewer profiles due to deletions)
     // This handles the edge case where deleted profiles must not be restored
     runtimeConfig.applyConfiguration(d_originalRuntimeConfig);
+    
+    // Save all hardware profiles to persistent storage - profiles were created/deleted during session
+    auto& profileManager = HardwareProfileManager::instance();
+    profileManager.saveProfiles();
     
     // Close dialog without applying preview changes
     reject();

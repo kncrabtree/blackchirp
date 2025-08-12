@@ -432,7 +432,7 @@ void RuntimeHardwareConfig::syncWithProfiles()
     
     // Get HardwareProfileManager singleton instance and load active profiles
     HardwareProfileManager& profileManager = HardwareProfileManager::instance();
-    QStringList hardwareTypes = profileManager.keys(); // Get all hardware types with profiles
+    QStringList hardwareTypes = profileManager.getConfiguredHardwareTypes(); // Get all hardware types with profiles
     
     int loadedCount = 0;
     for (const QString& type : hardwareTypes) {
