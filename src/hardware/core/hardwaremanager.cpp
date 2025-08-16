@@ -24,8 +24,11 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     // Set static instance for const access
     s_instance = this;
     
-    // Lock mutex for entire initialization - no concurrency issues during startup
-    QMutexLocker locker(&d_accessMutex);
+    // Lock hardware map for entire initialization - no concurrency issues during startup
+    QWriteLocker locker(&d_hardwareMapLock);
+    
+    // Initialize ClockManager
+    pu_clockManager = std::make_unique<ClockManager>(this);
     
     // Phase 3.3.6: Clean constructor - all hardware creation now goes through dynamic system
     // HardwareManager starts with empty d_hardwareMap and will be populated via syncWithRuntimeConfig()
@@ -91,14 +94,17 @@ void HardwareManager::handleConnectionResult(const QString& hwKey, bool success,
     // Find the hardware object for logging and connection management
     HardwareObject* obj = nullptr;
     {
-        QMutexLocker locker(&d_accessMutex);
+        QReadLocker mapLocker(&d_hardwareMapLock);
         auto it = d_hardwareMap.find(hwKey);
         if (it != d_hardwareMap.end()) {
             obj = it->second;
-            // Thread-safe response counting
-            if(d_connectionState.responseCount < d_hardwareMap.size())
-                d_connectionState.recordResponse();
         }
+    }
+    
+    // Handle connection state separately with dedicated lock
+    {
+        QMutexLocker connLocker(&d_connectionStateLock);
+        d_connectionState.recordResponse();
     }
 
     if (!obj) {
@@ -219,26 +225,23 @@ void HardwareManager::experimentComplete()
 
 void HardwareManager::testAll()
 {
-    QMutexLocker locker(&d_accessMutex);
-    
     // Reset connection test state for current hardware set
-    d_connectionState.reset();
-    
-    for(auto it = d_hardwareMap.cbegin(); it != d_hardwareMap.cend(); ++it)
     {
-        auto obj = it->second;
-        QMetaObject::invokeMethod(obj,&HardwareObject::bcTestConnection);
+        QMutexLocker connLocker(&d_connectionStateLock);
+        d_connectionState.reset();
     }
+    
+    QReadLocker mapLocker(&d_hardwareMapLock);
+    for(auto it = d_hardwareMap.cbegin(); it != d_hardwareMap.cend(); ++it)
+        QMetaObject::invokeMethod(it->second,&HardwareObject::bcTestConnection);
 
-    // checkStatus() will be called by connectionResult() as each hardware responds
-    // and will reset testsInProgress when all hardware has responded
 }
 
 void HardwareManager::testObjectConnection(const QString hwKey)
 {
     HardwareObject* obj = nullptr;
     {
-        QMutexLocker locker(&d_accessMutex);
+        QReadLocker locker(&d_hardwareMapLock);
         auto it = d_hardwareMap.find(hwKey);
         if(it == d_hardwareMap.end()) {
             emit connectionResult(hwKey,false,QString("Device not found!"));
@@ -386,7 +389,7 @@ FlowConfig HardwareManager::getFlowConfig(const QString key)
 
 std::map<QString, QStringList> HardwareManager::validationKeys() const
 {
-    QMutexLocker locker(&d_accessMutex);
+    QReadLocker locker(&d_hardwareMapLock);
     std::map<QString, QStringList> out;
     for(auto &[key,obj] : d_hardwareMap)
         out.insert_or_assign(key,obj->validationKeys());
@@ -521,22 +524,32 @@ void HardwareManager::storeAllOptHw(Experiment *exp, std::map<QString, bool> hw)
 
 void HardwareManager::checkStatus()
 {
-    QMutexLocker locker(&d_accessMutex);
-    
-    //gotta wait until all instruments have responded
-    if(!d_connectionState.allResponded(d_hardwareMap.size()))
-        return;
-
-    // All hardware has responded, tests are complete
-    d_connectionState.markComplete();
-
-    bool success = true;
-    for(auto &[key,obj] : d_hardwareMap)
+    // Connection state operations use dedicated lock
+    size_t hardwareMapSize = 0;
     {
-        // Handle critical vs non-critical hardware distinction dynamically
-        // using individual obj->isConnected() and obj->d_critical states  
-        if(!obj->isConnected() && obj->d_critical)
-            success = false;
+        QReadLocker mapLocker(&d_hardwareMapLock);
+        hardwareMapSize = d_hardwareMap.size();
+    }
+    
+    {
+        QMutexLocker connLocker(&d_connectionStateLock);
+        //gotta wait until all instruments have responded
+        if(!d_connectionState.allResponded(hardwareMapSize))
+            return;
+        // All hardware has responded, tests are complete
+        d_connectionState.markComplete();
+    }
+    
+    bool success = true;
+    {
+        QReadLocker mapLocker(&d_hardwareMapLock);
+        for(auto &[key,obj] : d_hardwareMap)
+        {
+            // Handle critical vs non-critical hardware distinction dynamically
+            // using individual obj->isConnected() and obj->d_critical states  
+            if(!obj->isConnected() && obj->d_critical)
+                success = false;
+        }
     }
 
     emit allHardwareConnected(success);
@@ -544,20 +557,20 @@ void HardwareManager::checkStatus()
 
 void HardwareManager::initializeConnectionTesting()
 {
-    QMutexLocker locker(&d_accessMutex);
+    QMutexLocker locker(&d_connectionStateLock);
     d_connectionState.reset();
 }
 
 void HardwareManager::resetConnectionTestState()
 {
-    QMutexLocker locker(&d_accessMutex);
+    QMutexLocker locker(&d_connectionStateLock);
     d_connectionState.responseCount = 0;
     d_connectionState.testsInProgress = false;
 }
 
 void HardwareManager::finalizeConnectionTesting()
 {
-    QMutexLocker locker(&d_accessMutex);
+    QMutexLocker locker(&d_connectionStateLock);
     d_connectionState.markComplete();
 }
 
@@ -746,7 +759,9 @@ const HardwareManager& HardwareManager::constInstance()
 
 void HardwareManager::resolveGpibController(const QString& controllerKey, std::function<void(GpibController*)> callback) const
 {
-    // Note: Assumes mutex is already locked by caller (resolveGpibControllersForInstruments)
+    // Use read lock for safe hardware map access
+    QReadLocker locker(&d_hardwareMapLock);
+    
     GpibController* controller = nullptr;
     auto it = d_hardwareMap.find(controllerKey);
     if (it != d_hardwareMap.end()) {
@@ -916,9 +931,9 @@ void HardwareManager::removeHardwareInternal(const QString& hwKey)
 {
     HardwareObject* obj = nullptr;
     
-    // Find and remove from map under mutex protection
+    // Find and remove from map under write lock protection
     {
-        QMutexLocker locker(&d_accessMutex);
+        QWriteLocker locker(&d_hardwareMapLock);
         auto it = d_hardwareMap.find(hwKey);
         if (it == d_hardwareMap.end()) {
             emit logMessage(QString("Hardware removal failed: Hardware key '%1' not found").arg(hwKey), LogHandler::Warning);
@@ -1092,7 +1107,7 @@ void HardwareManager::disconnectStoredConnections(const QString& hwKey)
 
 void HardwareManager::addHardwareInternal(const QString& hwKey, const QString& implementation)
 {
-    QMutexLocker locker(&d_accessMutex);
+    QWriteLocker locker(&d_hardwareMapLock);
     
     // Parse the hardware key to get type and label
     auto [hardwareType, label] = BC::Key::parseKey(hwKey);
@@ -1260,13 +1275,13 @@ void HardwareManager::syncWithRuntimeConfig()
     const auto& config = RuntimeHardwareConfig::constInstance();
     auto targetHardware = config.getCurrentHardware();
     
-    // Find differences between current and target states (with temporary mutex lock)
+    // Find differences between current and target states (with temporary read lock)
     std::vector<QString> toRemove;
     std::vector<std::pair<QString, QString>> toAdd;
     std::vector<std::pair<QString, QString>> toReplace;
     
     {
-        QMutexLocker locker(&d_accessMutex);
+        QReadLocker locker(&d_hardwareMapLock);
         toRemove = findHardwareToRemove(targetHardware);
         toAdd = findHardwareToAdd(targetHardware);
         toReplace = findHardwareToReplace(targetHardware);
@@ -1291,15 +1306,37 @@ void HardwareManager::syncWithRuntimeConfig()
     emit logMessage("Hardware synchronization changes applied successfully", LogHandler::Normal);
     
     // Resolve GPIB controllers for instruments before connection testing
-    {
-        QMutexLocker locker(&d_accessMutex);
-        resolveGpibControllersForInstruments();
-    }
+    resolveGpibControllersForInstruments();  // Now uses its own read lock
+    
+    // Update ClockManager with current clocks
+    updateClockManager();
     
     emit logMessage("Starting connection testing after hardware synchronization", LogHandler::Normal);
     testAll();
     
     emit logMessage("Hardware synchronization with runtime configuration complete", LogHandler::Normal);
+}
+
+void HardwareManager::updateClockManager()
+{
+    if (!pu_clockManager) {
+        emit logMessage("ClockManager not initialized - cannot update clocks", LogHandler::Error);
+        return;
+    }
+    
+    // Find all Clock objects in the hardware map
+    QVector<Clock*> clocks;
+    {
+        QReadLocker locker(&d_hardwareMapLock);
+        for (const auto& [key, hwObj] : d_hardwareMap) {
+            if (Clock* clock = qobject_cast<Clock*>(hwObj)) {
+                clocks.append(clock);
+            }
+        }
+    }
+    
+    emit logMessage(QString("Updating ClockManager with %1 clock(s)").arg(clocks.size()), LogHandler::Normal);
+    pu_clockManager->setClocksFromHardwareManager(clocks);
 }
 
 std::vector<QString> HardwareManager::findHardwareToRemove(const std::map<QString, QString>& targetHardware)
@@ -1354,9 +1391,10 @@ std::vector<std::pair<QString, QString>> HardwareManager::findHardwareToReplace(
 
 void HardwareManager::resolveGpibControllersForInstruments()
 {
-    // Note: Assumes mutex is already locked by caller (syncWithRuntimeConfig)
-    
     emit logMessage("Resolving GPIB controllers for GPIB instruments", LogHandler::Normal);
+    
+    // Use read lock for safe iteration over hardware map
+    QReadLocker locker(&d_hardwareMapLock);
     
     // Iterate through all hardware objects to find GPIB instruments
     for(auto& [hwKey, hwObj] : d_hardwareMap) {
@@ -1389,4 +1427,143 @@ void HardwareManager::resolveGpibControllersForInstruments()
     }
     
     emit logMessage("GPIB controller resolution complete", LogHandler::Normal);
+}
+
+// ============================================================================
+// Task 3.3.8: Communication Protocol Management API
+// ============================================================================
+
+void HardwareManager::getHardwareCommunicationInfo(const QString& hwKey)
+{
+    QReadLocker locker(&d_hardwareMapLock);
+    
+    auto it = d_hardwareMap.find(hwKey);
+    if (it == d_hardwareMap.end()) {
+        emit logMessage(QString("Hardware %1 not found for communication info query").arg(hwKey), LogHandler::Warning);
+        return;
+    }
+    
+    HardwareObject* hwObj = it->second;
+    if (!hwObj) {
+        emit logMessage(QString("Hardware object %1 is null").arg(hwKey), LogHandler::Warning);
+        return;
+    }
+    
+    // Get current protocol and connection status
+    CommunicationProtocol::CommType currentProtocol = hwObj->d_commType;
+    bool connected = hwObj->isConnected();
+    
+    // Get supported protocols from the hardware object
+    QVector<CommunicationProtocol::CommType> supportedProtocols = hwObj->supportedProtocols();
+    
+    // Emit the response signal with the collected information
+    emit hardwareCommunicationInfoReady(hwKey, currentProtocol, supportedProtocols, connected);
+}
+
+void HardwareManager::setHardwareProtocol(const QString& hwKey, CommunicationProtocol::CommType protocol, const QString& gpibControllerKey)
+{
+    QReadLocker locker(&d_hardwareMapLock);
+    
+    auto it = d_hardwareMap.find(hwKey);
+    if (it == d_hardwareMap.end()) {
+        emit protocolSetResult(hwKey, false, QString("Hardware %1 not found").arg(hwKey));
+        return;
+    }
+    
+    HardwareObject* hwObj = it->second;
+    if (!hwObj) {
+        emit protocolSetResult(hwKey, false, QString("Hardware object %1 is null").arg(hwKey));
+        return;
+    }
+    
+    // Check if the protocol is supported by this hardware
+    QVector<CommunicationProtocol::CommType> supportedProtocols = hwObj->supportedProtocols();
+    if (!supportedProtocols.contains(protocol)) {
+        emit protocolSetResult(hwKey, false, QString("Protocol not supported by %1").arg(hwKey));
+        return;
+    }
+    
+    // If protocol is already current, success
+    if (hwObj->d_commType == protocol) {
+        emit protocolSetResult(hwKey, true, QString("Protocol already set for %1").arg(hwKey));
+        return;
+    }
+    
+    // Protocol change needed
+    if (protocol == CommunicationProtocol::CommType::Gpib) {
+        // For GPIB protocol, use provided controller key or get from settings
+        QString controllerKey = gpibControllerKey;
+        if (controllerKey.isEmpty()) {
+            SettingsStorage s(hwKey, SettingsStorage::Hardware);
+            controllerKey = s.getGroupValue(BC::Key::Comm::gpib, BC::Key::GPIB::gpibController, QString());
+        }
+        
+        if (controllerKey.isEmpty()) {
+            emit protocolSetResult(hwKey, false, QString("No GPIB controller specified for %1").arg(hwKey));
+            return;
+        }
+        
+        locker.unlock(); // Release read lock before callback
+        
+        // Use existing resolution function with callback
+        resolveGpibController(controllerKey, [this, hwKey, hwObj, protocol](GpibController* controller) {
+            bool success = false;
+            if (hwObj->thread() != this->thread()) {
+                QMetaObject::invokeMethod(hwObj, [hwObj, protocol, controller]() -> bool {
+                    return hwObj->setCommProtocol(protocol, controller);
+                }, Qt::BlockingQueuedConnection, &success);
+            } else {
+                success = hwObj->setCommProtocol(protocol, controller);
+            }
+            
+            if (success) {
+                emit protocolSetResult(hwKey, true, QString("Protocol set successfully for %1").arg(hwKey));
+            } else {
+                emit protocolSetResult(hwKey, false, QString("Failed to set protocol for %1").arg(hwKey));
+            }
+        });
+    } else {
+        // Non-GPIB protocol - no controller needed
+        locker.unlock(); // Release read lock before potentially calling across threads
+        
+        bool success = false;
+        if (hwObj->thread() != this->thread()) {
+            QMetaObject::invokeMethod(hwObj, [hwObj, protocol]() -> bool {
+                return hwObj->setCommProtocol(protocol, nullptr);
+            }, Qt::BlockingQueuedConnection, &success);
+        } else {
+            success = hwObj->setCommProtocol(protocol, nullptr);
+        }
+        
+        if (success) {
+            emit protocolSetResult(hwKey, true, QString("Protocol set successfully for %1").arg(hwKey));
+        } else {
+            emit protocolSetResult(hwKey, false, QString("Failed to set protocol for %1").arg(hwKey));
+        }
+    }
+}
+
+void HardwareManager::getActiveGpibControllers()
+{
+    QReadLocker locker(&d_hardwareMapLock);
+    
+    QStringList controllerKeys;
+    
+    // Iterate through all hardware objects to find GPIB controllers
+    for (const auto& [hwKey, hwObj] : d_hardwareMap) {
+        if (!hwObj) continue;
+        
+        // Check if this is a GPIB controller
+        // We can identify GPIB controllers by checking their type
+        GpibController* controller = dynamic_cast<GpibController*>(hwObj);
+        if (controller) {
+            controllerKeys.append(hwKey);
+        }
+    }
+    
+    // Sort the keys for consistent ordering
+    controllerKeys.sort();
+    
+    // Emit the list of available GPIB controllers
+    emit gpibControllersAvailable(controllerKeys);
 }

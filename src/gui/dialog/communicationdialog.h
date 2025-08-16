@@ -19,6 +19,7 @@ class QSplitter;
 class QGroupBox;
 class QFormLayout;
 class ProtocolWidget;
+class HardwareManager;
 
 /**
  * @brief Master-detail communication settings dialog
@@ -40,6 +41,10 @@ private slots:
     void onTestDevice();
     void onTestAllDevices();
     void onProtocolSettingsChanged();
+    
+    // HardwareManager response handlers
+    void onGpibControllersAvailable(QStringList controllerKeys);
+    void onConnectionResult(const QString& hwKey, bool success, const QString& msg);
     
 private:
     struct DeviceInfo {
@@ -65,6 +70,7 @@ private:
     void saveDeviceSettings();
     void saveCommonSettings();
     void loadReadOptions(CommunicationProtocol::CommType protocolType);
+    void loadCurrentGpibController();
     
     QString getDeviceDisplayText(const DeviceInfo& info);
     QIcon getStatusIcon(const DeviceInfo& info);
@@ -76,6 +82,7 @@ private:
     QGroupBox *p_deviceConfigGroup;
     QLabel *p_deviceNameLabel;
     QComboBox *p_protocolCombo;
+    QComboBox *p_gpibControllerCombo;
     QStackedWidget *p_protocolStack;
     
     // Common settings (read options)
@@ -91,9 +98,9 @@ private:
     QMap<QString, DeviceInfo> d_deviceInfo;
     QMap<QString, ProtocolWidget*> d_protocolWidgets; // Key: "deviceKey:protocolType"
     QString d_currentDeviceKey;
-
-public slots:
-    void testComplete(QString device, bool success, QString msg);
+    
+    // HardwareManager reference
+    HardwareManager* p_hardwareManager;
 
 signals:
     void testConnection(QString hwKey);

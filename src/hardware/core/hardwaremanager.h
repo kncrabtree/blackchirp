@@ -10,6 +10,7 @@
 #include <data/storage/settingsstorage.h>
 #include <data/experiment/rfconfig.h>
 #include <QMutex>
+#include <QReadWriteLock>
 
 #include <data/experiment/hardware/optional/flowcontroller/flowconfig.h>
 #include <data/experiment/hardware/optional/pulsegenerator/pulsegenconfig.h>
@@ -18,6 +19,7 @@
 #include <data/experiment/hardware/optional/ioboard/ioboardconfig.h>
 
 #include <data/lif/lifconfig.h>
+#include <hardware/core/communication/communicationprotocol.h>
 
 class HardwareObject;
 class ClockManager;
@@ -55,6 +57,13 @@ signals:
      * \param msg Status or error message
      */
     void connectionResult(const QString& hwKey, bool success, const QString& msg);
+    
+    // Task 3.3.8: Communication protocol management signals
+    void hardwareCommunicationInfoReady(const QString& hwKey, CommunicationProtocol::CommType currentProtocol, 
+                                       QVector<CommunicationProtocol::CommType> supportedProtocols, bool connected);
+    void protocolSetResult(const QString& hwKey, bool success, const QString& msg);
+    void gpibControllersAvailable(QStringList controllerKeys);
+    
     void beginAcquisition();
     void abortAcquisition();
     void experimentInitialized(std::shared_ptr<Experiment>);
@@ -160,6 +169,11 @@ public slots:
     bool lifLaserFlashlampEnabled();
     void setLifLaserFlashlampEnabled(bool en);
     
+    // Task 3.3.8: Communication protocol management API
+    void getHardwareCommunicationInfo(const QString& hwKey);
+    void setHardwareProtocol(const QString& hwKey, CommunicationProtocol::CommType protocol, const QString& gpibControllerKey = QString());
+    void getActiveGpibControllers();
+    
     // Dynamic hardware synchronization
     void syncWithRuntimeConfig();
 
@@ -207,6 +221,7 @@ private:
     std::vector<std::pair<QString, QString>> findHardwareToAdd(const std::map<QString, QString>& targetHardware);
     std::vector<std::pair<QString, QString>> findHardwareToReplace(const std::map<QString, QString>& targetHardware);
     void resolveGpibControllersForInstruments();
+    void updateClockManager();
     
     // Connection tracking helpers for Task 3.3.2
     void storeConnection(const QString& hwKey, const QMetaObject::Connection& connection);
@@ -223,13 +238,14 @@ private:
     // Static instance management for const access
     static HardwareManager* s_instance;
     
-    // Mutex for thread-safe access to shared data
-    mutable QMutex d_accessMutex;
+    // Multi-lock architecture for better concurrency and deadlock prevention
+    mutable QReadWriteLock d_hardwareMapLock;  // Protects d_hardwareMap access
+    mutable QMutex d_connectionStateLock;      // Protects d_connectionState access
     
     // Private helper for internal use
     template<class T>
     T* findHardware(const QString key) const {
-        QMutexLocker locker(&d_accessMutex);
+        QReadLocker locker(&d_hardwareMapLock);
         auto it = d_hardwareMap.find(key);
         if (it == d_hardwareMap.end()) {
             return nullptr;
@@ -242,7 +258,7 @@ private:
     // Utility function to find all hardware of a specific type using runtime configuration
     template<class T>
     QVector<T*> findHardwareByType() const {
-        QMutexLocker locker(&d_accessMutex);
+        QReadLocker locker(&d_hardwareMapLock);
         
         QVector<T*> result;
 

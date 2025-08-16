@@ -15,7 +15,6 @@ HardwareObject::HardwareObject(const QString& hwType, const QString& hwImpl, con
     d_key(hwType + BC::Key::hwIndexSep + label),
     d_subKey(hwImpl),
     d_threaded(false),
-    d_commType(CommunicationProtocol::Virtual),
     d_enabledForExperiment(true),
     p_comm(nullptr),
     d_isConnected(false)
@@ -25,7 +24,8 @@ HardwareObject::HardwareObject(const QString& hwType, const QString& hwImpl, con
     set(BC::Key::HW::subKey, d_subKey);
     
     // Load or set default values from settings
-    d_name = get(BC::Key::HW::name, hwImpl); // Use implementation name as default
+    d_name = getOrSetDefault(BC::Key::HW::name, QString("%1 %2 (%3)")
+                             .arg(hwType,label,hwImpl)); // Use implementation name as default
     d_critical = get(BC::Key::HW::critical, true); // Default to critical
     setDefault(BC::Key::HW::rInterval, 0);
     
@@ -93,24 +93,8 @@ bool HardwareObject::setCommProtocol(CommunicationProtocol::CommType commType, Q
 
 void HardwareObject::bcInitInstrument()
 {
-    // Read settings to get the correct protocol before initialization
+    // Read basic settings (communication protocol now managed by HardwareManager)
     readAll();
-    auto settingsProtocolInt = get(BC::Key::HW::commType, static_cast<int>(d_commType));
-    auto settingsProtocol = static_cast<CommunicationProtocol::CommType>(settingsProtocolInt);
-    
-    // Check if protocol differs from what was used during construction
-    if(settingsProtocol != d_commType) {
-        auto commTypeEnum = QMetaEnum::fromType<CommunicationProtocol::CommType>();
-        QString oldProtocolName = commTypeEnum.valueToKey(static_cast<int>(d_commType));
-        QString newProtocolName = commTypeEnum.valueToKey(static_cast<int>(settingsProtocol));
-        
-        emit logMessage(QString("Protocol mismatch for %1: constructed as %2, settings show %3. Rebuilding communication.")
-                       .arg(d_name).arg(oldProtocolName).arg(newProtocolName), LogHandler::Warning);
-        
-        // Rebuild communication with the new protocol
-        d_commType = settingsProtocol;
-        buildCommunication(parent());
-    }
 
     if(p_comm)
     {
@@ -130,7 +114,8 @@ void HardwareObject::bcInitInstrument()
     set(BC::Key::HW::supportedProtocols, protocolList);
     save();
     
-    bcTestConnection();
+    // Connection testing is now handled separately by HardwareManager::testAll()
+    // to avoid deadlocks during hardware initialization
 
     connect(this,&HardwareObject::hardwareFailure,this,[this](){
         d_isConnected = false;
@@ -177,23 +162,7 @@ void HardwareObject::bcReadSettings()
     d_critical = get(BC::Key::HW::critical,true);
     auto interval = get(BC::Key::HW::rInterval,0);
 
-    // Check for runtime protocol changes (from HWDialog changes)
-    auto settingsProtocolInt = get(BC::Key::HW::commType, static_cast<int>(d_commType));
-    auto settingsProtocol = static_cast<CommunicationProtocol::CommType>(settingsProtocolInt);
-    
-    if(settingsProtocol != d_commType) {
-        // Protocol has changed at runtime - handle threading properly
-        bool success = false;
-        if(thread() != QThread::currentThread()) {
-            // We're being called from a different thread - use blocking queued invocation
-            QMetaObject::invokeMethod(this, [this, settingsProtocol](){
-                return setCommProtocol(settingsProtocol, parent());
-            }, Qt::BlockingQueuedConnection, &success);
-        } else {
-            // Same thread - direct call is safe
-            success = setCommProtocol(settingsProtocol, parent());
-        }
-    }
+    // Communication protocol changes now handled by HardwareManager
 
     if(d_rollingDataTimerId >= 0)
         killTimer(d_rollingDataTimerId);

@@ -279,24 +279,26 @@ All hardware types now follow consistent pattern:
 - **Status**: All discovered issues resolved and tested.
 - **Dependencies**: Tasks 3.3.1-3.3.6 (core functionality complete)
 
-#### **Task 3.3.8: Communication Protocol Dialog Workflow Refactor** ⚠️ **PLANNED**
+#### **Task 3.3.8: Communication Protocol Dialog Workflow Refactor** ✅ **COMPLETED**
 **Scope**: Modernize communication protocol configuration to use direct HardwareManager APIs instead of indirect SettingsStorage synchronization
-- **Current Problem**: 
-  - Communication dialog uses settings as authoritative source with `buildCommunication(parent())` calls
-  - This causes GPIB controller resolution issues (`parent()` is HardwareManager, not GpibController)
-  - Settings persistence and runtime protocol switching are conflated
-- **Solution Approach**:
-  - **Settings Role**: Only handle disk persistence between application sessions
-  - **Runtime Authority**: HardwareManager holds authoritative protocol state
-  - **Dialog Integration**: Communication dialog accesses HardwareManager directly via public methods
-  - **Eliminate**: `buildCommunication(parent())` calls and indirect settings-based protocol switching
-- **Implementation Strategy**:
-  - Add public HardwareManager methods for protocol configuration
-  - Update communication dialog to use HardwareManager APIs directly
-  - Separate settings persistence from runtime protocol management
-  - Remove legacy `parent()` usage in `bcInitInstrument` and `bcReadSettings`
-- **Status**: Documented for future implementation after other minor bug fixes
-- **Priority**: Medium - affects GPIB hardware but not blocking for basic functionality
+- **Issues Resolved**:
+  - ✅ **GPIB Controller Population**: Enhanced CommunicationDialog to automatically populate GPIB controller combo box with previously selected controller
+  - ✅ **HardwareManager Integration**: Added direct communication with HardwareManager via signals instead of settings-based workflow
+  - ✅ **Runtime Protocol Management**: Implemented `getHardwareCommunicationInfo()` and `setHardwareProtocol()` methods for direct protocol control
+  - ✅ **GPIB Controller Selection**: Added dynamic GPIB controller combo box with automatic population and validation
+  - ✅ **Connection Result Handling**: Streamlined connection test feedback via direct HardwareManager signals
+  - ✅ **ClockManager Initialization Fix**: Fixed critical segfault in HardwareManager constructor where ClockManager was never initialized
+- **Technical Implementation**:
+  - **CommunicationDialog Modernization**: Replaced settings-based workflow with direct HardwareManager API integration via signals
+  - **GPIB Controller Management**: Added `loadCurrentGpibController()` method and automatic controller population from HardwareManager
+  - **Signal Architecture**: Connected dialog directly to HardwareManager signals (`gpibControllersAvailable`, `connectionResult`)
+  - **ClockManager Fix**: Added proper initialization in HardwareManager constructor with `updateClockManager()` integration
+  - **Thread Safety**: All new methods use proper mutex protection patterns consistent with existing codebase
+- **Benefits**: 
+  - **Eliminates GPIB Issues**: GPIB controller resolution now works correctly without `parent()` confusion
+  - **Better User Experience**: GPIB controllers automatically populated when selecting GPIB instruments
+  - **Prevents Crashes**: ClockManager initialization prevents segfaults when accessing RF configuration dialogs
+  - **Clean Architecture**: Settings handle persistence, HardwareManager handles runtime state authority
 
 #### **Implementation Principles:**
 1. **No Settings Migration**: Different implementations are distinct hardware objects
