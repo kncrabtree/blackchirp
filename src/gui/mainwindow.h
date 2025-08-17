@@ -4,6 +4,8 @@
 #include <QMainWindow>
 #include <QList>
 #include <QPair>
+#include <QVector>
+#include <QMetaObject>
 #include <memory>
 #include <map>
 
@@ -92,6 +94,15 @@ private:
 
     bool d_hardwareConnected{false};
 
+    // Hardware UI management structures
+    struct HardwareUIElements {
+        QAction* menuAction;
+        QWidget* statusWidget;  // GasFlowDisplayBox, PressureStatusBox, etc.
+        QVector<QMetaObject::Connection> connections;
+    };
+    std::map<QString, HardwareUIElements> d_hardwareUI;  // key.label -> UI elements
+    std::map<QString, bool> d_hardwareConnectionState;  // key.label -> connection status
+
     void configureUi(ProgramState s);
     void startBatch(BatchManager *bm);
     void removeExperimentWidget(const QString& path);
@@ -101,6 +112,13 @@ private:
     
     // Factory method for creating experiments with proper hardware data
     std::shared_ptr<Experiment> createExperiment();
+    
+    // Hardware UI management methods
+    void buildHardwareUI();
+    void clearHardwareUI();
+    void updateHardwareConnectionState(const QString& hwKey, bool connected);
+    void configureUiForHardwareState();
+    bool isCriticalHardwareConnected() const;
 
     ProgramState d_state{Idle};
     int d_logCount{0};

@@ -141,161 +141,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(p_hwm,&HardwareManager::clockFrequencyUpdate,ui->clockBox,&ClockDisplayBox::updateFrequency);
 
-    // TODO: This hardware-based UI construction needs to be moved to a dynamic method
-    // that can be called after hardware configuration is determined at runtime.
-    // This is no longer possible in the constructor with dynamic hardware configuration.
-    // See Phase 2.4 in hw-plugin-system.txt for UI integration requirements.
-    auto currentHardware = RuntimeHardwareConfig::constInstance().getCurrentHardware();
-    for(auto it = currentHardware.cbegin(); it != currentHardware.cend(); ++it)
-    {
-        auto key = it->first;
-        auto ki = BC::Key::parseKey(key);
-
-        auto hwType = ki.first;
-
-        auto act = ui->menuHardware->addAction(QString("%1: %2").arg(key, p_hwm->getHwName(key)));
-        act->setObjectName(Ui::actionStr+key);
-
-
-
-        if(hwType == QString(FlowController::staticMetaObject.className()))
-        {
-            auto w = new GasFlowDisplayBox(key);
-            w->setObjectName(key+Ui::sbStr);
-            ui->hwStatusLayout->addWidget(w);
-            // ui->instrumentStatusLayout->insertWidget(ui->instrumentStatusLayout->indexOf(ui->statusSpacer),w,0);
-            connect(p_hwm,&HardwareManager::flowUpdate,w,&GasFlowDisplayBox::updateFlow);
-            connect(p_hwm,&HardwareManager::flowSetpointUpdate,w,&GasFlowDisplayBox::updateFlowSetpoint);
-            connect(p_hwm,&HardwareManager::gasPressureUpdate,w,&GasFlowDisplayBox::updatePressure);
-            connect(p_hwm,&HardwareManager::gasPressureControlMode,w,&GasFlowDisplayBox::updatePressureControl);
-
-            connect(act,&QAction::triggered,[this,w,key]{
-
-                if(isDialogOpen(key))
-                    return;
-
-                auto fc = p_hwm->getFlowConfig(key);
-                auto gcw = new GasControlWidget(fc);
-                connect(p_hwm,&HardwareManager::flowSetpointUpdate,gcw,&GasControlWidget::updateGasSetpoint);
-                connect(p_hwm,&HardwareManager::gasPressureSetpointUpdate,gcw,&GasControlWidget::updatePressureSetpoint);
-                connect(p_hwm,&HardwareManager::gasPressureControlMode,gcw,&GasControlWidget::updatePressureControl);
-                connect(gcw,&GasControlWidget::pressureControlUpdate,p_hwm,&HardwareManager::setGasPressureControlMode);
-                connect(gcw,&GasControlWidget::pressureSetpointUpdate,p_hwm,&HardwareManager::setGasPressureSetpoint);
-                connect(gcw,&GasControlWidget::gasSetpointUpdate,p_hwm,&HardwareManager::setFlowSetpoint);
-                connect(gcw,&GasControlWidget::nameUpdate,w,&GasFlowDisplayBox::updateFlowName);
-                connect(gcw,&GasControlWidget::nameUpdate,p_hwm,&HardwareManager::setFlowChannelName);
-
-                auto d = createHWDialog(key,gcw);
-                connect(d,&QDialog::accepted,w,&GasFlowDisplayBox::applySettings);
-
-            });
-        }
-        else if(hwType == QString(PressureController::staticMetaObject.className()))
-        {
-            auto psb = new PressureStatusBox(key);
-            psb->setObjectName(key);
-            ui->hwStatusLayout->addWidget(psb);
-            // ui->instrumentStatusLayout->insertWidget(ui->instrumentStatusLayout->indexOf(ui->statusSpacer),psb,0);
-            connect(p_hwm,&HardwareManager::pressureUpdate,psb,&PressureStatusBox::pressureUpdate);
-            connect(p_hwm,&HardwareManager::pressureControlMode,psb,&PressureStatusBox::pressureControlUpdate);
-
-            connect(act,&QAction::triggered,[this,psb,key](){
-
-                if(isDialogOpen(key))
-                    return;
-
-                auto pc = p_hwm->getPressureControllerConfig(key);
-                auto pcw = new PressureControlWidget(pc);
-                connect(p_hwm,&HardwareManager::pressureSetpointUpdate,pcw,&PressureControlWidget::pressureSetpointUpdate);
-                connect(p_hwm,&HardwareManager::pressureControlMode,pcw,&PressureControlWidget::pressureControlModeUpdate);
-                connect(pcw,&PressureControlWidget::setpointChanged,p_hwm,&HardwareManager::setPressureSetpoint);
-                connect(pcw,&PressureControlWidget::pressureControlModeChanged,p_hwm,&HardwareManager::setPressureControlMode);
-                connect(pcw,&PressureControlWidget::valveOpen,p_hwm,&HardwareManager::openGateValve);
-                connect(pcw,&PressureControlWidget::valveClose,p_hwm,&HardwareManager::closeGateValve);
-
-                auto d = createHWDialog(key,pcw);
-                connect(d,&QDialog::accepted,psb,&PressureStatusBox::updateFromSettings);
-            });
-        }
-        else if(hwType == QString(PulseGenerator::staticMetaObject.className()))
-        {
-            auto psb = new PulseStatusBox(key);
-            psb->setObjectName(key+Ui::sbStr);
-            ui->hwStatusLayout->addWidget(psb);;
-            // ui->instrumentStatusLayout->insertWidget(ui->instrumentStatusLayout->indexOf(ui->statusSpacer),psb,0);
-            connect(p_hwm,&HardwareManager::pGenConfigUpdate,psb,&PulseStatusBox::updatePulseLeds);
-            connect(p_hwm,&HardwareManager::pGenSettingUpdate,psb,&PulseStatusBox::updatePulseSetting);
-
-            connect(act,&QAction::triggered,[this,psb,key]{
-               if(isDialogOpen(key))
-                   return;
-
-               auto pc = p_hwm->getPGenConfig(key);
-               auto pcw = new PulseConfigWidget(pc);
-
-
-               connect(p_hwm,&HardwareManager::pGenConfigUpdate,pcw,&PulseConfigWidget::setFromConfig);
-               connect(p_hwm,&HardwareManager::pGenSettingUpdate,pcw,&PulseConfigWidget::newSetting);
-               connect(pcw,&PulseConfigWidget::changeSetting,p_hwm,&HardwareManager::setPGenSetting);
-               createHWDialog(key,pcw);
-            });
-
-        }
-        else if(hwType == QString(TemperatureController::staticMetaObject.className()))
-        {
-            auto tsb = new TemperatureStatusBox(key);
-            tsb->setObjectName(key+Ui::sbStr);
-            ui->hwStatusLayout->addWidget(tsb);
-            connect(p_hwm,&HardwareManager::temperatureEnableUpdate,tsb,&TemperatureStatusBox::setChannelEnabled);
-            connect(p_hwm,&HardwareManager::temperatureUpdate,tsb,&TemperatureStatusBox::setTemperature);
-            connect(act,&QAction::triggered,[this,key,tsb](){
-               if(isDialogOpen(key))
-                   return;
-
-               auto tc = p_hwm->getTemperatureControllerConfig(key);
-               auto tcw = new TemperatureControlWidget(tc);
-
-               connect(p_hwm,&HardwareManager::temperatureEnableUpdate,tcw,&TemperatureControlWidget::setChannelEnabled);
-               connect(tcw,&TemperatureControlWidget::channelEnableChanged,
-                       p_hwm,&HardwareManager::setTemperatureChannelEnabled);
-               connect(tcw,&TemperatureControlWidget::channelNameChanged
-                       ,p_hwm,&HardwareManager::setTemperatureChannelName);
-               connect(tcw,&TemperatureControlWidget::channelNameChanged,tsb,&TemperatureStatusBox::setChannelName);
-
-
-               auto d = createHWDialog(key,tcw);
-               connect(d,&QDialog::accepted,tsb,&TemperatureStatusBox::loadFromSettings);
-            });
-        }
-        else if(hwType == QString(LifLaser::staticMetaObject.className()))
-        {
-            auto lsb = new LifLaserStatusBox(key);
-            lsb->setObjectName(key+Ui::sbStr);
-            ui->hwStatusLayout->addWidget(lsb);
-            // ui->instrumentStatusLayout->insertWidget(ui->instrumentStatusLayout->indexOf(ui->statusSpacer),lsb,0);
-            connect(p_hwm,&HardwareManager::lifLaserPosUpdate,lsb,&LifLaserStatusBox::setPosition);
-            connect(p_hwm,&HardwareManager::lifLaserFlashlampUpdate,lsb,&LifLaserStatusBox::setFlashlampEnabled);
-            connect(act,&QAction::triggered,[this,key,lsb](){
-                if(isDialogOpen(key))
-                    return;
-
-               auto d = createHWDialog(key);
-               connect(d,&QDialog::accepted,lsb,&LifLaserStatusBox::applySettings);
-            });
-            
-        }
-        else
-        {
-            connect(act,&QAction::triggered,[this,key](){
-                if(isDialogOpen(key))
-                    return;
-
-                createHWDialog(key);
-            });
-        }
-    }
-
-    ui->hwStatusLayout->addSpacerItem(new QSpacerItem(1,1,QSizePolicy::Minimum,QSizePolicy::MinimumExpanding));
+    // Build hardware UI dynamically - can now be called when hardware configuration changes
+    buildHardwareUI();
 
     QThread *hwmThread = new QThread(this);
     hwmThread->setObjectName("HardwareManagerThread");
@@ -368,6 +215,240 @@ MainWindow::MainWindow(QWidget *parent) :
     // Defer UI configuration until after the widget is fully rendered
     // This prevents LIF widgets from briefly appearing on wrong tabs during initialization
     QTimer::singleShot(0, this, [this]() { configureUi(Idle); });
+}
+
+void MainWindow::buildHardwareUI()
+{
+    auto currentHardware = RuntimeHardwareConfig::constInstance().getCurrentHardware();
+    for(auto it = currentHardware.cbegin(); it != currentHardware.cend(); ++it)
+    {
+        auto key = it->first;
+        auto ki = BC::Key::parseKey(key);
+
+        auto hwType = ki.first;
+
+        HardwareUIElements elements;
+
+        auto act = ui->menuHardware->addAction(QString("%1: %2").arg(key, p_hwm->getHwName(key)));
+        act->setObjectName(Ui::actionStr+key);
+        elements.menuAction = act;
+
+        if(hwType == QString(FlowController::staticMetaObject.className()))
+        {
+            auto w = new GasFlowDisplayBox(key);
+            w->setObjectName(key+Ui::sbStr);
+            ui->hwStatusLayout->addWidget(w);
+            elements.statusWidget = w;
+
+            elements.connections.append(connect(p_hwm,&HardwareManager::flowUpdate,w,&GasFlowDisplayBox::updateFlow));
+            elements.connections.append(connect(p_hwm,&HardwareManager::flowSetpointUpdate,w,&GasFlowDisplayBox::updateFlowSetpoint));
+            elements.connections.append(connect(p_hwm,&HardwareManager::gasPressureUpdate,w,&GasFlowDisplayBox::updatePressure));
+            elements.connections.append(connect(p_hwm,&HardwareManager::gasPressureControlMode,w,&GasFlowDisplayBox::updatePressureControl));
+
+            elements.connections.append(connect(act,&QAction::triggered,[this,w,key]{
+
+                if(isDialogOpen(key))
+                    return;
+
+                auto fc = p_hwm->getFlowConfig(key);
+                auto gcw = new GasControlWidget(fc);
+                connect(p_hwm,&HardwareManager::flowSetpointUpdate,gcw,&GasControlWidget::updateGasSetpoint);
+                connect(p_hwm,&HardwareManager::gasPressureSetpointUpdate,gcw,&GasControlWidget::updatePressureSetpoint);
+                connect(p_hwm,&HardwareManager::gasPressureControlMode,gcw,&GasControlWidget::updatePressureControl);
+                connect(gcw,&GasControlWidget::pressureControlUpdate,p_hwm,&HardwareManager::setGasPressureControlMode);
+                connect(gcw,&GasControlWidget::pressureSetpointUpdate,p_hwm,&HardwareManager::setGasPressureSetpoint);
+                connect(gcw,&GasControlWidget::gasSetpointUpdate,p_hwm,&HardwareManager::setFlowSetpoint);
+                connect(gcw,&GasControlWidget::nameUpdate,w,&GasFlowDisplayBox::updateFlowName);
+                connect(gcw,&GasControlWidget::nameUpdate,p_hwm,&HardwareManager::setFlowChannelName);
+
+                auto d = createHWDialog(key,gcw);
+                connect(d,&QDialog::accepted,w,&GasFlowDisplayBox::applySettings);
+
+            }));
+        }
+        else if(hwType == QString(PressureController::staticMetaObject.className()))
+        {
+            auto psb = new PressureStatusBox(key);
+            psb->setObjectName(key);
+            ui->hwStatusLayout->addWidget(psb);
+            elements.statusWidget = psb;
+
+            elements.connections.append(connect(p_hwm,&HardwareManager::pressureUpdate,psb,&PressureStatusBox::pressureUpdate));
+            elements.connections.append(connect(p_hwm,&HardwareManager::pressureControlMode,psb,&PressureStatusBox::pressureControlUpdate));
+
+            elements.connections.append(connect(act,&QAction::triggered,[this,psb,key](){
+
+                if(isDialogOpen(key))
+                    return;
+
+                auto pc = p_hwm->getPressureControllerConfig(key);
+                auto pcw = new PressureControlWidget(pc);
+                connect(p_hwm,&HardwareManager::pressureSetpointUpdate,pcw,&PressureControlWidget::pressureSetpointUpdate);
+                connect(p_hwm,&HardwareManager::pressureControlMode,pcw,&PressureControlWidget::pressureControlModeUpdate);
+                connect(pcw,&PressureControlWidget::setpointChanged,p_hwm,&HardwareManager::setPressureSetpoint);
+                connect(pcw,&PressureControlWidget::pressureControlModeChanged,p_hwm,&HardwareManager::setPressureControlMode);
+                connect(pcw,&PressureControlWidget::valveOpen,p_hwm,&HardwareManager::openGateValve);
+                connect(pcw,&PressureControlWidget::valveClose,p_hwm,&HardwareManager::closeGateValve);
+
+                auto d = createHWDialog(key,pcw);
+                connect(d,&QDialog::accepted,psb,&PressureStatusBox::updateFromSettings);
+            }));
+        }
+        else if(hwType == QString(PulseGenerator::staticMetaObject.className()))
+        {
+            auto psb = new PulseStatusBox(key);
+            psb->setObjectName(key+Ui::sbStr);
+            ui->hwStatusLayout->addWidget(psb);;
+            elements.statusWidget = psb;
+
+            elements.connections.append(connect(p_hwm,&HardwareManager::pGenConfigUpdate,psb,&PulseStatusBox::updatePulseLeds));
+            elements.connections.append(connect(p_hwm,&HardwareManager::pGenSettingUpdate,psb,&PulseStatusBox::updatePulseSetting));
+
+            elements.connections.append(connect(act,&QAction::triggered,[this,psb,key]{
+               if(isDialogOpen(key))
+                   return;
+
+               auto pc = p_hwm->getPGenConfig(key);
+               auto pcw = new PulseConfigWidget(pc);
+
+
+               connect(p_hwm,&HardwareManager::pGenConfigUpdate,pcw,&PulseConfigWidget::setFromConfig);
+               connect(p_hwm,&HardwareManager::pGenSettingUpdate,pcw,&PulseConfigWidget::newSetting);
+               connect(pcw,&PulseConfigWidget::changeSetting,p_hwm,&HardwareManager::setPGenSetting);
+               createHWDialog(key,pcw);
+            }));
+
+        }
+        else if(hwType == QString(TemperatureController::staticMetaObject.className()))
+        {
+            auto tsb = new TemperatureStatusBox(key);
+            tsb->setObjectName(key+Ui::sbStr);
+            ui->hwStatusLayout->addWidget(tsb);
+            elements.statusWidget = tsb;
+
+            elements.connections.append(connect(p_hwm,&HardwareManager::temperatureEnableUpdate,tsb,&TemperatureStatusBox::setChannelEnabled));
+            elements.connections.append(connect(p_hwm,&HardwareManager::temperatureUpdate,tsb,&TemperatureStatusBox::setTemperature));
+            elements.connections.append(connect(act,&QAction::triggered,[this,key,tsb](){
+               if(isDialogOpen(key))
+                   return;
+
+               auto tc = p_hwm->getTemperatureControllerConfig(key);
+               auto tcw = new TemperatureControlWidget(tc);
+
+               connect(p_hwm,&HardwareManager::temperatureEnableUpdate,tcw,&TemperatureControlWidget::setChannelEnabled);
+               connect(tcw,&TemperatureControlWidget::channelEnableChanged,
+                       p_hwm,&HardwareManager::setTemperatureChannelEnabled);
+               connect(tcw,&TemperatureControlWidget::channelNameChanged
+                       ,p_hwm,&HardwareManager::setTemperatureChannelName);
+               connect(tcw,&TemperatureControlWidget::channelNameChanged,tsb,&TemperatureStatusBox::setChannelName);
+
+
+               auto d = createHWDialog(key,tcw);
+               connect(d,&QDialog::accepted,tsb,&TemperatureStatusBox::loadFromSettings);
+            }));
+        }
+        else if(hwType == QString(LifLaser::staticMetaObject.className()))
+        {
+            auto lsb = new LifLaserStatusBox(key);
+            lsb->setObjectName(key+Ui::sbStr);
+            ui->hwStatusLayout->addWidget(lsb);
+            elements.statusWidget = lsb;
+
+            elements.connections.append(connect(p_hwm,&HardwareManager::lifLaserPosUpdate,lsb,&LifLaserStatusBox::setPosition));
+            elements.connections.append(connect(p_hwm,&HardwareManager::lifLaserFlashlampUpdate,lsb,&LifLaserStatusBox::setFlashlampEnabled));
+            elements.connections.append(connect(act,&QAction::triggered,[this,key,lsb](){
+                if(isDialogOpen(key))
+                    return;
+
+               auto d = createHWDialog(key);
+               connect(d,&QDialog::accepted,lsb,&LifLaserStatusBox::applySettings);
+            }));
+            
+        }
+        else
+        {
+            elements.statusWidget = nullptr; // No status widget for generic hardware
+            elements.connections.append(connect(act,&QAction::triggered,[this,key](){
+                if(isDialogOpen(key))
+                    return;
+
+                createHWDialog(key);
+            }));
+        }
+
+        d_hardwareUI[key] = elements;
+        d_hardwareConnectionState[key] = false; // Initialize as disconnected
+    }
+
+    ui->hwStatusLayout->addSpacerItem(new QSpacerItem(1,1,QSizePolicy::Minimum,QSizePolicy::MinimumExpanding));
+}
+
+void MainWindow::clearHardwareUI()
+{
+    for(auto& [hwKey, elements] : d_hardwareUI) {
+        // Disconnect all signals
+        for(const auto& connection : elements.connections) {
+            disconnect(connection);
+        }
+        
+        // Remove and delete widgets
+        if(elements.statusWidget) {
+            ui->hwStatusLayout->removeWidget(elements.statusWidget);
+            delete elements.statusWidget;
+        }
+        
+        // Remove menu action
+        if(elements.menuAction) {
+            ui->menuHardware->removeAction(elements.menuAction);
+            delete elements.menuAction;
+        }
+    }
+    
+    d_hardwareUI.clear();
+    d_hardwareConnectionState.clear();
+    
+    // Remove the spacer item too
+    QLayoutItem* spacer = ui->hwStatusLayout->takeAt(ui->hwStatusLayout->count()-1);
+    delete spacer;
+}
+
+void MainWindow::updateHardwareConnectionState(const QString& hwKey, bool connected)
+{
+    // TODO: Implement in Phase 2 - Connection Status Tracking
+    d_hardwareConnectionState[hwKey] = connected;
+    
+    // Update individual UI element state
+    if(d_hardwareUI.contains(hwKey)) {
+        auto& elements = d_hardwareUI[hwKey];
+        if(elements.menuAction) {
+            elements.menuAction->setEnabled(connected);
+        }
+        if(elements.statusWidget) {
+            elements.statusWidget->setEnabled(connected);
+        }
+        // Could add visual feedback (grayed out, different styling, etc.)
+    }
+    
+    // Update overall UI state
+    configureUiForHardwareState();
+}
+
+void MainWindow::configureUiForHardwareState()
+{
+    // TODO: Implement in Phase 2 - Connection Status Tracking
+    // This will replace the binary logic in configureUi()
+}
+
+bool MainWindow::isCriticalHardwareConnected() const
+{
+    // TODO: Implement in Phase 2 - Connection Status Tracking
+    // Check only critical hardware - implementation depends on how criticality is determined
+    // Could read from settings, check HardwareObject::d_critical, or use hardcoded list
+    for(const auto& [hwKey, connected] : d_hardwareConnectionState) {
+        // Query if this hardware is critical and if it's disconnected
+        // Return false if any critical hardware is disconnected
+    }
+    return true; // Placeholder - return true for now to maintain existing behavior
 }
 
 MainWindow::~MainWindow()
