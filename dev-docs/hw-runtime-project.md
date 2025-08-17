@@ -329,24 +329,46 @@ void HardwareManager::syncWithRuntimeConfig() {
 }
 ```
 
-### Phase 3.4: GUI Dynamic Updates
+### ✅ Phase 3.4: GUI Dynamic Updates ✅ **COMPLETED**
 **Goal**: Make MainWindow adapt to hardware configuration changes and provide fine-grained connection status feedback.
 
-**Required Changes**:
-1. **Dynamic UI Construction**: Replace constructor-time hardware-dependent UI building with runtime methods
-2. **Status Display Updates**: Hardware menu items, status boxes, control widgets adapt to active hardware
-3. **Fine-Grained Connection Status UI**: 
-   - Replace binary `d_hardwareConnected` with per-hardware connection state checking
-   - Modify `configureUi()` to only disable experiment start for critical hardware failures, not all hardware controls
-   - Connect individual hardware status boxes to `hardwareConnectionChanged()` signals for real-time visual feedback
-   - Gray out/disable status boxes for disconnected hardware while preserving access to working hardware
-4. **Connection Testing State Management**:
-   - Add UI state for "connection tests in progress" to prevent experiment start during testing
-   - Show clear feedback when connection tests are pending vs completed
-   - Ensure users can still access hardware controls for connected devices during testing
-5. **Signal Routing Preservation**: Existing MainWindow→HardwareManager connections remain unchanged
+**Achievement**: Complete implementation of dynamic hardware UI system that adapts to runtime hardware configuration changes without requiring application restart, while providing fine-grained user feedback and maintaining safety controls for critical hardware.
 
-**Benefits**: 
+**Complete Implementation** (✅ **FULLY ACCOMPLISHED**):
+
+#### **Phase 3.4.1: Extract and Restructure** ✅
+- ✅ **Dynamic UI Architecture**: Extracted hardware UI building from MainWindow constructor to `buildHardwareUI()` method
+- ✅ **UI Element Tracking**: Added `HardwareUIElements` data structure for tracking UI elements and signal connections
+- ✅ **Cleanup Infrastructure**: Implemented `clearHardwareUI()` for proper cleanup of widgets, menu actions, and signal disconnections
+- ✅ **State Management**: Added tracking maps for hardware UI elements and connection states
+
+#### **Phase 3.4.2: Connection Status Tracking** ✅
+- ✅ **Per-Hardware Status**: Implemented per-hardware connection status tracking via `HardwareManager::connectionResult` signal
+- ✅ **Real-Time UI Updates**: Added `updateHardwareConnectionState()` for immediate UI feedback when hardware connection status changes
+- ✅ **Critical Hardware Logic**: Fixed critical hardware detection logic to delegate to `HardwareManager::allCriticalHardwareConnected()`
+- ✅ **Fine-Grained Control**: Replaced binary global hardware state with individual hardware connection checking
+- ✅ **Individual Element Control**: Hardware UI elements now enable/disable based on their specific connection status
+
+#### **Phase 3.4.3: Runtime Integration** ✅
+- ✅ **Dynamic Configuration Change Detection**: Implemented proper timing in `launchRuntimeHardwareConfigDialog()` using before/after hardware map comparison
+- ✅ **Automatic UI Rebuilding**: UI rebuilds when hardware configuration changes (regardless of dialog accept/reject)
+- ✅ **Critical Timing**: UI rebuild happens BEFORE hardware synchronization to ensure elements exist for `connectionResult` signals
+- ✅ **HardwareManager Enhancement**: Added `allCriticalHardwareConnected()` method for authoritative critical hardware checking
+
+**Technical Achievements**:
+1. **Dynamic UI Architecture**: UI now rebuilds automatically when hardware configuration changes at runtime
+2. **Per-Hardware Status Tracking**: Individual hardware devices have independent connection status and UI feedback
+3. **Critical Hardware Logic**: Proper delegation to HardwareManager for authoritative criticality and connection status
+4. **Real-Time Updates**: Hardware menu actions and status widgets update immediately when connection status changes
+5. **User Experience**: Users can access working hardware even when other hardware fails; only critical hardware failures disable experiment controls
+
+**Files Modified**:
+- `src/gui/mainwindow.h` - Added data structures and method declarations for dynamic UI management
+- `src/gui/mainwindow.cpp` - Complete implementation of dynamic UI system and runtime integration
+- `src/hardware/core/hardwaremanager.h` - Added `allCriticalHardwareConnected()` method declaration
+- `src/hardware/core/hardwaremanager.cpp` - Implemented authoritative critical hardware checking
+
+**Benefits Achieved**: 
 - **User-Friendly**: Users can access working hardware even when other hardware fails
 - **Clear Feedback**: Individual status boxes show per-hardware connection state  
 - **Safe Operations**: Still prevents experiments when critical hardware unavailable

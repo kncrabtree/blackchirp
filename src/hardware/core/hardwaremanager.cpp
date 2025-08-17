@@ -1567,3 +1567,16 @@ void HardwareManager::getActiveGpibControllers()
     // Emit the list of available GPIB controllers
     emit gpibControllersAvailable(controllerKeys);
 }
+
+bool HardwareManager::allCriticalHardwareConnected() const
+{
+    QReadLocker locker(&d_hardwareMapLock);
+    
+    for (const auto& [key, hwObj] : d_hardwareMap) {
+        if (hwObj->d_critical && !hwObj->isConnected()) {
+            return false;
+        }
+    }
+    
+    return true;
+}

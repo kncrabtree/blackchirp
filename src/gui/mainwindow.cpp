@@ -139,6 +139,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_hwm,&HardwareManager::statusMessage,ui->statusBar,&QStatusBar::showMessage);
     connect(p_hwm,&HardwareManager::allHardwareConnected,this,&MainWindow::hardwareInitialized);
 
+    // Add per-hardware connection tracking:
+    connect(p_hwm, &HardwareManager::connectionResult, 
+            this, &MainWindow::updateHardwareConnectionState);
+
     connect(p_hwm,&HardwareManager::clockFrequencyUpdate,ui->clockBox,&ClockDisplayBox::updateFrequency);
 
     // Build hardware UI dynamically - can now be called when hardware configuration changes
@@ -414,18 +418,13 @@ void MainWindow::clearHardwareUI()
 
 void MainWindow::updateHardwareConnectionState(const QString& hwKey, bool connected)
 {
-    // TODO: Implement in Phase 2 - Connection Status Tracking
     d_hardwareConnectionState[hwKey] = connected;
     
     // Update individual UI element state
     if(d_hardwareUI.contains(hwKey)) {
         auto& elements = d_hardwareUI[hwKey];
-        if(elements.menuAction) {
-            elements.menuAction->setEnabled(connected);
-        }
-        if(elements.statusWidget) {
-            elements.statusWidget->setEnabled(connected);
-        }
+        elements.menuAction->setEnabled(connected);
+        elements.statusWidget->setEnabled(connected);
         // Could add visual feedback (grayed out, different styling, etc.)
     }
     
@@ -435,20 +434,16 @@ void MainWindow::updateHardwareConnectionState(const QString& hwKey, bool connec
 
 void MainWindow::configureUiForHardwareState()
 {
-    // TODO: Implement in Phase 2 - Connection Status Tracking
-    // This will replace the binary logic in configureUi()
+    // Update overall UI state based on current hardware connection states
+    // For now, trigger the standard UI configuration update
+    configureUi(d_state);
 }
 
 bool MainWindow::isCriticalHardwareConnected() const
 {
-    // TODO: Implement in Phase 2 - Connection Status Tracking
-    // Check only critical hardware - implementation depends on how criticality is determined
-    // Could read from settings, check HardwareObject::d_critical, or use hardcoded list
-    for(const auto& [hwKey, connected] : d_hardwareConnectionState) {
-        // Query if this hardware is critical and if it's disconnected
-        // Return false if any critical hardware is disconnected
-    }
-    return true; // Placeholder - return true for now to maintain existing behavior
+    // Ask the HardwareManager - it has the authoritative information about
+    // hardware criticality and connection status
+    return p_hwm ? p_hwm->allCriticalHardwareConnected() : false;
 }
 
 MainWindow::~MainWindow()
@@ -919,12 +914,28 @@ void MainWindow::launchRuntimeHardwareConfigDialog()
         return;
     }
 
+    // Capture current hardware configuration before dialog opens
+    const auto& config = RuntimeHardwareConfig::constInstance();
+    auto initialHardware = config.getCurrentHardware();
+
     auto d = new RuntimeHardwareConfigDialog(this);
     
-    // Phase 3.3 - Hardware synchronization integration
-    // Sync hardware when dialog closes (accept or reject) due to profile deletion edge case
-    // Use QMetaObject::invokeMethod to execute on HardwareManager's thread, not UI thread
-    connect(d, &QDialog::finished, [this]() {
+    // Phase 3.4.3 - Dynamic UI integration with runtime hardware configuration
+    // Check if configuration changed when dialog closes (regardless of accept/reject)
+    // and rebuild UI before hardware synchronization
+    connect(d, &QDialog::finished, [this, initialHardware]() {
+        const auto& config = RuntimeHardwareConfig::constInstance();
+        auto currentHardware = config.getCurrentHardware();
+        
+        // Check if hardware configuration actually changed
+        if (initialHardware != currentHardware) {
+            // UI must be rebuilt BEFORE hardware synchronization so that
+            // UI elements exist to receive connectionResult signals during testing
+            clearHardwareUI();
+            buildHardwareUI();
+        }
+        
+        // Trigger hardware synchronization - UI elements ready to receive signals
         QMetaObject::invokeMethod(p_hwm, &HardwareManager::syncWithRuntimeConfig, Qt::QueuedConnection);
     });
     
@@ -1210,7 +1221,9 @@ HWDialog *MainWindow::createHWDialog(const QString key, QWidget *controlWidget)
 void MainWindow::configureUi(MainWindow::ProgramState s)
 {
     d_state = s;
-    if(!d_hardwareConnected)
+    
+    // REPLACE binary logic with fine-grained critical hardware checking:
+    if(!isCriticalHardwareConnected())
         s = Disconnected;
 
     //start by disabling all actions; then enable as needed

@@ -174,6 +174,9 @@ public slots:
     void setHardwareProtocol(const QString& hwKey, CommunicationProtocol::CommType protocol, const QString& gpibControllerKey = QString());
     void getActiveGpibControllers();
     
+    // Hardware connection status queries
+    bool allCriticalHardwareConnected() const;
+    
     // Dynamic hardware synchronization
     void syncWithRuntimeConfig();
 
