@@ -1,5 +1,6 @@
 #include "hardwareregistry.h"
 #include "hardwareobject.h"
+#include <hardware/library/vendorlibrary.h>
 
 #include <QMutexLocker>
 #include <QDebug>
@@ -170,4 +171,88 @@ bool HardwareRegistry::isMultiInstanceType(const QString& hardwareType)
 QString HardwareRegistry::makeRegistryKey(const QString& key, const QString& subKey) const
 {
     return QString("%1::%2").arg(key, subKey);
+}
+
+bool HardwareRegistry::addLibraryDependency(const QString& key, const QString& subKey, const QString& libraryName,
+                                           std::function<VendorLibrary*()> libraryGetter)
+{
+    QMutexLocker locker(&d_registryMutex);
+    
+    QString registryKey = makeRegistryKey(key, subKey);
+    auto it = d_registrations.find(registryKey);
+    
+    if (it == d_registrations.end()) {
+        qWarning() << "Cannot add library dependency - hardware not registered:" << key << subKey;
+        return false;
+    }
+    
+    if (!it.value().libraryDependencies.contains(libraryName)) {
+        it.value().libraryDependencies.append(libraryName);
+        qDebug() << "Added library dependency:" << libraryName << "to" << key << subKey;
+    }
+    
+    // Store the library getter function
+    if (!d_libraryGetters.contains(libraryName)) {
+        d_libraryGetters.insert(libraryName, libraryGetter);
+        qDebug() << "Registered library getter for:" << libraryName;
+    }
+    
+    return true;
+}
+
+QStringList HardwareRegistry::getLibraryDependencies(const QString& implementationName) const
+{
+    QMutexLocker locker(&d_registryMutex);
+    
+    // Find the registration with this implementation name
+    for (const auto& reg : d_registrations) {
+        if (reg.subKey == implementationName) {
+            return reg.libraryDependencies;
+        }
+    }
+    
+    return {};  // No dependencies found
+}
+
+QStringList HardwareRegistry::getHardwareDependingOnLibrary(const QString& libraryName) const
+{
+    QMutexLocker locker(&d_registryMutex);
+    
+    QStringList dependentHardware;
+    for (const auto& reg : d_registrations) {
+        if (reg.libraryDependencies.contains(libraryName)) {
+            dependentHardware.append(reg.subKey);
+        }
+    }
+    
+    return dependentHardware;
+}
+
+bool HardwareRegistry::hardwareUsesLibrary(const QString& implementationName, const QString& libraryName) const
+{
+    return getLibraryDependencies(implementationName).contains(libraryName);
+}
+
+QStringList HardwareRegistry::getLibrariesWithChanges() const
+{
+    QMutexLocker locker(&d_registryMutex);
+    
+    QStringList changedLibraries;
+    
+    // Check all registered library getters
+    for (auto it = d_libraryGetters.cbegin(); it != d_libraryGetters.cend(); ++it) {
+        const QString& libraryName = it.key();
+        const auto& libraryGetter = it.value();
+        
+        try {
+            VendorLibrary* lib = libraryGetter();
+            if (lib && lib->hasUnstagedChanges()) {
+                changedLibraries.append(libraryName);
+            }
+        } catch (...) {
+            qWarning() << "Exception when checking library changes for:" << libraryName;
+        }
+    }
+    
+    return changedLibraries;
 }

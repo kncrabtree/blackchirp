@@ -179,6 +179,9 @@ public slots:
     
     // Dynamic hardware synchronization
     void syncWithRuntimeConfig();
+    
+    // Phase 3.5.3: Library configuration integration
+    bool applyVendorLibraryChanges();
 
 public:
     std::map<QString,QStringList> validationKeys() const;
@@ -225,6 +228,12 @@ private:
     std::vector<std::pair<QString, QString>> findHardwareToReplace(const std::map<QString, QString>& targetHardware);
     void resolveGpibControllersForInstruments();
     void updateClockManager();
+    
+    // Phase 3.5.4: Library dependency tracking
+    void addLibraryDependentHardwareToRecreation(const std::map<QString, QString>& targetHardware,
+                                                std::vector<QString>& toRemove,
+                                                std::vector<std::pair<QString, QString>>& toAdd,
+                                                std::vector<std::pair<QString, QString>>& toReplace);
     
     // Connection tracking helpers for Task 3.3.2
     void storeConnection(const QString& hwKey, const QMetaObject::Connection& connection);

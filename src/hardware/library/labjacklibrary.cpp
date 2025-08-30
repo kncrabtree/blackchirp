@@ -7,6 +7,8 @@ LabjackLibrary* LabjackLibrary::s_instance = nullptr;
 LabjackLibrary::LabjackLibrary(QObject *parent) 
     : VendorLibrary(BC::Key::LabJack::labjackU3, parent)
 {
+    // Attempt to load the library on construction (consistent with SpectrumLibrary)
+    loadLibrary();
 }
 
 LabjackLibrary& LabjackLibrary::instance()

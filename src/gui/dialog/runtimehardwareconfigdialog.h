@@ -18,6 +18,10 @@ class QPushButton;
 class QButtonGroup;
 class QCheckBox;
 class QRadioButton;
+class QTableWidgetItem;
+class VendorLibrary;
+class SpectrumLibrary;
+class LabjackLibrary;
 
 namespace Ui {
 class RuntimeHardwareConfigDialog;
@@ -134,6 +138,103 @@ private:
      * \param state Validation state (Success/Error/Info)
      */
     void updateValidationStatus(const QString& message, const QString& state);
+    
+    // Phase 3.5: Library Status Tab Methods
+    /*!
+     * \brief Initialize the Library Status tab with vendor library information
+     */
+    void initializeLibraryStatusTab();
+    
+    /*!
+     * \brief Refresh library status display with current information
+     */
+    void refreshLibraryStatus();
+    
+    /*!
+     * \brief Handle library selection changes in the overview table
+     * \param current Currently selected item
+     * \param previous Previously selected item (unused)
+     */
+    void onLibrarySelectionChanged(QTableWidgetItem* current, QTableWidgetItem* previous);
+    
+    /*!
+     * \brief Handle changes to library path configuration
+     * \param libraryKey Settings key for the library being configured
+     */
+    void onLibraryPathChanged(const QString& libraryKey);
+    
+    /*!
+     * \brief Handle Browse button click for library path selection
+     */
+    void onBrowseLibraryPath();
+    
+    /*!
+     * \brief Handle Test Load button click to validate library configuration
+     */
+    void onTestLoadLibrary();
+    
+    /*!
+     * \brief Update library details panel for selected library
+     * \param library Reference to the selected vendor library
+     */
+    void updateLibraryDetails(VendorLibrary& library);
+    
+    /*!
+     * \brief Update library configuration panel for selected library
+     * \param library Reference to the selected vendor library
+     */
+    void updateLibraryConfiguration(VendorLibrary& library);
+    
+    /*!
+     * \brief Get status text for library based on its availability
+     * \param library Reference to the vendor library
+     * \return Status string ("Available", "Not Found", "Error")
+     */
+    QString getLibraryStatusText(VendorLibrary& library);
+    
+    /*!
+     * \brief Get display name for vendor library
+     * \param library Reference to the vendor library
+     * \return Human-readable library name
+     */
+    QString getLibraryDisplayName(VendorLibrary& library);
+    
+    /*!
+     * \brief Get version information for library if available
+     * \param library Reference to the vendor library
+     * \return Version string or "Unknown" if not available
+     */
+    QString getLibraryVersion(VendorLibrary& library);
+    
+    /*!
+     * \brief Update visual indicators for staged library changes
+     * 
+     * Shows visual feedback (asterisks, colors, etc.) when library
+     * configuration has unstaged changes pending application.
+     */
+    void updateStagingIndicators();
+    
+    /*!
+     * \brief Update visual indication for individual UI control staging state
+     * \param control UI control to update (QLineEdit, QCheckBox, etc.)
+     * \param isModified Whether the control has unstaged changes
+     */
+    void updateControlStagingIndicator(QWidget* control, bool isModified);
+    
+    /*!
+     * \brief Revert staged changes for all vendor libraries
+     * 
+     * Called when dialog is cancelled to discard all pending library changes.
+     */
+    void revertAllLibraryChanges();
+    
+    /*!
+     * \brief Update staging indicators for all libraries including tab-level indicators
+     * 
+     * Updates the Library Status tab title and other global indicators when
+     * any library has unstaged changes.
+     */
+    void updateAllLibraryStagingIndicators();
 
     Ui::RuntimeHardwareConfigDialog *pu_ui;
     
@@ -141,6 +242,10 @@ private:
     std::map<QString, QString> d_originalRuntimeConfig;  // Original runtime configuration for cancel functionality
     std::map<QString, QString> d_previewRuntimeConfig;   // Preview of runtime configuration changes
     QString d_currentHardwareType;  // Currently selected hardware type in browser
+    
+    // Phase 3.5: Library Status Tab state
+    QString d_currentLibraryKey;      // Currently selected library key
+    VendorLibrary* p_currentLibrary;  // Pointer to currently selected library
 };
 
 #endif // RUNTIMEHARDWARECONFIGDIALOG_H

@@ -161,3 +161,45 @@ void SpectrumLibrary::loadFunctions()
     // All essential functions loaded successfully
     d_libraryLoaded = true;
 }
+
+QString SpectrumLibrary::getVersionInfo() const
+{
+    if (!isAvailable() || !spcm_dwGetParam_i32) {
+        return QString();
+    }
+    
+    // Try to get version info without a device handle (nullptr)
+    // This may work for driver-level version queries
+    std::int32_t driverVersion = 0;
+    std::int32_t kernelVersion = 0;
+    
+    QString versionInfo;
+    
+    try {
+        // Get driver version (using constants from spectrumconstants.h)
+        std::int32_t result = spcm_dwGetParam_i32(nullptr, 1200 /* SPC_GETDRVVERSION */, &driverVersion);
+        if (result == 0 /* ERR_OK */) {
+            versionInfo += QString("Driver: %1.%2.%3")
+                           .arg((driverVersion >> 24) & 0xFF)
+                           .arg((driverVersion >> 16) & 0xFF)
+                           .arg(driverVersion & 0xFFFF);
+        }
+        
+        // Get kernel version
+        result = spcm_dwGetParam_i32(nullptr, 1210 /* SPC_GETKERNELVERSION */, &kernelVersion);
+        if (result == 0 /* ERR_OK */) {
+            if (!versionInfo.isEmpty()) {
+                versionInfo += ", ";
+            }
+            versionInfo += QString("Kernel: %1.%2.%3")
+                           .arg((kernelVersion >> 24) & 0xFF)
+                           .arg((kernelVersion >> 16) & 0xFF)
+                           .arg(kernelVersion & 0xFFFF);
+        }
+    } catch (...) {
+        // If nullptr causes issues, fall back gracefully
+        return "Available";
+    }
+    
+    return versionInfo.isEmpty() ? "Available" : versionInfo;
+}

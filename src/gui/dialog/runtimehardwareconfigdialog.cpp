@@ -17,14 +17,22 @@
 #include <QCheckBox>
 #include <QMessageBox>
 #include <QDialogButtonBox>
+#include <QTableWidget>
+#include <QTableWidgetItem>
+#include <QFileDialog>
+#include <QTextEdit>
 #include <data/bcglobals.h>
 #include <hardware/core/hardwareregistry.h>
 #include <hardware/core/hardwareprofilemanager.h>
+#include <hardware/library/vendorlibrary.h>
+#include <hardware/library/spectrumlibrary.h>
+#include <hardware/library/labjacklibrary.h>
 #include <gui/style/themecolors.h>
 
 RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
     : QDialog(parent),
-      pu_ui(new Ui::RuntimeHardwareConfigDialog)
+      pu_ui(new Ui::RuntimeHardwareConfigDialog),
+      p_currentLibrary(nullptr)
 {
     pu_ui->setupUi(this);
     
@@ -41,6 +49,9 @@ RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
     // Phase 3: Populate hardware browser and connect selection handling
     populateHardwareBrowser();
     
+    // Phase 3.5: Initialize Library Status tab
+    initializeLibraryStatusTab();
+    
     // Connect dialog buttons with custom logic for Phase 4.3 state management
     connect(pu_ui->buttonBox, &QDialogButtonBox::accepted, this, &RuntimeHardwareConfigDialog::onDialogAccepted);
     connect(pu_ui->buttonBox, &QDialogButtonBox::rejected, this, &RuntimeHardwareConfigDialog::onDialogRejected);
@@ -51,6 +62,9 @@ RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
     
     // Initialize validation status
     validatePreviewConfiguration();
+    
+    // Initialize staging indicators for libraries
+    updateAllLibraryStagingIndicators();
 }
 
 RuntimeHardwareConfigDialog::~RuntimeHardwareConfigDialog()
@@ -666,6 +680,11 @@ void RuntimeHardwareConfigDialog::onDialogAccepted()
         auto& profileManager = HardwareProfileManager::instance();
         profileManager.saveProfiles();
         
+        // Phase 3.5.3: Library configuration changes are staged and will be applied
+        // by HardwareManager::syncWithRuntimeConfig() which is called by MainWindow
+        // after dialog close. This ensures library changes are applied before 
+        // hardware synchronization begins.
+        
         // Configuration applied successfully
         accept();
     } else {
@@ -686,6 +705,9 @@ void RuntimeHardwareConfigDialog::onDialogRejected()
     // Apply the original configuration (which may have fewer profiles due to deletions)
     // This handles the edge case where deleted profiles must not be restored
     runtimeConfig.applyConfiguration(d_originalRuntimeConfig);
+    
+    // Phase 3.5.2: Revert all library staged changes
+    revertAllLibraryChanges();
     
     // Save all hardware profiles to persistent storage - profiles were created/deleted during session
     auto& profileManager = HardwareProfileManager::instance();
@@ -741,4 +763,578 @@ void RuntimeHardwareConfigDialog::updateValidationStatus(const QString& message,
     }
     
     pu_ui->validationStatusLabel->setStyleSheet(styleSheet);
+}
+
+// Phase 3.5: Library Status Tab Implementation
+
+void RuntimeHardwareConfigDialog::initializeLibraryStatusTab()
+{
+    // Connect library overview table selection changes
+    connect(pu_ui->libraryOverviewTable, &QTableWidget::currentItemChanged,
+            this, &RuntimeHardwareConfigDialog::onLibrarySelectionChanged);
+    
+    // Connect configuration controls
+    connect(pu_ui->userLibraryPathEdit, &QLineEdit::textChanged,
+            this, [this]() { onLibraryPathChanged(d_currentLibraryKey); });
+    
+    connect(pu_ui->additionalPathsEdit, &QLineEdit::textChanged,
+            this, [this]() { onLibraryPathChanged(d_currentLibraryKey); });
+    
+    connect(pu_ui->autoDiscoveryCheckBox, &QCheckBox::toggled,
+            this, [this]() { onLibraryPathChanged(d_currentLibraryKey); });
+    
+    connect(pu_ui->browseLibraryButton, &QPushButton::clicked,
+            this, &RuntimeHardwareConfigDialog::onBrowseLibraryPath);
+    
+    connect(pu_ui->testLoadButton, &QPushButton::clicked,
+            this, &RuntimeHardwareConfigDialog::onTestLoadLibrary);
+    
+    connect(pu_ui->refreshLibraryButton, &QPushButton::clicked,
+            this, &RuntimeHardwareConfigDialog::refreshLibraryStatus);
+    
+    // Initialize library status display
+    refreshLibraryStatus();
+}
+
+void RuntimeHardwareConfigDialog::refreshLibraryStatus()
+{
+    // Store current selection to restore later
+    QTableWidgetItem* currentSelection = pu_ui->libraryOverviewTable->currentItem();
+    QString selectedLibraryName;
+    if (currentSelection != nullptr) {
+        // Get the library name from the first column of the current row
+        QTableWidgetItem* nameItem = pu_ui->libraryOverviewTable->item(currentSelection->row(), 0);
+        if (nameItem != nullptr) {
+            selectedLibraryName = nameItem->data(Qt::UserRole).toString();
+        }
+    }
+    
+    // Get references to all vendor libraries
+    QList<QPair<QString, VendorLibrary*>> libraries;
+    libraries.append({"Spectrum M4i", &SpectrumLibrary::instance()});
+    libraries.append({"LabJack USB", &LabjackLibrary::instance()});
+    
+    // Initialize table structure if it's empty (first run)
+    if (pu_ui->libraryOverviewTable->rowCount() == 0) {
+        pu_ui->libraryOverviewTable->setRowCount(libraries.size());
+        
+        // Create table items once and set up basic properties
+        for (int row = 0; row < libraries.size(); ++row) {
+            const QString& displayName = libraries[row].first;
+            
+            // Library name (column 0)
+            auto* nameItem = new QTableWidgetItem(displayName);
+            nameItem->setFlags(nameItem->flags() & ~Qt::ItemIsEditable);
+            nameItem->setData(Qt::UserRole, displayName);
+            pu_ui->libraryOverviewTable->setItem(row, 0, nameItem);
+            
+            // Status (column 1)
+            auto* statusItem = new QTableWidgetItem();
+            statusItem->setFlags(statusItem->flags() & ~Qt::ItemIsEditable);
+            pu_ui->libraryOverviewTable->setItem(row, 1, statusItem);
+            
+            // Version (column 2)
+            auto* versionItem = new QTableWidgetItem();
+            versionItem->setFlags(versionItem->flags() & ~Qt::ItemIsEditable);
+            pu_ui->libraryOverviewTable->setItem(row, 2, versionItem);
+            
+            // Load path (column 3)
+            auto* pathItem = new QTableWidgetItem();
+            pathItem->setFlags(pathItem->flags() & ~Qt::ItemIsEditable);
+            pu_ui->libraryOverviewTable->setItem(row, 3, pathItem);
+        }
+        
+        // Set up column header stretch settings once
+        pu_ui->libraryOverviewTable->horizontalHeader()->setStretchLastSection(true);
+    }
+    
+    // Update existing table items with current library status
+    QTableWidgetItem* itemToReselect = nullptr;
+    
+    for (int row = 0; row < libraries.size() && row < pu_ui->libraryOverviewTable->rowCount(); ++row) {
+        const QString& displayName = libraries[row].first;
+        VendorLibrary* library = libraries[row].second;
+        
+        // Update status (column 1)
+        QString statusText = getLibraryStatusText(*library);
+        QTableWidgetItem* statusItem = pu_ui->libraryOverviewTable->item(row, 1);
+        if (statusItem != nullptr) {
+            statusItem->setText(statusText);
+            
+            // Apply status-based color coding
+            if (library->isAvailable()) {
+                statusItem->setForeground(ThemeColors::getThemeAwareColor(ThemeColors::StatusSuccess, this));
+            } else {
+                statusItem->setForeground(ThemeColors::getThemeAwareColor(ThemeColors::StatusError, this));
+            }
+        }
+        
+        // Update version (column 2)
+        QString versionText = getLibraryVersion(*library);
+        QTableWidgetItem* versionItem = pu_ui->libraryOverviewTable->item(row, 2);
+        if (versionItem != nullptr) {
+            versionItem->setText(versionText);
+        }
+        
+        // Update load path (column 3)
+        QString pathText = library->loadedLibraryPath();
+        if (pathText.isEmpty()) {
+            pathText = "Not loaded";
+        }
+        QTableWidgetItem* pathItem = pu_ui->libraryOverviewTable->item(row, 3);
+        if (pathItem != nullptr) {
+            pathItem->setText(pathText);
+        }
+        
+        // Check if this row should be reselected
+        if (displayName == selectedLibraryName) {
+            itemToReselect = pu_ui->libraryOverviewTable->item(row, 0); // Select first column
+        }
+    }
+    
+    // Restore selection if we had one previously
+    if (itemToReselect != nullptr) {
+        pu_ui->libraryOverviewTable->setCurrentItem(itemToReselect);
+    }
+    
+    // Adjust column widths only if this was the initial setup
+    if (selectedLibraryName.isEmpty()) {
+        pu_ui->libraryOverviewTable->resizeColumnsToContents();
+    }
+    
+    // Update details if a library is currently selected
+    if (p_currentLibrary != nullptr) {
+        updateLibraryDetails(*p_currentLibrary);
+        updateLibraryConfiguration(*p_currentLibrary);
+    }
+}
+
+void RuntimeHardwareConfigDialog::onLibrarySelectionChanged(QTableWidgetItem* current, QTableWidgetItem* previous)
+{
+    Q_UNUSED(previous)
+    
+    if (current == nullptr) {
+        p_currentLibrary = nullptr;
+        d_currentLibraryKey.clear();
+        // Clear details and configuration panels
+        pu_ui->libraryDetailsText->clear();
+        pu_ui->userLibraryPathEdit->clear();
+        pu_ui->additionalPathsEdit->clear();
+        pu_ui->autoDiscoveryCheckBox->setChecked(true);
+        return;
+    }
+    
+    // Get selected library
+    int row = current->row();
+    QString libraryDisplayName = pu_ui->libraryOverviewTable->item(row, 0)->data(Qt::UserRole).toString();
+    
+    VendorLibrary* library = nullptr;
+    QString libraryKey;
+    
+    if (libraryDisplayName == "Spectrum M4i") {
+        library = &SpectrumLibrary::instance();
+        libraryKey = BC::Key::Spectrum::spectrumM4i;
+    } else if (libraryDisplayName == "LabJack USB") {
+        library = &LabjackLibrary::instance();
+        libraryKey = BC::Key::LabJack::labjackU3;
+    }
+    
+    if (library != nullptr) {
+        p_currentLibrary = library;
+        d_currentLibraryKey = libraryKey;
+        
+        updateLibraryDetails(*library);
+        updateLibraryConfiguration(*library);
+    }
+}
+
+void RuntimeHardwareConfigDialog::onLibraryPathChanged(const QString& libraryKey)
+{
+    if (libraryKey.isEmpty() || p_currentLibrary == nullptr) {
+        return;
+    }
+    
+    // Update library configuration based on UI input
+    QString userPath = pu_ui->userLibraryPathEdit->text().trimmed();
+    QString additionalPaths = pu_ui->additionalPathsEdit->text().trimmed();
+    bool autoDiscovery = pu_ui->autoDiscoveryCheckBox->isChecked();
+    
+    // Apply settings to staged configuration (no immediate effect)
+    p_currentLibrary->setStagedUserProvidedPath(userPath);
+    
+    // Parse semicolon-separated additional paths
+    QStringList pathList;
+    if (!additionalPaths.isEmpty()) {
+        pathList = additionalPaths.split(';', Qt::SkipEmptyParts);
+        for (QString& path : pathList) {
+            path = path.trimmed();
+        }
+    }
+    p_currentLibrary->setStagedSearchPaths(pathList);
+    
+    p_currentLibrary->setStagedAutoDiscoveryEnabled(autoDiscovery);
+    
+    // Update visual indicators for staged changes
+    updateStagingIndicators();
+    updateAllLibraryStagingIndicators();
+}
+
+void RuntimeHardwareConfigDialog::onBrowseLibraryPath()
+{
+    if (p_currentLibrary == nullptr) {
+        return;
+    }
+    
+    QString currentPath = pu_ui->userLibraryPathEdit->text();
+    QString startDir = currentPath.isEmpty() ? QDir::homePath() : QFileInfo(currentPath).absolutePath();
+    
+    // Determine file filter based on platform
+    QString filter;
+#ifdef Q_OS_WINDOWS
+    filter = "Dynamic Libraries (*.dll);;All Files (*)";
+#else
+    filter = "Dynamic Libraries (*.so *.so.*);;All Files (*)";
+#endif
+    
+    QString selectedPath = QFileDialog::getOpenFileName(
+        this,
+        QString("Select %1 Library").arg(getLibraryDisplayName(*p_currentLibrary)),
+        startDir,
+        filter
+    );
+    
+    if (!selectedPath.isEmpty()) {
+        pu_ui->userLibraryPathEdit->setText(selectedPath);
+    }
+}
+
+void RuntimeHardwareConfigDialog::onTestLoadLibrary()
+{
+    if (p_currentLibrary == nullptr) {
+        return;
+    }
+    
+    // Check if there are staged changes to test
+    if (!p_currentLibrary->hasUnstagedChanges()) {
+        // No staged changes - test with current active settings
+        bool success = p_currentLibrary->reloadLibrary();
+        
+        QString title = QString("Test Load - %1").arg(getLibraryDisplayName(*p_currentLibrary));
+        if (success) {
+            QMessageBox::information(this, title, "Library loaded successfully with current active settings!");
+        } else {
+            QString errorMsg = QString("Failed to load library with current active settings:\n\n%1").arg(p_currentLibrary->errorString());
+            QMessageBox::warning(this, title, errorMsg);
+        }
+        
+        // Refresh the status display
+        refreshLibraryStatus();
+        return;
+    }
+    
+    // We have staged changes - warn user and test with temporary application
+    QString title = QString("Test Load - %1").arg(getLibraryDisplayName(*p_currentLibrary));
+    int result = QMessageBox::question(this, title, 
+        "This will temporarily apply your staged changes to test the library loading.\n\n"
+        "The changes will be reverted after testing. Continue?",
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+    
+    if (result != QMessageBox::Yes) {
+        return;
+    }
+    
+    // Store current active state for rollback (save staging state)
+    QString originalStagedUserPath = p_currentLibrary->getStagedUserProvidedPath();
+    QStringList originalStagedSearchPaths = p_currentLibrary->getStagedSearchPaths();
+    bool originalStagedAutoDiscovery = p_currentLibrary->isStagedAutoDiscoveryEnabled();
+    
+    // Temporarily apply staged settings
+    bool applySuccess = p_currentLibrary->applyChanges();
+    
+    if (!applySuccess) {
+        QMessageBox::warning(this, title, 
+            QString("Failed to apply staged changes for testing:\n\n%1").arg(p_currentLibrary->errorString()));
+        return;
+    }
+    
+    // Show test result
+    if (p_currentLibrary->isAvailable()) {
+        QMessageBox::information(this, title, "Library loaded successfully with staged settings!");
+    } else {
+        QString errorMsg = QString("Failed to load library with staged settings:\n\n%1").arg(p_currentLibrary->errorString());
+        QMessageBox::warning(this, title, errorMsg);
+    }
+    
+    // Restore original staged state (user's pending changes)
+    p_currentLibrary->setStagedUserProvidedPath(originalStagedUserPath);
+    p_currentLibrary->setStagedSearchPaths(originalStagedSearchPaths);
+    p_currentLibrary->setStagedAutoDiscoveryEnabled(originalStagedAutoDiscovery);
+    
+    // Refresh the status display
+    refreshLibraryStatus();
+    updateStagingIndicators();
+}
+
+void RuntimeHardwareConfigDialog::updateLibraryDetails(VendorLibrary& library)
+{
+    QString details;
+    
+    // Library name and description
+    details += QString("<h3>%1</h3>").arg(getLibraryDisplayName(library));
+    details += QString("<p><b>Library Name:</b> %1</p>").arg(library.libraryName());
+    
+    // Status information
+    details += QString("<p><b>Status:</b> %1</p>").arg(getLibraryStatusText(library));
+    
+    if (library.isAvailable()) {
+        // Available - show success information
+        details += QString("<p style='color: %1;'><b>✓ Library is available and ready</b></p>")
+                    .arg(ThemeColors::getCSSColor(ThemeColors::StatusSuccess, this));
+        
+        QString loadedPath = library.loadedLibraryPath();
+        if (!loadedPath.isEmpty()) {
+            details += QString("<p><b>Loaded from:</b><br><code>%1</code></p>").arg(loadedPath);
+        }
+        
+        // Version information
+        QString version = getLibraryVersion(library);
+        if (version != "Unknown") {
+            details += QString("<p><b>Version:</b> %1</p>").arg(version);
+        }
+        
+    } else {
+        // Not available - show error information
+        details += QString("<p style='color: %1;'><b>✗ Library is not available</b></p>")
+                    .arg(ThemeColors::getCSSColor(ThemeColors::StatusError, this));
+        
+        QString errorMsg = library.errorString();
+        if (!errorMsg.isEmpty()) {
+            details += QString("<p><b>Error:</b> %1</p>").arg(errorMsg);
+        }
+        
+        if (library.wasLoadingAttempted()) {
+            details += "<p><b>Loading was attempted</b> - check configuration settings below.</p>";
+        } else {
+            details += "<p><b>Loading not attempted</b> - library will be loaded when needed.</p>";
+        }
+    }
+    
+    // Platform-specific library names
+    QStringList platformNames = library.platformLibraryNames();
+    if (!platformNames.isEmpty()) {
+        details += "<p><b>Platform library names:</b><br>";
+        for (const QString& name : platformNames) {
+            details += QString("• <code>%1</code><br>").arg(name);
+        }
+        details += "</p>";
+    }
+    
+    // Default search paths
+    QStringList defaultPaths = library.defaultSearchPaths();
+    if (!defaultPaths.isEmpty()) {
+        details += "<p><b>Default search paths:</b><br>";
+        for (const QString& path : defaultPaths) {
+            details += QString("• <code>%1</code><br>").arg(path);
+        }
+        details += "</p>";
+    }
+    
+    pu_ui->libraryDetailsText->setHtml(details);
+}
+
+void RuntimeHardwareConfigDialog::updateLibraryConfiguration(VendorLibrary& library)
+{
+    // Block signals to prevent recursive calls
+    pu_ui->userLibraryPathEdit->blockSignals(true);
+    pu_ui->additionalPathsEdit->blockSignals(true);
+    pu_ui->autoDiscoveryCheckBox->blockSignals(true);
+    
+    // Load staged settings (what user is editing, not active configuration)
+    pu_ui->userLibraryPathEdit->setText(library.getStagedUserProvidedPath());
+    
+    QStringList userPaths = library.getStagedSearchPaths();
+    pu_ui->additionalPathsEdit->setText(userPaths.join(";"));
+    
+    pu_ui->autoDiscoveryCheckBox->setChecked(library.isStagedAutoDiscoveryEnabled());
+    
+    // Re-enable signals
+    pu_ui->userLibraryPathEdit->blockSignals(false);
+    pu_ui->additionalPathsEdit->blockSignals(false);
+    pu_ui->autoDiscoveryCheckBox->blockSignals(false);
+    
+    // Enable controls
+    pu_ui->userLibraryPathEdit->setEnabled(true);
+    pu_ui->browseLibraryButton->setEnabled(true);
+    pu_ui->additionalPathsEdit->setEnabled(true);
+    pu_ui->autoDiscoveryCheckBox->setEnabled(true);
+    pu_ui->testLoadButton->setEnabled(true);
+    
+    // Update visual indicators for staging state
+    updateStagingIndicators();
+}
+
+QString RuntimeHardwareConfigDialog::getLibraryStatusText(VendorLibrary& library)
+{
+    if (library.isAvailable()) {
+        return "Available";
+    } else if (library.wasLoadingAttempted()) {
+        return "Error";
+    } else {
+        return "Not Found";
+    }
+}
+
+QString RuntimeHardwareConfigDialog::getLibraryDisplayName(VendorLibrary& library)
+{
+    // Map library instances to display names
+    if (&library == &SpectrumLibrary::instance()) {
+        return "Spectrum M4i";
+    } else if (&library == &LabjackLibrary::instance()) {
+        return "LabJack USB";
+    } else {
+        return library.libraryName();
+    }
+}
+
+QString RuntimeHardwareConfigDialog::getLibraryVersion(VendorLibrary& library)
+{
+    if (!library.isAvailable()) {
+        return "Unknown";
+    }
+    
+    // Use the generic getVersionInfo() method first
+    QString versionInfo = library.getVersionInfo();
+    if (!versionInfo.isEmpty()) {
+        return versionInfo;
+    }
+    
+    // Fallback to specific library implementations for backward compatibility
+    if (&library == &LabjackLibrary::instance()) {
+        LabjackLibrary& ljLib = static_cast<LabjackLibrary&>(library);
+        if (ljLib.LJUSB_GetLibraryVersion != nullptr) {
+            try {
+                float version = ljLib.LJUSB_GetLibraryVersion();
+                return QString::number(version, 'f', 2);
+            } catch (...) {
+                // If version call fails, just return "Available"
+                return "Available";
+            }
+        }
+    }
+    
+    return "Available";
+}
+
+void RuntimeHardwareConfigDialog::updateStagingIndicators()
+{
+    if (p_currentLibrary == nullptr) {
+        return;
+    }
+    
+    // Update UI elements to show staging state
+    bool hasChanges = p_currentLibrary->hasUnstagedChanges();
+    
+    // Update library configuration panel label to show staging state
+    QString configLabel = "Library Configuration";
+    if (hasChanges) {
+        configLabel += " *";  // Add asterisk for pending changes
+        pu_ui->libraryConfigPanelLabel->setStyleSheet(
+            QString("QLabel { font-weight: bold; color: %1; }")
+            .arg(ThemeColors::getCSSColor(ThemeColors::StatusInfo, this)));
+    } else {
+        pu_ui->libraryConfigPanelLabel->setStyleSheet("QLabel { font-weight: bold; }");
+    }
+    pu_ui->libraryConfigPanelLabel->setText(configLabel);
+    
+    // Update test load button text based on staging state
+    if (hasChanges) {
+        pu_ui->testLoadButton->setText("Test Load (Staged)");
+        pu_ui->testLoadButton->setStyleSheet(
+            QString("QPushButton { color: %1; font-weight: bold; }")
+            .arg(ThemeColors::getCSSColor(ThemeColors::StatusInfo, this)));
+    } else {
+        pu_ui->testLoadButton->setText("Test Load");
+        pu_ui->testLoadButton->setStyleSheet("");
+    }
+    
+    // Update form controls to show modified state
+    updateControlStagingIndicator(pu_ui->userLibraryPathEdit, 
+        p_currentLibrary->getStagedUserProvidedPath() != p_currentLibrary->getActiveUserProvidedPath());
+        
+    updateControlStagingIndicator(pu_ui->additionalPathsEdit,
+        p_currentLibrary->getStagedSearchPaths() != p_currentLibrary->getActiveSearchPaths());
+        
+    updateControlStagingIndicator(pu_ui->autoDiscoveryCheckBox,
+        p_currentLibrary->isStagedAutoDiscoveryEnabled() != p_currentLibrary->isActiveAutoDiscoveryEnabled());
+}
+
+void RuntimeHardwareConfigDialog::updateControlStagingIndicator(QWidget* control, bool isModified)
+{
+    if (control == nullptr) {
+        return;
+    }
+    
+    if (isModified) {
+        // Apply visual indication for modified controls
+        control->setProperty("staging-modified", true);
+        control->setStyleSheet(
+            QString("QLineEdit { border: 2px solid %1; } QCheckBox { color: %1; font-weight: bold; }")
+            .arg(ThemeColors::getCSSColor(ThemeColors::StatusInfo, this)));
+    } else {
+        // Remove visual indication
+        control->setProperty("staging-modified", false);
+        control->setStyleSheet("");
+    }
+}
+
+void RuntimeHardwareConfigDialog::revertAllLibraryChanges()
+{
+    // Revert staged changes for all vendor libraries
+    SpectrumLibrary::instance().revertChanges();
+    LabjackLibrary::instance().revertChanges();
+    
+    // Update UI to reflect reverted state if library is currently selected
+    if (p_currentLibrary != nullptr) {
+        updateLibraryConfiguration(*p_currentLibrary);
+    }
+}
+
+void RuntimeHardwareConfigDialog::updateAllLibraryStagingIndicators()
+{
+    // Update staging indicators for all libraries, including tab-level indicators
+    bool hasAnyLibraryChanges = SpectrumLibrary::instance().hasUnstagedChanges() ||
+                                LabjackLibrary::instance().hasUnstagedChanges();
+    
+    // Update the Library Status tab title to show staging state
+    QString tabTitle = "Library Status";
+    if (hasAnyLibraryChanges) {
+        tabTitle += " *";  // Add asterisk to tab for global staging indicator
+    }
+    
+    // Find and update the tab title
+    int tabIndex = -1;
+    for (int i = 0; i < pu_ui->mainTabWidget->count(); ++i) {
+        if (pu_ui->mainTabWidget->widget(i) == pu_ui->libraryStatusTab) {
+            tabIndex = i;
+            break;
+        }
+    }
+    
+    if (tabIndex >= 0) {
+        pu_ui->mainTabWidget->setTabText(tabIndex, tabTitle);
+        
+        // Apply styling to tab if there are changes
+        if (hasAnyLibraryChanges) {
+            pu_ui->mainTabWidget->tabBar()->setTabTextColor(tabIndex, 
+                ThemeColors::getThemeAwareColor(ThemeColors::StatusInfo, this));
+        } else {
+            pu_ui->mainTabWidget->tabBar()->setTabTextColor(tabIndex, 
+                palette().color(QPalette::Text));
+        }
+    }
+    
+    // Update current library's indicators if one is selected
+    if (p_currentLibrary != nullptr) {
+        updateStagingIndicators();
+    }
 }

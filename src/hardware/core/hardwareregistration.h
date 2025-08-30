@@ -75,6 +75,25 @@ inline QString findHardwareBaseType(const QMetaObject* metaObj) {
     );
 
 /*!
+ * \brief Register library dependency for hardware implementation
+ * 
+ * This macro adds a vendor library dependency to an already registered hardware
+ * implementation. It should be used after REGISTER_HARDWARE_META in hardware
+ * implementation files where the necessary library includes are available.
+ * 
+ * \param CLASS Hardware class name (must already be registered)
+ * \param LIBRARY_NAME Library class name (e.g., SpectrumLibrary, LabjackLibrary)
+ */
+#define REGISTER_LIBRARY(CLASS, LIBRARY_NAME) \
+    static bool library_registered_##CLASS##_##LIBRARY_NAME = \
+        HardwareRegistry::instance().addLibraryDependency( \
+            findHardwareBaseType(&CLASS::staticMetaObject), \
+            QString(CLASS::staticMetaObject.className()), \
+            #LIBRARY_NAME, \
+            []() -> VendorLibrary* { return &LIBRARY_NAME::instance(); } \
+        );
+
+/*!
  * \brief Register hardware implementation using introspection (legacy)
  * 
  * This macro creates a temporary instance of the hardware class to extract

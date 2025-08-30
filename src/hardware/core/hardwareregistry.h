@@ -10,6 +10,7 @@
 #include <memory>
 
 class HardwareObject;
+class VendorLibrary;
 
 /*!
  * \brief Hardware registration information
@@ -19,12 +20,13 @@ struct HardwareRegistration {
     QString subKey;                                            /*!< Implementation key (e.g., "m4i2220x8") */
     QString description;                                       /*!< Description of the hardware */
     std::function<HardwareObject*(const QString&)> factory;   /*!< Factory function to create hardware instance with label */
+    QStringList libraryDependencies;                          /*!< List of vendor libraries this hardware depends on */
     
     // Constructor
     HardwareRegistration() = default;
     HardwareRegistration(const QString& k, const QString& sk, const QString& desc, 
                         std::function<HardwareObject*(const QString&)> fact)
-        : key(k), subKey(sk), description(desc), factory(fact) {}
+        : key(k), subKey(sk), description(desc), factory(fact), libraryDependencies({}) {}
 };
 
 /*!
@@ -127,6 +129,55 @@ public:
      */
     static bool isMultiInstanceType(const QString& hardwareType);
 
+    /*!
+     * \brief Get list of vendor libraries that a hardware implementation depends on
+     * \param implementationName Hardware implementation key (e.g., "m4i2220x8", "labjacku3")
+     * \return List of library names that the hardware depends on ("SpectrumLibrary", "LabjackLibrary", etc.)
+     * 
+     * This method identifies which vendor libraries a hardware implementation requires.
+     * Hardware objects using these libraries must be destroyed before library changes
+     * and recreated after library changes to prevent crashes from invalid function pointers.
+     */
+    QStringList getLibraryDependencies(const QString& implementationName) const;
+
+    /*!
+     * \brief Get list of hardware implementations that depend on a specific library
+     * \param libraryName Library name (e.g., "SpectrumLibrary", "LabjackLibrary")
+     * \return List of hardware implementation keys that depend on the specified library
+     */
+    QStringList getHardwareDependingOnLibrary(const QString& libraryName) const;
+
+    /*!
+     * \brief Check if hardware implementation uses specific library
+     * \param implementationName Hardware implementation key
+     * \param libraryName Library name
+     * \return True if hardware implementation depends on the specified library
+     */
+    bool hardwareUsesLibrary(const QString& implementationName, const QString& libraryName) const;
+
+    /*!
+     * \brief Add library dependency to existing hardware registration
+     * \param key Hardware type key
+     * \param subKey Implementation key
+     * \param libraryName Library name to add as dependency
+     * \param libraryGetter Function to get library instance
+     * \return True if dependency was added successfully
+     * 
+     * This method allows hardware implementations to register their library dependencies
+     * after the initial hardware registration. Used by the REGISTER_LIBRARY macro.
+     */
+    bool addLibraryDependency(const QString& key, const QString& subKey, const QString& libraryName,
+                              std::function<VendorLibrary*()> libraryGetter);
+
+    /*!
+     * \brief Get all libraries that have unstaged changes
+     * \return List of library names that have unstaged changes
+     * 
+     * This method checks all registered library instances for unstaged changes,
+     * providing a generic way to detect library configuration changes.
+     */
+    QStringList getLibrariesWithChanges() const;
+
 signals:
     /*!
      * \brief Emitted when hardware is successfully registered
@@ -153,6 +204,7 @@ private:
     
     static HardwareRegistry* s_instance;
     QHash<QString, HardwareRegistration> d_registrations;  /*!< All registered hardware */
+    QHash<QString, std::function<VendorLibrary*()>> d_libraryGetters;  /*!< Library instance getters by name */
     mutable QMutex d_registryMutex;                        /*!< Thread safety for registry access */
 };
 

@@ -423,8 +423,10 @@ void MainWindow::updateHardwareConnectionState(const QString& hwKey, bool connec
     // Update individual UI element state
     if(d_hardwareUI.contains(hwKey)) {
         auto& elements = d_hardwareUI[hwKey];
-        elements.menuAction->setEnabled(connected);
-        elements.statusWidget->setEnabled(connected);
+        if(elements.menuAction)
+            elements.menuAction->setEnabled(connected);
+        if(elements.statusWidget)
+            elements.statusWidget->setEnabled(connected);
         // Could add visual feedback (grayed out, different styling, etc.)
     }
     

@@ -4,6 +4,10 @@
 #include <data/settings/hardwarekeys.h>
 #include <data/bcglobals.h>
 
+// Phase 3.5.3: Vendor library includes for library configuration integration
+#include <hardware/library/spectrumlibrary.h>
+#include <hardware/library/labjacklibrary.h>
+
 #include <hardware/core/hardwareobject.h>
 #include <hardware/core/clock/clockmanager.h>
 #include <hardware/core/hw_h.h> // Generated at build time
@@ -1268,6 +1272,45 @@ void HardwareManager::replaceHardwareInternal(const QString& hwKey, const QStrin
 
 // Task 3.3.5: Atomic Synchronization Orchestrator implementation
 
+bool HardwareManager::applyVendorLibraryChanges()
+{
+    emit logMessage("Applying vendor library configuration changes", LogHandler::Normal);
+    
+    bool allSuccess = true;
+    
+    // Apply changes to SpectrumLibrary
+    SpectrumLibrary& specLib = SpectrumLibrary::instance();
+    if (specLib.hasUnstagedChanges()) {
+        emit logMessage("Applying Spectrum library configuration changes", LogHandler::Normal);
+        if (!specLib.applyChanges()) {
+            emit logMessage(QString("Failed to apply Spectrum library changes: %1").arg(specLib.errorString()), LogHandler::Error);
+            allSuccess = false;
+        } else {
+            emit logMessage("Spectrum library configuration applied successfully", LogHandler::Normal);
+        }
+    }
+    
+    // Apply changes to LabjackLibrary
+    LabjackLibrary& ljLib = LabjackLibrary::instance();
+    if (ljLib.hasUnstagedChanges()) {
+        emit logMessage("Applying LabJack library configuration changes", LogHandler::Normal);
+        if (!ljLib.applyChanges()) {
+            emit logMessage(QString("Failed to apply LabJack library changes: %1").arg(ljLib.errorString()), LogHandler::Error);
+            allSuccess = false;
+        } else {
+            emit logMessage("LabJack library configuration applied successfully", LogHandler::Normal);
+        }
+    }
+    
+    if (allSuccess) {
+        emit logMessage("All vendor library configuration changes applied successfully", LogHandler::Normal);
+    } else {
+        emit logMessage("Some vendor library configuration changes failed to apply", LogHandler::Error);
+    }
+    
+    return allSuccess;
+}
+
 void HardwareManager::syncWithRuntimeConfig()
 {
     emit logMessage("Starting hardware synchronization with runtime configuration", LogHandler::Normal);
@@ -1287,16 +1330,36 @@ void HardwareManager::syncWithRuntimeConfig()
         toReplace = findHardwareToReplace(targetHardware);
     }
     
+    // Add hardware dependent on changed libraries to recreation lists
+    addLibraryDependentHardwareToRecreation(targetHardware, toRemove, toAdd, toReplace);
+    
     emit logMessage(QString("Hardware synchronization plan: %1 to remove, %2 to add, %3 to replace")
                    .arg(toRemove.size()).arg(toAdd.size()).arg(toReplace.size()), LogHandler::Normal);
     
-    // Apply changes atomically - internal methods handle their own mutex locking
+    // Phase 1: Destroy hardware objects that need to be removed/replaced
+    // This ensures hardware objects are destroyed using current/valid function pointers
     for(const auto& hwKey : toRemove) {
         removeHardwareInternal(hwKey);
     }
     
     for(const auto& [hwKey, impl] : toReplace) {
-        replaceHardwareInternal(hwKey, impl);
+        // replaceHardwareInternal calls removeHardwareInternal first, then addHardwareInternal
+        // We'll need to split this to get proper timing for library changes
+        emit logMessage(QString("Removing hardware for replacement: %1").arg(hwKey), LogHandler::Normal);
+        removeHardwareInternal(hwKey);
+    }
+    
+    // Phase 2: Apply vendor library configuration changes at SAFE timing
+    // All hardware objects that could use the libraries are now destroyed
+    if (!applyVendorLibraryChanges()) {
+        emit logMessage("Warning: Some vendor library changes failed to apply, continuing with hardware synchronization", LogHandler::Warning);
+        // Continue with hardware sync even if library changes fail - user should be notified but not blocked
+    }
+    
+    // Phase 3: Create new hardware objects (using updated libraries if any changes were applied)
+    for(const auto& [hwKey, impl] : toReplace) {
+        emit logMessage(QString("Adding replacement hardware: %1 with implementation: %2").arg(hwKey, impl), LogHandler::Normal);
+        addHardwareInternal(hwKey, impl);
     }
     
     for(const auto& [hwKey, impl] : toAdd) {
@@ -1579,4 +1642,54 @@ bool HardwareManager::allCriticalHardwareConnected() const
     }
     
     return true;
+}
+
+void HardwareManager::addLibraryDependentHardwareToRecreation(const std::map<QString, QString>& /* targetHardware */,
+                                                            std::vector<QString>& toRemove,
+                                                            std::vector<std::pair<QString, QString>>& /* toAdd */,
+                                                            std::vector<std::pair<QString, QString>>& toReplace)
+{
+    const HardwareRegistry& registry = HardwareRegistry::instance();
+    
+    // Get all libraries that have staged changes (completely generic!)
+    QStringList changedLibraries = registry.getLibrariesWithChanges();
+    
+    if (changedLibraries.isEmpty()) {
+        return; // No library changes, nothing to do
+    }
+    
+    for (const QString& libName : changedLibraries) {
+        emit logMessage(QString("Library %1 has staged changes - dependent hardware will be recreated")
+                       .arg(libName), LogHandler::Normal);
+    }
+    
+    // Find current hardware that depends on changed libraries
+    const auto& currentHardware = RuntimeHardwareConfig::constInstance().getCurrentHardware();
+    
+    for (const auto& [hwKey, impl] : currentHardware) {
+        QStringList deps = registry.getLibraryDependencies(impl);
+        
+        bool needsRecreation = false;
+        for (const QString& changedLib : changedLibraries) {
+            if (deps.contains(changedLib)) {
+                needsRecreation = true;
+                emit logMessage(QString("Hardware %1 depends on changed library %2 - adding to recreation list")
+                               .arg(hwKey, changedLib), LogHandler::Normal);
+                break;
+            }
+        }
+        
+        if (needsRecreation) {
+            // Check if this hardware is already in one of the recreation lists
+            bool alreadyInRemoval = std::find(toRemove.begin(), toRemove.end(), hwKey) != toRemove.end();
+            bool alreadyInReplacement = std::find_if(toReplace.begin(), toReplace.end(), 
+                                                   [&hwKey](const auto& pair) { return pair.first == hwKey; }) != toReplace.end();
+            
+            if (!alreadyInRemoval && !alreadyInReplacement) {
+                // Add to replacement list (same implementation, but needs recreation for library changes)
+                toReplace.emplace_back(hwKey, impl);
+                emit logMessage(QString("Added %1 to replacement list due to library dependency").arg(hwKey), LogHandler::Normal);
+            }
+        }
+    }
 }

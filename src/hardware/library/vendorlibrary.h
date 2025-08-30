@@ -84,6 +84,15 @@ public:
     virtual QStringList defaultSearchPaths() const = 0;
 
     /*!
+     * \brief Get library version information
+     * \return Version string if available, empty string if not available or not supported
+     * 
+     * This method attempts to query version information from the loaded library.
+     * Implementation is library-specific and may require temporary device access.
+     */
+    virtual QString getVersionInfo() const { return QString(); }
+
+    /*!
      * \brief Get the full path where library was found (if loaded successfully)
      * \return Full path to loaded library, empty if not loaded
      */
@@ -155,6 +164,102 @@ public:
      */
     bool reloadLibrary();
 
+    // Staging API - UI uses these methods (no immediate effect)
+    
+    /*!
+     * \brief Set staged user-provided library path
+     * \param path Full path to library file provided by user
+     * 
+     * This modifies the staged configuration without immediately affecting
+     * the active configuration used by hardware. Changes must be applied
+     * via applyChanges() to take effect.
+     */
+    void setStagedUserProvidedPath(const QString& path);
+    
+    /*!
+     * \brief Set staged user-specified search paths
+     * \param paths List of directory paths to search
+     * 
+     * This modifies the staged configuration without immediately affecting
+     * the active configuration used by hardware.
+     */
+    void setStagedSearchPaths(const QStringList& paths);
+    
+    /*!
+     * \brief Set staged automatic discovery setting
+     * \param enabled Whether to use automatic discovery as fallback
+     * 
+     * This modifies the staged configuration without immediately affecting
+     * the active configuration used by hardware.
+     */
+    void setStagedAutoDiscoveryEnabled(bool enabled);
+    
+    // Staging query methods
+    
+    /*!
+     * \brief Get staged user-provided library path
+     * \return Staged user-specified library path, empty if none set
+     */
+    QString getStagedUserProvidedPath() const;
+    
+    /*!
+     * \brief Get staged user-specified search paths
+     * \return List of staged user-specified search directories
+     */
+    QStringList getStagedSearchPaths() const;
+    
+    /*!
+     * \brief Check if staged automatic discovery is enabled
+     * \return true if staged automatic discovery is enabled
+     */
+    bool isStagedAutoDiscoveryEnabled() const;
+    
+    /*!
+     * \brief Check if there are unstaged changes
+     * \return true if staged configuration differs from active configuration
+     */
+    bool hasUnstagedChanges() const;
+    
+    // Synchronization methods
+    
+    /*!
+     * \brief Apply staged changes to active configuration
+     * \return true if changes were applied successfully and library reloaded
+     * 
+     * This promotes the staged configuration to become the active configuration,
+     * saves the settings to persistent storage, and reloads the library with
+     * the new configuration.
+     */
+    bool applyChanges();
+    
+    /*!
+     * \brief Revert staged changes to match active configuration
+     * 
+     * This discards any staged changes and resets the staged configuration
+     * to match the current active configuration.
+     */
+    void revertChanges();
+    
+    // Active configuration access (hardware uses these)
+    
+    /*!
+     * \brief Get active user-provided library path
+     * \return Active user-specified library path, empty if none set
+     */
+    QString getActiveUserProvidedPath() const;
+    
+    /*!
+     * \brief Get active user-specified search paths
+     * \return List of active user-specified search directories
+     */
+    QStringList getActiveSearchPaths() const;
+    
+    /*!
+     * \brief Check if active automatic discovery is enabled
+     * \return true if active automatic discovery is enabled
+     */
+    bool isActiveAutoDiscoveryEnabled() const;
+
 protected:
     /*!
      * \brief Attempt to load library using platform-specific names and paths
@@ -192,6 +297,17 @@ protected:
     QString d_errorString;            /*!< Error message if loading failed */
     QStringList d_attemptedPaths;     /*!< Paths that were tried during loading */
     QString d_libraryKey;             /*!< Settings key for this library */
+
+    // Current active configuration (used by hardware)
+    QString d_activeUserPath;         /*!< Active user-provided library path */
+    QStringList d_activeSearchPaths;  /*!< Active user search paths */
+    bool d_activeAutoDiscovery;       /*!< Active auto-discovery setting */
+    
+    // Staged configuration (modified by UI, not yet applied)
+    QString d_stagedUserPath;         /*!< Staged user-provided library path */
+    QStringList d_stagedSearchPaths;  /*!< Staged user search paths */
+    bool d_stagedAutoDiscovery;       /*!< Staged auto-discovery setting */
+    bool d_hasUnstagedChanges;        /*!< Track if staging differs from active */
 
 private:
     /*!

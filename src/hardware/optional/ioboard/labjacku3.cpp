@@ -1,8 +1,10 @@
 #include "labjacku3.h"
 #include <hardware/core/hardwareregistration.h>
+#include <hardware/library/labjacklibrary.h>
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(LabjackU3, "Labjack U3 IOBoard")
+REGISTER_LIBRARY(LabjackU3, LabjackLibrary)
 
 LabjackU3::LabjackU3(const QString& label, QObject *parent) :
     IOBoard(QString(LabjackU3::staticMetaObject.className()), label, parent),
