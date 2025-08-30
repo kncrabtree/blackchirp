@@ -39,6 +39,7 @@ public:
     QString errorString() const override { return d_errorString; }
     QStringList platformLibraryNames() const override;
     QStringList defaultSearchPaths() const override;
+    QString getInstallationInstructions() const override;
     
     // Low-level LabJack USB function pointers (LJUSB_* functions from liblabjackusb.so)
     // These are the actual functions that u3.cpp calls

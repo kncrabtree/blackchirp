@@ -106,3 +106,100 @@ void LabjackLibrary::loadFunctions()
         d_libraryLoaded = false;
     }
 }
+
+QString LabjackLibrary::getInstallationInstructions() const
+{
+#ifdef Q_OS_LINUX
+    return QString(
+        "<p><b>Installing LabJack USB Driver on Linux:</b></p>"
+        "<ol>"
+        "<li><b>Download:</b> Visit the <a href=\"https://labjack.com/support/software/installers/ud\">LabJack UD software page</a> and download the Linux UD installer</li>"
+        "<li><b>Extract:</b> Extract the downloaded archive (typically named like <code>LabJackUD_*.tar.gz</code>)</li>"
+        "<li><b>Install:</b> Run the installation script as root:"
+        "<pre>cd LabJackUD_*/\nsudo ./install.sh</pre></li>"
+        "<li><b>Libraries:</b> The installer will place files in:"
+        "<ul>"
+        "<li>USB Library: <code>/usr/local/lib/liblabjackusb.so</code></li>"
+        "<li>UD Library: <code>/usr/local/lib/liblabjackud.so</code></li>"
+        "<li>Headers: <code>/usr/local/include/labjack/</code></li>"
+        "</ul></li>"
+        "<li><b>Permissions:</b> Add udev rules for device access (done automatically by installer)</li>"
+        "<li><b>Verify:</b> Check that the library is accessible:"
+        "<pre>ldconfig -p | grep labjack</pre></li>"
+        "</ol>"
+        "<p><b>Manual Installation (Alternative):</b></p>"
+        "<ul>"
+        "<li>Install libusb development package: <code>sudo apt install libusb-1.0-0-dev</code></li>"
+        "<li>Download source from GitHub: <a href=\"https://github.com/labjack/exodriver\">LabJack Exodriver</a></li>"
+        "<li>Compile and install following the GitHub instructions</li>"
+        "</ul>"
+        "<p><b>Troubleshooting:</b></p>"
+        "<ul>"
+        "<li>If permission denied: Check udev rules in <code>/etc/udev/rules.d/</code></li>"
+        "<li>If library not found: Run <code>sudo ldconfig</code> to update library cache</li>"
+        "<li>Verify device detection: <code>lsusb | grep LabJack</code></li>"
+        "</ul>"
+    );
+#elif defined(Q_OS_WIN)
+    return QString(
+        "<p><b>Installing LabJack USB Driver on Windows:</b></p>"
+        "<ol>"
+        "<li><b>Download:</b> Visit the <a href=\"https://labjack.com/support/software/installers/ud\">LabJack UD software page</a> and download the Windows UD installer</li>"
+        "<li><b>Run Installer:</b> Execute the installer as Administrator (typically named like <code>LabJackUD_*.exe</code>)</li>"
+        "<li><b>Installation Components:</b> The installer includes:"
+        "<ul>"
+        "<li>USB drivers for all LabJack devices</li>"
+        "<li>LabJackUD library (32-bit and 64-bit versions)</li>"
+        "<li>Example code and documentation</li>"
+        "</ul></li>"
+        "<li><b>Installation Path:</b> Files are typically installed to:"
+        "<ul>"
+        "<li>64-bit: <code>C:\\Windows\\System32\\LabJackUD.dll</code></li>"
+        "<li>32-bit: <code>C:\\Windows\\SysWOW64\\LabJackUD.dll</code></li>"
+        "<li>SDK: <code>C:\\Program Files\\LabJack\\</code></li>"
+        "</ul></li>"
+        "<li><b>Device Recognition:</b> Windows will automatically recognize LabJack devices after installation</li>"
+        "</ol>"
+        "<p><b>Troubleshooting:</b></p>"
+        "<ul>"
+        "<li>Run the installer as Administrator</li>"
+        "<li>Check Device Manager for LabJack devices under \"LabJack\" category</li>"
+        "<li>Ensure USB cable and device connections are secure</li>"
+        "<li>Try different USB ports if device is not detected</li>"
+        "</ul>"
+    );
+#elif defined(Q_OS_MACOS)
+    return QString(
+        "<p><b>Installing LabJack USB Driver on macOS:</b></p>"
+        "<ol>"
+        "<li><b>Download:</b> Visit the <a href=\"https://labjack.com/support/software/installers/ud\">LabJack UD software page</a> and download the macOS UD installer</li>"
+        "<li><b>Install:</b> Run the installer package (.pkg file) and follow the installation wizard</li>"
+        "<li><b>Installation Path:</b> Libraries are installed to:"
+        "<ul>"
+        "<li><code>/usr/local/lib/liblabjackusb.dylib</code></li>"
+        "<li><code>/usr/local/lib/liblabjackud.dylib</code></li>"
+        "<li>Headers: <code>/usr/local/include/labjack/</code></li>"
+        "</ul></li>"
+        "<li><b>Permissions:</b> Grant necessary permissions when prompted</li>"
+        "<li><b>Verify:</b> Check library installation:"
+        "<pre>ls -la /usr/local/lib/liblabjack*</pre></li>"
+        "</ol>"
+        "<p><b>Manual Installation (Homebrew):</b></p>"
+        "<pre>brew install libusb\ngit clone https://github.com/labjack/exodriver.git\ncd exodriver\nmake install</pre>"
+        "<p><b>Troubleshooting:</b></p>"
+        "<ul>"
+        "<li>For Apple Silicon Macs, ensure ARM64 compatibility</li>"
+        "<li>Check System Preferences for security prompts</li>"
+        "<li>Verify device detection: <code>system_profiler SPUSBDataType | grep LabJack</code></li>"
+        "</ul>"
+    );
+#else
+    return QString(
+        "<p><b>Installing LabJack USB Driver:</b></p>"
+        "<p>Please visit the <a href=\"https://labjack.com/support/software/installers/ud\">LabJack software download page</a> "
+        "to download the appropriate driver package for your operating system.</p>"
+        "<p>LabJack provides comprehensive installation instructions and support for all major operating systems.</p>"
+        "<p>For additional help, refer to the <a href=\"https://labjack.com/support\">LabJack support documentation</a>.</p>"
+    );
+#endif
+}

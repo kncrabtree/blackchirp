@@ -93,6 +93,16 @@ public:
     virtual QString getVersionInfo() const { return QString(); }
 
     /*!
+     * \brief Get platform-specific installation instructions for this library
+     * \return HTML-formatted installation instructions for the current platform
+     * 
+     * This method returns detailed, platform-specific instructions for installing
+     * the vendor library. The instructions should include download links, installation
+     * commands, and common troubleshooting information tailored to the current platform.
+     */
+    virtual QString getInstallationInstructions() const = 0;
+
+    /*!
      * \brief Get the full path where library was found (if loaded successfully)
      * \return Full path to loaded library, empty if not loaded
      */

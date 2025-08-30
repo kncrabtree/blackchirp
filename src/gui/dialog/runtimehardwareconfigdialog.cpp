@@ -792,6 +792,9 @@ void RuntimeHardwareConfigDialog::initializeLibraryStatusTab()
     connect(pu_ui->refreshLibraryButton, &QPushButton::clicked,
             this, &RuntimeHardwareConfigDialog::refreshLibraryStatus);
     
+    // Initialize installation guidance with platform-specific generic instructions
+    pu_ui->installationGuidanceText->setHtml(getGenericInstallationGuidance());
+    
     // Initialize library status display
     refreshLibraryStatus();
 }
@@ -921,6 +924,8 @@ void RuntimeHardwareConfigDialog::onLibrarySelectionChanged(QTableWidgetItem* cu
         pu_ui->userLibraryPathEdit->clear();
         pu_ui->additionalPathsEdit->clear();
         pu_ui->autoDiscoveryCheckBox->setChecked(true);
+        // Restore generic installation guidance
+        pu_ui->installationGuidanceText->setHtml(getGenericInstallationGuidance());
         return;
     }
     
@@ -1169,6 +1174,9 @@ void RuntimeHardwareConfigDialog::updateLibraryConfiguration(VendorLibrary& libr
     pu_ui->autoDiscoveryCheckBox->setEnabled(true);
     pu_ui->testLoadButton->setEnabled(true);
     
+    // Update installation guidance with library-specific instructions
+    pu_ui->installationGuidanceText->setHtml(library.getInstallationInstructions());
+    
     // Update visual indicators for staging state
     updateStagingIndicators();
 }
@@ -1337,4 +1345,91 @@ void RuntimeHardwareConfigDialog::updateAllLibraryStagingIndicators()
     if (p_currentLibrary != nullptr) {
         updateStagingIndicators();
     }
+}
+
+QString RuntimeHardwareConfigDialog::getGenericInstallationGuidance() const
+{
+#ifdef Q_OS_LINUX
+    return QString(
+        "<p><b>Installing Vendor Libraries on Linux:</b></p>"
+        "<ol>"
+        "<li><b>Download:</b> Visit the vendor's official website to download the Linux driver packages</li>"
+        "<li><b>Prerequisites:</b> Ensure you have necessary development tools:"
+        "<pre>sudo apt update\nsudo apt install build-essential linux-headers-$(uname -r)</pre></li>"
+        "<li><b>Installation:</b> Most vendors provide installation scripts that handle:"
+        "<ul>"
+        "<li>Kernel module compilation and loading</li>"
+        "<li>Library installation to standard paths (typically <code>/usr/local/lib/</code> or <code>/opt/</code>)</li>"
+        "<li>Device permissions and udev rules</li>"
+        "</ul></li>"
+        "<li><b>User Permissions:</b> Add your user to the appropriate groups for device access</li>"
+        "<li><b>Library Path:</b> Update <code>LD_LIBRARY_PATH</code> if libraries are in non-standard locations</li>"
+        "</ol>"
+        "<p><b>Common Troubleshooting:</b></p>"
+        "<ul>"
+        "<li>Check kernel module loading: <code>lsmod | grep [vendor]</code></li>"
+        "<li>Verify device files exist: <code>ls -la /dev/</code></li>"
+        "<li>Update library cache: <code>sudo ldconfig</code></li>"
+        "<li>Check USB device detection: <code>lsusb</code></li>"
+        "</ul>"
+    );
+#elif defined(Q_OS_WIN)
+    return QString(
+        "<p><b>Installing Vendor Libraries on Windows:</b></p>"
+        "<ol>"
+        "<li><b>Download:</b> Visit the vendor's official website to download Windows driver packages</li>"
+        "<li><b>Administrator Rights:</b> Always run installers as Administrator</li>"
+        "<li><b>Installation:</b> Windows installers typically handle:"
+        "<ul>"
+        "<li>Driver installation and digital signature verification</li>"
+        "<li>Library registration in system directories</li>"
+        "<li>Device driver association</li>"
+        "</ul></li>"
+        "<li><b>Reboot:</b> Most hardware drivers require a system restart</li>"
+        "<li><b>Verification:</b> Check Device Manager for proper device recognition</li>"
+        "</ol>"
+        "<p><b>Common Troubleshooting:</b></p>"
+        "<ul>"
+        "<li>Disable Driver Signature Enforcement if needed (advanced users)</li>"
+        "<li>Check Windows Event Viewer for driver errors</li>"
+        "<li>Ensure proper USB cable connections</li>"
+        "<li>Try different USB ports if devices aren't detected</li>"
+        "</ul>"
+    );
+#elif defined(Q_OS_MACOS)
+    return QString(
+        "<p><b>Installing Vendor Libraries on macOS:</b></p>"
+        "<ol>"
+        "<li><b>Download:</b> Visit the vendor's official website to download macOS driver packages</li>"
+        "<li><b>Security:</b> Allow installation from identified developers in System Preferences > Security & Privacy</li>"
+        "<li><b>Installation:</b> Run the .pkg installer and follow the setup wizard</li>"
+        "<li><b>System Extensions:</b> Grant permission for system extensions when prompted</li>"
+        "<li><b>Reboot:</b> Restart your Mac to load kernel extensions</li>"
+        "</ol>"
+        "<p><b>Apple Silicon Considerations:</b></p>"
+        "<ul>"
+        "<li>Ensure the driver supports ARM64 architecture</li>"
+        "<li>Some vendors may require Rosetta 2 for Intel-compiled drivers</li>"
+        "</ul>"
+        "<p><b>Common Troubleshooting:</b></p>"
+        "<ul>"
+        "<li>Check System Preferences > Security & Privacy for blocked extensions</li>"
+        "<li>Verify kernel extension loading: <code>kextstat</code></li>"
+        "<li>Check USB device detection: <code>system_profiler SPUSBDataType</code></li>"
+        "</ul>"
+    );
+#else
+    return QString(
+        "<p><b>Installing Vendor Libraries:</b></p>"
+        "<p>Please visit the vendor's official website to download the appropriate driver package for your operating system.</p>"
+        "<p>Most hardware vendors provide comprehensive installation instructions and support documentation specific to their products.</p>"
+        "<p><b>General Guidelines:</b></p>"
+        "<ul>"
+        "<li>Always download drivers from official vendor websites</li>"
+        "<li>Follow vendor-specific installation procedures</li>"
+        "<li>Ensure your system meets hardware and software requirements</li>"
+        "<li>Check vendor documentation for platform-specific considerations</li>"
+        "</ul>"
+    );
+#endif
 }

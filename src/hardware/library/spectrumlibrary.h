@@ -51,6 +51,7 @@ public:
     QStringList platformLibraryNames() const override;
     QStringList defaultSearchPaths() const override;
     QString getVersionInfo() const override;
+    QString getInstallationInstructions() const override;
 
     // Spectrum API function pointers
     // These replace direct SDK function calls and are loaded dynamically

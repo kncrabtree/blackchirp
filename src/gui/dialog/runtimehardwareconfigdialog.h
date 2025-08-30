@@ -235,6 +235,15 @@ private:
      * any library has unstaged changes.
      */
     void updateAllLibraryStagingIndicators();
+    
+    /*!
+     * \brief Get generic platform-specific installation guidance
+     * \return HTML-formatted generic installation guidance for the current platform
+     * 
+     * Returns general instructions for vendor library installation when no specific
+     * library is selected, tailored to the user's current platform.
+     */
+    QString getGenericInstallationGuidance() const;
 
     Ui::RuntimeHardwareConfigDialog *pu_ui;
     

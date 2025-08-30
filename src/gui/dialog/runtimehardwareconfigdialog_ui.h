@@ -346,7 +346,7 @@ public:
         installationGuidanceText = new QTextEdit(installationGuidanceGroup);
         installationGuidanceText->setObjectName(QString::fromUtf8("installationGuidanceText"));
         installationGuidanceText->setReadOnly(true);
-        installationGuidanceText->setMaximumHeight(150);
+        // installationGuidanceText->setMaximumHeight(150);
         installationGuidanceText->setHtml(
             "<p><b>Installing Vendor Libraries:</b></p>"
             "<ul>"
@@ -357,8 +357,7 @@ public:
         );
         installationGuidanceLayout->addWidget(installationGuidanceText);
         
-        libraryConfigPanelLayout->addWidget(installationGuidanceGroup);
-        libraryConfigPanelLayout->addStretch();
+        libraryConfigPanelLayout->addWidget(installationGuidanceGroup,1);
         
         libraryStatusSplitter->addWidget(libraryConfigPanel);
         

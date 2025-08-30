@@ -203,3 +203,84 @@ QString SpectrumLibrary::getVersionInfo() const
     
     return versionInfo.isEmpty() ? "Available" : versionInfo;
 }
+
+QString SpectrumLibrary::getInstallationInstructions() const
+{
+#ifdef Q_OS_LINUX
+    return QString(
+        "<p><b>Installing Spectrum M4i Driver on Linux:</b></p>"
+        "<ol>"
+        "<li><b>Download:</b> Visit the <a href=\"https://spectrum-instrumentation.com\">Spectrum Instrumentation website</a> and download the latest Linux driver package for M4i series cards</li>"
+        "<li><b>Extract:</b> Extract the downloaded package (typically named like <code>spcm_linux_drv_v###.tgz</code>)</li>"
+        "<li><b>Install:</b> Run the installation script as root:"
+        "<pre>sudo ./install</pre></li>"
+        "<li><b>Load Module:</b> The driver will install kernel modules and libraries to:"
+        "<ul>"
+        "<li>Libraries: <code>/opt/spectrum/lib/libspcm_linux.so</code></li>"
+        "<li>Headers: <code>/opt/spectrum/include/</code></li>"
+        "<li>Kernel modules: <code>/lib/modules/$(uname -r)/extra/</code></li>"
+        "</ul></li>"
+        "<li><b>Verify:</b> Check that the module loaded successfully:"
+        "<pre>lsmod | grep spcm</pre></li>"
+        "<li><b>Permissions:</b> Add your user to the <code>spcm</code> group for device access:"
+        "<pre>sudo usermod -a -G spcm $USER</pre></li>"
+        "</ol>"
+        "<p><b>Troubleshooting:</b></p>"
+        "<ul>"
+        "<li>If the library is not found, try adding <code>/opt/spectrum/lib</code> to your <code>LD_LIBRARY_PATH</code></li>"
+        "<li>Ensure kernel headers are installed: <code>sudo apt install linux-headers-$(uname -r)</code></li>"
+        "<li>Check device files exist: <code>ls -la /dev/spcm*</code></li>"
+        "</ul>"
+    );
+#elif defined(Q_OS_WIN)
+    return QString(
+        "<p><b>Installing Spectrum M4i Driver on Windows:</b></p>"
+        "<ol>"
+        "<li><b>Download:</b> Visit the <a href=\"https://spectrum-instrumentation.com\">Spectrum Instrumentation website</a> and download the latest Windows driver package</li>"
+        "<li><b>Run Installer:</b> Execute the installer as Administrator (typically named like <code>spcm_win_drv_v###.exe</code>)</li>"
+        "<li><b>Installation Path:</b> The installer will place files in:"
+        "<ul>"
+        "<li>64-bit: <code>C:\\Windows\\System32\\spcm_win64.dll</code></li>"
+        "<li>32-bit: <code>C:\\Windows\\SysWOW64\\spcm_win32.dll</code></li>"
+        "<li>SDK: <code>C:\\Program Files\\Spectrum\\</code></li>"
+        "</ul></li>"
+        "<li><b>Reboot:</b> Restart your computer to load the kernel driver</li>"
+        "<li><b>Verify:</b> Open Device Manager and check for Spectrum devices under \"Spectrum Instrumentation\" category</li>"
+        "</ol>"
+        "<p><b>Troubleshooting:</b></p>"
+        "<ul>"
+        "<li>Run the installer as Administrator</li>"
+        "<li>Disable Windows Driver Signature Enforcement if needed</li>"
+        "<li>Check Windows Event Viewer for driver loading errors</li>"
+        "</ul>"
+    );
+#elif defined(Q_OS_MACOS)
+    return QString(
+        "<p><b>Installing Spectrum M4i Driver on macOS:</b></p>"
+        "<ol>"
+        "<li><b>Download:</b> Visit the <a href=\"https://spectrum-instrumentation.com\">Spectrum Instrumentation website</a> and download the macOS driver package</li>"
+        "<li><b>Install:</b> Run the installer package (.pkg file) and follow the installation wizard</li>"
+        "<li><b>Installation Path:</b> Libraries are typically installed to:"
+        "<ul>"
+        "<li><code>/usr/local/lib/libspcm_mac.dylib</code></li>"
+        "<li><code>/Library/Frameworks/spcm.framework/</code></li>"
+        "</ul></li>"
+        "<li><b>System Extensions:</b> Allow the system extension when prompted in System Preferences</li>"
+        "<li><b>Reboot:</b> Restart your Mac to load the kernel extension</li>"
+        "</ol>"
+        "<p><b>Troubleshooting:</b></p>"
+        "<ul>"
+        "<li>Check System Preferences > Security & Privacy > General for blocked system extensions</li>"
+        "<li>Verify the kernel extension is loaded: <code>kextstat | grep spectrum</code></li>"
+        "<li>For Apple Silicon Macs, ensure you're using the ARM64-compatible driver version</li>"
+        "</ul>"
+    );
+#else
+    return QString(
+        "<p><b>Installing Spectrum M4i Driver:</b></p>"
+        "<p>Please visit the <a href=\"https://spectrum-instrumentation.com\">Spectrum Instrumentation website</a> "
+        "to download the appropriate driver package for your operating system.</p>"
+        "<p>For specific installation instructions, refer to the documentation included with the driver package.</p>"
+    );
+#endif
+}
