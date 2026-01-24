@@ -388,6 +388,7 @@ bool PulseGenerator::setAll(const PulseGenConfig &cc)
 {
     blockSignals(true);
     bool success = true;
+    setPulseEnabled(false);
     for(int i=0; i<d_numChannels; i++)
     {
         success &= setChannel(i,cc.at(i));

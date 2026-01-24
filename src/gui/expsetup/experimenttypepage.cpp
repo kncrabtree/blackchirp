@@ -319,6 +319,12 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     p_flBox->setChecked(get(lifFlashlampDisable,true));
     ofl->addRow("Auto Disable Flashlamp",p_flBox);
 
+    p_delayRandomBox = new QCheckBox(this);
+    p_delayRandomBox->setChecked(get(lifDelayRandom,false));
+    p_delayRandomBox->setToolTip("Randomize the order of delay points within each sweep.");
+    registerGetter<QAbstractButton>(lifDelayRandom,p_delayRandomBox,&QCheckBox::isChecked);
+    ofl->addRow("Randomize Delay Order",p_delayRandomBox);
+
     lvbl->addWidget(optvbl);
     lvbl->addSpacerItem(new QSpacerItem(1,1));
 
@@ -469,6 +475,7 @@ void ExperimentTypePage::apply()
          e->lifConfig()->d_completeMode = p_completeModeBox->currentData().value<LifConfig::LifCompleteMode>();
          e->lifConfig()->d_order = p_orderBox->currentData().value<LifConfig::LifScanOrder>();
          e->lifConfig()->d_disableFlashlamp = p_flBox->isChecked();
+         e->lifConfig()->d_delayRandom = p_delayRandomBox->isChecked();
      }
      else
          e->disableLif();

@@ -28,6 +28,7 @@ static const QString lif{"LifEnabled"};
 static const QString lifDelayStart{"LifDelayStart"};
 static const QString lifDelayStep{"LifDelayStep"};
 static const QString lifDelayPoints{"LifDelayPoints"};
+static const QString lifDelayRandom{"LifDelayRandom"};
 static const QString lifLaserStart{"LifLaserStart"};
 static const QString lifLaserStep{"LifLaserStep"};
 static const QString lifLaserPoints{"LifLaserPoints"};
@@ -62,7 +63,7 @@ private:
     QDoubleSpinBox *p_dStartBox, *p_dStepBox, *p_dEndBox, *p_lStartBox, *p_lStepBox, *p_lEndBox;
     QSpinBox *p_dNumStepsBox, *p_lNumStepsBox;
     QComboBox *p_orderBox, *p_completeModeBox;
-    QCheckBox *p_flBox;
+    QCheckBox *p_flBox, *p_delayRandomBox;
 
     void updateLifRanges();
 

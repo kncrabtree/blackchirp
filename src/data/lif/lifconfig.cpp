@@ -5,6 +5,7 @@
 
 #include <data/lif/liftrace.h>
 #include <QFile>
+#include <QRandomGenerator>
 #include <cmath>
 
 
@@ -92,6 +93,7 @@ void LifConfig::storeValues()
     store(dPoints,d_delayPoints);
     store(lStart,d_laserPosStart,d_laserUnits);
     store(lStep,d_laserPosStep,d_laserUnits);
+    store(dRandom,d_delayRandom);
     store(lPoints,d_laserPosPoints);
     store(shotsPerPoint,d_shotsPerPoint);
 
@@ -105,6 +107,7 @@ void LifConfig::retrieveValues()
     d_delayStartUs = retrieve(dStart,0.0);
     d_delayStepUs = retrieve(dStep,0.0);
     d_delayPoints = retrieve(dPoints,0);
+    d_delayRandom = retrieve(dRandom,false);
     d_laserPosStart = retrieve(lStart,0.0);
     d_laserPosStep = retrieve(lStep,0.0);
     d_laserPosPoints = retrieve(lPoints,0);
@@ -121,6 +124,13 @@ void LifConfig::prepareChildren()
 bool LifConfig::initialize()
 {
     ps_storage = std::make_shared<LifStorage>(d_delayPoints,d_laserPosPoints,d_number,d_path);
+    d_delayIndices.clear();
+    for(int i=0; i<d_delayPoints; i++)
+        d_delayIndices.append(i);
+    if(d_delayRandom)
+        std::shuffle(d_delayIndices.begin(),d_delayIndices.end(),*QRandomGenerator::global());
+    d_delayScanIndex = 0;
+    d_currentDelayIndex = d_delayIndices[0];
     ps_storage->writeProcessingSettings(d_procSettings);
     ps_storage->start();
     d_processingPaused = true;
@@ -137,7 +147,12 @@ bool LifConfig::advance()
     if(inc)
     {
         d_processingPaused = true;
-        if(d_currentDelayIndex+1 >= d_delayPoints && d_currentLaserIndex+1 >= d_laserPosPoints)
+
+        //if we have completed a delay sweep, randomize if needed
+        if( (d_delayScanIndex + 1 >= d_delayPoints) && d_delayRandom )
+            std::shuffle(d_delayIndices.begin(),d_delayIndices.end(),*QRandomGenerator::global());
+
+        if(d_delayScanIndex+1 >= d_delayPoints && d_currentLaserIndex+1 >= d_laserPosPoints)
         {
             d_completedSweeps++;
             d_complete = true;
@@ -146,16 +161,20 @@ bool LifConfig::advance()
         if(d_order == LaserFirst)
         {
             if(d_currentLaserIndex+1 >= d_laserPosPoints)
-                d_currentDelayIndex = (d_currentDelayIndex+1)%d_delayPoints;
+            {
+                d_delayScanIndex = (d_delayScanIndex+1)%d_delayPoints;
+                d_currentDelayIndex = d_delayIndices[d_delayScanIndex];
+            }
 
             d_currentLaserIndex = (d_currentLaserIndex+1)%d_laserPosPoints;
         }
         else
         {
-            if(d_currentDelayIndex+1 >= d_delayPoints)
+            if(d_delayScanIndex+1 >= d_delayPoints)
                 d_currentLaserIndex = (d_currentLaserIndex+1)%d_laserPosPoints;
 
-            d_currentDelayIndex = (d_currentDelayIndex+1)%d_delayPoints;
+            d_delayScanIndex = (d_delayScanIndex+1)%d_delayPoints;
+            d_currentDelayIndex = d_delayIndices[d_delayScanIndex];
         }
         ps_storage->advance();
     }
