@@ -240,6 +240,30 @@ class BCFid:
         if end < start:
             end = size
 
+                if rdc is None:
+            try:
+                if self.proc["FidRemoveDC"] == "true":
+                    fid_data -= np.mean(fid_data, axis=0)
+            except KeyError:
+                pass
+        elif rdc:
+            fid_data -= np.mean(fid_data, axis=0)
+
+        if expf_us is None:
+            try:
+                expf_us = float(self.proc["FidExpfUs"])
+            except KeyError:
+                expf_us = 0.0
+
+        if expf_us > 0.0:
+            for j in range(fid_data.shape[1]):
+                fid_data[:, j] = fid_data[:, j] * np.exp(
+                    -np.arange(len(fid_data[:, j]))
+                    * self.fidparams.spacing
+                    / expf_us
+                    * 1e6
+                )
+
         if winf is None:
             try:
                 wf = self.proc["FidWindowFunction"]
@@ -268,30 +292,6 @@ class BCFid:
         )
         if frame is not None:
             fid_data = fid_data[:, frame].reshape(-1, 1)
-
-        if rdc is None:
-            try:
-                if self.proc["FidRemoveDC"] == "true":
-                    fid_data -= np.mean(fid_data, axis=0)
-            except KeyError:
-                pass
-        elif rdc:
-            fid_data -= np.mean(fid_data, axis=0)
-
-        if expf_us is None:
-            try:
-                expf_us = float(self.proc["FidExpfUs"])
-            except KeyError:
-                expf_us = 0.0
-
-        if expf_us > 0.0:
-            for j in range(fid_data.shape[1]):
-                fid_data[:, j] = fid_data[:, j] * np.exp(
-                    -np.arange(len(fid_data[:, j]))
-                    * self.fidparams.spacing
-                    / expf_us
-                    * 1e6
-                )
 
         if zpf is None:
             try:
