@@ -23,9 +23,15 @@ signals:
 public slots:
     bool prepareForExperiment(Experiment &exp) override final;
     virtual void startConfigurationAcquisition(const LifConfig &c);
+    void setAcquisitionGated(bool gated);
+    virtual void flushAcquisitionBuffer() {}
 
     virtual void readWaveform() =0;
     virtual bool configure(const LifDigitizerConfig &c) =0;
+
+protected:
+    void emitWaveform(const QVector<qint8> &data);
+    bool d_acquisitionGated{false};
 
 private:
     void writeSettings();

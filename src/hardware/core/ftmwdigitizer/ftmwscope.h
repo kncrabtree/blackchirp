@@ -28,10 +28,16 @@ signals:
 public slots:
     virtual void readWaveform() =0;
     virtual bool hwPrepareForExperiment(Experiment &exp) override final;
+    void setAcquisitionGated(bool gated);
+    virtual void flushAcquisitionBuffer() {}
 
     // HardwareObject interface
 public slots:
     QStringList forbiddenKeys() const override;
+
+protected:
+    void emitShot(const QByteArray &data);
+    bool d_acquisitionGated{false};
 
 private:
     void writeSettings();

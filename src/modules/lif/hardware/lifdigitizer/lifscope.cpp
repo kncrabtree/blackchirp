@@ -76,6 +76,17 @@ void LifScope::startConfigurationAcquisition(const LifConfig &c)
     }
 }
 
+void LifScope::setAcquisitionGated(bool gated)
+{
+    d_acquisitionGated = gated;
+}
+
+void LifScope::emitWaveform(const QVector<qint8> &data)
+{
+    if(!d_acquisitionGated)
+        emit waveformRead(data);
+}
+
 void LifScope::writeSettings()
 {
     using namespace BC::Key::Digi;
