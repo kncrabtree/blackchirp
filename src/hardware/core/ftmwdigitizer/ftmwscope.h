@@ -38,6 +38,7 @@ public slots:
 protected:
     void emitShot(const QByteArray &data);
     bool d_acquisitionGated{false};
+    int d_discardCount{0};
 
 private:
     void writeSettings();

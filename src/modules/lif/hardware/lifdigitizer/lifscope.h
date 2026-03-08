@@ -32,6 +32,7 @@ public slots:
 protected:
     void emitWaveform(const QVector<qint8> &data);
     bool d_acquisitionGated{false};
+    int d_discardCount{0};
 
 private:
     void writeSettings();

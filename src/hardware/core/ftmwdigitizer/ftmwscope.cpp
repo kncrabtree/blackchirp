@@ -66,12 +66,20 @@ QStringList FtmwScope::forbiddenKeys() const
 void FtmwScope::setAcquisitionGated(bool gated)
 {
     d_acquisitionGated = gated;
+    if(!gated)
+        d_discardCount = 1;
 }
 
 void FtmwScope::emitShot(const QByteArray &data)
 {
-    if(!d_acquisitionGated)
-        emit shotAcquired(data);
+    if(d_acquisitionGated)
+        return;
+    if(d_discardCount > 0)
+    {
+        --d_discardCount;
+        return;
+    }
+    emit shotAcquired(data);
 }
 
 void FtmwScope::writeSettings()
