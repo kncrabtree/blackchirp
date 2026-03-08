@@ -162,7 +162,6 @@ public slots:
     void setLifParameters(double delay, double pos);
     bool setPGenLifDelay(double d);
     bool setLifLaserPos(double pos);
-    void lifLaserSetComplete(double pos);
     void startLifConfigAcq(const LifConfig &c);
     void stopLifConfigAcq();
     double lifLaserPos();

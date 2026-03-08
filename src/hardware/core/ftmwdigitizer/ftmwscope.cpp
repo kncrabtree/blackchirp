@@ -63,6 +63,25 @@ QStringList FtmwScope::forbiddenKeys() const
     return {BC::Key::Digi::numAnalogChannels, BC::Key::Digi::numDigitalChannels};
 }
 
+void FtmwScope::setAcquisitionGated(bool gated)
+{
+    d_acquisitionGated = gated;
+    if(!gated)
+        d_discardCount = 1;
+}
+
+void FtmwScope::emitShot(const QByteArray &data)
+{
+    if(d_acquisitionGated)
+        return;
+    if(d_discardCount > 0)
+    {
+        --d_discardCount;
+        return;
+    }
+    emit shotAcquired(data);
+}
+
 void FtmwScope::writeSettings()
 {
     using namespace BC::Key::Digi;

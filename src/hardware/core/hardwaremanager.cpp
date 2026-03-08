@@ -206,8 +206,6 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
                 emit lifSettingsComplete(false);
                 exp->d_hardwareSuccess = false;
             }
-            else
-                connect(ll,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserSetComplete,Qt::UniqueConnection);
         }
     }
     //any additional synchronous initialization can be performed here, before experimentInitialized() is emitted
@@ -219,12 +217,6 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
 
 void HardwareManager::experimentComplete()
 {
-    auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifLaser>();
-    if (!activeKeys.isEmpty()) {
-        auto ll = findHardware<LifLaser>(activeKeys.first());
-        if(ll)
-            disconnect(ll,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserSetComplete);
-    }
 }
 
 void HardwareManager::testAll()
@@ -295,9 +287,35 @@ void HardwareManager::configureClocks(QHash<RfConfig::ClockType, RfConfig::Clock
 
 void HardwareManager::setClocks(QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks)
 {
+    auto fsc = findHardware<FtmwScope>(BC::Key::hwKey(BC::Key::FtmwScope::ftmwScope,0));
+
+    // Gate the digitizer so no waveforms are emitted while clock frequencies change
+    if(fsc)
+    {
+        if(fsc->thread() == QThread::currentThread())
+            fsc->setAcquisitionGated(true);
+        else
+            QMetaObject::invokeMethod(fsc,[fsc](){ fsc->setAcquisitionGated(true); },
+                                      Qt::BlockingQueuedConnection);
+    }
 
     for(auto it = clocks.begin(); it != clocks.end(); ++it)
         it.value().desiredFreqMHz = pu_clockManager->setClockFrequency(it.key(),it.value().desiredFreqMHz);
+
+    // Flush any scope-internal buffered waveform from the old frequency, then ungate
+    if(fsc)
+    {
+        if(fsc->thread() == QThread::currentThread())
+        {
+            fsc->flushAcquisitionBuffer();
+            fsc->setAcquisitionGated(false);
+        }
+        else
+            QMetaObject::invokeMethod(fsc,[fsc](){
+                fsc->flushAcquisitionBuffer();
+                fsc->setAcquisitionGated(false);
+            }, Qt::BlockingQueuedConnection);
+    }
 
     emit allClocksReady(clocks);
 }
@@ -580,10 +598,38 @@ void HardwareManager::finalizeConnectionTesting()
 
 void HardwareManager::setLifParameters(double delay, double pos)
 {
+    auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifScope>();
+    auto lsc = findHardware<LifScope>(activeKeys.first());
+
+    // Gate the digitizer so no waveforms are emitted while hardware parameters change
+    if(lsc)
+    {
+        if(lsc->thread() == QThread::currentThread())
+            lsc->setAcquisitionGated(true);
+        else
+            QMetaObject::invokeMethod(lsc,[lsc](){ lsc->setAcquisitionGated(true); },
+                                      Qt::BlockingQueuedConnection);
+    }
+
     bool success = true;
     success &= setLifLaserPos(pos);
     if(success)
         success &= setPGenLifDelay(delay);
+
+    // Flush any scope-internal buffered waveform from the old trigger, then ungate
+    if(lsc)
+    {
+        if(lsc->thread() == QThread::currentThread())
+        {
+            lsc->flushAcquisitionBuffer();
+            lsc->setAcquisitionGated(false);
+        }
+        else
+            QMetaObject::invokeMethod(lsc,[lsc](){
+                lsc->flushAcquisitionBuffer();
+                lsc->setAcquisitionGated(false);
+            }, Qt::BlockingQueuedConnection);
+    }
 
     emit lifSettingsComplete(success);
 }
@@ -633,11 +679,6 @@ bool HardwareManager::setLifLaserPos(double pos)
         QMetaObject::invokeMethod(ll,[ll,pos](){ return ll->setPosition(pos); },Qt::BlockingQueuedConnection,&newPos);
 
     return newPos >= 0.0;
-}
-
-void HardwareManager::lifLaserSetComplete(double pos)
-{
-    emit lifSettingsComplete(pos > 0.0);
 }
 
 void HardwareManager::startLifConfigAcq(const LifConfig &c)

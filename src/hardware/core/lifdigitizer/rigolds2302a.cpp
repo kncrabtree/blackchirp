@@ -168,7 +168,7 @@ void RigolDS2302A::readWaveform()
 
 //    p_comm->writeCmd(":SINGLE\n");
 //    p_comm->writeCmd("*OPC\n");
-    emit waveformRead(buffer);
+    emitWaveform(buffer);
 
 }
 

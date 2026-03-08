@@ -484,7 +484,7 @@ void DSOv204A::retrieveData()
 
 
     QByteArray out = p_socket->read(bytes);
-    emit shotAcquired(out);
+    emitShot(out);
 
     p_socket->readAll();
 

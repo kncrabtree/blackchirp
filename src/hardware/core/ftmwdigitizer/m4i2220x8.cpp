@@ -424,7 +424,7 @@ void M4i2220x8::readWaveform()
             //tell m4i that it can use this memory again
             spcmLib->spcm_dwSetParam_i64(p_handle,SPC_DATA_AVAIL_CARD_LEN,d_waveformBytes);
 
-            emit shotAcquired(out);
+            emitShot(out);
         }
     }
 

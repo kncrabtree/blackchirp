@@ -722,7 +722,7 @@ void MSO64B::readWaveform()
         {
             QByteArray wfm = p_socket->read(d_waveformBytes);
             //            emit logMessage(QString("Wfm read complete: %1 ms").arg(QTime::currentTime().msec()));
-            emit shotAcquired(wfm);
+            emitShot(wfm);
             d_foundHeader = false;
             d_headerNumBytes = 0;
             d_waveformBytes = 0;

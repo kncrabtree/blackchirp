@@ -124,7 +124,7 @@ void VirtualLifScope::readWaveform()
         }
     }
 
-    emit waveformRead(out);
+    emitWaveform(out);
 
 }
 
