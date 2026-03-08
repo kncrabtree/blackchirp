@@ -5,6 +5,7 @@
 #include <QDir>
 #include <QListWidgetItem>
 #include <QToolBar>
+#include <QMenu>
 
 #define _STR(x) #x
 #define STRINGIFY(x) _STR(x)
@@ -107,6 +108,10 @@ void ViewerMainWindow::setupMenuBar()
     // Experiment menu for experiment-related actions
     QMenu *expMenu = menuBar->addMenu("&Experiment");
     expMenu->addAction(p_openAction);
+
+    p_recentMenu = expMenu->addMenu("Open &Recent");
+    updateRecentMenu();
+
     expMenu->addSeparator();
     expMenu->addAction(p_closeAction);
     
@@ -158,9 +163,12 @@ void ViewerMainWindow::openExperiment()
     browseButton->setIcon(ThemeColors::createThemedIcon(":/icons/document-magnifying-glass.svg", ThemeColors::IconSecondary, this));
 
     connect(browseButton, &QToolButton::clicked, this, [this, pathEdit]() {
-        QString path = QFileDialog::getExistingDirectory(this, QString("Select experiment directory"), QString("~"));
-        if (!path.isEmpty())
+        QString startDir = get(BC::Key::Viewer::lastBrowseDir, QDir::homePath());
+        QString path = QFileDialog::getExistingDirectory(this, QString("Select experiment directory"), startDir);
+        if (!path.isEmpty()) {
             pathEdit->setText(path);
+            set(BC::Key::Viewer::lastBrowseDir, path, true);
+        }
     });
 
     // Initially disable path controls
@@ -193,7 +201,7 @@ void ViewerMainWindow::openExperiment()
     d.setLayout(vbl);
 
     if (d.exec() == QDialog::Accepted) {
-        QString path = QString("");
+        QString path;
         if (pathBox->isChecked()) {
             path = pathEdit->text();
             if (path.isEmpty()) {
@@ -214,37 +222,7 @@ void ViewerMainWindow::openExperiment()
             return;
         }
 
-        QString displayText = createDisplayText(num, path);
-        
-        // Check if experiment is already open
-        auto it = d_openExperiments.find(displayText);
-        if (it != d_openExperiments.end()) {
-            // Experiment already open, raise existing window
-            ExperimentViewWidget* existingWidget = it->second.get();
-            existingWidget->show();
-            existingWidget->raise();
-            existingWidget->notifyAlreadyOpen();
-            return;
-        }
-
-        // Create new experiment view widget
-        auto evw = std::make_unique<ExperimentViewWidget>(num, path, true);
-        ExperimentViewWidget* evwPtr = evw.get();
-
-        // Connect cleanup signal
-        connect(evwPtr, &ExperimentViewWidget::widgetClosing, this, &ViewerMainWindow::onExperimentWidgetClosing);
-
-        // Store in tracking map and show
-        d_openExperiments[displayText] = std::move(evw);
-        evwPtr->show();
-
-        // Add to list widget
-        QListWidgetItem *item = new QListWidgetItem(displayText);
-        item->setData(Qt::UserRole, displayText); // Store display text as user data
-        p_experimentList->addItem(item);
-
-        p_statusLabel->setText(QString("Opened experiment %1").arg(displayText));
-        updateButtonStates();
+        openExperimentByNumPath(num, path);
     }
 }
 
@@ -340,6 +318,107 @@ QString ViewerMainWindow::createDisplayText(int expNum, const QString& path) con
         QDir dir(path);
         return QString("%1").arg(dir.absolutePath());
     }
+}
+
+void ViewerMainWindow::openExperimentByNumPath(int num, const QString &path)
+{
+    QString displayText = createDisplayText(num, path);
+
+    // Check if experiment is already open
+    auto it = d_openExperiments.find(displayText);
+    if (it != d_openExperiments.end()) {
+        ExperimentViewWidget* existingWidget = it->second.get();
+        existingWidget->show();
+        existingWidget->raise();
+        existingWidget->notifyAlreadyOpen();
+        return;
+    }
+
+    // Create new experiment view widget
+    auto evw = std::make_unique<ExperimentViewWidget>(num, path, true);
+    ExperimentViewWidget* evwPtr = evw.get();
+
+    connect(evwPtr, &ExperimentViewWidget::widgetClosing, this, &ViewerMainWindow::onExperimentWidgetClosing);
+
+    d_openExperiments[displayText] = std::move(evw);
+    evwPtr->show();
+
+    QListWidgetItem *item = new QListWidgetItem(displayText);
+    item->setData(Qt::UserRole, displayText);
+    p_experimentList->addItem(item);
+
+    p_statusLabel->setText(QString("Opened experiment %1").arg(displayText));
+    updateButtonStates();
+
+    addToRecentExperiments(num, path);
+}
+
+void ViewerMainWindow::addToRecentExperiments(int num, const QString &path)
+{
+    using namespace BC::Key::Viewer;
+
+    auto recent = getArray(recentExperiments);
+
+    // Remove any existing entry for the same experiment
+    QString displayText = createDisplayText(num, path);
+    recent.erase(std::remove_if(recent.begin(), recent.end(),
+        [&](const SettingsStorage::SettingsMap &m) {
+            int n = 0;
+            QString p;
+            auto nit = m.find(recentNum);
+            if (nit != m.end()) n = nit->second.toInt();
+            auto pit = m.find(recentPath);
+            if (pit != m.end()) p = pit->second.toString();
+            return createDisplayText(n, p) == displayText;
+        }), recent.end());
+
+    // Prepend new entry
+    SettingsStorage::SettingsMap entry;
+    entry[recentNum] = num;
+    entry[recentPath] = path;
+    recent.insert(recent.begin(), entry);
+
+    // Trim to max size
+    if (static_cast<int>(recent.size()) > MaxRecentExperiments)
+        recent.resize(MaxRecentExperiments);
+
+    setArray(recentExperiments, recent, true);
+    updateRecentMenu();
+}
+
+void ViewerMainWindow::updateRecentMenu()
+{
+    using namespace BC::Key::Viewer;
+
+    p_recentMenu->clear();
+
+    auto recent = getArray(recentExperiments);
+    if (recent.empty()) {
+        p_recentMenu->addAction("(No recent experiments)")->setEnabled(false);
+        return;
+    }
+
+    for (const auto &entry : recent) {
+        int num = 0;
+        QString path;
+        auto nit = entry.find(recentNum);
+        if (nit != entry.end()) num = nit->second.toInt();
+        auto pit = entry.find(recentPath);
+        if (pit != entry.end()) path = pit->second.toString();
+
+        QString label = createDisplayText(num, path);
+        auto action = p_recentMenu->addAction(label);
+        connect(action, &QAction::triggered, this, [this, num, path]() {
+            openExperimentByNumPath(num, path);
+        });
+    }
+
+    p_recentMenu->addSeparator();
+    auto clearAction = p_recentMenu->addAction("Clear Recent");
+    connect(clearAction, &QAction::triggered, this, [this]() {
+        setArray(BC::Key::Viewer::recentExperiments, {}, true);
+        updateRecentMenu();
+    });
 }
 
 void ViewerMainWindow::closeEvent(QCloseEvent *event)

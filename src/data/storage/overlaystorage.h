@@ -52,6 +52,7 @@ public:
     // Preview overlay management (temporary overlays not persisted to disk)
     bool addPreviewOverlay(std::shared_ptr<OverlayBase> overlay);
     bool removePreviewOverlay(const QString& label);
+    bool detachPreviewOverlay(const QString& label);
     void clearAllPreviews();
     QVector<std::shared_ptr<OverlayBase>> getAllPreviewOverlays() const;
     

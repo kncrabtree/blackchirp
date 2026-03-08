@@ -225,7 +225,7 @@ void CatalogOverlayWidget::setSourceFilePath(const QString &path)
 
 bool CatalogOverlayWidget::validateSourceFileImpl()
 {
-    QString path = p_filePathLineEdit->text().trimmed();
+    QString path = getStoredFullSourceFilePath();
     
     if (path.isEmpty()) {
         setSourceFileErrorMessage("Please select a catalog file.");
@@ -577,13 +577,13 @@ void CatalogOverlayWidget::updateFileInfo()
     // Find the details frame using object name
     auto detailsFrame = p_sourceFileConfigBox->findChild<QFrame*>("fileDetailsFrame");
     
-    if (!d_fileValid || d_catalogData.isEmpty()) {
+    if (d_catalogData.isEmpty()) {
         p_formatLabel->setText("-");
         p_moleculeLabel->setText("-");
         p_transitionCountLabel->setText("-");
         p_frequencyRangeLabel->setText("-");
         p_overlaySettingsBox->setEnabled(false);
-        
+
         // Hide details frame when no valid file
         if (detailsFrame) {
             detailsFrame->setVisible(false);

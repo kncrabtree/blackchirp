@@ -273,28 +273,23 @@ void OverlayManagerWidget::addOverlay(OverlayBase::OverlayType type)
         
         // Add overlay to storage if created successfully
         if (overlay != nullptr) {
-            // Check if this overlay was previously a preview overlay and remove it from preview storage
-            // This ensures proper transfer from preview to regular storage
+            // Detach from preview storage without emitting overlayRemoved,
+            // so the curve stays on the plot during promotion to permanent storage.
             if (p_overlayStorage) {
-                auto previewOverlays = p_overlayStorage->getAllPreviewOverlays();
-                for (const auto &previewOverlay : previewOverlays) {
-                    if (previewOverlay.get() == overlay.get()) {
-                        // This overlay came from preview storage - remove it from there first
-                        p_overlayStorage->removePreviewOverlay(overlay->getLabel());
-                        break;
-                    }
-                }
+                p_overlayStorage->detachPreviewOverlay(overlay->getLabel());
             }
-            
+
             // Ensure overlay is not in preview mode for persistent storage
             overlay->setPreview(false);
             overlay->setEnabled(true);
-            
-            // Add directly to overlay storage - this initiates async write
+
+            // Add directly to overlay storage - this initiates async write.
+            // FtPlot::addOverlay will detect the duplicate curve (same label)
+            // and skip re-adding it, preserving the current plot state.
             if (p_overlayStorage->addOverlay(overlay)) {
                 // Add to unified model for display
                 p_overlayModel->addOverlay(overlay);
-                
+
                 // Update UI state to show any pending writes
                 updateButtonStates();
             }

@@ -973,9 +973,8 @@ void FtmwViewWidget::removeOverlayFromPlots(std::shared_ptr<OverlayBase> overlay
 
 void FtmwViewWidget::onOverlayRemoved(std::shared_ptr<OverlayBase> overlay)
 {
-    if (ps_overlayStorage) {
-        ps_overlayStorage->removeOverlay(overlay->getLabel());
-    }
+    // Only remove from plots here — the overlay has already been removed
+    // from storage by whoever emitted the overlayRemoved signal.
     removeOverlayFromPlots(overlay);
 }
 

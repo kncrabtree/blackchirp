@@ -338,13 +338,14 @@ void CurveAppearancePresetManager::loadPresetsFromStorage()
 void CurveAppearancePresetManager::savePresetsToStorage()
 {
     QStringList presetNames;
-    
+
     for (const auto &preset : d_presets) {
         presetNames << preset.name;
         set(preset.name, preset.toVariantMap(), false);
     }
-    
-    set(BC::Key::CurveAppearancePresets::presetList, presetNames, true);
+
+    set(BC::Key::CurveAppearancePresets::presetList, presetNames, false);
+    save();
 }
 
 CurveAppearanceWidget::CurveAppearance CurveAppearancePresetManager::createCurvePreset(const QColor &color) const

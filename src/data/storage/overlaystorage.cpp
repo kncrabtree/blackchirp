@@ -514,13 +514,26 @@ bool OverlayStorage::removePreviewOverlay(const QString& label)
     if (it == d_previewOverlays.end()) {
         return false;
     }
-    
+
     auto overlay = it->second;
     d_previewOverlays.erase(it);
-    
+
     // Emit signal so plots will remove the preview overlay
     emit overlayRemoved(overlay);
-    
+
+    return true;
+}
+
+bool OverlayStorage::detachPreviewOverlay(const QString& label)
+{
+    auto it = d_previewOverlays.find(label);
+    if (it == d_previewOverlays.end()) {
+        return false;
+    }
+
+    // Remove from preview map without emitting overlayRemoved,
+    // so the curve stays on the plot during promotion to permanent storage.
+    d_previewOverlays.erase(it);
     return true;
 }
 
