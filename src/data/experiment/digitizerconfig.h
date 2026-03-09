@@ -59,7 +59,7 @@ public:
     };
     Q_ENUM(ByteOrder)
 
-    DigitizerConfig(const QString key,const QString subKey);
+    DigitizerConfig(const QString& hwKey);
 
     //vertical channels
     std::map<int,AnalogChannel> d_analogChannels;

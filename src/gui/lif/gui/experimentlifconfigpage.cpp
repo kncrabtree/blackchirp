@@ -3,13 +3,25 @@
 #include <QVBoxLayout>
 
 #include <gui/lif/gui/lifcontrolwidget.h>
+#include <data/experiment/hardwaredatacontainer.h>
 
 using namespace BC::Key::WizLif;
 
 ExperimentLifConfigPage::ExperimentLifConfigPage(Experiment *exp, QWidget *parent) :
     ExperimentConfigPage(key,title,exp,parent)
 {
-    p_lcw = new LifControlWidget(*exp->lifConfig());
+    // Look up LIF scope and laser hardware keys from experiment's hardware data
+    QString scopeHwKey;
+    QString laserHwKey;
+    for (auto it = exp->d_hardwareData.hardwareMap.cbegin();
+         it != exp->d_hardwareData.hardwareMap.cend(); ++it) {
+        if (it.value().type == BC::Data::HardwareType::LifScope)
+            scopeHwKey = it.key();
+        else if (it.value().type == BC::Data::HardwareType::LifLaser)
+            laserHwKey = it.key();
+    }
+
+    p_lcw = new LifControlWidget(scopeHwKey, laserHwKey);
 
     auto vbl = new QVBoxLayout;
     vbl->addWidget(p_lcw);

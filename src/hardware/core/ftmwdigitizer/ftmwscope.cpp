@@ -2,7 +2,7 @@
 
 FtmwScope::FtmwScope(const QString& impl, const QString& label, QObject *parent) :
     HardwareObject(QString(FtmwScope::staticMetaObject.className()), impl, label, parent),
-    FtmwDigitizerConfig(QString(FtmwScope::staticMetaObject.className()), impl, label)
+    FtmwDigitizerConfig(BC::Key::hwKey(QString(FtmwScope::staticMetaObject.className()), label))
 {
     using namespace BC::Key::Digi;
     using namespace BC::Store::Digi;

@@ -1,12 +1,15 @@
 #include "ftmwdigitizerconfigwidget.h"
 
 #include <hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/core/runtimehardwareconfig.h>
 #include <QCheckBox>
 #include <QSpinBox>
 #include <QGroupBox>
 
 FtmwDigitizerConfigWidget::FtmwDigitizerConfigWidget(QWidget *parent) :
-    DigitizerConfigWidget("FtmwDigitizerConfigWidget",BC::Key::hwKey(BC::Key::FtmwScope::ftmwScope,0),parent)
+    DigitizerConfigWidget("FtmwDigitizerConfigWidget",
+                          RuntimeHardwareConfig::constInstance().getActiveKeys<FtmwScope>().value(0),
+                          parent)
 {
 }
 

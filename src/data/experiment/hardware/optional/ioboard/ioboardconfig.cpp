@@ -1,8 +1,6 @@
 #include <data/experiment/hardware/optional/ioboard/ioboardconfig.h>
 
-#include <hardware/optional/ioboard/ioboard.h>
-
-IOBoardConfig::IOBoardConfig(const QString& hwType, const QString& impl, const QString& label) : DigitizerConfig(BC::Key::hwKey(hwType, label), impl)
+IOBoardConfig::IOBoardConfig(const QString& hwKey) : DigitizerConfig(hwKey)
 {
 }
 

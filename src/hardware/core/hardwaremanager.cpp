@@ -287,7 +287,8 @@ void HardwareManager::configureClocks(QHash<RfConfig::ClockType, RfConfig::Clock
 
 void HardwareManager::setClocks(QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks)
 {
-    auto fsc = findHardware<FtmwScope>(BC::Key::hwKey(BC::Key::FtmwScope::ftmwScope,0));
+    auto ftmwKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<FtmwScope>();
+    auto fsc = ftmwKeys.isEmpty() ? nullptr : findHardware<FtmwScope>(ftmwKeys.first());
 
     // Gate the digitizer so no waveforms are emitted while clock frequencies change
     if(fsc)
@@ -353,7 +354,7 @@ void HardwareManager::setPGenConfig(const QString key, const PulseGenConfig &c)
 
 PulseGenConfig HardwareManager::getPGenConfig(const QString key)
 {
-    PulseGenConfig out("PulseGenerator", "virtual", "temp"); // Dummy constructor, will be overwritten
+    PulseGenConfig out(key);
     auto pg = findHardware<PulseGenerator>(key);
     if(pg)
     {
@@ -396,7 +397,7 @@ void HardwareManager::setGasPressureControlMode(const QString key, bool en)
 
 FlowConfig HardwareManager::getFlowConfig(const QString key)
 {
-    FlowConfig out("FlowController", "virtual", "temp"); // Dummy constructor, will be overwritten
+    FlowConfig out(key);
     auto fc = findHardware<FlowController>(key);
     if(fc)
     {
@@ -451,7 +452,7 @@ void HardwareManager::closeGateValve(const QString key)
 
 PressureControllerConfig HardwareManager::getPressureControllerConfig(const QString key)
 {
-    PressureControllerConfig out("PressureController", "virtual", "temp"); // Dummy constructor, will be overwritten
+    PressureControllerConfig out(key);
     auto pc = findHardware<PressureController>(key);
     if(pc)
     {
@@ -481,7 +482,7 @@ void HardwareManager::setTemperatureChannelName(const QString key, uint ch, cons
 
 TemperatureControllerConfig HardwareManager::getTemperatureControllerConfig(const QString key)
 {
-    TemperatureControllerConfig out("TemperatureController", "virtual", "temp"); // Dummy constructor, will be overwritten
+    TemperatureControllerConfig out(key);
     auto tc = findHardware<TemperatureController>(key);
     if(tc)
     {
@@ -496,7 +497,7 @@ TemperatureControllerConfig HardwareManager::getTemperatureControllerConfig(cons
 
 IOBoardConfig HardwareManager::getIOBoardConfig(const QString key)
 {
-    IOBoardConfig out("IOBoard", "virtual", "temp"); // Dummy constructor, will be overwritten
+    IOBoardConfig out(key);
     auto iob = findHardware<IOBoard>(key);
     if(iob)
     {

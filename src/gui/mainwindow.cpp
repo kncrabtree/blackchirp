@@ -877,12 +877,11 @@ void MainWindow::launchLifConfigDialog()
     auto d = new QDialog;
     d->setWindowTitle("LIF Configuration");
 
-    // Create LifControlWidget with hardware parameters
-    QString hwType = QString(LifScope::staticMetaObject.className());
-    QString label = activeLabels.first();
-    QString implementation = runtimeConfig.getHardwareImplementation<LifScope>(label);
-    
-    auto w = new LifControlWidget(hwType, implementation, label, d);
+    // Create LifControlWidget with hardware keys
+    auto scopeKeys = runtimeConfig.getActiveKeys<LifScope>();
+    auto laserKeys = runtimeConfig.getActiveKeys<LifLaser>();
+
+    auto w = new LifControlWidget(scopeKeys.first(), laserKeys.first(), d);
     configureLifWidget(w);
 
     auto vbl = new QVBoxLayout;

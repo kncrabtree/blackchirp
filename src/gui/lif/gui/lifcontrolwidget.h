@@ -3,6 +3,8 @@
 
 #include <QWidget>
 
+#include <memory>
+
 #include <data/storage/settingsstorage.h>
 
 #include <data/lif/liftrace.h>
@@ -27,8 +29,7 @@ class LifControlWidget : public QWidget, public SettingsStorage
     Q_OBJECT
 
 public:
-    explicit LifControlWidget(const QString& scopeHwType, const QString& scopeImpl, const QString& scopeLabel, QWidget *parent = nullptr);
-    explicit LifControlWidget(const LifConfig& config, QWidget *parent = nullptr);
+    explicit LifControlWidget(const QString& scopeHwKey, const QString& laserHwKey, QWidget *parent = nullptr);
     ~LifControlWidget() override;
 
     void startAcquisition();
@@ -49,7 +50,7 @@ signals:
     void changeLaserFlashlampSignal(bool);
 
 private:
-    void initializeWidget(); // Common initialization for both constructors
+    void initializeWidget();
     
     LifTracePlot *p_lifTracePlot;
     DigitizerConfigWidget *p_digWidget;
@@ -61,7 +62,8 @@ private:
     QSpinBox *p_avgBox;
     QPushButton *p_resetButton;
 
-    LifConfig d_cfg;
+    std::shared_ptr<LifConfig> ps_cfg;
+    QString d_laserHwKey;
     bool d_acquiring{ false };
 
 

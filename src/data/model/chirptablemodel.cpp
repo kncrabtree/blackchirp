@@ -2,6 +2,7 @@
 
 #include <data/storage/settingsstorage.h>
 #include <hardware/optional/chirpsource/awg.h>
+#include <hardware/core/runtimehardwareconfig.h>
 #include <QDoubleSpinBox>
 #include <QCheckBox>
 
@@ -9,7 +10,8 @@ ChirpTableModel::ChirpTableModel(QObject *parent)
     : QAbstractTableModel(parent), SettingsStorage(BC::Key::ChirpTableModel::key),
       d_allIdentical(true), d_currentChirp(0)
 {
-    SettingsStorage s(BC::Key::hwKey(BC::Key::AWG::key,0)
+    auto awgKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<AWG>();
+    SettingsStorage s(awgKeys.isEmpty() ? QString() : awgKeys.first()
                       ,SettingsStorage::Hardware);
     d_awgMin = s.get(BC::Key::AWG::min,0.0);
     d_awgMax = s.get(BC::Key::AWG::max,1000.0);

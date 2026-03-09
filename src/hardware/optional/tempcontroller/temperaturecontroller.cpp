@@ -6,7 +6,7 @@
 using namespace BC::Key::TC;
 
 TemperatureController::TemperatureController(const QString& impl, const QString& label, uint numChannels, QObject *parent) :
-    HardwareObject(QString(TemperatureController::staticMetaObject.className()), impl, label, parent), d_numChannels(numChannels), d_config{QString(TemperatureController::staticMetaObject.className()), impl, label}
+    HardwareObject(QString(TemperatureController::staticMetaObject.className()), impl, label, parent), d_numChannels(numChannels), d_config{BC::Key::hwKey(QString(TemperatureController::staticMetaObject.className()), label)}
 {
     d_config.setNumChannels(d_numChannels);
 

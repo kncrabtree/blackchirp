@@ -1,7 +1,6 @@
 #include "lifdigitizerconfig.h"
-#include <data/settings/hardwarekeys.h>
 
-LifDigitizerConfig::LifDigitizerConfig(const QString& hwType, const QString& impl, const QString& label) : DigitizerConfig(BC::Key::hwKey(hwType, label), impl)
+LifDigitizerConfig::LifDigitizerConfig(const QString& hwKey) : DigitizerConfig(hwKey)
 {
 
 }

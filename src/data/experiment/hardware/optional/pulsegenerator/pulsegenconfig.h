@@ -69,7 +69,7 @@ public:
     bool d_pulseEnabled{true};
 
 
-    PulseGenConfig(const QString& hwType, const QString& impl, const QString& label);
+    PulseGenConfig(const QString& hwKey);
     ~PulseGenConfig();
 
     ChannelConfig at(const int i) const;
@@ -96,7 +96,6 @@ protected:
     void retrieveValues() override;
 
 private:
-    QString d_hwSubKey;
 };
 
 Q_DECLARE_METATYPE(PulseGenConfig)

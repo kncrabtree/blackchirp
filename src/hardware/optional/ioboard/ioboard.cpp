@@ -1,7 +1,7 @@
 #include <hardware/optional/ioboard/ioboard.h>
 
 IOBoard::IOBoard(const QString& impl, const QString& label, QObject *parent) :
-    HardwareObject(QString(IOBoard::staticMetaObject.className()), impl, label, parent), IOBoardConfig(QString(IOBoard::staticMetaObject.className()), impl, label)
+    HardwareObject(QString(IOBoard::staticMetaObject.className()), impl, label, parent), IOBoardConfig(BC::Key::hwKey(QString(IOBoard::staticMetaObject.className()), label))
 {
     using namespace BC::Key::Digi;
     using namespace BC::Store::Digi;

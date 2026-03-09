@@ -8,9 +8,9 @@
 #include <data/storage/blackchirpcsv.h>
 #include <data/storage/fidpeakupstorage.h>
 
-FtmwConfig::FtmwConfig(const QString& hwType, const QString& implementation, const QString& label) : HeaderStorage(BC::Store::FTMW::key)
+FtmwConfig::FtmwConfig(const QString& scopeHwKey) : HeaderStorage(BC::Store::FTMW::key)
 {
-    ps_scopeConfig = std::make_shared<FtmwDigitizerConfig>(hwType, implementation, label);
+    ps_scopeConfig = std::make_shared<FtmwDigitizerConfig>(scopeHwKey);
 }
 
 FtmwConfig::~FtmwConfig()

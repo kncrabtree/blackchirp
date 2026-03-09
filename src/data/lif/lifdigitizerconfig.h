@@ -13,7 +13,7 @@ static const QString lifChannelOrder("LifChannelOrder");
 class LifDigitizerConfig : public DigitizerConfig
 {
 public:
-    LifDigitizerConfig(const QString& hwType, const QString& impl, const QString& label);
+    LifDigitizerConfig(const QString& hwKey);
 
     enum ChannelOrder {
         Sequential,

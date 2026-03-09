@@ -2,7 +2,7 @@
 
 PulseGenerator::PulseGenerator(const QString& impl, const QString& label, int numChannels, QObject *parent) :
     HardwareObject(QString(PulseGenerator::staticMetaObject.className()), impl, label, parent),
-    d_numChannels{numChannels}, d_config(QString(PulseGenerator::staticMetaObject.className()), impl, label)
+    d_numChannels{numChannels}, d_config(BC::Key::hwKey(QString(PulseGenerator::staticMetaObject.className()), label))
 {
     set(BC::Key::PGen::numChannels,d_numChannels,true);
 

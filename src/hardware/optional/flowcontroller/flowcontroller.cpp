@@ -4,7 +4,7 @@ using namespace BC::Key;
 
 FlowController::FlowController(const QString& impl, const QString& label, QObject *parent) :
     HardwareObject(QString(FlowController::staticMetaObject.className()), impl, label, parent),
-    d_config(QString(FlowController::staticMetaObject.className()), impl, label),
+    d_config(BC::Key::hwKey(QString(FlowController::staticMetaObject.className()), label)),
     d_numChannels(getOrSetDefault(Flow::flowChannels,4))
 {
     for(int i=0; i<d_numChannels; ++i)

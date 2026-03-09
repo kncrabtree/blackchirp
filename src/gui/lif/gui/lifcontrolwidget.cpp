@@ -1,4 +1,3 @@
-#include "hardware/core/lifdigitizer/lifscope.h"
 #include <gui/lif/gui/lifcontrolwidget.h>
 
 #include <gui/widget/digitizerconfigwidget.h>
@@ -14,16 +13,9 @@
 #include <QLabel>
 #include <QSpinBox>
 
-LifControlWidget::LifControlWidget(const QString& scopeHwType, const QString& scopeImpl, const QString& scopeLabel, QWidget *parent) :
-    QWidget(parent), SettingsStorage(BC::Key::LifControl::key), 
-    d_cfg(scopeHwType, scopeImpl, scopeLabel)
-{
-    initializeWidget();
-}
-
-LifControlWidget::LifControlWidget(const LifConfig& config, QWidget *parent) :
-    QWidget(parent), SettingsStorage(BC::Key::LifControl::key), 
-    d_cfg(config)
+LifControlWidget::LifControlWidget(const QString& scopeHwKey, const QString& laserHwKey, QWidget *parent) :
+    QWidget(parent), SettingsStorage(BC::Key::LifControl::key),
+    ps_cfg(std::make_shared<LifConfig>(scopeHwKey)), d_laserHwKey(laserHwKey)
 {
     initializeWidget();
 }
@@ -46,7 +38,7 @@ void LifControlWidget::initializeWidget()
     vbl2->addWidget(dl);
 
     p_digWidget = new DigitizerConfigWidget(BC::Key::LifControl::lifDigWidget,
-                                            d_cfg.headerKey(),dgb);
+                                            ps_cfg->scopeConfig().headerKey(),dgb);
     vbl2->addWidget(p_digWidget);
 
     auto hbl2 = new QHBoxLayout;
@@ -81,7 +73,7 @@ void LifControlWidget::initializeWidget()
 
     auto lgb = new QGroupBox("Laser",this);
     auto vbl3 = new QVBoxLayout;
-    p_laserWidget = new LifLaserWidget(d_cfg.headerKey(), lgb);
+    p_laserWidget = new LifLaserWidget(d_laserHwKey, lgb);
     vbl3->addWidget(p_laserWidget);
     lgb->setLayout(vbl3);
     rightvbl->addWidget(lgb,0);
@@ -120,7 +112,7 @@ LifControlWidget::~LifControlWidget()
 void LifControlWidget::startAcquisition()
 {
 
-    auto &cfg = d_cfg.scopeConfig();
+    auto &cfg = ps_cfg->scopeConfig();
     p_digWidget->toConfig(cfg);
     auto it = cfg.d_analogChannels.find(cfg.d_refChannel);
     if(it != cfg.d_analogChannels.end())
@@ -137,7 +129,7 @@ void LifControlWidget::startAcquisition()
     p_stopAcqButton->setEnabled(true);
 
     d_acquiring = true;
-    emit startSignal(d_cfg);
+    emit startSignal(*ps_cfg);
 }
 
 void LifControlWidget::stopAcquisition()
@@ -164,7 +156,7 @@ void LifControlWidget::newWaveform(const QVector<qint8> b)
     if(d_acquiring)
     {
         //set bitShift to 8 to provide extra bits for rolling average
-        LifTrace l(d_cfg.scopeConfig(),b,0,0,8);
+        LifTrace l(ps_cfg->scopeConfig(),b,0,0,8);
         p_lifTracePlot->processTrace(l);
     }
 }
@@ -184,7 +176,7 @@ void LifControlWidget::setFromConfig(const LifConfig &cfg)
     p_digWidget->setFromConfig(cfg.scopeConfig());
     p_avgBox->setValue(cfg.d_shotsPerPoint);
     p_procWidget->setAll(cfg.d_procSettings);
-    d_cfg = cfg;
+    *ps_cfg = cfg;
 }
 
 void LifControlWidget::toConfig(LifConfig &cfg)

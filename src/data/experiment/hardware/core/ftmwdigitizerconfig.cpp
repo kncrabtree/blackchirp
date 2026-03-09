@@ -1,8 +1,6 @@
 #include "ftmwdigitizerconfig.h"
 
-#include <hardware/core/ftmwdigitizer/ftmwscope.h>
-
-FtmwDigitizerConfig::FtmwDigitizerConfig(const QString& hwType, const QString& impl, const QString& label) : DigitizerConfig(BC::Key::hwKey(hwType, label), impl)
+FtmwDigitizerConfig::FtmwDigitizerConfig(const QString& hwKey) : DigitizerConfig(hwKey)
 {
 
 }

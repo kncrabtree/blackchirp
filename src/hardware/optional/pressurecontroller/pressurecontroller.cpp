@@ -6,7 +6,7 @@
 using namespace BC::Key::PController;
 
 PressureController::PressureController(const QString& impl, const QString& label, bool ro, QObject *parent) :
-    HardwareObject(QString(PressureController::staticMetaObject.className()), impl, label, parent), d_readOnly(ro), d_config{QString(PressureController::staticMetaObject.className()), impl, label}
+    HardwareObject(QString(PressureController::staticMetaObject.className()), impl, label, parent), d_readOnly(ro), d_config{BC::Key::hwKey(QString(PressureController::staticMetaObject.className()), label)}
 {
     set(readOnly,d_readOnly);
 }

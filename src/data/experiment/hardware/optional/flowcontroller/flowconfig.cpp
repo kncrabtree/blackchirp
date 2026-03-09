@@ -3,9 +3,8 @@
 #include <data/storage/settingsstorage.h>
 #include <data/settings/hardwarekeys.h>
 
-FlowConfig::FlowConfig(const QString& hwType, const QString& impl, const QString& label) : HeaderStorage(BC::Key::hwKey(hwType, label))
+FlowConfig::FlowConfig(const QString& hwKey) : HeaderStorage(hwKey)
 {
-    Q_UNUSED(impl)
 }
 
 FlowConfig::~FlowConfig()

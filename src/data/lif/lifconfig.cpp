@@ -1,6 +1,3 @@
-#include <hardware/core/liflaser/liflaser.h>
-#include <hardware/core/lifdigitizer/lifscope.h>
-#include <hardware/core/runtimehardwareconfig.h>
 #include <data/lif/lifconfig.h>
 
 #include <data/lif/liftrace.h>
@@ -9,9 +6,9 @@
 #include <cmath>
 
 
-LifConfig::LifConfig(const QString& scopeHwType, const QString& scopeImpl, const QString& scopeLabel) : HeaderStorage(BC::Store::LIF::key)
+LifConfig::LifConfig(const QString& scopeHwKey) : HeaderStorage(BC::Store::LIF::key)
 {
-    ps_scopeConfig = std::make_shared<LifDigitizerConfig>(scopeHwType, scopeImpl, scopeLabel);
+    ps_scopeConfig = std::make_shared<LifDigitizerConfig>(scopeHwKey);
 }
 
 void LifConfig::setLaserUnits(const QString& units)

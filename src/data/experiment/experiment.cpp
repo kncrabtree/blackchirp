@@ -46,73 +46,26 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
         d_hardwareSuccess = true;
         
         // Create optional HW configs as needed using robust enum-based hardware type identification
-        for (auto it = d_hardwareData.hardwareMap.begin(); it != d_hardwareData.hardwareMap.end(); ++it) {
+        for (auto it = d_hardwareData.hardwareMap.cbegin(); it != d_hardwareData.hardwareMap.cend(); ++it) {
             const QString& key = it.key();
-            const auto& entry = it.value();
-            const QString& implementation = entry.implementation;
-            BC::Data::HardwareType hwType = entry.type;
-            
-            // Extract index for legacy configuration constructors (needed until they're migrated)
-            int index = 0;
-            auto keyParts = key.split(".");
-            if (keyParts.size() >= 2) {
-                bool ok = false;
-                index = keyParts.at(1).toInt(&ok);
-                if (!ok) index = 0; // Default to 0 for non-numeric labels
-            }
 
             // Create optional HW configs using robust enum-based type identification
-            switch (hwType) {
+            switch (it.value().type) {
                 case BC::Data::HardwareType::IOBoard:
-                {
-                    // Extract label from key (everything after the first dot)
-                    QString label = keyParts.size() >= 2 ? keyParts.at(1) : QString::number(index);
-                    // Hardware type is the first part of the key
-                    QString hwType = keyParts.at(0);
-                    IOBoardConfig cfg(hwType, implementation, label);
-                    addOptHwConfig(cfg);
+                    addOptHwConfig(IOBoardConfig(key));
                     break;
-                }
                 case BC::Data::HardwareType::PulseGenerator:
-                {
-                    // Extract label from key (everything after the first dot)
-                    QString label = keyParts.size() >= 2 ? keyParts.at(1) : QString::number(index);
-                    // Hardware type is the first part of the key
-                    QString hwTypeString = keyParts.at(0);
-                    PulseGenConfig cfg(hwTypeString, implementation, label);
-                    addOptHwConfig(cfg);
+                    addOptHwConfig(PulseGenConfig(key));
                     break;
-                }
                 case BC::Data::HardwareType::FlowController:
-                {
-                    // Extract label from key (everything after the first dot)
-                    QString label = keyParts.size() >= 2 ? keyParts.at(1) : QString::number(index);
-                    // Hardware type is the first part of the key
-                    QString hwTypeString = keyParts.at(0);
-                    FlowConfig cfg(hwTypeString, implementation, label);
-                    addOptHwConfig(cfg);
+                    addOptHwConfig(FlowConfig(key));
                     break;
-                }
                 case BC::Data::HardwareType::PressureController:
-                {
-                    // Extract label from key (everything after the first dot)
-                    QString label = keyParts.size() >= 2 ? keyParts.at(1) : QString::number(index);
-                    // Hardware type is the first part of the key
-                    QString hwTypeString = keyParts.at(0);
-                    PressureControllerConfig cfg(hwTypeString, implementation, label);
-                    addOptHwConfig(cfg);
+                    addOptHwConfig(PressureControllerConfig(key));
                     break;
-                }
                 case BC::Data::HardwareType::TemperatureController:
-                {
-                    // Extract label from key (everything after the first dot)
-                    QString label = keyParts.size() >= 2 ? keyParts.at(1) : QString::number(index);
-                    // Hardware type is the first part of the key
-                    QString hwTypeString = keyParts.at(0);
-                    TemperatureControllerConfig cfg(hwTypeString, implementation, label);
-                    addOptHwConfig(cfg);
+                    addOptHwConfig(TemperatureControllerConfig(key));
                     break;
-                }
                 case BC::Data::HardwareType::Unknown:
                 case BC::Data::HardwareType::FtmwScope:
                 case BC::Data::HardwareType::Clock:
@@ -120,7 +73,6 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
                 case BC::Data::HardwareType::GPIBController:
                 case BC::Data::HardwareType::LifScope:
                 case BC::Data::HardwareType::LifLaser:
-                    // These types don't need optional hardware config objects (yet)
                     break;
             }
         }
@@ -277,43 +229,33 @@ FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)
 
     disableFtmw();
 
-    // TODO: Replace this string-based hardware lookup with a type-safe hardware container
-    // that provides structured access methods for each hardware type while maintaining
-    // backward compatibility with the current map format for serialization
-    QString hwType = BC::Data::HardwareDataContainer::hardwareTypeToLegacyString(BC::Data::HardwareType::FtmwScope);
-    QString implementation = "invalid";
-    QString label = "invalid";
-    
-    // Look for FTMW digitizer in hardware map using robust type identification
+    // Find FTMW scope key from hardware map
+    QString scopeHwKey;
     for (auto it = d_hardwareData.hardwareMap.cbegin(); it != d_hardwareData.hardwareMap.cend(); ++it) {
         if (it.value().type == BC::Data::HardwareType::FtmwScope) {
-            auto parts = it.key().split(".");
-            if (parts.size() == 2) {
-                label = parts[1];
-                implementation = it.value().implementation;
-                break;
-            }
+            scopeHwKey = it.key();
+            break;
         }
     }
 
     switch(type) {
     case FtmwConfig::Target_Shots:
-        ps_ftmwConfig = std::make_shared<FtmwConfigSingle>(hwType, implementation, label);
+        ps_ftmwConfig = std::make_shared<FtmwConfigSingle>(scopeHwKey);
         break;
     case FtmwConfig::Target_Duration:
-        ps_ftmwConfig = std::make_shared<FtmwConfigDuration>(hwType, implementation, label);
+        ps_ftmwConfig = std::make_shared<FtmwConfigDuration>(scopeHwKey);
         break;
     case FtmwConfig::Peak_Up:
-        ps_ftmwConfig = std::make_shared<FtmwConfigPeakUp>(hwType, implementation, label);
+        ps_ftmwConfig = std::make_shared<FtmwConfigPeakUp>(scopeHwKey);
         break;
     case FtmwConfig::Forever:
-        ps_ftmwConfig = std::make_shared<FtmwConfigForever>(hwType, implementation, label);
+        ps_ftmwConfig = std::make_shared<FtmwConfigForever>(scopeHwKey);
         break;
     case FtmwConfig::LO_Scan:
-        ps_ftmwConfig = std::make_shared<FtmwConfigLOScan>(hwType, implementation, label);
+        ps_ftmwConfig = std::make_shared<FtmwConfigLOScan>(scopeHwKey);
         break;
     case FtmwConfig::DR_Scan:
-        ps_ftmwConfig = std::make_shared<FtmwConfigDRScan>(hwType, implementation, label);
+        ps_ftmwConfig = std::make_shared<FtmwConfigDRScan>(scopeHwKey);
         break;
     default:
         break;
@@ -523,22 +465,15 @@ LifConfig *Experiment::enableLif()
     disableLif();
 
     // Look for LIF scope in hardware map using robust type identification
-    QString hwType = BC::Data::HardwareDataContainer::hardwareTypeToLegacyString(BC::Data::HardwareType::LifScope);
-    QString implementation = "invalid";
-    QString label = "invalid";
-    
+    QString scopeHwKey;
     for (auto it = d_hardwareData.hardwareMap.cbegin(); it != d_hardwareData.hardwareMap.cend(); ++it) {
         if (it.value().type == BC::Data::HardwareType::LifScope) {
-            auto parts = it.key().split(".");
-            if (parts.size() == 2) {
-                label = parts[1];
-                implementation = it.value().implementation;
-                break;
-            }
+            scopeHwKey = it.key();
+            break;
         }
     }
 
-    ps_lifCfg = std::make_shared<LifConfig>(hwType, implementation, label);
+    ps_lifCfg = std::make_shared<LifConfig>(scopeHwKey);
     
     // Look for LIF laser to get units information
     for (auto it = d_hardwareData.hardwareMap.cbegin(); it != d_hardwareData.hardwareMap.cend(); ++it) {

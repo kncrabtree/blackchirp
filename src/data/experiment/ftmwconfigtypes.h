@@ -7,7 +7,7 @@
 class FtmwConfigSingle : public FtmwConfig
 {
 public:
-    FtmwConfigSingle(const QString& hwType, const QString& implementation, const QString& label);
+    FtmwConfigSingle(const QString& scopeHwKey);
     FtmwConfigSingle(const FtmwConfig &other);
     ~FtmwConfigSingle() {}
 
@@ -28,7 +28,7 @@ protected:
 class FtmwConfigPeakUp : public FtmwConfig
 {
 public:
-    FtmwConfigPeakUp(const QString& hwType, const QString& implementation, const QString& label);
+    FtmwConfigPeakUp(const QString& scopeHwKey);
     FtmwConfigPeakUp(const FtmwConfig &other);
     ~FtmwConfigPeakUp() {}
 
@@ -50,7 +50,7 @@ protected:
 class FtmwConfigDuration : public FtmwConfig
 {
 public:
-    FtmwConfigDuration(const QString& hwType, const QString& implementation, const QString& label);
+    FtmwConfigDuration(const QString& scopeHwKey);
     FtmwConfigDuration(const FtmwConfig &other);
     ~FtmwConfigDuration() {}
 
@@ -74,7 +74,7 @@ private:
 class FtmwConfigForever : public FtmwConfig
 {
 public:
-    FtmwConfigForever(const QString& hwType, const QString& implementation, const QString& label);
+    FtmwConfigForever(const QString& scopeHwKey);
     FtmwConfigForever(const FtmwConfig &other);
     ~FtmwConfigForever() {}
 
@@ -106,7 +106,7 @@ static const QString downMaj{"DownMajorSteps"};
 class FtmwConfigLOScan : public FtmwConfig
 {
 public:
-    FtmwConfigLOScan(const QString& hwType, const QString& implementation, const QString& label);
+    FtmwConfigLOScan(const QString& scopeHwKey);
     FtmwConfigLOScan(const FtmwConfig &other);
     ~FtmwConfigLOScan() {}
 
@@ -136,7 +136,7 @@ static const QString drNumSteps{"DRNumSteps"};
 class FtmwConfigDRScan : public FtmwConfig
 {
 public:
-    FtmwConfigDRScan(const QString& hwType, const QString& implementation, const QString& label);
+    FtmwConfigDRScan(const QString& scopeHwKey);
     FtmwConfigDRScan(const FtmwConfig &other);
     ~FtmwConfigDRScan() {};
 

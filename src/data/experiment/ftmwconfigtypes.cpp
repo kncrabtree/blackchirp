@@ -11,7 +11,7 @@
  *
  * ****************************************/
 
-FtmwConfigSingle::FtmwConfigSingle(const QString& hwType, const QString& implementation, const QString& label) : FtmwConfig(hwType, implementation, label)
+FtmwConfigSingle::FtmwConfigSingle(const QString& scopeHwKey) : FtmwConfig(scopeHwKey)
 {
 }
 
@@ -60,7 +60,7 @@ std::shared_ptr<FidStorageBase> FtmwConfigSingle::createStorage(int num, QString
  * ****************************************/
 
 
-FtmwConfigPeakUp::FtmwConfigPeakUp(const QString& hwType, const QString& implementation, const QString& label) : FtmwConfig(hwType, implementation, label)
+FtmwConfigPeakUp::FtmwConfigPeakUp(const QString& scopeHwKey) : FtmwConfig(scopeHwKey)
 {
 
 }
@@ -119,7 +119,7 @@ std::shared_ptr<FidStorageBase> FtmwConfigPeakUp::createStorage(int num, QString
  * ****************************************/
 
 
-FtmwConfigDuration::FtmwConfigDuration(const QString& hwType, const QString& implementation, const QString& label) : FtmwConfig(hwType, implementation, label)
+FtmwConfigDuration::FtmwConfigDuration(const QString& scopeHwKey) : FtmwConfig(scopeHwKey)
 {
 
 }
@@ -175,7 +175,7 @@ std::shared_ptr<FidStorageBase> FtmwConfigDuration::createStorage(int num, QStri
 }
 
 
-FtmwConfigForever::FtmwConfigForever(const QString& hwType, const QString& implementation, const QString& label) : FtmwConfig(hwType, implementation, label)
+FtmwConfigForever::FtmwConfigForever(const QString& scopeHwKey) : FtmwConfig(scopeHwKey)
 {
 
 }
@@ -222,7 +222,7 @@ std::shared_ptr<FidStorageBase> FtmwConfigForever::createStorage(int num, QStrin
     return std::make_shared<FidSingleStorage>(scopeConfig().d_numRecords,num,path);
 }
 
-FtmwConfigLOScan::FtmwConfigLOScan(const QString& hwType, const QString& implementation, const QString& label) : FtmwConfig(hwType, implementation, label)
+FtmwConfigLOScan::FtmwConfigLOScan(const QString& scopeHwKey) : FtmwConfig(scopeHwKey)
 {
 }
 
@@ -300,7 +300,7 @@ std::shared_ptr<FidStorageBase> FtmwConfigLOScan::createStorage(int num, QString
     return out;
 }
 
-FtmwConfigDRScan::FtmwConfigDRScan(const QString& hwType, const QString& implementation, const QString& label) : FtmwConfig(hwType, implementation, label)
+FtmwConfigDRScan::FtmwConfigDRScan(const QString& scopeHwKey) : FtmwConfig(scopeHwKey)
 {
 }
 

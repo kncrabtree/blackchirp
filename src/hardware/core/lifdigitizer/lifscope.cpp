@@ -1,8 +1,10 @@
 #include <hardware/core/lifdigitizer/lifscope.h>
 
+#include <data/bcglobals.h>
+
 LifScope::LifScope(const QString& impl, const QString& label, QObject *parent) :
     HardwareObject(QString(LifScope::staticMetaObject.className()), impl, label, parent),
-    LifDigitizerConfig(QString(LifScope::staticMetaObject.className()), impl, label)
+    LifDigitizerConfig(BC::Key::hwKey(QString(LifScope::staticMetaObject.className()), label))
 {
     using namespace BC::Key::Digi;
     using namespace BC::Store::Digi;

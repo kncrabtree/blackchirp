@@ -46,7 +46,7 @@ public:
     };
     Q_ENUM(LifCompleteMode)
 
-    LifConfig(const QString& scopeHwType, const QString& scopeImpl, const QString& scopeLabel);
+    LifConfig(const QString& scopeHwKey);
     ~LifConfig() = default;
 
     bool d_complete {false};

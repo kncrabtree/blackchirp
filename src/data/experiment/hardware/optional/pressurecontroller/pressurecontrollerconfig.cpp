@@ -2,11 +2,9 @@
 
 #include <data/storage/settingsstorage.h>
 #include <data/settings/hardwarekeys.h>
-#include <hardware/optional/pressurecontroller/pressurecontroller.h>
 
-PressureControllerConfig::PressureControllerConfig(const QString& hwType, const QString& impl, const QString& label) : HeaderStorage(BC::Key::hwKey(hwType, label))
+PressureControllerConfig::PressureControllerConfig(const QString& hwKey) : HeaderStorage(hwKey)
 {
-    Q_UNUSED(impl)
 }
 
 

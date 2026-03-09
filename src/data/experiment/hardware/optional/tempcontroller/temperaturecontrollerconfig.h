@@ -18,7 +18,7 @@ public:
         bool enabled{false};
     };
 
-    TemperatureControllerConfig(const QString& hwType, const QString& impl, const QString& label);
+    TemperatureControllerConfig(const QString& hwKey);
 
     void setNumChannels(int n);
 
