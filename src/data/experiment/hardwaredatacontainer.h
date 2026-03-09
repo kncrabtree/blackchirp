@@ -163,9 +163,11 @@ struct HardwareDataContainer {
             {"PressureController", HardwareType::PressureController},
             {"TemperatureController", HardwareType::TemperatureController},
             {"FtmwScope", HardwareType::FtmwScope},
+            {"FtmwDigitizer", HardwareType::FtmwScope},  // pre-label-era name
             {"Clock", HardwareType::Clock},
             {"AWG", HardwareType::AWG},
             {"GPIBController", HardwareType::GPIBController},
+            {"GpibController", HardwareType::GPIBController},  // current className
             {"LifScope", HardwareType::LifScope},
             {"LifLaser", HardwareType::LifLaser}
         };
