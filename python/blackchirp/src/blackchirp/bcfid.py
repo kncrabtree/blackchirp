@@ -239,8 +239,10 @@ class BCFid:
 
         if end < start:
             end = size
+        
+        fid_data = self.data[start:end, :]
 
-                if rdc is None:
+        if rdc is None:
             try:
                 if self.proc["FidRemoveDC"] == "true":
                     fid_data -= np.mean(fid_data, axis=0)
@@ -285,7 +287,7 @@ class BCFid:
             elif (wf == 6) or ("KaiserBessel" in wf):
                 winf = ("kaiser", 14.0)
 
-        fid_data = self.data[start:end, :] * (
+        fid_data = fid_data * (
             np.repeat(spsig.get_window(winf, end - start), self.data.shape[1]).reshape(
                 end - start, self.data.shape[1]
             )
