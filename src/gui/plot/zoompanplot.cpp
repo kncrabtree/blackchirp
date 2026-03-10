@@ -106,7 +106,14 @@ ZoomPanPlot::ZoomPanPlot(const QString name, QWidget *parent) : QwtPlot(parent),
 
 ZoomPanPlot::~ZoomPanPlot()
 {
+    waitForFilterComplete();
     delete p_mutex;
+}
+
+void ZoomPanPlot::waitForFilterComplete()
+{
+    if(p_watcher->isRunning())
+        p_watcher->waitForFinished();
 }
 
 bool ZoomPanPlot::isAutoScale()

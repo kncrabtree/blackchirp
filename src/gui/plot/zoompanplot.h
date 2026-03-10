@@ -115,6 +115,7 @@ protected:
     };
 
     void setAxisOverride(QwtPlot::Axis axis, bool override = true);
+    void waitForFilterComplete();
 
     virtual void filterData();
     virtual void resizeEvent(QResizeEvent *ev);
