@@ -239,35 +239,8 @@ class BCFid:
 
         if end < start:
             end = size
-
-        if winf is None:
-            try:
-                wf = self.proc["FidWindowFunction"]
-            except KeyError:
-                wf = 0
-
-            if (wf == "0") or ("None" in wf):
-                winf = "boxcar"
-            if (wf == 1) or ("Bartlett" in wf):
-                winf = "bartlett"
-            elif (wf == 2) or ("Blackman" in wf):
-                winf = "blackman"
-            elif (wf == 3) or ("BlackmanHarris" in wf):
-                winf = "blackmanharris"
-            elif (wf == 4) or ("Hamming" in wf):
-                winf = "hamming"
-            elif (wf == 5) or ("Hanning" in wf):
-                winf = "hann"
-            elif (wf == 6) or ("KaiserBessel" in wf):
-                winf = ("kaiser", 14.0)
-
-        fid_data = self.data[start:end, :] * (
-            np.repeat(spsig.get_window(winf, end - start), self.data.shape[1]).reshape(
-                end - start, self.data.shape[1]
-            )
-        )
-        if frame is not None:
-            fid_data = fid_data[:, frame].reshape(-1, 1)
+        
+        fid_data = self.data[start:end, :]
 
         if rdc is None:
             try:
@@ -292,6 +265,35 @@ class BCFid:
                     / expf_us
                     * 1e6
                 )
+
+        if winf is None:
+            try:
+                wf = self.proc["FidWindowFunction"]
+            except KeyError:
+                wf = 0
+
+            if (wf == "0") or ("None" in wf):
+                winf = "boxcar"
+            if (wf == 1) or ("Bartlett" in wf):
+                winf = "bartlett"
+            elif (wf == 2) or ("Blackman" in wf):
+                winf = "blackman"
+            elif (wf == 3) or ("BlackmanHarris" in wf):
+                winf = "blackmanharris"
+            elif (wf == 4) or ("Hamming" in wf):
+                winf = "hamming"
+            elif (wf == 5) or ("Hanning" in wf):
+                winf = "hann"
+            elif (wf == 6) or ("KaiserBessel" in wf):
+                winf = ("kaiser", 14.0)
+
+        fid_data = fid_data * (
+            np.repeat(spsig.get_window(winf, end - start), self.data.shape[1]).reshape(
+                end - start, self.data.shape[1]
+            )
+        )
+        if frame is not None:
+            fid_data = fid_data[:, frame].reshape(-1, 1)
 
         if zpf is None:
             try:

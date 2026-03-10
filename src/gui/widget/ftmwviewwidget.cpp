@@ -191,6 +191,17 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         p_pfw = nullptr;
     }
 
+    if(p_omw != nullptr)
+    {
+        // Disconnect the destroyed signal to prevent the deferred deletion
+        // from calling saveOverlays() after ps_overlayStorage has switched
+        // to the new experiment's storage. The existing saveOverlays() call
+        // below handles saving the current experiment's overlays properly.
+        disconnect(p_omw, &OverlayManagerWidget::destroyed, this, nullptr);
+        p_omw->close();
+        p_omw = nullptr;
+    }
+
     if(!ui->exptLabel->isVisible())
         ui->exptLabel->setVisible(true);
 
@@ -224,13 +235,11 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
     }
     
     // Save overlays before switching to new experiment
-    // First wait for any pending writes from the current experiment
     if (ps_overlayStorage) {
         ps_overlayStorage->waitForPendingWrites();
-        // Disconnect from old overlay storage signals
         disconnect(ps_overlayStorage.get(), nullptr, this, nullptr);
+        ps_overlayStorage->save();
     }
-    saveOverlays();
 
 
     
