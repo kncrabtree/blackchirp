@@ -1147,6 +1147,12 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
 
 void MainWindow::startBatch(BatchManager *bm)
 {
+    // Prompt user about overlays before committing to experiment start
+    if (!ui->ftViewWidget->promptOverlayTransition()) {
+        delete bm;
+        return;
+    }
+
     delete p_batchManager;
 
     connect(bm,&BatchManager::statusMessage,ui->statusBar,&QStatusBar::showMessage);

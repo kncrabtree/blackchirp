@@ -66,6 +66,7 @@ public:
     QVector<std::shared_ptr<OverlayBase>> getAllOverlays() const;
     void addOverlay(std::shared_ptr<OverlayBase> overlay);
     void removeOverlay(std::shared_ptr<OverlayBase> overlay);
+    bool promptOverlayTransition();
     
     // Plot management
     QStringList getPlotNames() const { return d_plotNames; }
@@ -160,6 +161,7 @@ private:
     OverlayManagerWidget *p_omw{nullptr};
     QString d_path;
     // Overlay storage is now handled via ps_overlayStorage shared pointer
+    QVector<std::shared_ptr<OverlayBase>> d_overlaysToCopy;
     QStringList d_plotNames;
     bool d_overlaysEnabled{true};
     std::map<QString, FtPlot*> d_plotMap;  // Maps plot names to FtPlot instances
@@ -177,6 +179,7 @@ private:
 
     void updateFid(int id);
     void createPlotNamesList();
+    void closeOverlayManager();
 
 
     // QObject interface
