@@ -437,6 +437,29 @@ public:
      */
     bool hasUnsavedChanges() const;
 
+    /*!
+     * \brief Check if a profile is a system-protected profile that cannot be removed
+     * \param hwType Hardware type string
+     * \param label Profile label
+     * \return True if this is a system profile (label == "virtual" for a required hardware type)
+     */
+    static bool isSystemProfile(const QString& hwType, const QString& label);
+
+    /*!
+     * \brief Ensure system profiles exist for all required hardware types
+     *
+     * Called at application startup and when the hardware config dialog opens.
+     * Creates a "virtual" profile with the appropriate virtual implementation for
+     * each required hardware type that does not already have one.
+     *
+     * Required type -> virtual implementation mapping:
+     *   FtmwScope  -> VirtualFtmwScope
+     *   Clock      -> FixedClock
+     *   LifScope   -> VirtualLifScope   (when LIF enabled)
+     *   LifLaser   -> VirtualLifLaser   (when LIF enabled)
+     */
+    void ensureSystemProfiles();
+
 private:
     // ========================================================================
     // INTERNAL DATA STRUCTURES

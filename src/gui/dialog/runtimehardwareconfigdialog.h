@@ -91,10 +91,29 @@ private:
     void updateRightPanelForHardwareType(const QString& hardwareType);
     
     /*!
-     * \brief Handle profile selection changes and update preview state
+     * \brief Handle profile selection changes and update preview state (multi-instance helper)
      * \param hardwareType Hardware type being configured
      */
     void onProfileSelectionChanged(const QString& hardwareType);
+
+    /*!
+     * \brief Handle the enable/disable checkbox for a hardware type
+     * \param hardwareType Hardware type being toggled
+     * \param enabled Whether the hardware type should be enabled
+     */
+    void onEnableToggled(const QString& hardwareType, bool enabled);
+
+    /*!
+     * \brief Handle radio button click for single-instance hardware profile selection
+     * \param hardwareType Hardware type being configured
+     */
+    void onProfileRadioClicked(const QString& hardwareType);
+
+    /*!
+     * \brief Handle checkbox click for multi-instance hardware profile selection
+     * \param hardwareType Hardware type being configured
+     */
+    void onProfileCheckboxClicked(const QString& hardwareType);
     
     /*!
      * \brief Update preview state and refresh left panel display

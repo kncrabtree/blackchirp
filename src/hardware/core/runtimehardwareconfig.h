@@ -238,17 +238,25 @@ public:
      */
     QStringList getAllValidationWarnings() const;
 
+    /*!
+     * \brief Activate system profiles for required hardware types that have no active config
+     *
+     * Called at startup after ensureSystemProfiles(). For each required hardware type
+     * with no active entry, activates the "virtual" system profile.
+     */
+    void activateMissingSystemProfiles();
+
 private:
     // ========================================================================
     // SINGLETON MANAGEMENT
     // ========================================================================
-    
+
     /*!
      * \brief Get mutable singleton instance for write access
-     * 
+     *
      * This method is private and only accessible to friend classes.
      * It provides write access to the configuration.
-     * 
+     *
      * \return Mutable reference to the singleton instance
      */
     static RuntimeHardwareConfig& instance();

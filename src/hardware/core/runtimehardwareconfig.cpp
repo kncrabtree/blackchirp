@@ -548,6 +548,39 @@ QStringList RuntimeHardwareConfig::getMissingRequiredHardwareInternal() const
     return missing;
 }
 
+void RuntimeHardwareConfig::activateMissingSystemProfiles()
+{
+    HardwareProfileManager& profileManager = HardwareProfileManager::instance();
+    HardwareRegistry& registry = HardwareRegistry::instance();
+    QStringList allTypes = registry.getHardwareTypes();
+
+    for (const QString& hwType : allTypes) {
+        if (!isHardwareRequired(hwType)) {
+            continue;
+        }
+
+        // Check if we already have an active entry for this type
+        bool hasEntry = false;
+        {
+            QReadLocker locker(&d_configLock);
+            for (auto it = d_activeHardware.cbegin(); it != d_activeHardware.cend(); ++it) {
+                if (it->type == hwType) {
+                    hasEntry = true;
+                    break;
+                }
+            }
+        }
+
+        if (!hasEntry) {
+            QString impl = profileManager.getImplementation(hwType, QStringLiteral("virtual"));
+            if (!impl.isEmpty()) {
+                setHardwareSelection(hwType, QStringLiteral("virtual"), impl);
+                qDebug() << "RuntimeHardwareConfig::activateMissingSystemProfiles: Activated system profile for" << hwType;
+            }
+        }
+    }
+}
+
 bool RuntimeHardwareConfig::applyConfiguration(const std::map<QString, QString>& config)
 {
     QWriteLocker locker(&d_configLock);

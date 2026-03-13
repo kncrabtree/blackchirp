@@ -1,6 +1,7 @@
 #include <hardware/core/hardwaremanager.h>
 #include <hardware/core/runtimehardwareconfig.h>
 #include <hardware/core/hardwareregistry.h>
+#include <hardware/core/hardwareprofilemanager.h>
 #include <data/settings/hardwarekeys.h>
 #include <data/bcglobals.h>
 
@@ -67,6 +68,10 @@ QString HardwareManager::getHwName(const QString key)
 
 void HardwareManager::initialize()
 {
+    // Ensure system profiles exist and activate them for required types with no config
+    HardwareProfileManager::instance().ensureSystemProfiles();
+    RuntimeHardwareConfig::instance().activateMissingSystemProfiles();
+
     // Phase 3.3.6: Load hardware from runtime configuration before starting threads
     emit logMessage("Loading hardware configuration from runtime profiles...", LogHandler::Normal);
     syncWithRuntimeConfig();

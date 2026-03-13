@@ -1,5 +1,6 @@
 #include "hardwareprofilemanager.h"
 #include "hardwareregistry.h"
+#include "runtimehardwareconfig.h"
 
 #include <QDateTime>
 #include <QDataStream>
@@ -9,6 +10,12 @@
 #include <QRegularExpression>
 #include <QReadLocker>
 #include <QWriteLocker>
+
+#include <hardware/core/ftmwdigitizer/virtualftmwscope.h>
+#include <hardware/core/clock/fixedclock.h>
+#include <hardware/core/lifdigitizer/virtuallifscope.h>
+#include <hardware/core/liflaser/virtualliflaser.h>
+#include <data/storage/applicationconfigmanager.h>
 
 // Static member definitions
 HardwareProfileManager* HardwareProfileManager::s_instance = nullptr;
@@ -734,6 +741,71 @@ bool HardwareProfileManager::hasUnsavedChanges() const
 {
     QMutexLocker locker(&d_modifiedFlagLock);
     return d_modified;
+}
+
+bool HardwareProfileManager::isSystemProfile(const QString& hwType, const QString& label)
+{
+    return label == QStringLiteral("virtual") && RuntimeHardwareConfig::isHardwareRequired(hwType);
+}
+
+void HardwareProfileManager::ensureSystemProfiles()
+{
+    // Build the required-type -> virtual-impl map
+    QMap<QString, QString> requiredVirtualMap;
+    requiredVirtualMap[QString(VirtualFtmwScope::staticMetaObject.className())] =
+        QString(VirtualFtmwScope::staticMetaObject.className());
+    requiredVirtualMap[QString(FixedClock::staticMetaObject.className())] =
+        QString(FixedClock::staticMetaObject.className());
+
+    if (ApplicationConfigManager::instance().isLifEnabled()) {
+        requiredVirtualMap[QString(VirtualLifScope::staticMetaObject.className())] =
+            QString(VirtualLifScope::staticMetaObject.className());
+        requiredVirtualMap[QString(VirtualLifLaser::staticMetaObject.className())] =
+            QString(VirtualLifLaser::staticMetaObject.className());
+    }
+
+    // The map keys above are the implementation class names, but the hardware type keys
+    // are the BASE class names. We need to look them up from the registry.
+    // FtmwScope, Clock, LifScope, LifLaser are the base type names.
+    // Build a map from hwType -> virtualImpl using RuntimeHardwareConfig::isHardwareRequired
+    // and the registry to find the type each virtual class belongs to.
+    HardwareRegistry& registry = HardwareRegistry::instance();
+    QStringList allTypes = registry.getHardwareTypes();
+
+    for (const QString& hwType : allTypes) {
+        if (!RuntimeHardwareConfig::isHardwareRequired(hwType)) {
+            continue;
+        }
+
+        // Find the virtual implementation for this type
+        // The virtual implementations are named Virtual<Type> or Fixed<Type>
+        // Check registry for the known virtual impl names
+        QStringList impls = registry.getImplementations(hwType);
+        QString virtualImpl;
+
+        // Check each known virtual impl to see if it's registered for this type
+        for (auto it = requiredVirtualMap.begin(); it != requiredVirtualMap.end(); ++it) {
+            if (impls.contains(it.value())) {
+                virtualImpl = it.value();
+                break;
+            }
+        }
+
+        if (virtualImpl.isEmpty()) {
+            qWarning() << "HardwareProfileManager::ensureSystemProfiles: No virtual implementation found for required type" << hwType;
+            continue;
+        }
+
+        // Create the "virtual" profile if it doesn't already exist
+        if (!getAllProfiles(hwType).contains(QStringLiteral("virtual"))) {
+            QString actualLabel = createHardwareProfile(hwType, virtualImpl, QStringLiteral("virtual"), Replace);
+            if (actualLabel.isEmpty()) {
+                qWarning() << "HardwareProfileManager::ensureSystemProfiles: Failed to create system profile for" << hwType;
+            } else {
+                qDebug() << "HardwareProfileManager::ensureSystemProfiles: Created system profile" << hwType << "virtual ->" << virtualImpl;
+            }
+        }
+    }
 }
 
 // ========================================================================

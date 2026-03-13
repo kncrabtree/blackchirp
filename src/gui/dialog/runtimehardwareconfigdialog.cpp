@@ -40,13 +40,41 @@ RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
       p_currentLibrary(nullptr)
 {
     pu_ui->setupUi(this);
-    
+
     // Apply theme-aware styling to validation status label
     pu_ui->applyValidationStatusStyling(this);
-    
+
+    // Ensure system profiles exist before reading configuration
+    HardwareProfileManager::instance().ensureSystemProfiles();
+
     // Initialize both original and preview state from current runtime configuration FIRST
     d_originalRuntimeConfig = RuntimeHardwareConfig::constInstance().getCurrentHardware();
     d_previewRuntimeConfig = d_originalRuntimeConfig;
+
+    // Auto-activate system profiles for required types that have no active entry
+    {
+        auto& profileManager = HardwareProfileManager::instance();
+        HardwareRegistry& registry = HardwareRegistry::instance();
+        for (const QString& hwType : registry.getHardwareTypes()) {
+            if (!RuntimeHardwareConfig::isHardwareRequired(hwType)) {
+                continue;
+            }
+            bool hasEntry = false;
+            for (auto& [key, impl] : d_previewRuntimeConfig) {
+                auto [type, label] = BC::Key::parseKey(key);
+                if (type == hwType) {
+                    hasEntry = true;
+                    break;
+                }
+            }
+            if (!hasEntry) {
+                QString impl = profileManager.getImplementation(hwType, QStringLiteral("virtual"));
+                if (!impl.isEmpty()) {
+                    d_previewRuntimeConfig[BC::Key::hwKey(hwType, QStringLiteral("virtual"))] = impl;
+                }
+            }
+        }
+    }
     
     // Phase 2: Populate configuration overview with actual hardware data
     populateConfigurationOverview();
@@ -256,133 +284,208 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
     
     // Determine if this is single-instance or multi-instance hardware type
     bool isMultiInstance = HardwareRegistry::isMultiInstanceType(hardwareType);
-    
+    bool isRequired = RuntimeHardwareConfig::isHardwareRequired(hardwareType);
+
+    // For single-instance types, add an Enable checkbox at the top
+    if (!isMultiInstance) {
+        // Determine if this type is currently enabled (has any entry in preview config)
+        bool isEnabled = false;
+        for (auto& [key, impl] : d_previewRuntimeConfig) {
+            auto [type, lbl] = BC::Key::parseKey(key);
+            if (type == hardwareType) {
+                isEnabled = true;
+                break;
+            }
+        }
+
+        auto* enableCheckbox = new QCheckBox(QString("Enable %1").arg(hardwareType), pu_ui->configurationContentWidget);
+        enableCheckbox->setObjectName("enableHardwareCheckbox");
+        enableCheckbox->setChecked(isEnabled);
+
+        if (isRequired) {
+            enableCheckbox->setEnabled(false);
+            enableCheckbox->setChecked(true);
+            enableCheckbox->setToolTip(QString("%1 is required for BlackChirp to operate and cannot be disabled.")
+                                           .arg(hardwareType));
+        }
+
+        layout->addWidget(enableCheckbox);
+
+        // Connect enable checkbox (use toggled since we handle programmatic + user changes the same)
+        connect(enableCheckbox, &QCheckBox::toggled, this, [this, hardwareType](bool checked) {
+            onEnableToggled(hardwareType, checked);
+        });
+    }
+
     // Create main group box for the hardware profile management
     auto* profileGroupBox = new QGroupBox(QString("%1 Profiles").arg(hardwareType), pu_ui->configurationContentWidget);
     auto* groupLayout = new QVBoxLayout(profileGroupBox);
-    
+
     // Available Profiles label
     auto* availableProfilesLabel = new QLabel("Available Profiles:");
     availableProfilesLabel->setStyleSheet("QLabel { font-weight: bold; }");
     groupLayout->addWidget(availableProfilesLabel);
-    
+
     // Create checkable list widget for profile selection
     auto* profilesList = new QListWidget();
     profilesList->setObjectName("profilesList");
     profilesList->setMaximumHeight(200);
-    
+
     // Get all profiles for this hardware type from HardwareProfileManager
     auto& profileManager = HardwareProfileManager::instance();
     QStringList allProfiles = profileManager.getAllProfiles(hardwareType);
-    
+
+    // For single-instance, determine if hardware is currently enabled
+    bool singleInstanceEnabled = true;
+    if (!isMultiInstance) {
+        singleInstanceEnabled = false;
+        for (auto& [key, impl] : d_previewRuntimeConfig) {
+            auto [type, lbl] = BC::Key::parseKey(key);
+            if (type == hardwareType) {
+                singleInstanceEnabled = true;
+                break;
+            }
+        }
+    }
+
     // Create button group for radio button behavior (single-instance only)
     QButtonGroup* buttonGroup = nullptr;
     if (!isMultiInstance) {
         buttonGroup = new QButtonGroup(this);
         buttonGroup->setExclusive(true);
     }
-    
+
     // Populate profiles list with appropriate selection widgets
     for (const QString& profileLabel : allProfiles) {
         QString implementation = profileManager.getImplementation(hardwareType, profileLabel);
+        bool isSysProfile = HardwareProfileManager::isSystemProfile(hardwareType, profileLabel);
         QString displayText = QString("%1 (%2)").arg(profileLabel, implementation);
-        
+        if (isSysProfile) {
+            displayText += " [system]";
+        }
+
         auto* listItem = new QListWidgetItem(profilesList);
         listItem->setData(Qt::UserRole, profileLabel); // Store label for easy retrieval
         // Don't set text on listItem to avoid duplication with custom widget text
-        
+
+        // Apply visual distinction for system profiles
+        if (isSysProfile) {
+            listItem->setForeground(ThemeColors::getThemeAwareColor(ThemeColors::SubtleText, this));
+            QFont f = listItem->font();
+            f.setItalic(true);
+            listItem->setFont(f);
+        }
+
         // Create appropriate selection widget based on instance type
         QWidget* selectionWidget = nullptr;
         if (isMultiInstance) {
             // Multi-instance: use checkboxes
             auto* checkbox = new QCheckBox(displayText);
             checkbox->setObjectName(QString("profile_%1_checkbox").arg(profileLabel));
-            
+
             // Check if this profile is active in preview configuration
             QString profileKey = BC::Key::hwKey(hardwareType, profileLabel);
             bool isActive = d_previewRuntimeConfig.find(profileKey) != d_previewRuntimeConfig.end();
             checkbox->setChecked(isActive);
-            
-            // Connect to selection change handler
-            connect(checkbox, &QCheckBox::toggled, this, [this, hardwareType]() {
-                onProfileSelectionChanged(hardwareType);
+
+            // Connect to selection change handler (use clicked to avoid double-fire)
+            connect(checkbox, &QCheckBox::clicked, this, [this, hardwareType]() {
+                onProfileCheckboxClicked(hardwareType);
             });
-            
+
             selectionWidget = checkbox;
-            
+
         } else {
             // Single-instance: use radio buttons
             auto* radioButton = new QRadioButton(displayText);
             radioButton->setObjectName(QString("profile_%1_radio").arg(profileLabel));
-            
-            // Check if this profile is active in preview configuration
+
+            // Check if this profile is the active one in preview configuration
             QString profileKey = BC::Key::hwKey(hardwareType, profileLabel);
             bool isActive = d_previewRuntimeConfig.find(profileKey) != d_previewRuntimeConfig.end();
             radioButton->setChecked(isActive);
-            
+
+            // Disable radio button if hardware type is not enabled
+            radioButton->setEnabled(singleInstanceEnabled);
+
             // Add to button group
             buttonGroup->addButton(radioButton);
-            
-            // Connect to selection change handler
-            connect(radioButton, &QRadioButton::toggled, this, [this, hardwareType]() {
-                onProfileSelectionChanged(hardwareType);
+
+            // Connect to selection change handler (use clicked to avoid double-fire from exclusive group)
+            connect(radioButton, &QRadioButton::clicked, this, [this, hardwareType]() {
+                onProfileRadioClicked(hardwareType);
             });
-            
+
             selectionWidget = radioButton;
         }
-        
+
         // Set the widget for this list item
         profilesList->setItemWidget(listItem, selectionWidget);
     }
-    
+
     // Handle case where no profiles exist
     if (allProfiles.isEmpty()) {
         auto* noProfilesItem = new QListWidgetItem("No profiles available", profilesList);
         noProfilesItem->setFlags(noProfilesItem->flags() & ~Qt::ItemIsSelectable);
         noProfilesItem->setForeground(ThemeColors::getThemeAwareColor(ThemeColors::SubtleText, this));
-        
+
         auto* noProfilesLabel = new QLabel("No profiles available");
         noProfilesLabel->setAlignment(Qt::AlignCenter);
         noProfilesLabel->setStyleSheet(QString("QLabel { color: %1; font-style: italic; }")
             .arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, this)));
         profilesList->setItemWidget(noProfilesItem, noProfilesLabel);
     }
-    
+
+    // For single-instance, connect the enable checkbox to gray out radio buttons
+    if (!isMultiInstance) {
+        auto* enableCheckbox = pu_ui->configurationContentWidget->findChild<QCheckBox*>("enableHardwareCheckbox");
+        if (enableCheckbox) {
+            connect(enableCheckbox, &QCheckBox::toggled, this, [profilesList](bool checked) {
+                for (int i = 0; i < profilesList->count(); ++i) {
+                    auto* widget = profilesList->itemWidget(profilesList->item(i));
+                    if (widget) {
+                        widget->setEnabled(checked);
+                    }
+                }
+            });
+        }
+    }
+
     groupLayout->addWidget(profilesList);
-    
+
     // Add/Remove buttons (horizontal layout)
     auto* buttonLayout = new QHBoxLayout();
-    
+
     auto* addProfileButton = new QPushButton("Add Profile");
     addProfileButton->setObjectName("addProfileButton");
     connect(addProfileButton, &QPushButton::clicked, this, [this, hardwareType]() {
         onAddProfile(hardwareType);
     });
-    
+
     auto* removeProfileButton = new QPushButton("Remove Profile");
     removeProfileButton->setObjectName("removeProfileButton");
     connect(removeProfileButton, &QPushButton::clicked, this, [this, hardwareType]() {
         onRemoveProfile(hardwareType);
     });
-    
+
     // Initially disable Remove button (no selection)
     removeProfileButton->setEnabled(false);
-    
+
     // Connect to list selection changes to enable/disable Remove button
     connect(profilesList, &QListWidget::itemSelectionChanged, this, [removeProfileButton, profilesList]() {
         removeProfileButton->setEnabled(!profilesList->selectedItems().isEmpty());
     });
-    
+
     buttonLayout->addWidget(addProfileButton);
     buttonLayout->addWidget(removeProfileButton);
     buttonLayout->addStretch();
-    
+
     groupLayout->addLayout(buttonLayout);
-    
+
     // Add the group box to the main layout
     layout->addWidget(profileGroupBox);
     layout->addStretch(); // Add stretch to push content to top
-    
+
     pu_ui->configurationContentWidget->setLayout(layout);
 }
 
@@ -444,6 +547,163 @@ void RuntimeHardwareConfigDialog::onProfileSelectionChanged(const QString& hardw
     }
     
     // Update preview display
+    updatePreviewConfiguration();
+}
+
+void RuntimeHardwareConfigDialog::onEnableToggled(const QString& hardwareType, bool enabled)
+{
+    if (hardwareType.isEmpty()) {
+        return;
+    }
+
+    if (enabled) {
+        // Find the currently selected radio button's profile label
+        auto* profilesList = pu_ui->configurationContentWidget->findChild<QListWidget*>("profilesList");
+        if (profilesList) {
+            auto& profileManager = HardwareProfileManager::instance();
+            for (int i = 0; i < profilesList->count(); ++i) {
+                auto* listItem = profilesList->item(i);
+                QString profileLabel = listItem->data(Qt::UserRole).toString();
+                if (profileLabel.isEmpty()) {
+                    continue;
+                }
+                auto* radioButton = qobject_cast<QRadioButton*>(profilesList->itemWidget(listItem));
+                if (radioButton && radioButton->isChecked()) {
+                    QString implementation = profileManager.getImplementation(hardwareType, profileLabel);
+                    QString profileKey = BC::Key::hwKey(hardwareType, profileLabel);
+                    d_previewRuntimeConfig[profileKey] = implementation;
+                    break;
+                }
+            }
+
+            // If no radio is checked, fall back to first profile (or "virtual" system profile)
+            bool hasEntry = false;
+            for (auto& [key, impl] : d_previewRuntimeConfig) {
+                auto [type, lbl] = BC::Key::parseKey(key);
+                if (type == hardwareType) {
+                    hasEntry = true;
+                    break;
+                }
+            }
+            if (!hasEntry) {
+                // Check for "virtual" system profile first
+                QString impl = profileManager.getImplementation(hardwareType, QStringLiteral("virtual"));
+                if (!impl.isEmpty()) {
+                    d_previewRuntimeConfig[BC::Key::hwKey(hardwareType, QStringLiteral("virtual"))] = impl;
+                } else if (!profileManager.getAllProfiles(hardwareType).isEmpty()) {
+                    // Fall back to first available profile
+                    QString firstLabel = profileManager.getAllProfiles(hardwareType).first();
+                    impl = profileManager.getImplementation(hardwareType, firstLabel);
+                    if (!impl.isEmpty()) {
+                        d_previewRuntimeConfig[BC::Key::hwKey(hardwareType, firstLabel)] = impl;
+                    }
+                }
+            }
+        }
+    } else {
+        // Remove all entries for this hardware type from preview config
+        auto it = d_previewRuntimeConfig.begin();
+        while (it != d_previewRuntimeConfig.end()) {
+            auto [hwType, lbl] = BC::Key::parseKey(it->first);
+            if (hwType == hardwareType) {
+                it = d_previewRuntimeConfig.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
+    updatePreviewConfiguration();
+}
+
+void RuntimeHardwareConfigDialog::onProfileRadioClicked(const QString& hardwareType)
+{
+    if (hardwareType.isEmpty()) {
+        return;
+    }
+
+    // Check if the enable checkbox is checked (only update if enabled)
+    auto* enableCheckbox = pu_ui->configurationContentWidget->findChild<QCheckBox*>("enableHardwareCheckbox");
+    if (enableCheckbox && !enableCheckbox->isChecked()) {
+        return;
+    }
+
+    // Find the profiles list widget
+    auto* profilesList = pu_ui->configurationContentWidget->findChild<QListWidget*>("profilesList");
+    if (!profilesList) {
+        return;
+    }
+
+    // Clear existing entries for this hardware type in preview config
+    auto it = d_previewRuntimeConfig.begin();
+    while (it != d_previewRuntimeConfig.end()) {
+        auto [hwType, lbl] = BC::Key::parseKey(it->first);
+        if (hwType == hardwareType) {
+            it = d_previewRuntimeConfig.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    // Add the selected radio button's profile
+    auto& profileManager = HardwareProfileManager::instance();
+    for (int i = 0; i < profilesList->count(); ++i) {
+        auto* listItem = profilesList->item(i);
+        QString profileLabel = listItem->data(Qt::UserRole).toString();
+        if (profileLabel.isEmpty()) {
+            continue;
+        }
+        auto* radioButton = qobject_cast<QRadioButton*>(profilesList->itemWidget(listItem));
+        if (radioButton && radioButton->isChecked()) {
+            QString implementation = profileManager.getImplementation(hardwareType, profileLabel);
+            QString profileKey = BC::Key::hwKey(hardwareType, profileLabel);
+            d_previewRuntimeConfig[profileKey] = implementation;
+            break;
+        }
+    }
+
+    updatePreviewConfiguration();
+}
+
+void RuntimeHardwareConfigDialog::onProfileCheckboxClicked(const QString& hardwareType)
+{
+    if (hardwareType.isEmpty()) {
+        return;
+    }
+
+    // Find the profiles list widget
+    auto* profilesList = pu_ui->configurationContentWidget->findChild<QListWidget*>("profilesList");
+    if (!profilesList) {
+        return;
+    }
+
+    // Clear existing entries for this hardware type in preview config
+    auto it = d_previewRuntimeConfig.begin();
+    while (it != d_previewRuntimeConfig.end()) {
+        auto [hwType, lbl] = BC::Key::parseKey(it->first);
+        if (hwType == hardwareType) {
+            it = d_previewRuntimeConfig.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    // Add all checked profiles for this hardware type
+    auto& profileManager = HardwareProfileManager::instance();
+    for (int i = 0; i < profilesList->count(); ++i) {
+        auto* listItem = profilesList->item(i);
+        QString profileLabel = listItem->data(Qt::UserRole).toString();
+        if (profileLabel.isEmpty()) {
+            continue;
+        }
+        auto* checkbox = qobject_cast<QCheckBox*>(profilesList->itemWidget(listItem));
+        if (checkbox && checkbox->isChecked()) {
+            QString implementation = profileManager.getImplementation(hardwareType, profileLabel);
+            QString profileKey = BC::Key::hwKey(hardwareType, profileLabel);
+            d_previewRuntimeConfig[profileKey] = implementation;
+        }
+    }
+
     updatePreviewConfiguration();
 }
 
@@ -658,15 +918,26 @@ void RuntimeHardwareConfigDialog::onRemoveProfile(const QString& hardwareType)
         return;
     }
     
-    // Extract profile labels from selected items
+    // Extract profile labels from selected items, blocking system profiles
     for (QListWidgetItem* item : selectedItems) {
         QString profileLabel = item->data(Qt::UserRole).toString();
-        
-        if (!profileLabel.isEmpty()) {
-            profilesToRemove.append(profileLabel);
+
+        if (profileLabel.isEmpty()) {
+            continue;
         }
+
+        // Block removal of system profiles
+        if (HardwareProfileManager::isSystemProfile(hardwareType, profileLabel)) {
+            QMessageBox::information(this, "Cannot Remove Profile",
+                QString("The '%1' profile for %2 is a system profile and cannot be removed.\n\n"
+                        "System profiles ensure BlackChirp can always start with working hardware.")
+                    .arg(profileLabel, hardwareType));
+            return;
+        }
+
+        profilesToRemove.append(profileLabel);
     }
-    
+
     // Confirm deletion
     QString message;
     if (profilesToRemove.size() == 1) {
@@ -696,7 +967,21 @@ void RuntimeHardwareConfigDialog::onRemoveProfile(const QString& hardwareType)
                 d_originalRuntimeConfig.erase(profileKey);
             }
         }
-        
+
+        // If the hardware type now has no active profile and a system profile exists,
+        // auto-activate it so the user is never left in an unrecoverable grayed-out state.
+        bool hasActiveProfile = false;
+        for (auto& [key, impl] : d_previewRuntimeConfig) {
+            auto [hwType, lbl] = BC::Key::parseKey(key);
+            if (hwType == hardwareType) { hasActiveProfile = true; break; }
+        }
+        if (!hasActiveProfile) {
+            QString sysImpl = profileManager.getImplementation(hardwareType, "virtual");
+            if (!sysImpl.isEmpty()) {
+                d_previewRuntimeConfig[BC::Key::hwKey(hardwareType, "virtual")] = sysImpl;
+            }
+        }
+
         if (success) {
             // Refresh the right panel to show updated profile list
             updateRightPanelForHardwareType(hardwareType);
