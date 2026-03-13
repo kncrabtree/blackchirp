@@ -94,6 +94,24 @@ inline QString findHardwareBaseType(const QMetaObject* metaObj) {
         );
 
 /*!
+ * \brief Register supported communication protocols for a hardware implementation
+ *
+ * This macro registers the supported protocols in the HardwareRegistry so they
+ * are available without instantiating the hardware object (avoiding vtable issues
+ * in the constructor). Should be placed immediately after REGISTER_HARDWARE_META.
+ *
+ * \param CLASS Hardware class name (must already be registered)
+ * \param ... One or more CommunicationProtocol::CommType values
+ */
+#define REGISTER_HARDWARE_PROTOCOLS(CLASS, ...) \
+    static bool protocols_registered_##CLASS = \
+        HardwareRegistry::instance().addSupportedProtocols( \
+            findHardwareBaseType(&CLASS::staticMetaObject), \
+            QString(CLASS::staticMetaObject.className()), \
+            QVector<CommunicationProtocol::CommType>{__VA_ARGS__} \
+        );
+
+/*!
  * \brief Register hardware implementation using introspection (legacy)
  * 
  * This macro creates a temporary instance of the hardware class to extract

@@ -5,7 +5,9 @@ using namespace BC::Key::PGen;
 
 // Register hardware implementations
 REGISTER_HARDWARE_META(Bnc577_4, "BNC 577 4-channel pulse generator")
+REGISTER_HARDWARE_PROTOCOLS(Bnc577_4, CommunicationProtocol::Rs232)
 REGISTER_HARDWARE_META(Bnc577_8, "BNC 577 8-channel pulse generator")
+REGISTER_HARDWARE_PROTOCOLS(Bnc577_8, CommunicationProtocol::Rs232)
 
 Bnc577_4::Bnc577_4(const QString& label, QObject *parent)
     : QCPulseGenerator{QString(Bnc577_4::staticMetaObject.className()), label, 4, parent}

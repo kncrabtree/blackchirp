@@ -3,6 +3,7 @@
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(Valon5009, "Valon Technology 5009 Dual Channel Synthesizer (500-6000 MHz)")
+REGISTER_HARDWARE_PROTOCOLS(Valon5009, CommunicationProtocol::Rs232)
 
 Valon5009::Valon5009(const QString& label, QObject *parent) :
     Clock(2, true, QString(Valon5009::staticMetaObject.className()), label, parent)

@@ -5,6 +5,7 @@
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(M8190, "Keysight M8190 AWG")
+REGISTER_HARDWARE_PROTOCOLS(M8190, CommunicationProtocol::Tcp)
 
 M8190::M8190(const QString& label, QObject *parent) : AWG(QString(M8190::staticMetaObject.className()), label, parent)
 {

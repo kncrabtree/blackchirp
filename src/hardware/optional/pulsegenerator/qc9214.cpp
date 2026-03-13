@@ -3,6 +3,7 @@
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(Qc9214, "QuantumComposers 9214 Pulse Generator")
+REGISTER_HARDWARE_PROTOCOLS(Qc9214, CommunicationProtocol::Rs232)
 
 Qc9214::Qc9214(const QString& label, QObject *parent) :
     QCPulseGenerator(QString(Qc9214::staticMetaObject.className()), label, 4, parent)

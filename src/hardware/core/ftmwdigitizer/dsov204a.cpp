@@ -9,6 +9,7 @@ using namespace BC::Key::Digi;
 
 // Register this hardware implementation
 REGISTER_HARDWARE_META(DSOv204A, "Keysight DSOv204A FTMW Digitizer (20 GHz, 80 GS/s)")
+REGISTER_HARDWARE_PROTOCOLS(DSOv204A, CommunicationProtocol::Tcp)
 
 DSOv204A::DSOv204A(const QString& label, QObject *parent)
     : FtmwScope{QString(DSOv204A::staticMetaObject.className()), label, parent}

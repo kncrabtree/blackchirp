@@ -7,6 +7,7 @@
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(AWG5204, "Tektronix AWG5204 AWG")
+REGISTER_HARDWARE_PROTOCOLS(AWG5204, CommunicationProtocol::Tcp)
 
 AWG5204::AWG5204(const QString& label, QObject *parent) :
     AWG(QString(AWG5204::staticMetaObject.className()), label, parent)

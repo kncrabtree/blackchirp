@@ -3,6 +3,7 @@
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(FixedClock, "Fixed Frequency Clock")
+REGISTER_HARDWARE_PROTOCOLS(FixedClock, CommunicationProtocol::Virtual)
 
 FixedClock::FixedClock(const QString& label, QObject *parent) :
     Clock(6, true, QString(FixedClock::staticMetaObject.className()), label, parent)
@@ -64,8 +65,3 @@ QStringList FixedClock::forbiddenKeys() const
     return out;
 }
 
-QVector<CommunicationProtocol::CommType> FixedClock::supportedProtocols() const
-{
-    // FixedClock doesn't actually communicate, but for testing purposes we can support Virtual
-    return {CommunicationProtocol::Virtual};
-}

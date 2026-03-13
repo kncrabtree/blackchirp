@@ -11,6 +11,7 @@ using namespace BC::Key::Digi;
 
 // Register this hardware implementation
 REGISTER_HARDWARE_META(Dpo71254b, "Tektronix DPO71254B FTMW Digitizer (12.5 GHz, 50 GS/s)")
+REGISTER_HARDWARE_PROTOCOLS(Dpo71254b, CommunicationProtocol::Tcp)
 
 Dpo71254b::Dpo71254b(const QString& label, QObject *parent) :
     FtmwScope(QString(Dpo71254b::staticMetaObject.className()), label, parent),

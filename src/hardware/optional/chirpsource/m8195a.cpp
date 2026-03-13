@@ -5,6 +5,7 @@
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(M8195A, "Keysight M8195A high-speed AWG")
+REGISTER_HARDWARE_PROTOCOLS(M8195A, CommunicationProtocol::Tcp)
 
 M8195A::M8195A(const QString& label, QObject *parent) : AWG(QString(M8195A::staticMetaObject.className()), label, parent)
 {

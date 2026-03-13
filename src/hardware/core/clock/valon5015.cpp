@@ -3,6 +3,7 @@
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(Valon5015, "Valon Technology 5015 Single Channel Synthesizer (500-15000 MHz)")
+REGISTER_HARDWARE_PROTOCOLS(Valon5015, CommunicationProtocol::Rs232)
 
 Valon5015::Valon5015(const QString& label, QObject *parent) :
     Clock(1, true, QString(Valon5015::staticMetaObject.className()), label, parent)

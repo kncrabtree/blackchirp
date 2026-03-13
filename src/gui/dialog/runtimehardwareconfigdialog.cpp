@@ -21,7 +21,12 @@
 #include <QTableWidgetItem>
 #include <QFileDialog>
 #include <QTextEdit>
+#include <QMetaEnum>
+#include <QSettings>
+#include <QCoreApplication>
 #include <data/bcglobals.h>
+#include <data/settings/hardwarekeys.h>
+#include <hardware/core/communication/communicationprotocol.h>
 #include <hardware/core/hardwareregistry.h>
 #include <hardware/core/hardwareprofilemanager.h>
 #include <hardware/library/vendorlibrary.h>
@@ -484,7 +489,26 @@ void RuntimeHardwareConfigDialog::onAddProfile(const QString& hardwareType)
     auto* implementationCombo = new QComboBox();
     implementationCombo->addItems(implementations);
     formLayout->addRow("Implementation:", implementationCombo);
-    
+
+    // Protocol selection (shown only when multiple protocols are supported)
+    auto* protocolLabel = new QLabel("Protocol:");
+    auto* protocolCombo = new QComboBox();
+    formLayout->addRow(protocolLabel, protocolCombo);
+
+    auto updateProtocolCombo = [&](const QString& impl) {
+        auto protocols = HardwareRegistry::instance().getSupportedProtocols(hardwareType, impl);
+        protocolCombo->clear();
+        auto commEnum = QMetaEnum::fromType<CommunicationProtocol::CommType>();
+        for (auto p : protocols)
+            protocolCombo->addItem(QString(commEnum.valueToKey(static_cast<int>(p))),
+                                   static_cast<int>(p));
+        bool multiProtocol = protocols.size() > 1;
+        protocolLabel->setVisible(multiProtocol);
+        protocolCombo->setVisible(multiProtocol);
+    };
+    updateProtocolCombo(implementationCombo->currentText());
+    connect(implementationCombo, &QComboBox::currentTextChanged, updateProtocolCombo);
+
     // Label input
     auto* labelEdit = new QLineEdit();
     labelEdit->setPlaceholderText("Enter unique label for this profile");
@@ -561,7 +585,22 @@ void RuntimeHardwareConfigDialog::onAddProfile(const QString& hardwareType)
     if (addDialog.exec() == QDialog::Accepted) {
         QString implementation = implementationCombo->currentText();
         QString label = labelEdit->text().trimmed();
-        
+
+        // Write selected protocol to settings before hardware object is created,
+        // so the HardwareObject constructor finds the correct value.
+        {
+            auto selectedProtocol = static_cast<CommunicationProtocol::CommType>(
+                protocolCombo->currentData().toInt());
+            QString settingsKey = BC::Key::hwKey(hardwareType, label);
+            QSettings s(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+            s.beginGroup(settingsKey);
+            s.beginGroup(implementation);
+            s.setValue(BC::Key::HW::commType, static_cast<int>(selectedProtocol));
+            s.endGroup();
+            s.endGroup();
+            s.sync();
+        }
+
         // Create the profile
         QString actualLabel = profileManager.createHardwareProfile(hardwareType, implementation, label);
         

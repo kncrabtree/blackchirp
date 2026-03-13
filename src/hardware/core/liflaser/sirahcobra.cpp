@@ -13,6 +13,7 @@ using namespace BC::Key::LifLaser;
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(SirahCobra, "Sirah Cobra LIF Laser")
+REGISTER_HARDWARE_PROTOCOLS(SirahCobra, CommunicationProtocol::Rs232)
 
 SirahCobra::SirahCobra(const QString& label, QObject *parent)
     : LifLaser(QString(SirahCobra::staticMetaObject.className()), label, parent)

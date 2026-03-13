@@ -3,6 +3,7 @@
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(Opolette, "Opolette LIF Laser")
+REGISTER_HARDWARE_PROTOCOLS(Opolette, CommunicationProtocol::Tcp)
 
 Opolette::Opolette(const QString& label, QObject *parent)
     : LifLaser(QString(Opolette::staticMetaObject.className()), label, parent)

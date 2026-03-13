@@ -9,6 +9,9 @@ using namespace BC::Key::Digi;
 
 // Register this hardware implementation
 REGISTER_HARDWARE_META(VirtualFtmwScope, "Virtual FTMW digitizer for testing and development")
+REGISTER_HARDWARE_PROTOCOLS(VirtualFtmwScope, CommunicationProtocol::Virtual,
+    CommunicationProtocol::Rs232, CommunicationProtocol::Tcp,
+    CommunicationProtocol::Gpib, CommunicationProtocol::Custom)
 
 VirtualFtmwScope::VirtualFtmwScope(const QString& label, QObject *parent) :
     FtmwScope(QString(VirtualFtmwScope::staticMetaObject.className()), label, parent)
@@ -148,14 +151,6 @@ void VirtualFtmwScope::readWaveform()
         emitShot(out);
 }
 
-QVector<CommunicationProtocol::CommType> VirtualFtmwScope::supportedProtocols() const
-{
-    // For testing: support all protocols to test runtime switching capability
-    // Note: None is excluded as it's only used as a fallback indicator
-    return {CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, 
-            CommunicationProtocol::Gpib, CommunicationProtocol::Custom,
-            CommunicationProtocol::Virtual};
-}
 
 void VirtualFtmwScope::generateSimulatedFid()
 {

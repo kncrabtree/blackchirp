@@ -6,6 +6,7 @@ using namespace BC::Key::PController;
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(IntellisysIQPlus, "Intellisys IQ+ Pressure Controller")
+REGISTER_HARDWARE_PROTOCOLS(IntellisysIQPlus, CommunicationProtocol::Rs232)
 
 IntellisysIQPlus::IntellisysIQPlus(const QString& label, QObject *parent) :
     PressureController(QString(IntellisysIQPlus::staticMetaObject.className()), label, false, parent)

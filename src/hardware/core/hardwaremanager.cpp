@@ -926,9 +926,6 @@ void HardwareManager::finalizeInitialization()
             connect(lifLaser, &LifLaser::laserFlashlampUpdate, this, &HardwareManager::lifLaserFlashlampUpdate);
         }
 
-        // Build communication protocol for hardware object
-        obj->buildCommunication(gpib);
-
         // Handle threaded hardware
         if(obj->d_threaded) {
             auto t = new QThread(this);
@@ -939,7 +936,7 @@ void HardwareManager::finalizeInitialization()
             obj->setParent(this);
         }
     }
-    
+
     // Setup ClockManager signals
     if (pu_clockManager) {
         connect(pu_clockManager.get(), &ClockManager::logMessage, this, &HardwareManager::logMessage);
@@ -1207,17 +1204,6 @@ void HardwareManager::addHardwareInternal(const QString& hwKey, const QString& i
         // Set up all signal connections with tracking
         setupHardwareObjectWithTracking(hwObj);
         setupHardwareSpecificConnectionsWithTracking(hwObj);
-        
-        // Resolve GPIB controller for communication setup
-        GpibController* gpib = nullptr;
-        auto gpibIt = std::find_if(d_hardwareMap.begin(), d_hardwareMap.end(), 
-            [](const auto& pair) { return qobject_cast<GpibController*>(pair.second) != nullptr; });
-        if (gpibIt != d_hardwareMap.end()) {
-            gpib = static_cast<GpibController*>(gpibIt->second);
-        }
-        
-        // Build communication protocol for hardware object
-        hwObj->buildCommunication(gpib);
         
         // Handle threading setup
         if (hwObj->d_threaded) {

@@ -4,6 +4,7 @@
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(LabjackU3, "Labjack U3 IOBoard")
+REGISTER_HARDWARE_PROTOCOLS(LabjackU3, CommunicationProtocol::Custom)
 REGISTER_LIBRARY(LabjackU3, LabjackLibrary)
 
 LabjackU3::LabjackU3(const QString& label, QObject *parent) :

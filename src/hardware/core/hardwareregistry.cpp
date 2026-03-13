@@ -51,34 +51,40 @@ bool HardwareRegistry::registerHardware(const QString& key, const QString& subKe
     
     // Store registration
     d_registrations.insert(registryKey, reg);
-    
+
     qDebug() << "Registered hardware:" << key << subKey << "(" << description << ")";
-    
-    // Signal registration
+
+    locker.unlock();  // Release mutex before emitting signal to avoid re-entrancy deadlocks.
     emit hardwareRegistered(key, subKey);
-    
+
     return true;
 }
 
 HardwareObject* HardwareRegistry::createHardware(const QString& key, const QString& subKey, const QString& label)
 {
-    QMutexLocker locker(&d_registryMutex);
-    
-    QString registryKey = makeRegistryKey(key, subKey);
-    auto it = d_registrations.find(registryKey);
-    
-    if (it == d_registrations.end()) {
-        qWarning() << "Hardware not registered:" << key << subKey;
-        return nullptr;
+    // Copy the factory out under the lock, then release before calling it.
+    // The factory constructs a HardwareObject whose constructor calls back into
+    // the registry (e.g. getSupportedProtocols), so we must not hold the mutex.
+    std::function<HardwareObject*(const QString&)> factory;
+    {
+        QMutexLocker locker(&d_registryMutex);
+
+        QString registryKey = makeRegistryKey(key, subKey);
+        auto it = d_registrations.find(registryKey);
+
+        if (it == d_registrations.end()) {
+            qWarning() << "Hardware not registered:" << key << subKey;
+            return nullptr;
+        }
+
+        factory = it.value().factory;
     }
-    
-    const HardwareRegistration& reg = it.value();
-    
-    // Create hardware instance
+
+    // Mutex is released here — safe to call back into registry from the constructor.
     HardwareObject* hardware = nullptr;
-    if (reg.factory) {
+    if (factory) {
         try {
-            hardware = reg.factory(label);
+            hardware = factory(label);
             if (hardware) {
                 qDebug() << "Created hardware instance:" << key << subKey << "with label:" << label;
             } else {
@@ -89,7 +95,7 @@ HardwareObject* HardwareRegistry::createHardware(const QString& key, const QStri
             hardware = nullptr;
         }
     }
-    
+
     return hardware;
 }
 
@@ -171,6 +177,37 @@ bool HardwareRegistry::isMultiInstanceType(const QString& hardwareType)
 QString HardwareRegistry::makeRegistryKey(const QString& key, const QString& subKey) const
 {
     return QString("%1::%2").arg(key, subKey);
+}
+
+bool HardwareRegistry::addSupportedProtocols(const QString& key, const QString& subKey,
+                                            const QVector<CommunicationProtocol::CommType>& protocols)
+{
+    QMutexLocker locker(&d_registryMutex);
+
+    QString registryKey = makeRegistryKey(key, subKey);
+    auto it = d_registrations.find(registryKey);
+
+    if (it == d_registrations.end()) {
+        qWarning() << "Cannot add supported protocols - hardware not registered:" << key << subKey;
+        return false;
+    }
+
+    it.value().supportedProtocols = protocols;
+    return true;
+}
+
+QVector<CommunicationProtocol::CommType> HardwareRegistry::getSupportedProtocols(
+    const QString& key, const QString& subKey) const
+{
+    QMutexLocker locker(&d_registryMutex);
+
+    QString registryKey = makeRegistryKey(key, subKey);
+    auto it = d_registrations.find(registryKey);
+
+    if (it == d_registrations.end())
+        return {};
+
+    return it.value().supportedProtocols;
 }
 
 bool HardwareRegistry::addLibraryDependency(const QString& key, const QString& subKey, const QString& libraryName,

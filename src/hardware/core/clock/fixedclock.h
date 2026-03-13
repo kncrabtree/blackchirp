@@ -29,8 +29,6 @@ private:
 public slots:
     QStringList forbiddenKeys() const override;
 
-public:
-    QVector<CommunicationProtocol::CommType> supportedProtocols() const override;
 };
 
 #endif // FIXEDCLOCK_H

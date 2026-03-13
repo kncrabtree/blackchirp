@@ -6,6 +6,7 @@
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(AWG70002a, "Tektronix AWG70002A high-performance AWG")
+REGISTER_HARDWARE_PROTOCOLS(AWG70002a, CommunicationProtocol::Tcp)
 
 AWG70002a::AWG70002a(const QString& label, QObject *parent) :
     AWG(QString(AWG70002a::staticMetaObject.className()), label, parent)

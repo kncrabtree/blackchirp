@@ -4,10 +4,13 @@
 #include <QObject>
 #include <QString>
 #include <QStringList>
+#include <QVector>
 #include <QHash>
 #include <QMutex>
 #include <functional>
 #include <memory>
+
+#include <hardware/core/communication/communicationprotocol.h>
 
 class HardwareObject;
 class VendorLibrary;
@@ -21,12 +24,14 @@ struct HardwareRegistration {
     QString description;                                       /*!< Description of the hardware */
     std::function<HardwareObject*(const QString&)> factory;   /*!< Factory function to create hardware instance with label */
     QStringList libraryDependencies;                          /*!< List of vendor libraries this hardware depends on */
-    
+    QVector<CommunicationProtocol::CommType> supportedProtocols; /*!< Communication protocols supported by this hardware */
+
     // Constructor
     HardwareRegistration() = default;
-    HardwareRegistration(const QString& k, const QString& sk, const QString& desc, 
+    HardwareRegistration(const QString& k, const QString& sk, const QString& desc,
                         std::function<HardwareObject*(const QString&)> fact)
-        : key(k), subKey(sk), description(desc), factory(fact), libraryDependencies({}) {}
+        : key(k), subKey(sk), description(desc), factory(fact), libraryDependencies({}),
+          supportedProtocols({CommunicationProtocol::Virtual}) {}
 };
 
 /*!
@@ -154,6 +159,25 @@ public:
      * \return True if hardware implementation depends on the specified library
      */
     bool hardwareUsesLibrary(const QString& implementationName, const QString& libraryName) const;
+
+    /*!
+     * \brief Add supported protocols to existing hardware registration
+     * \param key Hardware type key
+     * \param subKey Implementation key
+     * \param protocols List of supported communication protocols
+     * \return True if protocols were added successfully
+     */
+    bool addSupportedProtocols(const QString& key, const QString& subKey,
+                               const QVector<CommunicationProtocol::CommType>& protocols);
+
+    /*!
+     * \brief Get supported protocols for a hardware implementation
+     * \param key Hardware type key
+     * \param subKey Implementation key
+     * \return List of supported communication protocols, or empty if not registered
+     */
+    QVector<CommunicationProtocol::CommType> getSupportedProtocols(
+        const QString& key, const QString& subKey) const;
 
     /*!
      * \brief Add library dependency to existing hardware registration

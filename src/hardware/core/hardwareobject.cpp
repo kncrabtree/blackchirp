@@ -15,29 +15,40 @@ HardwareObject::HardwareObject(const QString& hwType, const QString& hwImpl, con
     d_key(hwType + BC::Key::hwIndexSep + label),
     d_subKey(hwImpl),
     d_threaded(false),
+    d_commType(CommunicationProtocol::Virtual),
     d_enabledForExperiment(true),
     p_comm(nullptr),
     d_isConnected(false)
-{    
+{
     // Set basic identifying keys
     set(BC::Key::HW::key, d_key);
     set(BC::Key::HW::subKey, d_subKey);
-    
+
     // Load or set default values from settings
     d_name = getOrSetDefault(BC::Key::HW::name, QString("%1 %2 (%3)")
                              .arg(hwType,label,hwImpl)); // Use implementation name as default
     d_critical = get(BC::Key::HW::critical, true); // Default to critical
     setDefault(BC::Key::HW::rInterval, 0);
-    
-    // Determine default communication type from supported protocols
-    auto supportedProtos = supportedProtocols();
-    if (!supportedProtos.isEmpty()) {
-        d_commType = supportedProtos.first();
+
+    // Look up supported protocols from registry (no vtable dispatch issue).
+    // Virtual implementations may not register protocols; default to Virtual.
+    auto registeredProtocols = HardwareRegistry::instance().getSupportedProtocols(hwType, hwImpl);
+    if (registeredProtocols.isEmpty())
+        registeredProtocols = {CommunicationProtocol::Virtual};
+
+    // Load persisted protocol, defaulting to the first registered protocol.
+    setDefault(BC::Key::HW::commType, static_cast<int>(registeredProtocols.first()));
+    d_commType = static_cast<CommunicationProtocol::CommType>(
+        get(BC::Key::HW::commType, static_cast<int>(registeredProtocols.first())));
+
+    // Validate persisted value against supported protocols; reset if invalid.
+    if (!registeredProtocols.contains(d_commType)) {
+        d_commType = registeredProtocols.first();
+        set(BC::Key::HW::commType, static_cast<int>(d_commType));
     }
-    setDefault(BC::Key::HW::commType, static_cast<int>(d_commType));
-    
+
     save();
-    
+
     // Write subKey one level above the SettingsStorage group for lookup
     QSettings s(QCoreApplication::organizationName(), QCoreApplication::applicationName());
     s.setFallbacksEnabled(false);
@@ -59,8 +70,11 @@ QString HardwareObject::errorString()
 
 QVector<CommunicationProtocol::CommType> HardwareObject::supportedProtocols() const
 {
-    // Default implementation returns the hardcoded protocol from constructor
-    return {d_commType};
+    auto [hwType, label] = BC::Key::parseKey(d_key);
+    auto protocols = HardwareRegistry::instance().getSupportedProtocols(hwType, d_subKey);
+    if (protocols.isEmpty())
+        return {CommunicationProtocol::Virtual};
+    return protocols;
 }
 
 bool HardwareObject::setCommProtocol(CommunicationProtocol::CommType commType, QObject *gc)
@@ -93,8 +107,13 @@ bool HardwareObject::setCommProtocol(CommunicationProtocol::CommType commType, Q
 
 void HardwareObject::bcInitInstrument()
 {
-    // Read basic settings (communication protocol now managed by HardwareManager)
     readAll();
+
+    // Build communication protocol. d_commType is already validated in constructor
+    // from registry + persisted settings. Pass nullptr for GPIB controller —
+    // resolveGpibControllersForInstruments() will rebuild GPIB instruments with
+    // the proper controller before connection testing.
+    buildCommunication(nullptr);
 
     if(p_comm)
     {
@@ -104,18 +123,6 @@ void HardwareObject::bcInitInstrument()
     }
 
     initialize();
-    
-    // Store supported protocols for UI access (after object is fully constructed)
-    QVariantList protocolList;
-    auto protocols = supportedProtocols();
-    for(auto protocol : protocols) {
-        protocolList.append(static_cast<int>(protocol));
-    }
-    set(BC::Key::HW::supportedProtocols, protocolList);
-    save();
-    
-    // Connection testing is now handled separately by HardwareManager::testAll()
-    // to avoid deadlocks during hardware initialization
 
     connect(this,&HardwareObject::hardwareFailure,this,[this](){
         d_isConnected = false;
@@ -162,7 +169,9 @@ void HardwareObject::bcReadSettings()
     d_critical = get(BC::Key::HW::critical,true);
     auto interval = get(BC::Key::HW::rInterval,0);
 
-    // Communication protocol changes now handled by HardwareManager
+    // Reload commType so protocol changes from CommunicationDialog are picked up.
+    d_commType = static_cast<CommunicationProtocol::CommType>(
+        get(BC::Key::HW::commType, static_cast<int>(d_commType)));
 
     if(d_rollingDataTimerId >= 0)
         killTimer(d_rollingDataTimerId);

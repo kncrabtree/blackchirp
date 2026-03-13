@@ -186,6 +186,7 @@ void ClockManager::setupClocks()
 {
     auto ct = QMetaEnum::fromType<RfConfig::ClockType>();
 
+    d_clockRoles.clear();
     setArray(hwClocks,{});
 
     for(auto c : d_clockList)

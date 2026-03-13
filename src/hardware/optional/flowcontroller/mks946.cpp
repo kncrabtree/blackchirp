@@ -5,6 +5,7 @@ using namespace BC::Key::Flow;
 
 // Register hardware implementation using new metaobject system
 REGISTER_HARDWARE_META(Mks946, "MKS 946 vacuum transducer controller")
+REGISTER_HARDWARE_PROTOCOLS(Mks946, CommunicationProtocol::Rs232)
 
 Mks946::Mks946(const QString& label, QObject *parent) :
     FlowController(QString(Mks946::staticMetaObject.className()), label, parent),

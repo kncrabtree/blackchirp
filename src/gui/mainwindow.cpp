@@ -1304,6 +1304,8 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
                     continue;
                 if(act == ui->actionTest_All_Connections)
                     continue;
+                if(act == ui->actionRuntimeHardwareConfig)
+                    continue;
                 act->setEnabled(true);
             }
         }

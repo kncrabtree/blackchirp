@@ -5,6 +5,7 @@ using namespace BC::Key::PGen;
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(SRSDG645, "Stanford Research Systems DG645 delay generator")
+REGISTER_HARDWARE_PROTOCOLS(SRSDG645, CommunicationProtocol::Rs232)
 
 SRSDG645::SRSDG645(const QString& label, QObject *parent)
     : PulseGenerator{QString(SRSDG645::staticMetaObject.className()), label, 4, parent}

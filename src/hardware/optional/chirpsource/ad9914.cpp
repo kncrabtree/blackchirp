@@ -8,6 +8,7 @@
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(AD9914, "Analog Devices AD9914 Direct Digital Synthesizer")
+REGISTER_HARDWARE_PROTOCOLS(AD9914, CommunicationProtocol::Rs232)
 
 AD9914::AD9914(const QString& label, QObject *parent) : AWG(QString(AD9914::staticMetaObject.className()), label, parent)
 {

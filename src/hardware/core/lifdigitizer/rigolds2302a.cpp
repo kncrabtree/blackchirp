@@ -5,6 +5,7 @@
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(RigolDS2302A, "Rigol DS2302A LIF Scope")
+REGISTER_HARDWARE_PROTOCOLS(RigolDS2302A, CommunicationProtocol::Tcp)
 
 RigolDS2302A::RigolDS2302A(const QString& label, QObject *parent)
     : LifScope(QString(RigolDS2302A::staticMetaObject.className()), label, parent)

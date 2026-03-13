@@ -7,6 +7,7 @@ using namespace Spectrum::M4i;
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(M4i2211x8, "Spectrum M4i.2211-x8 LIF Digitizer")
+REGISTER_HARDWARE_PROTOCOLS(M4i2211x8, CommunicationProtocol::Custom)
 REGISTER_LIBRARY(M4i2211x8, SpectrumLibrary)
 
 /*!

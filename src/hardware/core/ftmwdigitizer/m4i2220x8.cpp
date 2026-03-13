@@ -11,6 +11,7 @@ using namespace Spectrum::M4i;
 
 // Register this hardware implementation
 REGISTER_HARDWARE_META(M4i2220x8, "Spectrum Instrumentation M4i.2220-x8 FTMW Digitizer (2.5 GS/s, 1.25 GHz Bandwidth)")
+REGISTER_HARDWARE_PROTOCOLS(M4i2220x8, CommunicationProtocol::Custom)
 REGISTER_LIBRARY(M4i2220x8, SpectrumLibrary)
 
 /*!
