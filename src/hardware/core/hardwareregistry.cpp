@@ -192,7 +192,7 @@ bool HardwareRegistry::addSupportedProtocols(const QString& key, const QString& 
         return false;
     }
 
-    it.value().supportedProtocols = protocols;
+    d_registrations[registryKey].supportedProtocols = protocols;
     return true;
 }
 

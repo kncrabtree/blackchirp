@@ -720,12 +720,19 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
 
 void MainWindow::hardwareInitialized(bool success)
 {
-	d_hardwareConnected = success;
+    d_hardwareConnected = success;
     if(success)
         ui->statusBar->showMessage(QString("Hardware connected"));
     else
         ui->statusBar->showMessage(QString("Hardware error. See log for details."));
     configureUi(d_state);
+
+    if(!d_initialHardwareTestComplete)
+    {
+        d_initialHardwareTestComplete = true;
+        if(!success)
+            launchCommunicationDialog(true);
+    }
 }
 
 void MainWindow::clockPrompt(QHash<RfConfig::ClockType, RfConfig::ClockFreq> c)

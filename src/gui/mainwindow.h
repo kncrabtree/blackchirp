@@ -121,6 +121,7 @@ private:
     bool isCriticalHardwareConnected() const;
 
     ProgramState d_state{Idle};
+    bool d_initialHardwareTestComplete{false};
     int d_logCount{0};
     LogHandler::MessageCode d_logIcon{LogHandler::Normal};
     int d_currentExptNum{0};

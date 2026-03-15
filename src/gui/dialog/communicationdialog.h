@@ -41,9 +41,8 @@ private slots:
     void onTestDevice();
     void onTestAllDevices();
     void onProtocolSettingsChanged();
-    
+
     // HardwareManager response handlers
-    void onGpibControllersAvailable(QStringList controllerKeys);
     void onConnectionResult(const QString& hwKey, bool success, const QString& msg);
     
 private:
@@ -60,6 +59,7 @@ private:
     void setupUI();
     void setupLeftPanel();
     void setupRightPanel();
+    void populateGpibControllers();
     void connectSignals();
     
     void populateDeviceList();
@@ -83,6 +83,7 @@ private:
     QLabel *p_deviceNameLabel;
     QComboBox *p_protocolCombo;
     QComboBox *p_gpibControllerCombo;
+    QLabel *p_gpibControllerLabel;
     QStackedWidget *p_protocolStack;
     
     // Common settings (read options)

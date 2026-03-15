@@ -1,6 +1,7 @@
 #include <data/storage/settingsstorage.h>
 #include <gui/mainwindow.h>
 #include <gui/dialog/bcsavepathdialog.h>
+#include <gui/dialog/runtimehardwareconfigdialog.h>
 #include <gui/plot/curveappearancepresetmanager.h>
 #include <data/processing/parsers/fileparserregistry.h>
 #include <data/processing/parsers/spcatparser.h>
@@ -15,7 +16,6 @@
 #include <QSharedMemory>
 #include <QLocalServer>
 #include <QLocalSocket>
-#include <QProcess>
 #include <QtGlobal>
 
 #if QT_VERSION <= 0x060000
@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 
     if(savePath.isEmpty())
     {
-        QMessageBox::information(nullptr,QString("Welcome to Blackchirp!"),
+        QMessageBox::information(nullptr, QString("Welcome to Blackchirp!"),
                                  QString(
 R"000(It appears you are running Blackchirp for the first time, or you have just upgraded from a previous version. To get started, you first need to choose a directory where Blackchirp will store its data. In the directory you choose, four folders will be created:
 
@@ -108,22 +108,21 @@ Please note that if you are upgrading from an old version (<1.0.0) of Blackchirp
 )000"));
 
         BCSavePathDialog d;
-        int ret = d.exec();
-        if(ret == QDialog::Rejected)
+        if(d.exec() == QDialog::Rejected)
             return 0;
 
-        MainWindow w;
-        w.initializeHardware();
+        QMessageBox::information(nullptr, QString("Hardware Selection"),
+                                 QString(
+R"000(Next, select the instrument models connected to your system. For each hardware type, you can add a profile for your instrument model and activate it.
 
-        QMessageBox::information(nullptr,QString("Hardware Configuration"),QString(
-R"000(Next, you can configure the communication settings for the hardware connected to your computer. After exiting the following dialog, Blackchirp will restart and will use the settings you have chosen. You may change these later in the  Hardware > Communication menu.
+If you are unsure which hardware to select, you can leave the defaults (virtual instruments) and configure this later from the Hardware > Configure Hardware menu.
 )000"));
 
-        w.launchCommunicationDialog(false);
-        w.close();
-        qApp->quit();
-        QProcess::startDetached(qApp->arguments().constFirst(),qApp->arguments().mid(1));
-
+        RuntimeHardwareConfigDialog hwDialog;
+        hwDialog.exec();
+        // Fall through to normal startup — the saved hardware config will be loaded by
+        // HardwareManager::initialize(). If any hardware fails to connect, the
+        // Communication dialog will open automatically.
     }
 
     qRegisterMetaType<std::shared_ptr<Experiment>>();

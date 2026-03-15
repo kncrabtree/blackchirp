@@ -138,13 +138,14 @@ void HardwareObject::bcTestConnection()
     {
         if(!p_comm->bcTestConnection())
         {
+            set(BC::Key::HW::connected, false, true);
             emit connected(false,p_comm->errorString(),QPrivateSignal());
             return;
         }
     }
     bool success = testConnection();
     d_isConnected = success;
-    set(BC::Key::HW::connected,success);
+    set(BC::Key::HW::connected, success, true);
     emit connected(success,errorString(),QPrivateSignal());
 }
 
