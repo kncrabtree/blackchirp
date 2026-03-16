@@ -90,7 +90,7 @@ bool PressureController::prepareForExperiment(Experiment &e)
             setPressureControlMode(p->d_pressureControlMode);
     }
 
-    e.auxData()->registerKey(d_key,d_subKey,BC::Aux::PController::pressure);
+    e.auxData()->registerKey(d_key,d_model,BC::Aux::PController::pressure);
 
     e.addOptHwConfig(d_config);
 

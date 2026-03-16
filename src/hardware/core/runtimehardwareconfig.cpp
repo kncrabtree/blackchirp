@@ -584,31 +584,45 @@ void RuntimeHardwareConfig::activateMissingSystemProfiles()
 bool RuntimeHardwareConfig::applyConfiguration(const std::map<QString, QString>& config)
 {
     QWriteLocker locker(&d_configLock);
-    
+
     // Clear current active hardware
     d_activeHardware.clear();
-    
+
     // Apply new configuration
     for (auto it = config.begin(); it != config.end(); ++it) {
         const QString& key = it->first;
         const QString& implementation = it->second;
-        
+
         // Parse hardware type and label from key
         auto [hardwareType, label] = BC::Key::parseKey(key);
-        
+
         if (hardwareType.isEmpty() || label.isEmpty() || implementation.isEmpty()) {
             qWarning() << "RuntimeHardwareConfig::applyConfiguration: Invalid configuration entry:"
                       << "key=" << key << "implementation=" << implementation;
             continue;
         }
-        
+
         // Set hardware selection using internal method
         HardwareSelection selection;
         selection.type = hardwareType;
         selection.implementation = implementation;
-        
+
         d_activeHardware[key] = selection;
     }
-    
+
+    // Sync active/inactive state back to HardwareProfileManager so it persists.
+    // activateProfile/deactivateProfile are safe to call while holding d_configLock
+    // because they only lock d_profilesLock (a separate mutex in HardwareProfileManager).
+    HardwareProfileManager& profileManager = HardwareProfileManager::instance();
+    for (const QString& hwType : profileManager.getConfiguredHardwareTypes()) {
+        for (const QString& label : profileManager.getAllProfiles(hwType)) {
+            QString hwKey = BC::Key::hwKey(hwType, label);
+            if (d_activeHardware.contains(hwKey))
+                activateProfile(hwType, label);
+            else
+                deactivateProfile(hwType, label);
+        }
+    }
+
     return true;
 }

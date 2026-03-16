@@ -78,11 +78,11 @@ bool FlowController::prepareForExperiment(Experiment &e)
     if(!isConnected())
         return false;
 
-    e.auxData()->registerKey(d_key,d_subKey,BC::Aux::Flow::pressure);
+    e.auxData()->registerKey(d_key,d_model,BC::Aux::Flow::pressure);
     for(int i=0; i<d_numChannels; i++)
     {
         if(d_config.setting(i,FlowConfig::Enabled).toBool())
-            e.auxData()->registerKey(d_key,d_subKey,BC::Aux::Flow::flow.arg(i));
+            e.auxData()->registerKey(d_key,d_model,BC::Aux::Flow::flow.arg(i));
     }
 
     e.addOptHwConfig(d_config);

@@ -182,9 +182,9 @@ bool IOBoard::hwPrepareForExperiment(Experiment &exp)
         {
             auto name = analogName(it->first);
             if(!name.isEmpty())
-                exp.auxData()->registerKey(d_key,d_subKey,name+"."+BC::Aux::IOB::ain.arg(it->first));
+                exp.auxData()->registerKey(d_key,d_model,name+"."+BC::Aux::IOB::ain.arg(it->first));
             else
-                exp.auxData()->registerKey(d_key,d_subKey,BC::Aux::IOB::ain.arg(it->first));
+                exp.auxData()->registerKey(d_key,d_model,BC::Aux::IOB::ain.arg(it->first));
         }
 
         //note: digital channels should not be registered because they do not need to be plotted and

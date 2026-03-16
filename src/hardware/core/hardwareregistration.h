@@ -129,7 +129,7 @@ inline QString findHardwareBaseType(const QMetaObject* metaObj) {
         }(), \
         []() { \
             auto temp = std::unique_ptr<CLASS>(new CLASS()); \
-            return temp->d_subKey; \
+            return temp->d_model; \
         }(), \
         DESC, \
         [](const QString& label) -> HardwareObject* { return new CLASS(label); } \

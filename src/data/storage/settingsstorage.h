@@ -832,6 +832,28 @@ protected:
     void clearValue(const QString key);
 
     /*!
+     * \brief Removes all settings for this object's group from persistent storage
+     *
+     * Clears all in-memory data (values, getters, arrays, groups) and removes
+     * the entire QSettings group associated with this object. Sets d_discard so
+     * the destructor will not re-write the cleared data. Intended for use when
+     * a hardware profile is permanently deleted and this object is about to be
+     * destroyed.
+     */
+    void purge();
+
+    /*!
+     * \brief Removes a QSettings group by key path without requiring a live instance
+     *
+     * Utility for purging settings when no SettingsStorage instance exists for the
+     * target group (e.g., when deleting an inactive hardware profile that has no
+     * corresponding live HardwareObject).
+     *
+     * \param keys The list of group/subgroup keys that identify the group to remove
+     */
+    static void purgeGroup(const QStringList& keys);
+
+    /*!
      * \brief Write all values to `QSettings`.
      */
     void save();

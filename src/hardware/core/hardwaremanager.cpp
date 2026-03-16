@@ -836,19 +836,19 @@ void HardwareManager::setupHardwareObject(HardwareObject* obj)
     connect(obj, &HardwareObject::auxDataRead, [obj, this](AuxDataStorage::AuxDataMap m){
         AuxDataStorage::AuxDataMap out;
         for(auto it = m.cbegin(); it != m.cend(); ++it)
-            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_subKey, it->first), it->second});
+            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_model, it->first), it->second});
         emit auxData(out);
     });
     connect(obj, &HardwareObject::auxDataRead, [obj, this](AuxDataStorage::AuxDataMap m){
         AuxDataStorage::AuxDataMap out;
         for(auto it = m.cbegin(); it != m.cend(); ++it)
-            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_subKey, it->first), it->second});
+            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_model, it->first), it->second});
         emit validationData(out);
     });
     connect(obj, &HardwareObject::rollingDataRead, [obj, this](AuxDataStorage::AuxDataMap m){
         AuxDataStorage::AuxDataMap out;
         for(auto it = m.cbegin(); it != m.cend(); ++it)
-            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_subKey, it->first), it->second});
+            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_model, it->first), it->second});
         emit rollingData(out, QDateTime::currentDateTime());
     });
     connect(this, &HardwareManager::beginAcquisition, obj, &HardwareObject::beginAcquisition);
@@ -1017,6 +1017,13 @@ void HardwareManager::removeHardwareInternal(const QString& hwKey)
         }
     }
     
+    // Only purge settings if the profile was permanently deleted (not just deactivated).
+    // purgeSettings() sets d_discard=true, preventing ~SettingsStorage() from re-writing
+    // the cleared settings after deleteLater() is processed by the event loop.
+    auto [hwType, hwLabel] = BC::Key::parseKey(hwKey);
+    if (!HardwareProfileManager::instance().profileExists(hwType, hwLabel))
+        obj->purgeSettings();
+
     // Clean up the hardware object
     obj->deleteLater();
     
@@ -1052,21 +1059,21 @@ void HardwareManager::setupHardwareObjectWithTracking(HardwareObject* obj)
     storeConnection(hwKey, connect(obj, &HardwareObject::auxDataRead, [obj, this](AuxDataStorage::AuxDataMap m){
         AuxDataStorage::AuxDataMap out;
         for(auto it = m.cbegin(); it != m.cend(); ++it)
-            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_subKey, it->first), it->second});
+            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_model, it->first), it->second});
         emit auxData(out);
     }));
     
     storeConnection(hwKey, connect(obj, &HardwareObject::auxDataRead, [obj, this](AuxDataStorage::AuxDataMap m){
         AuxDataStorage::AuxDataMap out;
         for(auto it = m.cbegin(); it != m.cend(); ++it)
-            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_subKey, it->first), it->second});
+            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_model, it->first), it->second});
         emit validationData(out);
     }));
     
     storeConnection(hwKey, connect(obj, &HardwareObject::rollingDataRead, [obj, this](AuxDataStorage::AuxDataMap m){
         AuxDataStorage::AuxDataMap out;
         for(auto it = m.cbegin(); it != m.cend(); ++it)
-            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_subKey, it->first), it->second});
+            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_model, it->first), it->second});
         emit rollingData(out, QDateTime::currentDateTime());
     }));
     
@@ -1474,7 +1481,7 @@ std::vector<std::pair<QString, QString>> HardwareManager::findHardwareToReplace(
         if(currentIt != d_hardwareMap.end()) {
             // Hardware exists in current map, check if implementation differs
             HardwareObject* currentObj = currentIt->second;
-            QString currentImpl = currentObj->d_subKey;
+            QString currentImpl = currentObj->d_model;
             
             if(currentImpl != targetImpl) {
                 toReplace.emplace_back(targetKey, targetImpl);

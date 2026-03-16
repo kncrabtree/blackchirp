@@ -100,7 +100,7 @@ bool TemperatureController::prepareForExperiment(Experiment &e)
             setChannelEnabled(i,p->channelEnabled(i));
         }
 
-        e.auxData()->registerKey(d_key,d_subKey,BC::Aux::TC::temperature.arg(i));
+        e.auxData()->registerKey(d_key,d_model,BC::Aux::TC::temperature.arg(i));
     }
 
     e.addOptHwConfig(d_config);

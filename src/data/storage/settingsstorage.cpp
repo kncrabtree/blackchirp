@@ -1,6 +1,6 @@
 #include "settingsstorage.h"
 
-SettingsStorage::SettingsStorage(const QStringList keys, Type type) : d_settings{QCoreApplication::organizationName(),QCoreApplication::applicationName()}
+SettingsStorage::SettingsStorage(const QStringList keys, Type /*type*/) : d_settings{QCoreApplication::organizationName(),QCoreApplication::applicationName()}
 {
     d_settings.setFallbacksEnabled(false);
 
@@ -8,22 +8,14 @@ SettingsStorage::SettingsStorage(const QStringList keys, Type type) : d_settings
         d_settings.beginGroup(BC::Key::BC);
     else
     {
-        if( (type == Hardware) && (keys.size() == 1) )
-        {
-            d_settings.beginGroup(keys.first());
-            d_settings.beginGroup(d_settings.value("subKey","virtual").toString());
-        }
-        else
-        {
-            for(auto k : keys)
-                d_settings.beginGroup(k);
-        }
+        for(auto k : keys)
+            d_settings.beginGroup(k);
     }
 
     readAll();
 }
 
-SettingsStorage::SettingsStorage(const QString orgName, const QString appName, const QStringList keys, Type type) : d_settings{orgName,appName}
+SettingsStorage::SettingsStorage(const QString orgName, const QString appName, const QStringList keys, Type /*type*/) : d_settings{orgName,appName}
 {
     d_settings.setFallbacksEnabled(false);
 
@@ -31,16 +23,8 @@ SettingsStorage::SettingsStorage(const QString orgName, const QString appName, c
         d_settings.beginGroup(BC::Key::BC);
     else
     {
-        if( (type == Hardware) && (keys.size() == 1) )
-        {
-            d_settings.beginGroup(keys.first());
-            d_settings.beginGroup(d_settings.value("subKey","invalid").toString());
-        }
-        else
-        {
-            for(auto k : keys)
-                d_settings.beginGroup(k);
-        }
+        for(auto k : keys)
+            d_settings.beginGroup(k);
     }
 
     readAll();
@@ -464,6 +448,27 @@ void SettingsStorage::writeGroup(const QString groupKey)
         d_settings.setValue(it->first, it->second);
     d_settings.endGroup();
     d_settings.sync();
+}
+
+void SettingsStorage::purge()
+{
+    d_values.clear();
+    d_getters.clear();
+    d_arrayValues.clear();
+    d_groupValues.clear();
+    d_settings.remove(QString());
+    d_settings.sync();
+    d_discard = true;
+}
+
+void SettingsStorage::purgeGroup(const QStringList& keys)
+{
+    QSettings s(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    s.setFallbacksEnabled(false);
+    for (const auto& k : keys)
+        s.beginGroup(k);
+    s.remove(QString());
+    s.sync();
 }
 
 void SettingsStorage::save()

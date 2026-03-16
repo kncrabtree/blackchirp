@@ -118,24 +118,37 @@ QString HardwareProfileManager::createHardwareProfile(const QString& type,
 
 bool HardwareProfileManager::deleteHardwareProfile(const QString& type, const QString& label)
 {
-    QWriteLocker locker(&d_profilesLock);
-    
-    auto typeIt = d_profiles.find(type);
-    if (typeIt == d_profiles.end()) {
-        return false;
+    {
+        QWriteLocker locker(&d_profilesLock);
+
+        auto typeIt = d_profiles.find(type);
+        if (typeIt == d_profiles.end()) {
+            return false;
+        }
+
+        auto labelIt = typeIt->find(label);
+        if (labelIt == typeIt->end()) {
+            return false;
+        }
+
+        typeIt->erase(labelIt);
+        if (typeIt->isEmpty()) {
+            d_profiles.erase(typeIt);
+        }
+
+        setModified();
     }
-    
-    auto labelIt = typeIt->find(label);
-    if (labelIt == typeIt->end()) {
-        return false;
-    }
-    
-    typeIt->erase(labelIt);
-    if (typeIt->isEmpty()) {
-        d_profiles.erase(typeIt);
-    }
-    
-    setModified();
+
+    // Purge QSettings for this profile. If the profile has an active hardware object
+    // (i.e., it is in the current runtime config), removeHardwareInternal() will call
+    // purgeSettings() on the live object when the sync runs — this handles the
+    // d_discard flag needed to suppress ~SettingsStorage() re-writing.
+    // If there is no live hardware object (inactive profile), purge directly now.
+    QString hwKey = BC::Key::hwKey(type, label);
+    auto activeHardware = RuntimeHardwareConfig::constInstance().getCurrentHardware();
+    if (activeHardware.find(hwKey) == activeHardware.end())
+        SettingsStorage::purgeGroup({hwKey});
+
     return true;
 }
 

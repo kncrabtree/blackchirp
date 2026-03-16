@@ -11,9 +11,9 @@
 
 HardwareObject::HardwareObject(const QString& hwType, const QString& hwImpl, const QString& label, QObject *parent) :
     QObject(parent),
-    SettingsStorage(QStringList{hwType + BC::Key::hwIndexSep + label, hwImpl}),
+    SettingsStorage(QStringList{hwType + BC::Key::hwIndexSep + label}),
     d_key(hwType + BC::Key::hwIndexSep + label),
-    d_subKey(hwImpl),
+    d_model(hwImpl),
     d_threaded(false),
     d_commType(CommunicationProtocol::Virtual),
     d_enabledForExperiment(true),
@@ -22,7 +22,7 @@ HardwareObject::HardwareObject(const QString& hwType, const QString& hwImpl, con
 {
     // Set basic identifying keys
     set(BC::Key::HW::key, d_key);
-    set(BC::Key::HW::subKey, d_subKey);
+    set(BC::Key::HW::model, d_model);
 
     // Load or set default values from settings
     d_name = getOrSetDefault(BC::Key::HW::name, QString("%1 %2 (%3)")
@@ -48,12 +48,6 @@ HardwareObject::HardwareObject(const QString& hwType, const QString& hwImpl, con
     }
 
     save();
-
-    // Write subKey one level above the SettingsStorage group for lookup
-    QSettings s(QCoreApplication::organizationName(), QCoreApplication::applicationName());
-    s.setFallbacksEnabled(false);
-    s.setValue(d_key + "/" + BC::Key::HW::subKey, d_subKey);
-    s.sync();
 }
 
 HardwareObject::~HardwareObject()
@@ -71,7 +65,7 @@ QString HardwareObject::errorString()
 QVector<CommunicationProtocol::CommType> HardwareObject::supportedProtocols() const
 {
     auto [hwType, label] = BC::Key::parseKey(d_key);
-    auto protocols = HardwareRegistry::instance().getSupportedProtocols(hwType, d_subKey);
+    auto protocols = HardwareRegistry::instance().getSupportedProtocols(hwType, d_model);
     if (protocols.isEmpty())
         return {CommunicationProtocol::Virtual};
     return protocols;

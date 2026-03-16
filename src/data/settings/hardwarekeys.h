@@ -17,7 +17,7 @@ namespace BC::Key {
 // Hardware base class keys (from HardwareObject)
 namespace HW {
     static const QString key{"key"}; /*!< Hardware type key */
-    static const QString subKey{"subKey"}; /*!< Hardware implementation key */
+    static const QString model{"model"}; /*!< Hardware implementation/model name */
     static const QString name{"prettyName"}; /*!< Display name */
     static const QString connected{"connected"}; /*!< Whether last communication was successful */
     static const QString critical{"critical"}; /*!< Whether communication failure should abort an experiment */

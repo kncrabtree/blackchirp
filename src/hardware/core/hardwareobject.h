@@ -27,9 +27,9 @@
  * This class establishes a common interface for all hardware. Adding a new
  * piece of hardware to the code involves creating a subclass of
  * HardwareObject. Each hardware object has a name (::d_name) that is used in
- * the user interface, and a key (::d_key) and subkey (::d_subKey) that are
+ * the user interface, and a key (::d_key) and model (::d_model) that are
  * used to refer to the object in the settings file. The ::d_key specifies a
- * particular type of HardwareObject, and the ::d_subKey specifies a particular
+ * particular type.label combination, and the ::d_model specifies the
  * implementation of that hardware type. Subclasses must assign strings to
  * these variables in their constructors and must also set the
  * CommunicationProtocol in the class constructor. Other options, including
@@ -190,8 +190,8 @@ public:
     virtual ~HardwareObject();
 
     QString d_name; /*!< Name to be displayed on UI */
-    const QString d_key; /*!< Name to be used in settings for abstract hardware. */
-    const QString d_subKey; /*!< Name to be used in settings for real hardware. */
+    const QString d_key; /*!< Settings group key: "hwType.label" */
+    const QString d_model; /*!< Implementation/model name (e.g., "AWG70002a") */
 
     bool d_critical; /*!< Whether a communication error should abort an experiment. */
     const bool d_threaded; /*!< Whether the object should have its own thread of execution. */
@@ -231,6 +231,15 @@ public:
      * \return List of valdidation key strings.
      */
     virtual QStringList validationKeys() const { return {}; }
+
+    /*!
+     * \brief Removes all persisted settings for this hardware profile
+     *
+     * Calls SettingsStorage::purge() to delete the entire QSettings group
+     * for this hardware object. Should be called before deleteLater() when
+     * permanently removing a hardware profile.
+     */
+    void purgeSettings() { purge(); }
 
     /*!
      * \brief Returns list of supported communication protocols
