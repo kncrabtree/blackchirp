@@ -1158,7 +1158,9 @@ void MainWindow::startBatch(BatchManager *bm)
     connect(bm,&BatchManager::statusMessage,ui->statusBar,&QStatusBar::showMessage);
     connect(bm,&BatchManager::logMessage,p_lh,&LogHandler::logMessage);
     connect(bm,&BatchManager::beginExperiment,p_lh,&LogHandler::endExperimentLog);
-    connect(bm,&BatchManager::beginExperiment,[this,bm](){p_hwm->initializeExperiment(bm->currentExperiment());});
+    connect(bm,&BatchManager::beginExperiment,[this,bm](){
+        QMetaObject::invokeMethod(p_hwm,[this,bm](){ p_hwm->initializeExperiment(bm->currentExperiment());});
+    });
     connect(p_am,&AcquisitionManager::experimentComplete,bm,&BatchManager::experimentComplete);
     connect(p_am,&AcquisitionManager::experimentComplete,ui->ftViewWidget,&FtmwViewWidget::experimentComplete);
     connect(ui->abortButton,&QToolButton::clicked,bm,&BatchManager::abort);
