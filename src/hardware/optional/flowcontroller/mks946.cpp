@@ -294,11 +294,14 @@ void Mks946::hwSetPressureControlMode(bool enabled)
     }
     else
     {
-        if(!mksWrite(QString("PID!OFF")))
+        if(mksQuery(QString("PID?")).contains(QByteArray("ON")))
         {
-            emit logMessage(d_errorString,LogHandler::Error);
-            emit hardwareFailure();
-            return;
+            if(!mksWrite(QString("PID!OFF")))
+            {
+                emit logMessage(d_errorString,LogHandler::Error);
+                emit hardwareFailure();
+                return;
+            }
         }
     }
 }
