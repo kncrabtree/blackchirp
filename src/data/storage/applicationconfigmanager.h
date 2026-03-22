@@ -46,6 +46,7 @@ public:
     struct ApplicationConfig {
         bool lifEnabled{false};     /*!< LIF module enabled state */
         bool cudaEnabled{false};    /*!< CUDA module enabled state */
+        bool debugLogging{false};   /*!< Debug log messages enabled state */
     };
 
     /*!
@@ -71,13 +72,25 @@ public:
 
     /*!
      * \brief Check if CUDA module is enabled
-     * 
+     *
      * Thread-safe query for CUDA module availability. This replaces compile-time
      * #ifdef BC_CUDA checks with runtime configuration queries.
-     * 
+     *
      * \return True if CUDA functionality is enabled
      */
     bool isCudaEnabled() const;
+
+    /*!
+     * \brief Check if debug logging is enabled
+     * \return True if Debug-level log messages are written to the debug log file
+     */
+    bool isDebugLoggingEnabled() const;
+
+    /*!
+     * \brief Enable or disable debug logging and persist the setting
+     * \param enabled True to write Debug messages to debug_YYYYMM.csv
+     */
+    void setDebugLogging(bool enabled);
 
 signals:
     /*!
@@ -89,6 +102,7 @@ signals:
      * \param newConfig The updated application configuration
      */
     void configurationChanged(const ApplicationConfig& newConfig);
+    void debugLoggingChanged(bool enabled);
 
 private:
     /*!
@@ -133,6 +147,7 @@ namespace BC::Key::AppConfig {
     static const QString appConfig{"applicationConfig"};     /*!< Base settings key */
     static const QString lifEnabled{"lifEnabled"};           /*!< LIF enabled state */
     static const QString cudaEnabled{"cudaEnabled"};         /*!< CUDA enabled state */
+    static const QString debugLogging{"debugLogging"};       /*!< Debug logging enabled state */
 }
 
 #endif // APPLICATIONCONFIGMANAGER_H

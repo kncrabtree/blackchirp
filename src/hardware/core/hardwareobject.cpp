@@ -128,6 +128,9 @@ void HardwareObject::bcTestConnection()
 {
     d_isConnected = false;
     bcReadSettings();
+    emit logMessage(QString("bcTestConnection: key=%1 d_commType=%2 p_comm=%3")
+                    .arg(d_key).arg(static_cast<int>(d_commType)).arg(p_comm ? p_comm->metaObject()->className() : "null"),
+                    LogHandler::Debug);
     if(p_comm)
     {
         if(!p_comm->bcTestConnection())
@@ -182,6 +185,10 @@ void HardwareObject::buildCommunication(QObject *gc, CommunicationProtocol::Comm
 {
     // GPIB support included
     GpibController *c = dynamic_cast<GpibController*>(gc);
+    emit logMessage(QString("buildCommunication: key=%1 gc=%2 commType=%3 c=%4")
+                    .arg(d_key).arg(gc ? gc->metaObject()->className() : "null")
+                    .arg(static_cast<int>(commType)).arg(c ? "valid" : "null"),
+                    LogHandler::Debug);
     
     // If no GPIB controller provided and we need GPIB, connection will fail during testing
     // GPIB controller resolution is handled during the synchronization phase when all hardware exists

@@ -46,7 +46,7 @@ void LogHandler::logMessageWithTime(const QString text, const MessageCode type, 
         writeToFile(text, type, t);
 
     if(type == Debug)
-        return;
+        return;  // Debug messages never appear in the UI log
 
     if(type == Error || type == Warning)
         emit iconUpdate(type);
@@ -66,6 +66,11 @@ void LogHandler::endExperimentLog()
     d_currentExperimentNum = -1;
 }
 
+void LogHandler::setDebugLogging(bool enabled)
+{
+    d_debugLogging = enabled;
+}
+
 void LogHandler::writeToFile(const QString text, const MessageCode type, QDateTime t)
 {
     QDate now = t.date();
@@ -73,7 +78,25 @@ void LogHandler::writeToFile(const QString text, const MessageCode type, QDateTi
     msg.replace(BC::CSV::del,QString(","));
     QDir d = BlackchirpCSV::logDir();
     QString month = QString::number(now.month()).rightJustified(2,'0');
-    QFile logFile(d.absoluteFilePath(QString::number(now.year()) + month + ".csv"));
+    QString yearMonth = QString::number(now.year()) + month;
+
+    if(type == Debug)
+    {
+        if(!d_debugLogging)
+            return;
+        QFile debugLog(d.absoluteFilePath(QString("debug_") + yearMonth + ".csv"));
+        if(debugLog.open(QIODevice::Append|QIODevice::Text))
+        {
+            QTextStream ts(&debugLog);
+            if(debugLog.size() == 0)
+                BlackchirpCSV::writeLine(ts,{"Timestamp","Epoch_msecs","Code","Message"});
+            BlackchirpCSV::writeLine(ts,{t.toString(),t.toMSecsSinceEpoch(),
+                                         QVariant::fromValue<MessageCode>(type).toString(),msg});
+        }
+        return;
+    }
+
+    QFile logFile(d.absoluteFilePath(yearMonth + ".csv"));
     if(logFile.open(QIODevice::Append|QIODevice::Text))
     {
         QTextStream ts(&logFile);

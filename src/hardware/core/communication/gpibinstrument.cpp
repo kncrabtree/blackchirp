@@ -28,6 +28,8 @@ GpibInstrument::~GpibInstrument()
 void GpibInstrument::onControllerDestroyed()
 {
     // Controller has been destroyed - invalidate pointer and emit failure
+    emit logMessage(QString("GpibInstrument::onControllerDestroyed fired for key=%1 ownerKey=%2").arg(d_key, d_ownerKey),
+                    LogHandler::Debug);
     p_controller = nullptr;
     emit hardwareFailure();
 }
@@ -94,6 +96,8 @@ void GpibInstrument::initialize()
 bool GpibInstrument::testConnection()
 {
     if (!p_controller) {
+        emit logMessage(QString("GpibInstrument::testConnection: p_controller is NULL for key=%1 ownerKey=%2").arg(d_key, d_ownerKey),
+                        LogHandler::Debug);
         return false;
     }
     

@@ -113,6 +113,9 @@ MainWindow::MainWindow(QWidget *parent) :
     });
 
     p_lh = new LogHandler(true,this);
+    p_lh->setDebugLogging(ApplicationConfigManager::instance().isDebugLoggingEnabled());
+    connect(&ApplicationConfigManager::instance(), &ApplicationConfigManager::debugLoggingChanged,
+            p_lh, &LogHandler::setDebugLogging);
     connect(this,&MainWindow::logMessage,p_lh,&LogHandler::logMessage);
     connect(p_lh,&LogHandler::sendLogMessage,ui->logTextEdit,&QTextEdit::append);
     connect(p_lh,&LogHandler::iconUpdate,this,&MainWindow::setLogIcon);
