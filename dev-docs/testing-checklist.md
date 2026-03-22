@@ -11,7 +11,7 @@ introduced in the cmakemigration branch. Assumes a successful build.
 - [x] Application launches without crash when no settings exist
 - [x] Default virtual hardware is created for all required hardware types
 - [x] Hardware connection tests complete (all virtual hardware connects)
-- [-] MainWindow UI populates correctly (hardware menu, status boxes) - NOTE: Labels too large; overflow
+- [x] MainWindow UI populates correctly (hardware menu, status boxes) - NOTE: Labels too large; overflow
 - [x] No warnings/errors in console about missing profiles or configurations
 
 ### 1.2 Start with Existing devel-branch Settings
@@ -26,7 +26,7 @@ introduced in the cmakemigration branch. Assumes a successful build.
 
 ### 2.1 Dialog Launch & Display
 - [x] Hardware > Hardware Selection menu action opens the dialog
-- [-] Dialog is only accessible when program is idle (not during experiment) - FAIL!!!
+- [x] Dialog is only accessible when program is idle (not during experiment)
 - [x] Configuration Overview (left panel) shows current hardware configuration
 - [x] Hardware Browser (middle panel) lists all hardware types
 - [x] Library Status tab displays correctly
@@ -58,7 +58,7 @@ introduced in the cmakemigration branch. Assumes a successful build.
 ### 3.1 Hardware Addition
 - [x] Adding a new hardware profile and accepting dialog creates the hardware object
 - [x] New hardware appears in Hardware menu after dialog closes
-- [-] New hardware gets a connection test after creation FAIL: p_comm is nullptr; crash on connection test for non-virtual hardware.
+- [x] New hardware gets a connection test after creation
 - [x] Status box for new hardware appears in MainWindow
 
 ### 3.2 Hardware Removal
@@ -68,8 +68,8 @@ introduced in the cmakemigration branch. Assumes a successful build.
 - [x] No thread cleanup errors or crashes
 
 ### 3.3 Hardware Replacement
-- [-] No settings migration occurs (clean slate for new implementation) FAIL: no settings purge on removal of profile
-- [-] Connection test runs on new hardware FAIL: p_comm is nullptr (same as above)
+- [x] No settings migration occurs (clean slate for new implementation)
+- [x] Connection test runs on new hardware
 
 ### 3.4 Connection Status Tracking
 - [x] Per-hardware connection status shown individually in UI
@@ -78,9 +78,6 @@ introduced in the cmakemigration branch. Assumes a successful build.
 - [NT] `allCriticalHardwareConnected()` works correctly with changing hardware sets
 - [x] No deadlocks during connection testing with multiple hardware objects
 
-Errors/bugs/unexpected behavior:
--Clocks do not appear in RfConfig dialog
--Settings for removed HW profiles are not purged from persistent storage.
 -Experiment wizard remembers last settings, but what if associated HW has changed? Invalidate/notify? Store per HW profile?
 
 ---
@@ -88,27 +85,27 @@ Errors/bugs/unexpected behavior:
 ## 4. Communication Protocol Configuration
 
 ### 4.1 Protocol Dialog
-- [ ] Right-click hardware menu item > Communication opens CommunicationDialog
-- [ ] Dialog shows current protocol (RS232, TCP, GPIB, Virtual, Custom)
-- [ ] Protocol switching works at runtime
-- [ ] GPIB controller combo box auto-populates with available controllers
-- [ ] Previously selected GPIB controller is restored when dialog opens
-- [ ] Connection test from dialog returns result via HardwareManager signals
+- [x] Right-click hardware menu item > Communication opens CommunicationDialog
+- [x] Dialog shows current protocol (RS232, TCP, GPIB, Virtual, Custom)
+- [NT] Protocol switching works at runtime
+- [NT] GPIB controller combo box auto-populates with available controllers
+- [NT] Previously selected GPIB controller is restored when dialog opens
+- [x] Connection test from dialog returns result via HardwareManager signals
 
 ### 4.2 Protocol Settings Persistence
-- [ ] Protocol-specific settings (baud rate, IP address, GPIB address) persist
-- [ ] Switching protocol and restarting application preserves the selection
-- [ ] Group-based settings storage (`setGroupValue`/`getGroupValue`) works correctly
+- [x] Protocol-specific settings (baud rate, IP address, GPIB address) persist
+- [NT] Switching protocol and restarting application preserves the selection
+- [x] Group-based settings storage (`setGroupValue`/`getGroupValue`) works correctly
 
 ---
 
 ## 5. Vendor Library Management
 
 ### 5.1 Library Status Tab
-- [ ] Library Status tab shows all registered vendor libraries
-- [ ] Library availability status is correct (loaded/not found)
-- [ ] Version information displayed for loaded libraries (Spectrum driver/kernel versions)
-- [ ] Library details panel shows search paths and platform names
+- [x] Library Status tab shows all registered vendor libraries
+- [x] Library availability status is correct (loaded/not found)
+- [x] Version information displayed for loaded libraries (Spectrum driver/kernel versions)
+- [x] Library details panel shows search paths and platform names
 
 ### 5.2 Library Configuration
 - [ ] Custom library paths can be set

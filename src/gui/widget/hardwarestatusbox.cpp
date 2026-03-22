@@ -7,6 +7,12 @@
 HardwareStatusBox::HardwareStatusBox(QString key, QWidget *parent) :
     QGroupBox(parent), d_key{key}
 {
+    auto parts = d_key.split('.');
+    if(parts.size() >= 2)
+        setTitle(QString("%1: %2").arg(parts[0], parts[1]));
+    else
+        setTitle(d_key);
+
     SettingsStorage s(d_key,SettingsStorage::Hardware);
     updateTitle(s.get(BC::Key::HW::name,d_key));
     setFlat(true);
@@ -14,10 +20,7 @@ HardwareStatusBox::HardwareStatusBox(QString key, QWidget *parent) :
 
 void HardwareStatusBox::updateTitle(const QString &n)
 {
-    if(n.size() > 40)
-        setTitle(d_titleTemplate.arg(n.mid(0,37)+"..."));
-    else
-        setTitle(d_titleTemplate.arg(n));
+    setToolTip(n);
 }
 
 
