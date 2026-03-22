@@ -421,6 +421,16 @@ if(BC_BUILD_TESTS)
     add_blackchirp_definitions(tst_runtimehardwareconfigtest)
     add_test(NAME RuntimeHardwareConfigTest COMMAND tst_runtimehardwareconfigtest)
     
+    # Hardware Keys Test
+    add_executable(tst_hardwarekeys tests/tst_hardwarekeys.cpp)
+    target_link_libraries(tst_hardwarekeys
+        blackchirp-data
+        Qt6::Test
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_hardwarekeys)
+    add_test(NAME HardwareKeysTest COMMAND tst_hardwarekeys)
+
     # Hardware Profile Manager Test
     add_executable(tst_hardwareprofilemanagertest tests/tst_hardwareprofilemanagertest.cpp)
     target_link_libraries(tst_hardwareprofilemanagertest 
@@ -509,6 +519,7 @@ if(BC_BUILD_TESTS)
         tst_hardwareregistrytest
         tst_runtimehardwareconfigtest
         tst_hardwareprofilemanagertest
+        tst_hardwarekeys
         # tst_hardwarecommunication  # Disabled until HardwareManager migration complete
     )
     

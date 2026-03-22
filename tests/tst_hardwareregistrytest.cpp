@@ -163,7 +163,7 @@ void HardwareRegistryTest::testHardwareCreation()
     HardwareObject* hw = d_registry->createHardware(testKey, testSubKey, "testLabel");
     QVERIFY(hw != nullptr);
     QVERIFY(hw->d_key.startsWith(testKey));  // Key gets index suffix like ".0"
-    QCOMPARE(hw->d_subKey, testSubKey);
+    QCOMPARE(hw->d_model, testSubKey);
     
     // Clean up
     delete hw;

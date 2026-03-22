@@ -215,10 +215,10 @@ introduced in the cmakemigration branch. Assumes a successful build.
 
 ## 10. Settings & Storage Integrity
 
-### 10.1 SettingsStorage Changes
-- [ ] `groupKeys()` method returns correct group key list
+### 10.1 SettingsStorage Changes [AUTOMATED]
+- [x] `groupKeys()` method returns correct group key list — covered by `tst_settingsstoragetest::testGroupKeys`
 - [ ] Group values persist across application restart
-- [ ] Group values don't conflict with regular values or array values
+- [x] Group values don't conflict with regular values or array values — covered by `tst_settingsstoragetest::testCrossContamination`
 - [ ] `clearValue()` works for group values
 - [ ] Default subKey changed from "virtual" to "invalid" doesn't break existing hardware settings
 
@@ -227,10 +227,10 @@ introduced in the cmakemigration branch. Assumes a successful build.
 - [ ] Removal of `headerIndex()` doesn't break any dependent code paths
 - [ ] Headers save and load with single `objKey` parameter
 
-### 10.3 Hardware Keys
-- [ ] Label-based keys (`FlowController.frontPanel`) used consistently throughout
+### 10.3 Hardware Keys [AUTOMATED]
+- [x] Label-based keys (`FlowController.frontPanel`) used consistently throughout — covered by `tst_hardwarekeys`
 - [ ] No residual index-based keys in new experiment data
-- [ ] `BC::Key::hwKey()` produces correct format keys
+- [x] `BC::Key::hwKey()` produces correct format keys — covered by `tst_hardwarekeys` (26 cases: hwKey, parseKey, parseIndexKey, isIndexKey, migrateIndexKey, generateDefaultLabel, widgetKey, HardwareDataContainer legacy mappings)
 
 ---
 

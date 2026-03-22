@@ -52,6 +52,8 @@ private slots:
     void testGroupValueSetGet();
     void testGroupConflicts();
     void testGroupMultipleValues();
+    void testGroupKeys();
+    void testCrossContamination();
 
 
 private:
@@ -380,14 +382,12 @@ void SettingsStorageTest::initSettingsFile()
     s.endGroup();
     s.endGroup();
 
-    //Write settings for hardware
+    //Write settings for hardware (flat format — no subKey sub-group)
     s.beginGroup("hardwareKey");
-    s.setValue("subKey","hardwareSubKey");
-    s.beginGroup("hardwareSubKey");
+    s.setValue("model","hardwareSubKey");
     s.setValue("hardwareInt",10);
     s.setValue("hardwareName","My Hardware");
     s.setValue("hardwareDouble",44.4);
-    s.endGroup();
     s.endGroup();
 
     s.sync();
@@ -699,7 +699,7 @@ void SettingsStorageTest::testConstructorVariants()
     SettingsStorage stringList(QStringList{"group1", "group2"});
     QCOMPARE(stringList.keys().size(), 0); // New nested group should be empty
     
-    // Verify the hardware constructor found the correct subgroup
+    // Verify the hardware constructor found the correct group
     QCOMPARE(hardwareType.get<int>("hardwareInt"), 10);
     QCOMPARE(hardwareType.get<double>("hardwareDouble"), 44.4);
     
@@ -838,6 +838,93 @@ void SettingsStorageTest::testGroupMultipleValues()
     auto clearedGroup = getGroup(groupKey);
     QVERIFY(clearedGroup.empty());
     QCOMPARE(getGroupValue<QString>(groupKey, "key1", QString("default")), QString("default"));
+}
+
+void SettingsStorageTest::testGroupKeys()
+{
+    initSettingsFile();
+    clearGetters(false);
+    readAll();
+
+    // Initially no groups
+    QVERIFY(groupKeys().isEmpty());
+
+    // Add some groups
+    QVERIFY(setGroupValue("groupA", "k1", 1));
+    QVERIFY(setGroupValue("groupB", "k1", 2));
+    QVERIFY(setGroupValue("groupC", "k1", 3));
+
+    auto gk = groupKeys();
+    QCOMPARE(gk.size(), 3);
+    QVERIFY(gk.contains("groupA"));
+    QVERIFY(gk.contains("groupB"));
+    QVERIFY(gk.contains("groupC"));
+
+    // Adding more values to an existing group should not add a new group key
+    QVERIFY(setGroupValue("groupA", "k2", 10));
+    QCOMPARE(groupKeys().size(), 3);
+
+    // Clearing a group should remove it from groupKeys
+    clearValue("groupB");
+    auto gk2 = groupKeys();
+    QCOMPARE(gk2.size(), 2);
+    QVERIFY(!gk2.contains("groupB"));
+    QVERIFY(gk2.contains("groupA"));
+    QVERIFY(gk2.contains("groupC"));
+}
+
+void SettingsStorageTest::testCrossContamination()
+{
+    initSettingsFile();
+    clearGetters(false);
+    readAll();
+
+    // Set up one of each type
+    set("regularKey", 42, false);
+    setArray("arrayKey", {{{"ak", 1}}}, false);
+    QVERIFY(setGroupValue("groupKey", "gk", 99));
+
+    // Verify each type appears only in its own key list
+    auto k = keys();
+    auto ak = arrayKeys();
+    auto gk = groupKeys();
+
+    // Regular keys should not contain array or group keys
+    QVERIFY(k.contains("regularKey"));
+    QVERIFY(!k.contains("arrayKey"));
+    QVERIFY(!k.contains("groupKey"));
+
+    // Array keys should not contain regular or group keys
+    QVERIFY(ak.contains("arrayKey"));
+    QVERIFY(!ak.contains("regularKey"));
+    QVERIFY(!ak.contains("groupKey"));
+
+    // Group keys should not contain regular or array keys
+    QVERIFY(gk.contains("groupKey"));
+    QVERIFY(!gk.contains("regularKey"));
+    QVERIFY(!gk.contains("arrayKey"));
+
+    // containsValue should only be true for regular values and getters
+    QVERIFY(containsValue("regularKey"));
+    QVERIFY(!containsValue("groupKey"));
+
+    // containsArray should only be true for arrays
+    QVERIFY(containsArray("arrayKey"));
+    QVERIFY(!containsArray("regularKey"));
+    QVERIFY(!containsArray("groupKey"));
+
+    // Clearing one type should not affect the others
+    clearValue("regularKey");
+    QVERIFY(!containsValue("regularKey"));
+    QVERIFY(containsArray("arrayKey"));
+    QCOMPARE(getGroupValue<int>("groupKey", "gk", 0), 99);
+
+    clearValue("arrayKey");
+    QVERIFY(!containsArray("arrayKey"));
+    QCOMPARE(getGroupValue<int>("groupKey", "gk", 0), 99);
+
+    clearValue("groupKey");
+    QVERIFY(groupKeys().isEmpty());
 }
 
 QTEST_MAIN(SettingsStorageTest)
