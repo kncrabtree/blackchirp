@@ -33,10 +33,13 @@ private slots:
     // Full experiment loading - devel format (exp 2638)
     void loadExperiment2638_hardware();
     void loadExperiment2638_header();
+    void loadExperiment2638_ftmwConfig();
+    void loadExperiment2638_fidData();
 
     // Full experiment loading - new format (exp 27)
     void loadExperiment27_hardware();
     void loadExperiment27_header();
+    void loadExperiment27_lifConfig();
 
 private:
     QString testDataDir() const;
@@ -266,6 +269,82 @@ void ExperimentLoadingTest::loadExperiment27_header()
 
     QCOMPARE(exp.d_majorVersion, QString("1"));
     QCOMPARE(exp.d_minorVersion, QString("1"));
+}
+
+void ExperimentLoadingTest::loadExperiment2638_ftmwConfig()
+{
+    Experiment exp(2638, testDataDir() + "/2638", true);
+
+    QVERIFY(exp.ftmwEnabled());
+    auto *ftmw = exp.ftmwConfig();
+    QVERIFY(ftmw != nullptr);
+
+    // Header values from header.csv
+    QCOMPARE(ftmw->d_phaseCorrectionEnabled, false);
+    QCOMPARE(ftmw->d_chirpScoringEnabled, false);
+    QCOMPARE(ftmw->d_objective, quint64(20000));
+
+    // Chirp data from chirps.csv — 20 identical chirps, each with 1 segment
+    auto &chirpConfig = ftmw->d_rfConfig.d_chirpConfig;
+    QCOMPARE(chirpConfig.numChirps(), 20);
+
+    auto chirps = chirpConfig.chirpList();
+    QVERIFY(!chirps.isEmpty());
+
+    // Each chirp has 1 segment with known start/end frequencies
+    QCOMPARE(chirps.first().size(), 1);
+    QCOMPARE(chirps.first().first().startFreqMHz, 4895.0);
+    QCOMPARE(chirps.first().first().endFreqMHz, 1520.0);
+    QCOMPARE(chirps.first().first().durationUs, 1.0);
+}
+
+void ExperimentLoadingTest::loadExperiment2638_fidData()
+{
+    // Full load (not header-only) to get FID data
+    Experiment exp(2638, testDataDir() + "/2638", false);
+
+    QVERIFY(exp.ftmwEnabled());
+    auto *ftmw = exp.ftmwConfig();
+    QVERIFY(ftmw != nullptr);
+
+    auto storage = ftmw->storage();
+    QVERIFY(storage != nullptr);
+
+    // Load FID list for segment 0
+    auto fidList = storage->loadFidList(0);
+    QVERIFY(!fidList.isEmpty());
+
+    // Verify FID metadata from fidparams.csv:
+    // spacing=2e-11, probefreq=40960, vmult=1.52587890625e-06,
+    // shots=501400, sideband=LowerSideband, size=750000
+    auto &fid = fidList.first();
+    QCOMPARE(fid.spacing(), 2e-11);
+    QCOMPARE(fid.probeFreq(), 40960.0);
+    QCOMPARE(fid.shots(), quint64(501400));
+    QCOMPARE(fid.sideband(), RfConfig::LowerSideband);
+    QCOMPARE(fid.size(), 750000);
+}
+
+void ExperimentLoadingTest::loadExperiment27_lifConfig()
+{
+    // Header-only load is sufficient for LIF config values
+    Experiment exp(27, testDataDir() + "/27", true);
+
+    QVERIFY(exp.lifEnabled());
+    auto *lif = exp.lifConfig();
+    QVERIFY(lif != nullptr);
+
+    // Values from header.csv LifConfig entries
+    QCOMPARE(lif->d_order, LifConfig::DelayFirst);
+    QCOMPARE(lif->d_completeMode, LifConfig::StopWhenComplete);
+    QCOMPARE(lif->d_delayPoints, 6);
+    QCOMPARE(lif->d_delayStartUs, 0.0);
+    QCOMPARE(lif->d_delayStepUs, 10.0);
+    QCOMPARE(lif->d_delayRandom, true);
+    QCOMPARE(lif->d_laserPosPoints, 6);
+    QCOMPARE(lif->d_laserPosStart, 250.0);
+    QCOMPARE(lif->d_laserPosStep, 1.0);
+    QCOMPARE(lif->d_shotsPerPoint, 10);
 }
 
 QTEST_MAIN(ExperimentLoadingTest)

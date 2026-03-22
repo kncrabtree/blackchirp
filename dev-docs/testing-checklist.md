@@ -141,7 +141,7 @@ introduced in the cmakemigration branch. Assumes a successful build.
 
 ### 6.3 Data Recording
 - [ ] Experiment directory created with correct structure
-- [ ] `hardware.csv` saved in NEW 3-column format: key, subKey, hardwareType
+- [x] `hardware.csv` saved in NEW 3-column format: key, subKey, hardwareType — covered by `tst_experimentloading::hardwareSaveLoadRoundTrip`
 - [ ] Header file saved correctly with label-based hardware keys
 - [ ] FID data saved and loadable
 - [ ] Aux data (flow, pressure, temperature) recorded correctly
@@ -157,27 +157,27 @@ introduced in the cmakemigration branch. Assumes a successful build.
 
 ## 7. Data Loading & Backward Compatibility
 
-### 7.1 Loading New-Format Experiments
-- [ ] Experiments saved by cmakemigration branch load correctly
-- [ ] 3-column `hardware.csv` parsed correctly (key, subKey, hardwareType)
-- [ ] Hardware type enum values correctly restored
+### 7.1 Loading New-Format Experiments [AUTOMATED]
+- [x] Experiments saved by cmakemigration branch load correctly — covered by `tst_experimentloading::loadExperiment27_*`
+- [x] 3-column `hardware.csv` parsed correctly (key, subKey, hardwareType) — covered by `tst_experimentloading::loadHardwareNewFormat`
+- [x] Hardware type enum values correctly restored — covered by `tst_experimentloading::loadHardwareNewFormat`
 - [ ] All optional hardware configs (flow, pulse gen, IO board, etc.) load from label-based keys
 - [ ] FTMW data (FIDs, FT) loads and displays correctly
-- [ ] Header display shows hardware with label-based keys
+- [x] Header display shows hardware with label-based keys — covered by `tst_experimentloading::loadExperiment27_header`
 
-### 7.2 Loading Legacy Experiments (devel branch format)
-- [ ] Experiments saved by devel branch load without crash
-- [ ] 2-column `hardware.csv` (key, subKey) parsed via legacy path
-- [ ] Index-based keys (e.g., `FlowController.0`) are handled by `legacyStringToHardwareType()`
-- [ ] `FtmwDigitizer` legacy key maps correctly to `FtmwScope` type
-- [ ] `GpibController` vs `GPIBController` case variations handled
+### 7.2 Loading Legacy Experiments (devel branch format) [AUTOMATED]
+- [x] Experiments saved by devel branch load without crash — covered by `tst_experimentloading::loadExperiment2638_*`
+- [x] 2-column `hardware.csv` (key, subKey) parsed via legacy path — covered by `tst_experimentloading::loadHardwareLegacyFormat`
+- [x] Index-based keys (e.g., `FlowController.0`) are handled by `legacyStringToHardwareType()` — covered by `tst_hardwarekeys`
+- [x] `FtmwDigitizer` legacy key maps correctly to `FtmwScope` type — covered by `tst_hardwarekeys::legacyStringToHardwareTypeAliases`
+- [x] `GpibController` vs `GPIBController` case variations handled — covered by `tst_hardwarekeys::legacyStringToHardwareTypeAliases`
 - [ ] Optional hardware configs created from legacy keys
-- [ ] FTMW data from legacy experiments loads and displays correctly
+- [x] FTMW data from legacy experiments loads correctly — covered by `tst_experimentloading::loadExperiment2638_fidData`
 - [ ] Header storage keys (`headerKey()`) without `hwSubKey` work for old data
 
-### 7.3 Very Old Experiments
-- [ ] Pre-label-era experiments (if any exist) handle gracefully
-- [ ] Single-column hardware format fallback works (if applicable)
+### 7.3 Very Old Experiments [AUTOMATED]
+- [x] Pre-label-era experiments handle gracefully — covered by `tst_experimentloading::loadExperiment200_*`
+- [x] Oldest 2-column hardware format (no dot separator) loads correctly — covered by `tst_experimentloading::loadHardwareOldestFormat`
 
 ---
 
@@ -203,7 +203,7 @@ introduced in the cmakemigration branch. Assumes a successful build.
 - [ ] LIF experiment can be configured and started
 - [ ] LIF scope shots acquired and processed
 - [ ] LIF data saved to `lifparams.csv` and `lif/` directory
-- [ ] LIF data loads correctly when reopening experiment
+- [x] LIF config data loads correctly when reopening experiment — covered by `tst_experimentloading::loadExperiment27_lifConfig`
 - [ ] Laser units retrieved from hardware settings correctly
 
 ### 9.3 LIF Disabled
@@ -219,7 +219,7 @@ introduced in the cmakemigration branch. Assumes a successful build.
 - [x] `groupKeys()` method returns correct group key list — covered by `tst_settingsstoragetest::testGroupKeys`
 - [ ] Group values persist across application restart
 - [x] Group values don't conflict with regular values or array values — covered by `tst_settingsstoragetest::testCrossContamination`
-- [ ] `clearValue()` works for group values
+- [x] `clearValue()` works for group values — covered by `tst_settingsstoragetest::testGroupMultipleValues` and `testCrossContamination`
 - [ ] Default subKey changed from "virtual" to "invalid" doesn't break existing hardware settings
 
 ### 10.2 HeaderStorage Changes
