@@ -76,23 +76,14 @@ void HardwareManager::initialize()
     emit logMessage("Loading hardware configuration from runtime profiles...", LogHandler::Normal);
     syncWithRuntimeConfig();
     
-    //start all threads and initialize hw
+    // Emit virtual instrument warnings. Hardware initialization and threading is
+    // already handled by syncWithRuntimeConfig() via addHardwareInternal().
     for(auto it = d_hardwareMap.cbegin(); it != d_hardwareMap.cend(); ++it)
     {
         auto hw = it->second;
         if(hw->d_commType == CommunicationProtocol::Virtual)
             emit logMessage(QString("%1 is a virtual instrument. Be cautious about taking real measurements!")
                             .arg(hw->d_name),LogHandler::Warning);
-        if(hw->d_threaded)
-        {
-            if(!hw->thread()->isRunning())
-                hw->thread()->start();
-        }
-        else
-        {
-            hw->setParent(this);
-            QMetaObject::invokeMethod(hw,&HardwareObject::bcInitInstrument);
-        }
     }
 
     emit hwInitializationComplete();

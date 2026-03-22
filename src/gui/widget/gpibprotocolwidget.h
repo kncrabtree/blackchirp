@@ -27,6 +27,7 @@ public:
     }
 
     void loadProtocolSettings() override;
+    QString selectedController() const;
 
 protected:
     void saveProtocolSpecificSettings() override;

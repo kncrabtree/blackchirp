@@ -2,6 +2,7 @@
 #include <hardware/core/communication/gpibinstrument.h>
 #include <hardware/optional/gpibcontroller/gpibcontroller.h>
 #include <hardware/core/hardwaremanager.h>
+#include <hardware/core/runtimehardwareconfig.h>
 #include <data/storage/settingsstorage.h>
 #include <data/settings/hardwarekeys.h>
 
@@ -46,25 +47,25 @@ void GpibProtocolWidget::connectSignals()
 void GpibProtocolWidget::populateControllerList()
 {
     p_controllerCombo->clear();
-    
-    // Find all available GPIB controllers from hardware settings
-    // Future-proofed for multiple controllers
-    SettingsStorage hwStorage(BC::Key::hw);
-    auto allHwCount = hwStorage.getArraySize(BC::Key::allHw);
-    
-    bool foundController = false;
-    for(std::size_t i = 0; i < allHwCount; ++i) {
-        QString hwKey = hwStorage.getArrayValue<QString>(BC::Key::allHw, i, BC::Key::HW::key);
-        if(hwKey.startsWith(QString(GpibController::staticMetaObject.className()))) {
-            QString hwName = hwStorage.getArrayValue<QString>(BC::Key::allHw, i, BC::Key::HW::name);
-            p_controllerCombo->addItem(hwName, hwKey);
-            foundController = true;
-        }
+
+    const auto& config = RuntimeHardwareConfig::constInstance();
+    QStringList controllerKeys;
+    for (const auto& [hwKey, impl] : config.getCurrentHardware()) {
+        auto [hwType, label] = BC::Key::parseKey(hwKey);
+        if (hwType == QString(GpibController::staticMetaObject.className()))
+            controllerKeys.append(hwKey);
     }
-    
-    // If no controllers found, add placeholder
-    if(!foundController) {
+    controllerKeys.sort();
+
+    if (controllerKeys.isEmpty()) {
         p_controllerCombo->addItem("No GPIB controller configured", QString());
+        return;
+    }
+
+    for (const auto& key : controllerKeys) {
+        SettingsStorage s(key, SettingsStorage::Hardware);
+        QString name = s.get(BC::Key::HW::name, key);
+        p_controllerCombo->addItem(name, key);
     }
 }
 
@@ -91,6 +92,11 @@ void GpibProtocolWidget::loadProtocolSettings()
     if(address >= 0 && address <= 30) {
         p_addressSpinBox->setValue(address);
     }
+}
+
+QString GpibProtocolWidget::selectedController() const
+{
+    return p_controllerCombo->currentData().toString();
 }
 
 void GpibProtocolWidget::saveProtocolSpecificSettings()

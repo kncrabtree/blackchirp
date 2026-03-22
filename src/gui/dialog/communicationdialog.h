@@ -59,9 +59,8 @@ private:
     void setupUI();
     void setupLeftPanel();
     void setupRightPanel();
-    void populateGpibControllers();
     void connectSignals();
-    
+
     void populateDeviceList();
     void loadDeviceInfo();
     void updateDeviceListItem(const QString& hwKey);
@@ -70,7 +69,6 @@ private:
     void saveDeviceSettings();
     void saveCommonSettings();
     void loadReadOptions(CommunicationProtocol::CommType protocolType);
-    void loadCurrentGpibController();
     
     QString getDeviceDisplayText(const DeviceInfo& info);
     QIcon getStatusIcon(const DeviceInfo& info);
@@ -82,8 +80,6 @@ private:
     QGroupBox *p_deviceConfigGroup;
     QLabel *p_deviceNameLabel;
     QComboBox *p_protocolCombo;
-    QComboBox *p_gpibControllerCombo;
-    QLabel *p_gpibControllerLabel;
     QStackedWidget *p_protocolStack;
     
     // Common settings (read options)

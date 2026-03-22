@@ -73,9 +73,9 @@ introduced in the cmakemigration branch. Assumes a successful build.
 
 ### 3.4 Connection Status Tracking
 - [x] Per-hardware connection status shown individually in UI
-- [NT] Critical hardware failure disables experiment start
-- [NT] Non-critical hardware failure still allows experiment start
-- [NT] `allCriticalHardwareConnected()` works correctly with changing hardware sets
+- [x] Critical hardware failure disables experiment start
+- [x] Non-critical hardware failure still allows experiment start
+- [x] `allCriticalHardwareConnected()` works correctly with changing hardware sets
 - [x] No deadlocks during connection testing with multiple hardware objects
 
 -Experiment wizard remembers last settings, but what if associated HW has changed? Invalidate/notify? Store per HW profile?
@@ -87,14 +87,14 @@ introduced in the cmakemigration branch. Assumes a successful build.
 ### 4.1 Protocol Dialog
 - [x] Right-click hardware menu item > Communication opens CommunicationDialog
 - [x] Dialog shows current protocol (RS232, TCP, GPIB, Virtual, Custom)
-- [NT] Protocol switching works at runtime
-- [NT] GPIB controller combo box auto-populates with available controllers
-- [NT] Previously selected GPIB controller is restored when dialog opens
+- [x] Protocol switching works at runtime
+- [x] GPIB controller combo box auto-populates with available controllers
+- [-] Previously selected GPIB controller is restored when dialog opens FAIL: 2 problems: duplicate box. First has controllers listed but doesn't repopulate on opening. Second seems dead/unused.
 - [x] Connection test from dialog returns result via HardwareManager signals
 
 ### 4.2 Protocol Settings Persistence
 - [x] Protocol-specific settings (baud rate, IP address, GPIB address) persist
-- [NT] Switching protocol and restarting application preserves the selection
+- [x] Switching protocol and restarting application preserves the selection
 - [x] Group-based settings storage (`setGroupValue`/`getGroupValue`) works correctly
 
 ---

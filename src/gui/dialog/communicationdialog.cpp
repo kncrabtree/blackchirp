@@ -30,7 +30,6 @@
 #include <hardware/core/hardwaremanager.h>
 #include <hardware/core/hardwareobject.h>
 #include <hardware/core/hardwareregistry.h>
-#include <hardware/optional/gpibcontroller/gpibcontroller.h>
 #include <data/storage/settingsstorage.h>
 
 CommunicationDialog::CommunicationDialog(QWidget *parent) :
@@ -46,7 +45,6 @@ CommunicationDialog::CommunicationDialog(QWidget *parent) :
     setupUI();
     loadDeviceInfo();
     populateDeviceList();
-    populateGpibControllers();
     connectSignals();
 
     // Select first device if available
@@ -119,13 +117,6 @@ void CommunicationDialog::setupRightPanel()
     p_protocolCombo = new QComboBox(this);
     protocolLayout->addRow("Communication Protocol:", p_protocolCombo);
     
-    // GPIB controller selection (initially hidden)
-    p_gpibControllerLabel = new QLabel("GPIB Controller:", this);
-    p_gpibControllerCombo = new QComboBox(this);
-    p_gpibControllerLabel->hide();
-    p_gpibControllerCombo->hide();
-    protocolLayout->addRow(p_gpibControllerLabel, p_gpibControllerCombo);
-    
     layout->addLayout(protocolLayout);
     
     // Protocol-specific settings stack
@@ -158,22 +149,6 @@ void CommunicationDialog::setupRightPanel()
     layout->addStretch();
 }
 
-void CommunicationDialog::populateGpibControllers()
-{
-    p_gpibControllerCombo->clear();
-    p_gpibControllerCombo->addItem("Select Controller...", QString());
-
-    const auto& config = RuntimeHardwareConfig::constInstance();
-    QStringList controllerKeys;
-    for (const auto& [hwKey, impl] : config.getCurrentHardware()) {
-        auto [hwType, label] = BC::Key::parseKey(hwKey);
-        if (hwType == QString(GpibController::staticMetaObject.className()))
-            controllerKeys.append(hwKey);
-    }
-    controllerKeys.sort();
-    for (const auto& key : controllerKeys)
-        p_gpibControllerCombo->addItem(key, key);
-}
 
 void CommunicationDialog::connectSignals()
 {
@@ -314,11 +289,6 @@ void CommunicationDialog::updateRightPanel()
     p_protocolCombo->setCurrentIndex(currentIndex);
     p_protocolCombo->blockSignals(false);
     
-    // Load current GPIB controller if this is a GPIB instrument
-    if (info.currentProtocol == CommunicationProtocol::Gpib) {
-        loadCurrentGpibController();
-    }
-    
     // Update protocol stack and read options
     onProtocolChanged();
 }
@@ -333,16 +303,6 @@ void CommunicationDialog::onProtocolChanged()
         p_protocolCombo->currentData().toInt()
     );
     
-    
-    // Show/hide GPIB controller selection based on protocol
-    if(currentProtocol == CommunicationProtocol::Gpib) {
-        p_gpibControllerCombo->show();
-        p_gpibControllerLabel->show();
-        loadCurrentGpibController();
-    } else {
-        p_gpibControllerCombo->hide();
-        p_gpibControllerLabel->hide();
-    }
     
     // Create unique key for device + protocol combination
     QString widgetKey = QString("%1:%2").arg(d_currentDeviceKey).arg(static_cast<int>(currentProtocol));
@@ -403,19 +363,22 @@ void CommunicationDialog::onTestDevice()
     CommunicationProtocol::CommType selectedProtocol = static_cast<CommunicationProtocol::CommType>(
         p_protocolCombo->currentData().toInt());
 
-    // For GPIB protocol, validate controller selection
+    // Save current settings first so GpibProtocolWidget has written its controller selection
+    saveDeviceSettings();
+
+    // For GPIB protocol, validate controller selection via the protocol widget
     QString gpibController;
     if (selectedProtocol == CommunicationProtocol::CommType::Gpib) {
-        gpibController = p_gpibControllerCombo->currentData().toString();
+        QString widgetKey = QString("%1:%2").arg(d_currentDeviceKey).arg(static_cast<int>(selectedProtocol));
+        auto gpibWidget = qobject_cast<GpibProtocolWidget*>(d_protocolWidgets.value(widgetKey));
+        if (gpibWidget)
+            gpibController = gpibWidget->selectedController();
         if (gpibController.isEmpty()) {
             QMessageBox::warning(this, "Missing GPIB Controller",
                                "Please select a GPIB controller for GPIB communication.");
             return;
         }
     }
-
-    // Save current settings (protocol, timeout, term char) to QSettings
-    saveDeviceSettings();
 
     // Apply protocol to the live hardware object (rebuilds comm if protocol changed)
     QMetaObject::invokeMethod(p_hardwareManager, &HardwareManager::setHardwareProtocol,
@@ -548,22 +511,4 @@ void CommunicationDialog::onConnectionResult(const QString& hwKey, bool success,
 }
 
 
-void CommunicationDialog::loadCurrentGpibController()
-{
-    if (d_currentDeviceKey.isEmpty()) {
-        return;
-    }
-    
-    // Load the currently configured GPIB controller from settings
-    SettingsStorage storage(d_currentDeviceKey, SettingsStorage::Hardware);
-    QString currentController = storage.getGroupValue<QString>(BC::Key::Comm::gpib, BC::Key::GPIB::gpibController, QString());
-    
-    if (!currentController.isEmpty()) {
-        // Find and select the current controller in the combo box
-        int index = p_gpibControllerCombo->findData(currentController);
-        if (index >= 0) {
-            p_gpibControllerCombo->setCurrentIndex(index);
-        }
-    }
-}
 
