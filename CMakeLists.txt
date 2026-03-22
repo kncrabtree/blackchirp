@@ -431,6 +431,20 @@ if(BC_BUILD_TESTS)
     add_blackchirp_definitions(tst_hardwarekeys)
     add_test(NAME HardwareKeysTest COMMAND tst_hardwarekeys)
 
+    # Experiment Loading Test
+    add_executable(tst_experimentloading tests/tst_experimentloading.cpp)
+    target_link_libraries(tst_experimentloading
+        blackchirp-test-hardware
+        blackchirp-data
+        Qt6::Test
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_experimentloading)
+    target_compile_definitions(tst_experimentloading PRIVATE
+        TESTDATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/testdata"
+    )
+    add_test(NAME ExperimentLoadingTest COMMAND tst_experimentloading)
+
     # Hardware Profile Manager Test
     add_executable(tst_hardwareprofilemanagertest tests/tst_hardwareprofilemanagertest.cpp)
     target_link_libraries(tst_hardwareprofilemanagertest 
@@ -520,6 +534,7 @@ if(BC_BUILD_TESTS)
         tst_runtimehardwareconfigtest
         tst_hardwareprofilemanagertest
         tst_hardwarekeys
+        tst_experimentloading
         # tst_hardwarecommunication  # Disabled until HardwareManager migration complete
     )
     

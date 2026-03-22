@@ -1,0 +1,6 @@
+key;subKey;hardwareType
+LifLaser.default;VirtualLifLaser;11
+FtmwScope.default;VirtualFtmwScope;6
+PulseGenerator.default;VirtualPulseGenerator;2
+Clock.default;FixedClock;7
+LifScope.default;VirtualLifScope;10
