@@ -9,6 +9,8 @@
 #include <QDoubleSpinBox>
 #include <QWidgetAction>
 #include <QFormLayout>
+#include <QDialog>
+#include <QTreeWidget>
 #include <QtConcurrent/QtConcurrent>
 
 #include <data/analysis/ftworker.h>
@@ -147,19 +149,13 @@ FtmwViewWidget::~FtmwViewWidget()
 {
     clearGetters();
 
-    // Disconnect overlay manager signals to prevent double saveOverlays() call
-    if(p_omw != nullptr) {
-        disconnect(p_omw, &OverlayManagerWidget::destroyed, this, nullptr);
-    }
+    closeOverlayManager();
 
     // Save overlays before destruction
     saveOverlays();
 
     if(p_pfw != nullptr)
         p_pfw->close();
-
-    if(p_omw != nullptr)
-        p_omw->close();
 
     d_sbStatus.sbLoadWatcher->waitForFinished();
 
@@ -191,16 +187,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         p_pfw = nullptr;
     }
 
-    if(p_omw != nullptr)
-    {
-        // Disconnect the destroyed signal to prevent the deferred deletion
-        // from calling saveOverlays() after ps_overlayStorage has switched
-        // to the new experiment's storage. The existing saveOverlays() call
-        // below handles saving the current experiment's overlays properly.
-        disconnect(p_omw, &OverlayManagerWidget::destroyed, this, nullptr);
-        p_omw->close();
-        p_omw = nullptr;
-    }
+    closeOverlayManager();
 
     if(!ui->exptLabel->isVisible())
         ui->exptLabel->setVisible(true);
@@ -241,27 +228,31 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         ps_overlayStorage->save();
     }
 
-
-    
     // Set overlay storage reference from experiment
     ps_overlayStorage = e.overlayStorage();
-    
+
     // Connect to new overlay storage signals
     if (ps_overlayStorage) {
         connect(ps_overlayStorage.get(), &OverlayStorage::overlayAdded, this, &FtmwViewWidget::onOverlayAdded);
         connect(ps_overlayStorage.get(), &OverlayStorage::overlayRemoved, this, &FtmwViewWidget::onOverlayRemoved);
     }
-    
+
     // Load overlays from experiment storage and display them (only if overlays are enabled)
     if (ps_overlayStorage && d_overlaysEnabled)
     {
         auto overlays = ps_overlayStorage->getAllOverlays();
         for (const auto& overlay : overlays)
-        {
-            // Add overlay to plots (display only, storage is handled by ps_overlayStorage)
             addOverlayToPlots(overlay);
+    }
+
+    // Copy selected overlays from previous experiment to new storage
+    if (ps_overlayStorage && d_overlaysEnabled) {
+        for (const auto &overlay : d_overlaysToCopy) {
+            ps_overlayStorage->addOverlay(overlay);
+            // addOverlay triggers overlayAdded signal → onOverlayAdded → addOverlayToPlots
         }
     }
+    d_overlaysToCopy.clear();
 
     if(e.ftmwEnabled())
     {        
@@ -1106,4 +1097,108 @@ void FtmwViewWidget::saveOverlays()
         ps_overlayStorage->waitForPendingWrites();
         ps_overlayStorage->save();
     }
+}
+
+void FtmwViewWidget::closeOverlayManager()
+{
+    if (p_omw) {
+        // Disconnect destroyed signal to prevent saveOverlays() from firing
+        // after storage has potentially switched
+        disconnect(p_omw, &OverlayManagerWidget::destroyed, this, nullptr);
+        p_omw->close();  // WA_DeleteOnClose triggers destruction
+        p_omw = nullptr;
+    }
+}
+
+bool FtmwViewWidget::promptOverlayTransition()
+{
+    // Close overlay manager first (saves to current experiment properly)
+    closeOverlayManager();
+
+    // Clear any previous selection
+    d_overlaysToCopy.clear();
+
+    // If no overlays exist or overlays are disabled, nothing to prompt
+    if (!ps_overlayStorage || !d_overlaysEnabled) {
+        return true;
+    }
+
+    auto allOverlays = ps_overlayStorage->getAllOverlays();
+    if (allOverlays.isEmpty()) {
+        return true;
+    }
+
+    // Build a selection dialog
+    QDialog dlg(this);
+    dlg.setWindowTitle("Overlay Transition");
+
+    auto *layout = new QVBoxLayout(&dlg);
+
+    auto *label = new QLabel("Select overlays to copy to the new experiment:");
+    layout->addWidget(label);
+
+    auto *tree = new QTreeWidget;
+    tree->setHeaderLabels({"Name", "Type"});
+    tree->setRootIsDecorated(false);
+    tree->setSelectionMode(QAbstractItemView::NoSelection);
+
+    // Helper lambda: overlay type to display string (mirrors OverlayTableModel)
+    auto typeName = [](OverlayBase::OverlayType t) -> QString {
+        switch (t) {
+        case OverlayBase::BCExperiment: return "BC Experiment";
+        case OverlayBase::Catalog:      return "Catalog";
+        case OverlayBase::GenericXY:    return "Generic XY";
+        }
+        return "Unknown";
+    };
+
+    for (const auto &overlay : allOverlays) {
+        auto *item = new QTreeWidgetItem(tree);
+        item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+        item->setCheckState(0, Qt::Checked);  // Default: all selected
+        item->setText(0, overlay->getLabel());
+        item->setText(1, typeName(overlay->type()));
+    }
+
+    tree->resizeColumnToContents(0);
+    tree->resizeColumnToContents(1);
+    layout->addWidget(tree);
+
+    // Select All / Select None buttons
+    auto *selectionLayout = new QHBoxLayout;
+    auto *selectAllBtn = new QPushButton("Select All");
+    auto *selectNoneBtn = new QPushButton("Select None");
+    selectionLayout->addWidget(selectAllBtn);
+    selectionLayout->addWidget(selectNoneBtn);
+    selectionLayout->addStretch();
+    layout->addLayout(selectionLayout);
+
+    QObject::connect(selectAllBtn, &QPushButton::clicked, [tree]() {
+        for (int i = 0; i < tree->topLevelItemCount(); ++i)
+            tree->topLevelItem(i)->setCheckState(0, Qt::Checked);
+    });
+    QObject::connect(selectNoneBtn, &QPushButton::clicked, [tree]() {
+        for (int i = 0; i < tree->topLevelItemCount(); ++i)
+            tree->topLevelItem(i)->setCheckState(0, Qt::Unchecked);
+    });
+
+    // OK / Cancel
+    auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    QObject::connect(buttonBox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    QObject::connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    layout->addWidget(buttonBox);
+
+    // Size the dialog reasonably
+    dlg.resize(400, 300);
+
+    if (dlg.exec() != QDialog::Accepted)
+        return false;  // User cancelled — abort experiment start
+
+    // Collect checked overlays
+    for (int i = 0; i < tree->topLevelItemCount(); ++i) {
+        if (tree->topLevelItem(i)->checkState(0) == Qt::Checked)
+            d_overlaysToCopy.push_back(allOverlays.at(i));
+    }
+
+    return true;
 }
