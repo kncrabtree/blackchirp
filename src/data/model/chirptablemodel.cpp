@@ -11,10 +11,17 @@ ChirpTableModel::ChirpTableModel(QObject *parent)
       d_allIdentical(true), d_currentChirp(0)
 {
     auto awgKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<AWG>();
-    SettingsStorage s(awgKeys.isEmpty() ? QString() : awgKeys.first()
-                      ,SettingsStorage::Hardware);
-    d_awgMin = s.get(BC::Key::AWG::min,0.0);
-    d_awgMax = s.get(BC::Key::AWG::max,1000.0);
+    if(awgKeys.isEmpty())
+    {
+        d_awgMin = 0.0;
+        d_awgMax = 1e6;
+    }
+    else
+    {
+        SettingsStorage s(awgKeys.first(),SettingsStorage::Hardware);
+        d_awgMin = s.get(BC::Key::AWG::min,0.0);
+        d_awgMax = s.get(BC::Key::AWG::max,1000.0);
+    }
 
     using namespace BC::Key::ChirpTableModel;
     auto num = getArraySize(ctChirps);
@@ -472,8 +479,10 @@ QVector<QVector<ChirpConfig::ChirpSegment> > ChirpTableModel::chirpList() const
 
 void ChirpTableModel::initialize(RfConfig *p)
 {
+    beginResetModel();
     p_rfConfig = p;
     p_rfConfig->d_chirpConfig.setChirpList(d_chirpList);
+    endResetModel();
 }
 
 void ChirpTableModel::setFromRfConfig(RfConfig *p)

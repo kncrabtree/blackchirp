@@ -315,7 +315,21 @@ void ExperimentSetupDialog::error(const QString text)
 void ExperimentSetupDialog::reject()
 {
     for(auto &[k,p] : d_pages)
+    {
         p.page->discardChanges();
+
+        // Also discard changes on child widgets that have their own
+        // SettingsStorage (e.g., RfConfigWidget, ChirpConfigWidget,
+        // ChirpTableModel, ClockTableModel) so settings don't leak
+        // from a canceled wizard dialog.
+        auto children = p.page->findChildren<QObject*>();
+        for(auto c : children)
+        {
+            auto ss = dynamic_cast<SettingsStorage*>(c);
+            if(ss)
+                ss->discardChanges();
+        }
+    }
 
     QDialog::reject();
 }

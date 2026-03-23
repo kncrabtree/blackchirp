@@ -48,14 +48,10 @@ void RfConfigWidget::setFromRfConfig(const RfConfig &c)
 {
     ui->awgMultBox->setValue(qRound(c.d_awgMult));
 
-    if(c.d_upMixSideband == RfConfig::UpperSideband)
-        ui->upconversionSidebandComboBox->setCurrentIndex(0);
-    else
-        ui->upconversionSidebandComboBox->setCurrentIndex(1);
-    if(c.d_downMixSideband == RfConfig::UpperSideband)
-        ui->downconversionSidebandComboBox->setCurrentIndex(0);
-    else
-        ui->downconversionSidebandComboBox->setCurrentIndex(1);
+    ui->upconversionSidebandComboBox->setCurrentIndex(
+        ui->upconversionSidebandComboBox->findData(static_cast<int>(c.d_upMixSideband)));
+    ui->downconversionSidebandComboBox->setCurrentIndex(
+        ui->downconversionSidebandComboBox->findData(static_cast<int>(c.d_downMixSideband)));
 
     ui->chirpMultiplicationSpinBox->setValue(qRound(c.d_chirpMult));
 

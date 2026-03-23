@@ -492,7 +492,12 @@ void ExperimentTypePage::apply()
              ? BC::Key::hwKey(RuntimeHardwareConfig::hardwareTypeOf<FtmwScope>(), QStringLiteral("default"))
              : ftmwKeys.first());
 
-         if(e->d_number > 0 && e->ftmwEnabled())
+         // Preserve rfConfig and scopeConfig before enableFtmw destroys and
+         // recreates the FtmwConfig. This is needed for both new and repeat
+         // experiments because the RF config page may have already applied
+         // sideband, clock, and chirp settings.
+         bool hadFtmw = e->ftmwEnabled();
+         if(hadFtmw)
          {
              cfg = e->ftmwConfig()->d_rfConfig;
              ftc = e->ftmwConfig()->scopeConfig();
@@ -507,7 +512,7 @@ void ExperimentTypePage::apply()
          ftmw->d_chirpScoringEnabled = p_chirpScoringBox->isChecked();
          ftmw->d_chirpRMSThreshold = p_thresholdBox->value();
          ftmw->d_phaseCorrectionEnabled = p_phaseCorrectionBox->isChecked();
-         if(e->d_number > 0 && e->ftmwEnabled())
+         if(hadFtmw)
          {
              ftmw->d_rfConfig = cfg;
              ftmw->scopeConfig() = ftc;
