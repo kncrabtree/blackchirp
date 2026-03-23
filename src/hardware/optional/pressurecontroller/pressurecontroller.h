@@ -58,8 +58,6 @@ private:
     PressureControllerConfig d_config;
     friend class VirtualPressureController;
 
-    inline static int d_count = 0;
-
 
     // HardwareObject interface
 public:

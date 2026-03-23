@@ -515,11 +515,9 @@ void HardwareManager::storeAllOptHw(Experiment *exp, std::map<QString, bool> hw)
     // a dispatch table or visitor pattern to reduce complexity and improve maintainability
     for(auto const &[hwKey,_] : d_hardwareMap)
     {
-        auto t = BC::Key::parseIndexKey(hwKey);
-        auto type = t.first;
-        auto index = t.second;
+        auto [type, label] = BC::Key::parseKey(hwKey);
 
-        if((d_optHwTypes.find(type) == d_optHwTypes.end()) || index < 0 )
+        if(d_optHwTypes.find(type) == d_optHwTypes.end() || label.isEmpty())
             continue;
 
         bool read = true;

@@ -53,8 +53,6 @@ private:
     TemperatureControllerConfig d_config;
     QTimer *p_readTimer;
 
-    inline static int d_count = 0;
-
     friend class VirtualTemperatureController;
 
 

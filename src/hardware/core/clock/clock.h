@@ -61,8 +61,6 @@ private:
     QHash<RfConfig::ClockType,int> d_outputRoles;
     QVector<double> d_multFactors;
 
-    inline static int d_count = 0;
-
 
 protected:
     virtual void initializeClock() =0;

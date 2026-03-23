@@ -96,7 +96,7 @@ static const QString trackingDir{"rollingdata"};
  * ``BC::Key::hwKey()`` function to construct the key. For read-only access to
  * the settings associated with the current AWG implementation:
  *
- *     SettingsStorage s(BC::Key::hwKey(BC::Key::AWG::key,0),SettingsStorage::Hardware);
+ *     SettingsStorage s(BC::Key::hwKey(BC::Key::AWG::key,"default"),SettingsStorage::Hardware);
  *
  * The value associated with a key can be obtained with one of the get()
  * functions. If there is an integer associacted with the key ``myInt``, it can

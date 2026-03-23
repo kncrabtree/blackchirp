@@ -1515,8 +1515,7 @@ void MainWindow::setupThemeAwareIconStyling()
 std::shared_ptr<Experiment> MainWindow::createExperiment()
 {
     auto exp = std::make_shared<Experiment>();
-    // Populate hardware data from RuntimeHardwareConfig and create optional hw configs
+    // Populate hardware data from RuntimeHardwareConfig
     exp->d_hardwareData = RuntimeHardwareConfig::constInstance().createHardwareDataContainer();
-    exp->initOptHwFromData();
     return exp;
 }

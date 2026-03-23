@@ -125,14 +125,14 @@ introduced in the cmakemigration branch. Assumes a successful build.
 
 ### 6.1 Experiment Setup
 - [ ] Quick Experiment dialog opens and shows current hardware configuration
-- [ ] Experiment Setup dialog opens correctly with runtime hardware config
-- [ ] FTMW digitizer configuration reflects actual configured scope
-- [ ] Clock configuration shows all configured clock sources
-- [ ] Pulse generator page shows all configured pulse generators
-- [ ] Flow controller settings reflect configured flow controllers
+- [x] Experiment Setup dialog opens correctly with runtime hardware config
+- [x] FTMW digitizer configuration reflects actual configured scope
+- [x] Clock configuration shows all configured clock sources
+- [x] Pulse generator page shows all configured pulse generators
+- [x] Flow controller settings reflect configured flow controllers
 
 ### 6.2 Experiment Execution (Virtual Hardware)
-- [ ] Target Shots experiment starts, acquires, and completes with virtual hardware
+- [x] Target Shots experiment starts, acquires, and completes with virtual hardware
 - [ ] Target Duration experiment works
 - [ ] Peak Up mode starts (no experiment number assigned)
 - [ ] Forever mode starts and can be stopped
@@ -140,13 +140,13 @@ introduced in the cmakemigration branch. Assumes a successful build.
 - [ ] DR Scan experiment works (if applicable hardware configured)
 
 ### 6.3 Data Recording
-- [ ] Experiment directory created with correct structure
+- [x] Experiment directory created with correct structure
 - [x] `hardware.csv` saved in NEW 3-column format: key, subKey, hardwareType — covered by `tst_experimentloading::hardwareSaveLoadRoundTrip`
-- [ ] Header file saved correctly with label-based hardware keys
-- [ ] FID data saved and loadable
+- [x] Header file saved correctly with label-based hardware keys
+- [x] FID data saved and loadable
 - [ ] Aux data (flow, pressure, temperature) recorded correctly
 - [ ] Rolling data files created and populated
-- [ ] Experiment number increments correctly
+- [x] Experiment number increments correctly
 
 ### 6.4 Multi-Step Acquisitions
 - [ ] LO Scan with multiple steps completes all steps
@@ -229,34 +229,34 @@ introduced in the cmakemigration branch. Assumes a successful build.
 
 ### 10.3 Hardware Keys [AUTOMATED]
 - [x] Label-based keys (`FlowController.frontPanel`) used consistently throughout — covered by `tst_hardwarekeys`
-- [ ] No residual index-based keys in new experiment data
+- [x] No residual index-based keys in new experiment data
 - [x] `BC::Key::hwKey()` produces correct format keys — covered by `tst_hardwarekeys` (26 cases: hwKey, parseKey, parseIndexKey, isIndexKey, migrateIndexKey, generateDefaultLabel, widgetKey, HardwareDataContainer legacy mappings)
 
 ---
 
 ## 11. ClockManager
 
-- [ ] ClockManager initializes correctly (no segfault from missing initialization)
-- [ ] Clock roles (LO, UpConversion, DownConversion, etc.) assignable
+- [x] ClockManager initializes correctly (no segfault from missing initialization)
+- [x] Clock roles (LO, UpConversion, DownConversion, etc.) assignable
 - [ ] Multiple clocks can be configured with distinct labels
-- [ ] RF configuration dialog accessible without crash
-- [ ] Clock table model displays correctly in experiment setup
-- [ ] Fixed clocks work as expected
+- [x] RF configuration dialog accessible without crash
+- [x] Clock table model displays correctly in experiment setup
+- [x] Fixed clocks work as expected
 
 ---
 
 ## 12. GUI Dynamic Updates
 
 ### 12.1 Hardware Menu
-- [ ] Hardware menu rebuilt when configuration changes
-- [ ] Each hardware item has its own menu entry with communication dialog access
-- [ ] Menu items enable/disable based on individual hardware connection status
+- [x] Hardware menu rebuilt when configuration changes
+- [x] Each hardware item has its own menu entry with communication dialog access
+- [x] Menu items enable/disable based on individual hardware connection status
 
 ### 12.2 Status Boxes
-- [ ] Flow controller status boxes update with flow/pressure data
+- [x] Flow controller status boxes update with flow/pressure data
 - [ ] Temperature controller status boxes update with temperature data
-- [ ] Pressure controller status boxes update
-- [ ] Status boxes appear/disappear when hardware is added/removed
+- [x] Pressure controller status boxes update
+- [x] Status boxes appear/disappear when hardware is added/removed
 
 ### 12.3 Overlays and Plots
 - [ ] Overlay system works with label-based hardware keys
