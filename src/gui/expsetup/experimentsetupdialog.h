@@ -75,27 +75,23 @@ private:
             return {page,item};
     }
 
-    template<typename T> void addOptHwPages(QString hwKey, QTreeWidgetItem *expTypeItem)
+    template<typename T> void addOptHwPages(QString hwType, QTreeWidgetItem *expTypeItem)
     {
         auto hw = RuntimeHardwareConfig::constInstance().getCurrentHardware();
-        auto index = 0;
-        auto it = hw.end();
-        do
+        for(const auto &[k, impl] : hw)
         {
-            auto k = BC::Key::hwKey(hwKey,index);
-            it = hw.find(k);
-            if(it != hw.end())
-            {
-                SettingsStorage s(k,SettingsStorage::Hardware);
-                auto title = s.get(BC::Key::HW::name,k);
-                auto page = new T(k,title,p_exp);
-                auto i = p_configWidget->addWidget(page);
-                d_pages.insert({k,{i,k,page,true}});
-                auto item = new QTreeWidgetItem(expTypeItem,{page->d_title});
-                item->setData(0,Qt::UserRole,k);
-                index++;
-            }
-        } while (it != hw.end());
+            auto [type, label] = BC::Key::parseKey(k);
+            if(type != hwType)
+                continue;
+
+            SettingsStorage s(k,SettingsStorage::Hardware);
+            auto title = s.get(BC::Key::HW::name,k);
+            auto page = new T(k,title,p_exp);
+            auto i = p_configWidget->addWidget(page);
+            d_pages.insert({k,{i,k,page,true}});
+            auto item = new QTreeWidgetItem(expTypeItem,{page->d_title});
+            item->setData(0,Qt::UserRole,k);
+        }
     }
 
 

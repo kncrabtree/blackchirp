@@ -44,38 +44,7 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
     d_hardwareData = BC::Data::HardwareDataContainer::loadFromFile(d.absoluteFilePath(BC::CSV::hwFile));
     if (d_hardwareData.hasAnyHardware()) {
         d_hardwareSuccess = true;
-        
-        // Create optional HW configs as needed using robust enum-based hardware type identification
-        for (auto it = d_hardwareData.hardwareMap.cbegin(); it != d_hardwareData.hardwareMap.cend(); ++it) {
-            const QString& key = it.key();
-
-            // Create optional HW configs using robust enum-based type identification
-            switch (it.value().type) {
-                case BC::Data::HardwareType::IOBoard:
-                    addOptHwConfig(IOBoardConfig(key));
-                    break;
-                case BC::Data::HardwareType::PulseGenerator:
-                    addOptHwConfig(PulseGenConfig(key));
-                    break;
-                case BC::Data::HardwareType::FlowController:
-                    addOptHwConfig(FlowConfig(key));
-                    break;
-                case BC::Data::HardwareType::PressureController:
-                    addOptHwConfig(PressureControllerConfig(key));
-                    break;
-                case BC::Data::HardwareType::TemperatureController:
-                    addOptHwConfig(TemperatureControllerConfig(key));
-                    break;
-                case BC::Data::HardwareType::Unknown:
-                case BC::Data::HardwareType::FtmwScope:
-                case BC::Data::HardwareType::Clock:
-                case BC::Data::HardwareType::AWG:
-                case BC::Data::HardwareType::GPIBController:
-                case BC::Data::HardwareType::LifScope:
-                case BC::Data::HardwareType::LifLaser:
-                    break;
-            }
-        }
+        initOptHwFromData();
     }
 
     //load objectives
@@ -222,6 +191,39 @@ void Experiment::backup()
     //if we reach this point, it's time to backup
     d_lastBackupTime = QDateTime::currentDateTime();
     ps_ftmwConfig->storage()->backup();
+}
+
+void Experiment::initOptHwFromData()
+{
+    for (auto it = d_hardwareData.hardwareMap.cbegin(); it != d_hardwareData.hardwareMap.cend(); ++it) {
+        const QString& key = it.key();
+
+        switch (it.value().type) {
+            case BC::Data::HardwareType::IOBoard:
+                addOptHwConfig(IOBoardConfig(key));
+                break;
+            case BC::Data::HardwareType::PulseGenerator:
+                addOptHwConfig(PulseGenConfig(key));
+                break;
+            case BC::Data::HardwareType::FlowController:
+                addOptHwConfig(FlowConfig(key));
+                break;
+            case BC::Data::HardwareType::PressureController:
+                addOptHwConfig(PressureControllerConfig(key));
+                break;
+            case BC::Data::HardwareType::TemperatureController:
+                addOptHwConfig(TemperatureControllerConfig(key));
+                break;
+            case BC::Data::HardwareType::Unknown:
+            case BC::Data::HardwareType::FtmwScope:
+            case BC::Data::HardwareType::Clock:
+            case BC::Data::HardwareType::AWG:
+            case BC::Data::HardwareType::GPIBController:
+            case BC::Data::HardwareType::LifScope:
+            case BC::Data::HardwareType::LifLaser:
+                break;
+        }
+    }
 }
 
 FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)

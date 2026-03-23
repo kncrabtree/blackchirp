@@ -101,6 +101,8 @@ public:
         d_optHwData.erase(key);
     }
 
+    void initOptHwFromData();
+
     bool addAuxData(AuxDataStorage::AuxDataMap m);
     void setValidationMap(const ExperimentValidator::ValidationMap &m);
     bool validateItem(const QString key, const QVariant val);
