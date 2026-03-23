@@ -20,6 +20,7 @@ class ExperimentConfigPage;
 class QTreeWidgetItem;
 
 class LifControlWidget;
+class RfConfigWidget;
 
 class ExperimentSetupDialog : public QDialog
 {
@@ -28,6 +29,7 @@ public:
     explicit ExperimentSetupDialog(Experiment *exp, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList> &valKeys, QWidget *parent = nullptr);
 
     LifControlWidget *lifControlWidget();
+    RfConfigWidget *rfConfigWidget();
 
 signals:
 

@@ -27,6 +27,7 @@ class QAction;
 class HWDialog;
 class QuickExptDialog;
 class LifControlWidget;
+class RfConfigWidget;
 class ExperimentViewWidget;
 
 namespace Ui {
@@ -77,6 +78,7 @@ public slots:
     void launchLifConfigDialog();
     void launchRuntimeHardwareConfigDialog();
     void configureLifWidget(LifControlWidget *w);
+    void connectRfConfigWidget(RfConfigWidget *w);
     void setLogIcon(LogHandler::MessageCode c);
     void sleep(bool s);
     void viewExperiment();

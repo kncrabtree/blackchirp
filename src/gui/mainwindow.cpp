@@ -601,6 +601,7 @@ bool MainWindow::runExperimentWizard(Experiment *exp, QuickExptDialog *qed)
         QMetaObject::invokeMethod(p_hwm,&HardwareManager::getClocks,Qt::BlockingQueuedConnection,&clocks);
 
     ExperimentSetupDialog d(exp,clocks,p_hwm->validationKeys(),this);
+    connectRfConfigWidget(d.rfConfigWidget());
 
     if(ApplicationConfigManager::instance().isLifEnabled()) {
         configureLifWidget(d.lifControlWidget());
@@ -833,12 +834,9 @@ void MainWindow::launchRfConfigDialog()
     QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks;
     QMetaObject::invokeMethod(p_hwm,&HardwareManager::getClocks,Qt::BlockingQueuedConnection,&clocks);
     w->setClocks(clocks);
+    connectRfConfigWidget(w);
 
     auto vbl = new QVBoxLayout;
-
-    auto lbl = new QLabel("Settings will be applied when this dialog is closed with the Ok button.");
-    lbl->setWordWrap(true);
-    vbl->addWidget(lbl);
     vbl->addWidget(w);
 
     auto bb = new QDialogButtonBox(QDialogButtonBox::Ok|QDialogButtonBox::Cancel,d);
@@ -959,6 +957,16 @@ void MainWindow::launchRuntimeHardwareConfigDialog()
     
     d_openDialogs.insert({"RuntimeHardwareConfig", d});
     d->show();
+}
+
+void MainWindow::connectRfConfigWidget(RfConfigWidget *w)
+{
+    if(w)
+    {
+        connect(w,&RfConfigWidget::applyClocks,[this](QHash<RfConfig::ClockType, RfConfig::ClockFreq> c){
+            QMetaObject::invokeMethod(p_hwm,[c,this](){ p_hwm->configureClocks(c); });
+        });
+    }
 }
 
 void MainWindow::configureLifWidget(LifControlWidget *w)

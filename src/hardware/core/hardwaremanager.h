@@ -211,8 +211,7 @@ private:
     
     // Phase 2.4.2: Constructor refactoring methods
     void setupHardwareObject(HardwareObject* obj);
-    void finalizeInitialization();
-    
+
     // Phase 2.4.3: Runtime configuration integration
     HardwareObject* createSpecificHardware(const QString& type, const QString& implementation, const QString& label);
     

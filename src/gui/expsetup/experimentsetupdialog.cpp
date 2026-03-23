@@ -17,6 +17,7 @@
 
 #include "experimenttypepage.h"
 #include "experimentrfconfigpage.h"
+#include <gui/widget/rfconfigwidget.h>
 #include "experimentloscanconfigpage.h"
 #include "experimentdrscanconfigpage.h"
 #include "experimentchirpconfigpage.h"
@@ -179,11 +180,22 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const QHash<RfConf
         connect(id.page,&ExperimentConfigPage::error,this,&ExperimentSetupDialog::error);
     }
 
+
     p_navTree->expandAll();
     validate(p_navTree->invisibleRootItem(),true);
     p_summaryWidget->setExperiment(exp);
 
     connect(p_navTree,&QTreeWidget::currentItemChanged,this,&ExperimentSetupDialog::pageChanged);
+}
+
+RfConfigWidget *ExperimentSetupDialog::rfConfigWidget()
+{
+    auto it = d_pages.find(BC::Key::WizRf::key);
+    if(it == d_pages.end())
+        return nullptr;
+
+    auto p = dynamic_cast<ExperimentRfConfigPage*>(it->second.page);
+    return p ? p->rfConfigWidget() : nullptr;
 }
 
 LifControlWidget *ExperimentSetupDialog::lifControlWidget()

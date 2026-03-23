@@ -34,7 +34,9 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     
     // Initialize ClockManager
     pu_clockManager = std::make_unique<ClockManager>(this);
-    
+    connect(pu_clockManager.get(), &ClockManager::logMessage, this, &HardwareManager::logMessage);
+    connect(pu_clockManager.get(), &ClockManager::clockFrequencyUpdate, this, &HardwareManager::clockFrequencyUpdate);
+
     // Phase 3.3.6: Clean constructor - all hardware creation now goes through dynamic system
     // HardwareManager starts with empty d_hardwareMap and will be populated via syncWithRuntimeConfig()
     emit logMessage("HardwareManager created. Hardware will be loaded from runtime configuration.", LogHandler::Normal);
@@ -844,102 +846,6 @@ void HardwareManager::setupHardwareObject(HardwareObject* obj)
     });
     connect(this, &HardwareManager::beginAcquisition, obj, &HardwareObject::beginAcquisition);
     connect(this, &HardwareManager::endAcquisition, obj, &HardwareObject::endAcquisition);
-}
-
-void HardwareManager::finalizeInitialization()
-{
-    // Resolve GPIB controller for communication setup
-    GpibController* gpib = nullptr;
-    auto gpibIt = std::find_if(d_hardwareMap.begin(), d_hardwareMap.end(), 
-        [](const auto& pair) { return qobject_cast<GpibController*>(pair.second) != nullptr; });
-    if (gpibIt != d_hardwareMap.end()) {
-        gpib = static_cast<GpibController*>(gpibIt->second);
-    }
-
-    // Setup hardware-specific signal connections and communication
-    for(auto& [key, obj] : d_hardwareMap) {
-        // Setup common hardware object
-        setupHardwareObject(obj);
-        
-        // Setup hardware-specific signal connections
-        if (auto ftmwScope = qobject_cast<FtmwScope*>(obj)) {
-            connect(ftmwScope, &FtmwScope::shotAcquired, this, &HardwareManager::ftmwScopeShotAcquired);
-        }
-        else if (auto pGen = qobject_cast<PulseGenerator*>(obj)) {
-            QString k = pGen->d_key;
-            connect(pGen, &PulseGenerator::settingUpdate, [this, k](const int ch, const PulseGenConfig::Setting set, const QVariant val){
-                emit pGenSettingUpdate(k, ch, set, val);
-            });
-            connect(pGen, &PulseGenerator::configUpdate, [this, k](const PulseGenConfig cfg){
-                emit pGenConfigUpdate(k, cfg);
-            });
-        }
-        else if (auto flowController = qobject_cast<FlowController*>(obj)) {
-            QString k = flowController->d_key;
-            connect(flowController, &FlowController::flowUpdate, [this, k](int i, double d){
-                emit flowUpdate(k, i, d);
-            });
-            connect(flowController, &FlowController::flowSetpointUpdate, [this, k](int i, double d){
-                emit flowSetpointUpdate(k, i, d);
-            });
-            connect(flowController, &FlowController::pressureUpdate, [this, k](double d){
-                emit gasPressureUpdate(k, d);
-            });
-            connect(flowController, &FlowController::pressureSetpointUpdate, [this, k](double d){
-               emit gasPressureSetpointUpdate(k, d);
-            });
-            connect(flowController, &FlowController::pressureControlMode, [this, k](bool b){
-                emit gasPressureControlMode(k, b);
-            });
-        }
-        else if (auto pressureController = qobject_cast<PressureController*>(obj)) {
-            QString k = pressureController->d_key;
-            connect(pressureController, &PressureController::pressureUpdate, this, [this, k](double d){
-                emit pressureUpdate(k, d);
-            });
-            connect(pressureController, &PressureController::pressureSetpointUpdate, this, [this, k](double d){
-                emit pressureSetpointUpdate(k, d);
-            });
-            connect(pressureController, &PressureController::pressureControlMode, this, [this, k](bool b){
-                emit pressureControlMode(k, b);
-            });
-        }
-        else if (auto tempController = qobject_cast<TemperatureController*>(obj)) {
-            QString k = tempController->d_key;
-            connect(tempController, &TemperatureController::channelEnableUpdate, this, [this, k](uint i, bool en){
-                emit temperatureEnableUpdate(k, i, en);
-            });
-            connect(tempController, &TemperatureController::temperatureUpdate, this, [this, k](uint i, double t) {
-                emit temperatureUpdate(k, i, t);
-            });
-        }
-        else if (auto lifScope = qobject_cast<LifScope*>(obj)) {
-            connect(lifScope, &LifScope::waveformRead, this, &HardwareManager::lifScopeShotAcquired);
-            connect(lifScope, &LifScope::configAcqComplete, this, &HardwareManager::lifConfigAcqStarted);
-        }
-        else if (auto lifLaser = qobject_cast<LifLaser*>(obj)) {
-            connect(lifLaser, &LifLaser::laserPosUpdate, this, &HardwareManager::lifLaserPosUpdate);
-            connect(lifLaser, &LifLaser::laserFlashlampUpdate, this, &HardwareManager::lifLaserFlashlampUpdate);
-        }
-
-        // Handle threaded hardware
-        if(obj->d_threaded) {
-            auto t = new QThread(this);
-            t->setObjectName(obj->d_key + "Thread");
-            obj->moveToThread(t);
-            connect(t, &QThread::started, obj, &HardwareObject::bcInitInstrument);
-        } else {
-            obj->setParent(this);
-        }
-    }
-
-    // Setup ClockManager signals
-    if (pu_clockManager) {
-        connect(pu_clockManager.get(), &ClockManager::logMessage, this, &HardwareManager::logMessage);
-        connect(pu_clockManager.get(), &ClockManager::clockFrequencyUpdate, this, &HardwareManager::clockFrequencyUpdate);
-    }
-
-    
 }
 
 // Phase 2.4.3: Runtime configuration integration methods

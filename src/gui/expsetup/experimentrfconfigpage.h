@@ -17,6 +17,8 @@ public:
     ExperimentRfConfigPage(Experiment *exp, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, QWidget *parent = nullptr);
 
     // ExperimentConfigPage interface
+    RfConfigWidget *rfConfigWidget() const { return p_rfc; }
+
 public slots:
     void initialize() override;
     bool validate() override;

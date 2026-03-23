@@ -1,6 +1,8 @@
 #include <gui/widget/rfconfigwidget.h>
 #include "ui_rfconfigwidget.h"
 
+#include <QPushButton>
+
 RfConfigWidget::RfConfigWidget(QWidget *parent) :
     QWidget(parent), SettingsStorage(BC::Key::RfConfigWidget::key),
     ui(new Ui::RfConfigWidget)
@@ -35,6 +37,15 @@ RfConfigWidget::RfConfigWidget(QWidget *parent) :
     connect(ui->commonLoCheckBox,&QCheckBox::toggled,p_ctm,&ClockTableModel::setCommonLo);
     connect(ui->commonLoCheckBox,&QCheckBox::toggled,this,&RfConfigWidget::edited);
     connect(p_ctm,&ClockTableModel::dataChanged,this,&RfConfigWidget::edited);
+
+    auto applyButton = new QPushButton(tr("Apply Clock Settings Now"), this);
+    applyButton->setToolTip(tr("Send current clock configuration to hardware immediately."));
+    ui->clockConfigBox->layout()->addWidget(applyButton);
+    connect(applyButton, &QPushButton::clicked, this, [this](){
+        RfConfig rfc;
+        toRfConfig(rfc);
+        emit applyClocks(rfc.getClocks());
+    });
 
 }
 
