@@ -30,18 +30,18 @@ Hardware Menu, and Settings/HeaderStorage.
 ## 2. Experiment Lifecycle
 
 ### 2.1 Experiment Setup
-- [ ] Quick Experiment dialog opens and shows current hardware configuration
+- [x] Quick Experiment dialog opens and shows current hardware configuration
 
 ### 2.2 Experiment Execution (Virtual Hardware)
-- [ ] Target Duration experiment works
+- [x] Target Duration experiment works
 - [ ] Peak Up mode starts (no experiment number assigned)
-- [ ] Forever mode starts and can be stopped
+- [x] Forever mode starts and can be stopped
 - [ ] LO Scan experiment works (if applicable hardware configured)
 - [ ] DR Scan experiment works (if applicable hardware configured)
 
 ### 2.3 Data Recording
-- [ ] Aux data (flow, pressure, temperature) recorded correctly
-- [ ] Rolling data files created and populated
+- [x] Aux data (flow, pressure, temperature) recorded correctly
+- [x] Rolling data files created and populated
 
 ### 2.4 Multi-Step Acquisitions
 - [ ] LO Scan with multiple steps completes all steps

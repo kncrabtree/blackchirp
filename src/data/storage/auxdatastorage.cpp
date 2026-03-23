@@ -39,14 +39,7 @@ AuxDataStorage::AuxDataStorage(BlackchirpCSV *csv, int number, const QString pat
 
 void AuxDataStorage::registerKey(const QString objKey, const QString key)
 {
-    auto k = BC::Aux::keyTemplate.arg(objKey).arg(key);
     d_allowedKeys.insert(makeKey(objKey,key));
-}
-
-void AuxDataStorage::registerKey(const QString hwKey, const QString hwSubKey, const QString key)
-{
-    auto k = BC::Aux::hwKeyTemplate.arg(hwKey).arg(hwSubKey).arg(key);
-    d_allowedKeys.insert(makeKey(hwKey,hwSubKey,key));
 }
 
 void AuxDataStorage::addDataPoints(AuxDataStorage::AuxDataMap &m)

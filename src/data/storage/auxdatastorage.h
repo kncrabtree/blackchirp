@@ -13,7 +13,6 @@ class BlackchirpCSV;
 
 namespace  BC::Aux {
 static const QString keyTemplate{"%1.%2"};
-static const QString hwKeyTemplate{"%1.%2.%3"};
 }
 
 class AuxDataStorage
@@ -26,8 +25,8 @@ public:
         AuxDataMap map;
     };
 
-    static inline QString makeKey(const QString s1, const QString s2, const QString s3 = "") {
-        return s3.isEmpty() ? BC::Aux::keyTemplate.arg(s1).arg(s2) : BC::Aux::hwKeyTemplate.arg(s1).arg(s2).arg(s3);
+    static inline QString makeKey(const QString s1, const QString s2) {
+        return BC::Aux::keyTemplate.arg(s1).arg(s2);
     }
     int d_number{-1};
     QString d_path{""};
@@ -36,7 +35,6 @@ public:
     AuxDataStorage(BlackchirpCSV *csv, int number, const QString path="");
 
     void registerKey(const QString objKey, const QString key);
-    void registerKey(const QString hwKey, const QString hwSubKey, const QString key);
 
     void addDataPoints(AuxDataMap &m);
 

@@ -827,19 +827,19 @@ void HardwareManager::setupHardwareObject(HardwareObject* obj)
     connect(obj, &HardwareObject::auxDataRead, [obj, this](AuxDataStorage::AuxDataMap m){
         AuxDataStorage::AuxDataMap out;
         for(auto it = m.cbegin(); it != m.cend(); ++it)
-            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_model, it->first), it->second});
+            out.insert({AuxDataStorage::makeKey(obj->d_key, it->first), it->second});
         emit auxData(out);
     });
     connect(obj, &HardwareObject::auxDataRead, [obj, this](AuxDataStorage::AuxDataMap m){
         AuxDataStorage::AuxDataMap out;
         for(auto it = m.cbegin(); it != m.cend(); ++it)
-            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_model, it->first), it->second});
+            out.insert({AuxDataStorage::makeKey(obj->d_key, it->first), it->second});
         emit validationData(out);
     });
     connect(obj, &HardwareObject::rollingDataRead, [obj, this](AuxDataStorage::AuxDataMap m){
         AuxDataStorage::AuxDataMap out;
         for(auto it = m.cbegin(); it != m.cend(); ++it)
-            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_model, it->first), it->second});
+            out.insert({AuxDataStorage::makeKey(obj->d_key, it->first), it->second});
         emit rollingData(out, QDateTime::currentDateTime());
     });
     connect(this, &HardwareManager::beginAcquisition, obj, &HardwareObject::beginAcquisition);
@@ -954,21 +954,21 @@ void HardwareManager::setupHardwareObjectWithTracking(HardwareObject* obj)
     storeConnection(hwKey, connect(obj, &HardwareObject::auxDataRead, [obj, this](AuxDataStorage::AuxDataMap m){
         AuxDataStorage::AuxDataMap out;
         for(auto it = m.cbegin(); it != m.cend(); ++it)
-            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_model, it->first), it->second});
+            out.insert({AuxDataStorage::makeKey(obj->d_key, it->first), it->second});
         emit auxData(out);
     }));
     
     storeConnection(hwKey, connect(obj, &HardwareObject::auxDataRead, [obj, this](AuxDataStorage::AuxDataMap m){
         AuxDataStorage::AuxDataMap out;
         for(auto it = m.cbegin(); it != m.cend(); ++it)
-            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_model, it->first), it->second});
+            out.insert({AuxDataStorage::makeKey(obj->d_key, it->first), it->second});
         emit validationData(out);
     }));
     
     storeConnection(hwKey, connect(obj, &HardwareObject::rollingDataRead, [obj, this](AuxDataStorage::AuxDataMap m){
         AuxDataStorage::AuxDataMap out;
         for(auto it = m.cbegin(); it != m.cend(); ++it)
-            out.insert({AuxDataStorage::makeKey(obj->d_key, obj->d_model, it->first), it->second});
+            out.insert({AuxDataStorage::makeKey(obj->d_key, it->first), it->second});
         emit rollingData(out, QDateTime::currentDateTime());
     }));
     

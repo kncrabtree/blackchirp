@@ -66,14 +66,8 @@ void AuxDataViewWidget::pointUpdated(const AuxDataStorage::AuxDataMap m, const Q
         //locate curve by name and append point
         bool foundCurve = false;
 
-        auto l = key.split(".",Qt::SkipEmptyParts);
         QString realKey = key;
-        if(l.size() >= 2)
-            realKey = QString("%1.%2").arg(l.constFirst(),l.constLast());
-
-        QString title = realKey;
-        if(l.size() > 3)
-            title = l.at(l.size()-2);
+        QString title = key;
 
         for(auto c : d_plotCurves)
         {
