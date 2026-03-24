@@ -25,8 +25,8 @@ HardwareObject::HardwareObject(const QString& hwType, const QString& hwImpl, con
     set(BC::Key::HW::model, d_model);
 
     // Load or set default values from settings
-    d_name = getOrSetDefault(BC::Key::HW::name, QString("%1 %2 (%3)")
-                             .arg(hwType,label,hwImpl)); // Use implementation name as default
+    setDefault(BC::Key::HW::name, QString("%1 %2 (%3)")
+               .arg(hwType,label,hwImpl)); // Seed user-editable display name
     d_critical = get(BC::Key::HW::critical, true); // Default to critical
     setDefault(BC::Key::HW::rInterval, 0);
 
@@ -79,12 +79,12 @@ bool HardwareObject::setCommProtocol(CommunicationProtocol::CommType commType, Q
     // Validate that the requested protocol is supported
     auto supported = supportedProtocols();
     if (!supported.contains(commType)) {
-        d_errorString = QString("Protocol %1 not supported by %2").arg(protocolName).arg(d_name);
+        d_errorString = QString("Protocol %1 not supported by %2").arg(protocolName).arg(d_key);
         emit logMessage(d_errorString, LogHandler::Error);
         return false;
     }
-    
-    emit logMessage(QString("Switching %1 to %2 protocol").arg(d_name).arg(protocolName), LogHandler::Normal);
+
+    emit logMessage(QString("Switching %1 to %2 protocol").arg(d_key).arg(protocolName), LogHandler::Normal);
     
     // Store the new protocol type in settings
     set(BC::Key::HW::commType, static_cast<int>(commType));
@@ -94,7 +94,7 @@ bool HardwareObject::setCommProtocol(CommunicationProtocol::CommType commType, Q
     // Rebuild communication with new protocol
     buildCommunication(gc, commType);
     
-    emit logMessage(QString("Protocol switch to %1 completed for %2").arg(protocolName).arg(d_name), LogHandler::Normal);
+    emit logMessage(QString("Protocol switch to %1 completed for %2").arg(protocolName).arg(d_key), LogHandler::Normal);
     
     return true;
 }
@@ -163,7 +163,6 @@ void HardwareObject::bcReadAuxData()
 void HardwareObject::bcReadSettings()
 {
     readAll();
-    d_name = get(BC::Key::HW::name,QString(""));
     d_critical = get(BC::Key::HW::critical,true);
     auto interval = get(BC::Key::HW::rInterval,0);
 
@@ -263,7 +262,7 @@ bool HardwareObject::hwPrepareForExperiment(Experiment &exp)
         {
             if(d_critical)
             {
-                exp.d_errorString = QString("%1 is not connected").arg(d_name);
+                exp.d_errorString = QString("%1 is not connected").arg(d_key);
                 return false;
             }
             else

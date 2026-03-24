@@ -48,7 +48,7 @@ QString BC::Key::migrateIndexKey(const QString& oldKey, const QString& type, int
     auto [keyType, keyIndex] = parseIndexKey(oldKey);
     if (keyType == type && keyIndex == index) {
         // Generate default label based on index
-        QString defaultLabel = QString("device%1").arg(index);
+        QString defaultLabel = QString("Device%1").arg(index);
         return hwKey(type, defaultLabel);
     }
     return oldKey; // Not a matching index key
@@ -64,21 +64,21 @@ QString BC::Key::generateDefaultLabel(const QString& /* type */, const QStringLi
 {
     // Default label priority order
     static const QStringList defaultLabels = {
-        "default", "main", "primary", "secondary", "backup"
+        "Default", "Main", "Primary", "Secondary", "Backup"
     };
-    
+
     // Try standard defaults first
     for (const QString& label : defaultLabels) {
         if (!existingLabels.contains(label)) {
             return label;
         }
     }
-    
+
     // Fall back to numbered defaults
     int counter = 1;
     QString candidate;
     do {
-        candidate = QString("device%1").arg(counter++);
+        candidate = QString("Device%1").arg(counter++);
     } while (existingLabels.contains(candidate));
     
     return candidate;

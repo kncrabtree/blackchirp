@@ -17,7 +17,7 @@ double LifLaser::readPosition()
     emit laserPosUpdate(out);
     if(out < 0.0)
     {
-        emit logMessage(QString("Could not read position.").arg(d_name),LogHandler::Error);
+        emit logMessage(QString("Could not read position for %1.").arg(d_key),LogHandler::Error);
         emit hardwareFailure();
     }
 

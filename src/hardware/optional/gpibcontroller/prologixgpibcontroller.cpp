@@ -21,17 +21,17 @@ bool PrologixGpibController::testConnection()
     QByteArray resp = p_comm->queryCmd(QString("++ver\n"));
     if(resp.isEmpty())
     {
-        d_errorString = QString("%1 gave a null response to ID query").arg(d_name);
+        d_errorString = QString("%1 gave a null response to ID query").arg(d_key);
         return false;
     }
     
     if(!resp.startsWith(expectedIdResponse().toUtf8()))
     {
-        d_errorString = QString("%1 response invalid. Received: %2").arg(d_name).arg(QString(resp));
+        d_errorString = QString("%1 response invalid. Received: %2").arg(d_key).arg(QString(resp));
         return false;
     }
 
-    emit logMessage(QString("%1 ID response: %2").arg(d_name).arg(QString(resp)));
+    emit logMessage(QString("%1 ID response: %2").arg(d_key).arg(QString(resp)));
 
     // Send common configuration commands
     p_comm->writeCmd(QString("++auto 0\n"));

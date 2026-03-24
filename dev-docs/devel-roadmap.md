@@ -4,11 +4,6 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 
 ## Small
 
-### [Remove d_name from HardwareObject](remove-d-name.md)
-Replace `HardwareObject::d_name` with `d_key` for UI display. Capitalize default label
-suggestions ("Default", "Main", etc.) so hwKeys look presentable as titles. ~46 usages
-across 16 files; a few AWG implementations need SCPI names switched to `d_model`.
-
 ### [Widget Settings Cleanup on Profile Removal](widget-settings-cleanup.md)
 When a hardware profile is purged, also purge associated widget settings (e.g.,
 `PulseWidget.PulseGenerator.main`). Currently only the hardware object's own settings

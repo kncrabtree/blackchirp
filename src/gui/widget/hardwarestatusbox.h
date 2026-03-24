@@ -9,9 +9,6 @@ class HardwareStatusBox : public QGroupBox
 public:
     HardwareStatusBox(QString key, QWidget *parent = nullptr);
 
-public slots:
-    void updateTitle(const QString &n);
-
 protected:
     QString d_key;
     

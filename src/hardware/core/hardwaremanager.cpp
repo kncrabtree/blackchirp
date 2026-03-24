@@ -63,7 +63,7 @@ QString HardwareManager::getHwName(const QString key)
 {
     auto hw = findHardware<HardwareObject>(key);
     if(hw)
-        return hw->d_name;
+        return hw->d_key;
 
     return QString();
 }
@@ -85,7 +85,7 @@ void HardwareManager::initialize()
         auto hw = it->second;
         if(hw->d_commType == CommunicationProtocol::Virtual)
             emit logMessage(QString("%1 is a virtual instrument. Be cautious about taking real measurements!")
-                            .arg(hw->d_name),LogHandler::Warning);
+                            .arg(hw->d_key),LogHandler::Warning);
     }
 
     emit hwInitializationComplete();
@@ -118,7 +118,7 @@ void HardwareManager::handleConnectionResult(const QString& hwKey, bool success,
     if(success)
     {
         connect(obj,&HardwareObject::hardwareFailure,this,&HardwareManager::hardwareFailure,Qt::UniqueConnection);
-        emit logMessage(obj->d_name + QString(": Connected successfully."));
+        emit logMessage(obj->d_key + QString(": Connected successfully."));
     }
     else
     {
@@ -126,7 +126,7 @@ void HardwareManager::handleConnectionResult(const QString& hwKey, bool success,
         LogHandler::MessageCode code = LogHandler::Error;
         if(!obj->d_critical)
             code = LogHandler::Warning;
-        emit logMessage(obj->d_name + QString(": Connection failed!"),code);
+        emit logMessage(obj->d_key + QString(": Connection failed!"),code);
         if(!msg.isEmpty())
             emit logMessage(msg,code);
     }
@@ -181,7 +181,7 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
 
             if(!success)
             {
-                emit logMessage(QString("Error initializing %1").arg(obj->d_name),LogHandler::Error);
+                emit logMessage(QString("Error initializing %1").arg(obj->d_key),LogHandler::Error);
                 break;
             }
         }
@@ -819,7 +819,7 @@ void HardwareManager::setupHardwareObject(HardwareObject* obj)
 {
     // Common signal connections for all hardware objects
     connect(obj, &HardwareObject::logMessage, [this, obj](QString msg, LogHandler::MessageCode mc){
-        emit logMessage(QString("%1: %2").arg(obj->d_name).arg(msg), mc);
+        emit logMessage(QString("%1: %2").arg(obj->d_key).arg(msg), mc);
     });
     connect(obj, &HardwareObject::connected, [obj, this](bool success, QString msg){
         handleConnectionResult(obj->d_key, success, msg);
@@ -862,8 +862,8 @@ HardwareObject* HardwareManager::createSpecificHardware(const QString& type, con
     // Set up the hardware object with common signal connections
     setupHardwareObject(hwObj);
     
-    emit logMessage(QString("Successfully created hardware: %1 (%2.%3)")
-                   .arg(hwObj->d_name, type, label), LogHandler::Normal);
+    emit logMessage(QString("Successfully created hardware: %1")
+                   .arg(hwObj->d_key), LogHandler::Normal);
     
     return hwObj;
 }
@@ -891,7 +891,7 @@ void HardwareManager::removeHardwareInternal(const QString& hwKey)
         return;
     }
     
-    emit logMessage(QString("Removing hardware: %1 (%2)").arg(obj->d_name, hwKey), LogHandler::Normal);
+    emit logMessage(QString("Removing hardware: %1").arg(obj->d_key), LogHandler::Normal);
     
     // Step 2b: Use stored connection information for robust disconnection
     disconnectStoredConnections(hwKey);
@@ -903,7 +903,7 @@ void HardwareManager::removeHardwareInternal(const QString& hwKey)
             // Stop the thread gracefully
             thread->quit();
             if (!thread->wait(5000)) { // 5 second timeout
-                emit logMessage(QString("Warning: Thread for hardware %1 did not stop gracefully, terminating").arg(obj->d_name), LogHandler::Warning);
+                emit logMessage(QString("Warning: Thread for hardware %1 did not stop gracefully, terminating").arg(obj->d_key), LogHandler::Warning);
                 thread->terminate();
                 thread->wait(1000); // Give it 1 more second after terminate
             }
@@ -925,7 +925,7 @@ void HardwareManager::removeHardwareInternal(const QString& hwKey)
     // Emit unified connectionResult signal (hardware removed = disconnected)  
     emit connectionResult(hwKey, false, QString("Hardware removed"));
     
-    emit logMessage(QString("Successfully removed hardware: %1 (%2)").arg(obj->d_name, hwKey), LogHandler::Normal);
+    emit logMessage(QString("Successfully removed hardware: %1").arg(hwKey), LogHandler::Normal);
 }
 
 // Phase 3.3.2: Connection tracking infrastructure implementation
@@ -944,7 +944,7 @@ void HardwareManager::setupHardwareObjectWithTracking(HardwareObject* obj)
     
     // Common signal connections for all hardware objects - store each connection
     storeConnection(hwKey, connect(obj, &HardwareObject::logMessage, [this, obj](QString msg, LogHandler::MessageCode mc){
-        emit logMessage(QString("%1: %2").arg(obj->d_name).arg(msg), mc);
+        emit logMessage(QString("%1: %2").arg(obj->d_key).arg(msg), mc);
     }));
     
     storeConnection(hwKey, connect(obj, &HardwareObject::connected, [obj, this](bool success, QString msg){
@@ -1122,7 +1122,7 @@ void HardwareManager::addHardwareInternal(const QString& hwKey, const QString& i
             // Start the thread
             thread->start();
             
-            emit logMessage(QString("Started thread for hardware: %1").arg(hwObj->d_name), LogHandler::Normal);
+            emit logMessage(QString("Started thread for hardware: %1").arg(hwObj->d_key), LogHandler::Normal);
         } else {
             hwObj->setParent(this);
             // Initialize non-threaded hardware directly
@@ -1131,9 +1131,9 @@ void HardwareManager::addHardwareInternal(const QString& hwKey, const QString& i
         
         // Note: Connection testing is deferred until all hardware changes are complete
         // to avoid GPIB controller resolution issues during dynamic creation
-        emit logMessage(QString("Hardware created and initialized: %1 (connection testing deferred)").arg(hwObj->d_name), LogHandler::Normal);
-        
-        emit logMessage(QString("Successfully added hardware: %1 (%2)").arg(hwObj->d_name, hwKey), LogHandler::Normal);
+        emit logMessage(QString("Hardware created and initialized: %1 (connection testing deferred)").arg(hwObj->d_key), LogHandler::Normal);
+
+        emit logMessage(QString("Successfully added hardware: %1").arg(hwKey), LogHandler::Normal);
         
     } catch (const std::exception& e) {
         QString errorMsg = QString("Hardware initialization failed with exception: %1").arg(e.what());

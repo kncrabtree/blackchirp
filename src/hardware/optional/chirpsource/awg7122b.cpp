@@ -128,13 +128,13 @@ QString AWG7122B::getWaveformKey(const ChirpConfig cc)
 
     QByteArray resp = p_comm->queryCmd(QString("WList:Size?\n"));
     if(resp.isEmpty())
-        return QString("!Could not query waveform list size from %1.").arg(d_name);
+        return QString("!Could not query waveform list size from %1.").arg(d_key);
 
     bool ok = false;
     int n = resp.trimmed().toInt(&ok);
     if(!ok)
         return QString("Could not parse waveform list size from %1. Response: %2 (Hex: %3)")
-                .arg(d_name).arg(QString(resp)).arg(QString(resp.toHex()));
+                .arg(d_key).arg(QString(resp)).arg(QString(resp.toHex()));
 
     //get list of known hashes/waveforms
     QList<QPair<QString,QString>> hashList;

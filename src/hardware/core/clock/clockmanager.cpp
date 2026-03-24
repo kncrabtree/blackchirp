@@ -109,8 +109,8 @@ bool ClockManager::configureClocks(QHash<RfConfig::ClockType, RfConfig::ClockFre
 
         if(!c->addRole(type,d.output))
         {
-            emit logMessage(QString("The output number requested for %1 (%2) is out of range (only %2 outputs are available).")
-                               .arg(c->d_name).arg(d.output).arg(c->numOutputs()),LogHandler::Error);
+            emit logMessage(QString("The output number requested for %1 (%2) is out of range (only %3 outputs are available).")
+                               .arg(c->d_key).arg(d.output).arg(c->numOutputs()),LogHandler::Error);
             return false;
         }
 
@@ -126,7 +126,7 @@ bool ClockManager::configureClocks(QHash<RfConfig::ClockType, RfConfig::ClockFre
         if(actualFreq < 0.0)
         {
             emit logMessage(QString("Could not set %1 to %2 MHz (raw frequency = %3 MHz).")
-                               .arg(c->d_name)
+                               .arg(c->d_key)
                                .arg(d.desiredFreqMHz,0,'f',6)
                                .arg(d.desiredFreqMHz/c->multFactor(d.output),0,'f',6),LogHandler::Error);
             return false;
@@ -194,7 +194,7 @@ void ClockManager::setupClocks()
         auto names = c->channelNames();
         for(int j=0; j<c->numOutputs(); j++)
         {
-            QString pn = c->d_name;
+            QString pn = c->d_key;
             pn.append(QString(" "));
             if(j < names.size())
                 pn.append(names.at(j));

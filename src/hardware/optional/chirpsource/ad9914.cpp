@@ -142,7 +142,7 @@ bool AD9914::prepareForExperiment(Experiment &exp)
     QByteArray resp = p_comm->queryCmd(QString("IN\n"));
     if(!resp.startsWith(QByteArray("SUCCESS")))
     {
-        exp.d_errorString = QString("Could not initialize %1").arg(d_name);
+        exp.d_errorString = QString("Could not initialize %1").arg(d_key);
         emit hardwareFailure();
         return false;
     }

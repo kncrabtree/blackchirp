@@ -63,7 +63,7 @@ HWSettingsModel::HWSettingsModel(QString key, QStringList forbiddenKeys, QObject
     }
 }
 
-void HWSettingsModel::saveChanges(const QString name, int selectedProtocol)
+void HWSettingsModel::saveChanges(int selectedProtocol)
 {
     for(int i=0; i<pu_rootItem->childCount(); ++i)
     {
@@ -95,9 +95,6 @@ void HWSettingsModel::saveChanges(const QString name, int selectedProtocol)
         }
     }
 
-    if(!name.isEmpty())
-        set(BC::Key::HW::name,name);
-    
     // Save protocol selection if provided
     if(selectedProtocol >= 0)
         set(BC::Key::HW::commType, selectedProtocol);

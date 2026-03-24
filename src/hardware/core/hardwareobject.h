@@ -26,11 +26,11 @@
  *
  * This class establishes a common interface for all hardware. Adding a new
  * piece of hardware to the code involves creating a subclass of
- * HardwareObject. Each hardware object has a name (::d_name) that is used in
- * the user interface, and a key (::d_key) and model (::d_model) that are
- * used to refer to the object in the settings file. The ::d_key specifies a
- * particular type.label combination, and the ::d_model specifies the
- * implementation of that hardware type. Subclasses must assign strings to
+ * HardwareObject. Each hardware object has a key (::d_key) and model
+ * (::d_model) that are used to refer to the object in the settings file.
+ * The ::d_key specifies a particular type.label combination (e.g.,
+ * "PulseGenerator.Default"), and the ::d_model specifies the implementation
+ * of that hardware type. Subclasses must assign strings to
  * these variables in their constructors and must also set the
  * CommunicationProtocol in the class constructor. Other options, including
  * whether the HardwareObject is pushed to its own thread of execution or
@@ -189,7 +189,6 @@ public:
     explicit HardwareObject(const QString& hwType, const QString& hwImpl, const QString& label, QObject *parent = nullptr);
     virtual ~HardwareObject();
 
-    QString d_name; /*!< Name to be displayed on UI */
     const QString d_key; /*!< Settings group key: "hwType.label" */
     const QString d_model; /*!< Implementation/model name (e.g., "AWG70002a") */
 
@@ -355,9 +354,9 @@ public slots:
      * 
      * This function forces a reload of all settings from disk. It is called
      * whenever the user closes the Hardware Settings dialog box corresponding
-     * to this object. It updates ::d_name and ::d_critical, and it restarts
-     * the rolling data timer. It then calls readSettings() so that derived
-     * classes can refresh any necessary settings.
+     * to this object. It updates ::d_critical and restarts the rolling data
+     * timer. It then calls readSettings() so that derived classes can refresh
+     * any necessary settings.
      * 
      * \sa readSettings
      * 

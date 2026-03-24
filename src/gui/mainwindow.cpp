@@ -236,7 +236,7 @@ void MainWindow::buildHardwareUI()
 
         HardwareUIElements elements;
 
-        auto act = ui->menuHardware->addAction(QString("%1: %2").arg(key, p_hwm->getHwName(key)));
+        auto act = ui->menuHardware->addAction(key);
         act->setObjectName(Ui::actionStr+key);
         elements.menuAction = act;
 
@@ -1213,18 +1213,8 @@ HWDialog *MainWindow::createHWDialog(const QString key, QWidget *controlWidget)
 {
     auto out = new HWDialog(key,p_hwm->getForbiddenKeys(key),controlWidget);
     d_openDialogs.insert({key,out});
-    connect(out,&HWDialog::accepted,[this,key,out](){
+    connect(out,&HWDialog::accepted,[this,key](){
         QMetaObject::invokeMethod(p_hwm,[this,key](){ p_hwm->updateObjectSettings(key); });
-        auto n = out->getHwName();
-        auto act = ui->menuHardware->findChild<QAction*>(Ui::actionStr+key,Qt::FindDirectChildrenOnly);
-        if(act)
-            act->setText(key+": "+n);
-
-        auto sb = ui->hwStatusWidget->findChild<HardwareStatusBox*>(key+Ui::sbStr,Qt::FindDirectChildrenOnly);
-        if(sb)
-            // dynamic_cast<HardwareStatusBox*>(sb)->updateTitle(n);
-            sb->updateTitle(n);
-
     });
     connect(out,&QDialog::finished,out,&QDialog::deleteLater);
     connect(out,&HWDialog::destroyed,[this,key](){

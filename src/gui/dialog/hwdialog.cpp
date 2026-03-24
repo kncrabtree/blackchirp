@@ -4,7 +4,6 @@
 #include <QTreeView>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QLineEdit>
 #include <QLabel>
 #include <QGroupBox>
 #include <QDialogButtonBox>
@@ -24,12 +23,12 @@ HWDialog::HWDialog(QString key, QStringList forbiddenKeys, QWidget *controlWidge
     auto vbl = new QVBoxLayout;
     
     SettingsStorage s(key,SettingsStorage::Hardware);
-    auto name = s.get(BC::Key::HW::name,key);
-    setWindowTitle(QString("%1 Settings").arg(name));
+    auto model = s.get(BC::Key::HW::model, key);
+    setWindowTitle(QString("%1 Settings").arg(key));
 
     if(controlWidget)
     {
-        auto cBox = new QGroupBox(QString("%1 Control").arg(name));
+        auto cBox = new QGroupBox(QString("%1 Control").arg(key));
         auto cvbl = new QVBoxLayout;
         
         auto cLabel = new QLabel(QString("Changes made in this section will be applied immediately."));
@@ -44,7 +43,7 @@ HWDialog::HWDialog(QString key, QStringList forbiddenKeys, QWidget *controlWidge
         vbl->addWidget(cBox,0);
     }
     
-    auto sBox = new QGroupBox(QString("%1 Settings").arg(name));
+    auto sBox = new QGroupBox(QString("%1 Settings").arg(key));
     auto svbl = new QVBoxLayout;
     
     auto sLabel = new QLabel("Changes made in this section will only be applied when this dialog is closed with the Ok button. Editing these settings incorrectly may result in unexpected behavior. Consider backing up your config file before making changes.");
@@ -52,14 +51,15 @@ HWDialog::HWDialog(QString key, QStringList forbiddenKeys, QWidget *controlWidge
     sLabel->setAlignment(Qt::AlignCenter);
     svbl->addWidget(sLabel,0);
 
-    //Box for editing hardware object name
+    //Label showing hardware model
     auto nl = new QHBoxLayout;
-    auto nLbl = new QLabel("Name");
+    auto nLbl = new QLabel("Model");
     nl->addWidget(nLbl,0);
-    p_nameEdit = new QLineEdit(name,this);
-    nl->addWidget(p_nameEdit,1);
+    auto modelLbl = new QLabel(model,this);
+    nl->addWidget(modelLbl,1);
     svbl->addLayout(nl);
-    
+
+
     // Protocol selection if multiple protocols are supported
     auto supportedProtocolsVar = s.get(BC::Key::HW::supportedProtocols, QVariantList());
     auto supportedProtocols = supportedProtocolsVar.toList();
@@ -151,11 +151,6 @@ HWDialog::HWDialog(QString key, QStringList forbiddenKeys, QWidget *controlWidge
     setLayout(vbl);
 }
 
-QString HWDialog::getHwName() const
-{
-    return p_nameEdit->text();
-}
-
 int HWDialog::getSelectedProtocol() const
 {
     if(p_protocolCombo) {
@@ -201,7 +196,7 @@ void HWDialog::remove()
 void HWDialog::accept()
 {
     auto selectedProtocol = getSelectedProtocol();
-    p_model->saveChanges(p_nameEdit->text(), selectedProtocol);
+    p_model->saveChanges(selectedProtocol);
 
     QDialog::accept();
 }

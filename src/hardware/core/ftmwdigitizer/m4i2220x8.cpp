@@ -147,7 +147,7 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
 
     SpectrumLibrary* spcmLib = getSpectrumLibrary();
     if (!spcmLib) {
-        exp.d_errorString = QString("Could not initialize %1. Spectrum library not available.").arg(d_name);
+        exp.d_errorString = QString("Could not initialize %1. Spectrum library not available.").arg(d_key);
         return false;
     }
 
@@ -303,7 +303,7 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
     QByteArray errText(1000,'\0');
     if(spcmLib->spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
     {
-        exp.d_errorString = QString("Could not initialize %1. Error message: %2").arg(d_name).arg(QString::fromLatin1(errText));
+        exp.d_errorString = QString("Could not initialize %1. Error message: %2").arg(d_key).arg(QString::fromLatin1(errText));
         spcmLib->spcm_dwInvalidateBuf(p_handle,SPCM_BUF_DATA);
         delete[] p_m4iBuffer;
         return false;

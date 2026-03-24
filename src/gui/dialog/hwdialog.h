@@ -5,7 +5,6 @@
 
 class HWSettingsModel;
 class QTreeView;
-class QLineEdit;
 class QComboBox;
 class QLabel;
 
@@ -15,13 +14,11 @@ class HWDialog : public QDialog
 public:
     HWDialog(QString key, QStringList forbiddenKeys, QWidget *controlWidget = nullptr, QWidget *parent = nullptr);
 
-    QString getHwName() const;
     int getSelectedProtocol() const;
     
 private:
     QTreeView *p_view;
     HWSettingsModel *p_model;
-    QLineEdit *p_nameEdit;
     QComboBox *p_protocolCombo;
     QLabel *p_protocolLabel;
     QString d_hwKey;

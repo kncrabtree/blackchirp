@@ -51,7 +51,7 @@ void GpibInstrument::setAddress(int a)
     }
     
     // Try to reserve the new address
-    if (a >= 0 && !d_ownerKey.isEmpty() && p_controller->reserveAddress(a, d_ownerKey, hwParent->d_name)) {
+    if (a >= 0 && !d_ownerKey.isEmpty() && p_controller->reserveAddress(a, d_ownerKey, hwParent->d_key)) {
         d_address = a;
     } else {
         d_address = -1;  // Failed to reserve, mark as invalid
@@ -111,7 +111,7 @@ bool GpibInstrument::testConnection()
     int requestedAddress = s.getGroupValue<int>(BC::Key::Comm::gpib, BC::Key::GPIB::gpibAddress, 1);
     
     // Try to reserve the address
-    if (!p_controller->reserveAddress(requestedAddress, d_ownerKey, hwParent->d_name)) {
+    if (!p_controller->reserveAddress(requestedAddress, d_ownerKey, hwParent->d_key)) {
         // Address conflict - someone else is already using this address
         QString conflictOwnerName = p_controller->getAddressOwnerName(requestedAddress);
         setErrorString(QString("GPIB address %1 is already in use by %2")
