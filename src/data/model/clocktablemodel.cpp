@@ -290,8 +290,6 @@ bool ClockTableModel::setData(const QModelIndex &index, const QVariant &value, i
         {
             d_hwInfo[value.toInt()].used = true;
             d_clockAssignments.insert(type,value.toInt());
-            if(type == d_clockTypes.indexOf(RfConfig::UpLO) && d_commonUpDownLO)
-                d_clockAssignments.insert(RfConfig::DownLO,value.toInt());
 
             auto &hw = d_hwInfo.at(value.toInt());
             d_clockConfigs[type].hwKey = hw.hwKey;
@@ -312,6 +310,19 @@ bool ClockTableModel::setData(const QModelIndex &index, const QVariant &value, i
     }
 
     emit dataChanged(index,index);
+
+    if(d_commonUpDownLO && type == RfConfig::UpLO)
+    {
+        d_clockConfigs[RfConfig::DownLO] = d_clockConfigs[RfConfig::UpLO];
+        if(d_clockAssignments.contains(RfConfig::UpLO))
+            d_clockAssignments.insert(RfConfig::DownLO,d_clockAssignments.value(RfConfig::UpLO));
+        else
+            d_clockAssignments.remove(RfConfig::DownLO);
+
+        int downRow = d_clockTypes.indexOf(RfConfig::DownLO);
+        emit dataChanged(this->index(downRow,0),this->index(downRow,4));
+    }
+
     return true;
 }
 

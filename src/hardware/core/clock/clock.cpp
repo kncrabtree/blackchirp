@@ -21,7 +21,16 @@ Clock::Clock(int numOutputs, bool tunable, const QString& impl, const QString& l
         {
             QVariant type = getArrayValue(outputs,i,role);
             if(type.isValid())
-                addRole(type.value<RfConfig::ClockType>(),i);
+            {
+                auto parts = type.toString().split(",",Qt::SkipEmptyParts);
+                for(const auto &p : parts)
+                {
+                    bool ok;
+                    int roleVal = p.trimmed().toInt(&ok);
+                    if(ok)
+                        addRole(static_cast<RfConfig::ClockType>(roleVal),i);
+                }
+            }
             auto factor = getArrayValue(outputs,i,mf,1.0);
             setMultFactor(factor,i);
         }
@@ -36,11 +45,14 @@ Clock::~Clock()
     for(int i=0; i<d_numOutputs; ++i)
     {
         SettingsMap m;
+        QStringList roleList;
         for(auto it = d_outputRoles.cbegin(); it != d_outputRoles.cend(); ++it)
         {
             if(it.value() == i)
-                m.insert({role,it.key()});
+                roleList.append(QString::number(static_cast<int>(it.key())));
         }
+        if(!roleList.isEmpty())
+            m.insert({role, roleList.join(",")});
         m.insert({mf,d_multFactors.at(i)});
         appendArrayMap(outputs,m);
     }

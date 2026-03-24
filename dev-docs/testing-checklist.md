@@ -34,9 +34,9 @@ Hardware Menu, and Settings/HeaderStorage.
 
 ### 2.2 Experiment Execution (Virtual Hardware)
 - [x] Target Duration experiment works
-- [ ] Peak Up mode starts (no experiment number assigned)
+- [x] Peak Up mode starts (no experiment number assigned)
 - [x] Forever mode starts and can be stopped
-- [ ] LO Scan experiment works (if applicable hardware configured)
+- [x] LO Scan experiment works (if applicable hardware configured)
 - [ ] DR Scan experiment works (if applicable hardware configured)
 
 ### 2.3 Data Recording
@@ -44,19 +44,19 @@ Hardware Menu, and Settings/HeaderStorage.
 - [x] Rolling data files created and populated
 
 ### 2.4 Multi-Step Acquisitions
-- [ ] LO Scan with multiple steps completes all steps
-- [ ] Waveform is properly discarded between steps (stale waveform fix)
-- [ ] Hardware synchronization is stable across steps
+- [x] LO Scan with multiple steps completes all steps
+- [NT] Waveform is properly discarded between steps (stale waveform fix) (cannot test without real hardware)
+- [NT] Hardware synchronization is stable across steps (cannot test without real hardware)
 
 ---
 
 ## 3. Viewer Application
 
-- [ ] blackchirp-viewer builds and launches
-- [ ] Viewer can open and display new-format experiments
-- [ ] Viewer can open and display legacy (devel branch) experiments
-- [ ] FT display works correctly
-- [ ] Hardware information displayed correctly in experiment summary
+- [x] blackchirp-viewer builds and launches
+- [x] Viewer can open and display new-format experiments
+- [x] Viewer can open and display legacy (devel branch) experiments
+- [x] FT display works correctly
+- [x] Hardware information displayed correctly in experiment summary
 
 ---
 

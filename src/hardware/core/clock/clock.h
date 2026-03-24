@@ -16,7 +16,7 @@
  * the Valon5009) to be used for different purposes across instruments without
  * needing to write separate code.
  *
- * The Clock class keeps track of which role(s) it serves; 1 role per output.
+ * The Clock class keeps track of which role(s) it serves (multiple roles per output are supported, e.g. common LO).
  * It also tells the ClockManager whether it is tunable and what its allowed
  * frequency range is (though the range itself is defined in its implementation).
  *

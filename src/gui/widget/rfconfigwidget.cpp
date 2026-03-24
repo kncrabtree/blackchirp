@@ -20,7 +20,7 @@ RfConfigWidget::RfConfigWidget(QWidget *parent) :
 
     ui->awgMultBox->setValue(get(awgM,1));
     ui->chirpMultiplicationSpinBox->setValue(get(chirpM,1));
-    ui->commonLoCheckBox->setChecked(get(comLO,false));
+    auto savedComLO = get(comLO,false);
 
     registerGetter(upSB,std::function<QVariant()>{[this](){ return ui->upconversionSidebandComboBox->currentData(); }});
     registerGetter(downSB,std::function<QVariant()>{[this](){ return ui->downconversionSidebandComboBox->currentData(); }});
@@ -35,6 +35,7 @@ RfConfigWidget::RfConfigWidget(QWidget *parent) :
     ui->clockTableView->setItemDelegate(new ClockTableDelegate);
 
     connect(ui->commonLoCheckBox,&QCheckBox::toggled,p_ctm,&ClockTableModel::setCommonLo);
+    ui->commonLoCheckBox->setChecked(savedComLO);
     connect(ui->commonLoCheckBox,&QCheckBox::toggled,this,&RfConfigWidget::edited);
     connect(p_ctm,&ClockTableModel::dataChanged,this,&RfConfigWidget::edited);
 
