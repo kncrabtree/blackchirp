@@ -47,21 +47,23 @@ bool VendorLibrary::loadLibrary()
     QStringList systemPaths = QCoreApplication::libraryPaths();
     systemPaths << "/usr/lib" << "/usr/local/lib" << "/opt/lib";
     
-    // Build comprehensive list of paths to try
+    // Build comprehensive list of paths to try.
+    // User-configured paths are tried first so that a custom driver
+    // can override a system-installed default.
     QStringList allPaths;
-    
-    // First try library names alone for system path searching
-    allPaths << libraryNames;
-    
-    // Then try each search path combined with each library name
+
+    // 1. User-configured search paths (highest priority)
     for (const QString& searchPath : searchPaths) {
         for (const QString& libName : libraryNames) {
             QString fullPath = QDir(searchPath).absoluteFilePath(libName);
             allPaths << fullPath;
         }
     }
-    
-    // Finally try system paths with library names
+
+    // 2. Bare library names (system dynamic linker resolution)
+    allPaths << libraryNames;
+
+    // 3. Explicit system paths as fallback
     for (const QString& systemPath : systemPaths) {
         for (const QString& libName : libraryNames) {
             QString fullPath = QDir(systemPath).absoluteFilePath(libName);
@@ -72,13 +74,13 @@ bool VendorLibrary::loadLibrary()
     // Try each combination
     for (const QString& path : allPaths) {
         d_attemptedPaths << path;
-        
+
         d_library.setFileName(path);
-        
+
         if (d_library.load()) {
             // Library loaded successfully, now load function pointers
             loadFunctions();
-            
+
             if (d_libraryLoaded) {
                 // Functions loaded successfully - save this path for future use
                 saveSuccessfulLoad(path);

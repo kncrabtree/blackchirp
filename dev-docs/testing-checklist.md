@@ -16,14 +16,14 @@ Hardware Menu, and Settings/HeaderStorage.
 
 ## 1. Vendor Library Configuration
 
-- [ ] Custom library paths can be set
-- [ ] Additional search paths can be configured
-- [ ] "Test Load" button works with staged changes (temporary application + rollback)
-- [ ] Staging indicators (asterisks, colors) show when config has unsaved changes
-- [ ] Library changes applied before hardware synchronization on dialog close
-- [ ] Hardware implementations requiring missing libraries show clear error messages
-- [ ] Application remains functional with only virtual hardware when no vendor libraries are installed
-- [ ] Implementations gracefully degrade when their required library is unavailable
+- [x] Custom library paths can be set
+- [x] Additional search paths can be configured
+- [x] "Test Load" button works with staged changes (temporary application + rollback)
+- [x] Staging indicators (asterisks, colors) show when config has unsaved changes
+- [x] Library changes applied before hardware synchronization on dialog close
+- [NT] Hardware implementations requiring missing libraries show clear error messages (cannot test with system-installed libraries)
+- [x] Application remains functional with only virtual hardware when no vendor libraries are installed
+- [NT] Implementations gracefully degrade when their required library is unavailable (cannot test with system-installed libraries)
 
 ---
 
@@ -37,7 +37,7 @@ Hardware Menu, and Settings/HeaderStorage.
 - [x] Peak Up mode starts (no experiment number assigned)
 - [x] Forever mode starts and can be stopped
 - [x] LO Scan experiment works (if applicable hardware configured)
-- [ ] DR Scan experiment works (if applicable hardware configured)
+- [x] DR Scan experiment works (if applicable hardware configured)
 
 ### 2.3 Data Recording
 - [x] Aux data (flow, pressure, temperature) recorded correctly

@@ -1315,23 +1315,14 @@ void RuntimeHardwareConfigDialog::onBrowseLibraryPath()
     }
     
     QString currentPath = pu_ui->userLibraryPathEdit->text();
-    QString startDir = currentPath.isEmpty() ? QDir::homePath() : QFileInfo(currentPath).absolutePath();
-    
-    // Determine file filter based on platform
-    QString filter;
-#ifdef Q_OS_WINDOWS
-    filter = "Dynamic Libraries (*.dll);;All Files (*)";
-#else
-    filter = "Dynamic Libraries (*.so *.so.*);;All Files (*)";
-#endif
-    
-    QString selectedPath = QFileDialog::getOpenFileName(
+    QString startDir = currentPath.isEmpty() ? QDir::homePath() : currentPath;
+
+    QString selectedPath = QFileDialog::getExistingDirectory(
         this,
-        QString("Select %1 Library").arg(getLibraryDisplayName(*p_currentLibrary)),
-        startDir,
-        filter
+        QString("Select Directory Containing %1 Library").arg(getLibraryDisplayName(*p_currentLibrary)),
+        startDir
     );
-    
+
     if (!selectedPath.isEmpty()) {
         pu_ui->userLibraryPathEdit->setText(selectedPath);
     }
