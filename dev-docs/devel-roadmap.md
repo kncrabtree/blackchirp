@@ -9,10 +9,6 @@ When a hardware profile is purged, also purge associated widget settings (e.g.,
 `PulseWidget.PulseGenerator.main`). Currently only the hardware object's own settings
 group is cleaned up, leaving stale widget settings behind.
 
-### [Hardware Dialog Left Panel Navigation](hw-dialog-navigation.md)
-Connect the left panel's selection signal to `selectHardwareType()` so clicking a hardware
-type in the summary list navigates the middle/right panels. Currently display-only.
-
 ## Medium
 
 ### [Unified Application Configuration Dialog](app-config-dialog.md)

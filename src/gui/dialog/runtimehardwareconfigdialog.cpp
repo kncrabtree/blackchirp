@@ -92,6 +92,24 @@ RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
     // Connect hardware browser selection changes
     connect(pu_ui->hardwareBrowserList, &QListWidget::currentItemChanged,
             this, &RuntimeHardwareConfigDialog::onHardwareBrowserSelectionChanged);
+
+    // Connect left panel overview tree to drive middle/right panel selection
+    connect(pu_ui->configOverviewTree, &QTreeWidget::currentItemChanged,
+            this, [this](QTreeWidgetItem* current, QTreeWidgetItem*) {
+        if (!current)
+            return;
+        QString hwType = current->data(0, Qt::UserRole).toString();
+        if (hwType.isEmpty())
+            return;
+        // Find and select the matching item in the hardware browser list
+        for (int i = 0; i < pu_ui->hardwareBrowserList->count(); ++i) {
+            auto* item = pu_ui->hardwareBrowserList->item(i);
+            if (item->data(Qt::UserRole).toString() == hwType) {
+                pu_ui->hardwareBrowserList->setCurrentItem(item);
+                break;
+            }
+        }
+    });
     
     // Initialize validation status
     validatePreviewConfiguration();
@@ -138,15 +156,18 @@ void RuntimeHardwareConfigDialog::populateConfigurationOverview()
             // Single instance: "HardwareType: label (implementation)"
             auto* item = new QTreeWidgetItem(pu_ui->configOverviewTree);
             item->setText(0, QString("%1: %2").arg(hwType, instances.first()));
+            item->setData(0, Qt::UserRole, hwType);
         } else {
             // Multi-instance: Parent "HardwareType" with children "label (implementation)"
             auto* parentItem = new QTreeWidgetItem(pu_ui->configOverviewTree);
             parentItem->setText(0, hwType);
+            parentItem->setData(0, Qt::UserRole, hwType);
             parentItem->setExpanded(true);
-            
+
             for(const QString& instance : instances) {
                 auto* childItem = new QTreeWidgetItem(parentItem);
                 childItem->setText(0, instance);
+                childItem->setData(0, Qt::UserRole, hwType);
             }
         }
     }
