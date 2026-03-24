@@ -63,34 +63,34 @@ Hardware Menu, and Settings/HeaderStorage.
 ## 4. LIF Functionality
 
 ### 4.1 LIF UI
-- [ ] LIF-related UI elements visible when LIF is enabled (ApplicationConfigManager)
-- [ ] LIF display widget, control widget, and laser status box present
-- [ ] LIF tab/section in experiment setup dialog functional
-- [ ] LIF laser position controls work
+- [x] LIF-related UI elements visible when LIF is enabled (ApplicationConfigManager)
+- [x] LIF display widget, control widget, and laser status box present
+- [x] LIF tab/section in experiment setup dialog functional
+- [x] LIF laser position controls work
 
 ### 4.2 LIF Experiment (if hardware available)
-- [ ] LIF experiment can be configured and started
-- [ ] LIF scope shots acquired and processed
-- [ ] LIF data saved to `lifparams.csv` and `lif/` directory
-- [ ] Laser units retrieved from hardware settings correctly
+- [x] LIF experiment can be configured and started
+- [x] LIF scope shots acquired and processed
+- [x] LIF data saved to `lifparams.csv` and `lif/` directory
+- [x] Laser units retrieved from hardware settings correctly
 
 ### 4.3 LIF Disabled
-- [ ] When no LIF hardware configured, LIF UI elements are hidden/disabled
-- [ ] Experiment loading handles experiments with LIF data even if LIF hardware not configured
-- [ ] No crashes from LIF code paths when LIF hardware is absent
+- [NT] When no LIF hardware configured, LIF UI elements are hidden/disabled
+- [NT] Experiment loading handles experiments with LIF data even if LIF hardware not configured
+- [NT] No crashes from LIF code paths when LIF hardware is absent
 
 ---
 
 ## 5. ClockManager
 
-- [ ] Multiple clocks can be configured with distinct labels
+- [x] Multiple clocks can be configured with distinct labels
 
 ---
 
 ## 6. GUI Dynamic Updates
 
 ### 6.1 Status Boxes
-- [ ] Temperature controller status boxes update with temperature data
+- [x] Temperature controller status boxes update with temperature data
 
 ### 6.2 Overlays and Plots
 - [ ] Overlay system works with label-based hardware keys
@@ -101,12 +101,18 @@ Hardware Menu, and Settings/HeaderStorage.
 
 ## 7. Edge Cases & Error Handling
 
-- [ ] Starting experiment with no hardware configured shows appropriate error
-- [ ] Removing hardware while experiment setup dialog is open (should be prevented)
-- [ ] Rapidly opening/closing hardware config dialog doesn't cause crashes
-- [ ] Application shutdown is clean (no thread cleanup warnings)
-- [ ] GPIB instrument without GPIB controller configured shows informative error
-- [ ] Hardware that fails connection test shows clear status in UI
+- [x] Starting experiment with no hardware configured shows appropriate error
+- [x] Removing hardware while experiment setup dialog is open (should be prevented)
+- [x] Rapidly opening/closing hardware config dialog doesn't cause crashes
+- [x] Application shutdown is clean (no thread cleanup warnings)
+- [x] GPIB instrument without GPIB controller configured shows informative error
+- [x] Hardware that fails connection test shows clear status in UI
+
+---
+
+## Future UI Improvements
+
+- [ ] Replace read-only QDoubleSpinBox with QLabel in status boxes (TemperatureStatusBox, GasFlowDisplayBox) for a more compact display
 
 ---
 

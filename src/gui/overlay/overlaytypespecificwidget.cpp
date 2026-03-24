@@ -18,13 +18,23 @@ bool OverlayTypeSpecificWidget::validateSourceFile()
 {
     // Clear previous error message
     d_sourceFileErrorMessage.clear();
-    
+
     // Call derived class implementation
     bool isValid = validateSourceFileImpl();
-    
+
     // Update base class state
     d_sourceFileValid = isValid;
-    
+
+    // Update settings group box enabled state without calling updateSourceFileControls()
+    // (which would re-enter validateSourceFile and cause a stack overflow)
+    if (p_sourceFileSettingsBox) {
+        bool sourceEnabled = isCreationContext() || d_sourceFileEnabled;
+        if (isCreationContext())
+            p_sourceFileSettingsBox->setEnabled(sourceEnabled && d_sourceFileValid);
+        else
+            p_sourceFileSettingsBox->setEnabled(d_sourceFileEnabled);
+    }
+
     return isValid;
 }
 

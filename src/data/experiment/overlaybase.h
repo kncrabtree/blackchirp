@@ -69,8 +69,6 @@ public:
     // Curve metadata access methods
     QVariant getCurveMetadata(const QString &key) const;
     void setCurveMetadata(const QString &key, const QVariant &value);
-    void setCurveAppearanceMetadata(const BC::Data::CurveAppearance &appearance);
-    
     void setLabel(const QString &newlabel);
     void setSourceFile(const QString &newsourceFile);
     void setDestFile(const QString &newdestFile);

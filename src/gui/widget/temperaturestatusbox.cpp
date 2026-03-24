@@ -5,6 +5,7 @@
 #include <QDoubleSpinBox>
 
 #include <data/storage/settingsstorage.h>
+#include <gui/style/themecolors.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
 TemperatureStatusBox::TemperatureStatusBox(const QString key, QWidget *parent) :
@@ -33,6 +34,11 @@ TemperatureStatusBox::TemperatureStatusBox(const QString key, QWidget *parent) :
         d_widgets.push_back({lbl,sb,true});
     }
 
+
+    p_noActiveLabel = new QLabel(tr("No active channels"));
+    p_noActiveLabel->setAlignment(Qt::AlignCenter);
+    p_noActiveLabel->setStyleSheet(QString("QLabel { color: %1; font-style: italic; }").arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, this)));
+    gl->addWidget(p_noActiveLabel,nc,0,1,2);
 
     gl->setColumnStretch(0,0);
     gl->setColumnStretch(1,1);
@@ -94,9 +100,14 @@ void TemperatureStatusBox::setChannelEnabled(const QString key, uint ch, bool en
     w.box->setVisible(en);
     w.active = en;
 
-    bool visible = false;
-    for(auto &chw : d_widgets)
-        visible = visible || chw.active;
+    updateNoActiveLabel();
+}
 
-    setVisible(visible);
+void TemperatureStatusBox::updateNoActiveLabel()
+{
+    bool anyActive = false;
+    for(const auto &chw : d_widgets)
+        anyActive = anyActive || chw.active;
+
+    p_noActiveLabel->setVisible(!anyActive);
 }

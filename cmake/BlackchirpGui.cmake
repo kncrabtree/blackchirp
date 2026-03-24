@@ -65,7 +65,6 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/plot/chirpconfigplot.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/plot/curveappearancewidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/plot/curveappearancepresetmanager.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/plot/curveappearanceconverter.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/plot/presetsavedialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/plot/curvefactory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/plot/customtracker.cpp
@@ -170,7 +169,6 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/plot/chirpconfigplot.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/plot/curveappearancewidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/plot/curveappearancepresetmanager.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/plot/curveappearanceconverter.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/plot/presetsavedialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/plot/curvefactory.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/plot/customtracker.h

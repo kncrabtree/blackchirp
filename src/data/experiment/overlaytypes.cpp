@@ -685,7 +685,8 @@ void CatalogOverlay::_retrieveMetadata(const std::map<QString, QVariant> &m)
     }
     
     // Force curve style to stick plot when loaded from disk
-    setCurveMetadata(BC::Data::CurveKey::curveStyle, static_cast<int>(BC::Data::CurveStyle::Sticks));
+    // Value 2 = QwtPlotCurve::Sticks
+    setCurveMetadata(BC::Data::CurveKey::curveStyle, 2);
     
     // Invalidate cache after loading metadata
     invalidateConvolutionCache();

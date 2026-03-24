@@ -25,7 +25,10 @@ public slots:
     void setChannelEnabled(const QString key, uint ch, bool en);
 
 private:
+    void updateNoActiveLabel();
+
     std::vector<ChWidgets> d_widgets;
+    QLabel *p_noActiveLabel;
 };
 
 #endif // TEMPERATURESTATUSBOX_H

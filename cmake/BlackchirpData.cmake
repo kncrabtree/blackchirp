@@ -65,10 +65,7 @@ set(BLACKCHIRP_DATA_SOURCES
     # Processing system
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/processing/overlayoperation.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/processing/overlayprocessmanager.cpp
-    
-    # Presentation layer
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/presentation/curveappearance.cpp
-    
+
     # Storage system
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/storage/applicationconfigmanager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/storage/auxdatastorage.cpp

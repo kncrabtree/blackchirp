@@ -159,22 +159,6 @@ void CatalogOverlayWidget::applyToOverlay(std::shared_ptr<OverlayBase> overlay) 
     
     // Apply filtering range settings
     catalogOverlay->setFilterRange(p_filterMinFreqSpinBox->value(), p_filterMaxFreqSpinBox->value());
-    
-    // COMMENTED OUT: This was overwriting user appearance settings every time applyToOverlay() was called
-    // The initial appearance should be set only once during overlay creation, not continuously overwritten
-    // Apply curve appearance preset based on convolution mode
-    // QString presetName;
-    // if (p_convolutionEnabledCheckBox->isChecked()) {
-    //     presetName = "Curve - Secondary";  // Smooth curve for convolved data
-    // } else {
-    //     presetName = "Stem - Secondary";   // Stem plot for discrete transitions
-    // }
-    // 
-    // auto presetManager = CurveAppearancePresetManager::instance();
-    // if (presetManager && presetManager->hasPreset(presetName)) {
-    //     auto preset = presetManager->getPreset(presetName);
-    //     catalogOverlay->setCurveAppearanceMetadata(preset.appearance);
-    // }
 }
 
 bool CatalogOverlayWidget::validateSettingsImpl()

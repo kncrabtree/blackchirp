@@ -329,15 +329,4 @@ void OverlayBase::invalidateCache()
     d_cachedYMax = 0.0;
 }
 
-void OverlayBase::setCurveAppearanceMetadata(const BC::Data::CurveAppearance &appearance)
-{
-    // Apply all curve appearance properties to overlay metadata
-    setCurveMetadata(BC::Data::CurveKey::color, appearance.color);
-    setCurveMetadata(BC::Data::CurveKey::curveStyle, static_cast<int>(appearance.curveStyle));
-    setCurveMetadata(BC::Data::CurveKey::thickness, appearance.lineThickness);
-    setCurveMetadata(BC::Data::CurveKey::lineStyle, static_cast<int>(appearance.lineStyle));
-    setCurveMetadata(BC::Data::CurveKey::marker, static_cast<int>(appearance.markerStyle));
-    setCurveMetadata(BC::Data::CurveKey::markerSize, appearance.markerSize);
-    setCurveMetadata(BC::Data::CurveKey::visible, appearance.visible);
-    setCurveMetadata(BC::Data::CurveKey::autoscale, appearance.autoscale);
-}
+
