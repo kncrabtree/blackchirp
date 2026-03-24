@@ -82,7 +82,13 @@ bool FlowController::prepareForExperiment(Experiment &e)
     for(int i=0; i<d_numChannels; i++)
     {
         if(d_config.setting(i,FlowConfig::Enabled).toBool())
-            e.auxData()->registerKey(d_key,BC::Aux::Flow::flow.arg(i));
+        {
+            auto n = d_config.setting(i,FlowConfig::Name).toString();
+            if(n.isEmpty())
+                e.auxData()->registerKey(d_key,BC::Aux::Flow::flow.arg(i+1));
+            else
+                e.auxData()->registerKey(d_key,n+"."+BC::Aux::Flow::flow.arg(i+1));
+        }
     }
 
     e.addOptHwConfig(d_config);
