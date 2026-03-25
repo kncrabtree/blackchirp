@@ -9,11 +9,6 @@ Restore per-object threading and make it user-configurable via RuntimeHardwareCo
 Type-level defaults in intermediate classes; per-instance override persisted in
 HardwareSelection and applied during HardwareManager object creation.
 
-### [Widget Settings Cleanup on Profile Removal](widget-settings-cleanup.md)
-When a hardware profile is purged, also purge associated widget settings (e.g.,
-`PulseWidget.PulseGenerator.main`). Currently only the hardware object's own settings
-group is cleaned up, leaving stale widget settings behind.
-
 ## Medium
 
 ### [Unified Application Configuration Dialog](app-config-dialog.md)
