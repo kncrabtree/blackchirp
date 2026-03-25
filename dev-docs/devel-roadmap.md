@@ -4,11 +4,10 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 
 ## Small
 
-### Restore d_threaded defaults from devel branch
-The cmakemigration constructor refactor lost the per-type `d_threaded` defaults.
-On `devel`, the base class defaults to `threaded = true`; FtmwScope, Clock,
-IOBoard, LifScope, LifLaser, and GpibController all run in their own QThread.
-Currently everything on cmakemigration is non-threaded.
+### [Hardware Threading Configuration](hardware-threading.md)
+Restore per-object threading and make it user-configurable via RuntimeHardwareConfig.
+Type-level defaults in intermediate classes; per-instance override persisted in
+HardwareSelection and applied during HardwareManager object creation.
 
 ### [Widget Settings Cleanup on Profile Removal](widget-settings-cleanup.md)
 When a hardware profile is purged, also purge associated widget settings (e.g.,
@@ -42,3 +41,12 @@ Named loadouts bundling hardware map + RF config + chirp config. Loadouts are ed
 the Hardware Configuration dialog (with new RF/Chirp tabs); experiment setup defaults to
 the active loadout with a "Reset to Loadout Defaults" button. Includes loadout selection
 UI, save prompts, and experiment initialization priority logic.
+
+## Pre-Release
+
+### [Logging and Debug Message Cleanup](logging-cleanup.md)
+Review and rationalize all qDebug() (~41 calls) and logMessage() (~445 calls) output.
+Eliminate qDebug in favor of the log system, downgrade diagnostic traces from Error/Normal
+to Debug, and remove development scaffolding. Bulk of work is in FTMW digitizer files
+(~285 calls) and HardwareManager (~74 calls). Should be one of the last tasks before
+documentation revision for 2.0.0.
