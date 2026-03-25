@@ -16,13 +16,15 @@ public:
 
     int getSelectedProtocol() const;
     
+    void discardControlWidget();
+
 private:
     QTreeView *p_view;
     HWSettingsModel *p_model;
     QComboBox *p_protocolCombo;
     QLabel *p_protocolLabel;
     QString d_hwKey;
-       
+    QWidget *p_controlWidget;
 
 public slots:
     void insertBefore();

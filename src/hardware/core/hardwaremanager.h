@@ -57,6 +57,7 @@ signals:
      * \param msg Status or error message
      */
     void connectionResult(const QString& hwKey, bool success, const QString& msg);
+    void profileDeleted(const QString& hwKey);
     
     // Task 3.3.8: Communication protocol management signals
     void hardwareCommunicationInfoReady(const QString& hwKey, CommunicationProtocol::CommType currentProtocol, 

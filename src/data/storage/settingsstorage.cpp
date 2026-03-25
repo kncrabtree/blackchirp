@@ -471,6 +471,22 @@ void SettingsStorage::purgeGroup(const QStringList& keys)
     s.sync();
 }
 
+void SettingsStorage::purgeGroupsBySuffix(const QString& suffix)
+{
+    QSettings s(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    s.setFallbacksEnabled(false);
+    const QString dotSuffix = QString(".") + suffix;
+    const QStringList groups = s.childGroups();
+    for (const QString& group : groups) {
+        if (group.endsWith(dotSuffix)) {
+            s.beginGroup(group);
+            s.remove(QString());
+            s.endGroup();
+        }
+    }
+    s.sync();
+}
+
 void SettingsStorage::save()
 {
     if(!d_edited || d_discard)

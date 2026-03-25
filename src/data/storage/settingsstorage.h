@@ -854,6 +854,16 @@ protected:
     static void purgeGroup(const QStringList& keys);
 
     /*!
+     * \brief Removes all top-level QSettings groups whose name ends with
+     * \c "." + suffix. Used to clean up widget settings (e.g.,
+     * \c "PulseWidget.PulseGenerator.main") when a hardware profile whose
+     * key matches \a suffix is deleted.
+     *
+     * \param suffix The hardware key to match (e.g., "PulseGenerator.main")
+     */
+    static void purgeGroupsBySuffix(const QString& suffix);
+
+    /*!
      * \brief Write all values to `QSettings`.
      */
     void save();

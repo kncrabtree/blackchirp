@@ -15,7 +15,7 @@
 #include <hardware/core/hardwareobject.h>
 #include <hardware/core/communication/communicationprotocol.h>
 
-HWDialog::HWDialog(QString key, QStringList forbiddenKeys, QWidget *controlWidget, QWidget *parent) : QDialog(parent), d_hwKey(key)
+HWDialog::HWDialog(QString key, QStringList forbiddenKeys, QWidget *controlWidget, QWidget *parent) : QDialog(parent), d_hwKey(key), p_controlWidget(controlWidget)
 {
     setAttribute(Qt::WA_DeleteOnClose);
     setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::MinimumExpanding);
@@ -149,6 +149,15 @@ HWDialog::HWDialog(QString key, QStringList forbiddenKeys, QWidget *controlWidge
     
     vbl->addWidget(bb,0);
     setLayout(vbl);
+}
+
+void HWDialog::discardControlWidget()
+{
+    if (p_controlWidget) {
+        auto ss = dynamic_cast<SettingsStorage*>(p_controlWidget);
+        if (ss)
+            ss->discardChanges();
+    }
 }
 
 int HWDialog::getSelectedProtocol() const

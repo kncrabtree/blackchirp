@@ -916,8 +916,11 @@ void HardwareManager::removeHardwareInternal(const QString& hwKey)
     // purgeSettings() sets d_discard=true, preventing ~SettingsStorage() from re-writing
     // the cleared settings after deleteLater() is processed by the event loop.
     auto [hwType, hwLabel] = BC::Key::parseKey(hwKey);
-    if (!HardwareProfileManager::instance().profileExists(hwType, hwLabel))
+    if (!HardwareProfileManager::instance().profileExists(hwType, hwLabel)) {
         obj->purgeSettings();
+        SettingsStorage::purgeGroupsBySuffix(hwKey);
+        emit profileDeleted(hwKey);
+    }
 
     // Clean up the hardware object
     obj->deleteLater();

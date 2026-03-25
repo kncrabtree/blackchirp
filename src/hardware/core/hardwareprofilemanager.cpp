@@ -146,8 +146,10 @@ bool HardwareProfileManager::deleteHardwareProfile(const QString& type, const QS
     // If there is no live hardware object (inactive profile), purge directly now.
     QString hwKey = BC::Key::hwKey(type, label);
     auto activeHardware = RuntimeHardwareConfig::constInstance().getCurrentHardware();
-    if (activeHardware.find(hwKey) == activeHardware.end())
+    if (activeHardware.find(hwKey) == activeHardware.end()) {
         SettingsStorage::purgeGroup({hwKey});
+        SettingsStorage::purgeGroupsBySuffix(hwKey);
+    }
 
     return true;
 }
@@ -991,7 +993,7 @@ QString HardwareProfileManager::generateDefaultLabelInternal(const QString& type
     }
     
     // Try standard default labels
-    QStringList candidates = {"default", "main", "primary", "secondary", "backup"};
+    QStringList candidates = {"Default", "Main", "Primary", "Secondary", "Backup"};
     
     for (const QString& candidate : candidates) {
         if (!existingLabels.contains(candidate)) {
@@ -999,19 +1001,11 @@ QString HardwareProfileManager::generateDefaultLabelInternal(const QString& type
         }
     }
     
-    // Generate numbered label based on type
-    QString baseType = type.toLower();
-    if (baseType.endsWith("controller")) {
-        baseType.chop(10); // Remove "controller"
-    }
-    if (baseType.endsWith("digitizer")) {
-        baseType.chop(9); // Remove "digitizer"
-    }
-    
+    // Generate numbered label as fallback
     int counter = 1;
     QString candidate;
     do {
-        candidate = QString("%1%2").arg(baseType).arg(counter);
+        candidate = QString("Device%1").arg(counter);
         counter++;
     } while (existingLabels.contains(candidate) && counter <= 1000);
     

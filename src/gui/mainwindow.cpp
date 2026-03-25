@@ -148,6 +148,16 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(p_hwm,&HardwareManager::clockFrequencyUpdate,ui->clockBox,&ClockDisplayBox::updateFrequency);
 
+    connect(p_hwm, &HardwareManager::profileDeleted, this, [this](const QString& hwKey) {
+        auto it = d_openDialogs.find(hwKey);
+        if (it != d_openDialogs.end()) {
+            if (auto dlg = qobject_cast<HWDialog*>(it->second)) {
+                dlg->discardControlWidget();
+                dlg->reject();
+            }
+        }
+    });
+
     // Build hardware UI dynamically - can now be called when hardware configuration changes
     buildHardwareUI();
 
