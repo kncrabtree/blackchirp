@@ -24,6 +24,7 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/mainwindow.cpp
     
     # Dialogs
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/applicationconfigdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/batchsequencedialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/bcsavepathdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/communicationdialog.cpp
@@ -109,7 +110,8 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/temperaturecontrolwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/temperaturestatusbox.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/toolbarwidgetaction.cpp
-    
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/bcsavepathwidget.cpp
+
     # Styling and theming
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/style/themecolors.cpp
     
@@ -129,6 +131,7 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/mainwindow_ui.h
     
     # Dialogs
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/applicationconfigdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/batchsequencedialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/bcsavepathdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/communicationdialog.h
@@ -214,7 +217,8 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/temperaturecontrolwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/temperaturestatusbox.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/toolbarwidgetaction.h
-    
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/bcsavepathwidget.h
+
     # Styling and theming
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/style/themecolors.h
     

@@ -27,6 +27,7 @@
 #include <QCoreApplication>
 #include <data/bcglobals.h>
 #include <data/settings/hardwarekeys.h>
+#include <data/storage/applicationconfigmanager.h>
 #include <hardware/core/communication/communicationprotocol.h>
 #include <hardware/core/hardwareregistry.h>
 #include <hardware/core/hardwareprofilemanager.h>
@@ -236,7 +237,18 @@ void RuntimeHardwareConfigDialog::populateHardwareBrowser()
         } else {
             // Unconfigured hardware: normal text (default)
         }
-        
+
+        // Gray out LIF hardware types when LIF module is disabled
+        if (RuntimeHardwareConfig::isLifHardwareType(hwType)
+            && !ApplicationConfigManager::instance().isLifEnabled())
+        {
+            item->setForeground(ThemeColors::getThemeAwareColor(ThemeColors::SubtleText, this));
+            QFont f = item->font();
+            f.setItalic(true);
+            item->setFont(f);
+            item->setText(item->text() + " [LIF disabled]");
+        }
+
         // Remember this item if it matches the previously selected hardware type
         if (hwType == currentSelectedHardwareType) {
             itemToSelect = item;
@@ -311,6 +323,26 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
         return;
     }
     
+    // Check if this is a LIF hardware type that's currently disabled
+    if (RuntimeHardwareConfig::isLifHardwareType(hardwareType)
+        && !ApplicationConfigManager::instance().isLifEnabled())
+    {
+        auto* disabledLabel = new QLabel(
+            QString("The %1 hardware type is currently inactive because the LIF module "
+                    "is disabled.\n\nTo use LIF hardware, enable the LIF Module in "
+                    "Settings > Application Settings and restart the application.")
+            .arg(hardwareType),
+            pu_ui->configurationContentWidget);
+        disabledLabel->setWordWrap(true);
+        disabledLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+        disabledLabel->setStyleSheet(QString("QLabel { color: %1; font-style: italic; padding: 12px; }")
+            .arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, this)));
+        layout->addWidget(disabledLabel);
+        layout->addStretch();
+        pu_ui->configurationContentWidget->setLayout(layout);
+        return;
+    }
+
     // Determine if this is single-instance or multi-instance hardware type
     bool isMultiInstance = HardwareRegistry::isMultiInstanceType(hardwareType);
     bool isRequired = RuntimeHardwareConfig::isHardwareRequired(hardwareType);

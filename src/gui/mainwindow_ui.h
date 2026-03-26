@@ -34,6 +34,7 @@
 #include <gui/widget/toolbarwidgetaction.h>
 
 #include <gui/lif/gui/lifdisplaywidget.h>
+#include <data/storage/applicationconfigmanager.h>
 
 class Ui_MainWindow
 {
@@ -60,8 +61,7 @@ public:
     QToolButton *hardwareButton;
     QToolButton *viewExperimentButton;
     QToolButton *settingsButton;
-    QAction *fontAction;
-    QAction *savePathAction;
+    QAction *appConfigAction;
     QWidget *centralWidget;
     QHBoxLayout *mainLayout;
     QVBoxLayout *instrumentStatusLayout;
@@ -98,12 +98,13 @@ public:
     QVBoxLayout *hwStatusLayout;
 
 
-    QWidget *lifTab;
-    QAction *actionLifConfig;
+    QWidget *lifTab{nullptr};
+    QAction *actionLifConfig{nullptr};
     QAction *actionRuntimeHardwareConfig;
-    QProgressBar *lifProgressBar;
-    QLayout *lifTabLayout;
-    LifDisplayWidget *lifDisplayWidget;
+    QProgressBar *lifProgressBar{nullptr};
+    QLayout *lifTabLayout{nullptr};
+    LifDisplayWidget *lifDisplayWidget{nullptr};
+    QLabel *lifProgressLabel{nullptr};
 
     void setupUi(QMainWindow *MainWindow)
     {
@@ -158,11 +159,14 @@ public:
         actionStart_Sequence = new QAction(MainWindow);
         actionStart_Sequence->setObjectName(QString::fromUtf8("actionStart_Sequence"));
         // Icon set programmatically in setupThemeAwareIconStyling()
-        actionLifConfig = new QAction("LIF Configuration",MainWindow);
-        // Icon set programmatically in setupThemeAwareIconStyling()
-        actionLifConfig->setObjectName("ActionLifConfig");
-        // Icon set programmatically in setupThemeAwareIconStyling()
-        
+        if(ApplicationConfigManager::instance().isLifEnabled())
+        {
+            actionLifConfig = new QAction("LIF Configuration",MainWindow);
+            // Icon set programmatically in setupThemeAwareIconStyling()
+            actionLifConfig->setObjectName("ActionLifConfig");
+            // Icon set programmatically in setupThemeAwareIconStyling()
+        }
+
         actionRuntimeHardwareConfig = new QAction("Hardware Selection",MainWindow);
         actionRuntimeHardwareConfig->setObjectName("ActionRuntimeHardwareConfig");
         // Icon set programmatically in setupThemeAwareIconStyling()
@@ -223,10 +227,7 @@ public:
         settingsButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
         settingsButton->setPopupMode(QToolButton::InstantPopup);
 
-        fontAction = new QAction("Application Font");
-        // Icon set programmatically in setupThemeAwareIconStyling()
-
-        savePathAction = new QAction("Data Storage");
+        appConfigAction = new QAction("Application Settings");
         // Icon set programmatically in setupThemeAwareIconStyling()
 
 
@@ -315,20 +316,24 @@ public:
 
         mainTabWidget->addTab(ftmwTab, QIcon(), QString()); // Icon set programmatically
 
-        lifTab = new QWidget();
-        lifTab->setObjectName(QString("lifTab"));
-        lifTabLayout = new QVBoxLayout(lifTab);
-        lifDisplayWidget = new LifDisplayWidget();
-        lifDisplayWidget->setObjectName(QString("lifDisplayWidget"));
-        lifTabLayout->addWidget(lifDisplayWidget);
-        mainTabWidget->addTab(lifTab, QIcon(), QString()); // Icon set programmatically
-        mainTabWidget->setTabText(mainTabWidget->indexOf(lifTab),QString("LIF"));
+        if(ApplicationConfigManager::instance().isLifEnabled())
+        {
+            lifTab = new QWidget();
+            lifTab->setObjectName(QString("lifTab"));
+            lifTabLayout = new QVBoxLayout(lifTab);
+            lifDisplayWidget = new LifDisplayWidget();
+            lifDisplayWidget->setObjectName(QString("lifDisplayWidget"));
+            lifTabLayout->addWidget(lifDisplayWidget);
+            mainTabWidget->addTab(lifTab, QIcon(), QString()); // Icon set programmatically
+            mainTabWidget->setTabText(mainTabWidget->indexOf(lifTab), QString("LIF"));
 
-        lifProgressBar = new QProgressBar();
-        lifProgressBar->setRange(0,1000);
-        lifProgressBar->setValue(0);
-        instrumentStatusLayout->addWidget(new QLabel(QString("LIF Progress")),0,Qt::AlignCenter);
-        instrumentStatusLayout->addWidget(lifProgressBar);
+            lifProgressLabel = new QLabel(QString("LIF Progress"));
+            lifProgressBar = new QProgressBar();
+            lifProgressBar->setRange(0, 1000);
+            lifProgressBar->setValue(0);
+            instrumentStatusLayout->addWidget(lifProgressLabel, 0, Qt::AlignCenter);
+            instrumentStatusLayout->addWidget(lifProgressBar);
+        }
 
         rollingDataTab = new QWidget();
         rollingDataTab->setObjectName(QString::fromUtf8("rollingDataTab"));
@@ -395,8 +400,7 @@ public:
 //        MainWindow->setMenuBar(menuBar);
 
         settingsMenu = new QMenu(settingsButton);
-        settingsMenu->addAction(fontAction);
-        settingsMenu->addAction(savePathAction);
+        settingsMenu->addAction(appConfigAction);
         
         viewExperimentMenu = new QMenu(MainWindow);
         viewExperimentMenu->setObjectName(QString::fromUtf8("viewExperimentMenu"));
@@ -437,7 +441,8 @@ public:
         menuHardware->addAction(actionTest_All_Connections);
         menuHardware->addSeparator();
         menuHardware->addAction(actionRfConfig);
-        menuHardware->addAction(actionLifConfig);
+        if(actionLifConfig)
+            menuHardware->addAction(actionLifConfig);
         menuHardware->addSeparator();
         menuAcquisition->addAction(actionStart_Experiment);
         menuAcquisition->addAction(actionQuick_Experiment);

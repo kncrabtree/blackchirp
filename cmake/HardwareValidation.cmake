@@ -130,14 +130,6 @@ function(validate_hardware_configuration)
     validate_multiple_hardware("pressure controller" "${BC_PC}" "${VALID_PCS}")
     validate_multiple_hardware("temperature controller" "${BC_TC}" "${VALID_TCS}")
     
-    # Validate LIF hardware (optional - always available at runtime)
-    if(BC_LIFSCOPE)
-        validate_single_hardware("LIF scope" "${BC_LIFSCOPE}" "${VALID_LIFSCOPES}")
-    endif()
-    if(BC_LIFLASER)
-        validate_single_hardware("LIF laser" "${BC_LIFLASER}" "${VALID_LIFLASERS}")
-    endif()
-    
     # Hardware compatibility checks
     validate_hardware_compatibility()
     
@@ -153,10 +145,6 @@ function(validate_hardware_compatibility)
     set(USES_M4I FALSE)
     
     if(BC_FTMW_SCOPE IN_LIST M4I_CARDS)
-        set(USES_M4I TRUE)
-    endif()
-    
-    if(BC_LIFSCOPE AND BC_LIFSCOPE IN_LIST M4I_CARDS)
         set(USES_M4I TRUE)
     endif()
     

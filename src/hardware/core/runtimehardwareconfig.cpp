@@ -310,6 +310,15 @@ bool RuntimeHardwareConfig::isHardwareRequired(const QString& hardwareType)
     return false;
 }
 
+bool RuntimeHardwareConfig::isLifHardwareType(const QString& hardwareType)
+{
+    static const QStringList lifTypes = {
+        hardwareTypeOf<LifScope>(),
+        hardwareTypeOf<LifLaser>()
+    };
+    return lifTypes.contains(hardwareType);
+}
+
 QStringList RuntimeHardwareConfig::getMissingRequiredHardware() const
 {
     QReadLocker locker(&d_configLock);
@@ -437,6 +446,10 @@ void RuntimeHardwareConfig::syncWithProfiles()
     
     int loadedCount = 0;
     for (const QString& type : hardwareTypes) {
+        // Skip LIF hardware types when LIF module is disabled
+        if (!ApplicationConfigManager::instance().isLifEnabled() && isLifHardwareType(type))
+            continue;
+
         QStringList activeLabels = profileManager.getActiveProfiles(type);
         
         for (const QString& label : activeLabels) {
@@ -629,6 +642,10 @@ bool RuntimeHardwareConfig::applyConfiguration(const std::map<QString, QString>&
                       << "key=" << key << "implementation=" << implementation;
             continue;
         }
+
+        // Skip LIF hardware types when LIF module is disabled
+        if (!ApplicationConfigManager::instance().isLifEnabled() && isLifHardwareType(hardwareType))
+            continue;
 
         // Set hardware selection using internal method
         HardwareSelection selection;

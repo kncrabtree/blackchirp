@@ -1,6 +1,7 @@
 #include <data/storage/settingsstorage.h>
+#include <data/storage/applicationconfigmanager.h>
 #include <gui/mainwindow.h>
-#include <gui/dialog/bcsavepathdialog.h>
+#include <gui/dialog/applicationconfigdialog.h>
 #include <gui/dialog/runtimehardwareconfigdialog.h>
 #include <gui/plot/curveappearancepresetmanager.h>
 #include <data/processing/parsers/fileparserregistry.h>
@@ -47,7 +48,7 @@ int main(int argc, char *argv[])
     QApplication::setOrganizationName(QString("CrabtreeLab"));
 
     SettingsStorage s;
-    auto f = s.get(BC::Key::appFont,QFont(QString("sans-serif"),8));
+    auto f = ApplicationConfigManager::instance().getOptionValue(BC::Key::AppConfig::appFont).value<QFont>();
     a.setFont(f);
 
     std::unique_ptr<QSharedMemory> m;
@@ -95,20 +96,8 @@ int main(int argc, char *argv[])
 
     if(savePath.isEmpty())
     {
-        QMessageBox::information(nullptr, QString("Welcome to Blackchirp!"),
-                                 QString(
-R"000(It appears you are running Blackchirp for the first time, or you have just upgraded from a previous version. To get started, you first need to choose a directory where Blackchirp will store its data. In the directory you choose, four folders will be created:
-
-        experiments - Location where all experimental data are recorded
-        log - Location of log messages
-        rollingdata - Location for temporal monitoring data
-        textexports - Default location for manually exported csv files
-
-Please note that if you are upgrading from an old version (<1.0.0) of Blackchirp, it is not recommended that you use the same storage folder as your old version, as all file formats have changed.
-)000"));
-
-        BCSavePathDialog d;
-        if(d.exec() == QDialog::Rejected)
+        ApplicationConfigDialog configDialog(true);
+        if(configDialog.exec() == QDialog::Rejected)
             return 0;
 
         QMessageBox::information(nullptr, QString("Hardware Selection"),

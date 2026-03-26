@@ -213,14 +213,25 @@ public:
     
     /*!
      * \brief Check if hardware type is required
-     * 
+     *
      * Checks the HardwareRegistry to determine if a hardware type
      * is marked as required for operation.
-     * 
+     *
      * \param hardwareType Hardware type key
      * \return True if hardware type is required
      */
     static bool isHardwareRequired(const QString& hardwareType);
+
+    /*!
+     * \brief Check if hardware type is a LIF hardware type
+     *
+     * Returns true for hardware types associated with LIF (LifScope, LifLaser).
+     * Used to filter LIF hardware from the runtime config when LIF is disabled.
+     *
+     * \param hardwareType Hardware type key
+     * \return True if hardware type is a LIF type
+     */
+    static bool isLifHardwareType(const QString& hardwareType);
     
     /*!
      * \brief Get list of missing required hardware

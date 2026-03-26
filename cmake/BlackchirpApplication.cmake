@@ -46,21 +46,6 @@ set(BLACKCHIRP_ACQUISITION_HEADERS
 # Optional Module Source Files
 # ============================================================================
 
-# LIF Module (if enabled)
-set(BLACKCHIRP_LIF_SOURCES)
-set(BLACKCHIRP_LIF_HEADERS)
-
-if(BC_LIF)
-    set(BLACKCHIRP_LIF_SOURCES
-        # LIF data layer sources are in BlackchirpData.cmake
-        # Add application-specific LIF sources here if needed
-    )
-    
-    set(BLACKCHIRP_LIF_HEADERS
-        # Add LIF headers as needed
-    )
-endif()
-
 # CUDA Module (if enabled)
 set(BLACKCHIRP_CUDA_SOURCES)
 set(BLACKCHIRP_CUDA_HEADERS)
@@ -103,14 +88,12 @@ qt6_add_resources(BLACKCHIRP_COMPILED_RESOURCES ${BLACKCHIRP_QRC_FILES})
 set(BLACKCHIRP_APP_ALL_SOURCES
     ${BLACKCHIRP_APP_SOURCES}
     ${BLACKCHIRP_ACQUISITION_SOURCES}
-    ${BLACKCHIRP_LIF_SOURCES}
     ${BLACKCHIRP_CUDA_SOURCES}
 )
 
 set(BLACKCHIRP_APP_ALL_HEADERS
     ${BLACKCHIRP_APP_HEADERS}
     ${BLACKCHIRP_ACQUISITION_HEADERS}
-    ${BLACKCHIRP_LIF_HEADERS}
     ${BLACKCHIRP_CUDA_HEADERS}
 )
 
@@ -192,10 +175,6 @@ target_compile_definitions(blackchirp PRIVATE
 )
 
 # Module-specific definitions
-if(BC_LIF)
-    target_compile_definitions(blackchirp PRIVATE BC_LIF)
-endif()
-
 if(BC_CUDA)
     target_compile_definitions(blackchirp PRIVATE BC_CUDA)
 endif()
@@ -257,6 +236,6 @@ endif()
 message(STATUS "Blackchirp Application Configuration:")
 message(STATUS "  Main executable: blackchirp")
 message(STATUS "  Dependencies: Data, GUI, Hardware libraries")
-message(STATUS "  LIF module: ${BC_LIF}")
+message(STATUS "  LIF module: runtime")
 message(STATUS "  CUDA module: ${BC_CUDA}")
 message(STATUS "  Version: ${PROJECT_VERSION}")

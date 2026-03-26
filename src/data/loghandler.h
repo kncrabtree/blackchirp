@@ -40,7 +40,7 @@ public slots:
 private:
     int d_currentExperimentNum{-1};
     bool d_logToFile{true};
-    bool d_debugLogging{true};
+    bool d_debugLogging{false};
 
     void writeToFile(const QString text, const MessageCode type, QDateTime t = QDateTime::currentDateTime());
     QString makeLogFileName();

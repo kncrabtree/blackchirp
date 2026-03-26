@@ -13,7 +13,6 @@
 #include <QToolButton>
 #include <QFileDialog>
 #include <QDir>
-#include <QFontDialog>
 #include <QScreen>
 #include <QTimer>
 #include <functional>
@@ -34,9 +33,9 @@
 #include <gui/widget/pressurecontrolwidget.h>
 #include <gui/style/themecolors.h>
 
+#include <gui/dialog/applicationconfigdialog.h>
 #include <gui/dialog/communicationdialog.h>
 #include <gui/dialog/hwdialog.h>
-#include <gui/dialog/bcsavepathdialog.h>
 #include <gui/dialog/quickexptdialog.h>
 #include <gui/dialog/batchsequencedialog.h>
 #include <gui/dialog/runtimehardwareconfigdialog.h>
@@ -90,25 +89,14 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->rollingGraphsBox,&SpinBoxWidgetAction::valueChanged,
             ui->rollingDataViewWidget,&RollingDataWidget::changeNumPlots);
 
-    connect(ui->fontAction,&QAction::triggered,[this](){
-        auto f = QFontDialog::getFont(0,font());
-        QApplication::setFont(f);
-        setFont(f);
-
-        QSettings s;
-        s.beginGroup(BC::Key::BC);
-        s.setValue(BC::Key::appFont,f);
-        s.endGroup();
-    });
-
-    connect(ui->savePathAction,&QAction::triggered,[this](){
+    connect(ui->appConfigAction, &QAction::triggered, [this]() {
         if(p_batchManager && !p_batchManager->isComplete())
             return;
-        BCSavePathDialog d(this);
+        ApplicationConfigDialog d(false, this);
         if(d.exec() == QDialog::Accepted)
         {
             SettingsStorage s;
-            ui->exptSpinBox->setValue(s.get(BC::Key::exptNum,0));
+            ui->exptSpinBox->setValue(s.get(BC::Key::exptNum, 0));
         }
     });
 
@@ -116,6 +104,11 @@ MainWindow::MainWindow(QWidget *parent) :
     p_lh->setDebugLogging(ApplicationConfigManager::instance().isDebugLoggingEnabled());
     connect(&ApplicationConfigManager::instance(), &ApplicationConfigManager::debugLoggingChanged,
             p_lh, &LogHandler::setDebugLogging);
+    connect(&ApplicationConfigManager::instance(), &ApplicationConfigManager::fontChanged,
+            this, [this](QFont f) {
+        QApplication::setFont(f);
+        setFont(f);
+    });
     connect(this,&MainWindow::logMessage,p_lh,&LogHandler::logMessage);
     connect(p_lh,&LogHandler::sendLogMessage,ui->logTextEdit,&QTextEdit::append);
     connect(p_lh,&LogHandler::iconUpdate,this,&MainWindow::setLogIcon);
@@ -218,13 +211,17 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionTest_All_Connections,&QAction::triggered,p_hwm,&HardwareManager::testAll);
     connect(ui->viewExperimentAction,&QAction::triggered,this,&MainWindow::viewExperiment);
 
-    connect(ui->actionLifConfig,&QAction::triggered,this,&MainWindow::launchLifConfigDialog);
+    if(ui->actionLifConfig)
+        connect(ui->actionLifConfig,&QAction::triggered,this,&MainWindow::launchLifConfigDialog);
     connect(ui->actionRuntimeHardwareConfig,&QAction::triggered,this,&MainWindow::launchRuntimeHardwareConfigDialog);
-    connect(p_hwm,&HardwareManager::lifSettingsComplete,p_am,&AcquisitionManager::lifHardwareReady);
-    connect(p_hwm,&HardwareManager::lifScopeShotAcquired,p_am,&AcquisitionManager::processLifScopeShot);
-    connect(p_am,&AcquisitionManager::nextLifPoint,p_hwm,&HardwareManager::setLifParameters);
-    connect(p_am,&AcquisitionManager::lifShotAcquired,ui->lifProgressBar,&QProgressBar::setValue);
-    connect(p_am,&AcquisitionManager::lifPointUpdate,ui->lifDisplayWidget,&LifDisplayWidget::updatePoint);
+    if(ApplicationConfigManager::instance().isLifEnabled())
+    {
+        connect(p_hwm,&HardwareManager::lifSettingsComplete,p_am,&AcquisitionManager::lifHardwareReady);
+        connect(p_hwm,&HardwareManager::lifScopeShotAcquired,p_am,&AcquisitionManager::processLifScopeShot);
+        connect(p_am,&AcquisitionManager::nextLifPoint,p_hwm,&HardwareManager::setLifParameters);
+        connect(p_am,&AcquisitionManager::lifShotAcquired,ui->lifProgressBar,&QProgressBar::setValue);
+        connect(p_am,&AcquisitionManager::lifPointUpdate,ui->lifDisplayWidget,&LifDisplayWidget::updatePoint);
+    }
 
     SettingsStorage bc;
     ui->exptSpinBox->setValue(bc.get<int>(BC::Key::exptNum,0));
@@ -639,9 +636,8 @@ void MainWindow::batchComplete(bool aborted)
     disconnect(p_am,&AcquisitionManager::auxData,ui->auxDataViewWidget,&AuxDataViewWidget::pointUpdated);
     disconnect(p_hwm,&HardwareManager::abortAcquisition,p_am,&AcquisitionManager::abort);
 
-    if(ApplicationConfigManager::instance().isLifEnabled()) {
+    if(ui->lifTab)
         ui->lifTab->setEnabled(true);
-    }
 
     if(aborted)
         ui->statusBar->showMessage(QString("Experiment aborted"));
@@ -707,17 +703,22 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
         ui->ftmwProgressBar->setValue(1);
     }
 
-    if(ApplicationConfigManager::instance().isLifEnabled()) {
+    if(ui->lifDisplayWidget)
+    {
         ui->lifDisplayWidget->prepareForExperiment(*exp);
         if(exp->lifEnabled())
         {
-            ui->lifTab->setEnabled(true);
-            ui->lifProgressBar->setValue(0);
+            if(ui->lifTab)
+                ui->lifTab->setEnabled(true);
+            if(ui->lifProgressBar)
+                ui->lifProgressBar->setValue(0);
         }
         else
         {
-            ui->lifTab->setEnabled(false);
-            ui->lifProgressBar->setValue(1000);
+            if(ui->lifTab)
+                ui->lifTab->setEnabled(false);
+            if(ui->lifProgressBar)
+                ui->lifProgressBar->setValue(1000);
         }
     }
 
@@ -1258,51 +1259,19 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
     ui->pauseButton->setEnabled(false);
     ui->resumeButton->setEnabled(false);
     ui->sleepButton->setEnabled(false);
-    ui->savePathAction->setEnabled(false);
-
-    // Configure LIF UI visibility based on application configuration
-    // TEMPORARILY COMMENTED OUT - testing for visual artifacts
-    /*
-    bool lifEnabled = ApplicationConfigManager::instance().isLifEnabled();
-    if (ui->lifTab->isVisible() != lifEnabled) {
-        ui->lifTab->setVisible(lifEnabled);
-    }
-    if (ui->lifDisplayWidget->isVisible() != lifEnabled) {
-        ui->lifDisplayWidget->setVisible(lifEnabled);  // Hide the display widget directly
-    }
-    if (ui->actionLifConfig->isVisible() != lifEnabled) {
-        ui->actionLifConfig->setVisible(lifEnabled);
-    }
-    if (ui->lifProgressBar->isVisible() != lifEnabled) {
-        ui->lifProgressBar->setVisible(lifEnabled);
-    }
-    
-    // Also control LifLaserStatusBox and related action visibility if they exist
-    auto lifLaserStatusBox = findChild<LifLaserStatusBox*>();
-    if (lifLaserStatusBox) {
-        lifLaserStatusBox->setVisible(lifEnabled);
-    }
-    
-    // Control LifLaser hardware action visibility using metaobject classname
-    QString lifLaserClassName = QString(LifLaser::staticMetaObject.className());
-    for (auto act : ui->menuHardware->actions()) {
-        if (act->objectName().contains(lifLaserClassName)) {
-            act->setVisible(lifEnabled);
-        }
-    }
-    */
+    ui->appConfigAction->setEnabled(false);
 
     switch(s)
     {
     case Asleep:
         ui->sleepButton->setEnabled(true);
-        ui->savePathAction->setEnabled(true);
+        ui->appConfigAction->setEnabled(true);
         break;
     case Disconnected:
         ui->actionCommunication->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
         ui->actionRuntimeHardwareConfig->setEnabled(true);
-        ui->savePathAction->setEnabled(true);
+        ui->appConfigAction->setEnabled(true);
         break;
     case Paused:
         ui->abortButton->setEnabled(true);
@@ -1335,7 +1304,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         for(auto act : acq)
             act->setEnabled(true);
         ui->sleepButton->setEnabled(true);
-        ui->savePathAction->setEnabled(true);
+        ui->appConfigAction->setEnabled(true);
         break;
     }
 }
@@ -1363,7 +1332,8 @@ void MainWindow::startBatch(BatchManager *bm)
     connect(bm,&BatchManager::batchComplete,this,&MainWindow::checkSleep);
     connect(bm,&BatchManager::batchComplete,p_lh,&LogHandler::endExperimentLog);
 
-    connect(p_am,&AcquisitionManager::experimentComplete,ui->lifDisplayWidget,&LifDisplayWidget::experimentComplete);
+    if(ui->lifDisplayWidget)
+        connect(p_am,&AcquisitionManager::experimentComplete,ui->lifDisplayWidget,&LifDisplayWidget::experimentComplete);
 
     connect(p_am,&AcquisitionManager::auxData,ui->auxDataViewWidget,&AuxDataViewWidget::pointUpdated,Qt::UniqueConnection);
     connect(p_hwm,&HardwareManager::abortAcquisition,p_am,&AcquisitionManager::abort,Qt::UniqueConnection);
@@ -1479,7 +1449,8 @@ void MainWindow::setupThemeAwareIconStyling()
     ui->actionQuick_Experiment->setIcon(ThemeColors::createThemedIcon(":/icons/quickexpt.svg", ThemeColors::IconPrimary, this));
     ui->actionStart_Sequence->setIcon(ThemeColors::createThemedIcon(":/icons/sequence.svg", ThemeColors::IconPrimary, this));
     
-    ui->actionLifConfig->setIcon(ThemeColors::createThemedIcon(":/icons/lif.svg", ThemeColors::IconPrimary, this));
+    if(ui->actionLifConfig)
+        ui->actionLifConfig->setIcon(ThemeColors::createThemedIcon(":/icons/lif.svg", ThemeColors::IconPrimary, this));
     ui->actionRuntimeHardwareConfig->setIcon(ThemeColors::createThemedIcon(":/icons/cpu-chip.svg", ThemeColors::IconPrimary, this));
 
     ui->actionRfConfig->setIcon(ThemeColors::createThemedIcon(":/icons/rf.svg", ThemeColors::IconPrimary, this));
@@ -1494,14 +1465,14 @@ void MainWindow::setupThemeAwareIconStyling()
     
     // Set action icons
     ui->viewExperimentAction->setIcon(ThemeColors::createThemedIcon(":/icons/viewold.svg", ThemeColors::IconSecondary, this));
-    ui->fontAction->setIcon(ThemeColors::createThemedIcon(":/icons/language.svg", ThemeColors::IconSecondary, this));
-    ui->savePathAction->setIcon(ThemeColors::createThemedIcon(":/icons/folder-open.svg", ThemeColors::IconSecondary, this));
+    ui->appConfigAction->setIcon(ThemeColors::createThemedIcon(":/icons/cog-6-tooth.svg", ThemeColors::IconSecondary, this));
     
     // Set tab icons
     ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->ftmwTab), ThemeColors::createThemedIcon(":/icons/signal.svg", ThemeColors::IconPrimary, this));
     ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->rollingDataTab), ThemeColors::createThemedIcon(":/icons/arrow-path-rounded-square.svg", ThemeColors::IconSecondary, this));
     ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->auxDataTab), ThemeColors::createThemedIcon(":/icons/chart-bar.svg", ThemeColors::IconSecondary, this));
-    ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->lifTab), ThemeColors::createThemedIcon(":/icons/sparkles.svg", ThemeColors::IconSecondary, this));
+    if(ui->lifTab)
+        ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->lifTab), ThemeColors::createThemedIcon(":/icons/sparkles.svg", ThemeColors::IconSecondary, this));
     
     // Set autoscale action icons
     ui->actionAutoscale_Rolling->setIcon(ThemeColors::createThemedIcon(":/icons/arrows-pointing-out.svg", ThemeColors::IconSecondary, this));

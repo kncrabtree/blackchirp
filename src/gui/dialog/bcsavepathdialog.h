@@ -2,29 +2,23 @@
 #define BCSAVEPATHDIALOG_H
 
 #include <QDialog>
-#include <data/storage/settingsstorage.h>
 
-class QSpinBox;
+class BCSavePathWidget;
 class QDialogButtonBox;
-class QLineEdit;
 
-class BCSavePathDialog : public QDialog, public SettingsStorage
+class BCSavePathDialog : public QDialog
 {
 public:
     BCSavePathDialog(QWidget *parent = nullptr);
     QSize sizeHint() const override;
 
-private:
-    QSpinBox *p_expBox;
-    QDialogButtonBox *p_buttons;
-    QLineEdit *p_lineEdit;
-
 public slots:
     void accept() override;
     void reject() override;
-    void apply();
 
-
+private:
+    BCSavePathWidget *p_widget;
+    QDialogButtonBox *p_buttons;
 };
 
 #endif // BCSAVEPATHDIALOG_H

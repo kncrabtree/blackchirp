@@ -4,11 +4,6 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 
 ## Medium
 
-### [Unified Application Configuration Dialog](app-config-dialog.md)
-Consolidate scattered application settings (font, save path, LIF toggle, debug logging)
-into a single dialog with a declarative option registry. Also serves as the first-run
-onboarding experience. CUDA remains hidden/disabled until revived.
-
 ### [Generalized AWG Marker System](awg-marker-system.md)
 Replace the hardcoded 2-marker (protection/gate) system with a flexible N-marker
 architecture. Users define named marker channels with roles (Protection, Gate, Trigger,

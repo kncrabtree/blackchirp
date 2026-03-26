@@ -3,32 +3,48 @@
 
 #include <QObject>
 #include <QMutex>
+#include <QVariant>
+#include <QFont>
 
 /*!
- * \brief Centralized application state management for feature enabling
- * 
- * ApplicationConfigManager provides centralized, thread-safe runtime configuration
- * management to replace compilation flags with runtime configuration decisions.
- * 
- * This class implements the singleton pattern with thread-safe access to application
- * feature state. During development, the configuration is initialized from existing
- * compilation flags (BC_LIF, BC_CUDA) to maintain compatibility while transitioning
- * from compile-time to runtime configuration.
- * 
+ * \brief Declarative application option descriptor
+ *
+ * Describes a single configurable application option, including its settings
+ * key, display name, description, type-aware default value, and whether
+ * changing it requires an application restart.
+ */
+struct AppOption {
+    QString settingsKey;       ///< QSettings key (within AppConfig group)
+    QString label;             ///< Display name for UI
+    QString description;       ///< Tooltip / help text
+    QVariant defaultValue;     ///< Type-aware default
+    bool requiresRestart;      ///< Show restart badge in UI
+};
+
+/*!
+ * \brief Centralized runtime application configuration manager
+ *
+ * ApplicationConfigManager provides centralized, thread-safe runtime
+ * configuration management. It replaces compile-time flags (BC_LIF, etc.)
+ * with runtime configuration decisions persisted via QSettings.
+ *
+ * The manager maintains a declarative option registry (getOptions()) that
+ * describes all available options with their metadata, enabling automatic
+ * UI generation and generic get/set access.
+ *
  * Design principles:
  * - Singleton pattern with global access
- * - Thread-safe with QMutex (simple, non-over-engineered)
- * - Compile-time flag initialization during development phase
+ * - Thread-safe with QMutex
  * - Qt integration with signals for configuration changes
- * - Simple, straightforward implementation
- * 
+ * - Declarative option registry for UI generation
+ *
  * Usage example:
  * ```cpp
  * // Check if LIF is enabled (replaces #ifdef BC_LIF)
  * if (ApplicationConfigManager::instance().isLifEnabled()) {
  *     // LIF-specific code
  * }
- * 
+ *
  * // Check if CUDA is enabled (replaces #ifdef BC_CUDA)
  * if (ApplicationConfigManager::instance().isCudaEnabled()) {
  *     // CUDA-specific code
@@ -46,26 +62,25 @@ public:
     struct ApplicationConfig {
         bool lifEnabled{false};     /*!< LIF module enabled state */
         bool cudaEnabled{false};    /*!< CUDA module enabled state */
-        bool debugLogging{true};   /*!< Debug log messages enabled state */
+        bool debugLogging{false};   /*!< Debug log messages enabled state */
     };
 
     /*!
      * \brief Get singleton instance for application configuration access
-     * 
+     *
      * Provides thread-safe access to the application configuration manager.
      * The instance is created on first access and persists for the application
      * lifetime.
-     * 
+     *
      * \return Reference to the singleton instance
      */
     static ApplicationConfigManager& instance();
 
     /*!
      * \brief Check if LIF module is enabled
-     * 
-     * Thread-safe query for LIF module availability. This replaces compile-time
-     * #ifdef BC_LIF checks with runtime configuration queries.
-     * 
+     *
+     * Thread-safe query for LIF module availability.
+     *
      * \return True if LIF functionality is enabled
      */
     bool isLifEnabled() const;
@@ -73,8 +88,7 @@ public:
     /*!
      * \brief Check if CUDA module is enabled
      *
-     * Thread-safe query for CUDA module availability. This replaces compile-time
-     * #ifdef BC_CUDA checks with runtime configuration queries.
+     * Thread-safe query for CUDA module availability.
      *
      * \return True if CUDA functionality is enabled
      */
@@ -92,52 +106,58 @@ public:
      */
     void setDebugLogging(bool enabled);
 
+    /*!
+     * \brief Enable or disable LIF module and persist the setting
+     * \param enabled True to enable LIF hardware and UI components
+     */
+    void setLifEnabled(bool enabled);
+
+    /*!
+     * \brief Get the declarative option registry
+     * \return Read-only reference to the list of registered AppOption entries
+     */
+    const QVector<AppOption>& getOptions() const;
+
+    /*!
+     * \brief Get the current persisted value for an option key
+     * \param key The settingsKey of the option (within AppConfig group)
+     * \return The stored value, or the option's defaultValue if not yet set
+     */
+    QVariant getOptionValue(const QString& key) const;
+
+    /*!
+     * \brief Set and persist a value for an option key
+     *
+     * Persists the value to QSettings and updates in-memory state.
+     * Emits the appropriate specific signal (lifEnabledChanged, fontChanged,
+     * etc.) as well as configurationChanged when relevant.
+     *
+     * \param key The settingsKey of the option
+     * \param value The new value to store
+     */
+    void setOptionValue(const QString& key, const QVariant& value);
+
 signals:
     /*!
      * \brief Emitted when application configuration changes
-     * 
-     * This signal is emitted whenever the application configuration is modified,
-     * allowing components to respond to configuration changes dynamically.
-     * 
      * \param newConfig The updated application configuration
      */
     void configurationChanged(const ApplicationConfig& newConfig);
     void debugLoggingChanged(bool enabled);
+    void fontChanged(QFont font);
+    void lifEnabledChanged(bool enabled);
 
 private:
-    /*!
-     * \brief Private constructor for singleton pattern
-     * 
-     * Initializes the application configuration from compile-time flags during
-     * the development phase. This ensures compatibility while transitioning from
-     * compile-time to runtime configuration.
-     */
     explicit ApplicationConfigManager(QObject *parent = nullptr);
-
-    /*!
-     * \brief Private destructor
-     */
     ~ApplicationConfigManager() = default;
 
-    // Disable copy/assignment for singleton pattern
     ApplicationConfigManager(const ApplicationConfigManager&) = delete;
     ApplicationConfigManager& operator=(const ApplicationConfigManager&) = delete;
-
-    /*!
-     * \brief Initialize configuration from compile-time flags
-     * 
-     * During the development phase, this method initializes the runtime
-     * configuration state based on existing BC_LIF and BC_CUDA compilation
-     * flags. This provides a smooth transition from compile-time to runtime
-     * configuration management.
-     * 
-     * This method is called once during singleton construction.
-     */
-    void initializeFromCompileTimeFlags();
 
     static ApplicationConfigManager* s_instance;  /*!< Singleton instance */
     mutable QMutex d_configMutex;                /*!< Thread-safe access control */
     ApplicationConfig d_currentConfig;            /*!< Current configuration state */
+    QVector<AppOption> d_options;                 /*!< Declarative option registry */
 };
 
 /*!
@@ -148,6 +168,7 @@ namespace BC::Key::AppConfig {
     static const QString lifEnabled{"lifEnabled"};           /*!< LIF enabled state */
     static const QString cudaEnabled{"cudaEnabled"};         /*!< CUDA enabled state */
     static const QString debugLogging{"debugLogging"};       /*!< Debug logging enabled state */
+    static const QString appFont{"appFont"};                 /*!< Application font */
 }
 
 #endif // APPLICATIONCONFIGMANAGER_H

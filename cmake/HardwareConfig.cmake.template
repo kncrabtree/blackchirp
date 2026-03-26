@@ -131,26 +131,6 @@ set(BC_PRESSURECONTROLLER "" CACHE STRING "Pressure controller implementations (
 set(BC_TEMPCONTROLLER "" CACHE STRING "Temperature controller implementations (semicolon-separated)")
 
 # ============================================================================
-# LIF Hardware (Always available - controlled at runtime)
-# ============================================================================
-
-# LIF Digitizer/Oscilloscope (OPTIONAL - choose ONE or leave empty)
-# Available implementations: (LIF-specific digitizers only)
-#   virtual        - Virtual LIF scope for testing
-#   m4i2211x8      - Spectrum M4i.2211-x8 PCIe digitizer (requires Spectrum driver SDK)
-#   rigolds2302a   - Rigol DS2302A oscilloscope
-
-set(BC_LIFSCOPE "virtual" CACHE STRING "LIF oscilloscope implementation")
-
-# LIF Laser (OPTIONAL - choose ONE or leave empty)
-# Available implementations:
-#   virtual        - Virtual laser for testing
-#   opolette       - Opolette laser system
-#   sirahcobra     - Sirah Cobra laser system
-
-set(BC_LIFLASER "virtual" CACHE STRING "LIF laser implementation")
-
-# ============================================================================
 # Configuration Validation
 # ============================================================================
 #
@@ -218,7 +198,7 @@ set(BC_LIFLASER "virtual" CACHE STRING "LIF laser implementation")
 #
 # Example VendorLibraries.cmake:
 #   # Check if hardware requiring vendor libraries is enabled
-#   if(BC_FTMW_SCOPE STREQUAL "m4i2220x8" OR BC_LIFSCOPE STREQUAL "m4i2211x8")
+#   if(BC_FTMW_SCOPE STREQUAL "m4i2220x8")
 #       find_path(SPECTRUM_INCLUDE_DIR spcm/dlltyp.h
 #           PATHS /opt/spectrum/include /usr/local/include
 #           DOC "Spectrum driver include directory")
