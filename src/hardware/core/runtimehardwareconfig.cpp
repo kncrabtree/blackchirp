@@ -375,7 +375,8 @@ bool RuntimeHardwareConfig::setHardwareSelection(const QString& hardwareType,
     HardwareSelection selection;
     selection.type = hardwareType;
     selection.implementation = implementation;
-    
+    selection.threaded = HardwareProfileManager::instance().getThreaded(hardwareType, label);
+
     d_activeHardware[key] = selection;
     
     qDebug() << "Set hardware selection:" << key << "=" << implementation;
@@ -442,11 +443,12 @@ void RuntimeHardwareConfig::syncWithProfiles()
             QString implementation = profileManager.getImplementation(type, label);
             if (!implementation.isEmpty()) {
                 QString key = BC::Key::hwKey(type, label);
-                
+
                 HardwareSelection selection;
                 selection.type = type;
                 selection.implementation = implementation;
-                
+                selection.threaded = profileManager.getThreaded(type, label);
+
                 d_activeHardware[key] = selection;
                 loadedCount++;
                 
@@ -581,6 +583,32 @@ void RuntimeHardwareConfig::activateMissingSystemProfiles()
     }
 }
 
+std::optional<bool> RuntimeHardwareConfig::getThreaded(const QString& hwKey) const
+{
+    QReadLocker locker(&d_configLock);
+
+    auto it = d_activeHardware.find(hwKey);
+    if (it != d_activeHardware.end())
+        return it->threaded;
+
+    return std::nullopt;
+}
+
+void RuntimeHardwareConfig::setThreaded(const QString& hwKey, bool threaded)
+{
+    {
+        QWriteLocker locker(&d_configLock);
+        auto it = d_activeHardware.find(hwKey);
+        if (it != d_activeHardware.end())
+            it->threaded = threaded;
+    }
+
+    // Persist to HardwareProfileManager
+    auto [hardwareType, label] = BC::Key::parseKey(hwKey);
+    if (!hardwareType.isEmpty() && !label.isEmpty())
+        HardwareProfileManager::instance().setThreaded(hardwareType, label, threaded);
+}
+
 bool RuntimeHardwareConfig::applyConfiguration(const std::map<QString, QString>& config)
 {
     QWriteLocker locker(&d_configLock);
@@ -606,6 +634,7 @@ bool RuntimeHardwareConfig::applyConfiguration(const std::map<QString, QString>&
         HardwareSelection selection;
         selection.type = hardwareType;
         selection.implementation = implementation;
+        selection.threaded = HardwareProfileManager::instance().getThreaded(hardwareType, label);
 
         d_activeHardware[key] = selection;
     }

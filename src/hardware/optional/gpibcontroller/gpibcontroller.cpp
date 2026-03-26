@@ -3,6 +3,7 @@
 GpibController::GpibController(const QString& impl, const QString& label, QObject *parent) :
     HardwareObject(QString(GpibController::staticMetaObject.className()), impl, label, parent)
 {
+    d_threaded = true;
 }
 
 GpibController::~GpibController()

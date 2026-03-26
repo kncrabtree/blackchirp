@@ -265,11 +265,18 @@ private:
     QString getGenericInstallationGuidance() const;
 
     Ui::RuntimeHardwareConfigDialog *pu_ui;
-    
+
     // State management for Phase 4.3
     std::map<QString, QString> d_originalRuntimeConfig;  // Original runtime configuration for cancel functionality
     std::map<QString, QString> d_previewRuntimeConfig;   // Preview of runtime configuration changes
+    std::map<QString, bool> d_previewThreadedConfig;     // Threading overrides (key present = override stored)
     QString d_currentHardwareType;  // Currently selected hardware type in browser
+
+    /*!
+     * \brief Return whether the type-level default for threading is true for a hardware type
+     * \param hardwareType Hardware type string (e.g., "FtmwScope")
+     */
+    static bool getTypeDefaultThreaded(const QString& hardwareType);
     
     // Phase 3.5: Library Status Tab state
     QString d_currentLibraryKey;      // Currently selected library key

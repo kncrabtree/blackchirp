@@ -21,8 +21,7 @@ namespace HW {
     static const QString name{"prettyName"}; /*!< Display name */
     static const QString connected{"connected"}; /*!< Whether last communication was successful */
     static const QString critical{"critical"}; /*!< Whether communication failure should abort an experiment */
-    static const QString threaded{"threaded"}; /*!< Whether object is in its own thread */
-    static const QString commType{"commType"}; /*!< CommunicationProtocol type */
+static const QString commType{"commType"}; /*!< CommunicationProtocol type */
     static const QString supportedProtocols{"supportedProtocols"}; /*!< List of supported communication protocols */
     static const QString rInterval{"rollingDataIntervalSec"}; /*!< Timer interval for rolling data (seconds) */
 }

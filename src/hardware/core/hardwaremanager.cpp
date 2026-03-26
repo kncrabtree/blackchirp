@@ -1115,6 +1115,12 @@ void HardwareManager::addHardwareInternal(const QString& hwKey, const QString& i
         setupHardwareObjectWithTracking(hwObj);
         setupHardwareSpecificConnectionsWithTracking(hwObj);
         
+        // Apply threading override from RuntimeHardwareConfig (if stored by user)
+        // Falls back to the type-level default set in the intermediate class constructor
+        auto threadedOverride = RuntimeHardwareConfig::constInstance().getThreaded(hwKey);
+        if (threadedOverride.has_value())
+            hwObj->d_threaded = *threadedOverride;
+
         // Handle threading setup
         if (hwObj->d_threaded) {
             auto thread = new QThread(this);
@@ -1305,7 +1311,28 @@ void HardwareManager::syncWithRuntimeConfig()
     }
     
     emit logMessage("Hardware synchronization changes applied successfully", LogHandler::Normal);
-    
+
+    // Report threading status for all hardware objects (Debug level)
+    {
+        QReadLocker locker(&d_hardwareMapLock);
+        QThread* managerThread = QThread::currentThread();
+        QString managerThreadName = managerThread->objectName().isEmpty()
+                                    ? QString("0x%1").arg(reinterpret_cast<quintptr>(managerThread), 0, 16)
+                                    : managerThread->objectName();
+        emit logMessage(QString("Thread report - HardwareManager: %1").arg(managerThreadName),
+                        LogHandler::Debug);
+        for (auto& [hwKey, hwObj] : d_hardwareMap) {
+            QThread* hwThread = hwObj->thread();
+            QString hwThreadName = hwThread->objectName().isEmpty()
+                                   ? QString("0x%1").arg(reinterpret_cast<quintptr>(hwThread), 0, 16)
+                                   : hwThread->objectName();
+            bool ownThread = (hwThread != managerThread);
+            emit logMessage(QString("Thread report - %1: %2 (%3)")
+                            .arg(hwKey, hwThreadName, ownThread ? "own thread" : "manager thread"),
+                            LogHandler::Debug);
+        }
+    }
+
     // Resolve GPIB controllers for instruments before connection testing
     resolveGpibControllersForInstruments();  // Now uses its own read lock
     
@@ -1373,15 +1400,21 @@ std::vector<std::pair<QString, QString>> HardwareManager::findHardwareToReplace(
 {
     std::vector<std::pair<QString, QString>> toReplace;
     
-    // Hardware in both maps but with different implementations should be replaced
+    // Hardware in both maps but with different implementations or threading settings should be replaced
     for(const auto& [targetKey, targetImpl] : targetHardware) {
         auto currentIt = d_hardwareMap.find(targetKey);
         if(currentIt != d_hardwareMap.end()) {
-            // Hardware exists in current map, check if implementation differs
             HardwareObject* currentObj = currentIt->second;
-            QString currentImpl = currentObj->d_model;
-            
-            if(currentImpl != targetImpl) {
+
+            // Implementation changed
+            if(currentObj->d_model != targetImpl) {
+                toReplace.emplace_back(targetKey, targetImpl);
+                continue;
+            }
+
+            // Threading setting changed (only if a stored override differs from current state)
+            auto threadedOverride = RuntimeHardwareConfig::constInstance().getThreaded(targetKey);
+            if(threadedOverride.has_value() && *threadedOverride != currentObj->d_threaded) {
                 toReplace.emplace_back(targetKey, targetImpl);
             }
         }

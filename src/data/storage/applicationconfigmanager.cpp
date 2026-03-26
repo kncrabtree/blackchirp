@@ -14,7 +14,7 @@ ApplicationConfigManager::ApplicationConfigManager(QObject *parent)
     // Load persisted settings
     QSettings s;
     s.beginGroup(BC::Key::AppConfig::appConfig);
-    d_currentConfig.debugLogging = s.value(BC::Key::AppConfig::debugLogging, false).toBool();
+    d_currentConfig.debugLogging = s.value(BC::Key::AppConfig::debugLogging, true).toBool();
     s.endGroup();
 }
 

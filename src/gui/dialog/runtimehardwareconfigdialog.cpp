@@ -12,6 +12,7 @@
 #include <QPushButton>
 #include <QGroupBox>
 #include <QHash>
+#include <QSet>
 #include <QButtonGroup>
 #include <QRadioButton>
 #include <QCheckBox>
@@ -50,6 +51,13 @@ RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
     // Initialize both original and preview state from current runtime configuration FIRST
     d_originalRuntimeConfig = RuntimeHardwareConfig::constInstance().getCurrentHardware();
     d_previewRuntimeConfig = d_originalRuntimeConfig;
+
+    // Initialize threaded preview config from stored overrides
+    for (auto& [hwKey, impl] : d_originalRuntimeConfig) {
+        auto override = RuntimeHardwareConfig::constInstance().getThreaded(hwKey);
+        if (override.has_value())
+            d_previewThreadedConfig[hwKey] = *override;
+    }
 
     // Auto-activate system profiles for required types that have no active entry
     {
@@ -505,6 +513,95 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
 
     // Add the group box to the main layout
     layout->addWidget(profileGroupBox);
+
+    // Add collapsible Advanced section
+    auto* advancedButton = new QPushButton(QString::fromUtf8("\u25b6 Advanced"), pu_ui->configurationContentWidget);
+    advancedButton->setObjectName("advancedToggleButton");
+    advancedButton->setFlat(true);
+    advancedButton->setStyleSheet("QPushButton { text-align: left; font-weight: bold; }");
+
+    auto* advancedContainer = new QWidget(pu_ui->configurationContentWidget);
+    advancedContainer->setObjectName("advancedContainer");
+    advancedContainer->setVisible(false);
+
+    auto* advancedLayout = new QVBoxLayout(advancedContainer);
+    advancedLayout->setContentsMargins(4, 2, 4, 2);
+
+    // Determine initial threading state for the currently active/checked profile
+    auto getActiveHwKey = [this, hardwareType, profilesList]() -> QString {
+        bool isMulti = HardwareRegistry::isMultiInstanceType(hardwareType);
+        for (int i = 0; i < profilesList->count(); ++i) {
+            auto* item = profilesList->item(i);
+            QString profileLabel = item->data(Qt::UserRole).toString();
+            if (profileLabel.isEmpty()) continue;
+            if (isMulti) {
+                auto* cb = qobject_cast<QCheckBox*>(profilesList->itemWidget(item));
+                if (cb && cb->isChecked())
+                    return BC::Key::hwKey(hardwareType, profileLabel);
+            } else {
+                auto* rb = qobject_cast<QRadioButton*>(profilesList->itemWidget(item));
+                if (rb && rb->isChecked())
+                    return BC::Key::hwKey(hardwareType, profileLabel);
+            }
+        }
+        return QString();
+    };
+
+    bool typeDefault = getTypeDefaultThreaded(hardwareType);
+    QString activeHwKey = getActiveHwKey();
+    bool threadedChecked = typeDefault;
+    if (!activeHwKey.isEmpty()) {
+        auto it = d_previewThreadedConfig.find(activeHwKey);
+        if (it != d_previewThreadedConfig.end())
+            threadedChecked = it->second;
+    }
+
+    QString checkboxLabel = tr("Run in own thread");
+    if (typeDefault)
+        checkboxLabel += tr(" (recommended)");
+    auto* threadedCheckbox = new QCheckBox(checkboxLabel, advancedContainer);
+    threadedCheckbox->setObjectName("threadedCheckbox");
+    threadedCheckbox->setChecked(threadedChecked);
+    threadedCheckbox->setEnabled(!activeHwKey.isEmpty());
+
+    advancedLayout->addWidget(threadedCheckbox);
+    advancedContainer->setLayout(advancedLayout);
+
+    // Toggle expand/collapse
+    connect(advancedButton, &QPushButton::clicked, this, [advancedButton, advancedContainer](bool) {
+        bool visible = !advancedContainer->isVisible();
+        advancedContainer->setVisible(visible);
+        advancedButton->setText(visible ? QString::fromUtf8("\u25bc Advanced")
+                                        : QString::fromUtf8("\u25b6 Advanced"));
+    });
+
+    // Update Advanced section when profile selection changes in the list
+    connect(profilesList, &QListWidget::itemSelectionChanged, this,
+            [this, hardwareType, profilesList, threadedCheckbox, typeDefault, getActiveHwKey]() {
+        QString hwKey = getActiveHwKey();
+        if (hwKey.isEmpty()) {
+            threadedCheckbox->setEnabled(false);
+            threadedCheckbox->setChecked(typeDefault);
+            return;
+        }
+        threadedCheckbox->setEnabled(true);
+        auto it = d_previewThreadedConfig.find(hwKey);
+        bool checked = (it != d_previewThreadedConfig.end()) ? it->second : typeDefault;
+        // Block signals to avoid triggering the toggled connection below
+        QSignalBlocker blocker(threadedCheckbox);
+        threadedCheckbox->setChecked(checked);
+    });
+
+    // Wire checkbox changes into d_previewThreadedConfig
+    connect(threadedCheckbox, &QCheckBox::toggled, this,
+            [this, hardwareType, profilesList, getActiveHwKey](bool checked) {
+        QString hwKey = getActiveHwKey();
+        if (hwKey.isEmpty()) return;
+        d_previewThreadedConfig[hwKey] = checked;
+    });
+
+    layout->addWidget(advancedButton);
+    layout->addWidget(advancedContainer);
     layout->addStretch(); // Add stretch to push content to top
 
     pu_ui->configurationContentWidget->setLayout(layout);
@@ -1021,6 +1118,10 @@ void RuntimeHardwareConfigDialog::onDialogAccepted()
     auto& runtimeConfig = RuntimeHardwareConfig::instance();
     
     if (runtimeConfig.applyConfiguration(d_previewRuntimeConfig)) {
+        // Apply threading overrides from preview config
+        for (auto& [hwKey, threaded] : d_previewThreadedConfig)
+            runtimeConfig.setThreaded(hwKey, threaded);
+
         // Save all hardware profiles to persistent storage now that dialog is finished
         auto& profileManager = HardwareProfileManager::instance();
         profileManager.saveProfiles();
@@ -1768,4 +1869,18 @@ QString RuntimeHardwareConfigDialog::getGenericInstallationGuidance() const
         "</ul>"
     );
 #endif
+}
+
+bool RuntimeHardwareConfigDialog::getTypeDefaultThreaded(const QString& hardwareType)
+{
+    // These types default to threaded based on their intermediate class constructors
+    static const QSet<QString> threadedTypes = {
+        QString(FtmwScope::staticMetaObject.className()),
+        QString(AWG::staticMetaObject.className()),
+        QString(IOBoard::staticMetaObject.className()),
+        QString(LifScope::staticMetaObject.className()),
+        QString(LifLaser::staticMetaObject.className()),
+        QString(GpibController::staticMetaObject.className())
+    };
+    return threadedTypes.contains(hardwareType);
 }

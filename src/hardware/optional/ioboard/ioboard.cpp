@@ -3,6 +3,8 @@
 IOBoard::IOBoard(const QString& impl, const QString& label, QObject *parent) :
     HardwareObject(QString(IOBoard::staticMetaObject.className()), impl, label, parent), IOBoardConfig(BC::Key::hwKey(QString(IOBoard::staticMetaObject.className()), label))
 {
+    d_threaded = true;
+
     using namespace BC::Key::Digi;
     using namespace BC::Store::Digi;
     setDefault(isTriggered,false);

@@ -46,7 +46,7 @@ public:
     struct ApplicationConfig {
         bool lifEnabled{false};     /*!< LIF module enabled state */
         bool cudaEnabled{false};    /*!< CUDA module enabled state */
-        bool debugLogging{false};   /*!< Debug log messages enabled state */
+        bool debugLogging{true};   /*!< Debug log messages enabled state */
     };
 
     /*!

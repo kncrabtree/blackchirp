@@ -2,13 +2,6 @@
 
 Projects sorted by estimated complexity (smallest first). All are largely independent.
 
-## Small
-
-### [Hardware Threading Configuration](hardware-threading.md)
-Restore per-object threading and make it user-configurable via RuntimeHardwareConfig.
-Type-level defaults in intermediate classes; per-instance override persisted in
-HardwareSelection and applied during HardwareManager object creation.
-
 ## Medium
 
 ### [Unified Application Configuration Dialog](app-config-dialog.md)

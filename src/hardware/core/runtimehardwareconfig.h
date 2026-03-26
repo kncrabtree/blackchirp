@@ -1,6 +1,8 @@
 #ifndef RUNTIMEHARDWARECONFIG_H
 #define RUNTIMEHARDWARECONFIG_H
 
+#include <optional>
+
 #include <QString>
 #include <QStringList>
 #include <QHash>
@@ -246,6 +248,13 @@ public:
      */
     void activateMissingSystemProfiles();
 
+    /*!
+     * \brief Get the threading override for a hardware key
+     * \param hwKey Full hardware key (e.g., "FtmwScope.virtual")
+     * \return Threading override, or nullopt if none stored (use type-level default from constructor)
+     */
+    std::optional<bool> getThreaded(const QString& hwKey) const;
+
 private:
     // ========================================================================
     // SINGLETON MANAGEMENT
@@ -336,6 +345,13 @@ private:
      * \return True if configuration was applied successfully
      */
     bool applyConfiguration(const std::map<QString, QString>& config);
+
+    /*!
+     * \brief Set threading override for a hardware key
+     * \param hwKey Full hardware key (e.g., "FtmwScope.virtual")
+     * \param threaded Threading override value
+     */
+    void setThreaded(const QString& hwKey, bool threaded);
     
     
     
@@ -350,6 +366,7 @@ private:
     struct HardwareSelection {
         QString type;               /*!< Hardware type (stored for easy filtering) */
         QString implementation;     /*!< Selected implementation key */
+        std::optional<bool> threaded; /*!< Threading override (nullopt = use type-level default) */
     };
     
     static RuntimeHardwareConfig* s_instance;  /*!< Singleton instance */

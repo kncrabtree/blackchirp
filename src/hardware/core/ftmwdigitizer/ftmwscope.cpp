@@ -4,6 +4,8 @@ FtmwScope::FtmwScope(const QString& impl, const QString& label, QObject *parent)
     HardwareObject(QString(FtmwScope::staticMetaObject.className()), impl, label, parent),
     FtmwDigitizerConfig(BC::Key::hwKey(QString(FtmwScope::staticMetaObject.className()), label))
 {
+    d_threaded = true;
+
     using namespace BC::Key::Digi;
     using namespace BC::Store::Digi;
 

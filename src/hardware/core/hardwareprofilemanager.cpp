@@ -331,6 +331,39 @@ QString HardwareProfileManager::getImplementation(const QString& type, const QSt
     return labelIt->implementation;
 }
 
+std::optional<bool> HardwareProfileManager::getThreaded(const QString& type, const QString& label) const
+{
+    QReadLocker locker(&d_profilesLock);
+
+    auto typeIt = d_profiles.find(type);
+    if (typeIt == d_profiles.end())
+        return std::nullopt;
+
+    auto labelIt = typeIt->find(label);
+    if (labelIt == typeIt->end())
+        return std::nullopt;
+
+    return labelIt->threaded;
+}
+
+bool HardwareProfileManager::setThreaded(const QString& type, const QString& label, bool threaded)
+{
+    QWriteLocker locker(&d_profilesLock);
+
+    auto typeIt = d_profiles.find(type);
+    if (typeIt == d_profiles.end())
+        return false;
+
+    auto labelIt = typeIt->find(label);
+    if (labelIt == typeIt->end())
+        return false;
+
+    labelIt->threaded = threaded;
+    labelIt->modified = QDateTime::currentDateTime();
+    setModified();
+    return true;
+}
+
 QStringList HardwareProfileManager::getConfiguredHardwareTypes() const
 {
     QReadLocker locker(&d_profilesLock);
@@ -865,7 +898,12 @@ void HardwareProfileManager::loadProfilesFromSettings()
         }
         
         profile.description = getGroupValue<QString>(groupKey, BC::Key::HardwareProfiles::description, QString());
-        
+
+        // Load threading override only if explicitly stored (nullopt = use type-level default)
+        QVariant threadedVar = getGroupValue(groupKey, BC::Key::HardwareProfiles::threaded, QVariant());
+        if (threadedVar.isValid())
+            profile.threaded = threadedVar.toBool();
+
         // Only add if we have a valid implementation that exists in the registry
         if (!profile.implementation.isEmpty() && 
             HardwareRegistry::instance().getImplementations(type).contains(profile.implementation)) {
@@ -902,9 +940,12 @@ void HardwareProfileManager::saveProfilesToSettings()
             if (!profile.description.isEmpty()) {
                 setGroupValue(groupKey, BC::Key::HardwareProfiles::description, profile.description, false);
             }
+            if (profile.threaded.has_value()) {
+                setGroupValue(groupKey, BC::Key::HardwareProfiles::threaded, *profile.threaded, false);
+            }
         }
     }
-    
+
     // Save all changes to persistent storage
     save();
 }

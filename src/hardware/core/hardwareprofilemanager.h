@@ -1,6 +1,8 @@
 #ifndef HARDWAREPROFILEMANAGER_H
 #define HARDWAREPROFILEMANAGER_H
 
+#include <optional>
+
 #include <QString>
 #include <QStringList>
 #include <QHash>
@@ -273,7 +275,24 @@ public:
      * \return Implementation key, or empty string if profile doesn't exist
      */
     QString getImplementation(const QString& type, const QString& label) const;
-    
+
+    /*!
+     * \brief Get threading override for a specific profile
+     * \param type Hardware type
+     * \param label Profile label
+     * \return Threading override, or nullopt if no override is stored (use type-level default)
+     */
+    std::optional<bool> getThreaded(const QString& type, const QString& label) const;
+
+    /*!
+     * \brief Set threading override for a specific profile
+     * \param type Hardware type
+     * \param label Profile label
+     * \param threaded Threading override value
+     * \return True if successfully set
+     */
+    bool setThreaded(const QString& type, const QString& label, bool threaded);
+
     /*!
      * \brief Get all hardware types that have profiles
      * \return List of hardware types with at least one profile
@@ -474,10 +493,11 @@ private:
         QDateTime created;          /*!< Creation timestamp */
         QDateTime modified;         /*!< Last modified timestamp */
         QString description;        /*!< User description */
-        
-        ProfileInfo() : created(QDateTime::currentDateTime()), 
+        std::optional<bool> threaded; /*!< Threading override (nullopt = use type-level default) */
+
+        ProfileInfo() : created(QDateTime::currentDateTime()),
                        modified(QDateTime::currentDateTime()) {}
-        ProfileInfo(const QString& impl, bool act = true) 
+        ProfileInfo(const QString& impl, bool act = true)
             : implementation(impl), active(act),
               created(QDateTime::currentDateTime()),
               modified(QDateTime::currentDateTime()) {}
@@ -592,6 +612,7 @@ namespace BC::Key::HardwareProfiles {
     static const QString created{"created"};                /*!< Creation time subkey */
     static const QString modified{"modified"};              /*!< Modified time subkey */
     static const QString description{"description"};        /*!< Description subkey */
+    static const QString threaded{"threaded"};              /*!< Threading override subkey */
 }
 
 Q_DECLARE_METATYPE(HardwareProfileData)

@@ -6,6 +6,8 @@ LifScope::LifScope(const QString& impl, const QString& label, QObject *parent) :
     HardwareObject(QString(LifScope::staticMetaObject.className()), impl, label, parent),
     LifDigitizerConfig(BC::Key::hwKey(QString(LifScope::staticMetaObject.className()), label))
 {
+    d_threaded = true;
+
     using namespace BC::Key::Digi;
     using namespace BC::Store::Digi;
 

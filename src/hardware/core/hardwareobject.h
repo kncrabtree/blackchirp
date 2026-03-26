@@ -193,7 +193,7 @@ public:
     const QString d_model; /*!< Implementation/model name (e.g., "AWG70002a") */
 
     bool d_critical; /*!< Whether a communication error should abort an experiment. */
-    const bool d_threaded; /*!< Whether the object should have its own thread of execution. */
+    bool d_threaded; /*!< Whether the object should have its own thread of execution. */
     CommunicationProtocol::CommType d_commType; /*!< Type of communication */
 
     /*!
