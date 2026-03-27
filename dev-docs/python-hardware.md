@@ -12,316 +12,114 @@ recompiling Blackchirp. This enables:
 
 ## Architecture
 
-### Trampoline Pattern
+### QProcess + JSON IPC
 
-For each hardware interface class (FlowController, Clock, etc.), a C++
-**trampoline** class inherits the interface and dispatches every virtual method
-to a user-supplied Python object via pybind11's embedded interpreter:
+Python hardware runs in a **separate subprocess**, communicating with the C++
+application via JSON-lines over stdin/stdout pipes. This provides complete
+memory isolation -- crashes in Python cannot corrupt the Qt application.
 
 ```
-Blackchirp C++ lifecycle        C++ Trampoline              User's Python class
-────────────────────────        ──────────────              ───────────────────
-bcInitInstrument()          →   PythonFlowController
-  initialize()              →     loads .py, creates obj  → __init__()
-  testConnection()          →     calls py test_connection  → test_connection()
-hwReadFlow(ch)              →     calls py read_flow(ch)    → read_flow(ch)
-hwSetFlowSetpoint(ch,val)   →     calls py set_setpoint     → set_flow_setpoint(ch,val)
-prepareForExperiment(exp)   →     packs config dict         → prepare_for_experiment(config)
-beginAcquisition()          →     calls py begin            → begin_acquisition()
-endAcquisition()            →     calls py end              → end_acquisition()
+C++ PythonTestHardware          IPC (JSON over pipes)         Python subprocess
+---                             ---                           ---
+initialize()              ->    {"method": "initialize"}  ->  initialize()
+testConnection()          ->    {"method": "test_connection"} -> test_connection()
+  (p_comm available)            {"relay": "comm_query",       (self.comm.query()
+                                 "cmd": "*IDN?\n"}        ->    via IPC relay)
+readAuxData()             ->    {"method": "read_aux_data"} -> read_aux_data()
+prepareForExperiment()    ->    {"method": "prepare_for_experiment", ...} -> prepare_for_experiment(cfg)
+beginAcquisition()        ->    {"method": "begin_acquisition"} -> begin_acquisition()
+endAcquisition()          ->    {"method": "end_acquisition"} -> end_acquisition()
+sleep(b)                  ->    {"method": "sleep", ...}  ->  sleep(sleeping)
+readSettings()            ->    (kill and restart process) -> fresh load
 ```
 
-The trampoline handles:
-- Loading the Python script from a user-configured path
-- Injecting a `comm` wrapper so Python can use Blackchirp's CommunicationProtocol
-- Translating C++ types (Experiment, QByteArray, enums) to Python-friendly types
-  (dicts, bytes, strings)
-- Catching Python exceptions and mapping them to `d_errorString` + failure return
-- Providing no-op defaults for optional methods the user didn't implement
+### Why QProcess (not pybind11)
 
-### Communication
+An earlier attempt used pybind11 to embed the Python interpreter directly.
+This was abandoned due to persistent heap corruption from pybind11 3.0.2 +
+Python 3.13 mimalloc incompatibility in multi-threaded Qt applications.
+The pybind11 attempt is preserved on the `python-hw-pybind11` branch.
 
-Python implementations can communicate with hardware in two ways:
+QProcess advantages:
+- **Complete memory isolation** -- Python's heap is in a separate process
+- **No GIL concerns** -- the GIL is entirely within the subprocess
+- **Python version independence** -- no pybind11 version coupling
+- **No build dependency on Python** -- C++ side only uses QProcess (Qt6::Core)
+- **Crash resilience** -- Python crashes produce a clean error on the C++ side
 
-1. **Via Blackchirp's CommunicationProtocol** (`self.comm`): The trampoline
-   injects a wrapper around `p_comm` supporting `query()`, `write()`, and
-   `read_bytes()`. The user selects TCP/RS232/GPIB/Custom in the Hardware
-   Configuration dialog as usual.
+### Communication Design
 
-2. **Via external Python libraries**: The user sets CommunicationProtocol to
-   Virtual (or a new "Python-managed" type), imports their own library
-   (pyvisa, pyserial, a vendor SDK), and handles all communication themselves.
-   Blackchirp's `p_comm` goes unused.
+**Transport**: stdin/stdout pipes via `QProcess`. JSON-lines protocol (one
+JSON object per line, compact format).
 
-Both approaches are valid and can coexist across different hardware objects.
-
-### Settings Access
-
-Python implementations need access to persistent settings for device-specific
-configuration (number of channels, calibration values, custom parameters). The
-trampoline injects a `self.settings` wrapper scoped to the hardware object's
-own SettingsStorage group:
-
-```python
-def initialize(self):
-    self.num_channels = self.settings.get("numChannels", 4)
-
-def test_connection(self):
-    resp = self.comm.query("CHANNELS?\n")
-    n = int(resp.strip())
-    self.settings.set("numChannels", n)  # persists across restarts
+**Request (C++ -> Python)**:
+```json
+{"id": 1, "method": "test_connection"}
+{"id": 2, "method": "prepare_for_experiment", "config": {"number": 42}}
 ```
 
-The wrapper exposes:
-- `get(key, default)` / `set(key, value)` for scalar values
-- `get_array(key)` / `set_array(key, list_of_dicts)` for array settings
-- Read-only access to hardware keys: `self.settings.key` (the `d_key`),
-  `self.settings.model` (the `d_model`)
-
-Settings written by Python are visible in the Hardware Settings dialog
-tree view and persist in the same QSettings file as C++ implementations.
-This lets users configure Python hardware through the normal Blackchirp UI.
-
-### Threading & GIL
-
-Many hardware types run in their own QThread (`d_threaded = true`). On the
-`devel` branch, the threading defaults are:
-
-| Threaded (own QThread) | Non-threaded (main thread) |
-|---|---|
-| FtmwScope, LifScope, LifLaser | PulseGenerator, AWG |
-| Clock, IOBoard, GpibController | FlowController, PressureController |
-| (base class default: true) | TemperatureController |
-
-Python hardware must support both modes from the start. The key mechanism
-is pybind11's GIL management:
-
-- **Threaded hardware**: Each QThread that calls into Python must acquire
-  the GIL via `py::gil_scoped_acquire` before dispatching to the Python
-  object, and release it during C++ I/O waits. pybind11 manages thread
-  state (`PyThreadState`) automatically when using these scoped guards.
-- **Non-threaded hardware**: Runs on the main thread where the interpreter
-  was initialized. GIL acquisition is simpler but still required.
-
-Performance characteristics:
-
-- **I/O-bound calls** (query/response): The GIL is released during C++ I/O
-  waits (via `py::gil_scoped_release` in the comm wrapper). Multiple Python
-  hardware objects in different threads interleave fine — while one waits
-  for a device response, others can execute Python code.
-- **CPU-bound calls** (waveform computation, data parsing): Hold the GIL.
-  For most hardware this is negligible (microseconds). AWG waveform
-  generation could be slower but runs only once during `prepareForExperiment`.
-- **Polling loops** (FtmwScope/LifScope `readWaveform`): Called repeatedly
-  during acquisition. The poll frequency should be user-adjustable so users
-  can tune the tradeoff between acquisition speed and system responsiveness.
-  Users can also mitigate by configuring hardware-side block averaging.
-
-### Registration & Discovery
-
-Python hardware registers through the existing HardwareRegistry system. Each
-trampoline class (e.g., `PythonFlowController`) registers as a normal
-implementation. At runtime, the trampoline reads a `pythonScript` setting
-from SettingsStorage to locate the user's `.py` file.
-
-Script management options:
-- **Per-profile setting**: The script path is stored in the hardware profile's
-  settings, configurable in the Hardware Settings dialog
-- **Standard location**: `~/.config/blackchirp/python/` as a default search path
-- **Validation**: The trampoline checks that the script defines the required
-  class and methods at load time, reporting clear errors for missing methods
-
-### Python Environment
-
-Users often need third-party packages (pyvisa, vendor SDKs) that require
-`pip install` into an isolated environment. The trampoline must support:
-
-- **System Python**: Default — uses whatever `python3` is on PATH
-- **Virtual environment**: User specifies a venv path in settings. The
-  trampoline activates it before importing the script by prepending the
-  venv's `site-packages` to `sys.path`
-- **Conda environment**: User specifies a conda env name or prefix. The
-  trampoline resolves its `site-packages` path similarly
-
-The environment setting is per-profile (different hardware can use different
-environments) and configurable in the Hardware Settings dialog. The embedded
-interpreter is initialized once, but `sys.path` is adjusted per-script to
-pick up environment-specific packages.
-
-### Script Editing
-
-The Hardware Settings dialog for Python implementations includes:
-
-- **Script path selector** with Browse button
-- **Inline editor** (QPlainTextEdit with basic syntax highlighting) for
-  quick edits and hot testing — changes can be saved and the module
-  reloaded via `testConnection()` without restarting Blackchirp
-- **Skeleton generator**: A button that creates a new `.py` file
-  pre-populated with all required and optional methods for the hardware
-  type, with docstrings explaining each method's contract
-- **Log/traceback viewer**: Python exceptions during method dispatch are
-  shown with full tracebacks in the hardware log panel
-
-## Implementation Plan
-
-### Phase 1: Infrastructure
-
-**Goal**: Embedded Python interpreter + comm/settings wrappers + thread-safe
-dispatch + one working trampoline.
-
-1. Add pybind11 as a build dependency (CMake `find_package(pybind11)` or
-   bundled headers)
-2. Initialize the Python interpreter once at application startup
-   (`py::scoped_interpreter` in main.cpp or a lazy singleton); call
-   `PyEval_SaveThread()` to release the GIL so worker threads can acquire it
-3. Create `CommWrapper` class exposing `p_comm` methods to Python:
-   - `query(cmd: str) -> str`
-   - `write(cmd: str) -> bool`
-   - `read_bytes(n: int) -> bytes`
-   - `write_binary(data: bytes) -> bool`
-   - All methods release the GIL during the underlying C++ I/O call
-4. Create `SettingsWrapper` class exposing the hardware object's
-   SettingsStorage to Python:
-   - `get(key, default)` / `set(key, value)` for scalar settings
-   - `get_array(key)` / `set_array(key, list_of_dicts)` for arrays
-   - Read-only `key` and `model` properties
-5. Create `PythonHardwareBase` utility class/namespace with:
-   - Script loading with venv/conda `sys.path` injection
-   - Class instantiation and `self.comm` / `self.settings` injection
-   - Thread-safe method dispatch: `py::gil_scoped_acquire` before every
-     Python call, with proper `PyThreadState` handling for worker threads
-   - Exception handling: catch Python exceptions, extract traceback,
-     store in `d_errorString`, emit to log with full traceback
-   - Optional-method detection (hasattr checks, no-op defaults)
-   - Module reload support for hot testing
-6. Implement `PythonFlowController` as the first trampoline
-7. Register it in HardwareRegistry alongside existing implementations
-8. Add Python-specific settings UI in Hardware Settings dialog:
-   script path, environment path, inline editor, skeleton generator
-
-**Deliverable**: A user can write a `.py` file implementing a flow controller,
-select "PythonFlowController" in the Hardware Configuration dialog, point it
-at their script, and use it in an experiment.
-
-### Phase 2: Simple Hardware Types
-
-**Goal**: Trampolines for all polling-based, non-streaming hardware.
-
-Create trampoline classes for:
-- `PythonTemperatureController` (3 required methods)
-- `PythonPressureController` (9 required methods)
-- `PythonIOBoard` (2 required methods)
-- `PythonClock` (4 required methods)
-- `PythonLifLaser` (4 required methods)
-- `PythonGpibController` (2 required methods)
-
-Each trampoline follows the same pattern established in Phase 1. The Python
-API for each type is documented with a template `.py` file showing all
-required and optional methods with docstrings.
-
-Also in this phase:
-- Template/example scripts installed to a standard location
-- Error reporting improvements (line numbers, tracebacks in log)
-- Script hot-reload: re-import the module on `bcTestConnection()` so users
-  can edit scripts without restarting Blackchirp
-
-### Phase 3: PulseGenerator
-
-**Goal**: Trampoline for the most method-heavy interface.
-
-PulseGenerator has 21 pure virtual methods covering channel configuration
-(width, delay, active level, enabled, sync, mode, duty cycle) plus global
-settings (rep rate, pulse mode, pulse enabled). The Python API should flatten
-these into a clean interface:
-
-```python
-def set_channel_width(self, channel: int, width: float) -> bool
-def read_channel_width(self, channel: int) -> float
-def set_rep_rate(self, rate: float) -> bool
-# ... etc
+**Response (Python -> C++)**:
+```json
+{"id": 1, "result": true}
+{"id": 2, "result": true}
 ```
 
-This phase also addresses enum translation: `PulseGenConfig::ActiveLevel`,
-`PulseGenConfig::ChannelMode`, and `PulseGenConfig::PGenMode` must be exposed
-as Python string constants or IntEnums.
-
-### Phase 4: AWG
-
-**Goal**: Trampoline for chirp source / arbitrary waveform generators.
-
-AWG has no pure virtual methods of its own — it relies on
-`prepareForExperiment()` from `HardwareObject`. The trampoline must:
-
-1. Extract chirp waveform data, sample rate, marker data, and relevant
-   RF config from the Experiment object
-2. Pack it into a Python dict with bytes/float/int values
-3. Call `prepare_for_experiment(config)` on the Python object
-
-The Python implementation handles all waveform upload logic using either
-`self.comm` or its own vendor library.
-
-```python
-def prepare_for_experiment(self, config: dict) -> bool:
-    waveform = config["chirp_data"]      # bytes
-    sample_rate = config["sample_rate"]   # float (Hz)
-    markers = config["marker_data"]       # bytes
-    # ... upload to hardware
-    return True
+**Error response**:
+```json
+{"id": 1, "error": "ConnectionError: no response", "traceback": "..."}
 ```
 
-### Phase 5: Digitizers (FtmwScope, LifScope)
-
-**Goal**: Trampolines for data-streaming hardware with performance tuning.
-
-These are the most performance-sensitive types. The trampoline must:
-
-1. Call `readWaveform()` on the Python object, which returns raw bytes
-2. Feed those bytes back into the C++ signal emission path
-   (`emitShot()` / `emit waveformRead()`)
-
-```python
-def read_waveform(self) -> bytes:
-    # Read from scope via vendor library or self.comm
-    data = self.scope.read_binary_values(...)
-    return bytes(data)
+**Log messages (unsolicited)**:
+```json
+{"log": "Connected to device", "level": "Normal"}
 ```
 
-Performance considerations:
-- **Poll frequency**: Expose as a user-adjustable setting. Default to a
-  conservative rate; let users increase if their Python implementation
-  is fast enough.
-- **Block averaging**: Users can configure the scope to average N shots
-  in hardware before transferring, reducing the poll rate needed.
-- **Zero-copy**: For `self.comm`-based implementations, investigate whether
-  the bytes can be passed without copying between Python and C++.
-- **Timeout handling**: The trampoline must handle the case where Python
-  raises a timeout or returns empty data gracefully.
+### Communication Relay
 
-The `configure()` method on LifScope needs the LifDigitizerConfig exposed
-as a dict (sample rate, record length, trigger settings, etc.).
+Python can't directly access C++ `p_comm`. When Python calls
+`self.comm.query("*IDN?\n")`, the comm proxy sends a relay request back
+to C++ over the pipe:
 
-### Phase 6: Documentation & Templates
+1. Python sends: `{"relay": "comm_query", "cmd": "*IDN?\n"}`
+2. C++ reads this, calls `p_comm->queryCmd("*IDN?\n")`
+3. C++ sends back: `{"relay_result": "response text"}`
+4. Python's `comm.query()` returns `"response text"`
 
-- User guide: how to write a Python hardware implementation
-- API reference for each hardware type's Python interface
-- Template scripts for every hardware type (installable examples)
-- Troubleshooting guide (common errors, GIL gotchas, performance tips)
+The C++ `sendRequest()` read loop handles these interleaved relay requests
+while waiting for the final method response.
+
+### Settings Relay
+
+Similarly, `self.settings.get(key, default)` and `self.settings.set(key, value)`
+are relayed through IPC to the C++ side, which performs the actual
+`SettingsStorage` operations.
+
+### File Layout
+
+```
+src/hardware/python/
+    pythonprocess.h/.cpp          # QProcess wrapper: launch, IPC protocol, lifecycle
+    pythontesthardware.h/.cpp     # HardwareObject subclass, dispatches via IPC
+dev-docs/
+    echo_server.py                # TCP echo server for testing
+    test_hardware.py              # Example Python hardware script
+    python_hw_host.py             # Python-side IPC host: reads stdin, dispatches to user script
+```
 
 ## Python API Contract
 
 Each hardware type defines a Python class with methods matching the C++
-virtual interface. Methods use snake_case. The `self.comm` object is
-injected by the trampoline if a Blackchirp CommunicationProtocol is selected.
+virtual interface. Methods use snake_case. `self.comm`, `self.settings`,
+and `self.log` are injected by the IPC host script.
 
 ### Common Methods (all types)
 
 ```python
 def initialize(self):
-    """Called once at startup. Set up any resources."""
+    """Called once after script is loaded."""
 
 def test_connection(self) -> bool:
-    """Verify communication with hardware. Return True on success,
-    raise an exception with a descriptive message on failure."""
+    """Verify communication with hardware. Return True on success."""
 
 def read_aux_data(self) -> dict[str, float]:          # optional
 def read_validation_data(self) -> dict[str, float]:    # optional
@@ -329,54 +127,133 @@ def prepare_for_experiment(self, config: dict) -> bool: # optional
 def begin_acquisition(self):                            # optional
 def end_acquisition(self):                              # optional
 def sleep(self, sleeping: bool):                        # optional
+def read_settings(self):                                # optional
 ```
 
-### Type-Specific Methods
+### Injected Objects
 
-See individual trampoline phases above for the method signatures each
-type requires. The general principle: every C++ `hw*` pure virtual becomes
-a Python method with the `hw` prefix stripped and the name converted to
-snake_case.
+**self.comm** (communication proxy):
+- `query(cmd: str) -> str` -- send command, read response
+- `write(cmd: str) -> bool` -- send command, no response
+- `read_bytes(n: int) -> bytes` -- read n bytes
+- `write_binary(data: bytes) -> bool` -- send binary data
+
+**self.settings** (settings proxy):
+- `get(key: str, default=None)` -- read persistent setting
+- `set(key: str, value)` -- write persistent setting
+- `key` (read-only) -- hardware key (e.g., "PythonTestHardware.Default")
+- `model` (read-only) -- hardware model name
+
+**self.log** (logging proxy):
+- `log(msg)`, `debug(msg)`, `warning(msg)`, `error(msg)`, `highlight(msg)`
 
 ## Build System
 
-- pybind11 added as an optional dependency (`BC_ENABLE_PYTHON_HARDWARE` in
-  BuildConfig.cmake, default OFF)
-- When enabled, the Python trampoline classes are compiled into a separate
-  static library (`blackchirp-python-hw`) linked into the main application
-- Python 3.8+ required (for stable embedding API)
-- The embedded interpreter is initialized lazily on first use of a Python
-  hardware object
+The QProcess approach requires no external dependencies:
 
-## Resolved Decisions
+- `BC_ENABLE_PYTHON_HARDWARE` option in `BuildConfig.cmake` (default OFF)
+- When enabled: adds `src/hardware/python/` sources to `blackchirp-hardware`
+  library and defines `BC_PYTHON_HARDWARE` compile definition
+- No `find_package(Python3)` or `find_package(pybind11)` needed
+- Python is a runtime dependency only (system `python3` on PATH)
 
-- **Script editing**: Inline editor in Hardware Settings dialog for hot
-  testing, plus skeleton generator for new scripts
-- **Python environments**: Per-profile venv/conda path setting; trampoline
-  adjusts `sys.path` before importing
-- **Module reloading**: Reload on every `testConnection()` call for fast
-  iteration during development
-- **Multiple scripts**: Each hardware profile has its own script path;
-  all share the embedded interpreter and GIL
-- **Settings access**: Python gets scoped read/write to its own
-  SettingsStorage group via `self.settings`
-- **Threading**: Supported from the start via `py::gil_scoped_acquire` /
-  `py::gil_scoped_release`; no restriction to non-threaded types
+## Current Status
+
+### What's Done
+
+The core QProcess infrastructure is complete and compiles cleanly:
+
+- **`PythonProcess`** (`src/hardware/python/pythonprocess.h/.cpp`):
+  QProcess wrapper with JSON-lines IPC, interleaved relay handling,
+  log forwarding, and timeout management.
+- **`PythonTestHardware`** (`src/hardware/python/pythontesthardware.h/.cpp`):
+  HardwareObject subclass dispatching all virtual methods via IPC.
+- **`python_hw_host.py`** (`dev-docs/python_hw_host.py`):
+  Python-side IPC host with CommProxy, SettingsProxy, LogProxy, and
+  method dispatch.
+- **`test_hardware.py`** and **`echo_server.py`** (`dev-docs/`):
+  Test script exercising all methods, and TCP echo server for testing.
+- **Build system**: `BC_ENABLE_PYTHON_HARDWARE` option, conditional
+  compilation, `#ifdef` guards. Builds with ON and OFF.
+- **HardwareProfileManager**: `pythonScriptPath` field with getter/setter
+  and load/save persistence.
+- **HardwareManager**: PythonTestHardware conditionally registered in
+  `d_optHwTypes` when `BC_PYTHON_HARDWARE` is defined.
+- **pybind11 reference**: The abandoned pybind11 attempt is preserved on
+  the `python-hw-pybind11` branch for reference.
+
+### Proof-of-Concept Validated (2026-03-26)
+
+All manual testing passed. The full IPC pipeline works end-to-end:
+
+- **Script path UI**: `RuntimeHardwareConfigDialog` Advanced section has
+  a QLineEdit + Browse button for Python script path, with per-profile
+  persistence via `HardwareProfileManager::setPythonScriptPath()`.
+- **Connection**: `test_connection` succeeds via comm relay to echo server.
+  Log messages from Python appear in the hardware log panel.
+- **Experiment lifecycle**: `prepareForExperiment`, `beginAcquisition`,
+  `endAcquisition` all dispatch correctly. `sleep(bool)` works.
+- **Rolling data**: `readAuxData` returns synthetic data at the configured
+  interval. Rolling data files are written correctly.
+- **Settings relay**: `self.settings.get/set` round-trips through IPC to
+  C++ SettingsStorage. Values persist across restarts.
+- **Hot-reload**: Accepting the Hardware Settings dialog triggers
+  `readSettings`, which kills and restarts the Python subprocess.
+- **Multi-profile**: Multiple PythonTestHardware profiles work correctly
+  with independent script paths and settings.
+
+### Known Issues / Gaps
+
+1. **`exp.d_number` is 0 at `prepareForExperiment` time**: The experiment
+   number is assigned in `Experiment::initialize()`, which runs after
+   hardware prep. This is by design in the current architecture. Need to
+   decide what experiment data to serialize for Python hardware.
+2. **Experiment aux data**: `readAuxData` data appears in rolling data
+   plots but not in `auxdata.csv` for experiments. The experiment aux data
+   path (`bcReadAuxData` via `getAuxData`) is separate from the rolling
+   data timer path.
+3. **Host script deployment**: `findHostScript()` uses relative paths from
+   the build directory. Need a CMake install rule for deployment.
+4. **Python hardware type detection**: The script path UI is conditional
+   on `hardwareType == "PythonTestHardware"`. This will need to become
+   a registry-based check when Phase 2 trampolines are added.
+
+### Remaining Work (after proof-of-concept validated)
+
+#### Phase 2: Trampolines for Other Hardware Types
+
+For each hardware interface class (FlowController, Clock, etc.), create a
+`PythonXxx` trampoline class that inherits the interface and dispatches
+type-specific virtual methods via IPC. The Python host script already supports
+arbitrary method dispatch; only the C++ trampoline needs to be created.
+
+Priority order:
+1. `PythonFlowController` (simple, 3 required methods)
+2. `PythonTemperatureController` (3 required methods)
+3. `PythonPressureController` (9 required methods)
+4. `PythonIOBoard` (2 required methods)
+5. `PythonClock` (4 required methods)
+6. `PythonPulseGenerator` (21 methods -- most complex)
+7. `PythonAwg` (relies on prepareForExperiment only)
+8. `PythonFtmwScope` / `PythonLifScope` (performance-sensitive polling)
+
+#### Phase 3: Polish
+
+- Template/skeleton scripts for each hardware type
+- Script hot-reload improvements
+- Python environment support (venv/conda path per-profile)
+- Inline script editor in Hardware Settings dialog
+- User documentation
 
 ## Open Questions
 
 1. **Security**: Python scripts have full system access. Is a warning on
    first use sufficient, or do we need sandboxing?
 
-2. **Interpreter lifecycle**: Should the embedded interpreter persist for
-   the entire application lifetime, or be finalized/restarted when all
-   Python hardware is removed? (pybind11's `scoped_interpreter` does not
-   support re-initialization — this may force a persistent interpreter.)
+2. **Performance**: The IPC round-trip adds ~1ms per operation, negligible
+   for instrument I/O (10-100ms). But digitizer polling (FtmwScope/LifScope
+   `readWaveform`) may need optimization -- possibly batching data or
+   using shared memory for large transfers.
 
 3. **Experiment data exposure**: How much of the Experiment object should
-   `prepare_for_experiment` receive? A flat dict of relevant settings, or
-   a richer nested structure? The answer may vary by hardware type.
-
-4. **FtmwScope poll tuning**: Should the poll interval be a simple
-   SettingsStorage value (adjustable in Hardware Settings), or does it
-   need a real-time slider in the acquisition UI?
+   `prepare_for_experiment` receive? Currently just `{"number": N}`.

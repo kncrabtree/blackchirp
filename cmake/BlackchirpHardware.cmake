@@ -77,12 +77,26 @@ file(GLOB HARDWARE_IMPLEMENTATIONS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/sirah*.cpp
 )
 
+# Python hardware sources (QProcess-based, no Python build dependencies)
+if(BC_ENABLE_PYTHON_HARDWARE)
+    file(GLOB PYTHON_HARDWARE_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/python/*.cpp
+    )
+    file(GLOB PYTHON_HARDWARE_HEADERS
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/python/*.h
+    )
+else()
+    set(PYTHON_HARDWARE_SOURCES "")
+    set(PYTHON_HARDWARE_HEADERS "")
+endif()
+
 # Combine all sources
 set(BLACKCHIRP_HARDWARE_SOURCES
     ${HARDWARE_SYSTEM_SOURCES}
     ${COMMUNICATION_SOURCES}
     ${HARDWARE_TYPES_SOURCES}
     ${HARDWARE_IMPLEMENTATIONS_SOURCES}
+    ${PYTHON_HARDWARE_SOURCES}
 )
 
 # Generate hw_h.h with all hardware headers (types and implementations)

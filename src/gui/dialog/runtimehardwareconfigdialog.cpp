@@ -409,13 +409,6 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
         }
     }
 
-    // Create button group for radio button behavior (single-instance only)
-    QButtonGroup* buttonGroup = nullptr;
-    if (!isMultiInstance) {
-        buttonGroup = new QButtonGroup(this);
-        buttonGroup->setExclusive(true);
-    }
-
     // Populate profiles list with appropriate selection widgets
     for (const QString& profileLabel : allProfiles) {
         QString implementation = profileManager.getImplementation(hardwareType, profileLabel);
@@ -437,51 +430,18 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
             listItem->setFont(f);
         }
 
-        // Create appropriate selection widget based on instance type
-        QWidget* selectionWidget = nullptr;
-        if (isMultiInstance) {
-            // Multi-instance: use checkboxes
-            auto* checkbox = new QCheckBox(displayText);
-            checkbox->setObjectName(QString("profile_%1_checkbox").arg(profileLabel));
+        // Use built-in QListWidgetItem check state for profile activation.
+        // This renders a checkbox indicator as part of the item decoration;
+        // clicking the indicator toggles the check, while clicking the text
+        // area only selects the row (for Advanced settings).
+        listItem->setText(displayText);
+        listItem->setFlags(listItem->flags() | Qt::ItemIsUserCheckable);
 
-            // Check if this profile is active in preview configuration
-            QString profileKey = BC::Key::hwKey(hardwareType, profileLabel);
-            bool isActive = d_previewRuntimeConfig.find(profileKey) != d_previewRuntimeConfig.end();
-            checkbox->setChecked(isActive);
-
-            // Connect to selection change handler (use clicked to avoid double-fire)
-            connect(checkbox, &QCheckBox::clicked, this, [this, hardwareType]() {
-                onProfileCheckboxClicked(hardwareType);
-            });
-
-            selectionWidget = checkbox;
-
-        } else {
-            // Single-instance: use radio buttons
-            auto* radioButton = new QRadioButton(displayText);
-            radioButton->setObjectName(QString("profile_%1_radio").arg(profileLabel));
-
-            // Check if this profile is the active one in preview configuration
-            QString profileKey = BC::Key::hwKey(hardwareType, profileLabel);
-            bool isActive = d_previewRuntimeConfig.find(profileKey) != d_previewRuntimeConfig.end();
-            radioButton->setChecked(isActive);
-
-            // Disable radio button if hardware type is not enabled
-            radioButton->setEnabled(singleInstanceEnabled);
-
-            // Add to button group
-            buttonGroup->addButton(radioButton);
-
-            // Connect to selection change handler (use clicked to avoid double-fire from exclusive group)
-            connect(radioButton, &QRadioButton::clicked, this, [this, hardwareType]() {
-                onProfileRadioClicked(hardwareType);
-            });
-
-            selectionWidget = radioButton;
-        }
-
-        // Set the widget for this list item
-        profilesList->setItemWidget(listItem, selectionWidget);
+        QString profileKey = BC::Key::hwKey(hardwareType, profileLabel);
+        bool isActive = d_previewRuntimeConfig.find(profileKey) != d_previewRuntimeConfig.end();
+        if (!isMultiInstance && !singleInstanceEnabled)
+            isActive = false;
+        listItem->setCheckState(isActive ? Qt::Checked : Qt::Unchecked);
     }
 
     // Handle case where no profiles exist
@@ -497,20 +457,46 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
         profilesList->setItemWidget(noProfilesItem, noProfilesLabel);
     }
 
-    // For single-instance, connect the enable checkbox to gray out radio buttons
+    // For single-instance, connect the enable checkbox to gray out profile items
     if (!isMultiInstance) {
         auto* enableCheckbox = pu_ui->configurationContentWidget->findChild<QCheckBox*>("enableHardwareCheckbox");
         if (enableCheckbox) {
             connect(enableCheckbox, &QCheckBox::toggled, this, [profilesList](bool checked) {
                 for (int i = 0; i < profilesList->count(); ++i) {
-                    auto* widget = profilesList->itemWidget(profilesList->item(i));
-                    if (widget) {
-                        widget->setEnabled(checked);
-                    }
+                    auto* item = profilesList->item(i);
+                    if (item->data(Qt::UserRole).toString().isEmpty())
+                        continue;
+                    auto flags = item->flags();
+                    if (checked)
+                        flags |= Qt::ItemIsUserCheckable;
+                    else
+                        flags &= ~Qt::ItemIsUserCheckable;
+                    item->setFlags(flags);
                 }
             });
         }
     }
+
+    // Handle check state changes on list items.
+    // For multi-instance: multiple items can be checked.
+    // For single-instance: enforce mutual exclusivity (like radio buttons).
+    connect(profilesList, &QListWidget::itemChanged, this,
+            [this, hardwareType, profilesList, isMultiInstance](QListWidgetItem* changedItem) {
+        if (isMultiInstance) {
+            onProfileCheckboxClicked(hardwareType);
+        } else {
+            // Enforce radio-button behavior: uncheck all others when one is checked
+            if (changedItem->checkState() == Qt::Checked) {
+                QSignalBlocker blocker(profilesList);
+                for (int i = 0; i < profilesList->count(); ++i) {
+                    auto* item = profilesList->item(i);
+                    if (item != changedItem && item->checkState() == Qt::Checked)
+                        item->setCheckState(Qt::Unchecked);
+                }
+            }
+            onProfileRadioClicked(hardwareType);
+        }
+    });
 
     groupLayout->addWidget(profilesList);
 
@@ -559,22 +545,16 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
     auto* advancedLayout = new QVBoxLayout(advancedContainer);
     advancedLayout->setContentsMargins(4, 2, 4, 2);
 
-    // Determine initial threading state for the currently active/checked profile
-    auto getActiveHwKey = [this, hardwareType, profilesList]() -> QString {
-        bool isMulti = HardwareRegistry::isMultiInstanceType(hardwareType);
-        for (int i = 0; i < profilesList->count(); ++i) {
-            auto* item = profilesList->item(i);
-            QString profileLabel = item->data(Qt::UserRole).toString();
-            if (profileLabel.isEmpty()) continue;
-            if (isMulti) {
-                auto* cb = qobject_cast<QCheckBox*>(profilesList->itemWidget(item));
-                if (cb && cb->isChecked())
-                    return BC::Key::hwKey(hardwareType, profileLabel);
-            } else {
-                auto* rb = qobject_cast<QRadioButton*>(profilesList->itemWidget(item));
-                if (rb && rb->isChecked())
-                    return BC::Key::hwKey(hardwareType, profileLabel);
-            }
+    // Determine the profile whose Advanced settings should be displayed.
+    // Uses the highlighted (selected) list item so the user can click any
+    // profile row to view/edit its Advanced settings without toggling its
+    // checked state.
+    auto getActiveHwKey = [hardwareType, profilesList]() -> QString {
+        auto selected = profilesList->selectedItems();
+        if (!selected.isEmpty()) {
+            QString profileLabel = selected.first()->data(Qt::UserRole).toString();
+            if (!profileLabel.isEmpty())
+                return BC::Key::hwKey(hardwareType, profileLabel);
         }
         return QString();
     };
@@ -597,6 +577,57 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
     threadedCheckbox->setEnabled(!activeHwKey.isEmpty());
 
     advancedLayout->addWidget(threadedCheckbox);
+
+    // Python script path field (only for PythonTestHardware)
+    QLineEdit* pythonScriptEdit = nullptr;
+#ifdef BC_PYTHON_HARDWARE
+    if (hardwareType == QStringLiteral("PythonTestHardware")) {
+        auto* pythonScriptWidget = new QWidget(advancedContainer);
+        auto* scriptLayout = new QHBoxLayout(pythonScriptWidget);
+        scriptLayout->setContentsMargins(0, 0, 0, 0);
+
+        auto* scriptLabel = new QLabel(tr("Python Script:"), pythonScriptWidget);
+        pythonScriptEdit = new QLineEdit(pythonScriptWidget);
+        pythonScriptEdit->setObjectName("pythonScriptEdit");
+        pythonScriptEdit->setPlaceholderText(tr("Path to Python hardware script..."));
+
+        auto* browseButton = new QPushButton(tr("Browse..."), pythonScriptWidget);
+        connect(browseButton, &QPushButton::clicked, this, [this, pythonScriptEdit]() {
+            QString path = QFileDialog::getOpenFileName(this, tr("Select Python Script"),
+                                                         QString(), tr("Python Files (*.py)"));
+            if (!path.isEmpty())
+                pythonScriptEdit->setText(path);
+        });
+
+        scriptLayout->addWidget(scriptLabel);
+        scriptLayout->addWidget(pythonScriptEdit, 1);
+        scriptLayout->addWidget(browseButton);
+
+        // Initialize from preview config or profile manager
+        if (!activeHwKey.isEmpty()) {
+            auto it = d_previewPythonScriptConfig.find(activeHwKey);
+            if (it != d_previewPythonScriptConfig.end()) {
+                pythonScriptEdit->setText(it->second);
+            } else {
+                auto [type, label] = BC::Key::parseKey(activeHwKey);
+                QString path = HardwareProfileManager::instance().getPythonScriptPath(type, label);
+                pythonScriptEdit->setText(path);
+            }
+        }
+        pythonScriptEdit->setEnabled(!activeHwKey.isEmpty());
+
+        // Wire text changes into preview config
+        connect(pythonScriptEdit, &QLineEdit::textChanged, this,
+                [this, getActiveHwKey](const QString& text) {
+            QString hwKey = getActiveHwKey();
+            if (hwKey.isEmpty()) return;
+            d_previewPythonScriptConfig[hwKey] = text;
+        });
+
+        advancedLayout->addWidget(pythonScriptWidget);
+    }
+#endif
+
     advancedContainer->setLayout(advancedLayout);
 
     // Toggle expand/collapse
@@ -609,11 +640,15 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
 
     // Update Advanced section when profile selection changes in the list
     connect(profilesList, &QListWidget::itemSelectionChanged, this,
-            [this, hardwareType, profilesList, threadedCheckbox, typeDefault, getActiveHwKey]() {
+            [this, hardwareType, profilesList, threadedCheckbox, typeDefault, getActiveHwKey, pythonScriptEdit]() {
         QString hwKey = getActiveHwKey();
         if (hwKey.isEmpty()) {
             threadedCheckbox->setEnabled(false);
             threadedCheckbox->setChecked(typeDefault);
+            if (pythonScriptEdit) {
+                pythonScriptEdit->setEnabled(false);
+                pythonScriptEdit->clear();
+            }
             return;
         }
         threadedCheckbox->setEnabled(true);
@@ -622,6 +657,19 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
         // Block signals to avoid triggering the toggled connection below
         QSignalBlocker blocker(threadedCheckbox);
         threadedCheckbox->setChecked(checked);
+
+        if (pythonScriptEdit) {
+            pythonScriptEdit->setEnabled(true);
+            QSignalBlocker scriptBlocker(pythonScriptEdit);
+            auto sit = d_previewPythonScriptConfig.find(hwKey);
+            if (sit != d_previewPythonScriptConfig.end()) {
+                pythonScriptEdit->setText(sit->second);
+            } else {
+                auto [type, label] = BC::Key::parseKey(hwKey);
+                pythonScriptEdit->setText(
+                    HardwareProfileManager::instance().getPythonScriptPath(type, label));
+            }
+        }
     });
 
     // Wire checkbox changes into d_previewThreadedConfig
@@ -664,8 +712,7 @@ void RuntimeHardwareConfigDialog::onProfileSelectionChanged(const QString& hardw
     
     // Add selected profiles to preview configuration
     auto& profileManager = HardwareProfileManager::instance();
-    bool isMultiInstance = HardwareRegistry::isMultiInstanceType(hardwareType);
-    
+
     for (int i = 0; i < profilesList->count(); ++i) {
         auto* listItem = profilesList->item(i);
         QString profileLabel = listItem->data(Qt::UserRole).toString();
@@ -674,19 +721,8 @@ void RuntimeHardwareConfigDialog::onProfileSelectionChanged(const QString& hardw
             continue; // Skip items without profile data (like "No profiles available")
         }
         
-        // Check if this profile is selected
-        bool isSelected = false;
-        if (isMultiInstance) {
-            auto* checkbox = qobject_cast<QCheckBox*>(profilesList->itemWidget(listItem));
-            if (checkbox) {
-                isSelected = checkbox->isChecked();
-            }
-        } else {
-            auto* radioButton = qobject_cast<QRadioButton*>(profilesList->itemWidget(listItem));
-            if (radioButton) {
-                isSelected = radioButton->isChecked();
-            }
-        }
+        // Check if this profile is selected (checked)
+        bool isSelected = (listItem->checkState() == Qt::Checked);
         
         // Add to preview configuration if selected
         if (isSelected) {
@@ -717,8 +753,7 @@ void RuntimeHardwareConfigDialog::onEnableToggled(const QString& hardwareType, b
                 if (profileLabel.isEmpty()) {
                     continue;
                 }
-                auto* radioButton = qobject_cast<QRadioButton*>(profilesList->itemWidget(listItem));
-                if (radioButton && radioButton->isChecked()) {
+                if (listItem->checkState() == Qt::Checked) {
                     QString implementation = profileManager.getImplementation(hardwareType, profileLabel);
                     QString profileKey = BC::Key::hwKey(hardwareType, profileLabel);
                     d_previewRuntimeConfig[profileKey] = implementation;
@@ -795,16 +830,14 @@ void RuntimeHardwareConfigDialog::onProfileRadioClicked(const QString& hardwareT
         }
     }
 
-    // Add the selected radio button's profile
+    // Add the checked profile
     auto& profileManager = HardwareProfileManager::instance();
     for (int i = 0; i < profilesList->count(); ++i) {
         auto* listItem = profilesList->item(i);
         QString profileLabel = listItem->data(Qt::UserRole).toString();
-        if (profileLabel.isEmpty()) {
+        if (profileLabel.isEmpty())
             continue;
-        }
-        auto* radioButton = qobject_cast<QRadioButton*>(profilesList->itemWidget(listItem));
-        if (radioButton && radioButton->isChecked()) {
+        if (listItem->checkState() == Qt::Checked) {
             QString implementation = profileManager.getImplementation(hardwareType, profileLabel);
             QString profileKey = BC::Key::hwKey(hardwareType, profileLabel);
             d_previewRuntimeConfig[profileKey] = implementation;
@@ -846,8 +879,7 @@ void RuntimeHardwareConfigDialog::onProfileCheckboxClicked(const QString& hardwa
         if (profileLabel.isEmpty()) {
             continue;
         }
-        auto* checkbox = qobject_cast<QCheckBox*>(profilesList->itemWidget(listItem));
-        if (checkbox && checkbox->isChecked()) {
+        if (listItem->checkState() == Qt::Checked) {
             QString implementation = profileManager.getImplementation(hardwareType, profileLabel);
             QString profileKey = BC::Key::hwKey(hardwareType, profileLabel);
             d_previewRuntimeConfig[profileKey] = implementation;
@@ -1153,6 +1185,13 @@ void RuntimeHardwareConfigDialog::onDialogAccepted()
         // Apply threading overrides from preview config
         for (auto& [hwKey, threaded] : d_previewThreadedConfig)
             runtimeConfig.setThreaded(hwKey, threaded);
+
+        // Apply Python script path overrides
+        for (auto& [hwKey, scriptPath] : d_previewPythonScriptConfig) {
+            auto [type, label] = BC::Key::parseKey(hwKey);
+            if (!type.isEmpty() && !label.isEmpty())
+                HardwareProfileManager::instance().setPythonScriptPath(type, label, scriptPath);
+        }
 
         // Save all hardware profiles to persistent storage now that dialog is finished
         auto& profileManager = HardwareProfileManager::instance();

@@ -42,7 +42,7 @@ public:
     static const HardwareManager& constInstance();
 
     QString getHwName(const QString key);
-    const std::set<QString> d_optHwTypes;
+    std::set<QString> d_optHwTypes;
 
 signals:
     void logMessage(QString,LogHandler::MessageCode = LogHandler::Normal);

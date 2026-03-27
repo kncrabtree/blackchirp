@@ -22,6 +22,13 @@
 # ============================================================================
 
 
+# Python Hardware Module
+# Enable this to allow Python-based hardware drivers loaded at runtime.
+# Python scripts run in a separate subprocess (QProcess) communicating via
+# JSON IPC. No Python development headers are needed at build time;
+# only a working 'python3' on PATH is required at runtime.
+option(BC_ENABLE_PYTHON_HARDWARE "Enable Python hardware implementations via QProcess" OFF)
+
 # CUDA GPU Acceleration Module
 # Enable this if you have CUDA-capable hardware and want GPU acceleration
 # Requires NVIDIA CUDA toolkit to be installed on your system

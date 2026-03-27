@@ -294,6 +294,23 @@ public:
     bool setThreaded(const QString& type, const QString& label, bool threaded);
 
     /*!
+     * \brief Get Python script path for a specific profile
+     * \param type Hardware type
+     * \param label Profile label
+     * \return Python script path, or empty string if not set or profile doesn't exist
+     */
+    QString getPythonScriptPath(const QString& type, const QString& label) const;
+
+    /*!
+     * \brief Set Python script path for a specific profile
+     * \param type Hardware type
+     * \param label Profile label
+     * \param path Python script path
+     * \return True if successfully set
+     */
+    bool setPythonScriptPath(const QString& type, const QString& label, const QString& path);
+
+    /*!
      * \brief Get all hardware types that have profiles
      * \return List of hardware types with at least one profile
      */
@@ -494,6 +511,7 @@ private:
         QDateTime modified;         /*!< Last modified timestamp */
         QString description;        /*!< User description */
         std::optional<bool> threaded; /*!< Threading override (nullopt = use type-level default) */
+        QString pythonScriptPath;    /*!< Python script path (only used by Python hardware types) */
 
         ProfileInfo() : created(QDateTime::currentDateTime()),
                        modified(QDateTime::currentDateTime()) {}
@@ -613,6 +631,7 @@ namespace BC::Key::HardwareProfiles {
     static const QString modified{"modified"};              /*!< Modified time subkey */
     static const QString description{"description"};        /*!< Description subkey */
     static const QString threaded{"threaded"};              /*!< Threading override subkey */
+    static const QString pythonScriptPath{"pythonScriptPath"}; /*!< Python script path subkey */
 }
 
 Q_DECLARE_METATYPE(HardwareProfileData)

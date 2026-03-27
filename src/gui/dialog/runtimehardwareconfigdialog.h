@@ -270,6 +270,7 @@ private:
     std::map<QString, QString> d_originalRuntimeConfig;  // Original runtime configuration for cancel functionality
     std::map<QString, QString> d_previewRuntimeConfig;   // Preview of runtime configuration changes
     std::map<QString, bool> d_previewThreadedConfig;     // Threading overrides (key present = override stored)
+    std::map<QString, QString> d_previewPythonScriptConfig; // Python script path overrides
     QString d_currentHardwareType;  // Currently selected hardware type in browser
 
     /*!

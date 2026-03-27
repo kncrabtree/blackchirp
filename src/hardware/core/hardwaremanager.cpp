@@ -28,6 +28,10 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 {
     // Set static instance for const access
     s_instance = this;
+
+#ifdef BC_PYTHON_HARDWARE
+    d_optHwTypes.insert(QStringLiteral("PythonTestHardware"));
+#endif
     
     // Lock hardware map for entire initialization - no concurrency issues during startup
     QWriteLocker locker(&d_hardwareMapLock);

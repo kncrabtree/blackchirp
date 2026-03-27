@@ -364,6 +364,39 @@ bool HardwareProfileManager::setThreaded(const QString& type, const QString& lab
     return true;
 }
 
+QString HardwareProfileManager::getPythonScriptPath(const QString& type, const QString& label) const
+{
+    QReadLocker locker(&d_profilesLock);
+
+    auto typeIt = d_profiles.find(type);
+    if (typeIt == d_profiles.end())
+        return QString();
+
+    auto labelIt = typeIt->find(label);
+    if (labelIt == typeIt->end())
+        return QString();
+
+    return labelIt->pythonScriptPath;
+}
+
+bool HardwareProfileManager::setPythonScriptPath(const QString& type, const QString& label, const QString& path)
+{
+    QWriteLocker locker(&d_profilesLock);
+
+    auto typeIt = d_profiles.find(type);
+    if (typeIt == d_profiles.end())
+        return false;
+
+    auto labelIt = typeIt->find(label);
+    if (labelIt == typeIt->end())
+        return false;
+
+    labelIt->pythonScriptPath = path;
+    labelIt->modified = QDateTime::currentDateTime();
+    setModified();
+    return true;
+}
+
 QStringList HardwareProfileManager::getConfiguredHardwareTypes() const
 {
     QReadLocker locker(&d_profilesLock);
@@ -904,6 +937,8 @@ void HardwareProfileManager::loadProfilesFromSettings()
         if (threadedVar.isValid())
             profile.threaded = threadedVar.toBool();
 
+        profile.pythonScriptPath = getGroupValue<QString>(groupKey, BC::Key::HardwareProfiles::pythonScriptPath, QString());
+
         // Only add if we have a valid implementation that exists in the registry
         if (!profile.implementation.isEmpty() && 
             HardwareRegistry::instance().getImplementations(type).contains(profile.implementation)) {
@@ -942,6 +977,9 @@ void HardwareProfileManager::saveProfilesToSettings()
             }
             if (profile.threaded.has_value()) {
                 setGroupValue(groupKey, BC::Key::HardwareProfiles::threaded, *profile.threaded, false);
+            }
+            if (!profile.pythonScriptPath.isEmpty()) {
+                setGroupValue(groupKey, BC::Key::HardwareProfiles::pythonScriptPath, profile.pythonScriptPath, false);
             }
         }
     }
