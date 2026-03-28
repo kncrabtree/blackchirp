@@ -4,6 +4,17 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 
 ## Medium
 
+### Labjack Cross-Platform Support
+Currently, Blackchirp will not compile on a system that does not have the LabJack
+exodriver package installed, which is a Linux-only driver. This breaks 2 desired
+features: cross-platform support AND runtime library configuration rather than
+compile-time. The issue is the "labjackusb.h" header inclusion in
+src/hardware/optional/ioboard/u3.h. Needs investigation for how to get the correct
+library on MacOS and Windows and how to enable compilation without library.
+First step is to research and create a new labjack-cross-platform.md file with a
+plan, and then reassess whether the scope is small, medium, or large, updating
+this entry accordingly.
+
 ### [Generalized AWG Marker System](awg-marker-system.md)
 Replace the hardcoded 2-marker (protection/gate) system with a flexible N-marker
 architecture. Users define named marker channels with roles (Protection, Gate, Trigger,
