@@ -157,7 +157,7 @@ void HardwareObject::bcReadAuxData()
 
     auto vl = readValidationData();
     if(!vl.empty())
-        emit validationDataRead(pl,QPrivateSignal());
+        emit validationDataRead(vl,QPrivateSignal());
 }
 
 void HardwareObject::bcReadSettings()

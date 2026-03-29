@@ -129,8 +129,6 @@ QString PythonTestHardware::findHostScript() const
     // Search in several locations for python_hw_host.py
     QStringList searchPaths = {
         QCoreApplication::applicationDirPath() + QStringLiteral("/python_hw_host.py"),
-        QCoreApplication::applicationDirPath() + QStringLiteral("/../dev-docs/python_hw_host.py"),
-        QCoreApplication::applicationDirPath() + QStringLiteral("/../../dev-docs/python_hw_host.py"),
         QCoreApplication::applicationDirPath() + QStringLiteral("/../share/blackchirp/python_hw_host.py"),
     };
 
@@ -203,6 +201,16 @@ bool PythonTestHardware::prepareForExperiment(Experiment &exp)
 
     if (!pu_process || !pu_process->isRunning())
         return true;
+
+    // Register aux data keys by doing an initial read.
+    // Python scripts define their keys dynamically, so we discover them here.
+    auto auxData = readAuxData();
+    for (auto it = auxData.cbegin(); it != auxData.cend(); ++it)
+        exp.auxData()->registerKey(d_key, it->first);
+
+    auto valData = readValidationData();
+    for (auto it = valData.cbegin(); it != valData.cend(); ++it)
+        exp.auxData()->registerKey(d_key, it->first);
 
     QJsonObject req;
     req[QStringLiteral("method")] = QStringLiteral("prepare_for_experiment");

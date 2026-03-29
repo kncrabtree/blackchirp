@@ -100,10 +100,10 @@ are relayed through IPC to the C++ side, which performs the actual
 src/hardware/python/
     pythonprocess.h/.cpp          # QProcess wrapper: launch, IPC protocol, lifecycle
     pythontesthardware.h/.cpp     # HardwareObject subclass, dispatches via IPC
+    python_hw_host.py             # Python-side IPC host: reads stdin, dispatches to user script
 dev-docs/
     echo_server.py                # TCP echo server for testing
     test_hardware.py              # Example Python hardware script
-    python_hw_host.py             # Python-side IPC host: reads stdin, dispatches to user script
 ```
 
 ## Python API Contract
@@ -168,7 +168,7 @@ The core QProcess infrastructure is complete and compiles cleanly:
   log forwarding, and timeout management.
 - **`PythonTestHardware`** (`src/hardware/python/pythontesthardware.h/.cpp`):
   HardwareObject subclass dispatching all virtual methods via IPC.
-- **`python_hw_host.py`** (`dev-docs/python_hw_host.py`):
+- **`python_hw_host.py`** (`src/hardware/python/python_hw_host.py`):
   Python-side IPC host with CommProxy, SettingsProxy, LogProxy, and
   method dispatch.
 - **`test_hardware.py`** and **`echo_server.py`** (`dev-docs/`):
@@ -208,13 +208,7 @@ All manual testing passed. The full IPC pipeline works end-to-end:
    number is assigned in `Experiment::initialize()`, which runs after
    hardware prep. This is by design in the current architecture. Need to
    decide what experiment data to serialize for Python hardware.
-2. **Experiment aux data**: `readAuxData` data appears in rolling data
-   plots but not in `auxdata.csv` for experiments. The experiment aux data
-   path (`bcReadAuxData` via `getAuxData`) is separate from the rolling
-   data timer path.
-3. **Host script deployment**: `findHostScript()` uses relative paths from
-   the build directory. Need a CMake install rule for deployment.
-4. **Python hardware type detection**: The script path UI is conditional
+2. **Python hardware type detection**: The script path UI is conditional
    on `hardwareType == "PythonTestHardware"`. This will need to become
    a registry-based check when Phase 2 trampolines are added.
 

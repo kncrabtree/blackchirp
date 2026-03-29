@@ -85,6 +85,17 @@ if(BC_ENABLE_PYTHON_HARDWARE)
     file(GLOB PYTHON_HARDWARE_HEADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/python/*.h
     )
+
+    # Copy python_hw_host.py to build directory for development
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/python/python_hw_host.py
+        ${CMAKE_BINARY_DIR}/python_hw_host.py
+        COPYONLY
+    )
+
+    # Install python_hw_host.py alongside the application
+    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/python/python_hw_host.py
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/blackchirp)
 else()
     set(PYTHON_HARDWARE_SOURCES "")
     set(PYTHON_HARDWARE_HEADERS "")
