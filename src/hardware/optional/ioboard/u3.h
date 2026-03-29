@@ -17,11 +17,11 @@
 #ifndef U3_H_
 #define U3_H_
 
-#include <sys/time.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include "labjackusb.h"
+#include <hardware/library/labjacklibrary.h>
+#include <hardware/library/labjackconstants.h>
 #include <QtGlobal>
 
 
@@ -112,10 +112,6 @@ HANDLE openUSBConnection( int localID);
 
 void closeUSBConnection( HANDLE hDevice);
 //Closes a HANDLE to a U3 device.
-
-long getTickCount();
-//Returns the number of milliseconds that has elasped since the system was
-//started.
 
 long getCalibrationInfo( HANDLE hDevice,
                          u3CalibrationInfo *caliInfo);

@@ -5,15 +5,22 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 ## Medium
 
 ### Labjack Cross-Platform Support
-Currently, Blackchirp will not compile on a system that does not have the LabJack
-exodriver package installed, which is a Linux-only driver. This breaks 2 desired
-features: cross-platform support AND runtime library configuration rather than
-compile-time. The issue is the "labjackusb.h" header inclusion in
-src/hardware/optional/ioboard/u3.h. Needs investigation for how to get the correct
-library on MacOS and Windows and how to enable compilation without library.
-First step is to research and create a new labjack-cross-platform.md file with a
-plan, and then reassess whether the scope is small, medium, or large, updating
-this entry accordingly.
+**Phase 1 (complete):** Removed compile-time dependency on the LabJack exodriver
+vendor header (`labjackusb.h`) from `u3.h`. The `LabjackLibrary` class dynamically
+loads the vendor library at runtime, so the header was unnecessary. Blackchirp now
+compiles on all platforms without the exodriver installed. The exodriver works on
+both Linux and macOS with the same API, so both platforms are fully supported at
+runtime.
+
+**Phase 2 (future — Windows support):** The LabJack U3 uses the UD Library
+(`LabJackUD.dll`) on Windows instead of the exodriver. The UD library has a
+different API (e.g., `eAIN` has different parameters — no calibration struct, no
+ConfigIO flag — because UD manages state internally). Three approaches to evaluate:
+1. Use UD library's `RAW_IN`/`RAW_OUT` IOTypes to send raw USB packets, allowing
+   reuse of existing `u3.cpp` packet-building code
+2. Use `libusb-1.0` directly on all platforms (exodriver is a thin wrapper)
+3. Platform-conditional code paths calling UD easy functions on Windows
+Note: LJM library does NOT support U3 (T-series only).
 
 ### [Generalized AWG Marker System](awg-marker-system.md)
 Replace the hardcoded 2-marker (protection/gate) system with a flexible N-marker

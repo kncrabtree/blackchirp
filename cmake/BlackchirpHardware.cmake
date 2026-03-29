@@ -138,7 +138,6 @@ file(GLOB HARDWARE_IMPLEMENTATION_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/gpibcontroller/prologix*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/ioboard/virtual*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/ioboard/labjack*.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/ioboard/u3.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/pressurecontroller/virtual*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/pressurecontroller/intellisys*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/tempcontroller/virtual*.h

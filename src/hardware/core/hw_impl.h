@@ -33,7 +33,6 @@
 #include "hardware/optional/gpibcontroller/prologixgpibusb.h"
 #include "hardware/optional/gpibcontroller/virtualgpibcontroller.h"
 #include "hardware/optional/ioboard/labjacku3.h"
-#include "hardware/optional/ioboard/u3.h"
 #include "hardware/optional/ioboard/virtualioboard.h"
 #include "hardware/optional/pressurecontroller/intellisysiqplus.h"
 #include "hardware/optional/pressurecontroller/virtualpressurecontroller.h"

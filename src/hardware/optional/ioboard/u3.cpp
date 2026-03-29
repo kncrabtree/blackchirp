@@ -213,16 +213,6 @@ void closeUSBConnection(HANDLE hDevice)
 }
 
 
-long getTickCount()
-{
-    struct timeval tv;
-
-    gettimeofday(&tv, NULL);
-
-    return (tv.tv_sec * 1000) + (tv.tv_usec / 1000);
-}
-
-
 long isCalibrationInfoValid(u3CalibrationInfo *caliInfo)
 {
     if( caliInfo == NULL )
