@@ -183,7 +183,7 @@ void HardwareKeysTest::widgetKeyBasic()
 void HardwareKeysTest::migrateIndexKeyMatching()
 {
     auto result = BC::Key::migrateIndexKey("Clock.2", "Clock", 2);
-    QCOMPARE(result, QString("Clock.device2"));
+    QCOMPARE(result, QString("Clock.Device2"));
 }
 
 void HardwareKeysTest::migrateIndexKeyNonMatching()
@@ -202,33 +202,33 @@ void HardwareKeysTest::migrateIndexKeyNonMatching()
 void HardwareKeysTest::generateDefaultLabelEmpty()
 {
     auto label = BC::Key::generateDefaultLabel("Clock", {});
-    QCOMPARE(label, QString("default"));
+    QCOMPARE(label, QString("Default"));
 }
 
 void HardwareKeysTest::generateDefaultLabelSomeUsed()
 {
-    auto label = BC::Key::generateDefaultLabel("Clock", {"default"});
-    QCOMPARE(label, QString("main"));
+    auto label = BC::Key::generateDefaultLabel("Clock", {"Default"});
+    QCOMPARE(label, QString("Main"));
 
-    auto label2 = BC::Key::generateDefaultLabel("Clock", {"default", "main"});
-    QCOMPARE(label2, QString("primary"));
+    auto label2 = BC::Key::generateDefaultLabel("Clock", {"Default", "Main"});
+    QCOMPARE(label2, QString("Primary"));
 
-    auto label3 = BC::Key::generateDefaultLabel("Clock", {"default", "main", "primary"});
-    QCOMPARE(label3, QString("secondary"));
+    auto label3 = BC::Key::generateDefaultLabel("Clock", {"Default", "Main", "Primary"});
+    QCOMPARE(label3, QString("Secondary"));
 
-    auto label4 = BC::Key::generateDefaultLabel("Clock", {"default", "main", "primary", "secondary"});
-    QCOMPARE(label4, QString("backup"));
+    auto label4 = BC::Key::generateDefaultLabel("Clock", {"Default", "Main", "Primary", "Secondary"});
+    QCOMPARE(label4, QString("Backup"));
 }
 
 void HardwareKeysTest::generateDefaultLabelAllDefaultsUsed()
 {
     auto label = BC::Key::generateDefaultLabel("Clock",
-        {"default", "main", "primary", "secondary", "backup"});
-    QCOMPARE(label, QString("device1"));
+        {"Default", "Main", "Primary", "Secondary", "Backup"});
+    QCOMPARE(label, QString("Device1"));
 
     auto label2 = BC::Key::generateDefaultLabel("Clock",
-        {"default", "main", "primary", "secondary", "backup", "device1"});
-    QCOMPARE(label2, QString("device2"));
+        {"Default", "Main", "Primary", "Secondary", "Backup", "Device1"});
+    QCOMPARE(label2, QString("Device2"));
 }
 
 // --- HardwareDataContainer legacy mappings ---

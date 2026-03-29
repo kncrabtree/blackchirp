@@ -394,8 +394,8 @@ void HardwareProfileManagerTest::testCreateProfileAutoLabel()
     QVERIFY(manager.profileExists(d_testTypeFlow, label2));
     QVERIFY(manager.profileExists(d_testTypeFlow, label3));
     
-    // Test expected default label pattern (e.g., "default", "secondary", "backup")
-    QVERIFY(label1.contains("default") || label1.contains("flow"));
+    // Test expected default label pattern (e.g., "Default", "Secondary", "Backup")
+    QVERIFY(label1.contains("Default") || label1.contains("flow"));
     QVERIFY(!label2.isEmpty() && !label3.isEmpty());
 }
 
@@ -536,10 +536,10 @@ void HardwareProfileManagerTest::testDefaultLabelGeneration()
     QVERIFY(defaultLabel2 != defaultLabel1);
     QVERIFY(manager.isLabelAvailable(d_testTypeFlow, defaultLabel2));
     
-    // Test pattern (e.g., "default", "secondary", "backup", "flow1", "flow2", etc.)
-    QVERIFY(defaultLabel1.contains("default") || 
+    // Test pattern (e.g., "Default", "Secondary", "Backup", "flow1", "flow2", etc.)
+    QVERIFY(defaultLabel1.contains("Default") ||
             defaultLabel1.toLower().contains(d_testTypeFlow.toLower()) ||
-            defaultLabel1.contains("main"));
+            defaultLabel1.contains("Main"));
 }
 
 void HardwareProfileManagerTest::testLabelValidation()
