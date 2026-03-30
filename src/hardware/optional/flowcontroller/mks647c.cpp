@@ -11,7 +11,7 @@ REGISTER_HARDWARE_PROTOCOLS(Mks647c, CommunicationProtocol::Rs232)
 
 Mks647c::Mks647c(const QString& label, QObject *parent) :
     FlowController(QString(Mks647c::staticMetaObject.className()), label, parent),
-    d_maxTries(5), d_nextRead(0)
+    d_maxTries(5)
 {
     double b = 28316.847; //scfm --> sccm conversion
     double c = b/60.0; // scfh --> sccm conversion
@@ -376,20 +376,6 @@ int Mks647c::hwReadPressureControlMode()
         return 1;
     else
         return 0;
-}
-
-void Mks647c::poll()
-{
-    if(d_nextRead < 0 || d_nextRead >= get(flowChannels,4))
-    {
-        readPressure();
-        d_nextRead = 0;
-    }
-    else
-    {
-        readFlow(d_nextRead);
-        d_nextRead++;
-    }
 }
 
 void Mks647c::sleep(bool b)

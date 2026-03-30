@@ -20,7 +20,6 @@ public slots:
     double hwReadPressure() override;
     void hwSetPressureControlMode(bool enabled) override;
     int hwReadPressureControlMode() override;
-    void poll() override;
 
 protected:
     bool fcTestConnection() override;

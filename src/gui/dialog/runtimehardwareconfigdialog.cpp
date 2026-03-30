@@ -20,6 +20,8 @@
 #include <QDialogButtonBox>
 #include <QTableWidget>
 #include <QTableWidgetItem>
+#include <QDir>
+#include <QFile>
 #include <QFileDialog>
 #include <QTextEdit>
 #include <QMetaEnum>
@@ -580,11 +582,12 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
 
     advancedLayout->addWidget(threadedCheckbox);
 
-    // Python script path field (only for PythonTestHardware)
+    // Python script path field — shown when the selected profile uses a Python implementation
     QLineEdit* pythonScriptEdit = nullptr;
 #ifdef BC_PYTHON_HARDWARE
-    if (hardwareType == QStringLiteral("PythonTestHardware")) {
+    {
         auto* pythonScriptWidget = new QWidget(advancedContainer);
+        pythonScriptWidget->setObjectName("pythonScriptWidget");
         auto* scriptLayout = new QHBoxLayout(pythonScriptWidget);
         scriptLayout->setContentsMargins(0, 0, 0, 0);
 
@@ -605,18 +608,29 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
         scriptLayout->addWidget(pythonScriptEdit, 1);
         scriptLayout->addWidget(browseButton);
 
-        // Initialize from preview config or profile manager
-        if (!activeHwKey.isEmpty()) {
+        // Helper: check whether the selected profile is a Python implementation
+        auto isSelectedPython = [hardwareType, profilesList]() -> bool {
+            auto selected = profilesList->selectedItems();
+            if (selected.isEmpty()) return false;
+            QString label = selected.first()->data(Qt::UserRole).toString();
+            if (label.isEmpty()) return false;
+            QString impl = HardwareProfileManager::instance().getImplementation(hardwareType, label);
+            return impl.contains(QStringLiteral("Python"));
+        };
+
+        // Initialize visibility and value from the current selection
+        bool isPython = isSelectedPython();
+        pythonScriptWidget->setVisible(isPython);
+        if (isPython && !activeHwKey.isEmpty()) {
             auto it = d_previewPythonScriptConfig.find(activeHwKey);
             if (it != d_previewPythonScriptConfig.end()) {
                 pythonScriptEdit->setText(it->second);
             } else {
                 auto [type, label] = BC::Key::parseKey(activeHwKey);
-                QString path = HardwareProfileManager::instance().getPythonScriptPath(type, label);
-                pythonScriptEdit->setText(path);
+                pythonScriptEdit->setText(
+                    HardwareProfileManager::instance().getPythonScriptPath(type, label));
             }
         }
-        pythonScriptEdit->setEnabled(!activeHwKey.isEmpty());
 
         // Wire text changes into preview config
         connect(pythonScriptEdit, &QLineEdit::textChanged, this,
@@ -641,16 +655,17 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
     });
 
     // Update Advanced section when profile selection changes in the list
+    // Capture the parent widget so we can toggle visibility of the Python script row
+    QWidget* pythonScriptWidget = advancedContainer->findChild<QWidget*>("pythonScriptWidget");
     connect(profilesList, &QListWidget::itemSelectionChanged, this,
-            [this, hardwareType, profilesList, threadedCheckbox, typeDefault, getActiveHwKey, pythonScriptEdit]() {
+            [this, hardwareType, profilesList, threadedCheckbox, typeDefault, getActiveHwKey,
+             pythonScriptEdit, pythonScriptWidget]() {
         QString hwKey = getActiveHwKey();
         if (hwKey.isEmpty()) {
             threadedCheckbox->setEnabled(false);
             threadedCheckbox->setChecked(typeDefault);
-            if (pythonScriptEdit) {
-                pythonScriptEdit->setEnabled(false);
-                pythonScriptEdit->clear();
-            }
+            if (pythonScriptWidget)
+                pythonScriptWidget->setVisible(false);
             return;
         }
         threadedCheckbox->setEnabled(true);
@@ -661,15 +676,22 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
         threadedCheckbox->setChecked(checked);
 
         if (pythonScriptEdit) {
-            pythonScriptEdit->setEnabled(true);
-            QSignalBlocker scriptBlocker(pythonScriptEdit);
-            auto sit = d_previewPythonScriptConfig.find(hwKey);
-            if (sit != d_previewPythonScriptConfig.end()) {
-                pythonScriptEdit->setText(sit->second);
-            } else {
-                auto [type, label] = BC::Key::parseKey(hwKey);
-                pythonScriptEdit->setText(
-                    HardwareProfileManager::instance().getPythonScriptPath(type, label));
+            // Show/hide based on whether selected profile is a Python implementation
+            auto [type, label] = BC::Key::parseKey(hwKey);
+            QString impl = HardwareProfileManager::instance().getImplementation(type, label);
+            bool isPython = impl.contains(QStringLiteral("Python"));
+            if (pythonScriptWidget)
+                pythonScriptWidget->setVisible(isPython);
+
+            if (isPython) {
+                QSignalBlocker scriptBlocker(pythonScriptEdit);
+                auto sit = d_previewPythonScriptConfig.find(hwKey);
+                if (sit != d_previewPythonScriptConfig.end()) {
+                    pythonScriptEdit->setText(sit->second);
+                } else {
+                    pythonScriptEdit->setText(
+                        HardwareProfileManager::instance().getPythonScriptPath(type, label));
+                }
             }
         }
     });
@@ -1092,13 +1114,15 @@ void RuntimeHardwareConfigDialog::onAddProfile(const QString& hardwareType)
 
         // Write selected protocol and config params to settings before hardware
         // object is created, so the constructor finds the correct values.
+        // These must be written directly under the hwKey group (not under an
+        // implementation subgroup), because HardwareObject's SettingsStorage
+        // root is hwKey and it reads commType/params from that level.
         {
             auto selectedProtocol = static_cast<CommunicationProtocol::CommType>(
                 protocolCombo->currentData().toInt());
             QString settingsKey = BC::Key::hwKey(hardwareType, label);
             QSettings s(QCoreApplication::organizationName(), QCoreApplication::applicationName());
             s.beginGroup(settingsKey);
-            s.beginGroup(implementation);
             s.setValue(BC::Key::HW::commType, static_cast<int>(selectedProtocol));
 
             // Write config params (e.g., numChannels, tunable) so the base class
@@ -1118,7 +1142,6 @@ void RuntimeHardwareConfigDialog::onAddProfile(const QString& hardwareType)
                     s.setValue(it.key(), val);
             }
 
-            s.endGroup();
             s.endGroup();
             s.sync();
         }
@@ -1144,9 +1167,80 @@ void RuntimeHardwareConfigDialog::onAddProfile(const QString& hardwareType)
                 d_previewRuntimeConfig[profileKey] = implementation;
             }
             
+            // Offer to copy template script for Python hardware implementations
+#ifdef BC_PYTHON_HARDWARE
+            if (implementation.startsWith(QStringLiteral("Python"))) {
+                // Derive template filename: "PythonAwg" -> "python_awg_template.py"
+                QString typePart = implementation.mid(6); // Remove "Python" prefix
+                QString templateFilename = QStringLiteral("python_%1_template.py").arg(typePart.toLower());
+
+                // Search for template using same paths as findHostScript()
+                QString appDir = QCoreApplication::applicationDirPath();
+                QString templatePath;
+                QStringList searchPaths = {
+                    appDir + "/" + templateFilename,
+                    appDir + "/../share/blackchirp/" + templateFilename
+                };
+                for (const auto& path : searchPaths) {
+                    if (QFile::exists(path)) {
+                        templatePath = path;
+                        break;
+                    }
+                }
+
+                if (!templatePath.isEmpty()) {
+                    auto result = QMessageBox::question(
+                        this, tr("Python Template Script"),
+                        tr("Would you like to create a copy of the template script to customize?"),
+                        QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+
+                    if (result == QMessageBox::Yes) {
+                        // Use the application's configured save path as the initial directory
+                        SettingsStorage ss;
+                        QString initialDir = ss.get(BC::Key::savePath, QString(""));
+                        QString suggestedName = QStringLiteral("my_%1.py").arg(typePart.toLower());
+                        if (!initialDir.isEmpty())
+                            suggestedName = QDir(initialDir).filePath(suggestedName);
+                        QString savePath = QFileDialog::getSaveFileName(
+                            this, tr("Save Python Script"),
+                            suggestedName,
+                            tr("Python Scripts (*.py)"));
+
+                        if (!savePath.isEmpty()) {
+                            if (QFile::exists(savePath))
+                                QFile::remove(savePath);
+
+                            if (QFile::copy(templatePath, savePath)) {
+                                // Make the copy writable (QFile::copy preserves source permissions)
+                                QFile::setPermissions(savePath,
+                                    QFile::permissions(savePath) | QFileDevice::WriteOwner);
+
+                                QString profileKey = BC::Key::hwKey(hardwareType, actualLabel);
+                                d_previewPythonScriptConfig[profileKey] = savePath;
+                            } else {
+                                QMessageBox::warning(this, tr("Python Template Script"),
+                                    tr("Failed to copy template script to the selected location."));
+                            }
+                        }
+                    }
+                }
+            }
+#endif
+
             // Refresh the right panel to show the new profile with correct radio button state
             updateRightPanelForHardwareType(hardwareType);
-            
+
+            // Select the newly created profile in the list
+            auto* profilesList = pu_ui->configurationContentWidget->findChild<QListWidget*>("profilesList");
+            if (profilesList) {
+                for (int i = 0; i < profilesList->count(); ++i) {
+                    if (profilesList->item(i)->data(Qt::UserRole).toString() == actualLabel) {
+                        profilesList->setCurrentRow(i);
+                        break;
+                    }
+                }
+            }
+
             // Update preview display
             updatePreviewConfiguration();
         } else {

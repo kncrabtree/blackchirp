@@ -30,7 +30,6 @@ public slots:
     double hwReadPressure() override;
     void hwSetPressureControlMode(bool enabled) override;
     int hwReadPressureControlMode() override;
-    void poll() override;
 
 protected:
     void fcInitialize() override;
@@ -40,9 +39,6 @@ protected:
     // HardwareObject interface
 public slots:
     void sleep(bool b) override;
-
-private:
-    int d_nextRead;
 };
 
 #endif // MKS947_H

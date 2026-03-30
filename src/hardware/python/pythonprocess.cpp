@@ -65,6 +65,24 @@ bool PythonProcess::start(const QString &hostScriptPath, const QString &userScri
         return false;
     }
 
+    // Call the user script's initialize() so it can set up state before
+    // testConnection. This mirrors the C++ HardwareObject lifecycle:
+    // constructor -> initialize() -> testConnection().
+    int initId = d_nextId++;
+    QJsonObject userInitReq;
+    userInitReq[QStringLiteral("id")] = initId;
+    userInitReq[QStringLiteral("method")] = QStringLiteral("initialize");
+
+    writeLine(userInitReq);
+
+    auto initResp = readResponseForId(initId);
+    if (initResp.contains(QStringLiteral("error"))) {
+        emit processError(QString("Python initialize() failed: %1").arg(
+            initResp[QStringLiteral("error")].toString()));
+        stop();
+        return false;
+    }
+
     return true;
 }
 

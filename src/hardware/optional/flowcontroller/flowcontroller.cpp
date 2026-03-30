@@ -188,7 +188,13 @@ void FlowController::readPressureControlMode()
 
 void FlowController::poll()
 {
-
+    if (d_nextRead < 0 || d_nextRead >= d_numChannels) {
+        readPressure();
+        d_nextRead = 0;
+    } else {
+        readFlow(d_nextRead);
+        d_nextRead++;
+    }
 }
 
 void FlowController::readAll()

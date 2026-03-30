@@ -246,13 +246,14 @@ void PythonAwg::sleep(bool b)
 }
 
 // ============================================================================
-// readSettings() -- hot-reload
+// readSettings()
 // ============================================================================
 void PythonAwg::readSettings()
 {
-    if (pu_process) {
-        pu_process->stop();
-        startPythonProcess();
+    if (pu_process && pu_process->isRunning()) {
+        QJsonObject req;
+        req[QStringLiteral("method")] = QStringLiteral("read_settings");
+        pu_process->sendRequest(req);
     }
 }
 

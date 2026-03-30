@@ -38,7 +38,7 @@ public slots:
     void readPressure();
     void readPressureControlMode();
 
-    virtual void poll();
+    void poll();
     QStringList forbiddenKeys() const override;
 
 private:
@@ -53,6 +53,7 @@ private:
 
     FlowConfig d_config;
     const int d_numChannels;
+    int d_nextRead{0};
     QTimer *p_readTimer;
 
 protected:

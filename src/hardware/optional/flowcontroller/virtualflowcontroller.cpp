@@ -96,8 +96,3 @@ int VirtualFlowController::hwReadPressureControlMode()
 {
     return d_config.d_pressureControlMode ? 1 : 0;
 }
-
-void VirtualFlowController::poll()
-{
-    readAll();
-}

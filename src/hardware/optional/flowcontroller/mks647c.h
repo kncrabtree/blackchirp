@@ -19,7 +19,6 @@ public slots:
     double hwReadPressure() override;
     void hwSetPressureControlMode(bool enabled) override;
     int hwReadPressureControlMode() override;
-    void poll() override;
 
     // HardwareObject interface
     void sleep(bool b) override;
@@ -41,7 +40,6 @@ private:
 
     QByteArray mksQueryCmd(QString cmd, int respLength);
     int d_maxTries;
-    int d_nextRead;
 };
 
 #endif // MKS647C_H

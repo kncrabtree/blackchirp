@@ -271,17 +271,14 @@ void PythonTestHardware::sleep(bool b)
 }
 
 // ============================================================================
-// readSettings() -- hot-reload
+// readSettings()
 // ============================================================================
 void PythonTestHardware::readSettings()
 {
-    emit logMessage(QString("readSettings: hot-reload triggered, process=%1")
-                    .arg(pu_process ? "valid" : "null"),
-                    LogHandler::Debug);
-
-    if (pu_process) {
-        pu_process->stop();
-        startPythonProcess();
+    if (pu_process && pu_process->isRunning()) {
+        QJsonObject req;
+        req[QStringLiteral("method")] = QStringLiteral("read_settings");
+        pu_process->sendRequest(req);
     }
 }
 

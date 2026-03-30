@@ -8,8 +8,7 @@ REGISTER_HARDWARE_META(Mks946, "MKS 946 vacuum transducer controller")
 REGISTER_HARDWARE_PROTOCOLS(Mks946, CommunicationProtocol::Rs232)
 
 Mks946::Mks946(const QString& label, QObject *parent) :
-    FlowController(QString(Mks946::staticMetaObject.className()), label, parent),
-    d_nextRead(0)
+    FlowController(QString(Mks946::staticMetaObject.className()), label, parent)
 {
     if(!containsArray(channels))
     {
@@ -333,22 +332,6 @@ int Mks946::hwReadPressureControlMode()
 
     return -1;
 
-}
-
-void Mks946::poll()
-{
-    if(d_nextRead < 0 || d_nextRead >= get(flowChannels,4))
-    {
-        readPressure();
-//        readPressureSetpoint();
-        d_nextRead = 0;
-    }
-    else
-    {
-        readFlow(d_nextRead);
-//        readFlowSetpoint(d_nextRead);
-        d_nextRead++;
-    }
 }
 
 void Mks946::fcInitialize()
