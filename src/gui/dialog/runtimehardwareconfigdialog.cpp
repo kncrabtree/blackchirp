@@ -24,6 +24,8 @@
 #include <QTextEdit>
 #include <QMetaEnum>
 #include <QSettings>
+#include <QSpinBox>
+#include <QDoubleSpinBox>
 #include <QCoreApplication>
 #include <data/bcglobals.h>
 #include <data/settings/hardwarekeys.h>
@@ -961,9 +963,69 @@ void RuntimeHardwareConfigDialog::onAddProfile(const QString& hardwareType)
     labelEdit->setText(defaultLabel);
     
     formLayout->addRow("Label:", labelEdit);
-    
+
     layout->addLayout(formLayout);
-    
+
+    // Configuration parameters (shown when implementation has HwConfigParams)
+    auto* configParamsGroup = new QGroupBox("Configuration Parameters");
+    auto* configParamsLayout = new QFormLayout(configParamsGroup);
+    configParamsGroup->hide();
+
+    // Map from param key -> widget, rebuilt when implementation changes
+    QHash<QString, QWidget*> paramWidgets;
+
+    auto updateConfigParams = [&](const QString& impl) {
+        // Clear existing widgets
+        while (configParamsLayout->rowCount() > 0)
+            configParamsLayout->removeRow(0);
+        paramWidgets.clear();
+
+        auto params = HardwareRegistry::instance().getConfigParams(hardwareType, impl);
+        configParamsGroup->setVisible(!params.isEmpty());
+
+        for (const auto& param : params) {
+            int typeId = param.defaultValue.userType();
+            QWidget* widget = nullptr;
+
+            if (typeId == QMetaType::Int) {
+                auto* sb = new QSpinBox();
+                sb->setValue(param.defaultValue.toInt());
+                if (param.minimum.isValid()) sb->setMinimum(param.minimum.toInt());
+                if (param.maximum.isValid()) sb->setMaximum(param.maximum.toInt());
+                widget = sb;
+            } else if (typeId == QMetaType::UInt) {
+                auto* sb = new QSpinBox();
+                sb->setValue(static_cast<int>(param.defaultValue.toUInt()));
+                if (param.minimum.isValid()) sb->setMinimum(static_cast<int>(param.minimum.toUInt()));
+                if (param.maximum.isValid()) sb->setMaximum(static_cast<int>(param.maximum.toUInt()));
+                widget = sb;
+            } else if (typeId == QMetaType::Double) {
+                auto* dsb = new QDoubleSpinBox();
+                dsb->setValue(param.defaultValue.toDouble());
+                if (param.minimum.isValid()) dsb->setMinimum(param.minimum.toDouble());
+                if (param.maximum.isValid()) dsb->setMaximum(param.maximum.toDouble());
+                widget = dsb;
+            } else if (typeId == QMetaType::Bool) {
+                auto* cb = new QCheckBox();
+                cb->setChecked(param.defaultValue.toBool());
+                widget = cb;
+            } else {
+                auto* le = new QLineEdit();
+                le->setText(param.defaultValue.toString());
+                widget = le;
+            }
+
+            if (widget) {
+                paramWidgets[param.key] = widget;
+                configParamsLayout->addRow(param.label + ":", widget);
+            }
+        }
+    };
+    updateConfigParams(implementationCombo->currentText());
+    connect(implementationCombo, &QComboBox::currentTextChanged, updateConfigParams);
+
+    layout->addWidget(configParamsGroup);
+
     // Validation label
     auto* validationLabel = new QLabel();
     validationLabel->setStyleSheet(QString("QLabel { color: %1; }")
@@ -1028,8 +1090,8 @@ void RuntimeHardwareConfigDialog::onAddProfile(const QString& hardwareType)
         QString implementation = implementationCombo->currentText();
         QString label = labelEdit->text().trimmed();
 
-        // Write selected protocol to settings before hardware object is created,
-        // so the HardwareObject constructor finds the correct value.
+        // Write selected protocol and config params to settings before hardware
+        // object is created, so the constructor finds the correct values.
         {
             auto selectedProtocol = static_cast<CommunicationProtocol::CommType>(
                 protocolCombo->currentData().toInt());
@@ -1038,6 +1100,24 @@ void RuntimeHardwareConfigDialog::onAddProfile(const QString& hardwareType)
             s.beginGroup(settingsKey);
             s.beginGroup(implementation);
             s.setValue(BC::Key::HW::commType, static_cast<int>(selectedProtocol));
+
+            // Write config params (e.g., numChannels, tunable) so the base class
+            // constructor can read them via SettingsStorage/getOrSetDefault.
+            for (auto it = paramWidgets.cbegin(); it != paramWidgets.cend(); ++it) {
+                QVariant val;
+                if (auto* sb = qobject_cast<QSpinBox*>(it.value()))
+                    val = sb->value();
+                else if (auto* dsb = qobject_cast<QDoubleSpinBox*>(it.value()))
+                    val = dsb->value();
+                else if (auto* cb = qobject_cast<QCheckBox*>(it.value()))
+                    val = cb->isChecked();
+                else if (auto* le = qobject_cast<QLineEdit*>(it.value()))
+                    val = le->text();
+
+                if (val.isValid())
+                    s.setValue(it.key(), val);
+            }
+
             s.endGroup();
             s.endGroup();
             s.sync();

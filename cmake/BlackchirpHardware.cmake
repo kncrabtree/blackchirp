@@ -86,15 +86,20 @@ if(BC_ENABLE_PYTHON_HARDWARE)
         ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/python/*.h
     )
 
-    # Copy python_hw_host.py to build directory for development
-    configure_file(
+    # Collect Python runtime files (host script + templates)
+    file(GLOB PYTHON_RUNTIME_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/python/python_hw_host.py
-        ${CMAKE_BINARY_DIR}/python_hw_host.py
-        COPYONLY
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/python/python_*_template.py
     )
 
-    # Install python_hw_host.py alongside the application
-    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/python/python_hw_host.py
+    # Copy Python runtime files to build directory for development
+    foreach(pyfile ${PYTHON_RUNTIME_FILES})
+        get_filename_component(pyname ${pyfile} NAME)
+        configure_file(${pyfile} ${CMAKE_BINARY_DIR}/${pyname} COPYONLY)
+    endforeach()
+
+    # Install Python runtime files alongside the application
+    install(FILES ${PYTHON_RUNTIME_FILES}
             DESTINATION ${CMAKE_INSTALL_DATADIR}/blackchirp)
 else()
     set(PYTHON_HARDWARE_SOURCES "")

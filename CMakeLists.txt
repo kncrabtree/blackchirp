@@ -180,23 +180,6 @@ endif()
 # Include user build configuration
 include(${BUILD_CONFIG_FILE})
 
-# Hardware configuration eliminated - all hardware implementations always compiled in
-# This enables true single-binary distribution with runtime hardware selection
-
-message(STATUS "")
-message(STATUS "=== HARDWARE CONFIGURATION ===")
-message(STATUS "")
-message(STATUS "BlackChirp now uses runtime hardware configuration!")
-message(STATUS "ALL hardware implementations are compiled in and available.")
-message(STATUS "Hardware selection is done at runtime via RuntimeHardwareConfig.")
-message(STATUS "")
-message(STATUS "Benefits:")
-message(STATUS "  - Single binary contains all hardware support")
-message(STATUS "  - No compilation needed for hardware changes")
-message(STATUS "  - Runtime hardware switching")
-message(STATUS "")
-
-# No hardware validation needed - all hardware always available
 
 # ============================================================================
 # Version and Configuration Definitions

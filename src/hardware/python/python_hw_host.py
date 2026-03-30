@@ -258,7 +258,14 @@ def dispatch(user_obj, request):
         sleeping = request.get("sleeping", False)
         return fn(sleeping)
 
-    raise ValueError(f"Unknown method: {method}")
+    # Generic dispatch for type-specific methods (e.g., hw_read_flow,
+    # read_analog_channels). All request keys other than "id" and "method"
+    # are passed as keyword arguments.
+    fn = getattr(user_obj, method, None)
+    if fn is None:
+        return None  # Method not implemented -- return safe default
+    kwargs = {k: v for k, v in request.items() if k not in ("id", "method")}
+    return fn(**kwargs)
 
 
 # =============================================================================

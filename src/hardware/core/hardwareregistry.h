@@ -16,6 +16,22 @@ class HardwareObject;
 class VendorLibrary;
 
 /*!
+ * \brief Describes a configuration parameter that must be set before hardware construction
+ *
+ * Used by Python hardware trampolines (and potentially other dynamic implementations)
+ * to declare parameters that need UI input when a profile is created. The QVariant
+ * defaultValue determines both the default and the widget type (int → QSpinBox,
+ * bool → QCheckBox, double → QDoubleSpinBox, QString → QLineEdit).
+ */
+struct HwConfigParam {
+    QString key;           /*!< SettingsStorage key (written before object construction) */
+    QString label;         /*!< Display label for the UI widget */
+    QVariant defaultValue; /*!< Type-aware default value */
+    QVariant minimum;      /*!< Optional minimum for numeric types (invalid QVariant = no limit) */
+    QVariant maximum;      /*!< Optional maximum for numeric types (invalid QVariant = no limit) */
+};
+
+/*!
  * \brief Hardware registration information
  */
 struct HardwareRegistration {
@@ -25,6 +41,7 @@ struct HardwareRegistration {
     std::function<HardwareObject*(const QString&)> factory;   /*!< Factory function to create hardware instance with label */
     QStringList libraryDependencies;                          /*!< List of vendor libraries this hardware depends on */
     QVector<CommunicationProtocol::CommType> supportedProtocols; /*!< Communication protocols supported by this hardware */
+    QVector<HwConfigParam> configParams;                       /*!< Parameters requiring UI input before construction */
 
     // Constructor
     HardwareRegistration() = default;
@@ -178,6 +195,24 @@ public:
      */
     QVector<CommunicationProtocol::CommType> getSupportedProtocols(
         const QString& key, const QString& subKey) const;
+
+    /*!
+     * \brief Add configuration parameters to an existing hardware registration
+     * \param key Hardware type key
+     * \param subKey Implementation key
+     * \param params List of configuration parameters requiring UI input before construction
+     * \return True if parameters were added successfully
+     */
+    bool addConfigParams(const QString& key, const QString& subKey,
+                         const QVector<HwConfigParam>& params);
+
+    /*!
+     * \brief Get configuration parameters for a hardware implementation
+     * \param key Hardware type key
+     * \param subKey Implementation key
+     * \return List of configuration parameters, or empty if none registered
+     */
+    QVector<HwConfigParam> getConfigParams(const QString& key, const QString& subKey) const;
 
     /*!
      * \brief Add library dependency to existing hardware registration

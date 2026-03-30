@@ -1,0 +1,63 @@
+#ifndef PYTHONFLOWCONTROLLER_H
+#define PYTHONFLOWCONTROLLER_H
+
+#ifdef BC_PYTHON_HARDWARE
+
+#include <hardware/optional/flowcontroller/flowcontroller.h>
+
+#include <memory>
+
+class PythonProcess;
+
+namespace BC::Key::PythonFlowController {
+static const QString pythonScript{"pythonScript"};
+static const QString pythonClass{"pythonClass"};
+}
+
+/*!
+ * \brief FlowController subclass that dispatches all virtual methods to a Python subprocess via IPC
+ *
+ * PythonFlowController launches a Python subprocess (via PythonProcess) that
+ * loads a user-written flow controller driver script. All hardware virtual
+ * methods are translated to JSON requests sent over stdin/stdout pipes.
+ *
+ * Communication with actual hardware is relayed: when the Python script
+ * calls self.comm.query(), the request is sent back to C++ which performs
+ * the operation on p_comm and returns the result.
+ *
+ * The FlowController base class handles the poll timer, readAll(), and
+ * prepareForExperiment(). PythonFlowController only needs to implement
+ * fcInitialize(), fcTestConnection(), and the eight hw* pure virtuals.
+ */
+class PythonFlowController : public FlowController
+{
+    Q_OBJECT
+public:
+    explicit PythonFlowController(const QString &label, QObject *parent = nullptr);
+    ~PythonFlowController() override;
+
+protected:
+    void fcInitialize() override;
+    bool fcTestConnection() override;
+
+    void readSettings() override;
+    QStringList forbiddenKeys() const override;
+
+private:
+    void hwSetPressureControlMode(bool enabled) override;
+    void hwSetFlowSetpoint(const int ch, const double val) override;
+    void hwSetPressureSetpoint(const double val) override;
+    double hwReadFlowSetpoint(const int ch) override;
+    double hwReadPressureSetpoint() override;
+    double hwReadFlow(const int ch) override;
+    double hwReadPressure() override;
+    int hwReadPressureControlMode() override;
+
+    bool startPythonProcess();
+    QString findHostScript() const;
+
+    std::unique_ptr<PythonProcess> pu_process;
+};
+
+#endif // BC_PYTHON_HARDWARE
+#endif // PYTHONFLOWCONTROLLER_H
