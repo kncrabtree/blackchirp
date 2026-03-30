@@ -133,14 +133,43 @@ Each hardware type defines a Python class with methods matching the C++
 virtual interface. Methods use snake_case. `self.comm`, `self.settings`,
 and `self.log` are injected by the IPC host script.
 
+### Subprocess Lifecycle
+
+`PythonProcess::start()` establishes the subprocess and runs two
+handshake steps before returning:
+
+1. **`_init`** -- sets up `self.comm`, `self.settings`, and `self.log`
+   proxies on the user object.
+2. **`initialize`** -- calls the user script's `initialize()` method so
+   it can set up internal state (e.g., channel dicts, calibration data).
+
+After `start()` returns, the C++ trampoline sends `test_connection`.
+This mirrors the C++ `HardwareObject` lifecycle:
+**constructor → initialize() → testConnection()**.
+
+**Key constraint**: `initialize()` is called exactly once per subprocess
+start. If the subprocess is killed and restarted (e.g., due to script
+path change), `initialize()` runs again on the new process. The
+`readSettings()` path does **not** restart the subprocess; it sends a
+`read_settings` IPC message to the running process instead.
+
 ### Common Methods (all types)
 
 ```python
 def initialize(self):
-    """Called once after script is loaded."""
+    """Called once when the subprocess starts, after proxies are injected.
+
+    Use this to set up internal state (dicts, calibration, etc.).
+    self.comm is available but the connection has not been tested yet.
+    Called automatically by PythonProcess::start() before testConnection.
+    """
 
 def test_connection(self) -> bool:
-    """Verify communication with hardware. Return True on success."""
+    """Verify communication with hardware. Return True on success.
+
+    May be called multiple times (e.g., on reconnect). initialize()
+    is guaranteed to have run before the first call.
+    """
 
 def read_aux_data(self) -> dict[str, float]:          # optional
 def read_validation_data(self) -> dict[str, float]:    # optional
@@ -148,7 +177,7 @@ def prepare_for_experiment(self, config: dict) -> bool: # optional
 def begin_acquisition(self):                            # optional
 def end_acquisition(self):                              # optional
 def sleep(self, sleeping: bool):                        # optional
-def read_settings(self):                                # optional
+def read_settings(self):                                # optional -- reload settings without restart
 ```
 
 ### Injected Objects
@@ -167,6 +196,67 @@ def read_settings(self):                                # optional
 
 **self.log** (logging proxy):
 - `log(msg)`, `debug(msg)`, `warning(msg)`, `error(msg)`, `highlight(msg)`
+
+## Trampoline Implementation Contract
+
+These rules apply to all C++ Python trampoline classes (PythonAwg,
+PythonFlowController, etc.) and must be followed when creating new ones.
+
+### Process Lifecycle
+
+1. **`initialize()` / `fcInitialize()`**: Create `PythonProcess`, set
+   comm, settings callbacks, and connect log signal. Do **not** start the
+   subprocess here. The subprocess is started lazily in `testConnection`.
+
+2. **`testConnection()` / `fcTestConnection()`**: If the process is not
+   running, call `startPythonProcess()`. This calls
+   `PythonProcess::start()`, which sends `_init` and `initialize` IPC
+   before returning. Then send `test_connection` IPC.
+
+3. **`readSettings()`**: Send `{"method": "read_settings"}` to the
+   running process. Do **not** kill and restart the subprocess — that
+   would trigger a spurious `initialize()` call and disrupt connected
+   state.
+
+### QSettings Key Paths
+
+When writing config params and commType to QSettings before hardware
+construction (in `onAddProfile()`), values must be written directly
+under the `hwKey` group:
+
+```
+QSettings path: <hwType:label>/commType     ← CORRECT
+QSettings path: <hwType:label>/flowChannels ← CORRECT
+QSettings path: <hwType:label>/<impl>/commType ← WRONG (extra subgroup)
+```
+
+`HardwareObject`'s `SettingsStorage` root is `hwKey` (e.g.,
+`FlowController:Default`). It reads `commType` and config params from
+that level, not from an implementation subgroup.
+
+### Python Script Path UI
+
+The Python script path widget (QLineEdit + Browse button) in the
+Advanced section of `RuntimeHardwareConfigDialog` is created for all
+hardware types (under `#ifdef BC_PYTHON_HARDWARE`) but shown/hidden
+dynamically based on whether the selected profile's implementation
+contains "Python". This is checked via
+`HardwareProfileManager::getImplementation()`.
+
+### Base Class Integration
+
+Trampolines must respect the base class's ownership of state and
+signals. For example:
+
+- **FlowController**: `d_config`, `d_numChannels`, and
+  `QPrivateSignal`-guarded signals are private. Trampolines update state
+  only through the base class public slots (`readFlow()`,
+  `readPressure()`, etc.), not by directly modifying `d_config`.
+- **FlowController::poll()**: Non-virtual. The base class implements
+  sequential channel cycling (one `readFlow(ch)` per tick, then
+  `readPressure()`). Trampolines do not override this; the IPC round-trip
+  per `hwRead*` call is the correct granularity since Python scripts may
+  be communicating over slow serial links.
 
 ## Build System
 
@@ -355,8 +445,8 @@ All manual testing passed. The full IPC pipeline works end-to-end:
   interval. Rolling data files are written correctly.
 - **Settings relay**: `self.settings.get/set` round-trips through IPC to
   C++ SettingsStorage. Values persist across restarts.
-- **Hot-reload**: Accepting the Hardware Settings dialog triggers
-  `readSettings`, which kills and restarts the Python subprocess.
+- **Settings reload**: Accepting the Hardware Settings dialog triggers
+  `readSettings`, which sends `read_settings` IPC to the running process.
 - **Multi-profile**: Multiple PythonTestHardware profiles work correctly
   with independent script paths and settings.
 
@@ -388,9 +478,8 @@ Infrastructure for declaring constructor parameters that need UI input:
   auto-generates widgets from config params and writes values to QSettings
   before hardware construction
 
-#### Phase 2: Template Scripts & Host Update (in progress)
+#### Phase 2: Template Scripts & Host Update (complete)
 
-Completed:
 - **`python_hw_host.py`** updated with generic keyword-argument dispatch
   for type-specific methods (replaces `ValueError` for unknown methods)
 - **Template scripts created** for Wave 1 trampolines:
@@ -400,22 +489,14 @@ Completed:
 - **CMake deployment** updated in `BlackchirpHardware.cmake`: uses
   `file(GLOB ... python_*_template.py)` to copy templates to build dir
   and install them to `share/blackchirp/`
-
-Remaining:
-- Add template-copy dialog to `RuntimeHardwareConfigDialog::onAddProfile()`
-  (ask user if they want a copy, show save dialog, set as script path).
-  This is the **next immediate task**. The modification point is in
-  `runtimehardwareconfigdialog.cpp` in the `onAddProfile()` method, after
-  the profile is successfully created (~line 1110). The dialog needs to:
-  1. Detect if the implementation is a Python hardware type (check if class
-     name starts with "Python" or check registry for a template filename)
-  2. Ask the user with QMessageBox::question
-  3. If yes, locate the template file using the same search paths as
-     `findHostScript()` (app dir, `../share/blackchirp/`)
-  4. Show QFileDialog::getSaveFileName
-  5. Copy the template to the chosen path
-  6. Set `d_previewPythonScriptConfig[profileKey] = savedPath`
-- Create template scripts for Wave 2 trampolines (after those classes exist)
+- **Template-copy dialog** in `onAddProfile()`: when a Python hardware
+  profile is created, offers to copy the template to a user-chosen
+  location (file dialog initializes to app save path), then sets the
+  script path in `d_previewPythonScriptConfig`. Template filename is
+  derived from the implementation class name (e.g., `PythonAwg` →
+  `python_awg_template.py`).
+- **Remaining**: Create template scripts for Wave 2 trampolines (after
+  those classes exist)
 
 ### Remaining Work
 
@@ -435,11 +516,11 @@ Each trampoline needs:
 - Constructor reads params from SettingsStorage (written by dialog before
   construction) and passes to base class constructor
 - For TemperatureController/PulseGenerator/Clock: the param value is read
-  from `HardwareProfileManager::instance().getConstructorParam()` or
   directly from QSettings in the member initializer list since
-  SettingsStorage hasn't been constructed yet at that point. **Alternative
-  approach**: read from QSettings directly using a static helper, since the
-  dialog writes values under `hwKey/implementation/key` before construction.
+  SettingsStorage hasn't been constructed yet at that point. The dialog
+  writes config param values directly under `hwKey/<paramKey>` (not
+  under an implementation subgroup), so a static QSettings read at
+  `hwKey` level will find them.
 
 #### Phase 2: FtmwScope / LifScope (deferred)
 
