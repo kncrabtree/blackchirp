@@ -432,7 +432,7 @@ Values are written to QSettings under the hardware's SettingsStorage key
 | Trampoline | Params | Status |
 |---|---|---|
 | PythonAwg | none | Done (Wave 1) |
-| PythonIOBoard | none | Done (Wave 1) |
+| PythonIOBoard | `numAnalogChannels` (int), `numDigitalChannels` (int) | Done |
 | PythonFlowController | none (reads from settings) | Done (Wave 1) |
 | PythonTemperatureController | `numChannels` (uint) | Wave 2 |
 | PythonPressureController | `readOnly` (bool) | Wave 2 |
@@ -565,7 +565,7 @@ parameter issues:
   config to Python via IPC and deserialize validated values. Sends
   enabled channel indices with each `readAnalogChannels()`/
   `readDigitalChannels()` call. Base class handles `readAuxData`/
-  `readValidationData` by calling these. **Substantially complete.**
+  `readValidationData` by calling these. **Substantially complete**
 - **`PythonFlowController`** (`pythonflowcontroller.h/.cpp`): Inherits
   FlowController. Dispatches `fcInitialize()`, `fcTestConnection()`, and
   8 `hw*` pure virtuals via IPC. Base class handles polling, `readAll()`,
@@ -606,20 +606,41 @@ Infrastructure for declaring constructor parameters that need UI input:
 
 ### Remaining Work
 
-#### PythonAwg: ChirpConfig Serialization
+#### PythonAwg: ChirpConfig Serialization ✓
 
-PythonAwg's `prepareForExperiment` currently sends only the experiment
-number. Real AWG implementations access `ChirpConfig` to get:
-- **Memory-based AWGs** (M8190, AWG5204, etc.): `getChirpMicroseconds()`
-  (time-domain waveform as `QVector<QPointF>`) and `getMarkerData()`
-- **DDS-based AWGs** (AD9914): `chirpList()` (segment parameters:
-  start/end freq, duration) plus clock references from `RfConfig`
+`prepareForExperiment` now serializes the full chirp configuration as
+compact segment parameters plus RF chain info. The IPC payload includes:
+- `chirp.segments`: nested list of segment dicts (`start_freq_mhz`,
+  `end_freq_mhz`, `duration_us`, `alpha_us`, `empty`) — sufficient for
+  DDS-style AWGs (e.g. AD9914) without any waveform math
+- `chirp.{num_chirps, chirp_interval_us, pre/post protection/gate delays,
+  sample_rate_hz}` — timing parameters
+- `rf_config.{awg_mult, chirp_mult, up/down_mix_sideband, clocks}` — RF
+  chain and clock assignments
 
-The fix requires serializing the relevant ChirpConfig data into the
-`prepare_for_experiment` IPC call. Need to decide whether to send
-raw waveform samples (large but universal) or chirp segment parameters
-(compact but requires Python to understand the chirp structure), or
-both.
+For memory-based AWGs that need a time-domain waveform, `python_awg_template.py`
+provides two static helper methods:
+- `_compute_waveform(config['chirp'])` → `(times_us, amplitudes)` numpy arrays
+- `_compute_markers(config['chirp'])` → `(protection, gate)` bool numpy arrays
+
+These are reference implementations of ChirpConfig::getChirpMicroseconds()
+and ChirpConfig::getMarkerData() in Python. No large arrays are sent over
+IPC; waveform computation happens entirely in the Python subprocess.
+
+Note: `ChirpConfig::totalDuration()` no longer rounds up to the nearest
+10 µs — that was an AWG-implementation detail that has been removed.
+
+#### PythonIOBoard: HwConfigParam ✓
+
+`PythonIOBoard::configParams()` is implemented and registered via
+`REGISTER_HARDWARE_PARAMS(PythonIOBoard)`. When a user creates a new
+PythonIOBoard profile in the dialog, they are prompted for:
+- **Analog Channels** (`numAnalogChannels`, int, 0–32)
+- **Digital Channels** (`numDigitalChannels`, int, 0–32)
+
+The dialog writes these values to QSettings before construction, so
+the `IOBoard` base class constructor finds the correct channel counts
+and populates `d_analogChannels` / `d_digitalChannels` accordingly.
 
 #### Phase 2: Wave 2 Trampolines
 

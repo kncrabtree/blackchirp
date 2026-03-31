@@ -112,6 +112,25 @@ and `chirps.csv`:
 - Storage: `markers.csv` for experiment data
 - Default Protection (channel 0) and Gate (channel 1) when `markerCount >= 2`
 
+## Python Hardware Impact
+
+When the generalized marker system is implemented, `PythonAwg` will need updates:
+
+- **`configParams()`**: Add a `markerCount` integer param (replacing the `prot`/`amp`
+  booleans) so the user can declare how many physical marker channels their AWG has.
+  The dialog will write this value to QSettings before construction, mirroring the
+  pattern used by other trampolines for constructor-time parameters.
+
+- **`prepareForExperiment()` IPC payload**: Serialize the marker channel definitions
+  (name, role, timing mode, start/end times, enabled) into `config['chirp']['markers']`
+  as a compact list. Do **not** pre-compute sample arrays in C++ — follow the same
+  design as the chirp waveform (send parameters, compute in Python).
+
+- **`python_awg_template.py`**: The `_compute_markers()` helper currently implements
+  the hardcoded 2-channel (protection/gate) logic. It must be updated to iterate over
+  `config['chirp']['markers']` and compute one boolean array per channel from the
+  timing definitions. The `_compute_waveform()` helper is unaffected.
+
 **Phase 2: Absolute timing and per-chirp markers**
 - Enable `TimingMode::Absolute` in UI
 - Extend marker storage to per-chirp definitions (marker table becomes segment-aware,
