@@ -193,12 +193,9 @@ double ChirpConfig::chirpDurationUs(int chirpNum) const
 
 double ChirpConfig::totalDuration() const
 {
-    ///TODO: This should be an implementation detail of the AWG, not part of the chirpConfig
-    double baseLength = 10.0;
     double length = preChirpProtectionDelay() + preChirpGateDelay() + postChirpProtectionDelay();
     length += (static_cast<double>(numChirps())-1.0)*d_chirpInterval + chirpDurationUs(numChirps()-1);
-
-    return floor(length/baseLength + 1.0)*baseLength;
+    return length;
 }
 
 QVector<QVector<ChirpConfig::ChirpSegment> > ChirpConfig::chirpList() const

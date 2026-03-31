@@ -6,6 +6,7 @@
 
 #include <QCoreApplication>
 #include <QFile>
+#include <QJsonArray>
 #include <QJsonObject>
 
 #include <hardware/core/hardwareregistration.h>
@@ -192,6 +193,60 @@ bool PythonAwg::prepareForExperiment(Experiment &exp)
 
     QJsonObject config;
     config[QStringLiteral("number")] = exp.d_number;
+    config[QStringLiteral("ftmw_enabled")] = exp.ftmwEnabled();
+
+    if (exp.ftmwEnabled()) {
+        const auto &rfConfig = exp.ftmwConfig()->d_rfConfig;
+        const auto &cc = rfConfig.d_chirpConfig;
+
+        // Chirp segments: compact representation sufficient for DDS-style AWGs.
+        // For memory-based AWGs, use _compute_waveform() in the Python template.
+        QJsonArray segmentsArray;
+        for (const auto &chirp : cc.chirpList()) {
+            QJsonArray chirpArray;
+            for (const auto &seg : chirp) {
+                QJsonObject segObj;
+                segObj[QStringLiteral("start_freq_mhz")] = seg.startFreqMHz;
+                segObj[QStringLiteral("end_freq_mhz")] = seg.endFreqMHz;
+                segObj[QStringLiteral("duration_us")] = seg.durationUs;
+                segObj[QStringLiteral("alpha_us")] = seg.alphaUs;
+                segObj[QStringLiteral("empty")] = seg.empty;
+                chirpArray.append(segObj);
+            }
+            segmentsArray.append(chirpArray);
+        }
+
+        QJsonObject chirpObj;
+        chirpObj[QStringLiteral("segments")] = segmentsArray;
+        chirpObj[QStringLiteral("num_chirps")] = cc.numChirps();
+        chirpObj[QStringLiteral("chirp_interval_us")] = cc.chirpInterval();
+        chirpObj[QStringLiteral("pre_chirp_protection_us")] = cc.preChirpProtectionDelay();
+        chirpObj[QStringLiteral("post_chirp_protection_us")] = cc.postChirpProtectionDelay();
+        chirpObj[QStringLiteral("pre_chirp_gate_us")] = cc.preChirpGateDelay();
+        chirpObj[QStringLiteral("post_chirp_gate_us")] = cc.postChirpGateDelay();
+        chirpObj[QStringLiteral("sample_rate_hz")] = get<double>(BC::Key::AWG::rate);
+        config[QStringLiteral("chirp")] = chirpObj;
+
+        // RF chain parameters and clock assignments
+        QJsonObject rfObj;
+        rfObj[QStringLiteral("awg_mult")] = rfConfig.d_awgMult;
+        rfObj[QStringLiteral("chirp_mult")] = rfConfig.d_chirpMult;
+        rfObj[QStringLiteral("up_mix_sideband")] = static_cast<int>(rfConfig.d_upMixSideband);
+        rfObj[QStringLiteral("down_mix_sideband")] = static_cast<int>(rfConfig.d_downMixSideband);
+
+        QJsonObject clocksObj;
+        const auto clocks = rfConfig.getClocks();
+        for (auto it = clocks.cbegin(); it != clocks.cend(); ++it) {
+            QJsonObject clkObj;
+            clkObj[QStringLiteral("freq_mhz")] = rfConfig.clockFrequency(it.key());
+            clkObj[QStringLiteral("hw_key")] = it.value().hwKey;
+            clkObj[QStringLiteral("output")] = it.value().output;
+            clocksObj[QString::number(static_cast<int>(it.key()))] = clkObj;
+        }
+        rfObj[QStringLiteral("clocks")] = clocksObj;
+        config[QStringLiteral("rf_config")] = rfObj;
+    }
+
     req[QStringLiteral("config")] = config;
 
     auto resp = pu_process->sendRequest(req);
