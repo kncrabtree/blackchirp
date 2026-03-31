@@ -4,8 +4,10 @@
 #ifdef BC_PYTHON_HARDWARE
 
 #include <hardware/optional/ioboard/ioboard.h>
+#include <hardware/core/hardwareregistry.h>
 
 #include <memory>
+#include <QVector>
 
 class PythonProcess;
 
@@ -32,6 +34,8 @@ class PythonIOBoard : public IOBoard
 public:
     explicit PythonIOBoard(const QString &label, QObject *parent = nullptr);
     ~PythonIOBoard() override;
+
+    static QVector<HwConfigParam> configParams();
 
 protected:
     void initialize() override;

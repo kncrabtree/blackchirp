@@ -17,6 +17,7 @@
 // ============================================================================
 REGISTER_HARDWARE_META(PythonIOBoard, "Python IO Board (user-defined Python script)")
 REGISTER_HARDWARE_PROTOCOLS(PythonIOBoard, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
+REGISTER_HARDWARE_PARAMS(PythonIOBoard)
 
 // ============================================================================
 // Constructor / Destructor
@@ -40,6 +41,18 @@ PythonIOBoard::~PythonIOBoard()
 {
     if (pu_process)
         pu_process->stop();
+}
+
+// ============================================================================
+// configParams()
+// ============================================================================
+QVector<HwConfigParam> PythonIOBoard::configParams()
+{
+    using namespace BC::Key::Digi;
+    return {
+        { numAnalogChannels,  QStringLiteral("Analog Channels"),  QVariant(0), QVariant(0), QVariant(32) },
+        { numDigitalChannels, QStringLiteral("Digital Channels"), QVariant(0), QVariant(0), QVariant(32) },
+    };
 }
 
 // ============================================================================
