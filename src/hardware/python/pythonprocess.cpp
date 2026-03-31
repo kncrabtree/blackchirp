@@ -59,8 +59,10 @@ bool PythonProcess::start(const QString &hostScriptPath, const QString &userScri
     // Read the _init response (with relay/log handling)
     auto resp = readResponseForId(0);
     if (resp.contains(QStringLiteral("error"))) {
-        emit processError(QString("Python _init failed: %1").arg(
-            resp[QStringLiteral("error")].toString()));
+        auto errMsg = QString("Python startup failed: %1").arg(
+            resp[QStringLiteral("error")].toString());
+        emit logMessage(errMsg, LogHandler::Error);
+        emit processError(errMsg);
         stop();
         return false;
     }
@@ -77,8 +79,10 @@ bool PythonProcess::start(const QString &hostScriptPath, const QString &userScri
 
     auto initResp = readResponseForId(initId);
     if (initResp.contains(QStringLiteral("error"))) {
-        emit processError(QString("Python initialize() failed: %1").arg(
-            initResp[QStringLiteral("error")].toString()));
+        auto errMsg = QString("Python initialize() failed: %1").arg(
+            initResp[QStringLiteral("error")].toString());
+        emit logMessage(errMsg, LogHandler::Error);
+        emit processError(errMsg);
         stop();
         return false;
     }
@@ -155,8 +159,19 @@ QJsonObject PythonProcess::readResponseForId(int id)
         if (line.isEmpty()) {
             // No data available yet, or process died
             if (!isRunning()) {
+                // Process died — drain stderr synchronously for the error details.
+                // handleStderr() won't fire because we're not in the event loop.
+                QString stderrText;
+                if (p_process) {
+                    p_process->waitForFinished(1000);
+                    QByteArray data = p_process->readAllStandardError();
+                    stderrText = QString::fromUtf8(data).trimmed();
+                }
                 QJsonObject err;
-                err[QStringLiteral("error")] = QStringLiteral("Python process terminated unexpectedly");
+                if (stderrText.isEmpty())
+                    err[QStringLiteral("error")] = QStringLiteral("Python process terminated unexpectedly");
+                else
+                    err[QStringLiteral("error")] = QString("Python process terminated: %1").arg(stderrText);
                 return err;
             }
             continue;

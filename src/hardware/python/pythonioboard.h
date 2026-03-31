@@ -37,7 +37,8 @@ protected:
     void initialize() override;
     bool testConnection() override;
 
-    // IOBoard pure virtuals
+    // IOBoard interface
+    bool configure(IOBoardConfig &config) override;
     std::map<int, double> readAnalogChannels() override;
     std::map<int, bool> readDigitalChannels() override;
 
@@ -47,6 +48,8 @@ protected:
 
 private:
     bool startPythonProcess();
+    QJsonObject configToJson(const IOBoardConfig &config) const;
+    bool jsonToConfig(const QJsonObject &obj, IOBoardConfig &config) const;
     QString findHostScript() const;
 
     std::unique_ptr<PythonProcess> pu_process;

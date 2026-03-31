@@ -18,6 +18,7 @@ protected:
 
     // IOBoard interface
 protected:
+    bool configure(IOBoardConfig &config) override;
     std::map<int, double> readAnalogChannels() override;
     std::map<int, bool> readDigitalChannels() override;
 };

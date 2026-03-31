@@ -52,7 +52,13 @@ LabjackU3::LabjackU3(const QString& label, QObject *parent) :
     save();
 }
 
-bool LabjackU3::configure()
+bool LabjackU3::configure(IOBoardConfig &config)
+{
+    Q_UNUSED(config)
+    return configureTimers();
+}
+
+bool LabjackU3::configureTimers()
 {
     if(d_handle == nullptr)
     {
@@ -101,7 +107,7 @@ bool LabjackU3::testConnection()
         return false;
     }
 
-    if(!configure())
+    if(!configureTimers())
     {
         closeConnection();
         d_errorString = QString("Could not configure.");

@@ -243,7 +243,103 @@ dynamically based on whether the selected profile's implementation
 contains "Python". This is checked via
 `HardwareProfileManager::getImplementation()`.
 
-### Base Class Integration
+### Base Class State Management Patterns
+
+Hardware base classes fall into three categories based on how they manage
+internal state. The category determines how the Python trampoline must
+interact with config and how `prepareForExperiment` works.
+
+#### Pattern A: Bulk Configure (complex inherited config state)
+
+These classes **inherit** from a config class (e.g., `DigitizerConfig`)
+with many coupled fields (channel maps, trigger settings, sample rates,
+etc.). State is not modified by individual setter calls during normal
+operation. Instead, the experiment provides a desired config object, the
+subclass applies it to hardware in a single `configure()` call, reads
+back actual values, and the base class updates its internal state from
+the validated result.
+
+**C++ pattern** (established by `LifScope`, now also `IOBoard`):
+```
+hwPrepareForExperiment:
+  1. Get desired config from Experiment (or use current state)
+  2. Call virtual configure(config&)
+     → subclass applies settings to hardware
+     → subclass reads back actual values, updates config reference
+     → returns true/false
+  3. If success: copy validated config to *this, store in Experiment
+```
+
+**Python trampoline pattern**: The trampoline serializes the config to
+JSON and sends it as a `configure` IPC call. The Python script receives
+the full config, applies settings, and returns
+`{"success": True, "config": {...validated...}}`. The trampoline
+deserializes the response back into the config reference.
+
+Additionally, per-call channel selection (e.g., enabled channel indices
+sent with each `readAnalogChannels()` call) ensures the Python side
+always has current information even if config changes between calls.
+
+| Base Class | Config Class | configure() | Status |
+|---|---|---|---|
+| **IOBoard** | IOBoardConfig (→ DigitizerConfig) | `bool configure(IOBoardConfig&)` pure virtual | Done |
+| **LifScope** | LifDigitizerConfig (→ DigitizerConfig) | `bool configure(const LifDigitizerConfig&)` pure virtual | Existing (deferred) |
+| **FtmwScope** | FtmwDigitizerConfig (→ DigitizerConfig) | No base virtual; subclasses override `prepareForExperiment` directly | Needs refactor (deferred) |
+
+**Note on FtmwScope**: Unlike IOBoard and LifScope, FtmwScope does not
+currently have a `configure()` virtual. Each subclass (e.g., DSA71604C)
+overrides `prepareForExperiment()` and applies config directly. A future
+PythonFtmwScope would likely need a `configure()` virtual added to
+`FtmwScope`, following the same pattern as IOBoard and LifScope.
+
+#### Pattern B: Granular Methods (base class manages state)
+
+These classes **contain** a config object as a member (not inherited).
+The base class owns all state and updates it through individual
+getter/setter methods, each of which delegates to a `hw*` pure virtual
+for the actual hardware I/O. The base class decides *when* and *which*
+calls to make (e.g., polling order).
+
+**Python trampoline pattern**: Each `hw*` virtual is dispatched as a
+simple IPC call with the relevant arguments. The Python script only
+sees one value at a time. No bulk config serialization is needed — the
+base class handles all state management.
+
+| Base Class | Config Class | Virtual Style | Status |
+|---|---|---|---|
+| **FlowController** | FlowConfig (contained) | 8 `hw*` pure virtuals (per-channel reads/writes) | Done |
+| **PulseGenerator** | PulseGenConfig (contained) | ~24 `hw*` pure virtuals + `setAll()` bulk | Wave 2 |
+| **TemperatureController** | TemperatureControllerConfig (contained) | 3 `hw*` pure virtuals (per-channel) | Wave 2 |
+| **PressureController** | PressureControllerConfig (contained) | 9 `hw*` pure virtuals (scalar reads/writes) | Wave 2 |
+
+**PulseGenerator note**: Although PulseGenerator has a `setAll()` method,
+it delegates to individual `hwSetChannel()` calls internally. The
+trampoline only needs to implement the granular `hw*` methods.
+
+#### Pattern C: Stateless / Experiment-Data Pass-Through
+
+These classes have no complex internal config state. Instead, they
+receive data from the Experiment at `prepareForExperiment` time and
+program the hardware with it.
+
+| Base Class | What it receives | Status |
+|---|---|---|
+| **AWG** | ChirpConfig waveform data + markers | Wave 1 (incomplete — see below) |
+| **Clock** | Frequency assignments per role | Wave 2 |
+
+**AWG / ChirpConfig issue**: The AWG base class is stateless — it has
+no internal config object. Existing C++ implementations access
+`exp.ftmwConfig()->d_rfConfig.d_chirpConfig` directly in
+`prepareForExperiment()` to get the computed waveform
+(`getChirpMicroseconds()`) and marker data (`getMarkerData()`).
+PythonAwg currently sends only `{"number": N}` to the Python side,
+which means the Python script has **no access to the chirp waveform**.
+This must be fixed before PythonAwg is usable for real experiments.
+The fix involves serializing the relevant ChirpConfig data (waveform
+samples, marker data, chirp segments for DDS-style devices) and
+including it in the `prepare_for_experiment` IPC call.
+
+### Base Class Integration Details
 
 Trampolines must respect the base class's ownership of state and
 signals. For example:
@@ -257,6 +353,10 @@ signals. For example:
   `readPressure()`). Trampolines do not override this; the IPC round-trip
   per `hwRead*` call is the correct granularity since Python scripts may
   be communicating over slow serial links.
+- **IOBoard**: `d_analogChannels` and `d_digitalChannels` (from
+  `DigitizerConfig`) are updated only through the `configure()` virtual.
+  The trampoline sends enabled channel indices with each read call so
+  the Python script knows which channels to poll.
 
 ## Build System
 
@@ -457,13 +557,19 @@ parameter issues:
 
 - **`PythonAwg`** (`pythonawg.h/.cpp`): Inherits AWG. Dispatches all
   HardwareObject virtuals via IPC. No AWG-specific pure virtuals.
+  **Known gap**: `prepareForExperiment` does not serialize ChirpConfig
+  data — Python script cannot access chirp waveform/markers. See
+  Pattern C discussion above.
 - **`PythonIOBoard`** (`pythonioboard.h/.cpp`): Inherits IOBoard.
-  Dispatches `readAnalogChannels()` and `readDigitalChannels()` via IPC.
-  Base class handles `readAuxData`/`readValidationData` by calling these.
+  Implements `configure(IOBoardConfig&)` to serialize the full digitizer
+  config to Python via IPC and deserialize validated values. Sends
+  enabled channel indices with each `readAnalogChannels()`/
+  `readDigitalChannels()` call. Base class handles `readAuxData`/
+  `readValidationData` by calling these. **Substantially complete.**
 - **`PythonFlowController`** (`pythonflowcontroller.h/.cpp`): Inherits
   FlowController. Dispatches `fcInitialize()`, `fcTestConnection()`, and
   8 `hw*` pure virtuals via IPC. Base class handles polling, `readAll()`,
-  and `prepareForExperiment()`.
+  and `prepareForExperiment()`. **Substantially complete.**
 
 All three compile cleanly, tests pass.
 
@@ -500,15 +606,30 @@ Infrastructure for declaring constructor parameters that need UI input:
 
 ### Remaining Work
 
+#### PythonAwg: ChirpConfig Serialization
+
+PythonAwg's `prepareForExperiment` currently sends only the experiment
+number. Real AWG implementations access `ChirpConfig` to get:
+- **Memory-based AWGs** (M8190, AWG5204, etc.): `getChirpMicroseconds()`
+  (time-domain waveform as `QVector<QPointF>`) and `getMarkerData()`
+- **DDS-based AWGs** (AD9914): `chirpList()` (segment parameters:
+  start/end freq, duration) plus clock references from `RfConfig`
+
+The fix requires serializing the relevant ChirpConfig data into the
+`prepare_for_experiment` IPC call. Need to decide whether to send
+raw waveform samples (large but universal) or chirp segment parameters
+(compact but requires Python to understand the chirp structure), or
+both.
+
 #### Phase 2: Wave 2 Trampolines
 
 For each remaining hardware type, create a trampoline class using the
 HwConfigParam registry for constructor parameters:
 
-1. `PythonTemperatureController` (3 pure virtuals + `configParams`)
-2. `PythonPressureController` (9 pure virtuals + `configParams`)
-3. `PythonClock` (4 pure virtuals + `configParams`)
-4. `PythonPulseGenerator` (24 pure virtuals + `configParams`)
+1. `PythonTemperatureController` (3 `hw*` pure virtuals + `configParams`) — Pattern B
+2. `PythonPressureController` (9 `hw*` pure virtuals + `configParams`) — Pattern B
+3. `PythonClock` (4 `hw*` pure virtuals + `configParams`) — Pattern C
+4. `PythonPulseGenerator` (24 `hw*` pure virtuals + `configParams`) — Pattern B
 
 Each trampoline needs:
 - A `static QVector<HwConfigParam> configParams()` method
@@ -522,10 +643,22 @@ Each trampoline needs:
   under an implementation subgroup), so a static QSettings read at
   `hwKey` level will find them.
 
+All Wave 2 types follow Pattern B (granular methods) — each `hw*` call
+is a simple IPC dispatch with keyword arguments, no bulk config needed.
+
 #### Phase 2: FtmwScope / LifScope (deferred)
 
-Performance-sensitive polling types. May need batched data transfer or
-shared memory for large waveforms. Deferred until after all other types.
+Performance-sensitive Pattern A types. Both inherit from DigitizerConfig
+and need bulk configure. May also need batched data transfer or shared
+memory for large waveforms (readWaveform). Deferred until after all
+other types.
+
+- **LifScope**: Already has `virtual bool configure(const LifDigitizerConfig&)`
+  — the same pattern now used by IOBoard. PythonLifScope would follow
+  the PythonIOBoard pattern directly.
+- **FtmwScope**: Does **not** have a `configure()` virtual. Subclasses
+  override `prepareForExperiment()` directly. A PythonFtmwScope would
+  require adding a `configure()` virtual to FtmwScope first.
 
 #### Phase 3: Polish
 
@@ -544,5 +677,6 @@ shared memory for large waveforms. Deferred until after all other types.
    `readWaveform`) may need optimization -- possibly batching data or
    using shared memory for large transfers.
 
-3. **Experiment data exposure**: How much of the Experiment object should
-   `prepare_for_experiment` receive? Currently just `{"number": N}`.
+3. **AWG data format**: Should `prepare_for_experiment` send raw waveform
+   samples, chirp segment parameters, or both? Memory-based AWGs need
+   samples; DDS-based AWGs need segment parameters.

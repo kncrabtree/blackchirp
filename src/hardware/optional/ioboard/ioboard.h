@@ -16,6 +16,24 @@ public:
     virtual QStringList validationKeys() const override;
 
 protected:
+    /*!
+     * \brief Apply and validate channel/digitizer configuration on hardware.
+     *
+     * Called by hwPrepareForExperiment() with the desired configuration
+     * (from the Experiment if present, or the current internal state).
+     * Implementations should:
+     *   1. Apply the settings in \p config to the hardware
+     *   2. Read back actual values and update \p config with validated settings
+     *   3. Return true on success, false on failure
+     *
+     * On success, the base class copies the (potentially modified) config
+     * back to internal state and stores it in the Experiment.
+     *
+     * \param config The desired configuration (mutable — update with actual values)
+     * \return true if configuration was applied successfully
+     */
+    virtual bool configure(IOBoardConfig &config) =0;
+
     virtual std::map<int,double> readAnalogChannels() =0;
     virtual std::map<int,bool> readDigitalChannels() =0;
 

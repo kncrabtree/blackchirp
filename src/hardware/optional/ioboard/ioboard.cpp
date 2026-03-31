@@ -173,12 +173,21 @@ bool IOBoard::hwPrepareForExperiment(Experiment &exp)
     auto out = HardwareObject::hwPrepareForExperiment(exp);
     if(out)
     {
+        // Get desired config: from experiment if available, else current state
+        auto config = getConfig();
         auto wp = exp.getOptHwConfig<IOBoardConfig>(d_headerKey);
-        auto cfg = static_cast<IOBoardConfig*>(this);
         if(auto p = wp.lock())
-            *cfg = *p;
-        else
-            exp.addOptHwConfig(*cfg);
+            config = *p;
+
+        // Subclass applies settings to hardware, validates, and updates config
+        if(!configure(config))
+            return false;
+
+        // Update internal state with validated config
+        static_cast<IOBoardConfig&>(*this) = config;
+
+        // Store validated config in experiment
+        exp.addOptHwConfig(getConfig());
 
         for(auto it = d_analogChannels.cbegin();it!=d_analogChannels.cend();++it)
         {

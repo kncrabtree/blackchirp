@@ -50,6 +50,12 @@ void VirtualIOBoard::initialize()
 }
 
 
+bool VirtualIOBoard::configure(IOBoardConfig &config)
+{
+    Q_UNUSED(config)
+    return true;
+}
+
 std::map<int, double> VirtualIOBoard::readAnalogChannels()
 {
     auto qr = QRandomGenerator::global();
