@@ -13,19 +13,14 @@ Minor QoL — not blocking.
 
 ## Medium
 
-### Assess alternative approaches for relaying Digitizer data
-Currently, the FtmwScope and LifScope classes use signal emission to relay waveform
-data from the hardware layer to the active experiment. The signal flow is HardwareObject -
-HardwareManager - AcquisitionManager, then AcqusitionManager sends the data to the
-active Experiment. This requires tight polling loops as data need to be sent every
-single time a waveform is acquired from the hardware. Explore alternatives to signal
-emission on every waveform collection. Potential ideas involve batching signal emission
-into predetermined chunks (N waveforms, rolling memory buffer, etc), using a shared
-mutex-protected memory buffer between the digitizer and experiment (producer-consumer
-model), or presumming in the hardware thread for accumulation and transferring later.
-Also consider tradeoffs for these approaches with the Python hardware implementations.
-Do these methods need to go through JSON IPC or could a more direct communication/
-memory sharing approach work there too?
+### [Digitizer Data Flow Optimization](digitizer-data-flow.md)
+Replace per-shot Qt signal emission (Digitizer -> HardwareManager ->
+AcquisitionManager) with a bounded SPSC ring buffer shared between the digitizer
+and AcquisitionManager threads. Eliminates unbounded event queue growth and
+unnecessary HardwareManager relay. The FtmwScope base class handles all buffer
+management; digitizer implementations call `emitShot()` as before. Includes
+optional producer-side pre-accumulation for backpressure handling. LifScope
+stays signal-based. Python digitizers addressed at design level only.
 
 ### Labjack Cross-Platform Support
 **Phase 1 (complete):** Removed compile-time dependency on the LabJack exodriver
