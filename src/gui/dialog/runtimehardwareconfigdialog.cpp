@@ -582,21 +582,27 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
 
     advancedLayout->addWidget(threadedCheckbox);
 
-    // Python script path field — shown when the selected profile uses a Python implementation
+    // Python settings — shown when the selected profile uses a Python implementation
     QLineEdit* pythonScriptEdit = nullptr;
+    QLineEdit* pythonClassEdit = nullptr;
 #ifdef BC_PYTHON_HARDWARE
     {
-        auto* pythonScriptWidget = new QWidget(advancedContainer);
-        pythonScriptWidget->setObjectName("pythonScriptWidget");
-        auto* scriptLayout = new QHBoxLayout(pythonScriptWidget);
+        auto* pythonWidget = new QWidget(advancedContainer);
+        pythonWidget->setObjectName("pythonWidget");
+        auto* pythonLayout = new QVBoxLayout(pythonWidget);
+        pythonLayout->setContentsMargins(0, 0, 0, 0);
+
+        // Script path row
+        auto* scriptRow = new QWidget(pythonWidget);
+        auto* scriptLayout = new QHBoxLayout(scriptRow);
         scriptLayout->setContentsMargins(0, 0, 0, 0);
 
-        auto* scriptLabel = new QLabel(tr("Python Script:"), pythonScriptWidget);
-        pythonScriptEdit = new QLineEdit(pythonScriptWidget);
+        auto* scriptLabel = new QLabel(tr("Python Script:"), scriptRow);
+        pythonScriptEdit = new QLineEdit(scriptRow);
         pythonScriptEdit->setObjectName("pythonScriptEdit");
         pythonScriptEdit->setPlaceholderText(tr("Path to Python hardware script..."));
 
-        auto* browseButton = new QPushButton(tr("Browse..."), pythonScriptWidget);
+        auto* browseButton = new QPushButton(tr("Browse..."), scriptRow);
         connect(browseButton, &QPushButton::clicked, this, [this, pythonScriptEdit]() {
             QString path = QFileDialog::getOpenFileName(this, tr("Select Python Script"),
                                                          QString(), tr("Python Files (*.py)"));
@@ -607,6 +613,27 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
         scriptLayout->addWidget(scriptLabel);
         scriptLayout->addWidget(pythonScriptEdit, 1);
         scriptLayout->addWidget(browseButton);
+        pythonLayout->addWidget(scriptRow);
+
+        // Class name row
+        auto* classRow = new QWidget(pythonWidget);
+        auto* classLayout = new QHBoxLayout(classRow);
+        classLayout->setContentsMargins(0, 0, 0, 0);
+
+        auto* classLabel = new QLabel(tr("Python Class:"), classRow);
+        pythonClassEdit = new QLineEdit(classRow);
+        pythonClassEdit->setObjectName("pythonClassEdit");
+
+        classLayout->addWidget(classLabel);
+        classLayout->addWidget(pythonClassEdit, 1);
+        pythonLayout->addWidget(classRow);
+
+        // Helper: derive default class name from implementation (e.g., "PythonAwg" -> "AwgDriver")
+        auto defaultPythonClassName = [](const QString& impl) -> QString {
+            if (!impl.startsWith(QStringLiteral("Python")))
+                return QString();
+            return impl.mid(6) + QStringLiteral("Driver");
+        };
 
         // Helper: check whether the selected profile is a Python implementation
         auto isSelectedPython = [hardwareType, profilesList]() -> bool {
@@ -618,21 +645,32 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
             return impl.contains(QStringLiteral("Python"));
         };
 
-        // Initialize visibility and value from the current selection
+        // Initialize visibility and values from the current selection
         bool isPython = isSelectedPython();
-        pythonScriptWidget->setVisible(isPython);
+        pythonWidget->setVisible(isPython);
         if (isPython && !activeHwKey.isEmpty()) {
-            auto it = d_previewPythonScriptConfig.find(activeHwKey);
-            if (it != d_previewPythonScriptConfig.end()) {
-                pythonScriptEdit->setText(it->second);
+            auto [type, label] = BC::Key::parseKey(activeHwKey);
+            QString impl = HardwareProfileManager::instance().getImplementation(type, label);
+
+            auto sit = d_previewPythonScriptConfig.find(activeHwKey);
+            if (sit != d_previewPythonScriptConfig.end()) {
+                pythonScriptEdit->setText(sit->second);
             } else {
-                auto [type, label] = BC::Key::parseKey(activeHwKey);
                 pythonScriptEdit->setText(
                     HardwareProfileManager::instance().getPythonScriptPath(type, label));
             }
+
+            pythonClassEdit->setPlaceholderText(defaultPythonClassName(impl));
+            auto cit = d_previewPythonClassConfig.find(activeHwKey);
+            if (cit != d_previewPythonClassConfig.end()) {
+                pythonClassEdit->setText(cit->second);
+            } else {
+                pythonClassEdit->setText(
+                    HardwareProfileManager::instance().getPythonClassName(type, label));
+            }
         }
 
-        // Wire text changes into preview config
+        // Wire text changes into preview configs
         connect(pythonScriptEdit, &QLineEdit::textChanged, this,
                 [this, getActiveHwKey](const QString& text) {
             QString hwKey = getActiveHwKey();
@@ -640,7 +678,14 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
             d_previewPythonScriptConfig[hwKey] = text;
         });
 
-        advancedLayout->addWidget(pythonScriptWidget);
+        connect(pythonClassEdit, &QLineEdit::textChanged, this,
+                [this, getActiveHwKey](const QString& text) {
+            QString hwKey = getActiveHwKey();
+            if (hwKey.isEmpty()) return;
+            d_previewPythonClassConfig[hwKey] = text;
+        });
+
+        advancedLayout->addWidget(pythonWidget);
     }
 #endif
 
@@ -655,17 +700,17 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
     });
 
     // Update Advanced section when profile selection changes in the list
-    // Capture the parent widget so we can toggle visibility of the Python script row
-    QWidget* pythonScriptWidget = advancedContainer->findChild<QWidget*>("pythonScriptWidget");
+    // Capture the parent widget so we can toggle visibility of the Python settings
+    QWidget* pythonWidget = advancedContainer->findChild<QWidget*>("pythonWidget");
     connect(profilesList, &QListWidget::itemSelectionChanged, this,
             [this, hardwareType, profilesList, threadedCheckbox, typeDefault, getActiveHwKey,
-             pythonScriptEdit, pythonScriptWidget]() {
+             pythonScriptEdit, pythonClassEdit, pythonWidget]() {
         QString hwKey = getActiveHwKey();
         if (hwKey.isEmpty()) {
             threadedCheckbox->setEnabled(false);
             threadedCheckbox->setChecked(typeDefault);
-            if (pythonScriptWidget)
-                pythonScriptWidget->setVisible(false);
+            if (pythonWidget)
+                pythonWidget->setVisible(false);
             return;
         }
         threadedCheckbox->setEnabled(true);
@@ -680,8 +725,8 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
             auto [type, label] = BC::Key::parseKey(hwKey);
             QString impl = HardwareProfileManager::instance().getImplementation(type, label);
             bool isPython = impl.contains(QStringLiteral("Python"));
-            if (pythonScriptWidget)
-                pythonScriptWidget->setVisible(isPython);
+            if (pythonWidget)
+                pythonWidget->setVisible(isPython);
 
             if (isPython) {
                 QSignalBlocker scriptBlocker(pythonScriptEdit);
@@ -691,6 +736,22 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
                 } else {
                     pythonScriptEdit->setText(
                         HardwareProfileManager::instance().getPythonScriptPath(type, label));
+                }
+
+                if (pythonClassEdit) {
+                    QSignalBlocker classBlocker(pythonClassEdit);
+                    // Set placeholder from implementation name
+                    QString defaultClass = impl.startsWith(QStringLiteral("Python"))
+                        ? impl.mid(6) + QStringLiteral("Driver") : QString();
+                    pythonClassEdit->setPlaceholderText(defaultClass);
+
+                    auto cit = d_previewPythonClassConfig.find(hwKey);
+                    if (cit != d_previewPythonClassConfig.end()) {
+                        pythonClassEdit->setText(cit->second);
+                    } else {
+                        pythonClassEdit->setText(
+                            HardwareProfileManager::instance().getPythonClassName(type, label));
+                    }
                 }
             }
         }
@@ -1360,11 +1421,16 @@ void RuntimeHardwareConfigDialog::onDialogAccepted()
         for (auto& [hwKey, threaded] : d_previewThreadedConfig)
             runtimeConfig.setThreaded(hwKey, threaded);
 
-        // Apply Python script path overrides
+        // Apply Python script path and class name overrides
         for (auto& [hwKey, scriptPath] : d_previewPythonScriptConfig) {
             auto [type, label] = BC::Key::parseKey(hwKey);
             if (!type.isEmpty() && !label.isEmpty())
                 HardwareProfileManager::instance().setPythonScriptPath(type, label, scriptPath);
+        }
+        for (auto& [hwKey, className] : d_previewPythonClassConfig) {
+            auto [type, label] = BC::Key::parseKey(hwKey);
+            if (!type.isEmpty() && !label.isEmpty())
+                HardwareProfileManager::instance().setPythonClassName(type, label, className);
         }
 
         // Save all hardware profiles to persistent storage now that dialog is finished

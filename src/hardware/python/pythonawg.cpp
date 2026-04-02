@@ -2,15 +2,10 @@
 
 #ifdef BC_PYTHON_HARDWARE
 
-#include "pythonprocess.h"
-
-#include <QCoreApplication>
-#include <QFile>
 #include <QJsonArray>
 #include <QJsonObject>
 
 #include <hardware/core/hardwareregistration.h>
-#include <hardware/core/hardwareprofilemanager.h>
 
 // ============================================================================
 // Registration
@@ -22,21 +17,11 @@ REGISTER_HARDWARE_PROTOCOLS(PythonAwg, CommunicationProtocol::Rs232, Communicati
 // Constructor / Destructor
 // ============================================================================
 PythonAwg::PythonAwg(const QString &label, QObject *parent) :
-    AWG(QString(PythonAwg::staticMetaObject.className()), label, parent)
+    AWG(QString(PythonAwg::staticMetaObject.className()), label, parent),
+    PythonHardwareBase(d_key, d_model)
 {
     d_threaded = true;
     d_critical = false;
-
-    setDefault(BC::Key::PythonAwg::pythonScript, QString{});
-    setDefault(BC::Key::PythonAwg::pythonClass, QStringLiteral("AwgDriver"));
-
-    save();
-}
-
-PythonAwg::~PythonAwg()
-{
-    if (pu_process)
-        pu_process->stop();
 }
 
 // ============================================================================
@@ -44,11 +29,7 @@ PythonAwg::~PythonAwg()
 // ============================================================================
 void PythonAwg::initialize()
 {
-    pu_process = std::make_unique<PythonProcess>(this);
-    pu_process->setComm(p_comm);
-    pu_process->setHardwareInfo(d_key, d_model);
-
-    pu_process->setSettingsCallbacks(
+    initPythonProcess(p_comm,
         [this](const QString &key, const QVariant &defaultVal) -> QVariant {
             return get(key, defaultVal);
         },
@@ -66,74 +47,11 @@ void PythonAwg::initialize()
 // ============================================================================
 bool PythonAwg::testConnection()
 {
-    if (!pu_process->isRunning()) {
-        if (!startPythonProcess())
-            return false;
-    }
-
-    // Update comm in case protocol was reconfigured
-    pu_process->setComm(p_comm);
-
-    QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("test_connection");
-    auto resp = pu_process->sendRequest(req);
-
-    if (resp.contains(QStringLiteral("error"))) {
-        d_errorString = resp[QStringLiteral("error")].toString();
+    if (!testPythonConnection(p_comm)) {
+        d_errorString = pythonErrorString();
         return false;
     }
-    return resp[QStringLiteral("result")].toBool(false);
-}
-
-// ============================================================================
-// startPythonProcess()
-// ============================================================================
-bool PythonAwg::startPythonProcess()
-{
-    auto [hwType, label] = BC::Key::parseKey(d_key);
-    QString scriptPath = HardwareProfileManager::instance().getPythonScriptPath(hwType, label);
-
-    if (scriptPath.isEmpty())
-        scriptPath = get<QString>(BC::Key::PythonAwg::pythonScript);
-
-    if (scriptPath.isEmpty()) {
-        d_errorString = QStringLiteral("No Python script path configured");
-        emit logMessage(QString("PythonAwg (%1): %2").arg(d_key, d_errorString),
-                        LogHandler::Error);
-        return false;
-    }
-
-    QString hostScript = findHostScript();
-    if (hostScript.isEmpty()) {
-        d_errorString = QStringLiteral("Cannot find python_hw_host.py");
-        emit logMessage(QString("PythonAwg (%1): %2").arg(d_key, d_errorString),
-                        LogHandler::Error);
-        return false;
-    }
-
-    QString className = get<QString>(BC::Key::PythonAwg::pythonClass);
-    if (className.isEmpty())
-        className = QStringLiteral("AwgDriver");
-
-    return pu_process->start(hostScript, scriptPath, className);
-}
-
-// ============================================================================
-// findHostScript()
-// ============================================================================
-QString PythonAwg::findHostScript() const
-{
-    QStringList searchPaths = {
-        QCoreApplication::applicationDirPath() + QStringLiteral("/python_hw_host.py"),
-        QCoreApplication::applicationDirPath() + QStringLiteral("/../share/blackchirp/python_hw_host.py"),
-    };
-
-    for (const auto &path : searchPaths) {
-        if (QFile::exists(path))
-            return path;
-    }
-
-    return {};
+    return true;
 }
 
 // ============================================================================
@@ -291,13 +209,7 @@ void PythonAwg::endAcquisition()
 // ============================================================================
 void PythonAwg::sleep(bool b)
 {
-    if (!pu_process || !pu_process->isRunning())
-        return;
-
-    QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("sleep");
-    req[QStringLiteral("sleeping")] = b;
-    pu_process->sendRequest(req);
+    pythonSleep(b);
 }
 
 // ============================================================================
@@ -305,11 +217,7 @@ void PythonAwg::sleep(bool b)
 // ============================================================================
 void PythonAwg::readSettings()
 {
-    if (pu_process && pu_process->isRunning()) {
-        QJsonObject req;
-        req[QStringLiteral("method")] = QStringLiteral("read_settings");
-        pu_process->sendRequest(req);
-    }
+    pythonReadSettings();
 }
 
 // ============================================================================
@@ -317,8 +225,7 @@ void PythonAwg::readSettings()
 // ============================================================================
 QStringList PythonAwg::forbiddenKeys() const
 {
-    return {BC::Key::HW::commType, BC::Key::HW::model,
-            BC::Key::PythonAwg::pythonScript, BC::Key::PythonAwg::pythonClass};
+    return pythonForbiddenKeys();
 }
 
 // ============================================================================

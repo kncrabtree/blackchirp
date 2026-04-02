@@ -5,14 +5,7 @@
 
 #include <hardware/optional/chirpsource/awg.h>
 
-#include <memory>
-
-class PythonProcess;
-
-namespace BC::Key::PythonAwg {
-static const QString pythonScript{"pythonScript"};
-static const QString pythonClass{"pythonClass"};
-}
+#include "pythonhardwarebase.h"
 
 /*!
  * \brief AWG subclass that dispatches all virtual methods to a Python subprocess via IPC
@@ -25,12 +18,11 @@ static const QString pythonClass{"pythonClass"};
  * calls self.comm.query(), the request is sent back to C++ which performs
  * the operation on p_comm and returns the result.
  */
-class PythonAwg : public AWG
+class PythonAwg : public AWG, public PythonHardwareBase
 {
     Q_OBJECT
 public:
     explicit PythonAwg(const QString &label, QObject *parent = nullptr);
-    ~PythonAwg() override;
 
 protected:
     void initialize() override;
@@ -47,10 +39,6 @@ private:
     QStringList forbiddenKeys() const override;
 
     AuxDataStorage::AuxDataMap parseAuxDataResult(const QJsonObject &response);
-    bool startPythonProcess();
-    QString findHostScript() const;
-
-    std::unique_ptr<PythonProcess> pu_process;
 };
 
 #endif // BC_PYTHON_HARDWARE

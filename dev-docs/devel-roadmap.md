@@ -2,7 +2,30 @@
 
 Projects sorted by estimated complexity (smallest first). All are largely independent.
 
+## Small
+
+### Python Class Discovery in Hardware Configuration Dialog
+The Python Class field in the Hardware Configuration dialog is currently a plain
+QLineEdit. A future improvement could grep the selected `.py` script for class
+definitions and present them in a dropdown (QComboBox), ordered by appearance in
+the file. This would eliminate the need for users to manually type the class name.
+Minor QoL — not blocking.
+
 ## Medium
+
+### Assess alternative approaches for relaying Digitizer data
+Currently, the FtmwScope and LifScope classes use signal emission to relay waveform
+data from the hardware layer to the active experiment. The signal flow is HardwareObject -
+HardwareManager - AcquisitionManager, then AcqusitionManager sends the data to the
+active Experiment. This requires tight polling loops as data need to be sent every
+single time a waveform is acquired from the hardware. Explore alternatives to signal
+emission on every waveform collection. Potential ideas involve batching signal emission
+into predetermined chunks (N waveforms, rolling memory buffer, etc), using a shared
+mutex-protected memory buffer between the digitizer and experiment (producer-consumer
+model), or presumming in the hardware thread for accumulation and transferring later.
+Also consider tradeoffs for these approaches with the Python hardware implementations.
+Do these methods need to go through JSON IPC or could a more direct communication/
+memory sharing approach work there too?
 
 ### Labjack Cross-Platform Support
 **Phase 1 (complete):** Removed compile-time dependency on the LabJack exodriver
@@ -31,7 +54,7 @@ Phase 2 adds absolute timing and per-chirp marker overrides.
 ## Large
 
 ### [Python Hardware Implementations](python-hardware.md)
-User-editable Python scripts as hardware drivers via pybind11 embedded interpreter.
+**In progress** User-editable Python scripts as hardware drivers via JSON IPC.
 A C++ trampoline class per hardware type dispatches virtual methods to a user's Python
 class. Users can use Blackchirp's CommunicationProtocol or bring their own vendor
 libraries. Phased rollout: simple polling types first, then pulse generator and AWG,

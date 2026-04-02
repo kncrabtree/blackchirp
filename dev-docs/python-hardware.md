@@ -19,7 +19,7 @@ application via JSON-lines over stdin/stdout pipes. This provides complete
 memory isolation -- crashes in Python cannot corrupt the Qt application.
 
 ```
-C++ PythonTestHardware          IPC (JSON over pipes)         Python subprocess
+C++ PythonXxx class             IPC (JSON over pipes)         Python subprocess
 ---                             ---                           ---
 initialize()              ->    {"method": "initialize"}  ->  initialize()
 testConnection()          ->    {"method": "test_connection"} -> test_connection()
@@ -109,22 +109,52 @@ all hardware-type-specific methods to work without modifying the host script.
 Methods not implemented by the user's class return a safe default (`None`,
 `True`, or `{}` depending on the method category).
 
+### PythonHardwareBase Mixin
+
+All Python trampoline classes inherit from `PythonHardwareBase` (via
+multiple inheritance alongside their hardware base class) to eliminate
+boilerplate. The mixin provides:
+
+- **`initPythonProcess(comm, getter, setter)`** — creates the
+  `PythonProcess`, sets hardware info, wires up settings callbacks
+- **`testPythonConnection(comm)`** — starts the subprocess if needed,
+  sends `test_connection`, returns success/failure
+- **`startPythonProcess()`** — looks up `pythonScriptPath` and
+  `pythonClassName` from `HardwareProfileManager`; returns false with
+  an error if either is empty (no silent fallbacks)
+- **`findHostScript()`** — static method to locate `python_hw_host.py`
+- **`pythonSleep(b)`** / **`pythonReadSettings()`** — common IPC
+  dispatches
+- **`pythonForbiddenKeys()`** — static, returns `{commType, model}`
+- **Destructor** — stops `pu_process` if running
+
+The mixin's constructor takes `(key, model)` strings — no back-pointer
+to `HardwareObject` is needed. Each concrete class passes `d_key` and
+`d_model` from its `HardwareObject` base in the initializer list.
+
+The Python script path and class name are managed entirely by
+`HardwareProfileManager` (per-profile). There are no per-class settings
+keys for these values.
+
 ### File Layout
 
 ```
 src/hardware/python/
+    pythonhardwarebase.h/.cpp         # Mixin base class: common Python subprocess management
     pythonprocess.h/.cpp              # QProcess wrapper: launch, IPC protocol, lifecycle
-    pythontesthardware.h/.cpp         # HardwareObject subclass (proof-of-concept)
     pythonawg.h/.cpp                  # AWG trampoline
-    pythonioboard.h/.cpp              # IOBoard trampoline
+    pythonclock.h/.cpp                # Clock trampoline
     pythonflowcontroller.h/.cpp       # FlowController trampoline
+    pythonioboard.h/.cpp              # IOBoard trampoline
+    pythonpressurecontroller.h/.cpp   # PressureController trampoline
+    pythontemperaturecontroller.h/.cpp # TemperatureController trampoline
     python_hw_host.py                 # Python-side IPC host script
     python_awg_template.py            # Template AWG driver script
-    python_ioboard_template.py        # Template IOBoard driver script
+    python_clock_template.py          # Template Clock driver script
     python_flowcontroller_template.py # Template FlowController driver script
-dev-docs/
-    echo_server.py                    # TCP echo server for testing
-    test_hardware.py                  # Example Python hardware script
+    python_ioboard_template.py        # Template IOBoard driver script
+    python_pressurecontroller_template.py # Template PressureController driver script
+    python_temperaturecontroller_template.py # Template TemperatureController driver script
 ```
 
 ## Python API Contract
@@ -191,7 +221,7 @@ def read_settings(self):                                # optional -- reload set
 **self.settings** (settings proxy):
 - `get(key: str, default=None)` -- read persistent setting
 - `set(key: str, value)` -- write persistent setting
-- `key` (read-only) -- hardware key (e.g., "PythonTestHardware.Default")
+- `key` (read-only) -- hardware key (e.g., "PythonAwg.Default")
 - `model` (read-only) -- hardware model name
 
 **self.log** (logging proxy):
@@ -202,21 +232,35 @@ def read_settings(self):                                # optional -- reload set
 These rules apply to all C++ Python trampoline classes (PythonAwg,
 PythonFlowController, etc.) and must be followed when creating new ones.
 
+### Creating a New Trampoline
+
+1. Inherit from both the hardware base class and `PythonHardwareBase`
+2. Initialize `PythonHardwareBase(d_key, d_model)` in the constructor
+3. In the initialize override, call `initPythonProcess(p_comm, getter, setter)`
+   and connect `pu_process->logMessage` to `this->logMessage`
+4. In the test connection override, call `testPythonConnection(p_comm)`
+5. Delegate `sleep()` to `pythonSleep()`, `readSettings()` to
+   `pythonReadSettings()`, and build `forbiddenKeys()` from
+   `pythonForbiddenKeys()` plus any class-specific keys
+6. Implement hardware-specific virtual methods as JSON IPC dispatches
+   using `pu_process->sendRequest()`
+
 ### Process Lifecycle
 
-1. **`initialize()` / `fcInitialize()`**: Create `PythonProcess`, set
-   comm, settings callbacks, and connect log signal. Do **not** start the
-   subprocess here. The subprocess is started lazily in `testConnection`.
+1. **`initialize()` / `fcInitialize()`**: Call `initPythonProcess()` to
+   create the `PythonProcess` and wire up callbacks. Connect the log
+   signal. Do **not** start the subprocess here — it is started lazily
+   in `testConnection`.
 
-2. **`testConnection()` / `fcTestConnection()`**: If the process is not
-   running, call `startPythonProcess()`. This calls
-   `PythonProcess::start()`, which sends `_init` and `initialize` IPC
-   before returning. Then send `test_connection` IPC.
+2. **`testConnection()` / `fcTestConnection()`**: Call
+   `testPythonConnection()`, which starts the subprocess if needed
+   (via `startPythonProcess()` → `PythonProcess::start()`, which sends
+   `_init` and `initialize` IPC) and then sends `test_connection`.
 
-3. **`readSettings()`**: Send `{"method": "read_settings"}` to the
-   running process. Do **not** kill and restart the subprocess — that
-   would trigger a spurious `initialize()` call and disrupt connected
-   state.
+3. **`readSettings()`**: Call `pythonReadSettings()` to send
+   `{"method": "read_settings"}` to the running process. Do **not** kill
+   and restart the subprocess — that would trigger a spurious
+   `initialize()` call and disrupt connected state.
 
 ### QSettings Key Paths
 
@@ -308,9 +352,9 @@ base class handles all state management.
 | Base Class | Config Class | Virtual Style | Status |
 |---|---|---|---|
 | **FlowController** | FlowConfig (contained) | 8 `hw*` pure virtuals (per-channel reads/writes) | Done |
-| **PulseGenerator** | PulseGenConfig (contained) | ~24 `hw*` pure virtuals + `setAll()` bulk | Wave 2 |
-| **TemperatureController** | TemperatureControllerConfig (contained) | 3 `hw*` pure virtuals (per-channel) | Wave 2 |
-| **PressureController** | PressureControllerConfig (contained) | 9 `hw*` pure virtuals (scalar reads/writes) | Wave 2 |
+| **PulseGenerator** | PulseGenConfig (contained) | ~24 `hw*` pure virtuals + `setAll()` bulk | Pending |
+| **TemperatureController** | TemperatureControllerConfig (contained) | 3 `hw*` pure virtuals (per-channel) | Done |
+| **PressureController** | PressureControllerConfig (contained) | 9 `hw*` pure virtuals (scalar reads/writes) | Done |
 
 **PulseGenerator note**: Although PulseGenerator has a `setAll()` method,
 it delegates to individual `hwSetChannel()` calls internally. The
@@ -324,8 +368,8 @@ program the hardware with it.
 
 | Base Class | What it receives | Status |
 |---|---|---|
-| **AWG** | ChirpConfig waveform data + markers | Wave 1 (incomplete — see below) |
-| **Clock** | Frequency assignments per role | Wave 2 |
+| **AWG** | ChirpConfig waveform data + markers | Done |
+| **Clock** | Frequency assignments per role | Done |
 
 **AWG / ChirpConfig issue**: The AWG base class is stateless — it has
 no internal config object. Existing C++ implementations access
@@ -431,13 +475,13 @@ Values are written to QSettings under the hardware's SettingsStorage key
 
 | Trampoline | Params | Status |
 |---|---|---|
-| PythonAwg | none | Done (Wave 1) |
+| PythonAwg | none | Done |
+| PythonClock | `numOutputs` (int), `tunable` (bool) | Done |
+| PythonFlowController | none (reads from settings) | Done |
 | PythonIOBoard | `numAnalogChannels` (int), `numDigitalChannels` (int) | Done |
-| PythonFlowController | none (reads from settings) | Done (Wave 1) |
-| PythonTemperatureController | `numChannels` (uint) | Wave 2 |
-| PythonPressureController | `readOnly` (bool) | Wave 2 |
-| PythonClock | `numOutputs` (int), `tunable` (bool) | Wave 2 |
-| PythonPulseGenerator | `numChannels` (int) | Wave 2 |
+| PythonPressureController | `readOnly` (bool) | Done |
+| PythonTemperatureController | `numChannels` (uint) | Done |
+| PythonPulseGenerator | `numChannels` (int) | Pending |
 
 ## Template Script Workflow
 
@@ -454,9 +498,9 @@ script that:
    - What it is expected to return (type and semantics)
    - Error return values (e.g., `-1.0` for failed reads)
 3. **Demonstrates** usage of `self.comm`, `self.settings`, and `self.log`
-4. **Uses the correct class name** matching the trampoline's default
-   `pythonClass` setting (e.g., `AwgDriver`, `IOBoardDriver`,
-   `FlowControllerDriver`)
+4. **Uses the correct class name** matching the `pythonClassName`
+   configured in `HardwareProfileManager` (e.g., `AwgDriver`,
+   `IOBoardDriver`, `FlowControllerDriver`)
 
 ### Script Naming Convention
 
@@ -465,7 +509,6 @@ Template scripts follow the pattern `python_<type>_template.py` and live in
 
 | Trampoline | Template File | Default Class Name |
 |---|---|---|
-| PythonTestHardware | `python_test_template.py` | `TestHardware` |
 | PythonAwg | `python_awg_template.py` | `AwgDriver` |
 | PythonIOBoard | `python_ioboard_template.py` | `IOBoardDriver` |
 | PythonFlowController | `python_flowcontroller_template.py` | `FlowControllerDriver` |
@@ -510,23 +553,20 @@ The dialog locates the template using the same search paths as
 
 #### Phase 1: Core Infrastructure (complete)
 
+- **`PythonHardwareBase`** (`src/hardware/python/pythonhardwarebase.h/.cpp`):
+  Mixin base class providing common Python subprocess management
+  (process init, test connection, sleep, readSettings, findHostScript).
 - **`PythonProcess`** (`src/hardware/python/pythonprocess.h/.cpp`):
   QProcess wrapper with JSON-lines IPC, interleaved relay handling,
   log forwarding, and timeout management.
-- **`PythonTestHardware`** (`src/hardware/python/pythontesthardware.h/.cpp`):
-  HardwareObject subclass dispatching all virtual methods via IPC.
 - **`python_hw_host.py`** (`src/hardware/python/python_hw_host.py`):
   Python-side IPC host with CommProxy, SettingsProxy, LogProxy, and
   method dispatch. Supports generic keyword-argument dispatch for
   type-specific methods.
-- **`test_hardware.py`** and **`echo_server.py`** (`dev-docs/`):
-  Test script exercising all methods, and TCP echo server for testing.
 - **Build system**: `BC_ENABLE_PYTHON_HARDWARE` option, conditional
   compilation, `#ifdef` guards. Builds with ON and OFF.
-- **HardwareProfileManager**: `pythonScriptPath` field with getter/setter
-  and load/save persistence.
-- **HardwareManager**: PythonTestHardware conditionally registered in
-  `d_optHwTypes` when `BC_PYTHON_HARDWARE` is defined.
+- **HardwareProfileManager**: `pythonScriptPath` and `pythonClassName`
+  fields with getter/setter and load/save persistence.
 - **pybind11 reference**: The abandoned pybind11 attempt is preserved on
   the `python-hw-pybind11` branch for reference.
 
@@ -547,31 +587,37 @@ All manual testing passed. The full IPC pipeline works end-to-end:
   C++ SettingsStorage. Values persist across restarts.
 - **Settings reload**: Accepting the Hardware Settings dialog triggers
   `readSettings`, which sends `read_settings` IPC to the running process.
-- **Multi-profile**: Multiple PythonTestHardware profiles work correctly
+- **Multi-profile**: Multiple Python hardware profiles work correctly
   with independent script paths and settings.
 
-#### Phase 2: Wave 1 Trampolines (complete)
+#### Phase 2: Trampoline Classes (complete)
 
-Three trampoline classes created for hardware types with no constructor
-parameter issues:
+All non-scope hardware types have Python trampoline classes. Each
+inherits from both its hardware base class and `PythonHardwareBase`,
+eliminating boilerplate for process lifecycle, sleep, readSettings,
+findHostScript, and forbiddenKeys.
 
-- **`PythonAwg`** (`pythonawg.h/.cpp`): Inherits AWG. Dispatches all
-  HardwareObject virtuals via IPC. No AWG-specific pure virtuals.
-  **Known gap**: `prepareForExperiment` does not serialize ChirpConfig
-  data — Python script cannot access chirp waveform/markers. See
-  Pattern C discussion above.
-- **`PythonIOBoard`** (`pythonioboard.h/.cpp`): Inherits IOBoard.
-  Implements `configure(IOBoardConfig&)` to serialize the full digitizer
-  config to Python via IPC and deserialize validated values. Sends
-  enabled channel indices with each `readAnalogChannels()`/
-  `readDigitalChannels()` call. Base class handles `readAuxData`/
-  `readValidationData` by calling these. **Substantially complete**
+- **`PythonAwg`** (`pythonawg.h/.cpp`): Inherits AWG. Dispatches
+  `prepareForExperiment` with full chirp/RF config serialization,
+  `beginAcquisition`, `endAcquisition`, `readAuxData`,
+  `readValidationData` via IPC.
+- **`PythonClock`** (`pythonclock.h/.cpp`): Inherits Clock. Dispatches
+  `setHwFrequency` and `readHwFrequency` via IPC. Constructor reads
+  `numOutputs` and `tunable` from QSettings before Clock construction.
 - **`PythonFlowController`** (`pythonflowcontroller.h/.cpp`): Inherits
-  FlowController. Dispatches `fcInitialize()`, `fcTestConnection()`, and
-  8 `hw*` pure virtuals via IPC. Base class handles polling, `readAll()`,
-  and `prepareForExperiment()`. **Substantially complete.**
-
-All three compile cleanly, tests pass.
+  FlowController. Dispatches 8 `hw*` pure virtuals via IPC. Base class
+  handles polling, `readAll()`, and `prepareForExperiment()`.
+- **`PythonIOBoard`** (`pythonioboard.h/.cpp`): Inherits IOBoard.
+  Implements `configure(IOBoardConfig&)` to serialize/deserialize the
+  full digitizer config via IPC. Sends enabled channel indices with
+  each read call.
+- **`PythonPressureController`** (`pythonpressurecontroller.h/.cpp`):
+  Inherits PressureController. Dispatches 7 `hw*` pure virtuals via
+  IPC. Constructor reads `readOnly` from QSettings before construction.
+- **`PythonTemperatureController`**
+  (`pythontemperaturecontroller.h/.cpp`): Inherits TemperatureController.
+  Dispatches `readHwTemperature` via IPC. Constructor reads `numChannels`
+  from QSettings before construction.
 
 #### Phase 2: HwConfigParam Registry (complete)
 
@@ -588,10 +634,13 @@ Infrastructure for declaring constructor parameters that need UI input:
 
 - **`python_hw_host.py`** updated with generic keyword-argument dispatch
   for type-specific methods (replaces `ValueError` for unknown methods)
-- **Template scripts created** for Wave 1 trampolines:
+- **Template scripts created** for all trampolines:
   - `python_awg_template.py` (class `AwgDriver`)
-  - `python_ioboard_template.py` (class `IOBoardDriver`)
+  - `python_clock_template.py` (class `ClockDriver`)
   - `python_flowcontroller_template.py` (class `FlowControllerDriver`)
+  - `python_ioboard_template.py` (class `IOBoardDriver`)
+  - `python_pressurecontroller_template.py` (class `PressureControllerDriver`)
+  - `python_temperaturecontroller_template.py` (class `TemperatureControllerDriver`)
 - **CMake deployment** updated in `BlackchirpHardware.cmake`: uses
   `file(GLOB ... python_*_template.py)` to copy templates to build dir
   and install them to `share/blackchirp/`
@@ -601,78 +650,29 @@ Infrastructure for declaring constructor parameters that need UI input:
   script path in `d_previewPythonScriptConfig`. Template filename is
   derived from the implementation class name (e.g., `PythonAwg` →
   `python_awg_template.py`).
-- **Remaining**: Create template scripts for Wave 2 trampolines (after
-  those classes exist)
 
-### Remaining Work
+### Next Steps
 
-#### PythonAwg: ChirpConfig Serialization ✓
+#### Template Validation
 
-`prepareForExperiment` now serializes the full chirp configuration as
-compact segment parameters plus RF chain info. The IPC payload includes:
-- `chirp.segments`: nested list of segment dicts (`start_freq_mhz`,
-  `end_freq_mhz`, `duration_us`, `alpha_us`, `empty`) — sufficient for
-  DDS-style AWGs (e.g. AD9914) without any waveform math
-- `chirp.{num_chirps, chirp_interval_us, pre/post protection/gate delays,
-  sample_rate_hz}` — timing parameters
-- `rf_config.{awg_mult, chirp_mult, up/down_mix_sideband, clocks}` — RF
-  chain and clock assignments
+Exercise each existing template script with Virtual hardware to verify
+consistent behavior across all trampoline classes. Each template should
+successfully:
+- Connect via Virtual protocol
+- Return valid data from all `hw*` methods
+- Handle `sleep`/`readSettings` round-trips
+- Pass through `prepareForExperiment` (where applicable)
 
-For memory-based AWGs that need a time-domain waveform, `python_awg_template.py`
-provides two static helper methods:
-- `_compute_waveform(config['chirp'])` → `(times_us, amplitudes)` numpy arrays
-- `_compute_markers(config['chirp'])` → `(protection, gate)` bool numpy arrays
+#### PythonPulseGenerator
 
-These are reference implementations of ChirpConfig::getChirpMicroseconds()
-and ChirpConfig::getMarkerData() in Python. No large arrays are sent over
-IPC; waveform computation happens entirely in the Python subprocess.
+The PulseGenerator trampoline has not yet been created. It follows
+Pattern B (granular methods) with ~24 `hw*` pure virtuals.
 
-Note: `ChirpConfig::totalDuration()` no longer rounds up to the nearest
-10 µs — that was an AWG-implementation detail that has been removed.
-
-#### PythonIOBoard: HwConfigParam ✓
-
-`PythonIOBoard::configParams()` is implemented and registered via
-`REGISTER_HARDWARE_PARAMS(PythonIOBoard)`. When a user creates a new
-PythonIOBoard profile in the dialog, they are prompted for:
-- **Analog Channels** (`numAnalogChannels`, int, 0–32)
-- **Digital Channels** (`numDigitalChannels`, int, 0–32)
-
-The dialog writes these values to QSettings before construction, so
-the `IOBoard` base class constructor finds the correct channel counts
-and populates `d_analogChannels` / `d_digitalChannels` accordingly.
-
-#### Phase 2: Wave 2 Trampolines
-
-For each remaining hardware type, create a trampoline class using the
-HwConfigParam registry for constructor parameters:
-
-1. `PythonTemperatureController` (3 `hw*` pure virtuals + `configParams`) — Pattern B
-2. `PythonPressureController` (9 `hw*` pure virtuals + `configParams`) — Pattern B
-3. `PythonClock` (4 `hw*` pure virtuals + `configParams`) — Pattern C
-4. `PythonPulseGenerator` (24 `hw*` pure virtuals + `configParams`) — Pattern B
-
-Each trampoline needs:
-- A `static QVector<HwConfigParam> configParams()` method
-- `REGISTER_HARDWARE_PARAMS(ClassName)` in the .cpp file
-- Constructor reads params from SettingsStorage (written by dialog before
-  construction) and passes to base class constructor
-- For TemperatureController/PulseGenerator/Clock: the param value is read
-  directly from QSettings in the member initializer list since
-  SettingsStorage hasn't been constructed yet at that point. The dialog
-  writes config param values directly under `hwKey/<paramKey>` (not
-  under an implementation subgroup), so a static QSettings read at
-  `hwKey` level will find them.
-
-All Wave 2 types follow Pattern B (granular methods) — each `hw*` call
-is a simple IPC dispatch with keyword arguments, no bulk config needed.
-
-#### Phase 2: FtmwScope / LifScope (deferred)
+#### FtmwScope / LifScope (deferred)
 
 Performance-sensitive Pattern A types. Both inherit from DigitizerConfig
 and need bulk configure. May also need batched data transfer or shared
-memory for large waveforms (readWaveform). Deferred until after all
-other types.
+memory for large waveforms (readWaveform).
 
 - **LifScope**: Already has `virtual bool configure(const LifDigitizerConfig&)`
   — the same pattern now used by IOBoard. PythonLifScope would follow
@@ -681,7 +681,7 @@ other types.
   override `prepareForExperiment()` directly. A PythonFtmwScope would
   require adding a `configure()` virtual to FtmwScope first.
 
-#### Phase 3: Polish
+#### Polish
 
 - Script hot-reload improvements
 - Python environment support (venv/conda path per-profile)
@@ -697,7 +697,3 @@ other types.
    for instrument I/O (10-100ms). But digitizer polling (FtmwScope/LifScope
    `readWaveform`) may need optimization -- possibly batching data or
    using shared memory for large transfers.
-
-3. **AWG data format**: Should `prepare_for_experiment` send raw waveform
-   samples, chirp segment parameters, or both? Memory-based AWGs need
-   samples; DDS-based AWGs need segment parameters.

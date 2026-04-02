@@ -15,7 +15,8 @@ a pressure gauge/controller. The C++ FlowController base class handles:
 Your Python script implements the low-level hw_* methods that communicate
 with the actual hardware.
 
-Class name must match the pythonClass setting (default: "FlowControllerDriver").
+Class name must match the Python Class setting in the Hardware Configuration
+dialog (default: "FlowControllerDriver").
 
 Available proxies (injected automatically):
     self.comm     -- communicate with hardware via the configured protocol

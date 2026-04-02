@@ -271,6 +271,7 @@ private:
     std::map<QString, QString> d_previewRuntimeConfig;   // Preview of runtime configuration changes
     std::map<QString, bool> d_previewThreadedConfig;     // Threading overrides (key present = override stored)
     std::map<QString, QString> d_previewPythonScriptConfig; // Python script path overrides
+    std::map<QString, QString> d_previewPythonClassConfig;  // Python class name overrides
     QString d_currentHardwareType;  // Currently selected hardware type in browser
 
     /*!

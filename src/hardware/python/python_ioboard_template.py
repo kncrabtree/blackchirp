@@ -12,7 +12,8 @@ The C++ IOBoard base class handles aux data formatting, validation, and
 experiment integration. Your script only needs to return raw channel readings
 for the channels requested by the C++ side.
 
-Class name must match the pythonClass setting (default: "IOBoardDriver").
+Class name must match the Python Class setting in the Hardware Configuration
+dialog (default: "IOBoardDriver").
 
 Available proxies (injected automatically):
     self.comm     -- communicate with hardware via the configured protocol

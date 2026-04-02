@@ -5,14 +5,7 @@
 
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 
-#include <memory>
-
-class PythonProcess;
-
-namespace BC::Key::PythonFlowController {
-static const QString pythonScript{"pythonScript"};
-static const QString pythonClass{"pythonClass"};
-}
+#include "pythonhardwarebase.h"
 
 /*!
  * \brief FlowController subclass that dispatches all virtual methods to a Python subprocess via IPC
@@ -29,12 +22,11 @@ static const QString pythonClass{"pythonClass"};
  * prepareForExperiment(). PythonFlowController only needs to implement
  * fcInitialize(), fcTestConnection(), and the eight hw* pure virtuals.
  */
-class PythonFlowController : public FlowController
+class PythonFlowController : public FlowController, public PythonHardwareBase
 {
     Q_OBJECT
 public:
     explicit PythonFlowController(const QString &label, QObject *parent = nullptr);
-    ~PythonFlowController() override;
 
 protected:
     void fcInitialize() override;
@@ -52,11 +44,6 @@ private:
     double hwReadFlow(const int ch) override;
     double hwReadPressure() override;
     int hwReadPressureControlMode() override;
-
-    bool startPythonProcess();
-    QString findHostScript() const;
-
-    std::unique_ptr<PythonProcess> pu_process;
 };
 
 #endif // BC_PYTHON_HARDWARE

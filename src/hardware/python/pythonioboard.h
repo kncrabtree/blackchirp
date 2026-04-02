@@ -6,15 +6,7 @@
 #include <hardware/optional/ioboard/ioboard.h>
 #include <hardware/core/hardwareregistry.h>
 
-#include <memory>
-#include <QVector>
-
-class PythonProcess;
-
-namespace BC::Key::PythonIOBoard {
-static const QString pythonScript{"pythonScript"};
-static const QString pythonClass{"pythonClass"};
-}
+#include "pythonhardwarebase.h"
 
 /*!
  * \brief IOBoard subclass that dispatches virtual methods to a Python subprocess via IPC
@@ -28,12 +20,11 @@ static const QString pythonClass{"pythonClass"};
  * delegating to those two virtuals, so only the channel-reading methods need to
  * be dispatched to Python.
  */
-class PythonIOBoard : public IOBoard
+class PythonIOBoard : public IOBoard, public PythonHardwareBase
 {
     Q_OBJECT
 public:
     explicit PythonIOBoard(const QString &label, QObject *parent = nullptr);
-    ~PythonIOBoard() override;
 
     static QVector<HwConfigParam> configParams();
 
@@ -51,12 +42,8 @@ protected:
     QStringList forbiddenKeys() const override;
 
 private:
-    bool startPythonProcess();
     QJsonObject configToJson(const IOBoardConfig &config) const;
     bool jsonToConfig(const QJsonObject &obj, IOBoardConfig &config) const;
-    QString findHostScript() const;
-
-    std::unique_ptr<PythonProcess> pu_process;
 };
 
 #endif // BC_PYTHON_HARDWARE

@@ -2,7 +2,7 @@
 """
 Blackchirp Python Hardware IPC Host
 
-This script is launched by the C++ PythonTestHardware class as a subprocess.
+This script is launched by C++ Python hardware classes as a subprocess.
 It communicates with the C++ side via JSON-lines over stdin/stdout pipes.
 
 Usage:

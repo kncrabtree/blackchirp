@@ -9,7 +9,8 @@ waveforms for CP-FTMW spectroscopy. The C++ base class handles waveform
 configuration and experiment integration; your Python script handles
 communication with the actual hardware.
 
-Class name must match the pythonClass setting (default: "AwgDriver").
+Class name must match the Python Class setting in the Hardware Configuration
+dialog (default: "AwgDriver").
 
 Available proxies (injected automatically):
     self.comm     -- communicate with hardware via the configured protocol

@@ -2,14 +2,9 @@
 
 #ifdef BC_PYTHON_HARDWARE
 
-#include "pythonprocess.h"
-
-#include <QCoreApplication>
-#include <QFile>
 #include <QJsonObject>
 
 #include <hardware/core/hardwareregistration.h>
-#include <hardware/core/hardwareprofilemanager.h>
 
 // ============================================================================
 // Registration
@@ -21,7 +16,8 @@ REGISTER_HARDWARE_PROTOCOLS(PythonFlowController, CommunicationProtocol::Rs232, 
 // Constructor / Destructor
 // ============================================================================
 PythonFlowController::PythonFlowController(const QString &label, QObject *parent) :
-    FlowController(QString(PythonFlowController::staticMetaObject.className()), label, parent)
+    FlowController(QString(PythonFlowController::staticMetaObject.className()), label, parent),
+    PythonHardwareBase(d_key, d_model)
 {
     d_threaded = true;
 
@@ -42,16 +38,7 @@ PythonFlowController::PythonFlowController(const QString &label, QObject *parent
     setDefault(BC::Key::Flow::pMax,     1000.0);
     setDefault(BC::Key::Flow::pDec,     3);
 
-    setDefault(BC::Key::PythonFlowController::pythonScript, QString{});
-    setDefault(BC::Key::PythonFlowController::pythonClass,  QStringLiteral("FlowControllerDriver"));
-
     save();
-}
-
-PythonFlowController::~PythonFlowController()
-{
-    if (pu_process)
-        pu_process->stop();
 }
 
 // ============================================================================
@@ -59,11 +46,7 @@ PythonFlowController::~PythonFlowController()
 // ============================================================================
 void PythonFlowController::fcInitialize()
 {
-    pu_process = std::make_unique<PythonProcess>(this);
-    pu_process->setComm(p_comm);
-    pu_process->setHardwareInfo(d_key, d_model);
-
-    pu_process->setSettingsCallbacks(
+    initPythonProcess(p_comm,
         [this](const QString &key, const QVariant &defaultVal) -> QVariant {
             return get(key, defaultVal);
         },
@@ -81,74 +64,11 @@ void PythonFlowController::fcInitialize()
 // ============================================================================
 bool PythonFlowController::fcTestConnection()
 {
-    if (!pu_process->isRunning()) {
-        if (!startPythonProcess())
-            return false;
-    }
-
-    // Update comm in case protocol was reconfigured
-    pu_process->setComm(p_comm);
-
-    QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("test_connection");
-    auto resp = pu_process->sendRequest(req);
-
-    if (resp.contains(QStringLiteral("error"))) {
-        d_errorString = resp[QStringLiteral("error")].toString();
+    if (!testPythonConnection(p_comm)) {
+        d_errorString = pythonErrorString();
         return false;
     }
-    return resp[QStringLiteral("result")].toBool(false);
-}
-
-// ============================================================================
-// startPythonProcess()
-// ============================================================================
-bool PythonFlowController::startPythonProcess()
-{
-    auto [hwType, label] = BC::Key::parseKey(d_key);
-    QString scriptPath = HardwareProfileManager::instance().getPythonScriptPath(hwType, label);
-
-    if (scriptPath.isEmpty())
-        scriptPath = get<QString>(BC::Key::PythonFlowController::pythonScript);
-
-    if (scriptPath.isEmpty()) {
-        d_errorString = QStringLiteral("No Python script path configured");
-        emit logMessage(QString("PythonFlowController (%1): %2").arg(d_key, d_errorString),
-                        LogHandler::Error);
-        return false;
-    }
-
-    QString hostScript = findHostScript();
-    if (hostScript.isEmpty()) {
-        d_errorString = QStringLiteral("Cannot find python_hw_host.py");
-        emit logMessage(QString("PythonFlowController (%1): %2").arg(d_key, d_errorString),
-                        LogHandler::Error);
-        return false;
-    }
-
-    QString className = get<QString>(BC::Key::PythonFlowController::pythonClass);
-    if (className.isEmpty())
-        className = QStringLiteral("FlowControllerDriver");
-
-    return pu_process->start(hostScript, scriptPath, className);
-}
-
-// ============================================================================
-// findHostScript()
-// ============================================================================
-QString PythonFlowController::findHostScript() const
-{
-    QStringList searchPaths = {
-        QCoreApplication::applicationDirPath() + QStringLiteral("/python_hw_host.py"),
-        QCoreApplication::applicationDirPath() + QStringLiteral("/../share/blackchirp/python_hw_host.py"),
-    };
-
-    for (const auto &path : searchPaths) {
-        if (QFile::exists(path))
-            return path;
-    }
-
-    return {};
+    return true;
 }
 
 // ============================================================================
@@ -156,11 +76,7 @@ QString PythonFlowController::findHostScript() const
 // ============================================================================
 void PythonFlowController::readSettings()
 {
-    if (pu_process && pu_process->isRunning()) {
-        QJsonObject req;
-        req[QStringLiteral("method")] = QStringLiteral("read_settings");
-        pu_process->sendRequest(req);
-    }
+    pythonReadSettings();
 }
 
 // ============================================================================
@@ -168,10 +84,7 @@ void PythonFlowController::readSettings()
 // ============================================================================
 QStringList PythonFlowController::forbiddenKeys() const
 {
-    QStringList keys = FlowController::forbiddenKeys();
-    keys << BC::Key::PythonFlowController::pythonScript
-         << BC::Key::PythonFlowController::pythonClass;
-    return keys;
+    return FlowController::forbiddenKeys() + pythonForbiddenKeys();
 }
 
 // ============================================================================

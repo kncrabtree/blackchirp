@@ -397,6 +397,39 @@ bool HardwareProfileManager::setPythonScriptPath(const QString& type, const QStr
     return true;
 }
 
+QString HardwareProfileManager::getPythonClassName(const QString& type, const QString& label) const
+{
+    QReadLocker locker(&d_profilesLock);
+
+    auto typeIt = d_profiles.find(type);
+    if (typeIt == d_profiles.end())
+        return QString();
+
+    auto labelIt = typeIt->find(label);
+    if (labelIt == typeIt->end())
+        return QString();
+
+    return labelIt->pythonClassName;
+}
+
+bool HardwareProfileManager::setPythonClassName(const QString& type, const QString& label, const QString& name)
+{
+    QWriteLocker locker(&d_profilesLock);
+
+    auto typeIt = d_profiles.find(type);
+    if (typeIt == d_profiles.end())
+        return false;
+
+    auto labelIt = typeIt->find(label);
+    if (labelIt == typeIt->end())
+        return false;
+
+    labelIt->pythonClassName = name;
+    labelIt->modified = QDateTime::currentDateTime();
+    setModified();
+    return true;
+}
+
 QStringList HardwareProfileManager::getConfiguredHardwareTypes() const
 {
     QReadLocker locker(&d_profilesLock);
@@ -938,6 +971,7 @@ void HardwareProfileManager::loadProfilesFromSettings()
             profile.threaded = threadedVar.toBool();
 
         profile.pythonScriptPath = getGroupValue<QString>(groupKey, BC::Key::HardwareProfiles::pythonScriptPath, QString());
+        profile.pythonClassName = getGroupValue<QString>(groupKey, BC::Key::HardwareProfiles::pythonClassName, QString());
 
         // Only add if we have a valid implementation that exists in the registry
         if (!profile.implementation.isEmpty() && 
@@ -980,6 +1014,9 @@ void HardwareProfileManager::saveProfilesToSettings()
             }
             if (!profile.pythonScriptPath.isEmpty()) {
                 setGroupValue(groupKey, BC::Key::HardwareProfiles::pythonScriptPath, profile.pythonScriptPath, false);
+            }
+            if (!profile.pythonClassName.isEmpty()) {
+                setGroupValue(groupKey, BC::Key::HardwareProfiles::pythonClassName, profile.pythonClassName, false);
             }
         }
     }

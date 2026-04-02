@@ -311,6 +311,23 @@ public:
     bool setPythonScriptPath(const QString& type, const QString& label, const QString& path);
 
     /*!
+     * \brief Get Python class name for a specific profile
+     * \param type Hardware type
+     * \param label Profile label
+     * \return Python class name, or empty string if not set or profile doesn't exist
+     */
+    QString getPythonClassName(const QString& type, const QString& label) const;
+
+    /*!
+     * \brief Set Python class name for a specific profile
+     * \param type Hardware type
+     * \param label Profile label
+     * \param name Python class name
+     * \return True if successfully set
+     */
+    bool setPythonClassName(const QString& type, const QString& label, const QString& name);
+
+    /*!
      * \brief Get all hardware types that have profiles
      * \return List of hardware types with at least one profile
      */
@@ -512,6 +529,7 @@ private:
         QString description;        /*!< User description */
         std::optional<bool> threaded; /*!< Threading override (nullopt = use type-level default) */
         QString pythonScriptPath;    /*!< Python script path (only used by Python hardware types) */
+        QString pythonClassName;     /*!< Python class name (only used by Python hardware types) */
 
         ProfileInfo() : created(QDateTime::currentDateTime()),
                        modified(QDateTime::currentDateTime()) {}
@@ -632,6 +650,7 @@ namespace BC::Key::HardwareProfiles {
     static const QString description{"description"};        /*!< Description subkey */
     static const QString threaded{"threaded"};              /*!< Threading override subkey */
     static const QString pythonScriptPath{"pythonScriptPath"}; /*!< Python script path subkey */
+    static const QString pythonClassName{"pythonClassName"};   /*!< Python class name subkey */
 }
 
 Q_DECLARE_METATYPE(HardwareProfileData)
