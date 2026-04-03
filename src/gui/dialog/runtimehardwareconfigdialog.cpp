@@ -22,6 +22,8 @@
 #include <QTableWidgetItem>
 #include <QDir>
 #include <QFile>
+#include <QTextStream>
+#include <QRegularExpression>
 #include <QFileDialog>
 #include <QTextEdit>
 #include <QMetaEnum>
@@ -582,9 +584,34 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
 
     advancedLayout->addWidget(threadedCheckbox);
 
+    // Helper: populate an editable QComboBox with class names parsed from a Python script file,
+    // in order of appearance. Preserves the current text if it matches an entry.
+    auto populateClassCombo = [](QComboBox* combo, const QString& scriptPath) {
+        if (!combo) return;
+        QString current = combo->currentText();
+        {
+            QSignalBlocker blocker(combo);
+            combo->clear();
+        }
+        if (!scriptPath.isEmpty()) {
+            QFile file(scriptPath);
+            if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                QTextStream in(&file);
+                QRegularExpression re(QStringLiteral("^class\\s+(\\w+)"));
+                while (!in.atEnd()) {
+                    auto match = re.match(in.readLine());
+                    if (match.hasMatch())
+                        combo->addItem(match.captured(1));
+                }
+            }
+        }
+        if (!current.isEmpty())
+            combo->setCurrentText(current);
+    };
+
     // Python settings — shown when the selected profile uses a Python implementation
     QLineEdit* pythonScriptEdit = nullptr;
-    QLineEdit* pythonClassEdit = nullptr;
+    QComboBox* pythonClassEdit = nullptr;
 #ifdef BC_PYTHON_HARDWARE
     {
         auto* pythonWidget = new QWidget(advancedContainer);
@@ -621,8 +648,9 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
         classLayout->setContentsMargins(0, 0, 0, 0);
 
         auto* classLabel = new QLabel(tr("Python Class:"), classRow);
-        pythonClassEdit = new QLineEdit(classRow);
+        pythonClassEdit = new QComboBox(classRow);
         pythonClassEdit->setObjectName("pythonClassEdit");
+        pythonClassEdit->setEditable(true);
 
         classLayout->addWidget(classLabel);
         classLayout->addWidget(pythonClassEdit, 1);
@@ -660,25 +688,27 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
                     HardwareProfileManager::instance().getPythonScriptPath(type, label));
             }
 
-            pythonClassEdit->setPlaceholderText(defaultPythonClassName(impl));
+            pythonClassEdit->lineEdit()->setPlaceholderText(defaultPythonClassName(impl));
+            populateClassCombo(pythonClassEdit, pythonScriptEdit->text());
             auto cit = d_previewPythonClassConfig.find(activeHwKey);
             if (cit != d_previewPythonClassConfig.end()) {
-                pythonClassEdit->setText(cit->second);
+                pythonClassEdit->setCurrentText(cit->second);
             } else {
-                pythonClassEdit->setText(
+                pythonClassEdit->setCurrentText(
                     HardwareProfileManager::instance().getPythonClassName(type, label));
             }
         }
 
         // Wire text changes into preview configs
         connect(pythonScriptEdit, &QLineEdit::textChanged, this,
-                [this, getActiveHwKey](const QString& text) {
+                [this, getActiveHwKey, pythonClassEdit, populateClassCombo](const QString& text) {
             QString hwKey = getActiveHwKey();
             if (hwKey.isEmpty()) return;
             d_previewPythonScriptConfig[hwKey] = text;
+            populateClassCombo(pythonClassEdit, text);
         });
 
-        connect(pythonClassEdit, &QLineEdit::textChanged, this,
+        connect(pythonClassEdit, &QComboBox::currentTextChanged, this,
                 [this, getActiveHwKey](const QString& text) {
             QString hwKey = getActiveHwKey();
             if (hwKey.isEmpty()) return;
@@ -704,7 +734,7 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
     QWidget* pythonWidget = advancedContainer->findChild<QWidget*>("pythonWidget");
     connect(profilesList, &QListWidget::itemSelectionChanged, this,
             [this, hardwareType, profilesList, threadedCheckbox, typeDefault, getActiveHwKey,
-             pythonScriptEdit, pythonClassEdit, pythonWidget]() {
+             pythonScriptEdit, pythonClassEdit, pythonWidget, populateClassCombo]() {
         QString hwKey = getActiveHwKey();
         if (hwKey.isEmpty()) {
             threadedCheckbox->setEnabled(false);
@@ -739,17 +769,19 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
                 }
 
                 if (pythonClassEdit) {
-                    QSignalBlocker classBlocker(pythonClassEdit);
                     // Set placeholder from implementation name
                     QString defaultClass = impl.startsWith(QStringLiteral("Python"))
                         ? impl.mid(6) + QStringLiteral("Driver") : QString();
-                    pythonClassEdit->setPlaceholderText(defaultClass);
+                    pythonClassEdit->lineEdit()->setPlaceholderText(defaultClass);
 
+                    populateClassCombo(pythonClassEdit, pythonScriptEdit->text());
+
+                    QSignalBlocker classBlocker(pythonClassEdit);
                     auto cit = d_previewPythonClassConfig.find(hwKey);
                     if (cit != d_previewPythonClassConfig.end()) {
-                        pythonClassEdit->setText(cit->second);
+                        pythonClassEdit->setCurrentText(cit->second);
                     } else {
-                        pythonClassEdit->setText(
+                        pythonClassEdit->setCurrentText(
                             HardwareProfileManager::instance().getPythonClassName(type, label));
                     }
                 }

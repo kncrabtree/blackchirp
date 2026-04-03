@@ -4,12 +4,7 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 
 ## Small
 
-### Python Class Discovery in Hardware Configuration Dialog
-The Python Class field in the Hardware Configuration dialog is currently a plain
-QLineEdit. A future improvement could grep the selected `.py` script for class
-definitions and present them in a dropdown (QComboBox), ordered by appearance in
-the file. This would eliminate the need for users to manually type the class name.
-Minor QoL — not blocking.
+None.
 
 ## Medium
 
