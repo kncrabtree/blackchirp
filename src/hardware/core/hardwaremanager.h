@@ -73,8 +73,6 @@ signals:
     void validationData(AuxDataStorage::AuxDataMap);
     void rollingData(AuxDataStorage::AuxDataMap,QDateTime);
 
-    void ftmwScopeShotAcquired(QByteArray);
-
     void clockFrequencyUpdate(RfConfig::ClockType, double);
     void allClocksReady(QHash<RfConfig::ClockType,RfConfig::ClockFreq>);
 

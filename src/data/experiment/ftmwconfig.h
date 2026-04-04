@@ -34,6 +34,7 @@ static const QString ftmwType{"FtmwType"};
 }
 
 class BlackchirpCSV;
+class WaveformBuffer;
 
 class FtmwConfig : public ExperimentObjective, public HeaderStorage
 {
@@ -104,9 +105,13 @@ public:
     bool addFids(const QByteArray rawData);
     std::shared_ptr<FidStorageBase> storage() const;
 
+    void setWaveformBuffer(WaveformBuffer *buf);
+    WaveformBuffer* waveformBuffer() const;
+
     void loadFids();
 
 private:
+    WaveformBuffer *p_waveformBuffer{nullptr};
     std::shared_ptr<FtmwDigitizerConfig> ps_scopeConfig;
     std::shared_ptr<FidStorageBase> p_fidStorage;
     Fid d_fidTemplate;

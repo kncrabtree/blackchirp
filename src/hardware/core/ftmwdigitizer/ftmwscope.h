@@ -8,6 +8,8 @@
 
 #include <data/experiment/ftmwconfig.h>
 #include <data/experiment/hardware/core/ftmwdigitizerconfig.h>
+#include <data/storage/waveformbuffer.h>
+#include <memory>
 
 class FtmwScope : public HardwareObject, protected FtmwDigitizerConfig
 {
@@ -29,12 +31,16 @@ public slots:
 public slots:
     QStringList forbiddenKeys() const override;
 
+public:
+    WaveformBuffer* waveformBuffer() const { return pu_waveformBuffer.get(); }
+
 protected:
     void emitShot(const QByteArray &data);
     bool d_acquisitionGated{false};
     int d_discardCount{0};
 
 private:
+    std::unique_ptr<WaveformBuffer> pu_waveformBuffer;
     void writeSettings();
 };
 

@@ -51,7 +51,13 @@ bool FtmwScope::hwPrepareForExperiment(Experiment &exp)
 {
     auto out = HardwareObject::hwPrepareForExperiment(exp);
     if(out)
+    {
         writeSettings();
+        qint64 waveformBytes = static_cast<qint64>(d_recordLength) * d_bytesPerPoint * d_numRecords;
+        pu_waveformBuffer = std::make_unique<WaveformBuffer>(10, waveformBytes);
+        if(exp.ftmwEnabled())
+            exp.ftmwConfig()->setWaveformBuffer(pu_waveformBuffer.get());
+    }
 
     return out;
 }
@@ -81,7 +87,11 @@ void FtmwScope::emitShot(const QByteArray &data)
         --d_discardCount;
         return;
     }
-    emit shotAcquired(data);
+    if(pu_waveformBuffer)
+    {
+        quint64 shots = d_blockAverage ? d_numAverages : 1;
+        pu_waveformBuffer->write(data, shots);
+    }
 }
 
 void FtmwScope::writeSettings()

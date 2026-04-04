@@ -1,6 +1,8 @@
 #ifndef ACQUISITIONMANAGER_H
 #define ACQUISITIONMANAGER_H
 
+#include <atomic>
+
 #include <QObject>
 #include <QDateTime>
 #include <QTime>
@@ -11,6 +13,19 @@
 
 #include <data/loghandler.h>
 #include <data/experiment/experiment.h>
+
+/*!
+ * \brief Result of a worker-thread waveform processing batch.
+ *
+ * Returned by the QtConcurrent worker to the AcquisitionManager event loop
+ * so that side-effect operations (advance, signals, abort) stay on the AM thread.
+ */
+struct FtmwProcessingResult {
+    int entriesProcessed{0};
+    bool success{true};
+    QString errorString;
+    QString warningString;
+};
 
 class AcquisitionManager : public QObject
 {
@@ -48,7 +63,6 @@ signals:
 
 public slots:
     void beginExperiment(std::shared_ptr<Experiment> exp);
-    void processFtmwScopeShot(const QByteArray b);
     void processAuxData(AuxDataStorage::AuxDataMap m);
     void processValidationData(AuxDataStorage::AuxDataMap m);
     void clockSettingsComplete(const QHash<RfConfig::ClockType,RfConfig::ClockFreq> clocks);
@@ -61,13 +75,18 @@ public slots:
 
 private:
     std::unique_ptr<QFutureWatcher<void> > pu_fw;
+    std::unique_ptr<QFutureWatcher<FtmwProcessingResult>> pu_processingWatcher;
     std::shared_ptr<Experiment> ps_currentExperiment;
     AcquisitionState d_state;
     int d_auxTimerId;
+    QTimer *p_drainTimer{nullptr};
+    std::atomic<bool> d_abortProcessing{false};
 
     void auxDataTick();
     void checkComplete();
     void finishAcquisition();
+    void drainFtmwBuffer();
+    void onProcessingComplete();
 
 
 

@@ -78,6 +78,7 @@ set(BLACKCHIRP_DATA_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/storage/headerstorage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/storage/overlaystorage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/storage/settingsstorage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/storage/waveformbuffer.cpp
 )
 
 set(BLACKCHIRP_DATA_HEADERS
@@ -143,6 +144,7 @@ set(BLACKCHIRP_DATA_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/storage/headerstorage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/storage/overlaystorage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/storage/settingsstorage.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/storage/waveformbuffer.h
 )
 
 # ============================================================================

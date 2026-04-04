@@ -331,6 +331,16 @@ void FtmwConfig::cleanupAndSave()
 #endif
 }
 
+void FtmwConfig::setWaveformBuffer(WaveformBuffer *buf)
+{
+    p_waveformBuffer = buf;
+}
+
+WaveformBuffer *FtmwConfig::waveformBuffer() const
+{
+    return p_waveformBuffer;
+}
+
 void FtmwConfig::loadFids()
 {
     p_fidStorage = createStorage(d_number,d_path);

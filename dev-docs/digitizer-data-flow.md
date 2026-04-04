@@ -90,7 +90,7 @@ Digitizer Thread                              Acq Manager Thread
 │ emitShot(data)   │─>│  ┌─┬─┬─┬─┬─┬─┐   │──>│ for each entry:  │
 │  [base class     │  │  │ │ │ │ │ │ │   │   │  parseWaveform() │
 │   writes to buf] │  │  └─┴─┴─┴─┴─┴─┘   │   │  addFids()       │
-│                  │  │  drop-oldest on   │   │  advance()       │
+│                  │  │  drop-newest on   │   │  advance()       │
 │ optional:        │  │  overflow         │   │                  │
 │  pre-accumulate  │  └───────────────────┘   │ emit progress    │
 │  N shots first   │     ↑           ↑        │ once per drain   │
@@ -103,8 +103,11 @@ Digitizer Thread                              Acq Manager Thread
 ### Why this approach
 
 1. **Bounded memory with backpressure**: Fixed-size ring buffer (default ~10
-   slots) prevents unbounded queue growth. Drop-oldest policy ensures the
-   consumer always processes the most recent data if it falls behind.
+   slots) prevents unbounded queue growth. Drop-newest policy discards
+   incoming data when the consumer falls behind, which is the correct
+   precursor to dynamic pre-accumulation (Phase 6): when the buffer is
+   full, the producer will eventually accumulate shots locally instead
+   of discarding them.
 
 2. **Removes HardwareManager from the data path**: The buffer reference is
    passed through the Experiment object during setup. HardwareManager
@@ -173,9 +176,10 @@ Key properties:
 - **Fixed slot count**: Configured at creation (default 10 slots)
 - **Pre-allocated QByteArrays**: Each slot's QByteArray is pre-reserved to the
   expected waveform size at experiment start, avoiding per-shot heap allocation
-- **Drop-oldest overflow**: When full, the oldest unread entry is overwritten.
-  This ensures the consumer always sees the most recent data if it falls behind.
-  A counter tracks dropped entries for logging/diagnostics.
+- **Drop-newest overflow**: When full, the incoming entry is discarded.
+  This is race-free (producer never modifies the read index) and serves as
+  the stepping stone toward dynamic pre-accumulation. A counter tracks
+  dropped entries for logging/diagnostics.
 - **Cross-platform notification**: QSemaphore-based signaling. Producer
   releases the semaphore after each write; consumer acquires with a timeout
   to allow periodic housekeeping even when no data arrives.
@@ -302,15 +306,15 @@ between HardwareManager and AcquisitionManager during setup.
 
 ## Implementation Phases
 
-### Phase 1: WaveformBuffer class
+### Phase 1: WaveformBuffer class **COMPLETE**
 - Implement `WaveformBuffer` with SPSC ring buffer semantics
 - `WaveformEntry` struct with data, shotCount, preAccumulated flag
-- Drop-oldest overflow with dropped-entry counter
+- Drop-newest overflow with dropped-entry counter
 - QSemaphore notification
 - Pre-allocated QByteArray slots
 - Comprehensive unit tests (correctness, threading, overflow, flush markers)
 
-### Phase 2: FtmwScope integration
+### Phase 2: FtmwScope integration **COMPLETE**
 - Add `WaveformBuffer` member to FtmwScope base class
 - Modify `emitShot()` to write to buffer instead of emitting signal
 - Buffer created in `beginAcquisition()`, destroyed in `endAcquisition()`
@@ -319,22 +323,29 @@ between HardwareManager and AcquisitionManager during setup.
 - No changes to any digitizer implementation classes — they still call
   `emitShot(data)` as before
 
-### Phase 3: Experiment / FtmwConfig plumbing
-- Add buffer accessor to FtmwScope / FtmwConfig / Experiment
-- Ensure buffer lifetime spans the full acquisition
-- Handle the Experiment object's role in bridging HW and Acq layers
+### Phase 3: Experiment / FtmwConfig plumbing **COMPLETE**
+- Added `WaveformBuffer*` non-owning pointer to FtmwConfig with getter/setter
+- FtmwScope sets buffer pointer on FtmwConfig during `hwPrepareForExperiment()`
+- AcquisitionManager accesses buffer via `exp->ftmwConfig()->waveformBuffer()`
 
-### Phase 4: AcquisitionManager consumer
-- Implement `drainBuffer()` consumer loop
-- QSemaphore-triggered + periodic timer backup
-- Batched progress emission
-- Segment boundary handling (flush markers)
-- Remove `processFtmwScopeShot` slot and HardwareManager signal connection
+### Phase 4: AcquisitionManager consumer **COMPLETE**
+- Replaced `processFtmwScopeShot` with worker-thread architecture:
+  - `drainFtmwBuffer()` (AM event loop, 20ms timer): reads entries from
+    buffer (fast QByteArray moves), dispatches batch to QtConcurrent worker,
+    pauses drain timer
+  - Worker thread: calls `ftmw->addFids()` per entry (expensive parse +
+    accumulate), checks atomic abort flag between entries
+  - `onProcessingComplete()` (AM event loop): calls `advance()`, emits
+    progress/signals, restarts drain timer
+- AM event loop stays responsive during processing — abort, pause, aux data
+  all execute immediately
+- `finishAcquisition()` sets abort flag and waits for in-flight worker
+  (bounded by one addFids call)
+- Removed MainWindow signal connection for old data path
 
-### Phase 5: HardwareManager cleanup
-- Remove `ftmwScopeShotAcquired` signal
-- Remove relay connection in `connectScope()`
-- Verify all other digitizer signals (gating, etc.) still work
+### Phase 5: HardwareManager cleanup **COMPLETE**
+- Removed `ftmwScopeShotAcquired` signal from HardwareManager
+- Removed relay connection in `setupHardwareSpecificConnectionsWithTracking()`
 
 ### Phase 6: Optional pre-accumulation in base class
 - Implement backpressure-triggered pre-accumulation in `emitShot()`

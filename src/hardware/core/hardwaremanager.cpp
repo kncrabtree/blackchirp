@@ -983,10 +983,7 @@ void HardwareManager::setupHardwareSpecificConnectionsWithTracking(HardwareObjec
     QString hwKey = obj->d_key;
     
     // Setup hardware-specific signal connections and store each connection
-    if (auto ftmwScope = qobject_cast<FtmwScope*>(obj)) {
-        storeConnection(hwKey, connect(ftmwScope, &FtmwScope::shotAcquired, this, &HardwareManager::ftmwScopeShotAcquired));
-    }
-    else if (auto pGen = qobject_cast<PulseGenerator*>(obj)) {
+    if (auto pGen = qobject_cast<PulseGenerator*>(obj)) {
         QString k = pGen->d_key;
         storeConnection(hwKey, connect(pGen, &PulseGenerator::settingUpdate, [this, k](const int ch, const PulseGenConfig::Setting set, const QVariant val){
             emit pGenSettingUpdate(k, ch, set, val);

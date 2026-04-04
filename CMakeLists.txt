@@ -491,6 +491,16 @@ if(BC_BUILD_TESTS)
     
     # No hardware-specific compile definitions needed - all hardware available at runtime
 
+    # Waveform Buffer Test
+    add_executable(tst_waveformbuffertest tests/tst_waveformbuffertest.cpp)
+    target_link_libraries(tst_waveformbuffertest
+        blackchirp-data
+        Qt6::Test
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_waveformbuffertest)
+    add_test(NAME WaveformBufferTest COMMAND tst_waveformbuffertest)
+
     # Hardware Communication Test
     # TODO: Temporarily disabled due to HardwareManager dependencies in HardwareObject
     # This test will be re-enabled once Phase 2 runtime hardware migration is complete
@@ -523,6 +533,7 @@ if(BC_BUILD_TESTS)
         tst_hardwareprofilemanagertest
         tst_hardwarekeys
         tst_experimentloading
+        tst_waveformbuffertest
         # tst_hardwarecommunication  # Disabled until HardwareManager migration complete
     )
     

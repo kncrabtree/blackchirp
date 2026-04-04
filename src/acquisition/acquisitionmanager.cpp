@@ -1,5 +1,7 @@
 #include <acquisition/acquisitionmanager.h>
 
+#include <data/storage/waveformbuffer.h>
+
 #include <math.h>
 
 AcquisitionManager::AcquisitionManager(QObject *parent) : QObject(parent), d_state(Idle)
@@ -10,6 +12,9 @@ AcquisitionManager::AcquisitionManager(QObject *parent) : QObject(parent), d_sta
 
 AcquisitionManager::~AcquisitionManager()
 {
+    d_abortProcessing.store(true, std::memory_order_release);
+    if(pu_processingWatcher && pu_processingWatcher->isRunning())
+        pu_processingWatcher->waitForFinished();
 }
 
 void AcquisitionManager::beginExperiment(std::shared_ptr<Experiment> exp)
@@ -41,40 +46,131 @@ void AcquisitionManager::beginExperiment(std::shared_ptr<Experiment> exp)
 
     emit beginAcquisition();
 
+    if(ps_currentExperiment->ftmwEnabled() && ps_currentExperiment->ftmwConfig()->waveformBuffer())
+    {
+        d_abortProcessing.store(false, std::memory_order_relaxed);
+
+        pu_processingWatcher = std::make_unique<QFutureWatcher<FtmwProcessingResult>>();
+        connect(pu_processingWatcher.get(), &QFutureWatcher<FtmwProcessingResult>::finished,
+                this, &AcquisitionManager::onProcessingComplete);
+
+        p_drainTimer = new QTimer(this);
+        p_drainTimer->setInterval(20);
+        connect(p_drainTimer, &QTimer::timeout, this, &AcquisitionManager::drainFtmwBuffer);
+        p_drainTimer->start();
+    }
+
     if(ps_currentExperiment->lifEnabled())
         emit nextLifPoint(ps_currentExperiment->lifConfig()->currentDelay(),
                       ps_currentExperiment->lifConfig()->currentLaserPos());
 }
 
-void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
+void AcquisitionManager::drainFtmwBuffer()
 {
-    if(d_state == Acquiring
-            && ps_currentExperiment->ftmwEnabled()
-            && !ps_currentExperiment->ftmwConfig()->isComplete()
-            && !ps_currentExperiment->ftmwConfig()->d_processingPaused)
+    if(d_state != Acquiring || !ps_currentExperiment->ftmwEnabled())
+        return;
+
+    auto *ftmw = ps_currentExperiment->ftmwConfig();
+    auto *buf = ftmw->waveformBuffer();
+    if(!buf || buf->available() == 0)
+        return;
+
+    // Don't start new processing if worker is still running
+    if(pu_processingWatcher && pu_processingWatcher->isRunning())
+        return;
+
+    // Read entries from buffer (fast — just moves QByteArrays)
+    std::vector<QByteArray> waveforms;
+    WaveformEntry entry;
+
+    while(buf->read(entry))
     {
+        if(entry.flushMarker)
+            break;
 
-        bool success = ps_currentExperiment->ftmwConfig()->addFids(b);
-        auto errStr = ps_currentExperiment->ftmwConfig()->d_errorString;
+        if(ftmw->isComplete() || ftmw->d_processingPaused)
+            continue;
 
-        if(!success)
-        {
-            emit logMessage("Error processing FID data.",LogHandler::Error);
-            abort();
-            return;
-        }
-        else if(!errStr.isEmpty())
-            emit logMessage(errStr,LogHandler::Warning);
-
-        bool advanceSegment = ps_currentExperiment->ftmwConfig()->advance();
-
-        if(advanceSegment)
-            emit newClockSettings(ps_currentExperiment->ftmwConfig()->d_rfConfig.getClocks());
-
-        emit ftmwUpdateProgress(ps_currentExperiment->ftmwConfig()->perMilComplete());
+        waveforms.push_back(std::move(entry.data));
     }
 
+    if(waveforms.empty())
+    {
+        // Only flush markers or all entries skipped — still call advance
+        // for segment boundary and autosave handling
+        bool advanceSegment = ftmw->advance();
+        if(advanceSegment)
+            emit newClockSettings(ftmw->d_rfConfig.getClocks());
+        checkComplete();
+        return;
+    }
+
+    // Pause drain timer while the worker processes
+    p_drainTimer->stop();
+
+    // Dispatch to worker thread for expensive parse + accumulate
+    pu_processingWatcher->setFuture(
+        QtConcurrent::run([this, ftmw, data = std::move(waveforms)]() mutable -> FtmwProcessingResult {
+            FtmwProcessingResult result;
+
+            for(auto &wf : data)
+            {
+                if(d_abortProcessing.load(std::memory_order_acquire))
+                    break;
+
+                bool success = ftmw->addFids(wf);
+                result.entriesProcessed++;
+
+                if(!success)
+                {
+                    result.success = false;
+                    result.errorString = ftmw->d_errorString;
+                    break;
+                }
+
+                if(!ftmw->d_errorString.isEmpty() && result.warningString.isEmpty())
+                    result.warningString = ftmw->d_errorString;
+            }
+
+            return result;
+        })
+    );
+}
+
+void AcquisitionManager::onProcessingComplete()
+{
+    // Guard: if acquisition has already ended (e.g., abort called
+    // finishAcquisition while the worker was running), do nothing.
+    if(d_state == Idle || !ps_currentExperiment)
+        return;
+
+    auto result = pu_processingWatcher->result();
+
+    if(d_abortProcessing.load(std::memory_order_acquire))
+        return;
+
+    if(!result.success)
+    {
+        emit logMessage("Error processing FID data.",LogHandler::Error);
+        abort();
+        return;
+    }
+
+    if(!result.warningString.isEmpty())
+        emit logMessage(result.warningString,LogHandler::Warning);
+
+    auto *ftmw = ps_currentExperiment->ftmwConfig();
+
+    bool advanceSegment = ftmw->advance();
+    if(advanceSegment)
+        emit newClockSettings(ftmw->d_rfConfig.getClocks());
+
+    emit ftmwUpdateProgress(ftmw->perMilComplete());
     checkComplete();
+
+    // Restart drain timer if still acquiring
+    if(d_state == Acquiring && p_drainTimer)
+        p_drainTimer->start();
 }
 
 void AcquisitionManager::processLifScopeShot(const QVector<qint8> b)
@@ -212,6 +308,24 @@ void AcquisitionManager::checkComplete()
 
 void AcquisitionManager::finishAcquisition()
 {
+    if(p_drainTimer)
+    {
+        p_drainTimer->stop();
+        delete p_drainTimer;
+        p_drainTimer = nullptr;
+    }
+
+    // Signal worker to exit early and wait for it to finish.
+    // Worst-case latency: one addFids call (~300-800ms for very large waveforms).
+    d_abortProcessing.store(true, std::memory_order_release);
+    if(pu_processingWatcher)
+    {
+        if(pu_processingWatcher->isRunning())
+            pu_processingWatcher->waitForFinished();
+        pu_processingWatcher->disconnect();
+        pu_processingWatcher.reset();
+    }
+
     emit endAcquisition();
     d_state = Idle;
 

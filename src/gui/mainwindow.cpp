@@ -182,7 +182,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     connect(p_hwm,&HardwareManager::experimentInitialized,this,&MainWindow::experimentInitialized);
-    connect(p_hwm,&HardwareManager::ftmwScopeShotAcquired,p_am,&AcquisitionManager::processFtmwScopeShot);
     connect(p_am,&AcquisitionManager::newClockSettings,this,&MainWindow::clockPrompt);
     connect(p_hwm,&HardwareManager::allClocksReady,p_am,&AcquisitionManager::clockSettingsComplete);
     connect(p_am,&AcquisitionManager::beginAcquisition,p_hwm,&HardwareManager::beginAcquisition);
