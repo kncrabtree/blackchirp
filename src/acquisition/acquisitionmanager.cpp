@@ -80,7 +80,7 @@ void AcquisitionManager::drainFtmwBuffer()
         return;
 
     // Read entries from buffer (fast — just moves QByteArrays)
-    std::vector<QByteArray> waveforms;
+    std::vector<WaveformEntry> entries;
     WaveformEntry entry;
 
     while(buf->read(entry))
@@ -91,10 +91,10 @@ void AcquisitionManager::drainFtmwBuffer()
         if(ftmw->isComplete() || ftmw->d_processingPaused)
             continue;
 
-        waveforms.push_back(std::move(entry.data));
+        entries.push_back(std::move(entry));
     }
 
-    if(waveforms.empty())
+    if(entries.empty())
     {
         // Only flush markers or all entries skipped — still call advance
         // for segment boundary and autosave handling
@@ -110,15 +110,20 @@ void AcquisitionManager::drainFtmwBuffer()
 
     // Dispatch to worker thread for expensive parse + accumulate
     pu_processingWatcher->setFuture(
-        QtConcurrent::run([this, ftmw, data = std::move(waveforms)]() mutable -> FtmwProcessingResult {
+        QtConcurrent::run([this, ftmw, data = std::move(entries)]() mutable -> FtmwProcessingResult {
             FtmwProcessingResult result;
 
-            for(auto &wf : data)
+            for(auto &e : data)
             {
                 if(d_abortProcessing.load(std::memory_order_acquire))
                     break;
 
-                bool success = ftmw->addFids(wf);
+                bool success;
+                if(e.preAccumulated)
+                    success = ftmw->addPreAccumulatedFids(e.data, e.shotCount);
+                else
+                    success = ftmw->addFids(e.data);
+
                 result.entriesProcessed++;
 
                 if(!success)

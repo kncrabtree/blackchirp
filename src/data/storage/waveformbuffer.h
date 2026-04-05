@@ -100,6 +100,17 @@ public:
     void writeFlushMarker();
 
     /*!
+     * \brief Check if the buffer is full (producer-side query).
+     *
+     * Uses the same logic as writeEntry's overflow check. This allows
+     * the producer to decide whether to begin pre-accumulation before
+     * attempting a write.
+     *
+     * \return true if (writeIndex - readIndex) >= capacity.
+     */
+    bool isFull() const;
+
+    /*!
      * \brief Clear all entries and reset indices.
      *
      * Call at the start of acquisition. This is NOT thread-safe with concurrent

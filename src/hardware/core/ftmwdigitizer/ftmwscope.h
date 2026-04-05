@@ -6,6 +6,8 @@
 
 #include <QByteArray>
 
+#include <QVector>
+
 #include <data/experiment/ftmwconfig.h>
 #include <data/experiment/hardware/core/ftmwdigitizerconfig.h>
 #include <data/storage/waveformbuffer.h>
@@ -41,6 +43,17 @@ protected:
 
 private:
     std::unique_ptr<WaveformBuffer> pu_waveformBuffer;
+
+    // Pre-accumulation state (producer thread only, no synchronization needed)
+    bool d_preAccumulating{false};
+    quint64 d_preAccumShots{0};
+    QVector<qint64> d_preAccumData;
+    quint8 d_bitShift{0};
+
+    void parseAndAccumulate(const QByteArray &data);
+    bool flushPreAccumulated();
+    void resetPreAccumulation();
+
     void writeSettings();
 };
 

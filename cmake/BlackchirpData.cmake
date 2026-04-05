@@ -27,6 +27,7 @@ set(BLACKCHIRP_DATA_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/analysis/ft.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/analysis/ftworker.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/analysis/peakfinder.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/analysis/waveformparser.cpp
     
     # Experiment configuration
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/experiment/chirpconfig.cpp
@@ -91,6 +92,7 @@ set(BLACKCHIRP_DATA_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/analysis/ft.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/analysis/ftworker.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/analysis/peakfinder.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/analysis/waveformparser.h
     
     # Experiment configuration
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/experiment/chirpconfig.h

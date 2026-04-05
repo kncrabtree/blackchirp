@@ -347,20 +347,37 @@ between HardwareManager and AcquisitionManager during setup.
 - Removed `ftmwScopeShotAcquired` signal from HardwareManager
 - Removed relay connection in `setupHardwareSpecificConnectionsWithTracking()`
 
-### Phase 6: Optional pre-accumulation in base class
-- Implement backpressure-triggered pre-accumulation in `emitShot()`
-- Wide accumulation buffer (qint64 per sample)
-- Consumer path for pre-accumulated entries (skip parseWaveform)
-- Configurable threshold or fully dynamic
+### Phase 6: Optional pre-accumulation in base class **COMPLETE**
+- Backpressure-triggered pre-accumulation in `emitShot()`: when buffer is
+  full, FtmwScope parses raw bytes into a `QVector<qint64>` accumulator;
+  flushes to the ring buffer (as `preAccumulated=true`) as soon as a slot
+  opens; returns to raw-write mode immediately after flush
+- `WaveformBuffer::isFull()` added for producer-side backpressure check
+- Shared parsing function `BC::Analysis::parseWaveform()` in
+  `src/data/analysis/waveformparser.h/.cpp` (Write and Accumulate modes)
+  eliminates code duplication between FtmwConfig and FtmwScope
+- `FtmwConfig::parseWaveform()` refactored to call the shared function
+- `FtmwConfig::addPreAccumulatedFids()` handles pre-accumulated entries
+  (interprets QByteArray as qint64 values; chirp scoring / phase correction
+  still applied; CUDA path bypassed — appropriate since pre-accumulation
+  only occurs when consumer is already behind)
+- `AcquisitionManager::drainFtmwBuffer()` routes entries by `preAccumulated`
+  flag: raw entries → `addFids()`; pre-accumulated → `addPreAccumulatedFids()`
+- Gating (`setAcquisitionGated(true)`) discards any partial pre-accumulation
 
-### Phase 7: Testing and benchmarking
-- Unit tests for WaveformBuffer (Phase 1)
-- Integration test: VirtualFtmwScope -> buffer -> AcquisitionManager
-- Throughput benchmark: old signal path vs new buffer path
+### Phase 7: Performance optimization
+- Accumulation is currently single-core; potentially spread over more cores?
+- Consider balance between AcquisitionManager load and Digitizer pre-
+  accumulation load.
+
+### Phase 8: Testing and benchmarking
+- Unit tests for WaveformBuffer (Phase 1) **COMPLETE**
+- Integration test: VirtualFtmwScope -> buffer -> AcquisitionManager **COMPLETE**
 - Regression tests: chirp scoring, phase correction, segment boundaries
 - Multi-segment acquisition test (LO scan, DR scan)
-- Peak-up mode test (rolling average semantics)
+- Peak-up mode test (rolling average semantics) **COMPLETE**
 - Autosave timing verification
+
 
 ### Future: Python digitizer considerations (design only)
 - Document how PythonFtmwScope would write to the WaveformBuffer

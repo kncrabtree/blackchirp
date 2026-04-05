@@ -1,5 +1,9 @@
 #include <hardware/core/ftmwdigitizer/ftmwscope.h>
 
+#include <cstring>
+
+#include <data/analysis/waveformparser.h>
+
 FtmwScope::FtmwScope(const QString& impl, const QString& label, QObject *parent) :
     HardwareObject(QString(FtmwScope::staticMetaObject.className()), impl, label, parent),
     FtmwDigitizerConfig(BC::Key::hwKey(QString(FtmwScope::staticMetaObject.className()), label))
@@ -53,10 +57,19 @@ bool FtmwScope::hwPrepareForExperiment(Experiment &exp)
     if(out)
     {
         writeSettings();
-        qint64 waveformBytes = static_cast<qint64>(d_recordLength) * d_bytesPerPoint * d_numRecords;
-        pu_waveformBuffer = std::make_unique<WaveformBuffer>(10, waveformBytes);
         if(exp.ftmwEnabled())
+        {
+            qint64 waveformBytes = static_cast<qint64>(d_recordLength) * d_bytesPerPoint * d_numRecords;
+            pu_waveformBuffer = std::make_unique<WaveformBuffer>(10, waveformBytes);
             exp.ftmwConfig()->setWaveformBuffer(pu_waveformBuffer.get());
+            d_bitShift = exp.ftmwConfig()->getBitShift();
+
+            int totalSamples = d_recordLength * d_numRecords;
+            d_preAccumData.resize(totalSamples);
+            d_preAccumData.fill(0);
+            d_preAccumShots = 0;
+            d_preAccumulating = false;
+        }
     }
 
     return out;
@@ -74,7 +87,9 @@ QStringList FtmwScope::forbiddenKeys() const
 void FtmwScope::setAcquisitionGated(bool gated)
 {
     d_acquisitionGated = gated;
-    if(!gated)
+    if(gated)
+        resetPreAccumulation();
+    else
         d_discardCount = 1;
 }
 
@@ -87,11 +102,71 @@ void FtmwScope::emitShot(const QByteArray &data)
         --d_discardCount;
         return;
     }
-    if(pu_waveformBuffer)
+    if(!pu_waveformBuffer)
+        return;
+
+    if(d_preAccumulating)
     {
-        quint64 shots = d_blockAverage ? d_numAverages : 1;
-        pu_waveformBuffer->write(data, shots);
+        parseAndAccumulate(data);
+        if(!pu_waveformBuffer->isFull())
+            flushPreAccumulated();
     }
+    else
+    {
+        if(pu_waveformBuffer->isFull())
+        {
+            d_preAccumulating = true;
+            d_preAccumData.fill(0);
+            d_preAccumShots = 0;
+            parseAndAccumulate(data);
+        }
+        else
+        {
+            quint64 shots = d_blockAverage ? d_numAverages : 1;
+            pu_waveformBuffer->write(data, shots);
+        }
+    }
+}
+
+void FtmwScope::parseAndAccumulate(const QByteArray &data)
+{
+    quint64 shots = d_blockAverage ? d_numAverages : 1;
+
+    BC::Analysis::parseWaveform(data.constData(), d_preAccumData.data(),
+                                d_recordLength, d_numRecords,
+                                d_bytesPerPoint, d_byteOrder,
+                                shots, d_bitShift,
+                                BC::Analysis::ParseMode::Accumulate);
+
+    d_preAccumShots += shots;
+}
+
+bool FtmwScope::flushPreAccumulated()
+{
+    if(d_preAccumShots == 0)
+    {
+        d_preAccumulating = false;
+        return true;
+    }
+
+    int totalSamples = d_recordLength * d_numRecords;
+    QByteArray serialized(totalSamples * sizeof(qint64), Qt::Uninitialized);
+    memcpy(serialized.data(), d_preAccumData.constData(), serialized.size());
+
+    pu_waveformBuffer->write(serialized, d_preAccumShots, true);
+
+    d_preAccumData.fill(0);
+    d_preAccumShots = 0;
+    d_preAccumulating = false;
+
+    return true;
+}
+
+void FtmwScope::resetPreAccumulation()
+{
+    d_preAccumData.fill(0);
+    d_preAccumShots = 0;
+    d_preAccumulating = false;
 }
 
 void FtmwScope::writeSettings()

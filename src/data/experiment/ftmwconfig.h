@@ -103,6 +103,7 @@ public:
 
     bool setFidsData(const QVector<QVector<qint64> > newList);
     bool addFids(const QByteArray rawData);
+    bool addPreAccumulatedFids(const QByteArray &data, quint64 shotCount);
     std::shared_ptr<FidStorageBase> storage() const;
 
     void setWaveformBuffer(WaveformBuffer *buf);
@@ -137,6 +138,8 @@ protected:
     QVariant objectiveData() const override;
 
     virtual quint8 bitShift() const { return 0; }
+public:
+    quint8 getBitShift() const { return bitShift(); }
     virtual bool _init() =0;
     virtual void _prepareToSave() =0;
     virtual void _loadComplete() =0;

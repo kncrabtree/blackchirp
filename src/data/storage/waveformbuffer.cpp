@@ -72,6 +72,13 @@ void WaveformBuffer::writeFlushMarker()
     writeEntry(std::move(entry));
 }
 
+bool WaveformBuffer::isFull() const
+{
+    int w = d_writeIndex.load(std::memory_order_relaxed);
+    int r = d_readIndex.load(std::memory_order_acquire);
+    return (w - r) >= d_capacity;
+}
+
 void WaveformBuffer::reset()
 {
     // Drain any leftover semaphore permits so the consumer will not see stale

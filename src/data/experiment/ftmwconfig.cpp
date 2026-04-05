@@ -1,10 +1,12 @@
 #include <data/experiment/ftmwconfig.h>
 
+#include <cstring>
 #include <math.h>
 
 #include <QFile>
 #include <QtEndian>
 
+#include <data/analysis/waveformparser.h>
 #include <data/storage/blackchirpcsv.h>
 #include <data/storage/fidpeakupstorage.h>
 
@@ -29,93 +31,26 @@ quint64 FtmwConfig::shotIncrement() const
 
 FidList FtmwConfig::parseWaveform(const QByteArray b) const
 {
-
     int np = ps_scopeConfig->d_recordLength;
-    auto shots = shotIncrement();
+    int numRec = ps_scopeConfig->d_numRecords;
+
+    QVector<qint64> buf(np * numRec);
+    BC::Analysis::parseWaveform(b.constData(), buf.data(),
+                                np, numRec,
+                                ps_scopeConfig->d_bytesPerPoint,
+                                ps_scopeConfig->d_byteOrder,
+                                shotIncrement(), bitShift());
+
     FidList out;
-    //read raw data into vector in 64 bit integer form
-    for(int j=0;j<ps_scopeConfig->d_numRecords;j++)
+    out.reserve(numRec);
+    for(int j = 0; j < numRec; ++j)
     {
         QVector<qint64> d(np);
-
-        for(int i=0; i<np;i++)
-        {
-            qint64 dat = 0;
-
-            /*
-            for(int k = 0; k<scopeConfig().bytesPerPoint; k++)
-            {
-                int thisIndex = k;
-                if(scopeConfig().byteOrder == DigitizerConfig::BigEndian)
-                    thisIndex = scopeConfig().bytesPerPoint - k;
-
-                dat |= (static_cast<quint8>(b.at(scopeConfig().bytesPerPoint*(j*np+i)+thisIndex)) << (8*k));
-            }
-            //check for the sign bit on the most significant byte, and carry out sign extension if necessary
-            if(dat | (128 << (scopeConfig().bytesPerPoint-1)))
-                dat &= Q_INT64_C(0xffffffffffffffff);
-
-            dat += static_cast<qint64>(scopeConfig().yOff);
-            */
-
-
-            if(ps_scopeConfig->d_bytesPerPoint == 1)
-            {
-                char y = b.at(j*np+i);
-                dat = static_cast<qint64>(y);
-            }
-            else if(ps_scopeConfig->d_bytesPerPoint == 2)
-            {
-                auto y1 = static_cast<quint8>(b.at(2*(j*np+i)));
-                auto y2 = static_cast<quint8>(b.at(2*(j*np+i) + 1));
-
-                qint16 y = 0;
-                y |= y1;
-                y |= (y2 << 8);
-
-                if(ps_scopeConfig->d_byteOrder == DigitizerConfig::BigEndian)
-                    y = qFromBigEndian(y);
-                else
-                    y = qFromLittleEndian(y);
-
-                dat = (static_cast<qint64>(y));
-            }
-            else
-            {
-                auto y1 = static_cast<quint8>(b.at(4*(j*np+i)));
-                auto y2 = static_cast<quint8>(b.at(4*(j*np+i) + 1));
-                auto y3 = static_cast<quint8>(b.at(4*(j*np+i) + 2));
-                auto y4 = static_cast<quint8>(b.at(4*(j*np+i) + 3));
-
-                qint32 y = 0;
-                y |= y1;
-                y |= (y2 << 8);
-                y |= (y3 << 16);
-                y |= (y4 << 24);
-
-                if(ps_scopeConfig->d_byteOrder == DigitizerConfig::BigEndian)
-                    y = qFromBigEndian(y);
-                else
-                    y = qFromLittleEndian(y);
-
-                dat = (static_cast<qint64>(y));
-            }
-
-            //"Undo" averaging that was done by the device
-            //Ok to do this if statement in the loop; the compiler will optimize it
-            if(shots > 1)
-                dat *= shots;
-
-            //some modes (eg peakup) may add additional padding bits for averaging
-            dat = dat << bitShift();
-
-            d[i] = dat;
-        }
+        memcpy(d.data(), buf.constData() + j*np, np*sizeof(qint64));
 
         Fid f = d_fidTemplate;
         f.setData(d);
         f.setShots(shotIncrement());
-
         out.append(f);
     }
 
@@ -302,6 +237,50 @@ bool FtmwConfig::addFids(const QByteArray rawData)
     if(newList.isEmpty())
         newList = parseWaveform(rawData);
     return p_fidStorage->addFids(newList,d_currentShift);
+#endif
+}
+
+bool FtmwConfig::addPreAccumulatedFids(const QByteArray &data, quint64 shotCount)
+{
+    d_errorString.clear();
+
+    int np = ps_scopeConfig->d_recordLength;
+    int numRec = ps_scopeConfig->d_numRecords;
+    int totalSamples = np * numRec;
+
+    if(data.size() != totalSamples * static_cast<int>(sizeof(qint64)))
+    {
+        d_errorString = QString("Pre-accumulated data size mismatch: expected %1 bytes, got %2")
+                            .arg(totalSamples * sizeof(qint64)).arg(data.size());
+        return false;
+    }
+
+    const qint64 *src = reinterpret_cast<const qint64*>(data.constData());
+
+    FidList newList;
+    newList.reserve(numRec);
+    for(int j = 0; j < numRec; ++j)
+    {
+        QVector<qint64> d(np);
+        memcpy(d.data(), src + j*np, np*sizeof(qint64));
+
+        Fid f = d_fidTemplate;
+        f.setData(d);
+        f.setShots(shotCount);
+        newList.append(f);
+    }
+
+    if(d_chirpScoringEnabled || d_phaseCorrectionEnabled)
+    {
+        if(!preprocessChirp(newList))
+            return true;
+    }
+
+#ifdef BC_CUDA
+    // Pre-accumulated data bypasses the GPU averager (which expects raw bytes)
+    return p_fidStorage->addFids(newList, d_currentShift);
+#else
+    return p_fidStorage->addFids(newList, d_currentShift);
 #endif
 }
 
