@@ -113,6 +113,20 @@ void AcquisitionManager::drainFtmwBuffer()
         QtConcurrent::run([this, ftmw, data = std::move(entries)]() mutable -> FtmwProcessingResult {
             FtmwProcessingResult result;
 
+            if(d_abortProcessing.load(std::memory_order_acquire))
+                return result;
+
+#ifndef BC_CUDA
+            bool success = ftmw->addBatchFids(data);
+            if(!success)
+            {
+                result.success = false;
+                result.errorString = ftmw->d_errorString;
+            }
+            else if(!ftmw->d_errorString.isEmpty())
+                result.warningString = ftmw->d_errorString;
+            result.entriesProcessed = static_cast<int>(data.size());
+#else
             for(auto &e : data)
             {
                 if(d_abortProcessing.load(std::memory_order_acquire))
@@ -136,6 +150,7 @@ void AcquisitionManager::drainFtmwBuffer()
                 if(!ftmw->d_errorString.isEmpty() && result.warningString.isEmpty())
                     result.warningString = ftmw->d_errorString;
             }
+#endif
 
             return result;
         })

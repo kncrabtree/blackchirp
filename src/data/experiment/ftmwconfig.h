@@ -1,6 +1,8 @@
 ﻿#ifndef FTMWCONFIG_H
 #define FTMWCONFIG_H
 
+#include <vector>
+
 #include <QDateTime>
 #include <QVariant>
 #include <QMetaType>
@@ -33,6 +35,7 @@ namespace BC::Config::Exp {
 static const QString ftmwType{"FtmwType"};
 }
 
+struct WaveformEntry;
 class BlackchirpCSV;
 class WaveformBuffer;
 
@@ -79,6 +82,8 @@ public:
 
     quint64 shotIncrement() const;
     FidList parseWaveform(const QByteArray b) const;
+    FidList parseBatchFids(const std::vector<WaveformEntry> &entries) const;
+    bool addBatchFids(const std::vector<WaveformEntry> &entries);
     double ftMinMHz() const;
     double ftMaxMHz() const;
     double ftNyquistMHz() const;

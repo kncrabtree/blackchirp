@@ -1,9 +1,12 @@
 #ifndef WAVEFORMPARSER_H
 #define WAVEFORMPARSER_H
 
+#include <vector>
+
 #include <QtGlobal>
 
 #include <data/experiment/digitizerconfig.h>
+#include <data/storage/waveformbuffer.h>
 
 namespace BC::Analysis {
 
@@ -47,6 +50,12 @@ void parseWaveform(const char *src, qint64 *dst,
                    int bytesPerPoint, DigitizerConfig::ByteOrder byteOrder,
                    quint64 shotMultiplier, quint8 bitShift,
                    ParseMode mode = ParseMode::Write);
+
+void parseBatchParallel(const std::vector<WaveformEntry> &entries,
+                        qint64 *dst,
+                        int recordLength, int numRecords,
+                        int bytesPerPoint, DigitizerConfig::ByteOrder byteOrder,
+                        quint64 shotMultiplier, quint8 bitShift);
 
 } // namespace BC::Analysis
 

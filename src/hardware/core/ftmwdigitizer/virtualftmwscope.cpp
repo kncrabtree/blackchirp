@@ -36,6 +36,7 @@ VirtualFtmwScope::VirtualFtmwScope(const QString& label, QObject *parent) :
     setDefault(multiBlock,false);
     setDefault(maxBytes,2);
     setDefault(bandwidth,16000.0);
+    setDefault(interval,200);
 
     if(!containsArray(sampleRates))
         setArray(sampleRates,{

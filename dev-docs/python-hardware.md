@@ -371,18 +371,6 @@ program the hardware with it.
 | **AWG** | ChirpConfig waveform data + markers | Done |
 | **Clock** | Frequency assignments per role | Done |
 
-**AWG / ChirpConfig issue**: The AWG base class is stateless — it has
-no internal config object. Existing C++ implementations access
-`exp.ftmwConfig()->d_rfConfig.d_chirpConfig` directly in
-`prepareForExperiment()` to get the computed waveform
-(`getChirpMicroseconds()`) and marker data (`getMarkerData()`).
-PythonAwg currently sends only `{"number": N}` to the Python side,
-which means the Python script has **no access to the chirp waveform**.
-This must be fixed before PythonAwg is usable for real experiments.
-The fix involves serializing the relevant ChirpConfig data (waveform
-samples, marker data, chirp segments for DDS-style devices) and
-including it in the `prepare_for_experiment` IPC call.
-
 ### Base Class Integration Details
 
 Trampolines must respect the base class's ownership of state and
@@ -531,6 +519,9 @@ When a user creates a new Python hardware profile in
    filename (e.g., `my_flow_controller.py`)
 4. The template script is copied to the user's chosen location
 5. The saved path is automatically set as the profile's Python script path
+6. The script is scanned for class definitions, which are then placed into
+   a QComboBox for the user to select the correct class name (e.g.,
+   `FlowControllerDriver`)
 
 This ensures users always start from a working, well-documented script
 rather than an empty file.
@@ -696,4 +687,4 @@ memory for large waveforms (readWaveform).
 2. **Performance**: The IPC round-trip adds ~1ms per operation, negligible
    for instrument I/O (10-100ms). But digitizer polling (FtmwScope/LifScope
    `readWaveform`) may need optimization -- possibly batching data or
-   using shared memory for large transfers.
+   using shared memory for large transfers. See `digitizer-data-flow.md`.

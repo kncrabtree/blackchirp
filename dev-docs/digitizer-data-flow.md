@@ -365,18 +365,31 @@ between HardwareManager and AcquisitionManager during setup.
   flag: raw entries → `addFids()`; pre-accumulated → `addPreAccumulatedFids()`
 - Gating (`setAcquisitionGated(true)`) discards any partial pre-accumulation
 
-### Phase 7: Performance optimization
-- Accumulation is currently single-core; potentially spread over more cores?
-- Consider balance between AcquisitionManager load and Digitizer pre-
-  accumulation load.
+### Phase 7: Performance optimization **COMPLETE**
+- `BC::Analysis::parseBatchParallel()` processes all entries in a drain
+  batch with one chunked parallel pass over the flat sample index space
+  `[0, L)` where `L = recordLength × numRecords`. Each chunk thread
+  handles all N entries for its index slice (Write mode for entry 0,
+  Accumulate for entries 1..N-1), producing a single combined qint64
+  buffer with no inter-chunk synchronization.
+- Thread count: `P = qBound(1, L/8192, QThread::idealThreadCount())`;
+  serial fallback when P==1 (small waveforms, no overhead).
+- `FtmwConfig::parseBatchFids()` drives the parallel parse and builds a
+  FidList with `totalShots = sum of all entry shotCounts`.
+- `FtmwConfig::addBatchFids()` calls `parseBatchFids`, applies chirp
+  scoring/phase correction on the combined result, then calls
+  `FidStorageBase::addFids()` once (one mutex acquisition per drain cycle).
+- `AcquisitionManager` worker uses `addBatchFids()` for the non-CUDA
+  path; CUDA retains the per-entry serial loop.
+- `Qt6::Concurrent` added to `blackchirp-data` link dependencies.
 
-### Phase 8: Testing and benchmarking
+### Phase 8: Testing and benchmarking **COMPLETE**
 - Unit tests for WaveformBuffer (Phase 1) **COMPLETE**
 - Integration test: VirtualFtmwScope -> buffer -> AcquisitionManager **COMPLETE**
-- Regression tests: chirp scoring, phase correction, segment boundaries
-- Multi-segment acquisition test (LO scan, DR scan)
+- Regression tests: chirp scoring, phase correction, segment boundaries **COMPLETE**
+- Multi-segment acquisition test (LO scan, DR scan) **COMPLETE**
 - Peak-up mode test (rolling average semantics) **COMPLETE**
-- Autosave timing verification
+- Autosave timing verification **COMPLETE**
 
 
 ### Future: Python digitizer considerations (design only)

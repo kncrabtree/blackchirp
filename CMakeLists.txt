@@ -86,7 +86,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 # Find Qt6 components
-set(QT_REQUIRED_COMPONENTS Core Gui Widgets Network)
+set(QT_REQUIRED_COMPONENTS Core Gui Widgets Network Concurrent)
 
 # SerialPort only needed for main application, not viewer
 if(NOT BC_BUILD_VIEWER_ONLY)

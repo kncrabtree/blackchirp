@@ -8,6 +8,7 @@
 
 #include <data/analysis/waveformparser.h>
 #include <data/storage/blackchirpcsv.h>
+#include <data/storage/waveformbuffer.h>
 #include <data/storage/fidpeakupstorage.h>
 
 FtmwConfig::FtmwConfig(const QString& scopeHwKey) : HeaderStorage(BC::Store::FTMW::key)
@@ -55,6 +56,57 @@ FidList FtmwConfig::parseWaveform(const QByteArray b) const
     }
 
     return out;
+}
+
+FidList FtmwConfig::parseBatchFids(const std::vector<WaveformEntry> &entries) const
+{
+    int np = ps_scopeConfig->d_recordLength;
+    int numRec = ps_scopeConfig->d_numRecords;
+
+    QVector<qint64> buf(np * numRec, 0);
+    BC::Analysis::parseBatchParallel(entries, buf.data(), np, numRec,
+                                     ps_scopeConfig->d_bytesPerPoint,
+                                     ps_scopeConfig->d_byteOrder,
+                                     shotIncrement(), bitShift());
+
+    quint64 totalShots = 0;
+    for(const auto &e : entries)
+        totalShots += e.shotCount;
+
+    FidList out;
+    out.reserve(numRec);
+    for(int j = 0; j < numRec; ++j)
+    {
+        QVector<qint64> d(np);
+        memcpy(d.data(), buf.constData() + j*np, np*sizeof(qint64));
+
+        Fid f = d_fidTemplate;
+        f.setData(d);
+        f.setShots(totalShots);
+        out.append(f);
+    }
+
+    return out;
+}
+
+bool FtmwConfig::addBatchFids(const std::vector<WaveformEntry> &entries)
+{
+    d_errorString.clear();
+
+    FidList combined = parseBatchFids(entries);
+
+    if(d_chirpScoringEnabled || d_phaseCorrectionEnabled)
+    {
+        if(!preprocessChirp(combined))
+            return true;
+    }
+
+#ifdef BC_CUDA
+    // CUDA path expects raw bytes; batch path not supported, fall through to storage
+    return p_fidStorage->addFids(combined, d_currentShift);
+#else
+    return p_fidStorage->addFids(combined, d_currentShift);
+#endif
 }
 
 double FtmwConfig::ftMinMHz() const

@@ -8,9 +8,9 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 When multi-record mode uses many large records (e.g., 750k+ points × 10+ records),
 the live display's per-frame averaging can cause visible flicker at the default 500ms
 refresh interval. The issue is CPU-bound: averaging and FT processing compete with
-the acquisition worker for cores. Assess whether the FtmwViewWidget's async processing
-(QtConcurrent) can use a thread pool to distribute frame averaging across available
-cores, or whether the averaging should be moved to a persistent worker to avoid
+the acquisition worker for cores. Assess whether the AcquisitionManager's async 
+processing can use a thread pool to distribute accumulation across available
+cores, or whether the FtmwViewWidget averaging should be moved to a persistent worker to avoid
 overlapping computations between refresh ticks.
 
 ## Medium
