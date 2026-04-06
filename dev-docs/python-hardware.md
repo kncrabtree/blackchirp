@@ -469,7 +469,7 @@ Values are written to QSettings under the hardware's SettingsStorage key
 | PythonIOBoard | `numAnalogChannels` (int), `numDigitalChannels` (int) | Done |
 | PythonPressureController | `readOnly` (bool) | Done |
 | PythonTemperatureController | `numChannels` (uint) | Done |
-| PythonPulseGenerator | `numChannels` (int) | Pending |
+| PythonPulseGenerator | `numChannels` (int) | Done |
 
 ## Template Script Workflow
 
@@ -503,7 +503,7 @@ Template scripts follow the pattern `python_<type>_template.py` and live in
 | PythonTemperatureController | `python_temperaturecontroller_template.py` | `TemperatureControllerDriver` |
 | PythonPressureController | `python_pressurecontroller_template.py` | `PressureControllerDriver` |
 | PythonClock | `python_clock_template.py` | `ClockDriver` |
-| PythonPulseGenerator | `python_pulsegenerator_template.py` | `PulseGeneratorDriver` |
+| PythonPulseGenerator | `python_pulsegenerator_template.py` | `PulseGeneratorDriver` | Done |
 
 ### User Workflow
 
@@ -654,10 +654,15 @@ successfully:
 - Handle `sleep`/`readSettings` round-trips
 - Pass through `prepareForExperiment` (where applicable)
 
-#### PythonPulseGenerator
+#### PythonPulseGenerator (complete)
 
-The PulseGenerator trampoline has not yet been created. It follows
-Pattern B (granular methods) with ~24 `hw*` pure virtuals.
+`PythonPulseGenerator` (`pythonpulsegenerator.h/.cpp`) dispatches all 22
+`hw*` pure virtuals via IPC. Constructor reads `numChannels` from QSettings.
+`initializePGen()` initializes the process; `testConnection()` is overridden
+directly (not via a helper virtual, since PulseGenerator doesn't define one).
+`sleep()` is final in PulseGenerator and calls `setHwPulseEnabled(false)`
+internally, so Python sleep is handled automatically through IPC.
+Template: `python_pulsegenerator_template.py` (class `PulseGeneratorDriver`).
 
 #### FtmwScope / LifScope (deferred)
 
