@@ -327,8 +327,8 @@ always has current information even if config changes between calls.
 | Base Class | Config Class | configure() | Status |
 |---|---|---|---|
 | **IOBoard** | IOBoardConfig (→ DigitizerConfig) | `bool configure(IOBoardConfig&)` pure virtual | Done |
-| **LifScope** | LifDigitizerConfig (→ DigitizerConfig) | `bool configure(const LifDigitizerConfig&)` pure virtual | Existing (deferred) |
-| **FtmwScope** | FtmwDigitizerConfig (→ DigitizerConfig) | No base virtual; subclasses override `prepareForExperiment` directly | No refactor needed (deferred) |
+| **LifScope** | LifDigitizerConfig (→ DigitizerConfig) | `bool configure(const LifDigitizerConfig&)` pure virtual | Done |
+| **FtmwScope** | FtmwDigitizerConfig (→ DigitizerConfig) | No base virtual; subclasses override `prepareForExperiment` directly | Done (no refactor needed) |
 
 **Note on FtmwScope**: Unlike IOBoard and LifScope, FtmwScope does not
 have a `configure()` virtual. Each subclass (e.g., DSA71604C) overrides
@@ -475,6 +475,8 @@ Values are written to QSettings under the hardware's SettingsStorage key
 | PythonPressureController | `readOnly` (bool) | Done |
 | PythonTemperatureController | `numChannels` (uint) | Done |
 | PythonPulseGenerator | `numChannels` (int) | Done |
+| PythonFtmwScope | `numAnalogChannels` (int), `numDigitalChannels` (int) | Done |
+| PythonLifScope | `numAnalogChannels` (int), `numDigitalChannels` (int) | Done |
 
 ## Template Script Workflow
 
@@ -509,6 +511,8 @@ Template scripts follow the pattern `python_<type>_template.py` and live in
 | PythonPressureController | `python_pressurecontroller_template.py` | `PressureControllerDriver` |
 | PythonClock | `python_clock_template.py` | `ClockDriver` |
 | PythonPulseGenerator | `python_pulsegenerator_template.py` | `PulseGeneratorDriver` | Done |
+| PythonFtmwScope | `python_ftmwscope_template.py` | `FtmwScopeDriver` | Done |
+| PythonLifScope | `python_lifscope_template.py` | `LifScopeDriver` | Done |
 
 ### User Workflow
 
@@ -626,6 +630,18 @@ Infrastructure for declaring constructor parameters that need UI input:
   auto-generates widgets from config params and writes values to QSettings
   before hardware construction
 
+#### Phase 3: Digitizer Trampolines & Push Model (complete)
+
+- **`PythonProcess` refactored** to event-driven reads (`onReadyRead()`),
+  `QEventLoop`-based `sendRequest()`, and selective proxy injection via
+  `setEnabledProxies()`. See `python-process-push-refactor.md`.
+- **`ScopeProxy`** added to `python_hw_host.py`: `self.scope.emit_shot()`
+  pushes base64-encoded waveform bytes as unsolicited IPC messages.
+- **`PythonFtmwScope`** and **`PythonLifScope`** implemented with push-driven
+  acquisition (background thread in Python, `waveformReceived` signal in C++).
+- **CMake fix**: Python headers added to `HARDWARE_IMPLEMENTATION_HEADERS`
+  so AUTOMOC reliably pulls all Python trampoline object files into the binary.
+
 #### Phase 2: Template Scripts & Host Update (complete)
 
 - **`python_hw_host.py`** updated with generic keyword-argument dispatch
@@ -669,30 +685,28 @@ directly (not via a helper virtual, since PulseGenerator doesn't define one).
 internally, so Python sleep is handled automatically through IPC.
 Template: `python_pulsegenerator_template.py` (class `PulseGeneratorDriver`).
 
-#### FtmwScope / LifScope (deferred)
+#### PythonFtmwScope / PythonLifScope (complete)
 
-Pattern A types with waveform data transfer considerations.
+Both implemented with a push-driven waveform model. See
+`python-process-push-refactor.md` for full architecture details.
 
-- **LifScope**: Already has `virtual bool configure(const LifDigitizerConfig&)`
-  — the same pattern now used by IOBoard. PythonLifScope would follow
-  the PythonIOBoard pattern directly. Data volumes are small and
-  infrequent; signal-based / JSON IPC is fine.
-- **FtmwScope**: Does **not** have a `configure()` virtual, but
-  **no refactoring is needed**. The existing `prepareForExperiment()`
-  virtual is the correct hook — PythonFtmwScope overrides it to do
-  config serialization via JSON IPC, and `hwPrepareForExperiment()`
-  (final in FtmwScope) creates the WaveformBuffer afterward using the
-  validated config in `*this`.
-
-**FtmwScope waveform data strategy**: Push-driven via `ScopeProxy.emit_shot()`.
-Python encodes waveform bytes as base64 and sends an unsolicited `{"waveform": ...}`
-message; `readWaveform()` is a no-op on the C++ side. The ~1ms IPC overhead
-+ base64 decode is negligible vs. instrument I/O (10–100ms). The
-WaveformBuffer's pre-accumulation mechanism handles backpressure
-automatically if the Python round-trip is slower than the consumer
-drain rate. Shared memory optimization can be added later at the
-PythonProcess level without touching FtmwScope/buffer architecture.
-See `digitizer-data-flow.md` Phase 8 "Future" section.
+- **`PythonFtmwScope`** (`pythonftmwscope.h/.cpp`): Overrides
+  `prepareForExperiment()` to serialize `FtmwDigitizerConfig` via JSON IPC.
+  `readWaveform()` is a no-op; Python pushes waveforms via
+  `self.scope.emit_shot()` from a background thread, received as
+  `waveformReceived` signal and forwarded to `emitShot()`.
+  Template: `python_ftmwscope_template.py` (class `FtmwScopeDriver`).
+- **`PythonLifScope`** (`pythonlifscope.h/.cpp`): Overrides `configure()`
+  (called by the final `prepareForExperiment()` in `LifScope`). Python
+  pushes waveforms via `self.scope.emit_shot()`; `onWaveformReceived()`
+  converts `QByteArray` → `QVector<qint8>` and calls `emitWaveform()`.
+  Template: `python_lifscope_template.py` (class `LifScopeDriver`).
+- **`ScopeProxy`** injected selectively via `setEnabledProxies({"scope"})`.
+  See `python-process-push-refactor.md` for the proxy injection pattern.
+- **CMake fix** (`BlackchirpHardware.cmake`): Python hardware headers are now
+  appended to `HARDWARE_IMPLEMENTATION_HEADERS` so `hw_impl.h` includes them.
+  This ensures AUTOMOC generates meta-object code for each Python trampoline,
+  reliably pulling the static registration initializers into the final binary.
 
 #### Polish
 
