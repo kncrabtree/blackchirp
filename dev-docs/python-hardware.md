@@ -712,7 +712,9 @@ Both implemented with a push-driven waveform model. See
 
 - Script hot-reload improvements
 - Python environment support (venv/conda path per-profile)
-- Inline script editor in Hardware Settings dialog
+- Expose settings at profile creation time via the
+  [Hardware Settings Registry](settings-registry.md) (applies to all
+  hardware, not just Python).
 - User documentation
 
 ## Open Questions

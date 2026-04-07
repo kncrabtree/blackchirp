@@ -48,6 +48,13 @@ architecture. Users define named marker channels with roles (Protection, Gate, T
 Custom) and chirp-relative timing. AWGs report `markerCount` and pack their own bitfields.
 Phase 2 adds absolute timing and per-chirp marker overrides.
 
+### [Hardware Settings Registry](settings-registry.md)
+Unified settings registration system with metadata (labels, descriptions,
+priority levels). Hardware classes declare settings via static macros;
+settings are available before construction and presented at profile creation
+time. Replaces the `HwConfigParam` system and eliminates the gap where users
+must manually discover and configure settings after profile creation.
+
 ## Large
 
 ### [Python Hardware Implementations](python-hardware.md)
