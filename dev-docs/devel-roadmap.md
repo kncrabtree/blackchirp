@@ -13,6 +13,18 @@ processing can use a thread pool to distribute accumulation across available
 cores, or whether the FtmwViewWidget averaging should be moved to a persistent worker to avoid
 overlapping computations between refresh ticks.
 
+### [Python Script Hot-Reload](python-script-reload.md)
+Reload Python hardware scripts without restarting Blackchirp. Adds a control
+widget to HWDialog with Open in Editor, Reload, and status display. Uses the
+existing PythonProcess stop/start cycle — no HardwareObject reconstruction
+needed.
+
+### [Python Environment Support](python-env-support.md)
+Per-profile venv/conda environment path for Python hardware. Replaces the
+hardcoded `python3` executable with a configurable interpreter resolved from
+the environment directory. Stored in `HardwareProfileManager` alongside the
+existing script path and class name fields.
+
 ## Medium
 
 ### [Digitizer Data Flow Optimization](digitizer-data-flow.md)

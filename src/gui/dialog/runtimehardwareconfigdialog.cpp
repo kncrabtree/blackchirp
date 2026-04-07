@@ -1284,7 +1284,12 @@ void RuntimeHardwareConfigDialog::onAddProfile(const QString& hardwareType)
                 if (!templatePath.isEmpty()) {
                     auto result = QMessageBox::question(
                         this, tr("Python Template Script"),
-                        tr("Would you like to create a copy of the template script to customize?"),
+                        tr("<b>Python hardware scripts run with full system access.</b> "
+                           "Scripts can access files, network resources, and hardware devices "
+                           "with the same permissions as Blackchirp. Only use scripts from "
+                           "sources you trust."
+                           "<br><br>"
+                           "Would you like to create a copy of the template script to customize?"),
                         QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
 
                     if (result == QMessageBox::Yes) {

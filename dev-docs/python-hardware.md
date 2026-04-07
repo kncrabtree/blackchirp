@@ -710,17 +710,21 @@ Both implemented with a push-driven waveform model. See
 
 #### Polish
 
-- Script hot-reload improvements
-- Python environment support (venv/conda path per-profile)
+- [Script hot-reload](python-script-reload.md) with editor launch and error feedback
+- [Python environment support](python-env-support.md) (venv/conda path per-profile)
 - Expose settings at profile creation time via the
   [Hardware Settings Registry](settings-registry.md) (applies to all
   hardware, not just Python).
 - User documentation
 
-## Open Questions
+## Resolved Questions
 
-1. **Security**: Python scripts have full system access. Is a warning on
-   first use sufficient, or do we need sandboxing?
+1. **Security**: A warning is shown at profile creation time in the
+   template-copy dialog: "Python hardware scripts run with full system
+   access. Scripts can access files, network resources, and hardware
+   devices with the same permissions as Blackchirp. Only use scripts
+   from sources you trust." Sandboxing is not needed — users are
+   already running arbitrary hardware drivers.
 
 2. **Performance**: The IPC round-trip adds ~1ms per operation, negligible
    for instrument I/O (10-100ms). Digitizer waveform transfer via JSON +
