@@ -7,6 +7,8 @@ __pycache__
 *.txt.user
 clock_h.h
 hw_h.h
+hw_base.h
+hw_impl.h
 lifhw_h.h
 CLAUDE.md
 tori.b*
