@@ -392,8 +392,31 @@ between HardwareManager and AcquisitionManager during setup.
 - Autosave timing verification **COMPLETE**
 
 
-### Future: Python digitizer considerations (design only)
-- Document how PythonFtmwScope would write to the WaveformBuffer
-- Evaluate `multiprocessing.shared_memory` for zero-copy Python -> C++ transfer
-- JSON IPC would handle commands only; waveform data via shared memory
-- LifScope stays signal-based; no changes needed for PythonLifScope
+### Future: Python digitizer considerations (design assessment complete)
+
+**Recommended strategy: JSON + base64 (synchronous)**
+
+PythonFtmwScope overrides `prepareForExperiment()` to serialize config
+via JSON IPC; `hwPrepareForExperiment()` (final) creates the buffer
+afterward using validated config — no FtmwScope refactoring needed.
+
+`readWaveform()` is a no-op; the Python implementation pushes data in
+base64 encoding using a scope proxy object (like log and comm messages).
+The C++ class uses `emitShot()` to write to the buffer;
+pre-accumulation handles backpressure automatically.
+
+**Why this is sufficient**: Python digitizers target instruments with
+vendor Python SDKs where I/O is 10–100ms; the ~1ms IPC + base64
+overhead is noise. Pre-accumulation absorbs slow IPC gracefully (no
+data loss). Base64 for a 200KB waveform is <1ms decode.
+
+**Shared memory**: Deferred. Can be added as a PythonProcess-level
+feature without FtmwScope/buffer changes. Only justified if profiling
+shows base64 IPC is the bottleneck (unlikely given instrument I/O
+dominance).
+
+**LifScope**: Stays signal-based or follows the same JSON + base64
+pattern. Data volumes are small and infrequent; no special optimization
+needed.
+
+See `python-hardware.md` for full details.

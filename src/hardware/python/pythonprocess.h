@@ -3,9 +3,11 @@
 
 #ifdef BC_PYTHON_HARDWARE
 
+#include <QByteArray>
+#include <QJsonObject>
 #include <QObject>
 #include <QProcess>
-#include <QJsonObject>
+#include <QStringList>
 
 #include <functional>
 
@@ -19,6 +21,10 @@ class CommunicationProtocol;
  * PythonProcess wraps QProcess to launch a Python hardware host script,
  * communicate via JSON-lines on stdin/stdout, and handle interleaved
  * relay requests (comm, settings) and log messages during method dispatch.
+ *
+ * Reads are event-driven via readyReadStandardOutput connected to onReadyRead().
+ * sendRequest() uses a nested QEventLoop to wait for a response while still
+ * processing events (relay requests, log messages, waveform pushes).
  */
 class PythonProcess : public QObject
 {
@@ -49,8 +55,9 @@ public:
     /*!
      * \brief Send a method call to the Python subprocess
      *
-     * Blocks until Python responds. While waiting, handles interleaved
-     * relay requests (comm_query, get_setting, etc.) and log messages.
+     * Writes the request to stdin, then enters a nested QEventLoop to wait
+     * for the response. While waiting, onReadyRead() handles interleaved
+     * relay requests, log messages, and waveform pushes.
      *
      * \param request JSON object with "method" and optional parameters
      * \return Response JSON object with "result" or "error"
@@ -67,17 +74,22 @@ public:
     int timeoutMs() const { return d_timeoutMs; }
     void setTimeoutMs(int ms) { d_timeoutMs = ms; }
 
+    void setEnabledProxies(const QStringList &proxies) { d_enabledProxies = proxies; }
+
 signals:
     void logMessage(const QString &msg, LogHandler::MessageCode code);
+    void waveformReceived(const QByteArray &data, quint64 shotCount);
     void processError(const QString &errorString);
+    void responseReady();  // internal: wakes sendRequest() event loop
+
+private slots:
+    void onReadyRead();
+    void handleStderr();
 
 private:
-    void handleStderr();
     QJsonObject handleRelayRequest(const QJsonObject &relayReq);
     LogHandler::MessageCode parseLogLevel(const QString &level) const;
     void writeLine(const QJsonObject &obj);
-    QJsonObject readLineJson();
-    QJsonObject readResponseForId(int id);
 
     QProcess *p_process{nullptr};
     CommunicationProtocol *p_comm{nullptr};
@@ -87,6 +99,13 @@ private:
     QString d_hwModel;
     int d_timeoutMs{30000};
     int d_nextId{1};
+    QStringList d_enabledProxies;
+
+    // State for event-driven read loop
+    QByteArray d_readBuf;
+    bool d_waitingForResponse{false};
+    int d_expectedId{-1};
+    QJsonObject d_pendingResponse;
 };
 
 #endif // BC_PYTHON_HARDWARE

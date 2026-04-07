@@ -1,10 +1,11 @@
 #include "pythonprocess.h"
 
+#include <QEventLoop>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QCoreApplication>
-#include <QElapsedTimer>
 #include <QFile>
+#include <QTimer>
 
 #include <hardware/core/communication/communicationprotocol.h>
 
@@ -34,7 +35,8 @@ bool PythonProcess::start(const QString &hostScriptPath, const QString &userScri
     p_process = new QProcess(this);
     p_process->setProcessChannelMode(QProcess::SeparateChannels);
 
-    connect(p_process, &QProcess::readyReadStandardError, this, &PythonProcess::handleStderr);
+    connect(p_process, &QProcess::readyReadStandardOutput, this, &PythonProcess::onReadyRead);
+    connect(p_process, &QProcess::readyReadStandardError,  this, &PythonProcess::handleStderr);
 
     p_process->start(QStringLiteral("python3"),
                      {hostScriptPath, userScriptPath, className});
@@ -47,17 +49,14 @@ bool PythonProcess::start(const QString &hostScriptPath, const QString &userScri
         return false;
     }
 
-    // Send _init message to set up proxies
+    // Send _init message to inject proxies
     QJsonObject initReq;
-    initReq[QStringLiteral("id")] = 0;
-    initReq[QStringLiteral("method")] = QStringLiteral("_init");
-    initReq[QStringLiteral("key")] = d_hwKey;
-    initReq[QStringLiteral("model")] = d_hwModel;
+    initReq[QStringLiteral("method")]  = QStringLiteral("_init");
+    initReq[QStringLiteral("key")]     = d_hwKey;
+    initReq[QStringLiteral("model")]   = d_hwModel;
+    initReq[QStringLiteral("proxies")] = QJsonArray::fromStringList(d_enabledProxies);
 
-    writeLine(initReq);
-
-    // Read the _init response (with relay/log handling)
-    auto resp = readResponseForId(0);
+    auto resp = sendRequest(initReq);
     if (resp.contains(QStringLiteral("error"))) {
         auto errMsg = QString("Python startup failed: %1").arg(
             resp[QStringLiteral("error")].toString());
@@ -70,14 +69,10 @@ bool PythonProcess::start(const QString &hostScriptPath, const QString &userScri
     // Call the user script's initialize() so it can set up state before
     // testConnection. This mirrors the C++ HardwareObject lifecycle:
     // constructor -> initialize() -> testConnection().
-    int initId = d_nextId++;
     QJsonObject userInitReq;
-    userInitReq[QStringLiteral("id")] = initId;
     userInitReq[QStringLiteral("method")] = QStringLiteral("initialize");
 
-    writeLine(userInitReq);
-
-    auto initResp = readResponseForId(initId);
+    auto initResp = sendRequest(userInitReq);
     if (initResp.contains(QStringLiteral("error"))) {
         auto errMsg = QString("Python initialize() failed: %1").arg(
             initResp[QStringLiteral("error")].toString());
@@ -103,6 +98,10 @@ void PythonProcess::stop()
 
     delete p_process;
     p_process = nullptr;
+
+    d_readBuf.clear();
+    d_waitingForResponse = false;
+    d_pendingResponse = {};
 }
 
 bool PythonProcess::isRunning() const
@@ -122,8 +121,43 @@ QJsonObject PythonProcess::sendRequest(const QJsonObject &request)
     QJsonObject req = request;
     req[QStringLiteral("id")] = id;
 
+    d_expectedId = id;
+    d_waitingForResponse = true;
+    d_pendingResponse = {};
+
     writeLine(req);
-    return readResponseForId(id);
+
+    QEventLoop loop;
+    connect(this, &PythonProcess::responseReady, &loop, &QEventLoop::quit);
+    connect(p_process, &QProcess::finished, &loop, [this, &loop]() {
+        onReadyRead(); // drain any remaining stdout before giving up
+        loop.quit();
+    });
+    QTimer::singleShot(d_timeoutMs, &loop, &QEventLoop::quit);
+    loop.exec();
+
+    d_waitingForResponse = false;
+
+    if (d_pendingResponse.isEmpty()) {
+        QJsonObject err;
+        if (!isRunning()) {
+            QString stderrText;
+            if (p_process) {
+                QByteArray data = p_process->readAllStandardError();
+                stderrText = QString::fromUtf8(data).trimmed();
+            }
+            if (stderrText.isEmpty())
+                err[QStringLiteral("error")] = QStringLiteral("Python process terminated unexpectedly");
+            else
+                err[QStringLiteral("error")] = QString("Python process terminated: %1").arg(stderrText);
+        } else {
+            err[QStringLiteral("error")] = QString("Timeout waiting for Python response (id=%1, %2ms)")
+                                               .arg(id).arg(d_timeoutMs);
+        }
+        return err;
+    }
+
+    return d_pendingResponse;
 }
 
 void PythonProcess::setComm(CommunicationProtocol *comm)
@@ -144,67 +178,68 @@ void PythonProcess::setHardwareInfo(const QString &key, const QString &model)
 }
 
 // ============================================================================
-// Private implementation
+// Private slots
 // ============================================================================
 
-QJsonObject PythonProcess::readResponseForId(int id)
+void PythonProcess::onReadyRead()
 {
-    // Read lines until we get a response with the matching id.
-    // While waiting, handle relay requests and log messages.
-    QElapsedTimer timer;
-    timer.start();
+    if (!p_process)
+        return;
 
-    while (timer.elapsed() < d_timeoutMs) {
-        auto line = readLineJson();
-        if (line.isEmpty()) {
-            // No data available yet, or process died
-            if (!isRunning()) {
-                // Process died — drain stderr synchronously for the error details.
-                // handleStderr() won't fire because we're not in the event loop.
-                QString stderrText;
-                if (p_process) {
-                    p_process->waitForFinished(1000);
-                    QByteArray data = p_process->readAllStandardError();
-                    stderrText = QString::fromUtf8(data).trimmed();
-                }
-                QJsonObject err;
-                if (stderrText.isEmpty())
-                    err[QStringLiteral("error")] = QStringLiteral("Python process terminated unexpectedly");
-                else
-                    err[QStringLiteral("error")] = QString("Python process terminated: %1").arg(stderrText);
-                return err;
-            }
+    d_readBuf.append(p_process->readAllStandardOutput());
+
+    while (true) {
+        int idx = d_readBuf.indexOf('\n');
+        if (idx < 0)
+            break;
+
+        QByteArray line = d_readBuf.left(idx).trimmed();
+        d_readBuf.remove(0, idx + 1);
+
+        if (line.isEmpty())
+            continue;
+
+        QJsonParseError parseErr;
+        QJsonDocument doc = QJsonDocument::fromJson(line, &parseErr);
+        if (parseErr.error != QJsonParseError::NoError || !doc.isObject())
+            continue;
+
+        QJsonObject msg = doc.object();
+
+        // Log message (unsolicited)
+        if (msg.contains(QStringLiteral("log"))) {
+            QString text = msg[QStringLiteral("log")].toString();
+            auto code = parseLogLevel(msg[QStringLiteral("level")].toString());
+            emit logMessage(text, code);
             continue;
         }
 
-        // Check for log message (unsolicited)
-        if (line.contains(QStringLiteral("log"))) {
-            QString msg = line[QStringLiteral("log")].toString();
-            auto code = parseLogLevel(line[QStringLiteral("level")].toString());
-            emit logMessage(msg, code);
+        // Waveform push (unsolicited)
+        if (msg.contains(QStringLiteral("waveform"))) {
+            QByteArray data = QByteArray::fromBase64(
+                msg[QStringLiteral("waveform")].toString().toLatin1());
+            auto shots = static_cast<quint64>(msg[QStringLiteral("shots")].toInteger(1));
+            emit waveformReceived(data, shots);
             continue;
         }
 
-        // Check for relay request from Python
-        if (line.contains(QStringLiteral("relay"))) {
-            auto relayResp = handleRelayRequest(line);
+        // Relay request from Python
+        if (msg.contains(QStringLiteral("relay"))) {
+            auto relayResp = handleRelayRequest(msg);
             writeLine(relayResp);
             continue;
         }
 
-        // Check for matching response
-        if (line.contains(QStringLiteral("id")) && line[QStringLiteral("id")].toInt() == id) {
-            return line;
+        // Response to sendRequest
+        if (msg.contains(QStringLiteral("id"))) {
+            int msgId = msg[QStringLiteral("id")].toInt();
+            if (d_waitingForResponse && msgId == d_expectedId) {
+                d_pendingResponse = msg;
+                emit responseReady();
+            }
+            continue;
         }
-
-        // Unrecognized message -- skip
     }
-
-    // Timeout
-    QJsonObject err;
-    err[QStringLiteral("error")] = QString("Timeout waiting for Python response (id=%1, %2ms)")
-                                       .arg(id).arg(d_timeoutMs);
-    return err;
 }
 
 void PythonProcess::handleStderr()
@@ -219,6 +254,10 @@ void PythonProcess::handleStderr()
             emit logMessage(QString("Python stderr: %1").arg(text), LogHandler::Warning);
     }
 }
+
+// ============================================================================
+// Private helpers
+// ============================================================================
 
 QJsonObject PythonProcess::handleRelayRequest(const QJsonObject &relayReq)
 {
@@ -311,30 +350,4 @@ void PythonProcess::writeLine(const QJsonObject &obj)
     line.append('\n');
     p_process->write(line);
     p_process->waitForBytesWritten(1000);
-}
-
-QJsonObject PythonProcess::readLineJson()
-{
-    if (!p_process)
-        return {};
-
-    // Wait for data to be available
-    if (!p_process->canReadLine()) {
-        if (!p_process->waitForReadyRead(100))
-            return {};
-    }
-
-    if (!p_process->canReadLine())
-        return {};
-
-    QByteArray line = p_process->readLine();
-    if (line.isEmpty())
-        return {};
-
-    QJsonParseError err;
-    QJsonDocument doc = QJsonDocument::fromJson(line.trimmed(), &err);
-    if (err.error != QJsonParseError::NoError || !doc.isObject())
-        return {};
-
-    return doc.object();
 }

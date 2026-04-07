@@ -328,13 +328,18 @@ always has current information even if config changes between calls.
 |---|---|---|---|
 | **IOBoard** | IOBoardConfig (→ DigitizerConfig) | `bool configure(IOBoardConfig&)` pure virtual | Done |
 | **LifScope** | LifDigitizerConfig (→ DigitizerConfig) | `bool configure(const LifDigitizerConfig&)` pure virtual | Existing (deferred) |
-| **FtmwScope** | FtmwDigitizerConfig (→ DigitizerConfig) | No base virtual; subclasses override `prepareForExperiment` directly | Needs refactor (deferred) |
+| **FtmwScope** | FtmwDigitizerConfig (→ DigitizerConfig) | No base virtual; subclasses override `prepareForExperiment` directly | No refactor needed (deferred) |
 
 **Note on FtmwScope**: Unlike IOBoard and LifScope, FtmwScope does not
-currently have a `configure()` virtual. Each subclass (e.g., DSA71604C)
-overrides `prepareForExperiment()` and applies config directly. A future
-PythonFtmwScope would likely need a `configure()` virtual added to
-`FtmwScope`, following the same pattern as IOBoard and LifScope.
+have a `configure()` virtual. Each subclass (e.g., DSA71604C) overrides
+`prepareForExperiment()` and applies config directly. Analysis of the
+call chain shows **no refactoring is needed** for PythonFtmwScope:
+`hwPrepareForExperiment()` (final in FtmwScope) calls
+`HardwareObject::hwPrepareForExperiment()`, which calls the virtual
+`prepareForExperiment()`, and then creates the WaveformBuffer using the
+validated config in `*this`. PythonFtmwScope simply overrides
+`prepareForExperiment()` to serialize the config to JSON IPC, and the
+buffer creation happens automatically afterward.
 
 #### Pattern B: Granular Methods (base class manages state)
 
@@ -352,7 +357,7 @@ base class handles all state management.
 | Base Class | Config Class | Virtual Style | Status |
 |---|---|---|---|
 | **FlowController** | FlowConfig (contained) | 8 `hw*` pure virtuals (per-channel reads/writes) | Done |
-| **PulseGenerator** | PulseGenConfig (contained) | ~24 `hw*` pure virtuals + `setAll()` bulk | Pending |
+| **PulseGenerator** | PulseGenConfig (contained) | ~22 `hw*` pure virtuals + `setAll()` bulk | Done |
 | **TemperatureController** | TemperatureControllerConfig (contained) | 3 `hw*` pure virtuals (per-channel) | Done |
 | **PressureController** | PressureControllerConfig (contained) | 9 `hw*` pure virtuals (scalar reads/writes) | Done |
 
@@ -666,16 +671,28 @@ Template: `python_pulsegenerator_template.py` (class `PulseGeneratorDriver`).
 
 #### FtmwScope / LifScope (deferred)
 
-Performance-sensitive Pattern A types. Both inherit from DigitizerConfig
-and need bulk configure. May also need batched data transfer or shared
-memory for large waveforms (readWaveform).
+Pattern A types with waveform data transfer considerations.
 
 - **LifScope**: Already has `virtual bool configure(const LifDigitizerConfig&)`
   — the same pattern now used by IOBoard. PythonLifScope would follow
-  the PythonIOBoard pattern directly.
-- **FtmwScope**: Does **not** have a `configure()` virtual. Subclasses
-  override `prepareForExperiment()` directly. A PythonFtmwScope would
-  require adding a `configure()` virtual to FtmwScope first.
+  the PythonIOBoard pattern directly. Data volumes are small and
+  infrequent; signal-based / JSON IPC is fine.
+- **FtmwScope**: Does **not** have a `configure()` virtual, but
+  **no refactoring is needed**. The existing `prepareForExperiment()`
+  virtual is the correct hook — PythonFtmwScope overrides it to do
+  config serialization via JSON IPC, and `hwPrepareForExperiment()`
+  (final in FtmwScope) creates the WaveformBuffer afterward using the
+  validated config in `*this`.
+
+**FtmwScope waveform data strategy**: Push-driven via `ScopeProxy.emit_shot()`.
+Python encodes waveform bytes as base64 and sends an unsolicited `{"waveform": ...}`
+message; `readWaveform()` is a no-op on the C++ side. The ~1ms IPC overhead
++ base64 decode is negligible vs. instrument I/O (10–100ms). The
+WaveformBuffer's pre-accumulation mechanism handles backpressure
+automatically if the Python round-trip is slower than the consumer
+drain rate. Shared memory optimization can be added later at the
+PythonProcess level without touching FtmwScope/buffer architecture.
+See `digitizer-data-flow.md` Phase 8 "Future" section.
 
 #### Polish
 
@@ -690,6 +707,8 @@ memory for large waveforms (readWaveform).
    first use sufficient, or do we need sandboxing?
 
 2. **Performance**: The IPC round-trip adds ~1ms per operation, negligible
-   for instrument I/O (10-100ms). But digitizer polling (FtmwScope/LifScope
-   `readWaveform`) may need optimization -- possibly batching data or
-   using shared memory for large transfers. See `digitizer-data-flow.md`.
+   for instrument I/O (10-100ms). Digitizer waveform transfer via JSON +
+   base64 is adequate for Python digitizer use cases; the WaveformBuffer's
+   pre-accumulation mechanism handles backpressure automatically. Shared
+   memory optimization deferred to PythonProcess level if profiling shows
+   it's needed. See `digitizer-data-flow.md`.

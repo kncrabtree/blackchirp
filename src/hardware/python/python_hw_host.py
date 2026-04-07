@@ -177,6 +177,26 @@ class LogProxy:
         _send_json({"log": str(msg), "level": "Highlight"})
 
 
+class ScopeProxy:
+    """Proxy for pushing waveform data to C++ emitShot().
+
+    Injected as self.scope during _init. Safe to call from any thread —
+    _send_json is protected by _stdout_lock.
+    """
+
+    def emit_shot(self, raw_bytes, shots=1):
+        """Push raw waveform data to the C++ WaveformBuffer.
+
+        Args:
+            raw_bytes (bytes): Raw waveform data matching the configured
+                format (record_length × bytes_per_point × num_records).
+            shots (int): Number of shots represented (1 for single-shot,
+                N for pre-accumulated data).
+        """
+        b64 = base64.b64encode(bytes(raw_bytes)).decode('ascii')
+        _send_json({"waveform": b64, "shots": shots})
+
+
 # =============================================================================
 # Script loading
 # =============================================================================
@@ -225,12 +245,22 @@ def dispatch(user_obj, request):
     method = request.get("method", "")
 
     if method == "_init":
-        # Initialization: inject proxies
+        # Inject standard proxies (always present)
         user_obj.comm = CommProxy()
         user_obj.settings = SettingsProxy()
         user_obj.settings._key = request.get("key", "")
         user_obj.settings._model = request.get("model", "")
         user_obj.log = LogProxy()
+
+        # Inject optional proxies based on hardware type
+        _OPTIONAL_PROXY_FACTORIES = {
+            "scope": ScopeProxy,
+        }
+        for name in request.get("proxies", []):
+            factory = _OPTIONAL_PROXY_FACTORIES.get(name)
+            if factory:
+                setattr(user_obj, name, factory())
+
         return True
 
     if method in _SIMPLE_METHODS:
