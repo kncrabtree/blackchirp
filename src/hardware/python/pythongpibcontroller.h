@@ -1,8 +1,6 @@
 #ifndef PYTHONGPIBCONTROLLER_H
 #define PYTHONGPIBCONTROLLER_H
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <hardware/optional/gpibcontroller/gpibcontroller.h>
 #include <hardware/core/hardwareregistry.h>
 
@@ -44,5 +42,4 @@ protected:
     QStringList forbiddenKeys() const override;
 };
 
-#endif // BC_PYTHON_HARDWARE
 #endif // PYTHONGPIBCONTROLLER_H

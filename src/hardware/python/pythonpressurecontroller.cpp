@@ -1,7 +1,5 @@
 #include "pythonpressurecontroller.h"
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <QJsonObject>
 #include <cmath>
 
@@ -208,5 +206,3 @@ void PythonPressureController::hwCloseGateValve()
     req[QStringLiteral("method")] = QStringLiteral("hw_close_gate_valve");
     pu_process->sendRequest(req);
 }
-
-#endif // BC_PYTHON_HARDWARE

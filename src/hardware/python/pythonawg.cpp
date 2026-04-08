@@ -1,7 +1,5 @@
 #include "pythonawg.h"
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <QJsonArray>
 #include <QJsonObject>
 
@@ -239,5 +237,3 @@ AuxDataStorage::AuxDataMap PythonAwg::parseAuxDataResult(const QJsonObject &resp
         out[it.key()] = QVariant(it.value().toDouble());
     return out;
 }
-
-#endif // BC_PYTHON_HARDWARE

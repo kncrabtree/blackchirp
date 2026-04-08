@@ -1,8 +1,6 @@
 #ifndef PYTHONTEMPERATURECONTROLLER_H
 #define PYTHONTEMPERATURECONTROLLER_H
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 #include <hardware/core/hardwareregistry.h>
 
@@ -41,5 +39,4 @@ protected:
 
 };
 
-#endif // BC_PYTHON_HARDWARE
 #endif // PYTHONTEMPERATURECONTROLLER_H

@@ -1,7 +1,5 @@
 #include "pythonpulsegenerator.h"
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <QJsonObject>
 
 #include <hardware/core/hardwareregistration.h>
@@ -435,5 +433,3 @@ bool PythonPulseGenerator::readHwPulseEnabled()
 
     return resp[QStringLiteral("result")].toBool(false);
 }
-
-#endif // BC_PYTHON_HARDWARE

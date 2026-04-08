@@ -1,7 +1,5 @@
 #include "pythonioboard.h"
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <QJsonArray>
 #include <QJsonObject>
 
@@ -339,5 +337,3 @@ QStringList PythonIOBoard::forbiddenKeys() const
     keys << BC::Key::Digi::numAnalogChannels << BC::Key::Digi::numDigitalChannels;
     return keys;
 }
-
-#endif // BC_PYTHON_HARDWARE

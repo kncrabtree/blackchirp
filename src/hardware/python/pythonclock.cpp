@@ -1,7 +1,5 @@
 #include "pythonclock.h"
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <QJsonObject>
 
 #include <hardware/core/hardwareregistration.h>
@@ -152,5 +150,3 @@ QStringList PythonClock::forbiddenKeys() const
     keys << BC::Key::PythonClock::numOutputs << BC::Key::Clock::tunable;
     return keys;
 }
-
-#endif // BC_PYTHON_HARDWARE

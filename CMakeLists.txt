@@ -204,10 +204,6 @@ function(add_blackchirp_definitions target_name)
         target_compile_definitions(${target_name} PRIVATE BC_CUDA)
     endif()
 
-    # Python hardware definitions
-    if(BC_ENABLE_PYTHON_HARDWARE)
-        target_compile_definitions(${target_name} PRIVATE BC_PYTHON_HARDWARE)
-    endif()
 endfunction()
 
 # Viewer-specific version function
@@ -575,5 +571,4 @@ message(STATUS "  Qt version: ${Qt6_VERSION}")
 message(STATUS "  Build viewer only: ${BC_BUILD_VIEWER_ONLY}")
 message(STATUS "  Enable tests: ${BC_BUILD_TESTS}")
 message(STATUS "  Enable CUDA: ${BC_ENABLE_CUDA}")
-message(STATUS "  Enable Python hardware: ${BC_ENABLE_PYTHON_HARDWARE}")
 message(STATUS "")

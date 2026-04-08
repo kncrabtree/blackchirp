@@ -1,7 +1,5 @@
 #include "pythonflowcontroller.h"
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <QJsonObject>
 
 #include <hardware/core/hardwareregistration.h>
@@ -201,5 +199,3 @@ int PythonFlowController::hwReadPressureControlMode()
 
     return resp[QStringLiteral("result")].toInt(-1);
 }
-
-#endif // BC_PYTHON_HARDWARE

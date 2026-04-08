@@ -1,7 +1,5 @@
 #include "pythonliflaser.h"
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <QJsonObject>
 
 #include <hardware/core/hardwareregistration.h>
@@ -167,5 +165,3 @@ QStringList PythonLifLaser::forbiddenKeys() const
 {
     return LifLaser::forbiddenKeys() + pythonForbiddenKeys();
 }
-
-#endif // BC_PYTHON_HARDWARE

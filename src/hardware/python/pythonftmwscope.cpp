@@ -1,7 +1,5 @@
 #include "pythonftmwscope.h"
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <QJsonArray>
 #include <QJsonObject>
 
@@ -350,5 +348,3 @@ bool PythonFtmwScope::jsonToConfig(const QJsonObject &obj, FtmwDigitizerConfig &
 
     return true;
 }
-
-#endif // BC_PYTHON_HARDWARE

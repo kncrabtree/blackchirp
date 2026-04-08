@@ -1,8 +1,6 @@
 #ifndef PYTHONLIFLASER_H
 #define PYTHONLIFLASER_H
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <hardware/core/liflaser/liflaser.h>
 #include <hardware/core/hardwareregistry.h>
 
@@ -47,5 +45,4 @@ private:
     bool setFl(bool en) override;
 };
 
-#endif // BC_PYTHON_HARDWARE
 #endif // PYTHONLIFLASER_H

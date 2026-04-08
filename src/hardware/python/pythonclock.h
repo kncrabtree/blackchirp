@@ -1,8 +1,6 @@
 #ifndef PYTHONCLOCK_H
 #define PYTHONCLOCK_H
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <hardware/core/clock/clock.h>
 #include <hardware/core/hardwareregistry.h>
 
@@ -52,5 +50,4 @@ protected:
 
 };
 
-#endif // BC_PYTHON_HARDWARE
 #endif // PYTHONCLOCK_H

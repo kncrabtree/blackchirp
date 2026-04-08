@@ -1,7 +1,5 @@
 #include "pythongpibcontroller.h"
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <QJsonObject>
 
 #include <hardware/core/hardwareregistration.h>
@@ -119,5 +117,3 @@ QStringList PythonGpibController::forbiddenKeys() const
 {
     return GpibController::forbiddenKeys() + pythonForbiddenKeys();
 }
-
-#endif // BC_PYTHON_HARDWARE

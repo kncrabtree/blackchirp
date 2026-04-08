@@ -1,8 +1,6 @@
 #ifndef PYTHONHARDWAREBASE_H
 #define PYTHONHARDWAREBASE_H
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <memory>
 #include <QString>
 #include <QStringList>
@@ -41,6 +39,17 @@ public:
      * by the runtime hardware config for Python hardware.
      */
     static QStringList pythonForbiddenKeys();
+
+    /*!
+     * \brief Resolve the Python executable from an environment directory
+     *
+     * Checks for venv/conda layout (bin/python3, bin/python, Scripts/python.exe).
+     * Falls back to "python3" if envPath is empty or no interpreter is found.
+     *
+     * \param envPath Path to venv or conda environment directory (may be empty)
+     * \return Resolved executable path or "python3"
+     */
+    static QString resolvePythonExecutable(const QString &envPath);
 
 protected:
     /*!
@@ -107,5 +116,4 @@ private:
     QString d_pythonErrorString;
 };
 
-#endif // BC_PYTHON_HARDWARE
 #endif // PYTHONHARDWAREBASE_H

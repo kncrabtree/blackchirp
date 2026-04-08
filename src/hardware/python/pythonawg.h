@@ -1,8 +1,6 @@
 #ifndef PYTHONAWG_H
 #define PYTHONAWG_H
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <hardware/optional/chirpsource/awg.h>
 
 #include "pythonhardwarebase.h"
@@ -41,5 +39,4 @@ private:
     AuxDataStorage::AuxDataMap parseAuxDataResult(const QJsonObject &response);
 };
 
-#endif // BC_PYTHON_HARDWARE
 #endif // PYTHONAWG_H

@@ -1,7 +1,5 @@
 #include "pythontemperaturecontroller.h"
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <QJsonObject>
 #include <cmath>
 
@@ -112,5 +110,3 @@ QStringList PythonTemperatureController::forbiddenKeys() const
 {
     return TemperatureController::forbiddenKeys() + pythonForbiddenKeys();
 }
-
-#endif // BC_PYTHON_HARDWARE

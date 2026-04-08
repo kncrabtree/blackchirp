@@ -1,7 +1,5 @@
 #include "pythonlifscope.h"
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <QJsonObject>
 
 #include <hardware/core/hardwareregistration.h>
@@ -361,5 +359,3 @@ bool PythonLifScope::jsonToConfig(const QJsonObject &obj, LifDigitizerConfig &co
 
     return true;
 }
-
-#endif // BC_PYTHON_HARDWARE

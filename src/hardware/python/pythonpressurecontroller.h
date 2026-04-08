@@ -1,8 +1,6 @@
 #ifndef PYTHONPRESSURECONTROLLER_H
 #define PYTHONPRESSURECONTROLLER_H
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
 #include <hardware/core/hardwareregistry.h>
 
@@ -54,5 +52,4 @@ private:
 
 };
 
-#endif // BC_PYTHON_HARDWARE
 #endif // PYTHONPRESSURECONTROLLER_H

@@ -1,8 +1,6 @@
 #ifndef PYTHONFLOWCONTROLLER_H
 #define PYTHONFLOWCONTROLLER_H
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 
 #include "pythonhardwarebase.h"
@@ -46,5 +44,4 @@ private:
     int hwReadPressureControlMode() override;
 };
 
-#endif // BC_PYTHON_HARDWARE
 #endif // PYTHONFLOWCONTROLLER_H

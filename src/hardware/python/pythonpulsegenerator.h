@@ -1,8 +1,6 @@
 #ifndef PYTHONPULSEGENERATOR_H
 #define PYTHONPULSEGENERATOR_H
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 #include <hardware/core/hardwareregistry.h>
 
@@ -75,5 +73,4 @@ private:
     bool readHwPulseEnabled() override;
 };
 
-#endif // BC_PYTHON_HARDWARE
 #endif // PYTHONPULSEGENERATOR_H

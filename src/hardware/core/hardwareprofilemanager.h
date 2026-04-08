@@ -328,6 +328,23 @@ public:
     bool setPythonClassName(const QString& type, const QString& label, const QString& name);
 
     /*!
+     * \brief Get Python environment path for a specific profile
+     * \param type Hardware type
+     * \param label Profile label
+     * \return Path to venv/conda environment directory, or empty string if not set
+     */
+    QString getPythonEnvPath(const QString& type, const QString& label) const;
+
+    /*!
+     * \brief Set Python environment path for a specific profile
+     * \param type Hardware type
+     * \param label Profile label
+     * \param path Path to venv/conda environment directory (empty = system python3)
+     * \return True if successfully set
+     */
+    bool setPythonEnvPath(const QString& type, const QString& label, const QString& path);
+
+    /*!
      * \brief Get all hardware types that have profiles
      * \return List of hardware types with at least one profile
      */
@@ -530,6 +547,7 @@ private:
         std::optional<bool> threaded; /*!< Threading override (nullopt = use type-level default) */
         QString pythonScriptPath;    /*!< Python script path (only used by Python hardware types) */
         QString pythonClassName;     /*!< Python class name (only used by Python hardware types) */
+        QString pythonEnvPath;       /*!< Python environment directory (venv/conda; empty = system python3) */
 
         ProfileInfo() : created(QDateTime::currentDateTime()),
                        modified(QDateTime::currentDateTime()) {}
@@ -651,6 +669,7 @@ namespace BC::Key::HardwareProfiles {
     static const QString threaded{"threaded"};              /*!< Threading override subkey */
     static const QString pythonScriptPath{"pythonScriptPath"}; /*!< Python script path subkey */
     static const QString pythonClassName{"pythonClassName"};   /*!< Python class name subkey */
+    static const QString pythonEnvPath{"pythonEnvPath"};       /*!< Python environment directory subkey */
 }
 
 Q_DECLARE_METATYPE(HardwareProfileData)

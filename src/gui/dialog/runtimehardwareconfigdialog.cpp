@@ -31,6 +31,8 @@
 #include <QSpinBox>
 #include <QDoubleSpinBox>
 #include <QCoreApplication>
+#include <QProcess>
+#include <QTimer>
 #include <data/bcglobals.h>
 #include <data/settings/hardwarekeys.h>
 #include <data/storage/applicationconfigmanager.h>
@@ -41,6 +43,7 @@
 #include <hardware/library/spectrumlibrary.h>
 #include <hardware/library/labjacklibrary.h>
 #include <gui/style/themecolors.h>
+#include <hardware/python/pythonhardwarebase.h>
 
 RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
     : QDialog(parent),
@@ -612,112 +615,213 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
     // Python settings — shown when the selected profile uses a Python implementation
     QLineEdit* pythonScriptEdit = nullptr;
     QComboBox* pythonClassEdit = nullptr;
-#ifdef BC_PYTHON_HARDWARE
-    {
-        auto* pythonWidget = new QWidget(advancedContainer);
-        pythonWidget->setObjectName("pythonWidget");
-        auto* pythonLayout = new QVBoxLayout(pythonWidget);
-        pythonLayout->setContentsMargins(0, 0, 0, 0);
+    QLineEdit* pythonEnvEdit = nullptr;
+    QLabel* pythonEnvStatusLabel = nullptr;
 
-        // Script path row
-        auto* scriptRow = new QWidget(pythonWidget);
-        auto* scriptLayout = new QHBoxLayout(scriptRow);
-        scriptLayout->setContentsMargins(0, 0, 0, 0);
+    auto* pythonWidget = new QWidget(advancedContainer);
+    pythonWidget->setObjectName("pythonWidget");
+    auto* pythonLayout = new QVBoxLayout(pythonWidget);
+    pythonLayout->setContentsMargins(0, 0, 0, 0);
 
-        auto* scriptLabel = new QLabel(tr("Python Script:"), scriptRow);
-        pythonScriptEdit = new QLineEdit(scriptRow);
-        pythonScriptEdit->setObjectName("pythonScriptEdit");
-        pythonScriptEdit->setPlaceholderText(tr("Path to Python hardware script..."));
+    // Script path row
+    auto* scriptRow = new QWidget(pythonWidget);
+    auto* scriptLayout = new QHBoxLayout(scriptRow);
+    scriptLayout->setContentsMargins(0, 0, 0, 0);
 
-        auto* browseButton = new QPushButton(tr("Browse..."), scriptRow);
-        connect(browseButton, &QPushButton::clicked, this, [this, pythonScriptEdit]() {
-            QString path = QFileDialog::getOpenFileName(this, tr("Select Python Script"),
-                                                         QString(), tr("Python Files (*.py)"));
-            if (!path.isEmpty())
-                pythonScriptEdit->setText(path);
-        });
+    auto* scriptLabel = new QLabel(tr("Python Script:"), scriptRow);
+    pythonScriptEdit = new QLineEdit(scriptRow);
+    pythonScriptEdit->setObjectName("pythonScriptEdit");
+    pythonScriptEdit->setPlaceholderText(tr("Path to Python hardware script..."));
 
-        scriptLayout->addWidget(scriptLabel);
-        scriptLayout->addWidget(pythonScriptEdit, 1);
-        scriptLayout->addWidget(browseButton);
-        pythonLayout->addWidget(scriptRow);
+    auto* browseButton = new QPushButton(tr("Browse..."), scriptRow);
+    connect(browseButton, &QPushButton::clicked, this, [this, pythonScriptEdit]() {
+        QString path = QFileDialog::getOpenFileName(this, tr("Select Python Script"),
+                                                     QString(), tr("Python Files (*.py)"));
+        if (!path.isEmpty())
+            pythonScriptEdit->setText(path);
+    });
 
-        // Class name row
-        auto* classRow = new QWidget(pythonWidget);
-        auto* classLayout = new QHBoxLayout(classRow);
-        classLayout->setContentsMargins(0, 0, 0, 0);
+    scriptLayout->addWidget(scriptLabel);
+    scriptLayout->addWidget(pythonScriptEdit, 1);
+    scriptLayout->addWidget(browseButton);
+    pythonLayout->addWidget(scriptRow);
 
-        auto* classLabel = new QLabel(tr("Python Class:"), classRow);
-        pythonClassEdit = new QComboBox(classRow);
-        pythonClassEdit->setObjectName("pythonClassEdit");
-        pythonClassEdit->setEditable(true);
+    // Class name row
+    auto* classRow = new QWidget(pythonWidget);
+    auto* classLayout = new QHBoxLayout(classRow);
+    classLayout->setContentsMargins(0, 0, 0, 0);
 
-        classLayout->addWidget(classLabel);
-        classLayout->addWidget(pythonClassEdit, 1);
-        pythonLayout->addWidget(classRow);
+    auto* classLabel = new QLabel(tr("Python Class:"), classRow);
+    pythonClassEdit = new QComboBox(classRow);
+    pythonClassEdit->setObjectName("pythonClassEdit");
+    pythonClassEdit->setEditable(true);
 
-        // Helper: derive default class name from implementation (e.g., "PythonAwg" -> "AwgDriver")
-        auto defaultPythonClassName = [](const QString& impl) -> QString {
-            if (!impl.startsWith(QStringLiteral("Python")))
-                return QString();
-            return impl.mid(6) + QStringLiteral("Driver");
-        };
+    classLayout->addWidget(classLabel);
+    classLayout->addWidget(pythonClassEdit, 1);
+    pythonLayout->addWidget(classRow);
 
-        // Helper: check whether the selected profile is a Python implementation
-        auto isSelectedPython = [hardwareType, profilesList]() -> bool {
-            auto selected = profilesList->selectedItems();
-            if (selected.isEmpty()) return false;
-            QString label = selected.first()->data(Qt::UserRole).toString();
-            if (label.isEmpty()) return false;
-            QString impl = HardwareProfileManager::instance().getImplementation(hardwareType, label);
-            return impl.contains(QStringLiteral("Python"));
-        };
+    // Environment path row
+    auto* envRow = new QWidget(pythonWidget);
+    auto* envLayout = new QHBoxLayout(envRow);
+    envLayout->setContentsMargins(0, 0, 0, 0);
 
-        // Initialize visibility and values from the current selection
-        bool isPython = isSelectedPython();
-        pythonWidget->setVisible(isPython);
-        if (isPython && !activeHwKey.isEmpty()) {
-            auto [type, label] = BC::Key::parseKey(activeHwKey);
-            QString impl = HardwareProfileManager::instance().getImplementation(type, label);
+    auto* envLabel = new QLabel(tr("Python Environment:"), envRow);
+    pythonEnvEdit = new QLineEdit(envRow);
+    pythonEnvEdit->setObjectName("pythonEnvEdit");
+    pythonEnvEdit->setPlaceholderText(tr("Path to venv or conda environment (leave empty for system Python)..."));
+    pythonEnvEdit->setToolTip(tr("Path to a venv or conda environment directory. Leave empty to use the system Python."));
 
-            auto sit = d_previewPythonScriptConfig.find(activeHwKey);
-            if (sit != d_previewPythonScriptConfig.end()) {
-                pythonScriptEdit->setText(sit->second);
+    auto* envBrowseButton = new QPushButton(tr("Browse..."), envRow);
+    connect(envBrowseButton, &QPushButton::clicked, this, [this, pythonEnvEdit]() {
+        QString path = QFileDialog::getExistingDirectory(this, tr("Select Python Environment Directory"));
+        if (!path.isEmpty())
+            pythonEnvEdit->setText(path);
+    });
+
+    envLayout->addWidget(envLabel);
+    envLayout->addWidget(pythonEnvEdit, 1);
+    envLayout->addWidget(envBrowseButton);
+    pythonLayout->addWidget(envRow);
+
+    // Environment status label — shows resolved Python version or an error
+    pythonEnvStatusLabel = new QLabel(pythonWidget);
+    pythonEnvStatusLabel->setObjectName("pythonEnvStatusLabel");
+    pythonLayout->addWidget(pythonEnvStatusLabel);
+
+    // Helper: run an executable with --version and return the first output line
+    auto getPythonVersion = [](const QString &exe) -> QString {
+        QProcess proc;
+        proc.start(exe, {QStringLiteral("--version")});
+        if (!proc.waitForFinished(3000))
+            return {};
+        // Python 3 writes to stdout; Python 2 writes to stderr
+        QByteArray out = proc.readAllStandardOutput().trimmed();
+        if (!out.isEmpty()) return QString::fromUtf8(out);
+        return QString::fromUtf8(proc.readAllStandardError().trimmed());
+    };
+
+    // Helper: update the status label based on the current env path
+    auto updateEnvStatus = [pythonEnvEdit, pythonEnvStatusLabel, getPythonVersion]() {
+        const QString envPath = pythonEnvEdit->text().trimmed();
+        const QString exe = PythonHardwareBase::resolvePythonExecutable(envPath);
+        const QString version = getPythonVersion(exe);
+
+        if (envPath.isEmpty()) {
+            if (!version.isEmpty()) {
+                pythonEnvStatusLabel->setText(tr("System: %1").arg(version));
+                pythonEnvStatusLabel->setStyleSheet(
+                    QString("color: %1;").arg(ThemeColors::getCSSColor(
+                        ThemeColors::SubtleText, pythonEnvStatusLabel)));
             } else {
-                pythonScriptEdit->setText(
-                    HardwareProfileManager::instance().getPythonScriptPath(type, label));
+                pythonEnvStatusLabel->setText(tr("System Python not found"));
+                pythonEnvStatusLabel->setStyleSheet(
+                    QString("color: %1;").arg(ThemeColors::getCSSColor(
+                        ThemeColors::StatusError, pythonEnvStatusLabel)));
             }
-
-            pythonClassEdit->lineEdit()->setPlaceholderText(defaultPythonClassName(impl));
-            populateClassCombo(pythonClassEdit, pythonScriptEdit->text());
-            auto cit = d_previewPythonClassConfig.find(activeHwKey);
-            if (cit != d_previewPythonClassConfig.end()) {
-                pythonClassEdit->setCurrentText(cit->second);
+        } else {
+            // resolvePythonExecutable returns "python3" as fallback when nothing is found
+            if (exe == QStringLiteral("python3") && !version.isEmpty()) {
+                // The env path didn't contain an interpreter but system python3 works
+                pythonEnvStatusLabel->setText(tr("No interpreter found in environment; falling back to system Python"));
+                pythonEnvStatusLabel->setStyleSheet(
+                    QString("color: %1;").arg(ThemeColors::getCSSColor(
+                        ThemeColors::StatusWarning, pythonEnvStatusLabel)));
+            } else if (!version.isEmpty()) {
+                pythonEnvStatusLabel->setText(version);
+                pythonEnvStatusLabel->setStyleSheet(
+                    QString("color: %1;").arg(ThemeColors::getCSSColor(
+                        ThemeColors::StatusSuccess, pythonEnvStatusLabel)));
             } else {
-                pythonClassEdit->setCurrentText(
-                    HardwareProfileManager::instance().getPythonClassName(type, label));
+                pythonEnvStatusLabel->setText(tr("No Python found"));
+                pythonEnvStatusLabel->setStyleSheet(
+                    QString("color: %1;").arg(ThemeColors::getCSSColor(
+                        ThemeColors::StatusError, pythonEnvStatusLabel)));
             }
         }
+    };
 
-        // Wire text changes into preview configs
-        connect(pythonScriptEdit, &QLineEdit::textChanged, this,
-                [this, getActiveHwKey, pythonClassEdit, populateClassCombo](const QString& text) {
-            QString hwKey = getActiveHwKey();
-            if (hwKey.isEmpty()) return;
-            d_previewPythonScriptConfig[hwKey] = text;
-            populateClassCombo(pythonClassEdit, text);
-        });
+    // Debounce timer: update status 500 ms after the user stops typing
+    auto* envStatusTimer = new QTimer(pythonWidget);
+    envStatusTimer->setSingleShot(true);
+    connect(envStatusTimer, &QTimer::timeout, this, [updateEnvStatus]() { updateEnvStatus(); });
 
-        connect(pythonClassEdit, &QComboBox::currentTextChanged, this,
-                [this, getActiveHwKey](const QString& text) {
-            QString hwKey = getActiveHwKey();
-            if (hwKey.isEmpty()) return;
-            d_previewPythonClassConfig[hwKey] = text;
-        });
+    // Helper: derive default class name from implementation (e.g., "PythonAwg" -> "AwgDriver")
+    auto defaultPythonClassName = [](const QString& impl) -> QString {
+        if (!impl.startsWith(QStringLiteral("Python")))
+            return QString();
+        return impl.mid(6) + QStringLiteral("Driver");
+    };
 
-        advancedLayout->addWidget(pythonWidget);
+    // Helper: check whether the selected profile is a Python implementation
+    auto isSelectedPython = [hardwareType, profilesList]() -> bool {
+        auto selected = profilesList->selectedItems();
+        if (selected.isEmpty()) return false;
+        QString label = selected.first()->data(Qt::UserRole).toString();
+        if (label.isEmpty()) return false;
+        QString impl = HardwareProfileManager::instance().getImplementation(hardwareType, label);
+        return impl.contains(QStringLiteral("Python"));
+    };
+
+    // Initialize visibility and values from the current selection
+    bool isPython = isSelectedPython();
+    pythonWidget->setVisible(isPython);
+    if (isPython && !activeHwKey.isEmpty()) {
+        auto [type, label] = BC::Key::parseKey(activeHwKey);
+        QString impl = HardwareProfileManager::instance().getImplementation(type, label);
+
+        auto sit = d_previewPythonScriptConfig.find(activeHwKey);
+        if (sit != d_previewPythonScriptConfig.end()) {
+            pythonScriptEdit->setText(sit->second);
+        } else {
+            pythonScriptEdit->setText(
+                HardwareProfileManager::instance().getPythonScriptPath(type, label));
+        }
+
+        pythonClassEdit->lineEdit()->setPlaceholderText(defaultPythonClassName(impl));
+        populateClassCombo(pythonClassEdit, pythonScriptEdit->text());
+        auto cit = d_previewPythonClassConfig.find(activeHwKey);
+        if (cit != d_previewPythonClassConfig.end()) {
+            pythonClassEdit->setCurrentText(cit->second);
+        } else {
+            pythonClassEdit->setCurrentText(
+                HardwareProfileManager::instance().getPythonClassName(type, label));
+        }
+
+        auto eit = d_previewPythonEnvConfig.find(activeHwKey);
+        if (eit != d_previewPythonEnvConfig.end()) {
+            pythonEnvEdit->setText(eit->second);
+        } else {
+            pythonEnvEdit->setText(
+                HardwareProfileManager::instance().getPythonEnvPath(type, label));
+        }
+        updateEnvStatus();
     }
-#endif
+
+    // Wire text changes into preview configs
+    connect(pythonScriptEdit, &QLineEdit::textChanged, this,
+            [this, getActiveHwKey, pythonClassEdit, populateClassCombo](const QString& text) {
+        QString hwKey = getActiveHwKey();
+        if (hwKey.isEmpty()) return;
+        d_previewPythonScriptConfig[hwKey] = text;
+        populateClassCombo(pythonClassEdit, text);
+    });
+
+    connect(pythonClassEdit, &QComboBox::currentTextChanged, this,
+            [this, getActiveHwKey](const QString& text) {
+        QString hwKey = getActiveHwKey();
+        if (hwKey.isEmpty()) return;
+        d_previewPythonClassConfig[hwKey] = text;
+    });
+
+    connect(pythonEnvEdit, &QLineEdit::textChanged, this,
+            [this, getActiveHwKey, envStatusTimer](const QString& text) {
+        QString hwKey = getActiveHwKey();
+        if (hwKey.isEmpty()) return;
+        d_previewPythonEnvConfig[hwKey] = text;
+        envStatusTimer->start(500);
+    });
+
+    advancedLayout->addWidget(pythonWidget);
 
     advancedContainer->setLayout(advancedLayout);
 
@@ -730,11 +834,10 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
     });
 
     // Update Advanced section when profile selection changes in the list
-    // Capture the parent widget so we can toggle visibility of the Python settings
-    QWidget* pythonWidget = advancedContainer->findChild<QWidget*>("pythonWidget");
     connect(profilesList, &QListWidget::itemSelectionChanged, this,
             [this, hardwareType, profilesList, threadedCheckbox, typeDefault, getActiveHwKey,
-             pythonScriptEdit, pythonClassEdit, pythonWidget, populateClassCombo]() {
+             pythonScriptEdit, pythonClassEdit, pythonEnvEdit, pythonWidget, populateClassCombo,
+             updateEnvStatus]() {
         QString hwKey = getActiveHwKey();
         if (hwKey.isEmpty()) {
             threadedCheckbox->setEnabled(false);
@@ -784,6 +887,18 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
                         pythonClassEdit->setCurrentText(
                             HardwareProfileManager::instance().getPythonClassName(type, label));
                     }
+                }
+
+                if (pythonEnvEdit) {
+                    QSignalBlocker envBlocker(pythonEnvEdit);
+                    auto eit = d_previewPythonEnvConfig.find(hwKey);
+                    if (eit != d_previewPythonEnvConfig.end()) {
+                        pythonEnvEdit->setText(eit->second);
+                    } else {
+                        pythonEnvEdit->setText(
+                            HardwareProfileManager::instance().getPythonEnvPath(type, label));
+                    }
+                    updateEnvStatus();
                 }
             }
         }
@@ -1261,7 +1376,6 @@ void RuntimeHardwareConfigDialog::onAddProfile(const QString& hardwareType)
             }
             
             // Offer to copy template script for Python hardware implementations
-#ifdef BC_PYTHON_HARDWARE
             if (implementation.startsWith(QStringLiteral("Python"))) {
                 // Derive template filename: "PythonAwg" -> "python_awg_template.py"
                 QString typePart = implementation.mid(6); // Remove "Python" prefix
@@ -1323,7 +1437,6 @@ void RuntimeHardwareConfigDialog::onAddProfile(const QString& hardwareType)
                     }
                 }
             }
-#endif
 
             // Refresh the right panel to show the new profile with correct radio button state
             updateRightPanelForHardwareType(hardwareType);
@@ -1468,6 +1581,11 @@ void RuntimeHardwareConfigDialog::onDialogAccepted()
             auto [type, label] = BC::Key::parseKey(hwKey);
             if (!type.isEmpty() && !label.isEmpty())
                 HardwareProfileManager::instance().setPythonClassName(type, label, className);
+        }
+        for (auto& [hwKey, envPath] : d_previewPythonEnvConfig) {
+            auto [type, label] = BC::Key::parseKey(hwKey);
+            if (!type.isEmpty() && !label.isEmpty())
+                HardwareProfileManager::instance().setPythonEnvPath(type, label, envPath);
         }
 
         // Save all hardware profiles to persistent storage now that dialog is finished

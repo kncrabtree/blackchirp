@@ -1,8 +1,6 @@
 #ifndef PYTHONPROCESS_H
 #define PYTHONPROCESS_H
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <QByteArray>
 #include <QJsonObject>
 #include <QObject>
@@ -35,12 +33,13 @@ public:
 
     /*!
      * \brief Launch the Python subprocess
+     * \param pythonExe Python executable path (e.g. "/path/to/venv/bin/python3" or "python3")
      * \param hostScriptPath Path to python_hw_host.py
      * \param userScriptPath Path to the user's hardware script
      * \param className Name of the Python class to instantiate
      * \return True if process started and _init succeeded
      */
-    bool start(const QString &hostScriptPath, const QString &userScriptPath, const QString &className);
+    bool start(const QString &pythonExe, const QString &hostScriptPath, const QString &userScriptPath, const QString &className);
 
     /*!
      * \brief Stop the Python subprocess
@@ -108,5 +107,4 @@ private:
     QJsonObject d_pendingResponse;
 };
 
-#endif // BC_PYTHON_HARDWARE
 #endif // PYTHONPROCESS_H

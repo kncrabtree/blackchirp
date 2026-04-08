@@ -430,6 +430,39 @@ bool HardwareProfileManager::setPythonClassName(const QString& type, const QStri
     return true;
 }
 
+QString HardwareProfileManager::getPythonEnvPath(const QString& type, const QString& label) const
+{
+    QReadLocker locker(&d_profilesLock);
+
+    auto typeIt = d_profiles.find(type);
+    if (typeIt == d_profiles.end())
+        return QString();
+
+    auto labelIt = typeIt->find(label);
+    if (labelIt == typeIt->end())
+        return QString();
+
+    return labelIt->pythonEnvPath;
+}
+
+bool HardwareProfileManager::setPythonEnvPath(const QString& type, const QString& label, const QString& path)
+{
+    QWriteLocker locker(&d_profilesLock);
+
+    auto typeIt = d_profiles.find(type);
+    if (typeIt == d_profiles.end())
+        return false;
+
+    auto labelIt = typeIt->find(label);
+    if (labelIt == typeIt->end())
+        return false;
+
+    labelIt->pythonEnvPath = path;
+    labelIt->modified = QDateTime::currentDateTime();
+    setModified();
+    return true;
+}
+
 QStringList HardwareProfileManager::getConfiguredHardwareTypes() const
 {
     QReadLocker locker(&d_profilesLock);
@@ -972,6 +1005,7 @@ void HardwareProfileManager::loadProfilesFromSettings()
 
         profile.pythonScriptPath = getGroupValue<QString>(groupKey, BC::Key::HardwareProfiles::pythonScriptPath, QString());
         profile.pythonClassName = getGroupValue<QString>(groupKey, BC::Key::HardwareProfiles::pythonClassName, QString());
+        profile.pythonEnvPath = getGroupValue<QString>(groupKey, BC::Key::HardwareProfiles::pythonEnvPath, QString());
 
         // Only add if we have a valid implementation that exists in the registry
         if (!profile.implementation.isEmpty() && 
@@ -1017,6 +1051,9 @@ void HardwareProfileManager::saveProfilesToSettings()
             }
             if (!profile.pythonClassName.isEmpty()) {
                 setGroupValue(groupKey, BC::Key::HardwareProfiles::pythonClassName, profile.pythonClassName, false);
+            }
+            if (!profile.pythonEnvPath.isEmpty()) {
+                setGroupValue(groupKey, BC::Key::HardwareProfiles::pythonEnvPath, profile.pythonEnvPath, false);
             }
         }
     }

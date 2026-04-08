@@ -1,8 +1,6 @@
 #ifndef PYTHONLIFSCOPE_H
 #define PYTHONLIFSCOPE_H
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <hardware/core/lifdigitizer/lifscope.h>
 #include <hardware/core/hardwareregistry.h>
 
@@ -54,5 +52,4 @@ private:
     bool jsonToConfig(const QJsonObject &obj, LifDigitizerConfig &config) const;
 };
 
-#endif // BC_PYTHON_HARDWARE
 #endif // PYTHONLIFSCOPE_H

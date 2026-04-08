@@ -1,8 +1,6 @@
 #ifndef PYTHONFTMWSCOPE_H
 #define PYTHONFTMWSCOPE_H
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <hardware/core/ftmwdigitizer/ftmwscope.h>
 #include <hardware/core/hardwareregistry.h>
 
@@ -53,5 +51,4 @@ private:
     bool jsonToConfig(const QJsonObject &obj, FtmwDigitizerConfig &config) const;
 };
 
-#endif // BC_PYTHON_HARDWARE
 #endif // PYTHONFTMWSCOPE_H

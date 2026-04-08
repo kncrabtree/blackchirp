@@ -18,7 +18,7 @@ PythonProcess::~PythonProcess()
     stop();
 }
 
-bool PythonProcess::start(const QString &hostScriptPath, const QString &userScriptPath, const QString &className)
+bool PythonProcess::start(const QString &pythonExe, const QString &hostScriptPath, const QString &userScriptPath, const QString &className)
 {
     stop();
 
@@ -38,8 +38,7 @@ bool PythonProcess::start(const QString &hostScriptPath, const QString &userScri
     connect(p_process, &QProcess::readyReadStandardOutput, this, &PythonProcess::onReadyRead);
     connect(p_process, &QProcess::readyReadStandardError,  this, &PythonProcess::handleStderr);
 
-    p_process->start(QStringLiteral("python3"),
-                     {hostScriptPath, userScriptPath, className});
+    p_process->start(pythonExe, {hostScriptPath, userScriptPath, className});
 
     if (!p_process->waitForStarted(5000)) {
         emit processError(QString("Failed to start Python process: %1")

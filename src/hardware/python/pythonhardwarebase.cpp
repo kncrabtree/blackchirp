@@ -1,7 +1,5 @@
 #include "pythonhardwarebase.h"
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <QCoreApplication>
 #include <QFile>
 #include <QJsonObject>
@@ -83,7 +81,29 @@ bool PythonHardwareBase::startPythonProcess()
         return false;
     }
 
-    return pu_process->start(hostScript, scriptPath, className);
+    QString envPath = HardwareProfileManager::instance().getPythonEnvPath(hwType, label);
+    QString pythonExe = resolvePythonExecutable(envPath);
+
+    return pu_process->start(pythonExe, hostScript, scriptPath, className);
+}
+
+QString PythonHardwareBase::resolvePythonExecutable(const QString &envPath)
+{
+    if (envPath.isEmpty())
+        return QStringLiteral("python3");
+
+    const QStringList candidates = {
+        envPath + QStringLiteral("/bin/python3"),
+        envPath + QStringLiteral("/bin/python"),
+        envPath + QStringLiteral("/Scripts/python.exe"),
+    };
+
+    for (const auto &path : candidates) {
+        if (QFile::exists(path))
+            return path;
+    }
+
+    return QStringLiteral("python3");
 }
 
 QString PythonHardwareBase::findHostScript()
@@ -120,5 +140,3 @@ void PythonHardwareBase::pythonReadSettings()
         pu_process->sendRequest(req);
     }
 }
-
-#endif // BC_PYTHON_HARDWARE

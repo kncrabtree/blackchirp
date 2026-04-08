@@ -1,8 +1,6 @@
 #ifndef PYTHONIOBOARD_H
 #define PYTHONIOBOARD_H
 
-#ifdef BC_PYTHON_HARDWARE
-
 #include <hardware/optional/ioboard/ioboard.h>
 #include <hardware/core/hardwareregistry.h>
 
@@ -46,5 +44,4 @@ private:
     bool jsonToConfig(const QJsonObject &obj, IOBoardConfig &config) const;
 };
 
-#endif // BC_PYTHON_HARDWARE
 #endif // PYTHONIOBOARD_H
