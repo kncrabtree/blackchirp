@@ -4,15 +4,6 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 
 ## Small
 
-### FtmwViewWidget Performance Under High Data Rates
-When multi-record mode uses many large records (e.g., 750k+ points × 10+ records),
-the live display's per-frame averaging can cause visible flicker at the default 500ms
-refresh interval. The issue is CPU-bound: averaging and FT processing compete with
-the acquisition worker for cores. Assess whether the AcquisitionManager's async 
-processing can use a thread pool to distribute accumulation across available
-cores, or whether the FtmwViewWidget averaging should be moved to a persistent worker to avoid
-overlapping computations between refresh ticks.
-
 ### [Python Script Hot-Reload](python-script-reload.md)
 Reload Python hardware scripts without restarting Blackchirp. Adds a control
 widget to HWDialog with Open in Editor, Reload, and status display. Uses the

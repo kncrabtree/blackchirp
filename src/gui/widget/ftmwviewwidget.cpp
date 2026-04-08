@@ -215,7 +215,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         Q_UNUSED(key)
         ps.fidList.clear();
         ps.ft = Ft();
-        ps.frame = 0;
+        ps.frame = (key == d_liveId ? -1 : 0);
         ps.segment = 0;
         ps.backup = 0;
         ps.loadWhenDone = false;
