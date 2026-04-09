@@ -6,10 +6,12 @@
 #include <QStringList>
 #include <QVector>
 #include <QHash>
+#include <QMap>
 #include <QMutex>
 #include <functional>
 #include <memory>
 
+#include <data/storage/settingsstorage.h>
 #include <hardware/core/communication/communicationprotocol.h>
 
 class HardwareObject;
@@ -32,6 +34,50 @@ struct HwConfigParam {
 };
 
 /*!
+ * \brief Priority level for hardware settings
+ *
+ * Controls visibility in the profile creation dialog and HWDialog:
+ * - Required: Must be set before construction. Shown prominently.
+ *   May not be editable after profile creation.
+ * - Important: Has a sensible default but the user should review it.
+ *   Shown in the main settings area.
+ * - Optional: Rarely needs changing. Shown under a collapsible
+ *   "Advanced Settings" section.
+ */
+enum class HwSettingPriority { Required, Important, Optional };
+
+/*!
+ * \brief Scalar setting definition with metadata
+ *
+ * Registered statically at program startup. The defaultValue's QVariant
+ * type determines the UI widget (int -> QSpinBox, double -> QDoubleSpinBox,
+ * bool -> QCheckBox, QString -> QLineEdit).
+ */
+struct HwSettingDef {
+    QString key;              ///< SettingsStorage key
+    QString label;            ///< User-facing display label
+    QString description;      ///< Explanatory tooltip/help text
+    QVariant defaultValue;    ///< Type-aware default value
+    QVariant minimum;         ///< Optional min for numeric types (invalid = no limit)
+    QVariant maximum;         ///< Optional max for numeric types (invalid = no limit)
+    HwSettingPriority priority = HwSettingPriority::Optional;
+};
+
+/*!
+ * \brief Array setting definition with metadata
+ *
+ * Describes an array-type setting (e.g., sampleRates). The entries vector
+ * holds the default array contents; each entry is a SettingsMap.
+ */
+struct HwArraySettingDef {
+    QString key;              ///< SettingsStorage array key
+    QString label;            ///< User-facing display label
+    QString description;      ///< Explanatory tooltip/help text
+    std::vector<SettingsStorage::SettingsMap> entries;  ///< Default entries
+    HwSettingPriority priority = HwSettingPriority::Optional;
+};
+
+/*!
  * \brief Hardware registration information
  */
 struct HardwareRegistration {
@@ -42,6 +88,8 @@ struct HardwareRegistration {
     QStringList libraryDependencies;                          /*!< List of vendor libraries this hardware depends on */
     QVector<CommunicationProtocol::CommType> supportedProtocols; /*!< Communication protocols supported by this hardware */
     QVector<HwConfigParam> configParams;                       /*!< Parameters requiring UI input before construction */
+    QVector<HwSettingDef> settingDefs;                         /*!< Registered setting definitions with metadata */
+    QMap<QString, HwArraySettingDef> arraySettingDefs;          /*!< Registered array setting definitions */
 
     // Constructor
     HardwareRegistration() = default;
@@ -213,6 +261,59 @@ public:
      * \return List of configuration parameters, or empty if none registered
      */
     QVector<HwConfigParam> getConfigParams(const QString& key, const QString& subKey) const;
+
+    /*!
+     * \brief Add setting definitions to an existing hardware registration
+     * \param key Hardware type key
+     * \param subKey Implementation key
+     * \param settings List of setting definitions with metadata
+     * \return True if settings were added successfully
+     */
+    bool addSettingDefs(const QString& key, const QString& subKey,
+                        const QVector<HwSettingDef>& settings);
+
+    /*!
+     * \brief Get setting definitions for a hardware implementation
+     * \param key Hardware type key
+     * \param subKey Implementation key
+     * \return List of setting definitions, or empty if none registered
+     */
+    QVector<HwSettingDef> getSettingDefs(const QString& key, const QString& subKey) const;
+
+    /*!
+     * \brief Add array setting metadata to an existing hardware registration
+     * \param key Hardware type key
+     * \param subKey Implementation key
+     * \param arrayKey The array setting key
+     * \param label User-facing display label
+     * \param description Explanatory tooltip/help text
+     * \param priority Visibility priority level
+     * \return True if array setting definition was added successfully
+     */
+    bool addArraySettingDef(const QString& key, const QString& subKey,
+                            const QString& arrayKey, const QString& label,
+                            const QString& description, HwSettingPriority priority);
+
+    /*!
+     * \brief Add one entry to an array setting
+     * \param key Hardware type key
+     * \param subKey Implementation key
+     * \param arrayKey The array setting key (must already be registered via addArraySettingDef)
+     * \param entry Map of sub-key/value pairs for this entry
+     * \return True if entry was added successfully
+     */
+    bool addArraySettingEntry(const QString& key, const QString& subKey,
+                              const QString& arrayKey,
+                              const SettingsStorage::SettingsMap& entry);
+
+    /*!
+     * \brief Get all array setting definitions for a hardware implementation
+     * \param key Hardware type key
+     * \param subKey Implementation key
+     * \return Map of array key to array setting definitions, or empty if none registered
+     */
+    QMap<QString, HwArraySettingDef> getArraySettingDefs(
+        const QString& key, const QString& subKey) const;
 
     /*!
      * \brief Add library dependency to existing hardware registration

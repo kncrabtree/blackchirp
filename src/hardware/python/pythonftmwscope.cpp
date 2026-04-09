@@ -7,12 +7,72 @@
 #include <data/bcglobals.h>
 #include <data/settings/hardwarekeys.h>
 
+using namespace BC::Key::FtmwScope;
+using namespace BC::Key::Digi;
+
 // ============================================================================
 // Registration
 // ============================================================================
 REGISTER_HARDWARE_META(PythonFtmwScope, "Python FTMW Digitizer (user-defined Python script)")
 REGISTER_HARDWARE_PROTOCOLS(PythonFtmwScope, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
 REGISTER_HARDWARE_PARAMS(PythonFtmwScope)
+REGISTER_HARDWARE_SETTINGS(PythonFtmwScope,
+    {numAnalogChannels,  "Analog Channels",  "Number of analog inputs",
+     4, 1, 32, HwSettingPriority::Required},
+    {numDigitalChannels, "Digital Channels",  "Number of digital inputs",
+     0, 0, 32, HwSettingPriority::Required},
+    {hasAuxTriggerChannel, "Aux Trigger Channel", "Has auxiliary trigger input",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {minFullScale,       "Min Full Scale (V)", "Minimum full scale voltage",
+     5e-2, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxFullScale,       "Max Full Scale (V)", "Maximum full scale voltage",
+     2.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {minVOffset,         "Min V Offset (V)",   "Minimum voltage offset",
+     -2.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxVOffset,         "Max V Offset (V)",   "Maximum voltage offset",
+     2.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {isTriggered,        "Triggered",          "Digitizer uses external trigger",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {minTrigDelay,       "Min Trig Delay (us)", "Minimum trigger delay",
+     -10.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxTrigDelay,       "Max Trig Delay (us)", "Maximum trigger delay",
+     10.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {minTrigLevel,       "Min Trig Level (V)",  "Minimum trigger level",
+     -5.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxTrigLevel,       "Max Trig Level (V)",  "Maximum trigger level",
+     5.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxRecordLength,    "Max Record Length",   "Maximum record length in samples",
+     100000000, 0, QVariant{}, HwSettingPriority::Optional},
+    {canBlockAverage,    "Block Average",       "Supports block averaging",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxAverages,        "Max Averages",        "Maximum number of averages",
+     100, 1, QVariant{}, HwSettingPriority::Optional},
+    {canMultiRecord,     "Multi Record",        "Supports multi-record acquisition",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxRecords,         "Max Records",         "Maximum number of records",
+     100, 1, QVariant{}, HwSettingPriority::Optional},
+    {multiBlock,         "Multi Block",         "Can block average and multi-record simultaneously",
+     false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxBytes,           "Max Bytes/Point",     "Maximum bytes per data point",
+     2, 1, 8, HwSettingPriority::Optional},
+    {bandwidth,          "Bandwidth (MHz)",     "Analog bandwidth",
+     16000.0, QVariant{}, QVariant{}, HwSettingPriority::Important}
+)
+REGISTER_HARDWARE_ARRAY(PythonFtmwScope, sampleRates,
+    "Sample Rates", "Available digitizer sample rates",
+    HwSettingPriority::Important)
+REGISTER_HARDWARE_ARRAY_ENTRY(PythonFtmwScope, sampleRates,
+    {{srText, "2 GSa/s"}, {srValue, 2e9}})
+REGISTER_HARDWARE_ARRAY_ENTRY(PythonFtmwScope, sampleRates,
+    {{srText, "5 GSa/s"}, {srValue, 5e9}})
+REGISTER_HARDWARE_ARRAY_ENTRY(PythonFtmwScope, sampleRates,
+    {{srText, "10 GSa/s"}, {srValue, 10e9}})
+REGISTER_HARDWARE_ARRAY_ENTRY(PythonFtmwScope, sampleRates,
+    {{srText, "20 GSa/s"}, {srValue, 20e9}})
+REGISTER_HARDWARE_ARRAY_ENTRY(PythonFtmwScope, sampleRates,
+    {{srText, "50 GSa/s"}, {srValue, 50e9}})
+REGISTER_HARDWARE_ARRAY_ENTRY(PythonFtmwScope, sampleRates,
+    {{srText, "100 GSa/s"}, {srValue, 100e9}})
 
 // ============================================================================
 // Constructor
@@ -22,40 +82,6 @@ PythonFtmwScope::PythonFtmwScope(const QString &label, QObject *parent) :
     PythonHardwareBase(d_key, d_model)
 {
     d_threaded = true;
-
-    using namespace BC::Key::Digi;
-    setDefault(numAnalogChannels, 4);
-    setDefault(numDigitalChannels, 0);
-    setDefault(hasAuxTriggerChannel, true);
-    setDefault(minFullScale, 5e-2);
-    setDefault(maxFullScale, 2.0);
-    setDefault(minVOffset, -2.0);
-    setDefault(maxVOffset, 2.0);
-    setDefault(isTriggered, true);
-    setDefault(minTrigDelay, -10.0);
-    setDefault(maxTrigDelay, 10.0);
-    setDefault(minTrigLevel, -5.0);
-    setDefault(maxTrigLevel, 5.0);
-    setDefault(maxRecordLength, 100000000);
-    setDefault(canBlockAverage, true);
-    setDefault(maxAverages, 100);
-    setDefault(canMultiRecord, true);
-    setDefault(maxRecords, 100);
-    setDefault(multiBlock, false);
-    setDefault(maxBytes, 2);
-    setDefault(BC::Key::FtmwScope::bandwidth, 16000.0);
-
-    if(!containsArray(sampleRates))
-        setArray(sampleRates,{
-                     {{srText,"2 GSa/s"},{srValue,2e9}},
-                       {{srText,"5 GSa/s"},{srValue,5e9}},
-                       {{srText,"10 GSa/s"},{srValue,10e9}},
-                       {{srText,"20 GSa/s"},{srValue,20e9}},
-                       {{srText,"50 GSa/s"},{srValue,50e9}},
-                       {{srText,"100 GSa/s"},{srValue,100e9}}
-                     });
-
-    save();
 }
 
 // ============================================================================
@@ -63,7 +89,6 @@ PythonFtmwScope::PythonFtmwScope(const QString &label, QObject *parent) :
 // ============================================================================
 QVector<HwConfigParam> PythonFtmwScope::configParams()
 {
-    using namespace BC::Key::Digi;
     return {
         { numAnalogChannels,  QStringLiteral("Analog Channels"),  QVariant(0), QVariant(0), QVariant(32) },
         { numDigitalChannels, QStringLiteral("Digital Channels"), QVariant(0), QVariant(0), QVariant(32) },

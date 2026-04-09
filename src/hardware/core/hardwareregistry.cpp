@@ -240,6 +240,92 @@ QVector<HwConfigParam> HardwareRegistry::getConfigParams(const QString& key, con
     return it.value().configParams;
 }
 
+bool HardwareRegistry::addSettingDefs(const QString& key, const QString& subKey,
+                                      const QVector<HwSettingDef>& settings)
+{
+    QMutexLocker locker(&d_registryMutex);
+
+    QString registryKey = makeRegistryKey(key, subKey);
+    auto it = d_registrations.find(registryKey);
+
+    if (it == d_registrations.end()) {
+        qWarning() << "Cannot add setting defs - hardware not registered:" << key << subKey;
+        return false;
+    }
+
+    it.value().settingDefs.append(settings);
+    return true;
+}
+
+QVector<HwSettingDef> HardwareRegistry::getSettingDefs(const QString& key, const QString& subKey) const
+{
+    QMutexLocker locker(&d_registryMutex);
+
+    QString registryKey = makeRegistryKey(key, subKey);
+    auto it = d_registrations.find(registryKey);
+
+    if (it == d_registrations.end())
+        return {};
+
+    return it.value().settingDefs;
+}
+
+bool HardwareRegistry::addArraySettingDef(const QString& key, const QString& subKey,
+                                          const QString& arrayKey, const QString& label,
+                                          const QString& description, HwSettingPriority priority)
+{
+    QMutexLocker locker(&d_registryMutex);
+
+    QString registryKey = makeRegistryKey(key, subKey);
+    auto it = d_registrations.find(registryKey);
+
+    if (it == d_registrations.end()) {
+        qWarning() << "Cannot add array setting def - hardware not registered:" << key << subKey;
+        return false;
+    }
+
+    it.value().arraySettingDefs[arrayKey] = HwArraySettingDef{arrayKey, label, description, {}, priority};
+    return true;
+}
+
+bool HardwareRegistry::addArraySettingEntry(const QString& key, const QString& subKey,
+                                            const QString& arrayKey,
+                                            const SettingsStorage::SettingsMap& entry)
+{
+    QMutexLocker locker(&d_registryMutex);
+
+    QString registryKey = makeRegistryKey(key, subKey);
+    auto it = d_registrations.find(registryKey);
+
+    if (it == d_registrations.end()) {
+        qWarning() << "Cannot add array setting entry - hardware not registered:" << key << subKey;
+        return false;
+    }
+
+    auto arrayIt = it.value().arraySettingDefs.find(arrayKey);
+    if (arrayIt == it.value().arraySettingDefs.end()) {
+        qWarning() << "Cannot add array entry - array key not registered:" << arrayKey << "for" << key << subKey;
+        return false;
+    }
+
+    arrayIt.value().entries.push_back(entry);
+    return true;
+}
+
+QMap<QString, HwArraySettingDef> HardwareRegistry::getArraySettingDefs(
+    const QString& key, const QString& subKey) const
+{
+    QMutexLocker locker(&d_registryMutex);
+
+    QString registryKey = makeRegistryKey(key, subKey);
+    auto it = d_registrations.find(registryKey);
+
+    if (it == d_registrations.end())
+        return {};
+
+    return it.value().arraySettingDefs;
+}
+
 bool HardwareRegistry::addLibraryDependency(const QString& key, const QString& subKey, const QString& libraryName,
                                            std::function<VendorLibrary*()> libraryGetter)
 {

@@ -9,7 +9,7 @@ None.
 
 ## Medium
 
-### [Digitizer Data Flow Optimization](digitizer-data-flow.md)
+### [Digitizer Data Flow Optimization](digitizer-data-flow.md) **COMPLETE**
 Replace per-shot Qt signal emission (Digitizer -> HardwareManager ->
 AcquisitionManager) with a bounded SPSC ring buffer shared between the digitizer
 and AcquisitionManager threads. Eliminates unbounded event queue growth and
@@ -48,10 +48,12 @@ priority levels). Hardware classes declare settings via static macros;
 settings are available before construction and presented at profile creation
 time. Replaces the `HwConfigParam` system and eliminates the gap where users
 must manually discover and configure settings after profile creation.
+**Progress:** Phases 1-2 complete (infrastructure + 4 pilot classes).
+Next: Phase 3 (creation-time UI) after dialog refactoring.
 
 ## Large
 
-### [Python Hardware Implementations](python-hardware.md)
+### [Python Hardware Implementations](python-hardware.md) **COMPLETE**
 **In progress** User-editable Python scripts as hardware drivers via JSON IPC.
 A C++ trampoline class per hardware type dispatches virtual methods to a user's Python
 class. Users can use Blackchirp's CommunicationProtocol or bring their own vendor

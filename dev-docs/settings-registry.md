@@ -248,28 +248,6 @@ void HardwareObject::applyRegisteredSettings()
 }
 ```
 
-Constructors are simplified to call this method instead of repeating
-`setDefault` for every key:
-
-```cpp
-// Before:
-VirtualAwg::VirtualAwg(const QString& label, QObject *parent) :
-    AWG(QString(VirtualAwg::staticMetaObject.className()), label, parent)
-{
-    setDefault(BC::Key::AWG::rate, 16e9);
-    setDefault(BC::Key::AWG::samples, 2e9);
-    // ... 6 more setDefault calls ...
-}
-
-// After:
-VirtualAwg::VirtualAwg(const QString& label, QObject *parent) :
-    AWG(QString(VirtualAwg::staticMetaObject.className()), label, parent)
-{
-    applyRegisteredSettings();
-    save();
-}
-```
-
 #### Where to call `applyRegisteredSettings()`
 
 This should be called in the `HardwareObject` base constructor, after
@@ -344,57 +322,145 @@ should expose these settings there.
 
 ## Implementation Plan
 
-### Phase 1: Registry Infrastructure
+### Phase 1: Registry Infrastructure **COMPLETE**
 
 **Files modified:** `hardwareregistry.h`, `hardwareregistry.cpp`,
-`hardwareregistration.h`
+`hardwareregistration.h`, `hardwareobject.h`, `hardwareobject.cpp`
 
-1. Add `HwSettingPriority` enum, `HwSettingDef`, `HwArraySettingDef`
-   structs to `hardwareregistry.h`
-2. Add `settingDefs` and `arraySettingDefs` fields to
-   `HardwareRegistration`
-3. Implement `addSettingDefs()`, `addArraySettingDef()`,
-   `addArraySettingEntry()` and corresponding getters in
-   `HardwareRegistry`
-4. Add `REGISTER_HARDWARE_SETTINGS`, `REGISTER_HARDWARE_ARRAY`,
-   `REGISTER_HARDWARE_ARRAY_ENTRY` macros to `hardwareregistration.h`
-5. Add `applyRegisteredSettings()` to `HardwareObject` and call it
-   from the base constructor
-6. Build and verify no regressions (no classes use the new macros yet,
-   so `applyRegisteredSettings()` is a no-op for all)
+- Added `HwSettingPriority` enum, `HwSettingDef`, `HwArraySettingDef`
+  structs to `hardwareregistry.h`
+- Added `settingDefs` and `arraySettingDefs` fields to
+  `HardwareRegistration`
+- Implemented `addSettingDefs()`, `addArraySettingDef()`,
+  `addArraySettingEntry()` and corresponding getters in
+  `HardwareRegistry` (thread-safe, following existing patterns)
+- Added `REGISTER_HARDWARE_SETTINGS`, `REGISTER_HARDWARE_ARRAY`,
+  `REGISTER_HARDWARE_ARRAY_ENTRY` macros to `hardwareregistration.h`
+- Added private `applyRegisteredSettings(const QString& hwType)` to
+  `HardwareObject`, called from base constructor before `save()`
 
-### Phase 2: Pilot Migration (4 classes)
+### Phase 2: Pilot Migration (4 classes) **COMPLETE**
 
 **Files modified:** `virtualawg.cpp`, `pythonawg.cpp`,
 `virtualftmwscope.cpp`, `pythonftmwscope.cpp`
 
-1. Add `REGISTER_HARDWARE_SETTINGS` (and array macros for scopes) to
-   each of the four pilot classes
-2. Remove `setDefault`/`setArray` calls from their constructors
-   (replaced by `applyRegisteredSettings()` in base)
-3. For PythonFtmwScope: migrate its `configParams()` entries to
-   `HwSettingPriority::Required` entries in `REGISTER_HARDWARE_SETTINGS`
-4. Build and run tests. Verify that:
-   - Fresh profiles get correct defaults
-   - Existing profiles preserve their stored values
-   - The `HWDialog` still shows all settings correctly
+- All four classes now use `REGISTER_HARDWARE_SETTINGS` macros with
+  full metadata (labels, descriptions, priorities)
+- VirtualFtmwScope and PythonFtmwScope also use `REGISTER_HARDWARE_ARRAY`
+  and `REGISTER_HARDWARE_ARRAY_ENTRY` for sample rates
+- Constructor `setDefault`/`setArray`/`save()` calls removed from all
+  four classes (handled by `applyRegisteredSettings()` in base)
+- PythonFtmwScope: `numAnalogChannels` and `numDigitalChannels` are
+  `HwSettingPriority::Required`; `REGISTER_HARDWARE_PARAMS` and
+  `configParams()` kept for backward compatibility until Phase 3
+- All 26 tests pass, build clean
 
 ### Phase 3: Creation-Time UI
 
-**Files modified:** `runtimehardwareconfigdialog.cpp` (and `.h` if needed)
+**Prerequisite:** `runtimehardwareconfigdialog.cpp` is being refactored.
+The locations described below refer to logical code sections, not line
+numbers.
 
-1. In `onAddProfile()`, after implementation selection, query
-   `getSettingDefs()` and `getArraySettingDefs()` for the chosen
-   implementation
-2. Render Required settings as labeled form fields (same widget-type
-   logic as existing `configParams` UI)
-3. Render Important settings as labeled form fields with defaults
-   pre-filled
-4. Render Optional settings + array settings in a collapsible
-   "Advanced Settings" group using an `HWSettingsModel`-like tree view
-5. On OK, write all values to QSettings before profile creation
-6. Remove the old `configParams`-based UI code path (now handled by
-   Required-priority settings)
+**Goal:** Replace the `configParams`-based UI in the "Add Profile" dialog
+with a priority-grouped UI driven by `getSettingDefs()` and
+`getArraySettingDefs()`.
+
+#### Current configParams UI (to be replaced)
+
+The add-profile dialog (triggered by `onAddProfile()` or equivalent)
+currently has a lambda called `updateConfigParams` that:
+
+1. Calls `HardwareRegistry::instance().getConfigParams(hardwareType, impl)`
+2. For each `HwConfigParam`, creates a widget based on `defaultValue`
+   type: `int` -> `QSpinBox`, `double` -> `QDoubleSpinBox`,
+   `bool` -> `QCheckBox`, else -> `QLineEdit`. Min/max applied if valid.
+3. Adds widgets to a `QFormLayout` inside a `QGroupBox` labeled
+   "Configuration Parameters" (hidden when params list is empty)
+4. Stores widgets in a `QHash<QString, QWidget*> paramWidgets` map
+5. On dialog accept, iterates `paramWidgets`, extracts values via
+   `qobject_cast`, writes each to `QSettings` under the hardware's
+   settings key before the hardware object is constructed
+
+This lambda is connected to the implementation combo box's
+`currentTextChanged` signal so it rebuilds when the user changes
+implementation.
+
+#### New UI structure
+
+Replace the single `configParamsGroup` with three groups:
+
+```
+Required Settings (QGroupBox, always visible when non-empty)
+  - QFormLayout with labeled form fields
+  - For HwSettingPriority::Required entries
+  - These correspond to what configParams used to handle
+
+Important Settings (QGroupBox, always visible when non-empty)
+  - QFormLayout with labeled form fields, pre-filled with defaults
+  - For HwSettingPriority::Important entries
+
+Advanced Settings (QGroupBox, checkable/collapsible, collapsed by default)
+  - QFormLayout with labeled form fields, pre-filled with defaults
+  - For HwSettingPriority::Optional entries
+  - Array settings shown as read-only summary (e.g., "6 sample rates")
+```
+
+#### Widget creation
+
+Reuse the same type-dispatch logic from the existing configParams code:
+- `int` -> `QSpinBox` with min/max from `HwSettingDef`
+- `double` -> `QDoubleSpinBox` with min/max
+- `bool` -> `QCheckBox`
+- `QString` -> `QLineEdit`
+- Set `widget->setToolTip(setting.description)` for all widgets
+- Use `setting.label` as the form row label
+
+All widgets go into the same `paramWidgets` map (keyed by
+`HwSettingDef::key`). The settings-writing logic on dialog accept
+is identical to the current configParams flow.
+
+#### Backward compatibility
+
+During the transition (before Phase 4 migrates all classes):
+- Query `getSettingDefs()` first. If non-empty, use the new UI.
+- If `getSettingDefs()` returns empty, fall back to `getConfigParams()`
+  with the old UI behavior.
+- Classes with BOTH (like PythonFtmwScope) should use the new UI;
+  the old `configParams` entries are a subset of the `settingDefs`
+  Required entries, so the new UI is strictly more complete.
+
+#### After Phase 3 is complete
+
+- The old `configParams`-based UI code path can be removed
+- `REGISTER_HARDWARE_PARAMS` and `configParams()` on PythonFtmwScope
+  can be removed (its Required settings are now in `settingDefs`)
+- Other classes that still use only `configParams` will continue to
+  work via the fallback until they are migrated in Phase 4
+
+#### API methods to use
+
+```cpp
+// Get scalar settings (returns empty QVector if none registered)
+QVector<HwSettingDef> settings =
+    HardwareRegistry::instance().getSettingDefs(hardwareType, impl);
+
+// Get array settings (returns empty QMap if none registered)
+QMap<QString, HwArraySettingDef> arrays =
+    HardwareRegistry::instance().getArraySettingDefs(hardwareType, impl);
+
+// Existing fallback (returns empty QVector if none registered)
+QVector<HwConfigParam> params =
+    HardwareRegistry::instance().getConfigParams(hardwareType, impl);
+```
+
+#### Test cases
+
+- Hardware type with no registered settings -> empty dialog (old behavior)
+- VirtualAwg -> 1 Important (rate), 7 Optional, no arrays
+- VirtualFtmwScope -> 2 Required (channels), 1 Important (bandwidth),
+  18 Optional, 1 Important array (sample rates shown as summary)
+- PythonFtmwScope -> same as VirtualFtmwScope minus `interval`, has
+  both old configParams AND new settingDefs (new UI takes precedence)
 
 ### Phase 4: Full Migration
 
@@ -408,7 +474,28 @@ includes all classes in:
 - `src/hardware/core/clock/` (all clock implementations)
 - All remaining Python trampolines
 
-For each class:
+For each hardware type, scan though the implementations to collect
+the current setDefault() calls. For the ones that are common between
+implementations, suggest recommendations for which priority
+each setting should be, and ask the user to confirm or change them
+before finalizing the decision. Any `configParams()` must be Required.
+For settings that show up only in a single implementation (or a subset),
+ask the user if that setting should be:
+- Added to the other implementations with an Optional or Important setting,
+- Included as an Optional or Important priority setting for that
+  implementation only,
+- Left as a setDefault call in the constructor that is explicitly not 
+  registered (i.e., a power user feature), or
+- Removed entirely. In this case, scan the codebase to find any references
+  to that setting that may be affected and present to the user for final 
+  confirmation.
+Once all parameters are confirmed, write the results to a file for use
+in the implementation phase. **Note: This also applies to the classes that
+were part of the pilot migration.** Some optional/important decisions may need
+to be revisited; we did not walk through those prior to implementing 
+the proof of concept.
+
+To implement, for each class:
 1. Add registration macros
 2. Remove constructor `setDefault`/`setArray` calls
 3. Migrate any `configParams()` to Required-priority settings

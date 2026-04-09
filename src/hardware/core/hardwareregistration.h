@@ -131,6 +131,68 @@ inline QString findHardwareBaseType(const QMetaObject* metaObj) {
         );
 
 /*!
+ * \brief Register scalar settings for a hardware class
+ *
+ * Registers setting definitions with metadata (labels, descriptions, priorities)
+ * in the HardwareRegistry. Settings are available before object construction
+ * and presented at profile creation time.
+ *
+ * \param CLASS Hardware class name (must already be registered)
+ * \param ... HwSettingDef initializer lists: {key, "Label", "Description", defaultVal, min, max, priority}
+ */
+#define REGISTER_HARDWARE_SETTINGS(CLASS, ...) \
+    static bool settings_registered_##CLASS = \
+        HardwareRegistry::instance().addSettingDefs( \
+            findHardwareBaseType(&CLASS::staticMetaObject), \
+            QString(CLASS::staticMetaObject.className()), \
+            {__VA_ARGS__} \
+        );
+
+/*!
+ * \brief Register array setting metadata (call once per array key)
+ *
+ * Declares an array-type setting with display metadata. Must be called
+ * before any REGISTER_HARDWARE_ARRAY_ENTRY calls for the same array key.
+ *
+ * \param CLASS Hardware class name (must already be registered)
+ * \param ARRAY_KEY String constant for the array key
+ * \param LABEL User-facing display label
+ * \param DESC Explanatory description/tooltip
+ * \param PRIORITY HwSettingPriority value
+ */
+#define REGISTER_HARDWARE_ARRAY(CLASS, ARRAY_KEY, LABEL, DESC, PRIORITY) \
+    static bool BC_ARRDEF_VAR(CLASS, ARRAY_KEY) = \
+        HardwareRegistry::instance().addArraySettingDef( \
+            findHardwareBaseType(&CLASS::staticMetaObject), \
+            QString(CLASS::staticMetaObject.className()), \
+            ARRAY_KEY, LABEL, DESC, PRIORITY);
+
+/*!
+ * \brief Register one entry in an array setting (call once per entry)
+ *
+ * Adds a single entry to a previously declared array setting.
+ * Each entry is a SettingsStorage::SettingsMap (std::map<QString,QVariant>).
+ *
+ * \param CLASS Hardware class name
+ * \param ARRAY_KEY String constant for the array key (must match a prior REGISTER_HARDWARE_ARRAY)
+ * \param ... Key-value pairs: {{subKey1, value1}, {subKey2, value2}}
+ */
+#define REGISTER_HARDWARE_ARRAY_ENTRY(CLASS, ARRAY_KEY, ...) \
+    static bool BC_ARRENTRY_VAR(CLASS, __COUNTER__) = \
+        HardwareRegistry::instance().addArraySettingEntry( \
+            findHardwareBaseType(&CLASS::staticMetaObject), \
+            QString(CLASS::staticMetaObject.className()), \
+            ARRAY_KEY, \
+            SettingsStorage::SettingsMap{__VA_ARGS__} \
+        );
+
+// Helpers for unique static variable names in array macros
+#define BC_ARRDEF_CONCAT(a, b) a##b
+#define BC_ARRDEF_VAR(CLASS, KEY) BC_ARRDEF_CONCAT(arraydef_##CLASS##_, __LINE__)
+#define BC_ARRENTRY_CONCAT(a, b) a##b
+#define BC_ARRENTRY_VAR(CLASS, N) BC_ARRENTRY_CONCAT(arrayentry_##CLASS##_, N)
+
+/*!
  * \brief Register hardware implementation using introspection (legacy)
  * 
  * This macro creates a temporary instance of the hardware class to extract

@@ -501,11 +501,23 @@ protected:
 
 private:
     /*!
+     * \brief Apply registered setting defaults from HardwareRegistry
+     *
+     * Called from the base constructor to apply any settings registered
+     * via REGISTER_HARDWARE_SETTINGS and REGISTER_HARDWARE_ARRAY macros.
+     * Uses setDefault() for scalar settings (preserves existing values)
+     * and setArray() for array settings (only if array doesn't exist yet).
+     *
+     * \param hwType Hardware type key (e.g., "FtmwScope", "AWG")
+     */
+    void applyRegisteredSettings(const QString& hwType);
+
+    /*!
      * \brief Perform read of auxiliary data
-     * 
+     *
      * Derived classes may override this function to return data to be
      * displayed on the aux and/or rolling data plots.
-     * 
+     *
      * \return AuxDataStorage::AuxDataMap (an alias for `std::map<QString,QVariant>`)
      * containing key-value pairs.
      */

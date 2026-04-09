@@ -47,12 +47,28 @@ HardwareObject::HardwareObject(const QString& hwType, const QString& hwImpl, con
         set(BC::Key::HW::commType, static_cast<int>(d_commType));
     }
 
+    applyRegisteredSettings(hwType);
+
     save();
 }
 
 HardwareObject::~HardwareObject()
 {
     // p_comm will be deleted automatically as a child QObject - no manual cleanup needed
+}
+
+void HardwareObject::applyRegisteredSettings(const QString& hwType)
+{
+    auto& reg = HardwareRegistry::instance();
+
+    for (const auto& s : reg.getSettingDefs(hwType, d_model))
+        setDefault(s.key, s.defaultValue);
+
+    auto arrays = reg.getArraySettingDefs(hwType, d_model);
+    for (auto it = arrays.cbegin(); it != arrays.cend(); ++it) {
+        if (!containsArray(it.key()) && !it.value().entries.empty())
+            setArray(it.key(), it.value().entries);
+    }
 }
 
 QString HardwareObject::errorString()
