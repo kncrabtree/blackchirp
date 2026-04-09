@@ -59,6 +59,7 @@
 #include <hardware/core/hardwaremanager.h>
 #include <hardware/core/runtimehardwareconfig.h>
 #include <hardware/core/clock/fixedclock.h>
+#include <gui/widget/pythonhardwarecontrolwidget.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
 #include <hardware/optional/flowcontroller/flowcontroller.h>
@@ -236,6 +237,7 @@ void MainWindow::buildHardwareUI()
     for(auto it = currentHardware.cbegin(); it != currentHardware.cend(); ++it)
     {
         auto key = it->first;
+        auto implName = it->second;
         auto ki = BC::Key::parseKey(key);
 
         auto hwType = ki.first;
@@ -258,7 +260,7 @@ void MainWindow::buildHardwareUI()
             elements.connections.append(connect(p_hwm,&HardwareManager::gasPressureUpdate,w,&GasFlowDisplayBox::updatePressure));
             elements.connections.append(connect(p_hwm,&HardwareManager::gasPressureControlMode,w,&GasFlowDisplayBox::updatePressureControl));
 
-            elements.connections.append(connect(act,&QAction::triggered,[this,w,key]{
+            elements.connections.append(connect(act,&QAction::triggered,[this,w,key,implName]{
 
                 if(isDialogOpen(key))
                     return;
@@ -274,7 +276,8 @@ void MainWindow::buildHardwareUI()
                 connect(gcw,&GasControlWidget::nameUpdate,w,&GasFlowDisplayBox::updateFlowName);
                 connect(gcw,&GasControlWidget::nameUpdate,p_hwm,&HardwareManager::setFlowChannelName);
 
-                auto d = createHWDialog(key,gcw);
+                QWidget *cw = implName.contains(QStringLiteral("Python")) ? wrapWithPythonWidget(key, gcw) : gcw;
+                auto d = createHWDialog(key,cw);
                 connect(d,&QDialog::accepted,w,&GasFlowDisplayBox::applySettings);
 
             }));
@@ -289,7 +292,7 @@ void MainWindow::buildHardwareUI()
             elements.connections.append(connect(p_hwm,&HardwareManager::pressureUpdate,psb,&PressureStatusBox::pressureUpdate));
             elements.connections.append(connect(p_hwm,&HardwareManager::pressureControlMode,psb,&PressureStatusBox::pressureControlUpdate));
 
-            elements.connections.append(connect(act,&QAction::triggered,[this,psb,key](){
+            elements.connections.append(connect(act,&QAction::triggered,[this,psb,key,implName](){
 
                 if(isDialogOpen(key))
                     return;
@@ -303,7 +306,8 @@ void MainWindow::buildHardwareUI()
                 connect(pcw,&PressureControlWidget::valveOpen,p_hwm,&HardwareManager::openGateValve);
                 connect(pcw,&PressureControlWidget::valveClose,p_hwm,&HardwareManager::closeGateValve);
 
-                auto d = createHWDialog(key,pcw);
+                QWidget *cw = implName.contains(QStringLiteral("Python")) ? wrapWithPythonWidget(key, pcw) : pcw;
+                auto d = createHWDialog(key,cw);
                 connect(d,&QDialog::accepted,psb,&PressureStatusBox::updateFromSettings);
             }));
         }
@@ -317,7 +321,7 @@ void MainWindow::buildHardwareUI()
             elements.connections.append(connect(p_hwm,&HardwareManager::pGenConfigUpdate,psb,&PulseStatusBox::updatePulseLeds));
             elements.connections.append(connect(p_hwm,&HardwareManager::pGenSettingUpdate,psb,&PulseStatusBox::updatePulseSetting));
 
-            elements.connections.append(connect(act,&QAction::triggered,[this,psb,key]{
+            elements.connections.append(connect(act,&QAction::triggered,[this,psb,key,implName]{
                if(isDialogOpen(key))
                    return;
 
@@ -328,7 +332,8 @@ void MainWindow::buildHardwareUI()
                connect(p_hwm,&HardwareManager::pGenConfigUpdate,pcw,&PulseConfigWidget::setFromConfig);
                connect(p_hwm,&HardwareManager::pGenSettingUpdate,pcw,&PulseConfigWidget::newSetting);
                connect(pcw,&PulseConfigWidget::changeSetting,p_hwm,&HardwareManager::setPGenSetting);
-               createHWDialog(key,pcw);
+               QWidget *cw = implName.contains(QStringLiteral("Python")) ? wrapWithPythonWidget(key, pcw) : pcw;
+               createHWDialog(key,cw);
             }));
 
         }
@@ -341,7 +346,7 @@ void MainWindow::buildHardwareUI()
 
             elements.connections.append(connect(p_hwm,&HardwareManager::temperatureEnableUpdate,tsb,&TemperatureStatusBox::setChannelEnabled));
             elements.connections.append(connect(p_hwm,&HardwareManager::temperatureUpdate,tsb,&TemperatureStatusBox::setTemperature));
-            elements.connections.append(connect(act,&QAction::triggered,[this,key,tsb](){
+            elements.connections.append(connect(act,&QAction::triggered,[this,key,tsb,implName](){
                if(isDialogOpen(key))
                    return;
 
@@ -355,8 +360,8 @@ void MainWindow::buildHardwareUI()
                        ,p_hwm,&HardwareManager::setTemperatureChannelName);
                connect(tcw,&TemperatureControlWidget::channelNameChanged,tsb,&TemperatureStatusBox::setChannelName);
 
-
-               auto d = createHWDialog(key,tcw);
+               QWidget *cw = implName.contains(QStringLiteral("Python")) ? wrapWithPythonWidget(key, tcw) : tcw;
+               auto d = createHWDialog(key,cw);
                connect(d,&QDialog::accepted,tsb,&TemperatureStatusBox::loadFromSettings);
             }));
         }
@@ -369,11 +374,12 @@ void MainWindow::buildHardwareUI()
 
             elements.connections.append(connect(p_hwm,&HardwareManager::lifLaserPosUpdate,lsb,&LifLaserStatusBox::setPosition));
             elements.connections.append(connect(p_hwm,&HardwareManager::lifLaserFlashlampUpdate,lsb,&LifLaserStatusBox::setFlashlampEnabled));
-            elements.connections.append(connect(act,&QAction::triggered,[this,key,lsb](){
+            elements.connections.append(connect(act,&QAction::triggered,[this,key,lsb,implName](){
                 if(isDialogOpen(key))
                     return;
 
-               auto d = createHWDialog(key);
+               QWidget *cw = implName.contains(QStringLiteral("Python")) ? wrapWithPythonWidget(key, nullptr) : nullptr;
+               auto d = createHWDialog(key, cw);
                connect(d,&QDialog::accepted,lsb,&LifLaserStatusBox::applySettings);
             }));
             
@@ -381,11 +387,12 @@ void MainWindow::buildHardwareUI()
         else
         {
             elements.statusWidget = nullptr; // No status widget for generic hardware
-            elements.connections.append(connect(act,&QAction::triggered,[this,key](){
+            elements.connections.append(connect(act,&QAction::triggered,[this,key,implName](){
                 if(isDialogOpen(key))
                     return;
 
-                createHWDialog(key);
+                QWidget *cw = implName.contains(QStringLiteral("Python")) ? wrapWithPythonWidget(key, nullptr) : nullptr;
+                createHWDialog(key, cw);
             }));
         }
 
@@ -1217,6 +1224,23 @@ bool MainWindow::isDialogOpen(const QString key)
     }
 
     return false;
+}
+
+QWidget *MainWindow::wrapWithPythonWidget(const QString &hwKey, QWidget *typeWidget)
+{
+    auto composite = new QWidget;
+    auto layout = new QVBoxLayout(composite);
+    layout->setContentsMargins(0, 0, 0, 0);
+
+    auto pyWidget = new PythonHardwareControlWidget(hwKey, p_hwm, composite);
+    layout->addWidget(pyWidget);
+
+    if (typeWidget) {
+        typeWidget->setParent(composite);
+        layout->addWidget(typeWidget);
+    }
+
+    return composite;
 }
 
 HWDialog *MainWindow::createHWDialog(const QString key, QWidget *controlWidget)

@@ -99,6 +99,8 @@ signals:
     void lifConfigAcqStarted();
     void lifLaserFlashlampUpdate(bool);
 
+    void pythonScriptReloadResult(const QString &hwKey, bool success, const QString &msg);
+
 public slots:
     void initialize();
 
@@ -180,6 +182,8 @@ public slots:
     
     // Phase 3.5.3: Library configuration integration
     bool applyVendorLibraryChanges();
+
+    void reloadPythonScript(const QString &hwKey);
 
 public:
     std::map<QString,QStringList> validationKeys() const;

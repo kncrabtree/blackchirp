@@ -121,6 +121,7 @@ private:
     void updateHardwareConnectionState(const QString& hwKey, bool connected);
     void configureUiForHardwareState();
     bool isCriticalHardwareConnected() const;
+    QWidget *wrapWithPythonWidget(const QString &hwKey, QWidget *typeWidget);
 
     ProgramState d_state{Idle};
     bool d_initialHardwareTestComplete{false};

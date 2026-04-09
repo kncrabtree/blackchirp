@@ -41,6 +41,16 @@ public:
     static QStringList pythonForbiddenKeys();
 
     /*!
+     * \brief Stop the Python subprocess if it is running
+     */
+    void stopProcess();
+
+    /*!
+     * \brief Returns the error string from the last failed operation
+     */
+    QString pythonErrorString() const { return d_pythonErrorString; }
+
+    /*!
      * \brief Resolve the Python executable from an environment directory
      *
      * Checks for venv/conda layout (bin/python3, bin/python, Scripts/python.exe).
@@ -102,11 +112,6 @@ protected:
      * \brief Dispatch read_settings to the Python subprocess
      */
     void pythonReadSettings();
-
-    /*!
-     * \brief Returns the error string from the last failed operation
-     */
-    QString pythonErrorString() const { return d_pythonErrorString; }
 
     std::unique_ptr<PythonProcess> pu_process;
 

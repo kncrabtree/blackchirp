@@ -25,6 +25,12 @@ QStringList PythonHardwareBase::pythonForbiddenKeys()
     return {BC::Key::HW::commType, BC::Key::HW::model};
 }
 
+void PythonHardwareBase::stopProcess()
+{
+    if (pu_process)
+        pu_process->stop();
+}
+
 void PythonHardwareBase::initPythonProcess(CommunicationProtocol *comm,
                                            PythonProcess::SettingsGetter getter,
                                            PythonProcess::SettingsSetter setter)

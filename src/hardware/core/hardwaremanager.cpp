@@ -10,6 +10,7 @@
 #include <hardware/library/labjacklibrary.h>
 
 #include <hardware/core/hardwareobject.h>
+#include <hardware/python/pythonhardwarebase.h>
 #include <hardware/core/clock/clockmanager.h>
 #include <hardware/core/hw_h.h> // Generated at build time
 
@@ -1249,6 +1250,43 @@ bool HardwareManager::applyVendorLibraryChanges()
     }
     
     return allSuccess;
+}
+
+void HardwareManager::reloadPythonScript(const QString &hwKey)
+{
+    HardwareObject *obj = nullptr;
+    {
+        QReadLocker locker(&d_hardwareMapLock);
+        auto it = d_hardwareMap.find(hwKey);
+        if (it == d_hardwareMap.end()) {
+            emit pythonScriptReloadResult(hwKey, false, QStringLiteral("Hardware not found: %1").arg(hwKey));
+            return;
+        }
+        obj = it->second;
+    }
+
+    auto *pyBase = dynamic_cast<PythonHardwareBase*>(obj);
+    if (!pyBase) {
+        emit pythonScriptReloadResult(hwKey, false, QStringLiteral("%1 is not a Python hardware implementation").arg(hwKey));
+        return;
+    }
+
+    // Dispatch stop + test to the hardware object's thread.
+    // stopProcess() kills the subprocess; bcTestConnection() re-reads settings
+    // and calls testConnection() -> testPythonConnection() -> startPythonProcess()
+    // automatically since the process is no longer running.
+    QMetaObject::invokeMethod(obj, [this, obj, pyBase, hwKey]() {
+        pyBase->stopProcess();
+        obj->bcTestConnection();
+        bool success = obj->isConnected();
+        QString msg = success ? QStringLiteral("Script reloaded successfully")
+                              : pyBase->pythonErrorString();
+        emit pythonScriptReloadResult(hwKey, success, msg);
+        if (success)
+            emit logMessage(QStringLiteral("Python script reloaded for %1").arg(hwKey));
+        else
+            emit logMessage(QStringLiteral("Python script reload failed for %1: %2").arg(hwKey, msg), LogHandler::Error);
+    });
 }
 
 void HardwareManager::syncWithRuntimeConfig()

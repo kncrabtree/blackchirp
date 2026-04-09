@@ -111,6 +111,7 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/temperaturestatusbox.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/toolbarwidgetaction.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/bcsavepathwidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/pythonhardwarecontrolwidget.cpp
 
     # Styling and theming
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/style/themecolors.cpp
@@ -218,6 +219,7 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/temperaturestatusbox.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/toolbarwidgetaction.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/bcsavepathwidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/pythonhardwarecontrolwidget.h
 
     # Styling and theming
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/style/themecolors.h

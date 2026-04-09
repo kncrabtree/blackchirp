@@ -4,17 +4,8 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 
 ## Small
 
-### [Python Script Hot-Reload](python-script-reload.md)
-Reload Python hardware scripts without restarting Blackchirp. Adds a control
-widget to HWDialog with Open in Editor, Reload, and status display. Uses the
-existing PythonProcess stop/start cycle — no HardwareObject reconstruction
-needed.
+None.
 
-### [Python Environment Support](python-env-support.md)
-Per-profile venv/conda environment path for Python hardware. Replaces the
-hardcoded `python3` executable with a configurable interpreter resolved from
-the environment directory. Stored in `HardwareProfileManager` alongside the
-existing script path and class name fields.
 
 ## Medium
 

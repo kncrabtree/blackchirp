@@ -710,8 +710,8 @@ Both implemented with a push-driven waveform model. See
 
 #### Polish
 
-- [Script hot-reload](python-script-reload.md) with editor launch and error feedback
-- [Python environment support](python-env-support.md) (venv/conda path per-profile)
+- [Script hot-reload](python-script-reload.md) with editor launch and error feedback **complete**
+- [Python environment support](python-env-support.md) (venv/conda path per-profile) **complete**
 - Expose settings at profile creation time via the
   [Hardware Settings Registry](settings-registry.md) (applies to all
   hardware, not just Python).
