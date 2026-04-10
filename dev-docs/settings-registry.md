@@ -355,122 +355,35 @@ should expose these settings there.
   `configParams()` kept for backward compatibility until Phase 3
 - All 26 tests pass, build clean
 
-### Phase 3: Creation-Time UI
+### Phase 3: Creation-Time UI **COMPLETE**
 
-**Prerequisite:** `runtimehardwareconfigdialog.cpp` refactor **COMPLETE**.
+**Files modified:** `src/gui/dialog/addprofiledialog.h`,
+`addprofiledialog.cpp`, `src/hardware/python/pythonftmwscope.h`,
+`pythonftmwscope.cpp`
 
-**Goal:** Replace the `configParams`-based UI in the "Add Profile" dialog
-with a priority-grouped UI driven by `getSettingDefs()` and
-`getArraySettingDefs()`.
+`AddProfileDialog::updateConfigParams()` was replaced with
+`updateSettingsDefs()`, which builds three priority-grouped sections:
 
-#### Current configParams UI (to be replaced)
+- **Required Settings** / **Important Settings**: `QFormLayout`-based,
+  always visible when non-empty. Scalar widgets use `QSpinBox` (with
+  `INT_MIN`/`INT_MAX` when no explicit range), `ScientificSpinBox` for
+  doubles, `QCheckBox` for bools, and `QLineEdit` for strings. Tooltips
+  show `HwSettingDef::description`. Array settings at these priorities
+  are shown as read-only count labels ("N entries").
 
-The add-profile dialog is now a standalone class: `AddProfileDialog`
-(`src/gui/dialog/addprofiledialog.h` / `addprofiledialog.cpp`).
-It is instantiated by `RuntimeHardwareConfigDialog::onAddProfile()`.
+- **Advanced Settings**: checkable/collapsible `QGroupBox`, collapsed
+  by default. Optional scalar settings are displayed in a scrollable
+  two-column `QTableWidget` (Setting / Value), keeping the dialog
+  compact even for implementations with many optional parameters.
 
-The config params UI lives in `AddProfileDialog::updateConfigParams()`
-(`addprofiledialog.cpp`), which:
+A backward-compatibility fallback to `getConfigParams()` remains for
+hardware classes not yet migrated to `REGISTER_HARDWARE_SETTINGS`
+(these display under a "Configuration Parameters" group). The fallback
+will be removed once Phase 4 is complete.
 
-1. Calls `HardwareRegistry::instance().getConfigParams(hardwareType, impl)`
-2. For each `HwConfigParam`, creates a widget based on `defaultValue`
-   type: `int` -> `QSpinBox`, `double` -> `QDoubleSpinBox`,
-   `bool` -> `QCheckBox`, else -> `QLineEdit`. Min/max applied if valid.
-3. Adds widgets to `p_configParamsLayout` (a `QFormLayout`) inside
-   `p_configParamsGroup` (a `QGroupBox` labeled "Configuration Parameters",
-   hidden when params list is empty)
-4. Stores widgets in `d_paramWidgets` (`QHash<QString, QWidget*>`)
-5. On dialog accept (`AddProfileDialog::accept()`), iterates
-   `d_paramWidgets`, extracts values via `qobject_cast`, writes each to
-   `QSettings` under the hardware's settings key before the hardware
-   object is constructed
-
-`updateConfigParams()` is connected to `p_implementationCombo`'s
-`currentTextChanged` signal so it rebuilds when the user changes
-implementation.
-
-#### New UI structure
-
-In `AddProfileDialog`, replace the single `p_configParamsGroup` with
-three member group boxes:
-
-```
-p_requiredParamsGroup  (QGroupBox "Required Settings",  always visible when non-empty)
-  - p_requiredParamsLayout (QFormLayout)
-  - For HwSettingPriority::Required entries
-  - These correspond to what configParams used to handle
-
-p_importantParamsGroup (QGroupBox "Important Settings", always visible when non-empty)
-  - p_importantParamsLayout (QFormLayout)
-  - For HwSettingPriority::Important entries
-
-p_advancedParamsGroup  (QGroupBox "Advanced Settings",  checkable/collapsible, collapsed by default)
-  - p_advancedParamsLayout (QFormLayout)
-  - For HwSettingPriority::Optional entries
-  - Array settings shown as read-only summary (e.g., "6 sample rates")
-```
-
-`updateConfigParams()` is renamed `updateSettingsDefs()` and rebuilds
-all three groups. The old `getConfigParams()` fallback path can live
-alongside the new path during the transition (see Backward compatibility
-below).
-
-#### Widget creation
-
-Reuse the same type-dispatch logic already in `updateConfigParams()`:
-- `int` -> `QSpinBox` with min/max from `HwSettingDef`
-- `double` -> `QDoubleSpinBox` with min/max
-- `bool` -> `QCheckBox`
-- `QString` -> `QLineEdit`
-- Set `widget->setToolTip(setting.description)` for all widgets
-- Use `setting.label` as the form row label
-
-All widgets go into the same `d_paramWidgets` map (keyed by
-`HwSettingDef::key`). The settings-writing logic in `accept()` is
-identical to the current configParams flow — no changes needed there.
-
-#### Backward compatibility
-
-During the transition (before Phase 4 migrates all classes):
-- Query `getSettingDefs()` first. If non-empty, use the new UI.
-- If `getSettingDefs()` returns empty, fall back to `getConfigParams()`
-  with the old UI behavior.
-- Classes with BOTH (like PythonFtmwScope) should use the new UI;
-  the old `configParams` entries are a subset of the `settingDefs`
-  Required entries, so the new UI is strictly more complete.
-
-#### After Phase 3 is complete
-
-- The old `configParams`-based UI code path can be removed
-- `REGISTER_HARDWARE_PARAMS` and `configParams()` on PythonFtmwScope
-  can be removed (its Required settings are now in `settingDefs`)
-- Other classes that still use only `configParams` will continue to
-  work via the fallback until they are migrated in Phase 4
-
-#### API methods to use
-
-```cpp
-// Get scalar settings (returns empty QVector if none registered)
-QVector<HwSettingDef> settings =
-    HardwareRegistry::instance().getSettingDefs(hardwareType, impl);
-
-// Get array settings (returns empty QMap if none registered)
-QMap<QString, HwArraySettingDef> arrays =
-    HardwareRegistry::instance().getArraySettingDefs(hardwareType, impl);
-
-// Existing fallback (returns empty QVector if none registered)
-QVector<HwConfigParam> params =
-    HardwareRegistry::instance().getConfigParams(hardwareType, impl);
-```
-
-#### Test cases
-
-- Hardware type with no registered settings -> empty dialog (old behavior)
-- VirtualAwg -> 1 Important (rate), 7 Optional, no arrays
-- VirtualFtmwScope -> 2 Required (channels), 1 Important (bandwidth),
-  18 Optional, 1 Important array (sample rates shown as summary)
-- PythonFtmwScope -> same as VirtualFtmwScope minus `interval`, has
-  both old configParams AND new settingDefs (new UI takes precedence)
+`REGISTER_HARDWARE_PARAMS` and `configParams()` were removed from
+`PythonFtmwScope`, whose Required settings are now fully covered by its
+`REGISTER_HARDWARE_SETTINGS` entries.
 
 ### Phase 4: Full Migration
 
@@ -522,6 +435,32 @@ Update `HWSettingsModel` and `HWDialog` to use registry metadata:
 - Add `description` as tooltip
 - Group by priority; mark Required settings read-only
 - Replace `forbiddenKeys` filtering with registry-based visibility
+
+#### Array settings editing in AddProfileDialog
+
+Currently array settings are shown as read-only count summaries ("N
+entries") in `AddProfileDialog`. Users creating a new profile may want
+to customize array contents at creation time (e.g., available sample
+rates for a Python digitizer whose actual hardware differs from the
+registered defaults).
+
+Consider how best to expose array editing. Options to evaluate:
+
+- **Inline sub-dialog**: clicking the summary label opens a child
+  dialog showing the array as an editable table (rows = entries,
+  columns = sub-keys), with add/remove row buttons. Values are written
+  to `QSettings` on accept, alongside the scalar settings.
+- **Delegate to HWDialog**: keep arrays read-only in AddProfileDialog
+  and direct users to Hardware > [device] after profile creation.
+  Simpler, but means the profile must be constructed with defaults
+  before the user can customize array settings.
+- **Inline expandable rows**: expand the `QTableWidget` row in-place
+  to show a nested table of array entries, similar to a tree view.
+
+The right mechanism depends on how commonly users need non-default
+array values at creation time versus post-creation. This should be
+decided before or alongside the HWDialog metadata work, since both
+touch the same display layer.
 
 ## Open Questions
 

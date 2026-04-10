@@ -2,7 +2,6 @@
 #define PYTHONFTMWSCOPE_H
 
 #include <hardware/core/ftmwdigitizer/ftmwscope.h>
-#include <hardware/core/hardwareregistry.h>
 
 #include "pythonhardwarebase.h"
 
@@ -27,8 +26,6 @@ class PythonFtmwScope : public FtmwScope, public PythonHardwareBase
     Q_OBJECT
 public:
     explicit PythonFtmwScope(const QString &label, QObject *parent = nullptr);
-
-    static QVector<HwConfigParam> configParams();
 
 public slots:
     bool prepareForExperiment(Experiment &exp) override;

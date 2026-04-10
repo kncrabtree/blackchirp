@@ -15,7 +15,6 @@ using namespace BC::Key::Digi;
 // ============================================================================
 REGISTER_HARDWARE_META(PythonFtmwScope, "Python FTMW Digitizer (user-defined Python script)")
 REGISTER_HARDWARE_PROTOCOLS(PythonFtmwScope, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
-REGISTER_HARDWARE_PARAMS(PythonFtmwScope)
 REGISTER_HARDWARE_SETTINGS(PythonFtmwScope,
     {numAnalogChannels,  "Analog Channels",  "Number of analog inputs",
      4, 1, 32, HwSettingPriority::Required},
@@ -82,17 +81,6 @@ PythonFtmwScope::PythonFtmwScope(const QString &label, QObject *parent) :
     PythonHardwareBase(d_key, d_model)
 {
     d_threaded = true;
-}
-
-// ============================================================================
-// configParams()
-// ============================================================================
-QVector<HwConfigParam> PythonFtmwScope::configParams()
-{
-    return {
-        { numAnalogChannels,  QStringLiteral("Analog Channels"),  QVariant(0), QVariant(0), QVariant(32) },
-        { numDigitalChannels, QStringLiteral("Digital Channels"), QVariant(0), QVariant(0), QVariant(32) },
-    };
 }
 
 // ============================================================================

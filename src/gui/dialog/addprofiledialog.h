@@ -9,6 +9,7 @@ class QLineEdit;
 class QLabel;
 class QGroupBox;
 class QFormLayout;
+class QTableWidget;
 class QDialogButtonBox;
 
 class AddProfileDialog : public QDialog
@@ -23,7 +24,7 @@ public:
 
 private:
     void updateProtocolCombo(const QString &impl);
-    void updateConfigParams(const QString &impl);
+    void updateSettingsDefs(const QString &impl);
     void validateLabel(const QString &text);
     void offerPythonTemplate();
 
@@ -37,8 +38,12 @@ private:
     QLabel *p_protocolLabel;
     QLineEdit *p_labelEdit;
     QLabel *p_validationLabel;
-    QGroupBox *p_configParamsGroup;
-    QFormLayout *p_configParamsLayout;
+    QGroupBox *p_requiredParamsGroup;
+    QFormLayout *p_requiredParamsLayout;
+    QGroupBox *p_importantParamsGroup;
+    QFormLayout *p_importantParamsLayout;
+    QGroupBox *p_advancedParamsGroup;
+    QTableWidget *p_advancedTable;
     QDialogButtonBox *p_buttonBox;
     QHash<QString, QWidget*> d_paramWidgets;
 };
