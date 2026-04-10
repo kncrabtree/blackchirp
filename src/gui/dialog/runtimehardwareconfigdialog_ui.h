@@ -15,16 +15,6 @@
 #include <QtWidgets/QTreeWidgetItem>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
-#include <QtWidgets/QTableWidget>
-#include <QtWidgets/QTableWidgetItem>
-#include <QtWidgets/QTextEdit>
-#include <QtWidgets/QLineEdit>
-#include <QtWidgets/QFileDialog>
-#include <QtWidgets/QCheckBox>
-#include <QtWidgets/QGroupBox>
-#include <QtWidgets/QGridLayout>
-#include <QtWidgets/QFormLayout>
-#include <QtWidgets/QHeaderView>
 #include <gui/style/themecolors.h>
 
 class Ui_RuntimeHardwareConfigDialog
@@ -59,40 +49,8 @@ public:
     // Validation Status Bar
     QLabel *validationStatusLabel;
     
-    // Library Status Tab
+    // Library Status Tab (content provided by LibraryStatusWidget)
     QWidget *libraryStatusTab;
-    QVBoxLayout *libraryStatusLayout;
-    QSplitter *libraryStatusSplitter;
-    
-    // Library Overview (Top)
-    QWidget *libraryOverviewWidget;
-    QVBoxLayout *libraryOverviewLayout;
-    QLabel *libraryOverviewLabel;
-    QTableWidget *libraryOverviewTable;
-    
-    // Library Details Label (now in left panel)
-    QLabel *libraryDetailsPanelLabel;
-    QTextEdit *libraryDetailsText;
-    
-    // Library Configuration Panel (Right)
-    QWidget *libraryConfigPanel;
-    QVBoxLayout *libraryConfigPanelLayout;
-    QLabel *libraryConfigPanelLabel;
-    
-    // Configuration controls
-    QGroupBox *libraryPathGroup;
-    QFormLayout *libraryPathLayout;
-    QLineEdit *userLibraryPathEdit;
-    QPushButton *browseLibraryButton;
-    QLineEdit *additionalPathsEdit;
-    QCheckBox *autoDiscoveryCheckBox;
-    QPushButton *testLoadButton;
-    QPushButton *refreshLibraryButton;
-    
-    // Installation guidance
-    QGroupBox *installationGuidanceGroup;
-    QVBoxLayout *installationGuidanceLayout;
-    QTextEdit *installationGuidanceText;
     
     // Dialog Buttons
     QDialogButtonBox *buttonBox;
@@ -213,159 +171,14 @@ public:
         
         mainTabWidget->addTab(hardwareConfigTab, "Hardware Configuration");
         
-        // Library Status Tab
+        // Library Status Tab — content is provided by LibraryStatusWidget,
+        // which the dialog places into this tab.
         libraryStatusTab = new QWidget();
         libraryStatusTab->setObjectName(QString::fromUtf8("libraryStatusTab"));
-        libraryStatusLayout = new QVBoxLayout(libraryStatusTab);
-        libraryStatusLayout->setSpacing(6);
-        libraryStatusLayout->setContentsMargins(11, 11, 11, 11);
-        libraryStatusLayout->setObjectName(QString::fromUtf8("libraryStatusLayout"));
-        
-        // Horizontal splitter for 2-panel layout: left (table + details) and right (configuration)
-        libraryStatusSplitter = new QSplitter(Qt::Horizontal, libraryStatusTab);
-        libraryStatusSplitter->setObjectName(QString::fromUtf8("libraryStatusSplitter"));
-        
-        // Left Panel: Library Overview + Details (stacked vertically)
-        libraryOverviewWidget = new QWidget();
-        libraryOverviewWidget->setObjectName(QString::fromUtf8("libraryOverviewWidget"));
-        libraryOverviewLayout = new QVBoxLayout(libraryOverviewWidget);
-        libraryOverviewLayout->setSpacing(6);
-        libraryOverviewLayout->setContentsMargins(6, 6, 6, 6);
-        libraryOverviewLayout->setObjectName(QString::fromUtf8("libraryOverviewLayout"));
-        
-        // Library Status Table
-        libraryOverviewLabel = new QLabel(libraryOverviewWidget);
-        libraryOverviewLabel->setObjectName(QString::fromUtf8("libraryOverviewLabel"));
-        libraryOverviewLabel->setText("Vendor Library Status");
-        libraryOverviewLabel->setAlignment(Qt::AlignCenter);
-        libraryOverviewLabel->setStyleSheet(QString::fromUtf8("QLabel { font-weight: bold; }"));
-        libraryOverviewLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-        libraryOverviewLayout->addWidget(libraryOverviewLabel);
-        
-        libraryOverviewTable = new QTableWidget(libraryOverviewWidget);
-        libraryOverviewTable->setObjectName(QString::fromUtf8("libraryOverviewTable"));
-        libraryOverviewTable->setColumnCount(4);
-        libraryOverviewTable->setHorizontalHeaderLabels(QStringList() << "Library" << "Status" << "Version" << "Load Path");
-        libraryOverviewTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-        libraryOverviewTable->setSelectionMode(QAbstractItemView::SingleSelection);
-        libraryOverviewTable->setAlternatingRowColors(true);
-        libraryOverviewTable->horizontalHeader()->setStretchLastSection(true);
-        libraryOverviewTable->verticalHeader()->setVisible(false);
-        libraryOverviewLayout->addWidget(libraryOverviewTable, 1); // Give stretch to table
-        
-        // Library Details (below table in left panel)
-        libraryDetailsPanelLabel = new QLabel(libraryOverviewWidget);
-        libraryDetailsPanelLabel->setObjectName(QString::fromUtf8("libraryDetailsPanelLabel"));
-        libraryDetailsPanelLabel->setText("Library Details");
-        libraryDetailsPanelLabel->setAlignment(Qt::AlignCenter);
-        libraryDetailsPanelLabel->setStyleSheet(QString::fromUtf8("QLabel { font-weight: bold; }"));
-        libraryDetailsPanelLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-        libraryOverviewLayout->addWidget(libraryDetailsPanelLabel);
-        
-        libraryDetailsText = new QTextEdit(libraryOverviewWidget);
-        libraryDetailsText->setObjectName(QString::fromUtf8("libraryDetailsText"));
-        libraryDetailsText->setReadOnly(true);
-        libraryDetailsText->setMaximumHeight(200);
-        libraryOverviewLayout->addWidget(libraryDetailsText, 0); // No stretch for details
-        
-        libraryStatusSplitter->addWidget(libraryOverviewWidget);
-        
-        // Right Panel: Library Configuration Controls
-        libraryConfigPanel = new QWidget();
-        libraryConfigPanel->setObjectName(QString::fromUtf8("libraryConfigPanel"));
-        libraryConfigPanelLayout = new QVBoxLayout(libraryConfigPanel);
-        libraryConfigPanelLayout->setSpacing(6);
-        libraryConfigPanelLayout->setContentsMargins(6, 6, 6, 6);
-        libraryConfigPanelLayout->setObjectName(QString::fromUtf8("libraryConfigPanelLayout"));
-        
-        libraryConfigPanelLabel = new QLabel(libraryConfigPanel);
-        libraryConfigPanelLabel->setObjectName(QString::fromUtf8("libraryConfigPanelLabel"));
-        libraryConfigPanelLabel->setText("Library Configuration");
-        libraryConfigPanelLabel->setAlignment(Qt::AlignCenter);
-        libraryConfigPanelLabel->setStyleSheet(QString::fromUtf8("QLabel { font-weight: bold; }"));
-        libraryConfigPanelLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-        libraryConfigPanelLayout->addWidget(libraryConfigPanelLabel);
-        
-        // Library Path Configuration Group
-        libraryPathGroup = new QGroupBox("Library Path Settings", libraryConfigPanel);
-        libraryPathGroup->setObjectName(QString::fromUtf8("libraryPathGroup"));
-        libraryPathLayout = new QFormLayout(libraryPathGroup);
-        libraryPathLayout->setSpacing(6);
-        libraryPathLayout->setContentsMargins(6, 6, 6, 6);
-        libraryPathLayout->setObjectName(QString::fromUtf8("libraryPathLayout"));
-        
-        // User Library Path
-        userLibraryPathEdit = new QLineEdit(libraryPathGroup);
-        userLibraryPathEdit->setObjectName(QString::fromUtf8("userLibraryPathEdit"));
-        userLibraryPathEdit->setPlaceholderText("Enter path to library file (optional)");
-        
-        browseLibraryButton = new QPushButton("Browse...", libraryPathGroup);
-        browseLibraryButton->setObjectName(QString::fromUtf8("browseLibraryButton"));
-        browseLibraryButton->setMaximumWidth(80);
-        
-        QHBoxLayout *pathLayout = new QHBoxLayout();
-        pathLayout->addWidget(userLibraryPathEdit);
-        pathLayout->addWidget(browseLibraryButton);
-        libraryPathLayout->addRow("User Library Path:", pathLayout);
-        
-        // Additional Search Paths
-        additionalPathsEdit = new QLineEdit(libraryPathGroup);
-        additionalPathsEdit->setObjectName(QString::fromUtf8("additionalPathsEdit"));
-        additionalPathsEdit->setPlaceholderText("Additional search paths (semicolon-separated)");
-        libraryPathLayout->addRow("Additional Paths:", additionalPathsEdit);
-        
-        // Auto Discovery
-        autoDiscoveryCheckBox = new QCheckBox("Enable automatic library discovery", libraryPathGroup);
-        autoDiscoveryCheckBox->setObjectName(QString::fromUtf8("autoDiscoveryCheckBox"));
-        autoDiscoveryCheckBox->setChecked(true);
-        libraryPathLayout->addRow(autoDiscoveryCheckBox);
-        
-        // Action Buttons
-        QHBoxLayout *buttonLayout = new QHBoxLayout();
-        testLoadButton = new QPushButton("Test Load", libraryPathGroup);
-        testLoadButton->setObjectName(QString::fromUtf8("testLoadButton"));
-        buttonLayout->addWidget(testLoadButton);
-        
-        refreshLibraryButton = new QPushButton("Refresh Status", libraryPathGroup);
-        refreshLibraryButton->setObjectName(QString::fromUtf8("refreshLibraryButton"));
-        buttonLayout->addWidget(refreshLibraryButton);
-        
-        buttonLayout->addStretch();
-        libraryPathLayout->addRow(buttonLayout);
-        
-        libraryConfigPanelLayout->addWidget(libraryPathGroup);
-        
-        // Installation Guidance Group
-        installationGuidanceGroup = new QGroupBox("Installation Guidance", libraryConfigPanel);
-        installationGuidanceGroup->setObjectName(QString::fromUtf8("installationGuidanceGroup"));
-        installationGuidanceLayout = new QVBoxLayout(installationGuidanceGroup);
-        installationGuidanceLayout->setSpacing(6);
-        installationGuidanceLayout->setContentsMargins(6, 6, 6, 6);
-        installationGuidanceLayout->setObjectName(QString::fromUtf8("installationGuidanceLayout"));
-        
-        installationGuidanceText = new QTextEdit(installationGuidanceGroup);
-        installationGuidanceText->setObjectName(QString::fromUtf8("installationGuidanceText"));
-        installationGuidanceText->setReadOnly(true);
-        // installationGuidanceText->setMaximumHeight(150);
-        installationGuidanceText->setHtml(
-            "<p><b>Installing Vendor Libraries:</b></p>"
-            "<ul>"
-            "<li><b>Spectrum Instrumentation:</b> Install the Spectrum M4i driver package from their website. The library is typically installed to <code>/opt/spectrum/lib/</code></li>"
-            "<li><b>LabJack:</b> Install the LabJack Linux driver from their website. The USB library is typically installed to <code>/usr/local/lib/</code></li>"
-            "</ul>"
-            "<p>If libraries are installed to non-standard locations, use the configuration settings above to specify custom paths.</p>"
-        );
-        installationGuidanceLayout->addWidget(installationGuidanceText);
-        
-        libraryConfigPanelLayout->addWidget(installationGuidanceGroup,1);
-        
-        libraryStatusSplitter->addWidget(libraryConfigPanel);
-        
-        // Set splitter sizes (50% left panel, 50% right panel)
-        libraryStatusSplitter->setSizes({400, 400});
-        
-        libraryStatusLayout->addWidget(libraryStatusSplitter);
-        
+        auto *libraryStatusLayout = new QVBoxLayout(libraryStatusTab);
+        libraryStatusLayout->setSpacing(0);
+        libraryStatusLayout->setContentsMargins(0, 0, 0, 0);
+
         mainTabWidget->addTab(libraryStatusTab, "Library Status");
         
         mainLayout->addWidget(mainTabWidget);

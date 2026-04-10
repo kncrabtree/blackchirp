@@ -1,0 +1,347 @@
+#include "addprofiledialog.h"
+
+#include <QComboBox>
+#include <QLineEdit>
+#include <QLabel>
+#include <QGroupBox>
+#include <QFormLayout>
+#include <QVBoxLayout>
+#include <QDialogButtonBox>
+#include <QPushButton>
+#include <QSpinBox>
+#include <QDoubleSpinBox>
+#include <QCheckBox>
+#include <QMessageBox>
+#include <QFileDialog>
+#include <QMetaEnum>
+#include <QSettings>
+#include <QCoreApplication>
+#include <QDir>
+#include <QFile>
+#include <data/bcglobals.h>
+#include <data/settings/hardwarekeys.h>
+#include <data/storage/settingsstorage.h>
+#include <hardware/core/hardwareregistry.h>
+#include <hardware/core/hardwareprofilemanager.h>
+#include <hardware/core/communication/communicationprotocol.h>
+#include <gui/style/themecolors.h>
+
+AddProfileDialog::AddProfileDialog(const QString &hardwareType, QWidget *parent)
+    : QDialog(parent), d_hardwareType(hardwareType)
+{
+    setWindowTitle("Add " + hardwareType + " Profile");
+    setModal(true);
+    resize(400, 200);
+
+    auto *layout = new QVBoxLayout(this);
+
+    // Get available implementations
+    QStringList implementations = HardwareRegistry::instance().getImplementations(hardwareType);
+    implementations.sort();
+
+    auto *formLayout = new QFormLayout();
+
+    if (implementations.isEmpty()) {
+        layout->addWidget(new QLabel("No implementations available"));
+        p_implementationCombo = new QComboBox();
+        p_protocolCombo = new QComboBox();
+        p_protocolLabel = new QLabel("Protocol:");
+        p_labelEdit = new QLineEdit();
+        p_configParamsGroup = new QGroupBox("Configuration Parameters");
+        p_configParamsLayout = new QFormLayout(p_configParamsGroup);
+        p_validationLabel = new QLabel();
+        p_buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+        p_buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+        connect(p_buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+        connect(p_buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+        layout->addWidget(p_buttonBox);
+        return;
+    }
+
+    // Implementation combo
+    p_implementationCombo = new QComboBox();
+    p_implementationCombo->addItems(implementations);
+    formLayout->addRow("Implementation:", p_implementationCombo);
+
+    // Protocol combo (shown only when multiple protocols are supported)
+    p_protocolLabel = new QLabel("Protocol:");
+    p_protocolCombo = new QComboBox();
+    formLayout->addRow(p_protocolLabel, p_protocolCombo);
+
+    // Label input
+    p_labelEdit = new QLineEdit();
+    p_labelEdit->setPlaceholderText("Enter unique label for this profile");
+    QString defaultLabel = HardwareProfileManager::instance().generateDefaultLabel(hardwareType);
+    p_labelEdit->setText(defaultLabel);
+    formLayout->addRow("Label:", p_labelEdit);
+
+    layout->addLayout(formLayout);
+
+    // Configuration parameters group
+    p_configParamsGroup = new QGroupBox("Configuration Parameters");
+    p_configParamsLayout = new QFormLayout(p_configParamsGroup);
+    p_configParamsGroup->hide();
+    layout->addWidget(p_configParamsGroup);
+
+    // Validation label
+    p_validationLabel = new QLabel();
+    p_validationLabel->setStyleSheet(QString("QLabel { color: %1; }")
+        .arg(ThemeColors::getCSSColor(ThemeColors::StatusError, this)));
+    p_validationLabel->hide();
+    layout->addWidget(p_validationLabel);
+
+    // Button box
+    p_buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+    layout->addWidget(p_buttonBox);
+
+    connect(p_buttonBox, &QDialogButtonBox::accepted, this, &AddProfileDialog::accept);
+    connect(p_buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+
+    // Connect implementation combo changes
+    connect(p_implementationCombo, &QComboBox::currentTextChanged,
+            this, &AddProfileDialog::updateProtocolCombo);
+    connect(p_implementationCombo, &QComboBox::currentTextChanged,
+            this, &AddProfileDialog::updateConfigParams);
+
+    // Connect label validation
+    connect(p_labelEdit, &QLineEdit::textChanged,
+            this, &AddProfileDialog::validateLabel);
+
+    // Initialize with current selection
+    updateProtocolCombo(p_implementationCombo->currentText());
+    updateConfigParams(p_implementationCombo->currentText());
+
+    // Trigger initial validation
+    p_labelEdit->textChanged(p_labelEdit->text());
+}
+
+QString AddProfileDialog::selectedImplementation() const
+{
+    return p_implementationCombo->currentText();
+}
+
+QString AddProfileDialog::profileLabel() const
+{
+    return p_labelEdit->text().trimmed();
+}
+
+QString AddProfileDialog::pythonScriptPath() const
+{
+    return d_pythonScriptPath;
+}
+
+void AddProfileDialog::updateProtocolCombo(const QString &impl)
+{
+    auto protocols = HardwareRegistry::instance().getSupportedProtocols(d_hardwareType, impl);
+    p_protocolCombo->clear();
+    auto commEnum = QMetaEnum::fromType<CommunicationProtocol::CommType>();
+    for (auto p : protocols)
+        p_protocolCombo->addItem(QString(commEnum.valueToKey(static_cast<int>(p))),
+                                 static_cast<int>(p));
+    bool multiProtocol = protocols.size() > 1;
+    p_protocolLabel->setVisible(multiProtocol);
+    p_protocolCombo->setVisible(multiProtocol);
+}
+
+void AddProfileDialog::updateConfigParams(const QString &impl)
+{
+    // Clear existing widgets
+    while (p_configParamsLayout->rowCount() > 0)
+        p_configParamsLayout->removeRow(0);
+    d_paramWidgets.clear();
+
+    auto params = HardwareRegistry::instance().getConfigParams(d_hardwareType, impl);
+    p_configParamsGroup->setVisible(!params.isEmpty());
+
+    for (const auto &param : params) {
+        int typeId = param.defaultValue.userType();
+        QWidget *widget = nullptr;
+
+        if (typeId == QMetaType::Int) {
+            auto *sb = new QSpinBox();
+            sb->setValue(param.defaultValue.toInt());
+            if (param.minimum.isValid()) sb->setMinimum(param.minimum.toInt());
+            if (param.maximum.isValid()) sb->setMaximum(param.maximum.toInt());
+            widget = sb;
+        } else if (typeId == QMetaType::UInt) {
+            auto *sb = new QSpinBox();
+            sb->setValue(static_cast<int>(param.defaultValue.toUInt()));
+            if (param.minimum.isValid()) sb->setMinimum(static_cast<int>(param.minimum.toUInt()));
+            if (param.maximum.isValid()) sb->setMaximum(static_cast<int>(param.maximum.toUInt()));
+            widget = sb;
+        } else if (typeId == QMetaType::Double) {
+            auto *dsb = new QDoubleSpinBox();
+            dsb->setValue(param.defaultValue.toDouble());
+            if (param.minimum.isValid()) dsb->setMinimum(param.minimum.toDouble());
+            if (param.maximum.isValid()) dsb->setMaximum(param.maximum.toDouble());
+            widget = dsb;
+        } else if (typeId == QMetaType::Bool) {
+            auto *cb = new QCheckBox();
+            cb->setChecked(param.defaultValue.toBool());
+            widget = cb;
+        } else {
+            auto *le = new QLineEdit();
+            le->setText(param.defaultValue.toString());
+            widget = le;
+        }
+
+        if (widget) {
+            d_paramWidgets[param.key] = widget;
+            p_configParamsLayout->addRow(param.label + ":", widget);
+        }
+    }
+}
+
+void AddProfileDialog::validateLabel(const QString &text)
+{
+    auto &profileManager = HardwareProfileManager::instance();
+    auto validationError = profileManager.validateLabel(text);
+    if (validationError != HardwareProfileManager::Valid) {
+        QString errorMsg;
+        switch (validationError) {
+            case HardwareProfileManager::Empty:
+                errorMsg = "Label cannot be empty";
+                break;
+            case HardwareProfileManager::TooLong:
+                errorMsg = "Label too long (max 64 characters)";
+                break;
+            case HardwareProfileManager::InvalidCharacters:
+                errorMsg = "Label contains invalid characters";
+                break;
+            case HardwareProfileManager::StartsWithNumber:
+                errorMsg = "Label cannot start with a number";
+                break;
+            case HardwareProfileManager::StartsWithUnderscore:
+                errorMsg = "Label cannot start with underscore";
+                break;
+            case HardwareProfileManager::ContainsDots:
+                errorMsg = "Label cannot contain dots";
+                break;
+            default:
+                errorMsg = "Invalid label";
+                break;
+        }
+        p_validationLabel->setText(errorMsg);
+        p_validationLabel->show();
+        p_buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+    } else if (!profileManager.isLabelAvailable(d_hardwareType, text)) {
+        p_validationLabel->setText("Label already exists for this hardware type");
+        p_validationLabel->show();
+        p_buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+    } else {
+        p_validationLabel->hide();
+        p_buttonBox->button(QDialogButtonBox::Ok)->setEnabled(true);
+    }
+}
+
+void AddProfileDialog::accept()
+{
+    QString implementation = p_implementationCombo->currentText();
+    QString label = p_labelEdit->text().trimmed();
+
+    // Write selected protocol and config params to settings before hardware
+    // object is created, so the constructor finds the correct values.
+    {
+        auto selectedProtocol = static_cast<CommunicationProtocol::CommType>(
+            p_protocolCombo->currentData().toInt());
+        QString settingsKey = BC::Key::hwKey(d_hardwareType, label);
+        QSettings s(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+        s.beginGroup(settingsKey);
+        s.setValue(BC::Key::HW::commType, static_cast<int>(selectedProtocol));
+
+        for (auto it = d_paramWidgets.cbegin(); it != d_paramWidgets.cend(); ++it) {
+            QVariant val;
+            if (auto *sb = qobject_cast<QSpinBox*>(it.value()))
+                val = sb->value();
+            else if (auto *dsb = qobject_cast<QDoubleSpinBox*>(it.value()))
+                val = dsb->value();
+            else if (auto *cb = qobject_cast<QCheckBox*>(it.value()))
+                val = cb->isChecked();
+            else if (auto *le = qobject_cast<QLineEdit*>(it.value()))
+                val = le->text();
+
+            if (val.isValid())
+                s.setValue(it.key(), val);
+        }
+
+        s.endGroup();
+        s.sync();
+    }
+
+    // Create the profile
+    auto &profileManager = HardwareProfileManager::instance();
+    QString actualLabel = profileManager.createHardwareProfile(d_hardwareType, implementation, label);
+
+    if (actualLabel.isEmpty()) {
+        QMessageBox::warning(this, "Add Profile", "Failed to create profile. Please try again.");
+        return;
+    }
+
+    if (implementation.startsWith(QStringLiteral("Python")))
+        offerPythonTemplate();
+
+    QDialog::accept();
+}
+
+void AddProfileDialog::offerPythonTemplate()
+{
+    QString implementation = p_implementationCombo->currentText();
+    QString label = p_labelEdit->text().trimmed();
+
+    // Derive template filename: "PythonAwg" -> "python_awg_template.py"
+    QString typePart = implementation.mid(6); // Remove "Python" prefix
+    QString templateFilename = QStringLiteral("python_%1_template.py").arg(typePart.toLower());
+
+    // Search for template using same paths as findHostScript()
+    QString appDir = QCoreApplication::applicationDirPath();
+    QString templatePath;
+    QStringList searchPaths = {
+        appDir + "/" + templateFilename,
+        appDir + "/../share/blackchirp/" + templateFilename
+    };
+    for (const auto &path : searchPaths) {
+        if (QFile::exists(path)) {
+            templatePath = path;
+            break;
+        }
+    }
+
+    if (templatePath.isEmpty())
+        return;
+
+    auto result = QMessageBox::question(
+        this, tr("Python Template Script"),
+        tr("<b>Python hardware scripts run with full system access.</b> "
+           "Scripts can access files, network resources, and hardware devices "
+           "with the same permissions as Blackchirp. Only use scripts from "
+           "sources you trust."
+           "<br><br>"
+           "Would you like to create a copy of the template script to customize?"),
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+
+    if (result == QMessageBox::Yes) {
+        SettingsStorage ss;
+        QString initialDir = ss.get(BC::Key::savePath, QString(""));
+        QString suggestedName = QStringLiteral("my_%1.py").arg(typePart.toLower());
+        if (!initialDir.isEmpty())
+            suggestedName = QDir(initialDir).filePath(suggestedName);
+        QString savePath = QFileDialog::getSaveFileName(
+            this, tr("Save Python Script"),
+            suggestedName,
+            tr("Python Scripts (*.py)"));
+
+        if (!savePath.isEmpty()) {
+            if (QFile::exists(savePath))
+                QFile::remove(savePath);
+
+            if (QFile::copy(templatePath, savePath)) {
+                QFile::setPermissions(savePath,
+                    QFile::permissions(savePath) | QFileDevice::WriteOwner);
+                d_pythonScriptPath = savePath;
+            } else {
+                QMessageBox::warning(this, tr("Python Template Script"),
+                    tr("Failed to copy template script to the selected location."));
+            }
+        }
+    }
+}

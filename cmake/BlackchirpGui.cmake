@@ -24,6 +24,7 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/mainwindow.cpp
     
     # Dialogs
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/addprofiledialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/applicationconfigdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/batchsequencedialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/bcsavepathdialog.cpp
@@ -112,6 +113,8 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/toolbarwidgetaction.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/bcsavepathwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/pythonhardwarecontrolwidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/librarystatuswidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/pythonsettingswidget.cpp
 
     # Styling and theming
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/style/themecolors.cpp
@@ -132,6 +135,7 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/mainwindow_ui.h
     
     # Dialogs
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/addprofiledialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/applicationconfigdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/batchsequencedialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/bcsavepathdialog.h
@@ -220,6 +224,8 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/toolbarwidgetaction.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/bcsavepathwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/pythonhardwarecontrolwidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/librarystatuswidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/pythonsettingswidget.h
 
     # Styling and theming
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/style/themecolors.h

@@ -357,9 +357,7 @@ should expose these settings there.
 
 ### Phase 3: Creation-Time UI
 
-**Prerequisite:** `runtimehardwareconfigdialog.cpp` is being refactored.
-The locations described below refer to logical code sections, not line
-numbers.
+**Prerequisite:** `runtimehardwareconfigdialog.cpp` refactor **COMPLETE**.
 
 **Goal:** Replace the `configParams`-based UI in the "Add Profile" dialog
 with a priority-grouped UI driven by `getSettingDefs()` and
@@ -367,47 +365,59 @@ with a priority-grouped UI driven by `getSettingDefs()` and
 
 #### Current configParams UI (to be replaced)
 
-The add-profile dialog (triggered by `onAddProfile()` or equivalent)
-currently has a lambda called `updateConfigParams` that:
+The add-profile dialog is now a standalone class: `AddProfileDialog`
+(`src/gui/dialog/addprofiledialog.h` / `addprofiledialog.cpp`).
+It is instantiated by `RuntimeHardwareConfigDialog::onAddProfile()`.
+
+The config params UI lives in `AddProfileDialog::updateConfigParams()`
+(`addprofiledialog.cpp`), which:
 
 1. Calls `HardwareRegistry::instance().getConfigParams(hardwareType, impl)`
 2. For each `HwConfigParam`, creates a widget based on `defaultValue`
    type: `int` -> `QSpinBox`, `double` -> `QDoubleSpinBox`,
    `bool` -> `QCheckBox`, else -> `QLineEdit`. Min/max applied if valid.
-3. Adds widgets to a `QFormLayout` inside a `QGroupBox` labeled
-   "Configuration Parameters" (hidden when params list is empty)
-4. Stores widgets in a `QHash<QString, QWidget*> paramWidgets` map
-5. On dialog accept, iterates `paramWidgets`, extracts values via
-   `qobject_cast`, writes each to `QSettings` under the hardware's
-   settings key before the hardware object is constructed
+3. Adds widgets to `p_configParamsLayout` (a `QFormLayout`) inside
+   `p_configParamsGroup` (a `QGroupBox` labeled "Configuration Parameters",
+   hidden when params list is empty)
+4. Stores widgets in `d_paramWidgets` (`QHash<QString, QWidget*>`)
+5. On dialog accept (`AddProfileDialog::accept()`), iterates
+   `d_paramWidgets`, extracts values via `qobject_cast`, writes each to
+   `QSettings` under the hardware's settings key before the hardware
+   object is constructed
 
-This lambda is connected to the implementation combo box's
+`updateConfigParams()` is connected to `p_implementationCombo`'s
 `currentTextChanged` signal so it rebuilds when the user changes
 implementation.
 
 #### New UI structure
 
-Replace the single `configParamsGroup` with three groups:
+In `AddProfileDialog`, replace the single `p_configParamsGroup` with
+three member group boxes:
 
 ```
-Required Settings (QGroupBox, always visible when non-empty)
-  - QFormLayout with labeled form fields
+p_requiredParamsGroup  (QGroupBox "Required Settings",  always visible when non-empty)
+  - p_requiredParamsLayout (QFormLayout)
   - For HwSettingPriority::Required entries
   - These correspond to what configParams used to handle
 
-Important Settings (QGroupBox, always visible when non-empty)
-  - QFormLayout with labeled form fields, pre-filled with defaults
+p_importantParamsGroup (QGroupBox "Important Settings", always visible when non-empty)
+  - p_importantParamsLayout (QFormLayout)
   - For HwSettingPriority::Important entries
 
-Advanced Settings (QGroupBox, checkable/collapsible, collapsed by default)
-  - QFormLayout with labeled form fields, pre-filled with defaults
+p_advancedParamsGroup  (QGroupBox "Advanced Settings",  checkable/collapsible, collapsed by default)
+  - p_advancedParamsLayout (QFormLayout)
   - For HwSettingPriority::Optional entries
   - Array settings shown as read-only summary (e.g., "6 sample rates")
 ```
 
+`updateConfigParams()` is renamed `updateSettingsDefs()` and rebuilds
+all three groups. The old `getConfigParams()` fallback path can live
+alongside the new path during the transition (see Backward compatibility
+below).
+
 #### Widget creation
 
-Reuse the same type-dispatch logic from the existing configParams code:
+Reuse the same type-dispatch logic already in `updateConfigParams()`:
 - `int` -> `QSpinBox` with min/max from `HwSettingDef`
 - `double` -> `QDoubleSpinBox` with min/max
 - `bool` -> `QCheckBox`
@@ -415,9 +425,9 @@ Reuse the same type-dispatch logic from the existing configParams code:
 - Set `widget->setToolTip(setting.description)` for all widgets
 - Use `setting.label` as the form row label
 
-All widgets go into the same `paramWidgets` map (keyed by
-`HwSettingDef::key`). The settings-writing logic on dialog accept
-is identical to the current configParams flow.
+All widgets go into the same `d_paramWidgets` map (keyed by
+`HwSettingDef::key`). The settings-writing logic in `accept()` is
+identical to the current configParams flow — no changes needed there.
 
 #### Backward compatibility
 

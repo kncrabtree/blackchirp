@@ -1,54 +1,32 @@
 #include "runtimehardwareconfigdialog.h"
 #include "runtimehardwareconfigdialog_ui.h"
+#include "addprofiledialog.h"
+
 #include <QTreeWidgetItem>
 #include <QListWidgetItem>
 #include <QLabel>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QFormLayout>
-#include <QComboBox>
-#include <QLineEdit>
-#include <QListWidget>
 #include <QPushButton>
 #include <QGroupBox>
-#include <QHash>
-#include <QSet>
-#include <QButtonGroup>
-#include <QRadioButton>
 #include <QCheckBox>
 #include <QMessageBox>
 #include <QDialogButtonBox>
-#include <QTableWidget>
-#include <QTableWidgetItem>
-#include <QDir>
-#include <QFile>
-#include <QTextStream>
-#include <QRegularExpression>
-#include <QFileDialog>
-#include <QTextEdit>
-#include <QMetaEnum>
-#include <QSettings>
-#include <QSpinBox>
-#include <QDoubleSpinBox>
-#include <QCoreApplication>
-#include <QProcess>
-#include <QTimer>
+#include <QSignalBlocker>
+
 #include <data/bcglobals.h>
 #include <data/settings/hardwarekeys.h>
 #include <data/storage/applicationconfigmanager.h>
-#include <hardware/core/communication/communicationprotocol.h>
 #include <hardware/core/hardwareregistry.h>
 #include <hardware/core/hardwareprofilemanager.h>
-#include <hardware/library/vendorlibrary.h>
-#include <hardware/library/spectrumlibrary.h>
-#include <hardware/library/labjacklibrary.h>
 #include <gui/style/themecolors.h>
-#include <hardware/python/pythonhardwarebase.h>
+#include <gui/widget/pythonsettingswidget.h>
+#include <gui/widget/librarystatuswidget.h>
 
 RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
     : QDialog(parent),
       pu_ui(new Ui::RuntimeHardwareConfigDialog),
-      p_currentLibrary(nullptr)
+      p_libraryStatusWidget(nullptr)
 {
     pu_ui->setupUi(this);
 
@@ -62,11 +40,11 @@ RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
     d_originalRuntimeConfig = RuntimeHardwareConfig::constInstance().getCurrentHardware();
     d_previewRuntimeConfig = d_originalRuntimeConfig;
 
-    // Initialize threaded preview config from stored overrides
+    // Initialize threaded overrides from stored values
     for (auto& [hwKey, impl] : d_originalRuntimeConfig) {
         auto override = RuntimeHardwareConfig::constInstance().getThreaded(hwKey);
         if (override.has_value())
-            d_previewThreadedConfig[hwKey] = *override;
+            d_profileOverrides[hwKey].threaded = *override;
     }
 
     // Auto-activate system profiles for required types that have no active entry
@@ -93,20 +71,23 @@ RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
             }
         }
     }
-    
-    // Phase 2: Populate configuration overview with actual hardware data
+
+    // Populate configuration overview with actual hardware data
     populateConfigurationOverview();
-    
-    // Phase 3: Populate hardware browser and connect selection handling
+
+    // Populate hardware browser and connect selection handling
     populateHardwareBrowser();
-    
-    // Phase 3.5: Initialize Library Status tab
-    initializeLibraryStatusTab();
-    
-    // Connect dialog buttons with custom logic for Phase 4.3 state management
+
+    // Initialize Library Status tab
+    p_libraryStatusWidget = new LibraryStatusWidget(pu_ui->libraryStatusTab);
+    pu_ui->libraryStatusTab->layout()->addWidget(p_libraryStatusWidget);
+    connect(p_libraryStatusWidget, &LibraryStatusWidget::stagingStateChanged,
+            this, &RuntimeHardwareConfigDialog::onLibraryStagingStateChanged);
+
+    // Connect dialog buttons
     connect(pu_ui->buttonBox, &QDialogButtonBox::accepted, this, &RuntimeHardwareConfigDialog::onDialogAccepted);
     connect(pu_ui->buttonBox, &QDialogButtonBox::rejected, this, &RuntimeHardwareConfigDialog::onDialogRejected);
-    
+
     // Connect hardware browser selection changes
     connect(pu_ui->hardwareBrowserList, &QListWidget::currentItemChanged,
             this, &RuntimeHardwareConfigDialog::onHardwareBrowserSelectionChanged);
@@ -128,12 +109,12 @@ RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
             }
         }
     });
-    
+
     // Initialize validation status
     validatePreviewConfiguration();
-    
+
     // Initialize staging indicators for libraries
-    updateAllLibraryStagingIndicators();
+    onLibraryStagingStateChanged(p_libraryStatusWidget->hasUnstagedChanges());
 }
 
 RuntimeHardwareConfigDialog::~RuntimeHardwareConfigDialog()
@@ -145,10 +126,10 @@ void RuntimeHardwareConfigDialog::populateConfigurationOverview()
 {
     // Clear the tree
     pu_ui->configOverviewTree->clear();
-    
+
     // Use preview configuration instead of current runtime configuration
     auto currentHw = d_previewRuntimeConfig;
-    
+
     // Handle empty configuration
     if (currentHw.empty()) {
         auto* item = new QTreeWidgetItem(pu_ui->configOverviewTree);
@@ -156,7 +137,7 @@ void RuntimeHardwareConfigDialog::populateConfigurationOverview()
         item->setFlags(item->flags() & ~Qt::ItemIsSelectable);
         return;
     }
-    
+
     // Group hardware by type to determine single vs multi-instance
     QHash<QString, QStringList> hardwareByType;
     for(auto it = currentHw.begin(); it != currentHw.end(); ++it) {
@@ -164,12 +145,12 @@ void RuntimeHardwareConfigDialog::populateConfigurationOverview()
         QString displayText = QString("%1 (%2)").arg(label, it->second);
         hardwareByType[hwType].append(displayText);
     }
-    
+
     // Build tree structure based on single vs multi-instance
     for(auto typeIt = hardwareByType.begin(); typeIt != hardwareByType.end(); ++typeIt) {
         const QString& hwType = typeIt.key();
         const QStringList& instances = typeIt.value();
-        
+
         if (instances.size() == 1) {
             // Single instance: "HardwareType: label (implementation)"
             auto* item = new QTreeWidgetItem(pu_ui->configOverviewTree);
@@ -189,7 +170,7 @@ void RuntimeHardwareConfigDialog::populateConfigurationOverview()
             }
         }
     }
-    
+
     // Ensure tree is fully expanded
     pu_ui->configOverviewTree->expandAll();
 }
@@ -203,48 +184,46 @@ void RuntimeHardwareConfigDialog::populateHardwareBrowser()
 {
     // Preserve current selection to prevent right panel from closing
     QString currentSelectedHardwareType = d_currentHardwareType;
-    
+
     // Block signals to prevent unwanted selection change events during repopulation
     pu_ui->hardwareBrowserList->blockSignals(true);
-    
+
     // Clear the list
     pu_ui->hardwareBrowserList->clear();
-    
+
     // Get all available hardware types from the registry
     auto hardwareTypes = HardwareRegistry::instance().getHardwareTypes();
-    
+
     // Get current hardware configuration to count active instances (use preview state)
     auto currentHw = d_previewRuntimeConfig;
-    
+
     // Count instances by hardware type
     QHash<QString, int> typeCounts;
     for(auto it = currentHw.begin(); it != currentHw.end(); ++it) {
         auto [hwType, label] = BC::Key::parseKey(it->first);
         typeCounts[hwType]++;
     }
-    
+
     // Sort hardware types for consistent display
     hardwareTypes.sort();
-    
+
     // Populate the list with hardware types and counts
     QListWidgetItem* itemToSelect = nullptr;
     for(const QString& hwType : hardwareTypes) {
         int count = typeCounts.value(hwType, 0);
         QString displayText = QString("%1 (%2)").arg(hwType).arg(count);
-        
+
         auto* item = new QListWidgetItem(displayText, pu_ui->hardwareBrowserList);
-        
+
         // Store the hardware type for easy retrieval
         item->setData(Qt::UserRole, hwType);
-        
+
         // Apply visual styling based on configuration status
         if (count > 0) {
             // Configured hardware: bold text
             QFont font = item->font();
             font.setBold(true);
             item->setFont(font);
-        } else {
-            // Unconfigured hardware: normal text (default)
         }
 
         // Gray out LIF hardware types when LIF module is disabled
@@ -263,12 +242,12 @@ void RuntimeHardwareConfigDialog::populateHardwareBrowser()
             itemToSelect = item;
         }
     }
-    
+
     // Restore selection if we had one previously
     if (itemToSelect != nullptr) {
         pu_ui->hardwareBrowserList->setCurrentItem(itemToSelect);
     }
-    
+
     // Re-enable signals
     pu_ui->hardwareBrowserList->blockSignals(false);
 }
@@ -276,13 +255,13 @@ void RuntimeHardwareConfigDialog::populateHardwareBrowser()
 void RuntimeHardwareConfigDialog::onHardwareBrowserSelectionChanged(QListWidgetItem* current, QListWidgetItem* previous)
 {
     Q_UNUSED(previous)
-    
+
     if (current == nullptr) {
         d_currentHardwareType.clear();
         updateSelectionDisplay(QString());
         return;
     }
-    
+
     // Extract hardware type from the selected item and store it
     QString selectedHardwareType = current->data(Qt::UserRole).toString();
     d_currentHardwareType = selectedHardwareType;
@@ -291,13 +270,13 @@ void RuntimeHardwareConfigDialog::onHardwareBrowserSelectionChanged(QListWidgetI
 
 void RuntimeHardwareConfigDialog::updateSelectionDisplay(const QString& selectedHardwareType)
 {
-    // Update the main configuration panel title 
+    // Update the main configuration panel title
     if (selectedHardwareType.isEmpty()) {
         pu_ui->configurationLabel->setText("Configuration");
     } else {
         pu_ui->configurationLabel->setText(QString("%1 Configuration").arg(selectedHardwareType));
     }
-    
+
     // Use the new dynamic UI creation method
     updateRightPanelForHardwareType(selectedHardwareType);
 }
@@ -308,7 +287,6 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
     if (pu_ui->configurationContentWidget->layout()) {
         QLayoutItem* item;
         while ((item = pu_ui->configurationContentWidget->layout()->takeAt(0)) != nullptr) {
-            // Let Qt handle signal cleanup automatically when parent is destroyed
             if (item->widget()) {
                 delete item->widget();
             }
@@ -316,10 +294,10 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
         }
         delete pu_ui->configurationContentWidget->layout();
     }
-    
+
     // Create a new layout for the right panel content
     auto* layout = new QVBoxLayout(pu_ui->configurationContentWidget);
-    
+
     // Handle case where no hardware type is selected
     if (hardwareType.isEmpty()) {
         auto* noSelectionLabel = new QLabel("No hardware type selected", pu_ui->configurationContentWidget);
@@ -331,7 +309,7 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
         pu_ui->configurationContentWidget->setLayout(layout);
         return;
     }
-    
+
     // Check if this is a LIF hardware type that's currently disabled
     if (RuntimeHardwareConfig::isLifHardwareType(hardwareType)
         && !ApplicationConfigManager::instance().isLifEnabled())
@@ -381,7 +359,6 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
 
         layout->addWidget(enableCheckbox);
 
-        // Connect enable checkbox (use toggled since we handle programmatic + user changes the same)
         connect(enableCheckbox, &QCheckBox::toggled, this, [this, hardwareType](bool checked) {
             onEnableToggled(hardwareType, checked);
         });
@@ -428,8 +405,7 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
         }
 
         auto* listItem = new QListWidgetItem(profilesList);
-        listItem->setData(Qt::UserRole, profileLabel); // Store label for easy retrieval
-        // Don't set text on listItem to avoid duplication with custom widget text
+        listItem->setData(Qt::UserRole, profileLabel);
 
         // Apply visual distinction for system profiles
         if (isSysProfile) {
@@ -439,10 +415,6 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
             listItem->setFont(f);
         }
 
-        // Use built-in QListWidgetItem check state for profile activation.
-        // This renders a checkbox indicator as part of the item decoration;
-        // clicking the indicator toggles the check, while clicking the text
-        // area only selects the row (for Advanced settings).
         listItem->setText(displayText);
         listItem->setFlags(listItem->flags() | Qt::ItemIsUserCheckable);
 
@@ -487,8 +459,6 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
     }
 
     // Handle check state changes on list items.
-    // For multi-instance: multiple items can be checked.
-    // For single-instance: enforce mutual exclusivity (like radio buttons).
     connect(profilesList, &QListWidget::itemChanged, this,
             [this, hardwareType, profilesList, isMultiInstance](QListWidgetItem* changedItem) {
         if (isMultiInstance) {
@@ -555,9 +525,6 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
     advancedLayout->setContentsMargins(4, 2, 4, 2);
 
     // Determine the profile whose Advanced settings should be displayed.
-    // Uses the highlighted (selected) list item so the user can click any
-    // profile row to view/edit its Advanced settings without toggling its
-    // checked state.
     auto getActiveHwKey = [hardwareType, profilesList]() -> QString {
         auto selected = profilesList->selectedItems();
         if (!selected.isEmpty()) {
@@ -572,9 +539,9 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
     QString activeHwKey = getActiveHwKey();
     bool threadedChecked = typeDefault;
     if (!activeHwKey.isEmpty()) {
-        auto it = d_previewThreadedConfig.find(activeHwKey);
-        if (it != d_previewThreadedConfig.end())
-            threadedChecked = it->second;
+        auto it = d_profileOverrides.find(activeHwKey);
+        if (it != d_profileOverrides.end() && it->second.threaded.has_value())
+            threadedChecked = *it->second.threaded;
     }
 
     QString checkboxLabel = tr("Run in own thread");
@@ -586,164 +553,6 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
     threadedCheckbox->setEnabled(!activeHwKey.isEmpty());
 
     advancedLayout->addWidget(threadedCheckbox);
-
-    // Helper: populate an editable QComboBox with class names parsed from a Python script file,
-    // in order of appearance. Preserves the current text if it matches an entry.
-    auto populateClassCombo = [](QComboBox* combo, const QString& scriptPath) {
-        if (!combo) return;
-        QString current = combo->currentText();
-        {
-            QSignalBlocker blocker(combo);
-            combo->clear();
-        }
-        if (!scriptPath.isEmpty()) {
-            QFile file(scriptPath);
-            if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-                QTextStream in(&file);
-                QRegularExpression re(QStringLiteral("^class\\s+(\\w+)"));
-                while (!in.atEnd()) {
-                    auto match = re.match(in.readLine());
-                    if (match.hasMatch())
-                        combo->addItem(match.captured(1));
-                }
-            }
-        }
-        if (!current.isEmpty())
-            combo->setCurrentText(current);
-    };
-
-    // Python settings — shown when the selected profile uses a Python implementation
-    QLineEdit* pythonScriptEdit = nullptr;
-    QComboBox* pythonClassEdit = nullptr;
-    QLineEdit* pythonEnvEdit = nullptr;
-    QLabel* pythonEnvStatusLabel = nullptr;
-
-    auto* pythonWidget = new QWidget(advancedContainer);
-    pythonWidget->setObjectName("pythonWidget");
-    auto* pythonLayout = new QVBoxLayout(pythonWidget);
-    pythonLayout->setContentsMargins(0, 0, 0, 0);
-
-    // Script path row
-    auto* scriptRow = new QWidget(pythonWidget);
-    auto* scriptLayout = new QHBoxLayout(scriptRow);
-    scriptLayout->setContentsMargins(0, 0, 0, 0);
-
-    auto* scriptLabel = new QLabel(tr("Python Script:"), scriptRow);
-    pythonScriptEdit = new QLineEdit(scriptRow);
-    pythonScriptEdit->setObjectName("pythonScriptEdit");
-    pythonScriptEdit->setPlaceholderText(tr("Path to Python hardware script..."));
-
-    auto* browseButton = new QPushButton(tr("Browse..."), scriptRow);
-    connect(browseButton, &QPushButton::clicked, this, [this, pythonScriptEdit]() {
-        QString path = QFileDialog::getOpenFileName(this, tr("Select Python Script"),
-                                                     QString(), tr("Python Files (*.py)"));
-        if (!path.isEmpty())
-            pythonScriptEdit->setText(path);
-    });
-
-    scriptLayout->addWidget(scriptLabel);
-    scriptLayout->addWidget(pythonScriptEdit, 1);
-    scriptLayout->addWidget(browseButton);
-    pythonLayout->addWidget(scriptRow);
-
-    // Class name row
-    auto* classRow = new QWidget(pythonWidget);
-    auto* classLayout = new QHBoxLayout(classRow);
-    classLayout->setContentsMargins(0, 0, 0, 0);
-
-    auto* classLabel = new QLabel(tr("Python Class:"), classRow);
-    pythonClassEdit = new QComboBox(classRow);
-    pythonClassEdit->setObjectName("pythonClassEdit");
-    pythonClassEdit->setEditable(true);
-
-    classLayout->addWidget(classLabel);
-    classLayout->addWidget(pythonClassEdit, 1);
-    pythonLayout->addWidget(classRow);
-
-    // Environment path row
-    auto* envRow = new QWidget(pythonWidget);
-    auto* envLayout = new QHBoxLayout(envRow);
-    envLayout->setContentsMargins(0, 0, 0, 0);
-
-    auto* envLabel = new QLabel(tr("Python Environment:"), envRow);
-    pythonEnvEdit = new QLineEdit(envRow);
-    pythonEnvEdit->setObjectName("pythonEnvEdit");
-    pythonEnvEdit->setPlaceholderText(tr("Path to venv or conda environment (leave empty for system Python)..."));
-    pythonEnvEdit->setToolTip(tr("Path to a venv or conda environment directory. Leave empty to use the system Python."));
-
-    auto* envBrowseButton = new QPushButton(tr("Browse..."), envRow);
-    connect(envBrowseButton, &QPushButton::clicked, this, [this, pythonEnvEdit]() {
-        QString path = QFileDialog::getExistingDirectory(this, tr("Select Python Environment Directory"));
-        if (!path.isEmpty())
-            pythonEnvEdit->setText(path);
-    });
-
-    envLayout->addWidget(envLabel);
-    envLayout->addWidget(pythonEnvEdit, 1);
-    envLayout->addWidget(envBrowseButton);
-    pythonLayout->addWidget(envRow);
-
-    // Environment status label — shows resolved Python version or an error
-    pythonEnvStatusLabel = new QLabel(pythonWidget);
-    pythonEnvStatusLabel->setObjectName("pythonEnvStatusLabel");
-    pythonLayout->addWidget(pythonEnvStatusLabel);
-
-    // Helper: run an executable with --version and return the first output line
-    auto getPythonVersion = [](const QString &exe) -> QString {
-        QProcess proc;
-        proc.start(exe, {QStringLiteral("--version")});
-        if (!proc.waitForFinished(3000))
-            return {};
-        // Python 3 writes to stdout; Python 2 writes to stderr
-        QByteArray out = proc.readAllStandardOutput().trimmed();
-        if (!out.isEmpty()) return QString::fromUtf8(out);
-        return QString::fromUtf8(proc.readAllStandardError().trimmed());
-    };
-
-    // Helper: update the status label based on the current env path
-    auto updateEnvStatus = [pythonEnvEdit, pythonEnvStatusLabel, getPythonVersion]() {
-        const QString envPath = pythonEnvEdit->text().trimmed();
-        const QString exe = PythonHardwareBase::resolvePythonExecutable(envPath);
-        const QString version = getPythonVersion(exe);
-
-        if (envPath.isEmpty()) {
-            if (!version.isEmpty()) {
-                pythonEnvStatusLabel->setText(tr("System: %1").arg(version));
-                pythonEnvStatusLabel->setStyleSheet(
-                    QString("color: %1;").arg(ThemeColors::getCSSColor(
-                        ThemeColors::SubtleText, pythonEnvStatusLabel)));
-            } else {
-                pythonEnvStatusLabel->setText(tr("System Python not found"));
-                pythonEnvStatusLabel->setStyleSheet(
-                    QString("color: %1;").arg(ThemeColors::getCSSColor(
-                        ThemeColors::StatusError, pythonEnvStatusLabel)));
-            }
-        } else {
-            // resolvePythonExecutable returns "python3" as fallback when nothing is found
-            if (exe == QStringLiteral("python3") && !version.isEmpty()) {
-                // The env path didn't contain an interpreter but system python3 works
-                pythonEnvStatusLabel->setText(tr("No interpreter found in environment; falling back to system Python"));
-                pythonEnvStatusLabel->setStyleSheet(
-                    QString("color: %1;").arg(ThemeColors::getCSSColor(
-                        ThemeColors::StatusWarning, pythonEnvStatusLabel)));
-            } else if (!version.isEmpty()) {
-                pythonEnvStatusLabel->setText(version);
-                pythonEnvStatusLabel->setStyleSheet(
-                    QString("color: %1;").arg(ThemeColors::getCSSColor(
-                        ThemeColors::StatusSuccess, pythonEnvStatusLabel)));
-            } else {
-                pythonEnvStatusLabel->setText(tr("No Python found"));
-                pythonEnvStatusLabel->setStyleSheet(
-                    QString("color: %1;").arg(ThemeColors::getCSSColor(
-                        ThemeColors::StatusError, pythonEnvStatusLabel)));
-            }
-        }
-    };
-
-    // Debounce timer: update status 500 ms after the user stops typing
-    auto* envStatusTimer = new QTimer(pythonWidget);
-    envStatusTimer->setSingleShot(true);
-    connect(envStatusTimer, &QTimer::timeout, this, [updateEnvStatus]() { updateEnvStatus(); });
 
     // Helper: derive default class name from implementation (e.g., "PythonAwg" -> "AwgDriver")
     auto defaultPythonClassName = [](const QString& impl) -> QString {
@@ -762,6 +571,10 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
         return impl.contains(QStringLiteral("Python"));
     };
 
+    // Python settings widget
+    auto* pythonWidget = new PythonSettingsWidget(advancedContainer);
+    pythonWidget->setObjectName("pythonWidget");
+
     // Initialize visibility and values from the current selection
     bool isPython = isSelectedPython();
     pythonWidget->setVisible(isPython);
@@ -769,56 +582,43 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
         auto [type, label] = BC::Key::parseKey(activeHwKey);
         QString impl = HardwareProfileManager::instance().getImplementation(type, label);
 
-        auto sit = d_previewPythonScriptConfig.find(activeHwKey);
-        if (sit != d_previewPythonScriptConfig.end()) {
-            pythonScriptEdit->setText(sit->second);
-        } else {
-            pythonScriptEdit->setText(
-                HardwareProfileManager::instance().getPythonScriptPath(type, label));
-        }
+        auto oit = d_profileOverrides.find(activeHwKey);
+        const ProfileOverrides* ov = (oit != d_profileOverrides.end()) ? &oit->second : nullptr;
 
-        pythonClassEdit->lineEdit()->setPlaceholderText(defaultPythonClassName(impl));
-        populateClassCombo(pythonClassEdit, pythonScriptEdit->text());
-        auto cit = d_previewPythonClassConfig.find(activeHwKey);
-        if (cit != d_previewPythonClassConfig.end()) {
-            pythonClassEdit->setCurrentText(cit->second);
-        } else {
-            pythonClassEdit->setCurrentText(
-                HardwareProfileManager::instance().getPythonClassName(type, label));
-        }
+        pythonWidget->setScriptPath(
+            (ov && ov->pythonScript.has_value()) ? *ov->pythonScript
+            : HardwareProfileManager::instance().getPythonScriptPath(type, label));
 
-        auto eit = d_previewPythonEnvConfig.find(activeHwKey);
-        if (eit != d_previewPythonEnvConfig.end()) {
-            pythonEnvEdit->setText(eit->second);
-        } else {
-            pythonEnvEdit->setText(
-                HardwareProfileManager::instance().getPythonEnvPath(type, label));
-        }
-        updateEnvStatus();
+        pythonWidget->setClassNamePlaceholder(defaultPythonClassName(impl));
+        pythonWidget->setClassName(
+            (ov && ov->pythonClass.has_value()) ? *ov->pythonClass
+            : HardwareProfileManager::instance().getPythonClassName(type, label));
+
+        pythonWidget->setEnvPath(
+            (ov && ov->pythonEnv.has_value()) ? *ov->pythonEnv
+            : HardwareProfileManager::instance().getPythonEnvPath(type, label));
     }
 
-    // Wire text changes into preview configs
-    connect(pythonScriptEdit, &QLineEdit::textChanged, this,
-            [this, getActiveHwKey, pythonClassEdit, populateClassCombo](const QString& text) {
-        QString hwKey = getActiveHwKey();
-        if (hwKey.isEmpty()) return;
-        d_previewPythonScriptConfig[hwKey] = text;
-        populateClassCombo(pythonClassEdit, text);
-    });
-
-    connect(pythonClassEdit, &QComboBox::currentTextChanged, this,
+    // Wire PythonSettingsWidget signals into preview configs
+    connect(pythonWidget, &PythonSettingsWidget::scriptPathChanged, this,
             [this, getActiveHwKey](const QString& text) {
         QString hwKey = getActiveHwKey();
         if (hwKey.isEmpty()) return;
-        d_previewPythonClassConfig[hwKey] = text;
+        d_profileOverrides[hwKey].pythonScript = text;
     });
 
-    connect(pythonEnvEdit, &QLineEdit::textChanged, this,
-            [this, getActiveHwKey, envStatusTimer](const QString& text) {
+    connect(pythonWidget, &PythonSettingsWidget::classNameChanged, this,
+            [this, getActiveHwKey](const QString& text) {
         QString hwKey = getActiveHwKey();
         if (hwKey.isEmpty()) return;
-        d_previewPythonEnvConfig[hwKey] = text;
-        envStatusTimer->start(500);
+        d_profileOverrides[hwKey].pythonClass = text;
+    });
+
+    connect(pythonWidget, &PythonSettingsWidget::envPathChanged, this,
+            [this, getActiveHwKey](const QString& text) {
+        QString hwKey = getActiveHwKey();
+        if (hwKey.isEmpty()) return;
+        d_profileOverrides[hwKey].pythonEnv = text;
     });
 
     advancedLayout->addWidget(pythonWidget);
@@ -836,80 +636,54 @@ void RuntimeHardwareConfigDialog::updateRightPanelForHardwareType(const QString&
     // Update Advanced section when profile selection changes in the list
     connect(profilesList, &QListWidget::itemSelectionChanged, this,
             [this, hardwareType, profilesList, threadedCheckbox, typeDefault, getActiveHwKey,
-             pythonScriptEdit, pythonClassEdit, pythonEnvEdit, pythonWidget, populateClassCombo,
-             updateEnvStatus]() {
+             pythonWidget, defaultPythonClassName]() {
         QString hwKey = getActiveHwKey();
         if (hwKey.isEmpty()) {
             threadedCheckbox->setEnabled(false);
             threadedCheckbox->setChecked(typeDefault);
-            if (pythonWidget)
-                pythonWidget->setVisible(false);
+            pythonWidget->setVisible(false);
             return;
         }
         threadedCheckbox->setEnabled(true);
-        auto it = d_previewThreadedConfig.find(hwKey);
-        bool checked = (it != d_previewThreadedConfig.end()) ? it->second : typeDefault;
-        // Block signals to avoid triggering the toggled connection below
-        QSignalBlocker blocker(threadedCheckbox);
-        threadedCheckbox->setChecked(checked);
+        {
+            auto it = d_profileOverrides.find(hwKey);
+            bool checked = (it != d_profileOverrides.end() && it->second.threaded.has_value())
+                           ? *it->second.threaded : typeDefault;
+            QSignalBlocker blocker(threadedCheckbox);
+            threadedCheckbox->setChecked(checked);
+        }
 
-        if (pythonScriptEdit) {
-            // Show/hide based on whether selected profile is a Python implementation
-            auto [type, label] = BC::Key::parseKey(hwKey);
-            QString impl = HardwareProfileManager::instance().getImplementation(type, label);
-            bool isPython = impl.contains(QStringLiteral("Python"));
-            if (pythonWidget)
-                pythonWidget->setVisible(isPython);
+        // Show/hide based on whether selected profile is a Python implementation
+        auto [type, label] = BC::Key::parseKey(hwKey);
+        QString impl = HardwareProfileManager::instance().getImplementation(type, label);
+        bool isPythonImpl = impl.contains(QStringLiteral("Python"));
+        pythonWidget->setVisible(isPythonImpl);
 
-            if (isPython) {
-                QSignalBlocker scriptBlocker(pythonScriptEdit);
-                auto sit = d_previewPythonScriptConfig.find(hwKey);
-                if (sit != d_previewPythonScriptConfig.end()) {
-                    pythonScriptEdit->setText(sit->second);
-                } else {
-                    pythonScriptEdit->setText(
-                        HardwareProfileManager::instance().getPythonScriptPath(type, label));
-                }
+        if (isPythonImpl) {
+            auto oit = d_profileOverrides.find(hwKey);
+            const ProfileOverrides* ov = (oit != d_profileOverrides.end()) ? &oit->second : nullptr;
 
-                if (pythonClassEdit) {
-                    // Set placeholder from implementation name
-                    QString defaultClass = impl.startsWith(QStringLiteral("Python"))
-                        ? impl.mid(6) + QStringLiteral("Driver") : QString();
-                    pythonClassEdit->lineEdit()->setPlaceholderText(defaultClass);
+            pythonWidget->setScriptPath(
+                (ov && ov->pythonScript.has_value()) ? *ov->pythonScript
+                : HardwareProfileManager::instance().getPythonScriptPath(type, label));
 
-                    populateClassCombo(pythonClassEdit, pythonScriptEdit->text());
+            pythonWidget->setClassNamePlaceholder(defaultPythonClassName(impl));
+            pythonWidget->setClassName(
+                (ov && ov->pythonClass.has_value()) ? *ov->pythonClass
+                : HardwareProfileManager::instance().getPythonClassName(type, label));
 
-                    QSignalBlocker classBlocker(pythonClassEdit);
-                    auto cit = d_previewPythonClassConfig.find(hwKey);
-                    if (cit != d_previewPythonClassConfig.end()) {
-                        pythonClassEdit->setCurrentText(cit->second);
-                    } else {
-                        pythonClassEdit->setCurrentText(
-                            HardwareProfileManager::instance().getPythonClassName(type, label));
-                    }
-                }
-
-                if (pythonEnvEdit) {
-                    QSignalBlocker envBlocker(pythonEnvEdit);
-                    auto eit = d_previewPythonEnvConfig.find(hwKey);
-                    if (eit != d_previewPythonEnvConfig.end()) {
-                        pythonEnvEdit->setText(eit->second);
-                    } else {
-                        pythonEnvEdit->setText(
-                            HardwareProfileManager::instance().getPythonEnvPath(type, label));
-                    }
-                    updateEnvStatus();
-                }
-            }
+            pythonWidget->setEnvPath(
+                (ov && ov->pythonEnv.has_value()) ? *ov->pythonEnv
+                : HardwareProfileManager::instance().getPythonEnvPath(type, label));
         }
     });
 
-    // Wire checkbox changes into d_previewThreadedConfig
+    // Wire checkbox changes into profile overrides
     connect(threadedCheckbox, &QCheckBox::toggled, this,
             [this, hardwareType, profilesList, getActiveHwKey](bool checked) {
         QString hwKey = getActiveHwKey();
         if (hwKey.isEmpty()) return;
-        d_previewThreadedConfig[hwKey] = checked;
+        d_profileOverrides[hwKey].threaded = checked;
     });
 
     layout->addWidget(advancedButton);
@@ -924,13 +698,13 @@ void RuntimeHardwareConfigDialog::onProfileSelectionChanged(const QString& hardw
     if (hardwareType.isEmpty()) {
         return;
     }
-    
+
     // Find the profiles list widget
     auto* profilesList = pu_ui->configurationContentWidget->findChild<QListWidget*>("profilesList");
     if (!profilesList) {
         return;
     }
-    
+
     // Clear existing entries for this hardware type in preview config
     auto it = d_previewRuntimeConfig.begin();
     while (it != d_previewRuntimeConfig.end()) {
@@ -941,21 +715,21 @@ void RuntimeHardwareConfigDialog::onProfileSelectionChanged(const QString& hardw
             ++it;
         }
     }
-    
+
     // Add selected profiles to preview configuration
     auto& profileManager = HardwareProfileManager::instance();
 
     for (int i = 0; i < profilesList->count(); ++i) {
         auto* listItem = profilesList->item(i);
         QString profileLabel = listItem->data(Qt::UserRole).toString();
-        
+
         if (profileLabel.isEmpty()) {
             continue; // Skip items without profile data (like "No profiles available")
         }
-        
+
         // Check if this profile is selected (checked)
         bool isSelected = (listItem->checkState() == Qt::Checked);
-        
+
         // Add to preview configuration if selected
         if (isSelected) {
             QString implementation = profileManager.getImplementation(hardwareType, profileLabel);
@@ -963,7 +737,7 @@ void RuntimeHardwareConfigDialog::onProfileSelectionChanged(const QString& hardw
             d_previewRuntimeConfig[profileKey] = implementation;
         }
     }
-    
+
     // Update preview display
     updatePreviewConfiguration();
 }
@@ -1125,10 +899,10 @@ void RuntimeHardwareConfigDialog::updatePreviewConfiguration()
 {
     // Refresh the configuration overview (left panel) to show preview state
     populateConfigurationOverview();
-    
+
     // Refresh the hardware browser to show updated instance counts
     populateHardwareBrowser();
-    
+
     // Validate the configuration and update status
     validatePreviewConfiguration();
 }
@@ -1138,326 +912,54 @@ void RuntimeHardwareConfigDialog::onAddProfile(const QString& hardwareType)
     if (hardwareType.isEmpty()) {
         return;
     }
-    
-    // Get available implementations for this hardware type
-    QStringList implementations = HardwareRegistry::instance().getImplementations(hardwareType);
-    if (implementations.isEmpty()) {
-        QMessageBox::warning(this, "Add Profile", "No implementations available for " + hardwareType);
+
+    AddProfileDialog addDialog(hardwareType, this);
+    if (addDialog.exec() != QDialog::Accepted) {
         return;
     }
-    
-    // Sort implementations alphabetically for better user experience
-    implementations.sort();
-    
-    // Create a simple dialog for adding a profile
-    QDialog addDialog(this);
-    addDialog.setWindowTitle("Add " + hardwareType + " Profile");
-    addDialog.setModal(true);
-    addDialog.resize(400, 200);
-    
-    auto* layout = new QVBoxLayout(&addDialog);
-    
-    // Implementation selection
-    auto* formLayout = new QFormLayout();
-    
-    auto* implementationCombo = new QComboBox();
-    implementationCombo->addItems(implementations);
-    formLayout->addRow("Implementation:", implementationCombo);
 
-    // Protocol selection (shown only when multiple protocols are supported)
-    auto* protocolLabel = new QLabel("Protocol:");
-    auto* protocolCombo = new QComboBox();
-    formLayout->addRow(protocolLabel, protocolCombo);
+    QString implementation = addDialog.selectedImplementation();
+    QString actualLabel = addDialog.profileLabel();
+    QString pythonScript = addDialog.pythonScriptPath();
 
-    auto updateProtocolCombo = [&](const QString& impl) {
-        auto protocols = HardwareRegistry::instance().getSupportedProtocols(hardwareType, impl);
-        protocolCombo->clear();
-        auto commEnum = QMetaEnum::fromType<CommunicationProtocol::CommType>();
-        for (auto p : protocols)
-            protocolCombo->addItem(QString(commEnum.valueToKey(static_cast<int>(p))),
-                                   static_cast<int>(p));
-        bool multiProtocol = protocols.size() > 1;
-        protocolLabel->setVisible(multiProtocol);
-        protocolCombo->setVisible(multiProtocol);
-    };
-    updateProtocolCombo(implementationCombo->currentText());
-    connect(implementationCombo, &QComboBox::currentTextChanged, updateProtocolCombo);
-
-    // Label input
-    auto* labelEdit = new QLineEdit();
-    labelEdit->setPlaceholderText("Enter unique label for this profile");
-    
-    // Generate a default label suggestion
-    auto& profileManager = HardwareProfileManager::instance();
-    QString defaultLabel = profileManager.generateDefaultLabel(hardwareType);
-    labelEdit->setText(defaultLabel);
-    
-    formLayout->addRow("Label:", labelEdit);
-
-    layout->addLayout(formLayout);
-
-    // Configuration parameters (shown when implementation has HwConfigParams)
-    auto* configParamsGroup = new QGroupBox("Configuration Parameters");
-    auto* configParamsLayout = new QFormLayout(configParamsGroup);
-    configParamsGroup->hide();
-
-    // Map from param key -> widget, rebuilt when implementation changes
-    QHash<QString, QWidget*> paramWidgets;
-
-    auto updateConfigParams = [&](const QString& impl) {
-        // Clear existing widgets
-        while (configParamsLayout->rowCount() > 0)
-            configParamsLayout->removeRow(0);
-        paramWidgets.clear();
-
-        auto params = HardwareRegistry::instance().getConfigParams(hardwareType, impl);
-        configParamsGroup->setVisible(!params.isEmpty());
-
-        for (const auto& param : params) {
-            int typeId = param.defaultValue.userType();
-            QWidget* widget = nullptr;
-
-            if (typeId == QMetaType::Int) {
-                auto* sb = new QSpinBox();
-                sb->setValue(param.defaultValue.toInt());
-                if (param.minimum.isValid()) sb->setMinimum(param.minimum.toInt());
-                if (param.maximum.isValid()) sb->setMaximum(param.maximum.toInt());
-                widget = sb;
-            } else if (typeId == QMetaType::UInt) {
-                auto* sb = new QSpinBox();
-                sb->setValue(static_cast<int>(param.defaultValue.toUInt()));
-                if (param.minimum.isValid()) sb->setMinimum(static_cast<int>(param.minimum.toUInt()));
-                if (param.maximum.isValid()) sb->setMaximum(static_cast<int>(param.maximum.toUInt()));
-                widget = sb;
-            } else if (typeId == QMetaType::Double) {
-                auto* dsb = new QDoubleSpinBox();
-                dsb->setValue(param.defaultValue.toDouble());
-                if (param.minimum.isValid()) dsb->setMinimum(param.minimum.toDouble());
-                if (param.maximum.isValid()) dsb->setMaximum(param.maximum.toDouble());
-                widget = dsb;
-            } else if (typeId == QMetaType::Bool) {
-                auto* cb = new QCheckBox();
-                cb->setChecked(param.defaultValue.toBool());
-                widget = cb;
-            } else {
-                auto* le = new QLineEdit();
-                le->setText(param.defaultValue.toString());
-                widget = le;
-            }
-
-            if (widget) {
-                paramWidgets[param.key] = widget;
-                configParamsLayout->addRow(param.label + ":", widget);
-            }
-        }
-    };
-    updateConfigParams(implementationCombo->currentText());
-    connect(implementationCombo, &QComboBox::currentTextChanged, updateConfigParams);
-
-    layout->addWidget(configParamsGroup);
-
-    // Validation label
-    auto* validationLabel = new QLabel();
-    validationLabel->setStyleSheet(QString("QLabel { color: %1; }")
-        .arg(ThemeColors::getCSSColor(ThemeColors::StatusError, this)));
-    validationLabel->hide();
-    layout->addWidget(validationLabel);
-    
-    // Button box
-    auto* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &addDialog);
-    layout->addWidget(buttonBox);
-    
-    // Connect buttons
-    connect(buttonBox, &QDialogButtonBox::accepted, &addDialog, &QDialog::accept);
-    connect(buttonBox, &QDialogButtonBox::rejected, &addDialog, &QDialog::reject);
-    
-    // Real-time label validation
-    connect(labelEdit, &QLineEdit::textChanged, [&](const QString& text) {
-        auto validationError = profileManager.validateLabel(text);
-        if (validationError != HardwareProfileManager::Valid) {
-            QString errorMsg;
-            switch (validationError) {
-                case HardwareProfileManager::Empty:
-                    errorMsg = "Label cannot be empty";
-                    break;
-                case HardwareProfileManager::TooLong:
-                    errorMsg = "Label too long (max 64 characters)";
-                    break;
-                case HardwareProfileManager::InvalidCharacters:
-                    errorMsg = "Label contains invalid characters";
-                    break;
-                case HardwareProfileManager::StartsWithNumber:
-                    errorMsg = "Label cannot start with a number";
-                    break;
-                case HardwareProfileManager::StartsWithUnderscore:
-                    errorMsg = "Label cannot start with underscore";
-                    break;
-                case HardwareProfileManager::ContainsDots:
-                    errorMsg = "Label cannot contain dots";
-                    break;
-                default:
-                    errorMsg = "Invalid label";
-                    break;
-            }
-            validationLabel->setText(errorMsg);
-            validationLabel->show();
-            buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
-        } else if (!profileManager.isLabelAvailable(hardwareType, text)) {
-            validationLabel->setText("Label already exists for this hardware type");
-            validationLabel->show();
-            buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
-        } else {
-            validationLabel->hide();
-            buttonBox->button(QDialogButtonBox::Ok)->setEnabled(true);
-        }
-    });
-    
-    // Trigger initial validation
-    labelEdit->textChanged(labelEdit->text());
-    
-    // Show dialog and handle result
-    if (addDialog.exec() == QDialog::Accepted) {
-        QString implementation = implementationCombo->currentText();
-        QString label = labelEdit->text().trimmed();
-
-        // Write selected protocol and config params to settings before hardware
-        // object is created, so the constructor finds the correct values.
-        // These must be written directly under the hwKey group (not under an
-        // implementation subgroup), because HardwareObject's SettingsStorage
-        // root is hwKey and it reads commType/params from that level.
-        {
-            auto selectedProtocol = static_cast<CommunicationProtocol::CommType>(
-                protocolCombo->currentData().toInt());
-            QString settingsKey = BC::Key::hwKey(hardwareType, label);
-            QSettings s(QCoreApplication::organizationName(), QCoreApplication::applicationName());
-            s.beginGroup(settingsKey);
-            s.setValue(BC::Key::HW::commType, static_cast<int>(selectedProtocol));
-
-            // Write config params (e.g., numChannels, tunable) so the base class
-            // constructor can read them via SettingsStorage/getOrSetDefault.
-            for (auto it = paramWidgets.cbegin(); it != paramWidgets.cend(); ++it) {
-                QVariant val;
-                if (auto* sb = qobject_cast<QSpinBox*>(it.value()))
-                    val = sb->value();
-                else if (auto* dsb = qobject_cast<QDoubleSpinBox*>(it.value()))
-                    val = dsb->value();
-                else if (auto* cb = qobject_cast<QCheckBox*>(it.value()))
-                    val = cb->isChecked();
-                else if (auto* le = qobject_cast<QLineEdit*>(it.value()))
-                    val = le->text();
-
-                if (val.isValid())
-                    s.setValue(it.key(), val);
-            }
-
-            s.endGroup();
-            s.sync();
-        }
-
-        // Create the profile
-        QString actualLabel = profileManager.createHardwareProfile(hardwareType, implementation, label);
-        
-        if (!actualLabel.isEmpty()) {
-            // Automatically activate the new profile if it's the first profile of this hardware type
-            // Check if any profile already exists for this hardware type in preview configuration
-            bool hasExistingProfile = false;
-            for (auto it = d_previewRuntimeConfig.begin(); it != d_previewRuntimeConfig.end(); ++it) {
-                auto [hwType, label] = BC::Key::parseKey(it->first);
-                if (hwType == hardwareType) {
-                    hasExistingProfile = true;
-                    break;
-                }
-            }
-            
-            // Only add to preview if this is the first profile for this hardware type
-            if (!hasExistingProfile) {
-                QString profileKey = BC::Key::hwKey(hardwareType, actualLabel);
-                d_previewRuntimeConfig[profileKey] = implementation;
-            }
-            
-            // Offer to copy template script for Python hardware implementations
-            if (implementation.startsWith(QStringLiteral("Python"))) {
-                // Derive template filename: "PythonAwg" -> "python_awg_template.py"
-                QString typePart = implementation.mid(6); // Remove "Python" prefix
-                QString templateFilename = QStringLiteral("python_%1_template.py").arg(typePart.toLower());
-
-                // Search for template using same paths as findHostScript()
-                QString appDir = QCoreApplication::applicationDirPath();
-                QString templatePath;
-                QStringList searchPaths = {
-                    appDir + "/" + templateFilename,
-                    appDir + "/../share/blackchirp/" + templateFilename
-                };
-                for (const auto& path : searchPaths) {
-                    if (QFile::exists(path)) {
-                        templatePath = path;
-                        break;
-                    }
-                }
-
-                if (!templatePath.isEmpty()) {
-                    auto result = QMessageBox::question(
-                        this, tr("Python Template Script"),
-                        tr("<b>Python hardware scripts run with full system access.</b> "
-                           "Scripts can access files, network resources, and hardware devices "
-                           "with the same permissions as Blackchirp. Only use scripts from "
-                           "sources you trust."
-                           "<br><br>"
-                           "Would you like to create a copy of the template script to customize?"),
-                        QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
-
-                    if (result == QMessageBox::Yes) {
-                        // Use the application's configured save path as the initial directory
-                        SettingsStorage ss;
-                        QString initialDir = ss.get(BC::Key::savePath, QString(""));
-                        QString suggestedName = QStringLiteral("my_%1.py").arg(typePart.toLower());
-                        if (!initialDir.isEmpty())
-                            suggestedName = QDir(initialDir).filePath(suggestedName);
-                        QString savePath = QFileDialog::getSaveFileName(
-                            this, tr("Save Python Script"),
-                            suggestedName,
-                            tr("Python Scripts (*.py)"));
-
-                        if (!savePath.isEmpty()) {
-                            if (QFile::exists(savePath))
-                                QFile::remove(savePath);
-
-                            if (QFile::copy(templatePath, savePath)) {
-                                // Make the copy writable (QFile::copy preserves source permissions)
-                                QFile::setPermissions(savePath,
-                                    QFile::permissions(savePath) | QFileDevice::WriteOwner);
-
-                                QString profileKey = BC::Key::hwKey(hardwareType, actualLabel);
-                                d_previewPythonScriptConfig[profileKey] = savePath;
-                            } else {
-                                QMessageBox::warning(this, tr("Python Template Script"),
-                                    tr("Failed to copy template script to the selected location."));
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Refresh the right panel to show the new profile with correct radio button state
-            updateRightPanelForHardwareType(hardwareType);
-
-            // Select the newly created profile in the list
-            auto* profilesList = pu_ui->configurationContentWidget->findChild<QListWidget*>("profilesList");
-            if (profilesList) {
-                for (int i = 0; i < profilesList->count(); ++i) {
-                    if (profilesList->item(i)->data(Qt::UserRole).toString() == actualLabel) {
-                        profilesList->setCurrentRow(i);
-                        break;
-                    }
-                }
-            }
-
-            // Update preview display
-            updatePreviewConfiguration();
-        } else {
-            QMessageBox::warning(this, "Add Profile", "Failed to create profile. Please try again.");
+    // Automatically activate the new profile if it's the first profile of this hardware type
+    bool hasExistingProfile = false;
+    for (auto it = d_previewRuntimeConfig.begin(); it != d_previewRuntimeConfig.end(); ++it) {
+        auto [hwType, label] = BC::Key::parseKey(it->first);
+        if (hwType == hardwareType) {
+            hasExistingProfile = true;
+            break;
         }
     }
+
+    // Only add to preview if this is the first profile for this hardware type
+    if (!hasExistingProfile) {
+        QString profileKey = BC::Key::hwKey(hardwareType, actualLabel);
+        d_previewRuntimeConfig[profileKey] = implementation;
+    }
+
+    // Store Python script path if a template was copied
+    if (!pythonScript.isEmpty()) {
+        QString profileKey = BC::Key::hwKey(hardwareType, actualLabel);
+        d_profileOverrides[profileKey].pythonScript = pythonScript;
+    }
+
+    // Refresh the right panel to show the new profile with correct state
+    updateRightPanelForHardwareType(hardwareType);
+
+    // Select the newly created profile in the list
+    auto* profilesList = pu_ui->configurationContentWidget->findChild<QListWidget*>("profilesList");
+    if (profilesList) {
+        for (int i = 0; i < profilesList->count(); ++i) {
+            if (profilesList->item(i)->data(Qt::UserRole).toString() == actualLabel) {
+                profilesList->setCurrentRow(i);
+                break;
+            }
+        }
+    }
+
+    // Update preview display
+    updatePreviewConfiguration();
 }
 
 void RuntimeHardwareConfigDialog::onRemoveProfile(const QString& hardwareType)
@@ -1465,26 +967,25 @@ void RuntimeHardwareConfigDialog::onRemoveProfile(const QString& hardwareType)
     if (hardwareType.isEmpty()) {
         return;
     }
-    
+
     // Find the profiles list widget
     auto* profilesList = pu_ui->configurationContentWidget->findChild<QListWidget*>("profilesList");
     if (!profilesList) {
         return;
     }
-    
+
     // Find which profiles are selected for removal (based on QListWidget selection, not activation state)
     QStringList profilesToRemove;
     auto& profileManager = HardwareProfileManager::instance();
-    
+
     // Get selected items from the list widget
     QList<QListWidgetItem*> selectedItems = profilesList->selectedItems();
-    
+
     if (selectedItems.isEmpty()) {
-        // No items selected in the list widget
         QMessageBox::information(this, "Remove Profile", "Please select at least one profile to remove from the list.");
         return;
     }
-    
+
     // Extract profile labels from selected items, blocking system profiles
     for (QListWidgetItem* item : selectedItems) {
         QString profileLabel = item->data(Qt::UserRole).toString();
@@ -1511,14 +1012,14 @@ void RuntimeHardwareConfigDialog::onRemoveProfile(const QString& hardwareType)
         message = QString("Are you sure you want to delete the profile '%1'?\n\nThis action cannot be undone.")
                      .arg(profilesToRemove.first());
     } else {
-        message = QString("Are you sure you want to delete %1 profiles?\n\nProfiles to delete:\n• %2\n\nThis action cannot be undone.")
+        message = QString("Are you sure you want to delete %1 profiles?\n\nProfiles to delete:\n%2\n\nThis action cannot be undone.")
                      .arg(profilesToRemove.size())
-                     .arg(profilesToRemove.join("\n• "));
+                     .arg(profilesToRemove.join("\n"));
     }
-    
+
     int result = QMessageBox::warning(this, "Remove Profile", message,
                                       QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-    
+
     if (result == QMessageBox::Yes) {
         // Remove profiles
         bool success = true;
@@ -1527,8 +1028,7 @@ void RuntimeHardwareConfigDialog::onRemoveProfile(const QString& hardwareType)
                 success = false;
                 qWarning() << "Failed to delete profile" << hardwareType << label;
             } else {
-                // Phase 4.3: Remove from BOTH preview and original runtime configs
-                // This handles the edge case where deleted profiles must be removed permanently
+                // Remove from BOTH preview and original runtime configs
                 QString profileKey = BC::Key::hwKey(hardwareType, label);
                 d_previewRuntimeConfig.erase(profileKey);
                 d_originalRuntimeConfig.erase(profileKey);
@@ -1552,7 +1052,7 @@ void RuntimeHardwareConfigDialog::onRemoveProfile(const QString& hardwareType)
         if (success) {
             // Refresh the right panel to show updated profile list
             updateRightPanelForHardwareType(hardwareType);
-            
+
             // Update preview configuration display
             updatePreviewConfiguration();
         } else {
@@ -1565,66 +1065,56 @@ void RuntimeHardwareConfigDialog::onDialogAccepted()
 {
     // Apply the preview configuration to the runtime configuration
     auto& runtimeConfig = RuntimeHardwareConfig::instance();
-    
-    if (runtimeConfig.applyConfiguration(d_previewRuntimeConfig)) {
-        // Apply threading overrides from preview config
-        for (auto& [hwKey, threaded] : d_previewThreadedConfig)
-            runtimeConfig.setThreaded(hwKey, threaded);
 
-        // Apply Python script path and class name overrides
-        for (auto& [hwKey, scriptPath] : d_previewPythonScriptConfig) {
+    if (runtimeConfig.applyConfiguration(d_previewRuntimeConfig)) {
+        // Apply per-profile overrides
+        for (auto& [hwKey, ov] : d_profileOverrides) {
+            if (ov.threaded.has_value())
+                runtimeConfig.setThreaded(hwKey, *ov.threaded);
             auto [type, label] = BC::Key::parseKey(hwKey);
-            if (!type.isEmpty() && !label.isEmpty())
-                HardwareProfileManager::instance().setPythonScriptPath(type, label, scriptPath);
-        }
-        for (auto& [hwKey, className] : d_previewPythonClassConfig) {
-            auto [type, label] = BC::Key::parseKey(hwKey);
-            if (!type.isEmpty() && !label.isEmpty())
-                HardwareProfileManager::instance().setPythonClassName(type, label, className);
-        }
-        for (auto& [hwKey, envPath] : d_previewPythonEnvConfig) {
-            auto [type, label] = BC::Key::parseKey(hwKey);
-            if (!type.isEmpty() && !label.isEmpty())
-                HardwareProfileManager::instance().setPythonEnvPath(type, label, envPath);
+            if (!type.isEmpty() && !label.isEmpty()) {
+                auto& pm = HardwareProfileManager::instance();
+                if (ov.pythonScript.has_value())
+                    pm.setPythonScriptPath(type, label, *ov.pythonScript);
+                if (ov.pythonClass.has_value())
+                    pm.setPythonClassName(type, label, *ov.pythonClass);
+                if (ov.pythonEnv.has_value())
+                    pm.setPythonEnvPath(type, label, *ov.pythonEnv);
+            }
         }
 
         // Save all hardware profiles to persistent storage now that dialog is finished
         auto& profileManager = HardwareProfileManager::instance();
         profileManager.saveProfiles();
-        
-        // Phase 3.5.3: Library configuration changes are staged and will be applied
+
+        // Library configuration changes are staged and will be applied
         // by HardwareManager::syncWithRuntimeConfig() which is called by MainWindow
-        // after dialog close. This ensures library changes are applied before 
-        // hardware synchronization begins.
-        
+        // after dialog close.
+
         // Configuration applied successfully
         accept();
     } else {
         // Configuration failed to apply
-        QMessageBox::warning(this, "Configuration Error", 
+        QMessageBox::warning(this, "Configuration Error",
                            "Failed to apply hardware configuration. Please check your settings and try again.");
     }
 }
 
 void RuntimeHardwareConfigDialog::onDialogRejected()
 {
-    // Phase 4.3: Restore original runtime configuration
-    // Note: Profile creation/deletion has already been persisted immediately,
-    // so we only need to restore the runtime configuration state minus any deleted profiles
-    
+    // Restore original runtime configuration
     auto& runtimeConfig = RuntimeHardwareConfig::instance();
-    
+
     // Apply the original configuration (which may have fewer profiles due to deletions)
-    // This handles the edge case where deleted profiles must not be restored
     runtimeConfig.applyConfiguration(d_originalRuntimeConfig);
-    
-    // Phase 3.5.2: Revert all library staged changes
-    revertAllLibraryChanges();
-    
+
+    // Revert all library staged changes
+    p_libraryStatusWidget->revertAllChanges();
+
     // Save all hardware profiles to persistent storage - profiles were created/deleted during session
     auto& profileManager = HardwareProfileManager::instance();
     profileManager.saveProfiles();
-    
+
     // Close dialog without applying preview changes
     reject();
 }
@@ -1633,7 +1123,7 @@ void RuntimeHardwareConfigDialog::validatePreviewConfiguration()
 {
     // Use the new static validation method to validate the preview configuration
     QStringList validationErrors = RuntimeHardwareConfig::validateHardwareConfiguration(d_previewRuntimeConfig);
-    
+
     if (validationErrors.isEmpty()) {
         // Configuration is valid
         updateValidationStatus("Configuration is valid", "Success");
@@ -1656,7 +1146,7 @@ void RuntimeHardwareConfigDialog::validatePreviewConfiguration()
 void RuntimeHardwareConfigDialog::updateValidationStatus(const QString& message, const QString& state)
 {
     pu_ui->validationStatusLabel->setText(message);
-    
+
     // Apply ThemeColors styling based on state
     QString styleSheet;
     if (state == "Success") {
@@ -1669,560 +1159,16 @@ void RuntimeHardwareConfigDialog::updateValidationStatus(const QString& message,
         styleSheet = QString("QLabel { color: %1; font-style: italic; }")
             .arg(ThemeColors::getCSSColor(ThemeColors::StatusInfo, this));
     } else {
-        // Default styling
         styleSheet = QString("QLabel { color: %1; }")
             .arg(ThemeColors::getCSSColor(ThemeColors::StatusSuccess, this));
     }
-    
+
     pu_ui->validationStatusLabel->setStyleSheet(styleSheet);
 }
 
-// Phase 3.5: Library Status Tab Implementation
-
-void RuntimeHardwareConfigDialog::initializeLibraryStatusTab()
+void RuntimeHardwareConfigDialog::onLibraryStagingStateChanged(bool hasChanges)
 {
-    // Connect library overview table selection changes
-    connect(pu_ui->libraryOverviewTable, &QTableWidget::currentItemChanged,
-            this, &RuntimeHardwareConfigDialog::onLibrarySelectionChanged);
-    
-    // Connect configuration controls
-    connect(pu_ui->userLibraryPathEdit, &QLineEdit::textChanged,
-            this, [this]() { onLibraryPathChanged(d_currentLibraryKey); });
-    
-    connect(pu_ui->additionalPathsEdit, &QLineEdit::textChanged,
-            this, [this]() { onLibraryPathChanged(d_currentLibraryKey); });
-    
-    connect(pu_ui->autoDiscoveryCheckBox, &QCheckBox::toggled,
-            this, [this]() { onLibraryPathChanged(d_currentLibraryKey); });
-    
-    connect(pu_ui->browseLibraryButton, &QPushButton::clicked,
-            this, &RuntimeHardwareConfigDialog::onBrowseLibraryPath);
-    
-    connect(pu_ui->testLoadButton, &QPushButton::clicked,
-            this, &RuntimeHardwareConfigDialog::onTestLoadLibrary);
-    
-    connect(pu_ui->refreshLibraryButton, &QPushButton::clicked,
-            this, &RuntimeHardwareConfigDialog::refreshLibraryStatus);
-    
-    // Initialize installation guidance with platform-specific generic instructions
-    pu_ui->installationGuidanceText->setHtml(getGenericInstallationGuidance());
-    
-    // Initialize library status display
-    refreshLibraryStatus();
-}
-
-void RuntimeHardwareConfigDialog::refreshLibraryStatus()
-{
-    // Store current selection to restore later
-    QTableWidgetItem* currentSelection = pu_ui->libraryOverviewTable->currentItem();
-    QString selectedLibraryName;
-    if (currentSelection != nullptr) {
-        // Get the library name from the first column of the current row
-        QTableWidgetItem* nameItem = pu_ui->libraryOverviewTable->item(currentSelection->row(), 0);
-        if (nameItem != nullptr) {
-            selectedLibraryName = nameItem->data(Qt::UserRole).toString();
-        }
-    }
-    
-    // Get references to all vendor libraries
-    QList<QPair<QString, VendorLibrary*>> libraries;
-    libraries.append({"Spectrum M4i", &SpectrumLibrary::instance()});
-    libraries.append({"LabJack USB", &LabjackLibrary::instance()});
-    
-    // Initialize table structure if it's empty (first run)
-    if (pu_ui->libraryOverviewTable->rowCount() == 0) {
-        pu_ui->libraryOverviewTable->setRowCount(libraries.size());
-        
-        // Create table items once and set up basic properties
-        for (int row = 0; row < libraries.size(); ++row) {
-            const QString& displayName = libraries[row].first;
-            
-            // Library name (column 0)
-            auto* nameItem = new QTableWidgetItem(displayName);
-            nameItem->setFlags(nameItem->flags() & ~Qt::ItemIsEditable);
-            nameItem->setData(Qt::UserRole, displayName);
-            pu_ui->libraryOverviewTable->setItem(row, 0, nameItem);
-            
-            // Status (column 1)
-            auto* statusItem = new QTableWidgetItem();
-            statusItem->setFlags(statusItem->flags() & ~Qt::ItemIsEditable);
-            pu_ui->libraryOverviewTable->setItem(row, 1, statusItem);
-            
-            // Version (column 2)
-            auto* versionItem = new QTableWidgetItem();
-            versionItem->setFlags(versionItem->flags() & ~Qt::ItemIsEditable);
-            pu_ui->libraryOverviewTable->setItem(row, 2, versionItem);
-            
-            // Load path (column 3)
-            auto* pathItem = new QTableWidgetItem();
-            pathItem->setFlags(pathItem->flags() & ~Qt::ItemIsEditable);
-            pu_ui->libraryOverviewTable->setItem(row, 3, pathItem);
-        }
-        
-        // Set up column header stretch settings once
-        pu_ui->libraryOverviewTable->horizontalHeader()->setStretchLastSection(true);
-    }
-    
-    // Update existing table items with current library status
-    QTableWidgetItem* itemToReselect = nullptr;
-    
-    for (int row = 0; row < libraries.size() && row < pu_ui->libraryOverviewTable->rowCount(); ++row) {
-        const QString& displayName = libraries[row].first;
-        VendorLibrary* library = libraries[row].second;
-        
-        // Update status (column 1)
-        QString statusText = getLibraryStatusText(*library);
-        QTableWidgetItem* statusItem = pu_ui->libraryOverviewTable->item(row, 1);
-        if (statusItem != nullptr) {
-            statusItem->setText(statusText);
-            
-            // Apply status-based color coding
-            if (library->isAvailable()) {
-                statusItem->setForeground(ThemeColors::getThemeAwareColor(ThemeColors::StatusSuccess, this));
-            } else {
-                statusItem->setForeground(ThemeColors::getThemeAwareColor(ThemeColors::StatusError, this));
-            }
-        }
-        
-        // Update version (column 2)
-        QString versionText = getLibraryVersion(*library);
-        QTableWidgetItem* versionItem = pu_ui->libraryOverviewTable->item(row, 2);
-        if (versionItem != nullptr) {
-            versionItem->setText(versionText);
-        }
-        
-        // Update load path (column 3)
-        QString pathText = library->loadedLibraryPath();
-        if (pathText.isEmpty()) {
-            pathText = "Not loaded";
-        }
-        QTableWidgetItem* pathItem = pu_ui->libraryOverviewTable->item(row, 3);
-        if (pathItem != nullptr) {
-            pathItem->setText(pathText);
-        }
-        
-        // Check if this row should be reselected
-        if (displayName == selectedLibraryName) {
-            itemToReselect = pu_ui->libraryOverviewTable->item(row, 0); // Select first column
-        }
-    }
-    
-    // Restore selection if we had one previously
-    if (itemToReselect != nullptr) {
-        pu_ui->libraryOverviewTable->setCurrentItem(itemToReselect);
-    }
-    
-    // Adjust column widths only if this was the initial setup
-    if (selectedLibraryName.isEmpty()) {
-        pu_ui->libraryOverviewTable->resizeColumnsToContents();
-    }
-    
-    // Update details if a library is currently selected
-    if (p_currentLibrary != nullptr) {
-        updateLibraryDetails(*p_currentLibrary);
-        updateLibraryConfiguration(*p_currentLibrary);
-    }
-}
-
-void RuntimeHardwareConfigDialog::onLibrarySelectionChanged(QTableWidgetItem* current, QTableWidgetItem* previous)
-{
-    Q_UNUSED(previous)
-    
-    if (current == nullptr) {
-        p_currentLibrary = nullptr;
-        d_currentLibraryKey.clear();
-        // Clear details and configuration panels
-        pu_ui->libraryDetailsText->clear();
-        pu_ui->userLibraryPathEdit->clear();
-        pu_ui->additionalPathsEdit->clear();
-        pu_ui->autoDiscoveryCheckBox->setChecked(true);
-        // Restore generic installation guidance
-        pu_ui->installationGuidanceText->setHtml(getGenericInstallationGuidance());
-        return;
-    }
-    
-    // Get selected library
-    int row = current->row();
-    QString libraryDisplayName = pu_ui->libraryOverviewTable->item(row, 0)->data(Qt::UserRole).toString();
-    
-    VendorLibrary* library = nullptr;
-    QString libraryKey;
-    
-    if (libraryDisplayName == "Spectrum M4i") {
-        library = &SpectrumLibrary::instance();
-        libraryKey = BC::Key::Spectrum::spectrumM4i;
-    } else if (libraryDisplayName == "LabJack USB") {
-        library = &LabjackLibrary::instance();
-        libraryKey = BC::Key::LabJack::labjackU3;
-    }
-    
-    if (library != nullptr) {
-        p_currentLibrary = library;
-        d_currentLibraryKey = libraryKey;
-        
-        updateLibraryDetails(*library);
-        updateLibraryConfiguration(*library);
-    }
-}
-
-void RuntimeHardwareConfigDialog::onLibraryPathChanged(const QString& libraryKey)
-{
-    if (libraryKey.isEmpty() || p_currentLibrary == nullptr) {
-        return;
-    }
-    
-    // Update library configuration based on UI input
-    QString userPath = pu_ui->userLibraryPathEdit->text().trimmed();
-    QString additionalPaths = pu_ui->additionalPathsEdit->text().trimmed();
-    bool autoDiscovery = pu_ui->autoDiscoveryCheckBox->isChecked();
-    
-    // Apply settings to staged configuration (no immediate effect)
-    p_currentLibrary->setStagedUserProvidedPath(userPath);
-    
-    // Parse semicolon-separated additional paths
-    QStringList pathList;
-    if (!additionalPaths.isEmpty()) {
-        pathList = additionalPaths.split(';', Qt::SkipEmptyParts);
-        for (QString& path : pathList) {
-            path = path.trimmed();
-        }
-    }
-    p_currentLibrary->setStagedSearchPaths(pathList);
-    
-    p_currentLibrary->setStagedAutoDiscoveryEnabled(autoDiscovery);
-    
-    // Update visual indicators for staged changes
-    updateStagingIndicators();
-    updateAllLibraryStagingIndicators();
-}
-
-void RuntimeHardwareConfigDialog::onBrowseLibraryPath()
-{
-    if (p_currentLibrary == nullptr) {
-        return;
-    }
-    
-    QString currentPath = pu_ui->userLibraryPathEdit->text();
-    QString startDir = currentPath.isEmpty() ? QDir::homePath() : currentPath;
-
-    QString selectedPath = QFileDialog::getExistingDirectory(
-        this,
-        QString("Select Directory Containing %1 Library").arg(getLibraryDisplayName(*p_currentLibrary)),
-        startDir
-    );
-
-    if (!selectedPath.isEmpty()) {
-        pu_ui->userLibraryPathEdit->setText(selectedPath);
-    }
-}
-
-void RuntimeHardwareConfigDialog::onTestLoadLibrary()
-{
-    if (p_currentLibrary == nullptr) {
-        return;
-    }
-    
-    // Check if there are staged changes to test
-    if (!p_currentLibrary->hasUnstagedChanges()) {
-        // No staged changes - test with current active settings
-        bool success = p_currentLibrary->reloadLibrary();
-        
-        QString title = QString("Test Load - %1").arg(getLibraryDisplayName(*p_currentLibrary));
-        if (success) {
-            QMessageBox::information(this, title, "Library loaded successfully with current active settings!");
-        } else {
-            QString errorMsg = QString("Failed to load library with current active settings:\n\n%1").arg(p_currentLibrary->errorString());
-            QMessageBox::warning(this, title, errorMsg);
-        }
-        
-        // Refresh the status display
-        refreshLibraryStatus();
-        return;
-    }
-    
-    // We have staged changes - warn user and test with temporary application
-    QString title = QString("Test Load - %1").arg(getLibraryDisplayName(*p_currentLibrary));
-    int result = QMessageBox::question(this, title, 
-        "This will temporarily apply your staged changes to test the library loading.\n\n"
-        "The changes will be reverted after testing. Continue?",
-        QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
-    
-    if (result != QMessageBox::Yes) {
-        return;
-    }
-    
-    // Store current active state for rollback (save staging state)
-    QString originalStagedUserPath = p_currentLibrary->getStagedUserProvidedPath();
-    QStringList originalStagedSearchPaths = p_currentLibrary->getStagedSearchPaths();
-    bool originalStagedAutoDiscovery = p_currentLibrary->isStagedAutoDiscoveryEnabled();
-    
-    // Temporarily apply staged settings
-    bool applySuccess = p_currentLibrary->applyChanges();
-    
-    if (!applySuccess) {
-        QMessageBox::warning(this, title, 
-            QString("Failed to apply staged changes for testing:\n\n%1").arg(p_currentLibrary->errorString()));
-        return;
-    }
-    
-    // Show test result
-    if (p_currentLibrary->isAvailable()) {
-        QMessageBox::information(this, title, "Library loaded successfully with staged settings!");
-    } else {
-        QString errorMsg = QString("Failed to load library with staged settings:\n\n%1").arg(p_currentLibrary->errorString());
-        QMessageBox::warning(this, title, errorMsg);
-    }
-    
-    // Restore original staged state (user's pending changes)
-    p_currentLibrary->setStagedUserProvidedPath(originalStagedUserPath);
-    p_currentLibrary->setStagedSearchPaths(originalStagedSearchPaths);
-    p_currentLibrary->setStagedAutoDiscoveryEnabled(originalStagedAutoDiscovery);
-    
-    // Refresh the status display
-    refreshLibraryStatus();
-    updateStagingIndicators();
-}
-
-void RuntimeHardwareConfigDialog::updateLibraryDetails(VendorLibrary& library)
-{
-    QString details;
-    
-    // Library name and description
-    details += QString("<h3>%1</h3>").arg(getLibraryDisplayName(library));
-    details += QString("<p><b>Library Name:</b> %1</p>").arg(library.libraryName());
-    
-    // Status information
-    details += QString("<p><b>Status:</b> %1</p>").arg(getLibraryStatusText(library));
-    
-    if (library.isAvailable()) {
-        // Available - show success information
-        details += QString("<p style='color: %1;'><b>✓ Library is available and ready</b></p>")
-                    .arg(ThemeColors::getCSSColor(ThemeColors::StatusSuccess, this));
-        
-        QString loadedPath = library.loadedLibraryPath();
-        if (!loadedPath.isEmpty()) {
-            details += QString("<p><b>Loaded from:</b><br><code>%1</code></p>").arg(loadedPath);
-        }
-        
-        // Version information
-        QString version = getLibraryVersion(library);
-        if (version != "Unknown") {
-            details += QString("<p><b>Version:</b> %1</p>").arg(version);
-        }
-        
-    } else {
-        // Not available - show error information
-        details += QString("<p style='color: %1;'><b>✗ Library is not available</b></p>")
-                    .arg(ThemeColors::getCSSColor(ThemeColors::StatusError, this));
-        
-        QString errorMsg = library.errorString();
-        if (!errorMsg.isEmpty()) {
-            details += QString("<p><b>Error:</b> %1</p>").arg(errorMsg);
-        }
-        
-        if (library.wasLoadingAttempted()) {
-            details += "<p><b>Loading was attempted</b> - check configuration settings below.</p>";
-        } else {
-            details += "<p><b>Loading not attempted</b> - library will be loaded when needed.</p>";
-        }
-    }
-    
-    // Platform-specific library names
-    QStringList platformNames = library.platformLibraryNames();
-    if (!platformNames.isEmpty()) {
-        details += "<p><b>Platform library names:</b><br>";
-        for (const QString& name : platformNames) {
-            details += QString("• <code>%1</code><br>").arg(name);
-        }
-        details += "</p>";
-    }
-    
-    // Default search paths
-    QStringList defaultPaths = library.defaultSearchPaths();
-    if (!defaultPaths.isEmpty()) {
-        details += "<p><b>Default search paths:</b><br>";
-        for (const QString& path : defaultPaths) {
-            details += QString("• <code>%1</code><br>").arg(path);
-        }
-        details += "</p>";
-    }
-    
-    pu_ui->libraryDetailsText->setHtml(details);
-}
-
-void RuntimeHardwareConfigDialog::updateLibraryConfiguration(VendorLibrary& library)
-{
-    // Block signals to prevent recursive calls
-    pu_ui->userLibraryPathEdit->blockSignals(true);
-    pu_ui->additionalPathsEdit->blockSignals(true);
-    pu_ui->autoDiscoveryCheckBox->blockSignals(true);
-    
-    // Load staged settings (what user is editing, not active configuration)
-    pu_ui->userLibraryPathEdit->setText(library.getStagedUserProvidedPath());
-    
-    QStringList userPaths = library.getStagedSearchPaths();
-    pu_ui->additionalPathsEdit->setText(userPaths.join(";"));
-    
-    pu_ui->autoDiscoveryCheckBox->setChecked(library.isStagedAutoDiscoveryEnabled());
-    
-    // Re-enable signals
-    pu_ui->userLibraryPathEdit->blockSignals(false);
-    pu_ui->additionalPathsEdit->blockSignals(false);
-    pu_ui->autoDiscoveryCheckBox->blockSignals(false);
-    
-    // Enable controls
-    pu_ui->userLibraryPathEdit->setEnabled(true);
-    pu_ui->browseLibraryButton->setEnabled(true);
-    pu_ui->additionalPathsEdit->setEnabled(true);
-    pu_ui->autoDiscoveryCheckBox->setEnabled(true);
-    pu_ui->testLoadButton->setEnabled(true);
-    
-    // Update installation guidance with library-specific instructions
-    pu_ui->installationGuidanceText->setHtml(library.getInstallationInstructions());
-    
-    // Update visual indicators for staging state
-    updateStagingIndicators();
-}
-
-QString RuntimeHardwareConfigDialog::getLibraryStatusText(VendorLibrary& library)
-{
-    if (library.isAvailable()) {
-        return "Available";
-    } else if (library.wasLoadingAttempted()) {
-        return "Error";
-    } else {
-        return "Not Found";
-    }
-}
-
-QString RuntimeHardwareConfigDialog::getLibraryDisplayName(VendorLibrary& library)
-{
-    // Map library instances to display names
-    if (&library == &SpectrumLibrary::instance()) {
-        return "Spectrum M4i";
-    } else if (&library == &LabjackLibrary::instance()) {
-        return "LabJack USB";
-    } else {
-        return library.libraryName();
-    }
-}
-
-QString RuntimeHardwareConfigDialog::getLibraryVersion(VendorLibrary& library)
-{
-    if (!library.isAvailable()) {
-        return "Unknown";
-    }
-    
-    // Use the generic getVersionInfo() method first
-    QString versionInfo = library.getVersionInfo();
-    if (!versionInfo.isEmpty()) {
-        return versionInfo;
-    }
-    
-    // Fallback to specific library implementations for backward compatibility
-    if (&library == &LabjackLibrary::instance()) {
-        LabjackLibrary& ljLib = static_cast<LabjackLibrary&>(library);
-        if (ljLib.LJUSB_GetLibraryVersion != nullptr) {
-            try {
-                float version = ljLib.LJUSB_GetLibraryVersion();
-                return QString::number(version, 'f', 2);
-            } catch (...) {
-                // If version call fails, just return "Available"
-                return "Available";
-            }
-        }
-    }
-    
-    return "Available";
-}
-
-void RuntimeHardwareConfigDialog::updateStagingIndicators()
-{
-    if (p_currentLibrary == nullptr) {
-        return;
-    }
-    
-    // Update UI elements to show staging state
-    bool hasChanges = p_currentLibrary->hasUnstagedChanges();
-    
-    // Update library configuration panel label to show staging state
-    QString configLabel = "Library Configuration";
-    if (hasChanges) {
-        configLabel += " *";  // Add asterisk for pending changes
-        pu_ui->libraryConfigPanelLabel->setStyleSheet(
-            QString("QLabel { font-weight: bold; color: %1; }")
-            .arg(ThemeColors::getCSSColor(ThemeColors::StatusInfo, this)));
-    } else {
-        pu_ui->libraryConfigPanelLabel->setStyleSheet("QLabel { font-weight: bold; }");
-    }
-    pu_ui->libraryConfigPanelLabel->setText(configLabel);
-    
-    // Update test load button text based on staging state
-    if (hasChanges) {
-        pu_ui->testLoadButton->setText("Test Load (Staged)");
-        pu_ui->testLoadButton->setStyleSheet(
-            QString("QPushButton { color: %1; font-weight: bold; }")
-            .arg(ThemeColors::getCSSColor(ThemeColors::StatusInfo, this)));
-    } else {
-        pu_ui->testLoadButton->setText("Test Load");
-        pu_ui->testLoadButton->setStyleSheet("");
-    }
-    
-    // Update form controls to show modified state
-    updateControlStagingIndicator(pu_ui->userLibraryPathEdit, 
-        p_currentLibrary->getStagedUserProvidedPath() != p_currentLibrary->getActiveUserProvidedPath());
-        
-    updateControlStagingIndicator(pu_ui->additionalPathsEdit,
-        p_currentLibrary->getStagedSearchPaths() != p_currentLibrary->getActiveSearchPaths());
-        
-    updateControlStagingIndicator(pu_ui->autoDiscoveryCheckBox,
-        p_currentLibrary->isStagedAutoDiscoveryEnabled() != p_currentLibrary->isActiveAutoDiscoveryEnabled());
-}
-
-void RuntimeHardwareConfigDialog::updateControlStagingIndicator(QWidget* control, bool isModified)
-{
-    if (control == nullptr) {
-        return;
-    }
-    
-    if (isModified) {
-        // Apply visual indication for modified controls
-        control->setProperty("staging-modified", true);
-        control->setStyleSheet(
-            QString("QLineEdit { border: 2px solid %1; } QCheckBox { color: %1; font-weight: bold; }")
-            .arg(ThemeColors::getCSSColor(ThemeColors::StatusInfo, this)));
-    } else {
-        // Remove visual indication
-        control->setProperty("staging-modified", false);
-        control->setStyleSheet("");
-    }
-}
-
-void RuntimeHardwareConfigDialog::revertAllLibraryChanges()
-{
-    // Revert staged changes for all vendor libraries
-    SpectrumLibrary::instance().revertChanges();
-    LabjackLibrary::instance().revertChanges();
-    
-    // Update UI to reflect reverted state if library is currently selected
-    if (p_currentLibrary != nullptr) {
-        updateLibraryConfiguration(*p_currentLibrary);
-    }
-}
-
-void RuntimeHardwareConfigDialog::updateAllLibraryStagingIndicators()
-{
-    // Update staging indicators for all libraries, including tab-level indicators
-    bool hasAnyLibraryChanges = SpectrumLibrary::instance().hasUnstagedChanges() ||
-                                LabjackLibrary::instance().hasUnstagedChanges();
-    
     // Update the Library Status tab title to show staging state
-    QString tabTitle = "Library Status";
-    if (hasAnyLibraryChanges) {
-        tabTitle += " *";  // Add asterisk to tab for global staging indicator
-    }
-    
-    // Find and update the tab title
     int tabIndex = -1;
     for (int i = 0; i < pu_ui->mainTabWidget->count(); ++i) {
         if (pu_ui->mainTabWidget->widget(i) == pu_ui->libraryStatusTab) {
@@ -2230,111 +1176,19 @@ void RuntimeHardwareConfigDialog::updateAllLibraryStagingIndicators()
             break;
         }
     }
-    
+
     if (tabIndex >= 0) {
+        QString tabTitle = hasChanges ? "Library Status *" : "Library Status";
         pu_ui->mainTabWidget->setTabText(tabIndex, tabTitle);
-        
-        // Apply styling to tab if there are changes
-        if (hasAnyLibraryChanges) {
-            pu_ui->mainTabWidget->tabBar()->setTabTextColor(tabIndex, 
+
+        if (hasChanges) {
+            pu_ui->mainTabWidget->tabBar()->setTabTextColor(tabIndex,
                 ThemeColors::getThemeAwareColor(ThemeColors::StatusInfo, this));
         } else {
-            pu_ui->mainTabWidget->tabBar()->setTabTextColor(tabIndex, 
+            pu_ui->mainTabWidget->tabBar()->setTabTextColor(tabIndex,
                 palette().color(QPalette::Text));
         }
     }
-    
-    // Update current library's indicators if one is selected
-    if (p_currentLibrary != nullptr) {
-        updateStagingIndicators();
-    }
-}
-
-QString RuntimeHardwareConfigDialog::getGenericInstallationGuidance() const
-{
-#ifdef Q_OS_LINUX
-    return QString(
-        "<p><b>Installing Vendor Libraries on Linux:</b></p>"
-        "<ol>"
-        "<li><b>Download:</b> Visit the vendor's official website to download the Linux driver packages</li>"
-        "<li><b>Prerequisites:</b> Ensure you have necessary development tools:"
-        "<pre>sudo apt update\nsudo apt install build-essential linux-headers-$(uname -r)</pre></li>"
-        "<li><b>Installation:</b> Most vendors provide installation scripts that handle:"
-        "<ul>"
-        "<li>Kernel module compilation and loading</li>"
-        "<li>Library installation to standard paths (typically <code>/usr/local/lib/</code> or <code>/opt/</code>)</li>"
-        "<li>Device permissions and udev rules</li>"
-        "</ul></li>"
-        "<li><b>User Permissions:</b> Add your user to the appropriate groups for device access</li>"
-        "<li><b>Library Path:</b> Update <code>LD_LIBRARY_PATH</code> if libraries are in non-standard locations</li>"
-        "</ol>"
-        "<p><b>Common Troubleshooting:</b></p>"
-        "<ul>"
-        "<li>Check kernel module loading: <code>lsmod | grep [vendor]</code></li>"
-        "<li>Verify device files exist: <code>ls -la /dev/</code></li>"
-        "<li>Update library cache: <code>sudo ldconfig</code></li>"
-        "<li>Check USB device detection: <code>lsusb</code></li>"
-        "</ul>"
-    );
-#elif defined(Q_OS_WIN)
-    return QString(
-        "<p><b>Installing Vendor Libraries on Windows:</b></p>"
-        "<ol>"
-        "<li><b>Download:</b> Visit the vendor's official website to download Windows driver packages</li>"
-        "<li><b>Administrator Rights:</b> Always run installers as Administrator</li>"
-        "<li><b>Installation:</b> Windows installers typically handle:"
-        "<ul>"
-        "<li>Driver installation and digital signature verification</li>"
-        "<li>Library registration in system directories</li>"
-        "<li>Device driver association</li>"
-        "</ul></li>"
-        "<li><b>Reboot:</b> Most hardware drivers require a system restart</li>"
-        "<li><b>Verification:</b> Check Device Manager for proper device recognition</li>"
-        "</ol>"
-        "<p><b>Common Troubleshooting:</b></p>"
-        "<ul>"
-        "<li>Disable Driver Signature Enforcement if needed (advanced users)</li>"
-        "<li>Check Windows Event Viewer for driver errors</li>"
-        "<li>Ensure proper USB cable connections</li>"
-        "<li>Try different USB ports if devices aren't detected</li>"
-        "</ul>"
-    );
-#elif defined(Q_OS_MACOS)
-    return QString(
-        "<p><b>Installing Vendor Libraries on macOS:</b></p>"
-        "<ol>"
-        "<li><b>Download:</b> Visit the vendor's official website to download macOS driver packages</li>"
-        "<li><b>Security:</b> Allow installation from identified developers in System Preferences > Security & Privacy</li>"
-        "<li><b>Installation:</b> Run the .pkg installer and follow the setup wizard</li>"
-        "<li><b>System Extensions:</b> Grant permission for system extensions when prompted</li>"
-        "<li><b>Reboot:</b> Restart your Mac to load kernel extensions</li>"
-        "</ol>"
-        "<p><b>Apple Silicon Considerations:</b></p>"
-        "<ul>"
-        "<li>Ensure the driver supports ARM64 architecture</li>"
-        "<li>Some vendors may require Rosetta 2 for Intel-compiled drivers</li>"
-        "</ul>"
-        "<p><b>Common Troubleshooting:</b></p>"
-        "<ul>"
-        "<li>Check System Preferences > Security & Privacy for blocked extensions</li>"
-        "<li>Verify kernel extension loading: <code>kextstat</code></li>"
-        "<li>Check USB device detection: <code>system_profiler SPUSBDataType</code></li>"
-        "</ul>"
-    );
-#else
-    return QString(
-        "<p><b>Installing Vendor Libraries:</b></p>"
-        "<p>Please visit the vendor's official website to download the appropriate driver package for your operating system.</p>"
-        "<p>Most hardware vendors provide comprehensive installation instructions and support documentation specific to their products.</p>"
-        "<p><b>General Guidelines:</b></p>"
-        "<ul>"
-        "<li>Always download drivers from official vendor websites</li>"
-        "<li>Follow vendor-specific installation procedures</li>"
-        "<li>Ensure your system meets hardware and software requirements</li>"
-        "<li>Check vendor documentation for platform-specific considerations</li>"
-        "</ul>"
-    );
-#endif
 }
 
 bool RuntimeHardwareConfigDialog::getTypeDefaultThreaded(const QString& hardwareType)
