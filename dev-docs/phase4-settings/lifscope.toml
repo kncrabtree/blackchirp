@@ -1,0 +1,203 @@
+# LifScope Settings Review
+# Status: pending
+#
+# Implementations:
+#   VirtualLifScope, RigolDS2302A, M4i2211x8, PythonLifScope
+#
+# Priority: Required | Important | Optional
+# Decision (partial): add_to_missing | existing_only | setdefault_only | remove
+#
+# NOTES:
+#   1. PythonLifScope has configParams: numAnalogChannels and numDigitalChannels.
+#      These must become Required.
+#
+#   2. maxRecordLength, maxAverages, maxRecords are missing from VirtualLifScope
+#      and M4i2211x8. RigolDS2302A sets them to hardware-specific values
+#      (1400000, 1, 1 respectively). PythonLifScope sets maxRecordLength=1e8
+#      and maxAverages=100 but NOT maxRecords. DECISION NEEDED per impl.
+#
+#   3. canMultiRecord is false for ALL LifScope implementations (LIF digitizers
+#      do not use multi-record mode). maxRecords=1 for RigolDS2302A reflects this.
+#
+#   4. RigolDS2302A has a unique setting: queryIntervalMs (101 ms). This controls
+#      a polling delay specific to Rigol scope communication. DECISION NEEDED.
+#
+#   5. BUG: M4i2211x8 has a typo in the sample rate text: "1250 GSa/s" should
+#      be "1250 MSa/s". This should be fixed when migrating.
+#
+#   6. M4i2211x8 has a Custom comm array (device path) -- excluded from registration.
+#
+#   7. LifScope shares the BC::Key::Digi namespace with FtmwScope and IOBoard,
+#      but bandwidth is never set (not relevant for LIF digitizers).
+# ==============================================================================
+
+# ── Common Scalar Settings ─────────────────────────────────────────────────────
+
+[settings.numAnalogChannels]
+label    = "Analog Channels"
+tooltip  = "Number of analog input channels"
+min      = 1
+max      = 32
+priority = "Required"
+
+[settings.numDigitalChannels]
+label    = "Digital Channels"
+tooltip  = "Number of digital input channels"
+min      = 0
+max      = 32
+priority = "Required"
+
+[settings.hasAuxTriggerChannel]
+label    = "Aux Trigger Channel"
+tooltip  = "Has auxiliary trigger input"
+priority = "Optional"
+
+[settings.minFullScale]
+label    = "Min Full Scale (V)"
+tooltip  = "Minimum full-scale voltage range"
+priority = "Optional"
+
+[settings.maxFullScale]
+label    = "Max Full Scale (V)"
+tooltip  = "Maximum full-scale voltage range"
+priority = "Optional"
+
+[settings.minVOffset]
+label    = "Min V Offset (V)"
+tooltip  = "Minimum vertical offset"
+priority = "Optional"
+
+[settings.maxVOffset]
+label    = "Max V Offset (V)"
+tooltip  = "Maximum vertical offset"
+priority = "Optional"
+
+[settings.isTriggered]
+label    = "Externally Triggered"
+tooltip  = "Digitizer uses external trigger signal"
+priority = "Optional"
+
+[settings.minTrigDelay]
+label    = "Min Trig Delay (us)"
+tooltip  = "Minimum trigger delay in microseconds"
+priority = "Optional"
+
+[settings.maxTrigDelay]
+label    = "Max Trig Delay (us)"
+tooltip  = "Maximum trigger delay in microseconds"
+priority = "Optional"
+
+[settings.minTrigLevel]
+label    = "Min Trig Level (V)"
+tooltip  = "Minimum trigger threshold voltage"
+priority = "Optional"
+
+[settings.maxTrigLevel]
+label    = "Max Trig Level (V)"
+tooltip  = "Maximum trigger threshold voltage"
+priority = "Optional"
+
+[settings.canBlockAverage]
+label    = "Block Average"
+tooltip  = "Supports block averaging mode"
+priority = "Optional"
+
+[settings.canMultiRecord]
+label    = "Multi Record"
+tooltip  = "Supports multi-record acquisition (false for all LIF scopes)"
+priority = "Optional"
+
+[settings.multiBlock]
+label    = "Multi Block"
+tooltip  = "Can simultaneously block average and multi-record"
+priority = "Optional"
+
+[settings.maxBytes]
+label    = "Max Bytes/Point"
+tooltip  = "Maximum bytes per sample"
+min      = 1
+max      = 4
+priority = "Optional"
+
+# ── Partial Settings ───────────────────────────────────────────────────────────
+
+[partial.maxRecordLength]
+label            = "Max Record Length"
+tooltip          = "Maximum record length in samples"
+priority         = "Optional"
+default_if_added = 100000000
+missing_from     = ["VirtualLifScope", "M4i2211x8"]
+# RigolDS2302A = 1400000; PythonLifScope = 100000000
+# M4i2211x8 default needs verification from Spectrum M4i.2211-x8 manual.
+decision         = "add_to_missing"
+
+[partial.maxAverages]
+label            = "Max Averages"
+tooltip          = "Maximum number of block averages"
+priority         = "Optional"
+default_if_added = 100
+missing_from     = ["VirtualLifScope", "M4i2211x8"]
+# RigolDS2302A = 1; PythonLifScope = 100
+decision         = "add_to_missing"
+
+[partial.maxRecords]
+label            = "Max Records"
+tooltip          = "Maximum number of multi-records"
+priority         = "Optional"
+default_if_added = 1
+missing_from     = ["VirtualLifScope", "M4i2211x8", "PythonLifScope"]
+# Only RigolDS2302A sets this (= 1). For LIF scopes maxRecords=1 always.
+decision         = "add_to_missing"
+
+# ── Implementation-Only Settings ───────────────────────────────────────────────
+
+[impl_only.RigolDS2302A.queryIntervalMs]
+label    = "Query Interval (ms)"
+tooltip  = "Polling interval between scope queries during acquisition"
+default  = 101
+min      = 1
+priority = "Optional"
+# DECISION: register as Optional (existing_only), or leave as setDefault only?
+decision = ""
+
+# ── Sample Rates Array ─────────────────────────────────────────────────────────
+
+[arrays.sampleRates]
+label    = "Sample Rates"
+tooltip  = "Available digitizer sample rates"
+priority = "Important"
+
+# ── Reference: Default Values per Implementation ───────────────────────────────
+#
+# Key                   |   Virtual | RigolDS2302A | M4i2211x8 |     Python
+# ----------------------|-----------|--------------|-----------|------------
+# numAnalogChannels     |         2 |            2 |         2 |   2 (req)*
+# numDigitalChannels    |         0 |            0 |         0 |   0 (req)*
+# hasAuxTriggerChannel  |      true |         true |      true |       true
+# minFullScale          |      0.05 |         0.05 |      0.05 |       0.05
+# maxFullScale          |       2.0 |          2.5*|       2.5*|        2.0
+# minVOffset            |      -2.0 |         -2.0 |      -2.0 |       -2.0
+# maxVOffset            |       2.0 |          2.0 |       2.0 |        2.0
+# isTriggered           |      true |         true |      true |       true
+# minTrigDelay          |     -10.0 |        -10.0 |     -10.0 |      -10.0
+# maxTrigDelay          |      10.0 |         10.0 |      10.0 |       10.0
+# minTrigLevel          |      -5.0 |         -5.0 |      -5.0 |       -5.0
+# maxTrigLevel          |       5.0 |          5.0 |       5.0 |        5.0
+# canBlockAverage       |     false |        false |     false |       true*
+# canMultiRecord        |     false |        false |     false |      false
+# multiBlock            |     false |        false |     false |          ─
+# maxBytes              |         2 |            1*|         1*|          2
+#
+# Partial (─ = not set):
+# maxRecordLength       |         ─ |      1400000*|         ─ |     1e+08*
+# maxAverages           |         ─ |            1*|         ─ |       100*
+# maxRecords            |         ─ |            1 |         ─ |           ─
+# queryIntervalMs       |         ─ |          101 |         ─ |           ─
+#
+# * = differs from majority
+#
+# Sample rates:
+# VirtualLifScope  78.125, 156.25, 312.5, 625, 1250, 2500 MSa/s
+# RigolDS2302A     10, 20, 50, 100, 200, 500, 1000 MSa/s
+# M4i2211x8        78.125, 156.25, 312.5, 625, 1250 MSa/s  [BUG: last entry says "GSa/s"]
+# PythonLifScope   78.125, 156.25, 312.5, 625, 1250 MSa/s  [same typo as M4i2211x8]

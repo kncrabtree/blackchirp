@@ -1,0 +1,169 @@
+# LifLaser Settings Review
+# Status: pending
+#
+# Implementations:
+#   VirtualLifLaser, Opolette, SirahCobra, PythonLifLaser
+#
+# Priority: Required | Important | Optional
+# Decision (partial): add_to_missing | existing_only | setdefault_only | remove
+#
+# NOTES:
+#   1. PythonLifLaser configParams() returns {} (empty). No pre-construction
+#      parameters. Migration is mechanical only.
+#
+#   2. SirahCobra is radically different from the other three implementations:
+#        - Different wavelength range (450-700 nm vs 250-2000 nm)
+#        - hasFl = false (no flashlamp)
+#        - hasExtStage = true (external crystal stage for SHG/THG)
+#        - ~8 unique scalar settings for the external stage
+#        - 3 calibration arrays: stages, extStageCrystalPoly, extStageCompPoly
+#
+#   3. SirahCobra calibration arrays contain instrument-specific data (grating
+#      parameters, polynomial coefficients). The defaults in the code are
+#      specific to one particular instrument. DECISION NEEDED for these arrays:
+#        - Register as Optional (user must customize at creation time)?
+#        - Leave as setArray in constructor (power-user only, edit via HWDialog)?
+#        - Register as required? (heavy but ensures they are visible at setup)
+#
+#   4. SirahCobra extStagePort ("COM9") is a serial port name. This is more
+#      like a communication setting. DECISION NEEDED: register or exclude?
+# ==============================================================================
+
+# ── Common Scalar Settings ─────────────────────────────────────────────────────
+
+[settings.minPos]
+label    = "Min Position"
+tooltip  = "Minimum laser wavelength/position"
+priority = "Important"
+
+[settings.maxPos]
+label    = "Max Position"
+tooltip  = "Maximum laser wavelength/position"
+priority = "Important"
+
+[settings.units]
+label    = "Position Units"
+tooltip  = "Units for position display (e.g. nm, cm-1)"
+priority = "Optional"
+
+[settings.decimals]
+label    = "Display Decimals"
+tooltip  = "Number of decimal places for position display"
+min      = 0
+max      = 8
+priority = "Optional"
+
+[settings.hasFl]
+label    = "Has Flashlamp"
+tooltip  = "Laser has a flashlamp (pumped with separate trigger)"
+priority = "Optional"
+
+# ── SirahCobra-Only Scalar Settings ───────────────────────────────────────────
+
+[impl_only.SirahCobra.hasExtStage]
+label    = "Has External Stage"
+tooltip  = "Laser has an external crystal rotation stage for frequency doubling/tripling"
+default  = true
+priority = "Optional"
+
+[impl_only.SirahCobra.extStagePort]
+label    = "Ext Stage Port"
+tooltip  = "Serial port name for the external crystal stage controller"
+default  = "COM9"
+priority = "Optional"
+# DECISION: register, or treat as communication config (exclude)?
+decision = ""
+
+[impl_only.SirahCobra.extStageBaud]
+label    = "Ext Stage Baud Rate"
+tooltip  = "Baud rate for external crystal stage serial communication"
+default  = 9600
+priority = "Optional"
+
+[impl_only.SirahCobra.extStageCrystalAddress]
+label    = "Crystal Stage Address"
+tooltip  = "Motor controller address for the crystal rotation stage"
+default  = 8
+priority = "Optional"
+
+[impl_only.SirahCobra.extStageCompAddress]
+label    = "Compensator Stage Address"
+tooltip  = "Motor controller address for the compensator stage"
+default  = 2
+priority = "Optional"
+
+[impl_only.SirahCobra.extStageCrystalTheta0]
+label    = "Crystal Stage Theta0"
+tooltip  = "Zero-position angle for crystal rotation stage (instrument-specific calibration)"
+default  = 123.7593111
+priority = "Optional"
+
+[impl_only.SirahCobra.extStageCrystalSlope]
+label    = "Crystal Stage Slope"
+tooltip  = "Position-to-angle slope for crystal stage (instrument-specific calibration)"
+default  = 0.3219747226
+priority = "Optional"
+
+[impl_only.SirahCobra.extStageCompTheta0]
+label    = "Compensator Stage Theta0"
+tooltip  = "Zero-position angle for compensator stage (instrument-specific calibration)"
+default  = 518.1670078
+priority = "Optional"
+
+[impl_only.SirahCobra.extStageCompSlope]
+label    = "Compensator Stage Slope"
+tooltip  = "Position-to-angle slope for compensator stage (instrument-specific calibration)"
+default  = -0.3820040691
+priority = "Optional"
+
+# ── SirahCobra Calibration Arrays ─────────────────────────────────────────────
+# These arrays contain polynomial calibration coefficients and grating parameters.
+# Each is instrument-specific and must be calibrated for each laser.
+# DECISION NEEDED for each: register as Optional, or leave as setArray in constructor?
+
+[arrays.SirahCobra.stages]
+label    = "Grating Stage Parameters"
+tooltip  = "Grating and motor geometry parameters (instrument-specific calibration)"
+priority = "Optional"
+decision = ""
+# Has 1 entry with ~12 sub-keys: sStart, sHigh, sRamp, sMax, sbls,
+# sLeverLength, sLinearOffset, sAngleOffset, sGrooves, sGrazingAngle,
+# sPitch, sMotorResolution.
+
+[arrays.SirahCobra.extStageCrystalPoly]
+label    = "Crystal Polynomial"
+tooltip  = "Wavelength calibration polynomial for the crystal stage (7 coefficients)"
+priority = "Optional"
+decision = ""
+# 7 entries, each {polyOrder: int, polyValue: double}
+
+[arrays.SirahCobra.extStageCompPoly]
+label    = "Compensator Polynomial"
+tooltip  = "Wavelength calibration polynomial for the compensator stage (3 coefficients)"
+priority = "Optional"
+decision = ""
+# 3 entries, each {polyOrder: int, polyValue: double}
+
+# ── Reference: Default Values per Implementation ───────────────────────────────
+#
+# Key        |   Virtual |  Opolette | SirahCobra |     Python
+# -----------|-----------|-----------|------------|------------
+# minPos     |     250.0 |     250.0 |      450.0*|       250.0
+# maxPos     |    2000.0 |    2000.0 |      700.0*|      2000.0
+# units      |      "nm" |      "nm" |       "nm" |        "nm"
+# decimals   |         2 |         2 |          4*|           2
+# hasFl      |      true |      true |      false*|        true
+#
+# SirahCobra only:
+# hasExtStage            = true
+# extStagePort           = "COM9"
+# extStageBaud           = 9600
+# extStageCrystalAddress = 8
+# extStageCompAddress    = 2
+# extStageCrystalTheta0  = 123.7593111
+# extStageCrystalSlope   = 0.3219747226
+# extStageCompTheta0     = 518.1670078
+# extStageCompSlope      = -0.3820040691
+# stages array           = 1 entry (grating geometry -- instrument specific)
+# extStageCrystalPoly    = 7 coefficients (instrument specific)
+# extStageCompPoly       = 3 coefficients (instrument specific)

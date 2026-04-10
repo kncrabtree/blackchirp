@@ -1,0 +1,192 @@
+# FtmwScope Settings Review
+# Status: pending
+#
+# Implementations (✓ = already migrated in Phase 2):
+#   VirtualFtmwScope ✓, Dpo71254b, Dsa71604c, DSOv204A, DSOx92004A, MSO64B, MSO72004C, M4i2220x8
+#
+# Priority: Required | Important | Optional
+# Decision (partial): add_to_missing | existing_only | setdefault_only | remove
+#
+# NOTE: maxRecordLength, maxAverages, and maxRecords are missing from VirtualFtmwScope
+# (already migrated -- needs retroactive update), MSO72004C, and M4i2220x8.
+# Recommended action: add_to_missing, but defaults for M4i2220x8 need to be
+# looked up from the Spectrum hardware manual.
+# ==============================================================================
+
+# ── Common Scalar Settings ─────────────────────────────────────────────────────
+
+[settings.numAnalogChannels]
+label    = "Analog Channels"
+tooltip  = "Number of analog input channels"
+min      = 1
+max      = 32
+priority = "Required"
+
+[settings.numDigitalChannels]
+label    = "Digital Channels"
+tooltip  = "Number of digital input channels"
+min      = 0
+max      = 32
+priority = "Required"
+
+[settings.hasAuxTriggerChannel]
+label    = "Aux Trigger Channel"
+tooltip  = "Has auxiliary trigger input (separate from analog channels)"
+priority = "Optional"
+
+[settings.minFullScale]
+label    = "Min Full Scale (V)"
+tooltip  = "Minimum full-scale voltage range"
+priority = "Optional"
+
+[settings.maxFullScale]
+label    = "Max Full Scale (V)"
+tooltip  = "Maximum full-scale voltage range"
+priority = "Optional"
+
+[settings.minVOffset]
+label    = "Min V Offset (V)"
+tooltip  = "Minimum vertical offset"
+priority = "Optional"
+
+[settings.maxVOffset]
+label    = "Max V Offset (V)"
+tooltip  = "Maximum vertical offset"
+priority = "Optional"
+
+[settings.isTriggered]
+label    = "Externally Triggered"
+tooltip  = "Digitizer uses external trigger signal"
+priority = "Optional"
+
+[settings.minTrigDelay]
+label    = "Min Trig Delay (us)"
+tooltip  = "Minimum trigger delay in microseconds"
+priority = "Optional"
+
+[settings.maxTrigDelay]
+label    = "Max Trig Delay (us)"
+tooltip  = "Maximum trigger delay in microseconds"
+priority = "Optional"
+
+[settings.minTrigLevel]
+label    = "Min Trig Level (V)"
+tooltip  = "Minimum trigger threshold voltage"
+priority = "Optional"
+
+[settings.maxTrigLevel]
+label    = "Max Trig Level (V)"
+tooltip  = "Maximum trigger threshold voltage"
+priority = "Optional"
+
+[settings.canBlockAverage]
+label    = "Block Average"
+tooltip  = "Supports block averaging mode"
+priority = "Optional"
+
+[settings.canMultiRecord]
+label    = "Multi Record"
+tooltip  = "Supports multi-record acquisition"
+priority = "Optional"
+
+[settings.multiBlock]
+label    = "Multi Block"
+tooltip  = "Can simultaneously block average and multi-record"
+priority = "Optional"
+
+[settings.maxBytes]
+label    = "Max Bytes/Point"
+tooltip  = "Maximum bytes per sample (1 or 2)"
+min      = 1
+max      = 8
+priority = "Optional"
+
+[settings.bandwidth]
+label    = "Bandwidth (MHz)"
+tooltip  = "Analog bandwidth in MHz"
+priority = "Important"
+
+# ── Partial Settings (not in all implementations) ──────────────────────────────
+
+[partial.maxRecordLength]
+label            = "Max Record Length"
+tooltip          = "Maximum record length in samples"
+priority         = "Optional"
+default_if_added = 100000000
+missing_from     = ["VirtualFtmwScope", "MSO72004C", "M4i2220x8"]
+# M4i2220x8 default needs verification from Spectrum M4i.2220-x8 manual.
+decision         = "add_to_missing"
+
+[partial.maxAverages]
+label            = "Max Averages"
+tooltip          = "Maximum number of block averages"
+priority         = "Optional"
+default_if_added = 100
+missing_from     = ["VirtualFtmwScope", "MSO72004C", "M4i2220x8"]
+# M4i2220x8 default needs verification from Spectrum M4i.2220-x8 manual.
+decision         = "add_to_missing"
+
+[partial.maxRecords]
+label            = "Max Records"
+tooltip          = "Maximum number of multi-records"
+priority         = "Optional"
+default_if_added = 100
+missing_from     = ["VirtualFtmwScope", "MSO72004C", "M4i2220x8"]
+# M4i2220x8 default needs verification from Spectrum M4i.2220-x8 manual.
+decision         = "add_to_missing"
+
+# ── Implementation-Only Settings ───────────────────────────────────────────────
+
+[impl_only.VirtualFtmwScope.interval]
+label    = "Sim Interval (ms)"
+tooltip  = "Simulated acquisition interval in milliseconds"
+default  = 200
+min      = 1
+priority = "Optional"
+# Already registered; update label/tooltip/priority here if desired.
+
+# ── Sample Rates Array ─────────────────────────────────────────────────────────
+
+[arrays.sampleRates]
+label    = "Sample Rates"
+tooltip  = "Available digitizer sample rates"
+priority = "Important"
+
+# ── Reference: Default Values per Implementation ───────────────────────────────
+#
+# Key                   |  Virtual | Dpo71254b | Dsa71604c |  DSOv204A | DSOx92004A |    MSO64B | MSO72004C | M4i2220x8
+# ----------------------|----------|-----------|-----------|-----------|------------|-----------|-----------|----------
+# numAnalogChannels     |        4 |         4 |         4 |         4 |          4 |         4 |         4 |        1*
+# numDigitalChannels    |        0 |         0 |         0 |         0 |          0 |         0 |         0 |         0
+# hasAuxTriggerChannel  |     true |      true |      true |      true |       true |      true |      true |      true
+# minFullScale          |     0.05 |      0.05 |      0.05 |      0.05 |       0.05 |    0.005* |      0.05 |      0.05
+# maxFullScale          |      2.0 |       2.0 |       2.0 |      4.0* |        2.0 |      5.0* |       2.0 |       2.0
+# minVOffset            |     -2.0 |      -2.0 |      -2.0 |      -2.0 |       -2.0 |     -5.0* |      -2.0 |      -2.0
+# maxVOffset            |      2.0 |       2.0 |       2.0 |       2.0 |        2.0 |      5.0* |       2.0 |       2.0
+# isTriggered           |     true |      true |      true |      true |       true |      true |      true |      true
+# minTrigDelay          |    -10.0 |     -10.0 |     -10.0 |     -10.0 |      -10.0 |      0.0* |     -10.0 |     -10.0
+# maxTrigDelay          |     10.0 |      10.0 |      10.0 |      10.0 |       10.0 |      0.0* |      10.0 |      10.0
+# minTrigLevel          |     -5.0 |      -5.0 |      -5.0 |      -5.0 |       -5.0 |      -5.0 |      -5.0 |      -5.0
+# maxTrigLevel          |      5.0 |       5.0 |       5.0 |       5.0 |        5.0 |       5.0 |       5.0 |       5.0
+# canBlockAverage       |     true |      true |      true |      true |       true |      true |      true |      true
+# canMultiRecord        |     true |      true |      true |      true |       true |      true |      true |      true
+# multiBlock            |    false |     true* |     false |     false |      false |     false |     false |     false
+# maxBytes              |        2 |         2 |         2 |         2 |          2 |         2 |         2 |         2
+# bandwidth (MHz)       |    16000 |     12500 |     16000 |     20000 |      20000 |      2500 |     16000 |      1250
+#
+# Partial (─ = not set):
+# maxRecordLength       |        ─ |     1e+08 |     1e+08 |     1e+08 |      1e+08 |   6.25e7* |         ─ |         ─
+# maxAverages           |        ─ |       100 |       100 |       100 |        100 |       100 |         ─ |         ─
+# maxRecords            |        ─ |       100 |       100 |       100 |        100 |       100 |         ─ |         ─
+#
+# * = differs from the majority
+#
+# Sample rates (GSa/s unless noted):
+# VirtualFtmwScope  2, 5, 10, 20, 50, 100
+# Dpo71254b         3.125, 6.25, 12.5, 25, 50
+# Dsa71604c         2, 5, 10, 20, 50, 100
+# DSOv204A          1, 1.25, 2, 2.5, 4, 10, 20, 40, 80
+# DSOx92004A        1, 1.25, 2, 2.5, 4, 10, 20, 40, 80
+# MSO64B            2, 5, 10, 20, 50  (6.25 GS/s max hardware)
+# MSO72004C         2, 5, 10, 20, 50, 100
+# M4i2220x8         78.125, 156.25, 312.5, 625, 1250, 2500 MSa/s

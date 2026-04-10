@@ -1,0 +1,103 @@
+# FlowController Settings Review
+# Status: pending
+#
+# Implementations:
+#   VirtualFlowController, Mks946, Mks647c, PythonFlowController
+#
+# Priority: Required | Important | Optional
+# Decision (partial): add_to_missing | existing_only | setdefault_only | remove
+#
+# NOTES:
+#   1. UNREGISTERED PRE-CONSTRUCTION PARAMETER: flowChannels
+#      All four implementations call `get(flowChannels, 4)` in the constructor to
+#      determine how many channel entries to create in the `channels` array.
+#      This value is never setDefault'd or registered as a configParam anywhere.
+#      It falls back to 4 if not set. For Mks946 and Mks647c this matters a lot
+#      (how many MFCs are wired up). DECISION NEEDED: should flowChannels be
+#      added as a Required setting for all (or some) implementations?
+#
+#   2. The `channels` array (chUnits, chMax, chDecimals per entry) is initialized
+#      from flowChannels at construction time. The initial defaults differ between
+#      implementations (see reference table). This array is user-configurable and
+#      is NOT a registration candidate -- leave as constructor code.
+#
+#   3. FlowController base class sets interval=333 in its constructor. This is
+#      shared across all implementations and is NOT in individual constructors.
+#      It can stay as a base-class setDefault (no registration needed unless
+#      you want it visible in AddProfileDialog).
+#
+#   4. Mks946 has unique settings: address, offset, pressureChannel.
+#      These are instrument-specific configuration items.
+#
+#   5. PythonFlowController pMax default = 1000.0 (Torr), while all others use
+#      10.0 (kTorr). The units also differ (Torr vs kTorr). This is intentional --
+#      Python hardware defaults to more generic values.
+# ==============================================================================
+
+# ── Common Scalar Settings ─────────────────────────────────────────────────────
+
+[settings.pUnits]
+label    = "Pressure Units"
+tooltip  = "Units for pressure reading display"
+priority = "Optional"
+
+[settings.pMax]
+label    = "Max Pressure"
+tooltip  = "Full-scale pressure for display scaling"
+min      = 0.0
+priority = "Optional"
+
+[settings.pDec]
+label    = "Pressure Decimals"
+tooltip  = "Number of decimal places in pressure display"
+min      = 0
+max      = 6
+priority = "Optional"
+
+# ── Unregistered Pre-Construction Parameter ────────────────────────────────────
+
+[partial.flowChannels]
+label            = "Number of Flow Channels"
+tooltip          = "Number of mass flow controller channels connected"
+priority         = "Required"
+default_if_added = 4
+missing_from     = []   # not registered anywhere currently
+# DECISION: add_to_all (all 4 impls) or setdefault_only (leave as implicit get())
+decision         = ""
+
+# ── Implementation-Only Settings ───────────────────────────────────────────────
+
+[impl_only.Mks946.address]
+label    = "Device Address"
+tooltip  = "RS-232 device address (default 253 = broadcast)"
+default  = 253
+priority = "Optional"
+
+[impl_only.Mks946.offset]
+label    = "Channel Offset"
+tooltip  = "First MFC channel number on the controller (1-indexed)"
+default  = 1
+priority = "Optional"
+
+[impl_only.Mks946.pressureChannel]
+label    = "Pressure Channel"
+tooltip  = "Channel number of the pressure transducer input"
+default  = 5
+priority = "Optional"
+
+# ── Reference: Default Values per Implementation ───────────────────────────────
+#
+# Key              |    Virtual |    Mks946 |   Mks647c |     Python
+# -----------------|------------|-----------|-----------|------------
+# pUnits           |    "kTorr" |   "kTorr" |   "kTorr" |      "Torr"*
+# pMax             |       10.0 |      10.0 |      10.0 |      1000.0*
+# pDec             |          3 |         3 |         3 |           3
+# flowChannels     |   4 (read) |  4 (read) |  4 (read) |    4 (read)
+#
+# * PythonFlowController uses Torr / 1000.0 as generic defaults (differs from hardware impls)
+#
+# channels array defaults per channel:
+#   VirtualFlowController  chMax=10000.0, chUnits="sccm", chDecimals=3
+#   Mks946                 chMax=10000.0, chUnits="sccm", chDecimals=1
+#   Mks647c                chMax=500.0,   chUnits="sccm", chDecimals=2
+#   PythonFlowController   chMax=10000.0, chUnits="sccm", chDecimals=3

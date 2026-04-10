@@ -387,42 +387,73 @@ will be removed once Phase 4 is complete.
 
 ### Phase 4: Full Migration
 
-Migrate all remaining hardware implementations to
-`REGISTER_HARDWARE_SETTINGS` (and array macros where applicable). This
-includes all classes in:
+**Status: Review in progress** — TOML review files generated; awaiting user
+approval before implementation begins.
 
-- `src/hardware/core/ftmwdigitizer/` (Dpo71254b, M4i2220x8, etc.)
-- `src/hardware/optional/chirpsource/` (AWG70002a, AD9914, etc.)
-- `src/hardware/optional/` (flow controllers, pressure controllers, etc.)
-- `src/hardware/core/clock/` (all clock implementations)
-- All remaining Python trampolines
+#### Step 1: Settings Review (IN PROGRESS)
 
-For each hardware type, scan though the implementations to collect
-the current setDefault() calls. For the ones that are common between
-implementations, suggest recommendations for which priority
-each setting should be, and ask the user to confirm or change them
-before finalizing the decision. Any `configParams()` must be Required.
-For settings that show up only in a single implementation (or a subset),
-ask the user if that setting should be:
-- Added to the other implementations with an Optional or Important setting,
-- Included as an Optional or Important priority setting for that
-  implementation only,
-- Left as a setDefault call in the constructor that is explicitly not 
-  registered (i.e., a power user feature), or
-- Removed entirely. In this case, scan the codebase to find any references
-  to that setting that may be affected and present to the user for final 
-  confirmation.
-Once all parameters are confirmed, write the results to a file for use
-in the implementation phase. **Note: This also applies to the classes that
-were part of the pilot migration.** Some optional/important decisions may need
-to be revisited; we did not walk through those prior to implementing 
-the proof of concept.
+TOML review files have been generated for every hardware type and are located
+in `dev-docs/phase4-settings/`. One file per hardware type:
 
-To implement, for each class:
-1. Add registration macros
-2. Remove constructor `setDefault`/`setArray` calls
-3. Migrate any `configParams()` to Required-priority settings
-4. Remove `REGISTER_HARDWARE_PARAMS` and `configParams()` static method
+| File | Hardware Type | Implementations |
+|---|---|---|
+| `ftmwscope.toml` | FtmwScope | VirtualFtmwScope ✓, Dpo71254b, Dsa71604c, DSOv204A, DSOx92004A, MSO64B, MSO72004C, M4i2220x8 |
+| `chirpsource.toml` | ChirpSource (AWG) | VirtualAwg ✓, PythonAwg ✓, AWG70002a, AWG5204, AWG7122b, M8190, M8195a, AD9914 |
+| `clock.toml` | Clock | Valon5015, Valon5009, HP83712B, FixedClock, PythonClock |
+| `flowcontroller.toml` | FlowController | VirtualFlowController, Mks946, Mks647c, PythonFlowController |
+| `pressurecontroller.toml` | PressureController | VirtualPressureController, IntelliSysIQPlus, PythonPressureController |
+| `pulsegenerator.toml` | PulseGenerator | VirtualPulseGenerator, QC9518, QC9528, QC9214, BNC577, SRSDG645, PythonPulseGenerator |
+| `ioboard.toml` | IOBoard | VirtualIOBoard, LabJackU3, PythonIOBoard |
+| `gpibcontroller.toml` | GpibController | VirtualGpibController, PrologixGpibLAN, PrologixGpibUSB, PythonGpibController |
+| `lifscope.toml` | LifScope | VirtualLifScope, RigolDS2302A, M4i2211x8, PythonLifScope |
+| `liflaser.toml` | LifLaser | VirtualLifLaser, Opolette, SirahCobra, PythonLifLaser |
+| `tempcontroller.toml` | TemperatureController | Lakeshore218, VirtualTemperatureController, PythonTemperatureController |
+
+Each TOML file contains:
+- `[settings.KEY]` entries to edit: label, tooltip, min, max, priority
+- `[partial.KEY]` entries for settings missing from some implementations,
+  with a `decision` field to fill in
+- `[impl_only.IMPL.KEY]` entries for implementation-specific settings
+- `[arrays.KEY]` entries for array setting metadata
+- A reference table (as comments) showing current default values per
+  implementation, with differences from the majority marked with `*`
+
+**Open decisions requiring user input** are marked with `decision = ""`
+in the TOML files. Key open questions include:
+- `ftmwscope.toml`: maxRecordLength/maxAverages/maxRecords defaults for
+  M4i2220x8 (need Spectrum hardware manual)
+- `chirpsource.toml`: AD9914 rampOnly/prot/amp — fixed DDS limitations,
+  consider making Required and non-editable
+- `flowcontroller.toml`: `flowChannels` is read pre-construction but never
+  registered anywhere — add as Required?
+- `ioboard.toml`: PythonIOBoard only registers 2 settings — register the
+  rest as Optional or leave missing?
+- `liflaser.toml`: SirahCobra calibration arrays — register as Optional
+  or leave as constructor `setArray`?
+- `tempcontroller.toml`: `interval` lives in the base class only — register
+  in implementations or leave as base-class `setDefault`?
+
+#### Step 2: Implementation (pending review completion)
+
+Once all TOML files have `decision` fields filled in and labels/priorities
+approved, implement for each class:
+
+1. Add `REGISTER_HARDWARE_SETTINGS` macro (and `REGISTER_HARDWARE_ARRAY` /
+   `REGISTER_HARDWARE_ARRAY_ENTRY` where applicable) using the approved
+   values from the TOML file
+2. Remove constructor `setDefault`/`setArray` calls for all registered settings
+3. Migrate any `configParams()` entries to Required-priority settings in the
+   `REGISTER_HARDWARE_SETTINGS` macro
+4. Remove `REGISTER_HARDWARE_PARAMS` and the `configParams()` static method
+
+**Also required for already-migrated classes** (VirtualFtmwScope,
+PythonFtmwScope, VirtualAwg, PythonAwg): retroactively add any approved
+settings that were omitted from the Phase 2 pilot (notably maxRecordLength,
+maxAverages, maxRecords for VirtualFtmwScope).
+
+**Bugs to fix during migration:**
+- M4i2211x8 and PythonLifScope: sample rate text `"1250 GSa/s"` should
+  be `"1250 MSa/s"`
 
 After all classes are migrated, remove `HwConfigParam`,
 `REGISTER_HARDWARE_PARAMS`, `addConfigParams()`, and `getConfigParams()`.
