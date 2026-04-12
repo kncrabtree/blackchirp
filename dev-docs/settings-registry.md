@@ -474,7 +474,7 @@ One Haiku agent per hardware type; for large types, split across multiple agents
 
 | Class | Settings | Status |
 |---|---|---|
-| HardwareObject | `critical`, `rInterval` | Pending |
+| HardwareObject | `critical`, `rInterval` | ✓ Done |
 | Clock | `manualTune` | Pending |
 | FlowController | `interval` | ✓ Done |
 | IOBoard | `isTriggered` | Pending |

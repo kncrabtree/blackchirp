@@ -8,6 +8,14 @@
 #include <hardware/optional/gpibcontroller/gpibcontroller.h>
 #include <hardware/core/communication/gpibinstrument.h>
 
+REGISTER_HARDWARE_SETTINGS(HardwareObject,
+    {BC::Key::HW::critical, "Critical Hardware",
+     "If enabled, a communication failure with this device will abort any running experiment.",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::HW::rInterval, "Rolling Data Interval (s)",
+     "Period for periodic rolling-data readback in seconds. Set to 0 to disable.",
+     0, 0, QVariant{}, HwSettingPriority::Optional}
+)
 
 HardwareObject::HardwareObject(const QString& hwType, const QString& hwImpl, const QString& label, QObject *parent) :
     QObject(parent),
@@ -28,7 +36,6 @@ HardwareObject::HardwareObject(const QString& hwType, const QString& hwImpl, con
     setDefault(BC::Key::HW::name, QString("%1 %2 (%3)")
                .arg(hwType,label,hwImpl)); // Seed user-editable display name
     d_critical = get(BC::Key::HW::critical, true); // Default to critical
-    setDefault(BC::Key::HW::rInterval, 0);
 
     // Look up supported protocols from registry (no vtable dispatch issue).
     // Virtual implementations may not register protocols; default to Virtual.
