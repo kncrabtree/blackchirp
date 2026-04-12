@@ -478,7 +478,7 @@ One Haiku agent per hardware type; for large types, split across multiple agents
 | Clock | `manualTune` | Pending |
 | FlowController | `interval` | ✓ Done |
 | IOBoard | `isTriggered` | Pending |
-| TemperatureController | `interval` | Pending |
+| TemperatureController | `interval` | ✓ Done |
 
 ##### Implementation Migration Status
 
@@ -494,7 +494,7 @@ One Haiku agent per hardware type; for large types, split across multiple agents
 | GpibController | — | VirtualGpibController, PrologixGpibLAN, PrologixGpibUSB, PythonGpibController | 0 / 4 |
 | LifScope | — | VirtualLifScope, RigolDS2302A, M4i2211x8, PythonLifScope | 0 / 4 |
 | LifLaser | — | VirtualLifLaser, Opolette, SirahCobra, PythonLifLaser | 0 / 4 |
-| TemperatureController | — | Lakeshore218, VirtualTemperatureController, PythonTemperatureController | 0 / 3 |
+| TemperatureController | All | — | ✓ 3 / 3 |
 
 Once all TOML files have `decision` fields filled in and labels/priorities
 approved, implement for each class:

@@ -27,8 +27,6 @@ class PythonTemperatureController : public TemperatureController, public PythonH
 public:
     explicit PythonTemperatureController(const QString &label, QObject *parent = nullptr);
 
-    static QVector<HwConfigParam> configParams();
-
 protected:
     void tcInitialize() override;
     bool tcTestConnection() override;

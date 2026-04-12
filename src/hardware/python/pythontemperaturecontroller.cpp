@@ -11,7 +11,11 @@
 // ============================================================================
 REGISTER_HARDWARE_META(PythonTemperatureController, "Python Temperature Controller (user-defined Python script)")
 REGISTER_HARDWARE_PROTOCOLS(PythonTemperatureController, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
-REGISTER_HARDWARE_PARAMS(PythonTemperatureController)
+REGISTER_HARDWARE_SETTINGS(PythonTemperatureController,
+    {BC::Key::TC::numChannels, "Temperature Channels",
+     "Number of temperature sensor input channels",
+     4, 1, 16, HwSettingPriority::Required}
+)
 
 // ============================================================================
 // Constructor / Destructor
@@ -34,16 +38,6 @@ PythonTemperatureController::PythonTemperatureController(const QString &label, Q
     d_threaded = true;
 
     save();
-}
-
-// ============================================================================
-// configParams()
-// ============================================================================
-QVector<HwConfigParam> PythonTemperatureController::configParams()
-{
-    return {
-        { BC::Key::TC::numChannels, QStringLiteral("Temperature Channels"), QVariant(4), QVariant(1), QVariant(16) },
-    };
 }
 
 // ============================================================================

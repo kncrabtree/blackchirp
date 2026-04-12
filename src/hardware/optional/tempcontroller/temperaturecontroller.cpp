@@ -2,8 +2,15 @@
 
 #include <QTimer>
 #include <data/settings/hardwarekeys.h>
+#include <hardware/core/hardwareregistration.h>
 
 using namespace BC::Key::TC;
+
+REGISTER_HARDWARE_SETTINGS(TemperatureController,
+    {BC::Key::TC::interval, "Poll Interval (ms)",
+     "Interval between temperature sensor readings in milliseconds.",
+     500, 1, QVariant{}, HwSettingPriority::Optional}
+)
 
 TemperatureController::TemperatureController(const QString& impl, const QString& label, uint numChannels, QObject *parent) :
     HardwareObject(QString(TemperatureController::staticMetaObject.className()), impl, label, parent), d_numChannels(numChannels), d_config{BC::Key::hwKey(QString(TemperatureController::staticMetaObject.className()), label)}
@@ -11,7 +18,6 @@ TemperatureController::TemperatureController(const QString& impl, const QString&
     d_config.setNumChannels(d_numChannels);
 
     set(::numChannels,d_numChannels);
-    setDefault(interval,500);
 
     if(!containsArray(channels))
     {
