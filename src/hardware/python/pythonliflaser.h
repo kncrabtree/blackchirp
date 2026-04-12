@@ -29,8 +29,6 @@ class PythonLifLaser : public LifLaser, public PythonHardwareBase
 public:
     explicit PythonLifLaser(const QString &label, QObject *parent = nullptr);
 
-    static QVector<HwConfigParam> configParams();
-
 protected:
     void initialize() override;
     bool testConnection() override;

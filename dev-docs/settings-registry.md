@@ -493,7 +493,7 @@ One Haiku agent per hardware type; for large types, split across multiple agents
 | IOBoard | All | — | ✓ 3 / 3 |
 | GpibController | All | — | ✓ 4 / 4 |
 | LifScope | — | VirtualLifScope, RigolDS2302A, M4i2211x8, PythonLifScope | 0 / 4 |
-| LifLaser | — | VirtualLifLaser, Opolette, SirahCobra, PythonLifLaser | 0 / 4 |
+| LifLaser | All | — | ✓ 4 / 4 |
 | TemperatureController | All | — | ✓ 3 / 3 |
 
 Once all TOML files have `decision` fields filled in and labels/priorities
