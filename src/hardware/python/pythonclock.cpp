@@ -9,7 +9,13 @@
 // ============================================================================
 REGISTER_HARDWARE_META(PythonClock, "Python Clock (user-defined Python script)")
 REGISTER_HARDWARE_PROTOCOLS(PythonClock, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
-REGISTER_HARDWARE_PARAMS(PythonClock)
+REGISTER_HARDWARE_SETTINGS(PythonClock,
+    {BC::Key::PythonClock::numOutputs, "Number of Outputs", "Number of independent frequency outputs on this clock.", 1, 1, 8, HwSettingPriority::Required},
+    {BC::Key::Clock::tunable, "Tunable", "Clock frequency can be changed at runtime.", true, QVariant{}, QVariant{}, HwSettingPriority::Required},
+    {BC::Key::Clock::minFreq, "Min Frequency (MHz)", "Minimum output frequency in MHz", 0.0, 0.0, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::Clock::maxFreq, "Max Frequency (MHz)", "Maximum output frequency in MHz", 1e7, 0.0, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::Clock::lock, "Requires External Lock", "Clock references an external 10 MHz lock signal.", false, QVariant{}, QVariant{}, HwSettingPriority::Optional}
+)
 
 // ============================================================================
 // Constructor / Destructor
@@ -39,22 +45,9 @@ PythonClock::PythonClock(const QString &label, QObject *parent) :
 {
     d_threaded = true;
 
-    setDefault(BC::Key::Clock::minFreq, 0.0);
-    setDefault(BC::Key::Clock::maxFreq, 1e7);
-
     save();
 }
 
-// ============================================================================
-// configParams()
-// ============================================================================
-QVector<HwConfigParam> PythonClock::configParams()
-{
-    return {
-        { BC::Key::PythonClock::numOutputs, QStringLiteral("Number of Outputs"), QVariant(1), QVariant(1), QVariant(8) },
-        { BC::Key::Clock::tunable,          QStringLiteral("Tunable"),           QVariant(true), 0, 0 },
-    };
-}
 
 // ============================================================================
 // initializeClock()

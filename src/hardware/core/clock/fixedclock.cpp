@@ -4,6 +4,11 @@
 // Register hardware implementation
 REGISTER_HARDWARE_META(FixedClock, "Fixed Frequency Clock")
 REGISTER_HARDWARE_PROTOCOLS(FixedClock, CommunicationProtocol::Virtual)
+REGISTER_HARDWARE_SETTINGS(FixedClock,
+    {BC::Key::Clock::minFreq, "Min Frequency (MHz)", "Minimum output frequency in MHz", 0.0, 0.0, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::Clock::maxFreq, "Max Frequency (MHz)", "Maximum output frequency in MHz", 1e7, 0.0, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::Clock::lock, "Requires External Lock", "Clock references an external 10 MHz lock signal.", true, QVariant{}, QVariant{}, HwSettingPriority::Optional}
+)
 
 FixedClock::FixedClock(const QString& label, QObject *parent) :
     Clock(6, true, QString(FixedClock::staticMetaObject.className()), label, parent)
@@ -19,10 +24,6 @@ FixedClock::FixedClock(const QString& label, QObject *parent) :
         for(int i=0; i<6; i++)
             d_currentFrequencyList << 0.0;
     }
-
-    setDefault(minFreq,0.0);
-    setDefault(maxFreq,1e7);
-    setDefault(lock,true);
 
     save();
 }

@@ -4,14 +4,15 @@
 // Register hardware implementation
 REGISTER_HARDWARE_META(Valon5009, "Valon Technology 5009 Dual Channel Synthesizer (500-6000 MHz)")
 REGISTER_HARDWARE_PROTOCOLS(Valon5009, CommunicationProtocol::Rs232)
+REGISTER_HARDWARE_SETTINGS(Valon5009,
+    {BC::Key::Clock::minFreq, "Min Frequency (MHz)", "Minimum output frequency in MHz", 500.0, 0.0, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::Clock::maxFreq, "Max Frequency (MHz)", "Maximum output frequency in MHz", 6000.0, 0.0, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::Clock::lock, "Requires External Lock", "Clock references an external 10 MHz lock signal.", true, QVariant{}, QVariant{}, HwSettingPriority::Optional}
+)
 
 Valon5009::Valon5009(const QString& label, QObject *parent) :
     Clock(2, true, QString(Valon5009::staticMetaObject.className()), label, parent)
 {
-    setDefault(BC::Key::Clock::minFreq,500.0);
-    setDefault(BC::Key::Clock::maxFreq,6000.0);
-    setDefault(BC::Key::Clock::lock,true);
-
     // Communication defaults
     setDefault(BC::Key::Comm::timeout, 500);
     setDefault(BC::Key::Comm::termChar, QString("\n\r"));

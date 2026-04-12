@@ -1,6 +1,11 @@
 #include <hardware/core/clock/clock.h>
 
 #include <QMetaEnum>
+#include <hardware/core/hardwareregistration.h>
+
+REGISTER_HARDWARE_SETTINGS(Clock,
+    {BC::Key::Clock::manualTune, "Manual Tune", "Allow manual frequency adjustment of this clock from the main window.", false, QVariant{}, QVariant{}, HwSettingPriority::Optional}
+)
 
 Clock::Clock(int numOutputs, bool tunable, const QString& impl, const QString& label, QObject *parent) :
     HardwareObject(QString(Clock::staticMetaObject.className()), impl, label, parent), d_numOutputs(numOutputs),
@@ -9,7 +14,6 @@ Clock::Clock(int numOutputs, bool tunable, const QString& impl, const QString& l
     using namespace BC::Key::Clock;
 
     setDefault(BC::Key::Clock::tunable,d_isTunable);
-    setDefault(BC::Key::Clock::manualTune,false);
 
     for(int i=0; i<d_numOutputs; i++)
         d_multFactors << 1.0;

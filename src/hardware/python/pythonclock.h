@@ -36,8 +36,6 @@ class PythonClock : public Clock, public PythonHardwareBase
 public:
     explicit PythonClock(const QString &label, QObject *parent = nullptr);
 
-    static QVector<HwConfigParam> configParams();
-
 protected:
     void initializeClock() override;
     bool testClockConnection() override;

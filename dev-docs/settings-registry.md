@@ -475,7 +475,7 @@ One Haiku agent per hardware type; for large types, split across multiple agents
 | Class | Settings | Status |
 |---|---|---|
 | HardwareObject | `critical`, `rInterval` | ✓ Done |
-| Clock | `manualTune` | Pending |
+| Clock | `manualTune` | ✓ Done |
 | FlowController | `interval` | ✓ Done |
 | IOBoard | `isTriggered` | ✓ Done |
 | TemperatureController | `interval` | ✓ Done |
@@ -486,7 +486,7 @@ One Haiku agent per hardware type; for large types, split across multiple agents
 |---|---|---|---|
 | FtmwScope | VirtualFtmwScope | Dpo71254b, Dsa71604c, DSOv204A, DSOx92004A, MSO64B, MSO72004C, M4i2220x8 | 1 / 8 |
 | ChirpSource | VirtualAwg, PythonAwg | AWG70002a, AWG5204, AWG7122b, M8190, M8195a, AD9914 | 2 / 8 |
-| Clock | — | Valon5015, Valon5009, HP83712B, FixedClock, PythonClock | 0 / 5 |
+| Clock | All | — | ✓ 5 / 5 |
 | FlowController | All | — | ✓ 4 / 4 |
 | PressureController | All | — | ✓ 3 / 3 |
 | PulseGenerator | — | VirtualPulseGenerator, QC9518, QC9528, QC9214, BNC577, SRSDG645, PythonPulseGenerator | 0 / 7 |
