@@ -12,7 +12,29 @@
 // ============================================================================
 REGISTER_HARDWARE_META(PythonPressureController, "Python Pressure Controller (user-defined Python script)")
 REGISTER_HARDWARE_PROTOCOLS(PythonPressureController, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
-REGISTER_HARDWARE_PARAMS(PythonPressureController)
+REGISTER_HARDWARE_SETTINGS(PythonPressureController,
+    {BC::Key::PController::readOnly, "Read Only",
+     "Device is a read-only pressure gauge (no valve control).",
+     false, QVariant{}, QVariant{}, HwSettingPriority::Required},
+    {BC::Key::PController::min, "Min Pressure",
+     "Minimum pressure reading (display range lower bound).",
+     -1.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::PController::max, "Max Pressure",
+     "Maximum pressure reading (display range upper bound).",
+     20.0, 0.0, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::PController::decimals, "Display Decimals",
+     "Number of decimal places in pressure display.",
+     4, 0, 8, HwSettingPriority::Optional},
+    {BC::Key::PController::units, "Pressure Units",
+     "Pressure units for display.",
+     QString("Torr"), QVariant{}, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::PController::readInterval, "Read Interval (ms)",
+     "Polling interval for pressure readings in milliseconds.",
+     200, 1, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::PController::hasValve, "Has Valve",
+     "Device includes a controlled valve output.",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional}
+)
 
 // ============================================================================
 // Constructor / Destructor
@@ -34,25 +56,7 @@ PythonPressureController::PythonPressureController(const QString &label, QObject
 {
     d_threaded = true;
 
-    setDefault(BC::Key::PController::min, -1.0);
-    setDefault(BC::Key::PController::max, 20.0);
-    setDefault(BC::Key::PController::decimals, 4);
-    setDefault(BC::Key::PController::units, QString("Torr"));
-    setDefault(BC::Key::PController::readInterval, 200);
-    setDefault(BC::Key::PController::hasValve, true);
-
     save();
-}
-
-// ============================================================================
-// configParams()
-// ============================================================================
-QVector<HwConfigParam> PythonPressureController::configParams()
-{
-    using namespace BC::Key::PController;
-    return {
-        { readOnly, QStringLiteral("Read Only"), QVariant(false), 0, 0 },
-    };
 }
 
 // ============================================================================

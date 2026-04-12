@@ -31,8 +31,6 @@ class PythonPressureController : public PressureController, public PythonHardwar
 public:
     explicit PythonPressureController(const QString &label, QObject *parent = nullptr);
 
-    static QVector<HwConfigParam> configParams();
-
 protected:
     void pcInitialize() override;
     bool pcTestConnection() override;

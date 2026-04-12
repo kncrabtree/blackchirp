@@ -488,7 +488,7 @@ One Haiku agent per hardware type; for large types, split across multiple agents
 | ChirpSource | VirtualAwg, PythonAwg | AWG70002a, AWG5204, AWG7122b, M8190, M8195a, AD9914 | 2 / 8 |
 | Clock | — | Valon5015, Valon5009, HP83712B, FixedClock, PythonClock | 0 / 5 |
 | FlowController | All | — | ✓ 4 / 4 |
-| PressureController | — | VirtualPressureController, IntelliSysIQPlus, PythonPressureController | 0 / 3 |
+| PressureController | All | — | ✓ 3 / 3 |
 | PulseGenerator | — | VirtualPulseGenerator, QC9518, QC9528, QC9214, BNC577, SRSDG645, PythonPulseGenerator | 0 / 7 |
 | IOBoard | — | VirtualIOBoard, LabJackU3, PythonIOBoard | 0 / 3 |
 | GpibController | — | VirtualGpibController, PrologixGpibLAN, PrologixGpibUSB, PythonGpibController | 0 / 4 |
