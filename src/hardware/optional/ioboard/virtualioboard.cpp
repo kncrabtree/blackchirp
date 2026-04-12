@@ -5,29 +5,50 @@
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(VirtualIOBoard, "Virtual IOBoard for Testing")
+REGISTER_HARDWARE_SETTINGS(VirtualIOBoard,
+    {BC::Key::Digi::numAnalogChannels, "Analog Channels", "Number of analog input channels",
+     8, 0, 128, HwSettingPriority::Required},
+    {BC::Key::Digi::numDigitalChannels, "Digital Channels", "Number of digital input channels",
+     8, 0, 128, HwSettingPriority::Required},
+    {BC::Key::Digi::hasAuxTriggerChannel, "Aux Trigger Channel", "Has auxiliary trigger input",
+     false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::minFullScale, "Min Full Scale (V)", "Minimum full-scale voltage range",
+     2.44, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::maxFullScale, "Max Full Scale (V)", "Maximum full-scale voltage range",
+     2.44, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::minVOffset, "Min V Offset (V)", "Minimum vertical offset",
+     0.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::maxVOffset, "Max V Offset (V)", "Maximum vertical offset",
+     0.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::minTrigDelay, "Min Trig Delay (us)", "Minimum trigger delay in microseconds",
+     0.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::maxTrigDelay, "Max Trig Delay (us)", "Maximum trigger delay in microseconds",
+     0.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::minTrigLevel, "Min Trig Level (V)", "Minimum trigger threshold voltage",
+     0.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::maxTrigLevel, "Max Trig Level (V)", "Maximum trigger threshold voltage",
+     0.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::maxRecordLength, "Max Record Length", "Maximum record length in samples",
+     1, 1, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::canBlockAverage, "Block Average", "Supports block averaging",
+     false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::canMultiRecord, "Multi Record", "Supports multi-record acquisition",
+     false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::multiBlock, "Multi Block", "Can simultaneously block average and multi-record",
+     false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::maxBytes, "Max Bytes/Point", "Maximum bytes per sample",
+     2, 1, 8, HwSettingPriority::Optional}
+)
+REGISTER_HARDWARE_ARRAY(VirtualIOBoard, BC::Key::Digi::sampleRates,
+    "Sample Rates", "Available sample rates (for IO boards typically 'N/A')",
+    HwSettingPriority::Optional)
+REGISTER_HARDWARE_ARRAY_ENTRY(VirtualIOBoard, BC::Key::Digi::sampleRates,
+    {{BC::Key::Digi::srText, "N/A"}, {BC::Key::Digi::srValue, 0.0}})
 
 VirtualIOBoard::VirtualIOBoard(const QString& label, QObject *parent) :
     IOBoard(QString(VirtualIOBoard::staticMetaObject.className()), label, parent)
 {
     using namespace BC::Key::Digi;
-
-    setDefault(numAnalogChannels,8);
-    setDefault(numDigitalChannels,8);
-    setDefault(hasAuxTriggerChannel,false);
-    setDefault(minFullScale,2.44);
-    setDefault(maxFullScale,2.44);
-    setDefault(minVOffset,0.0);
-    setDefault(maxVOffset,0.0);
-    setDefault(isTriggered,false);
-    setDefault(minTrigDelay,0.0);
-    setDefault(maxTrigDelay,0.0);
-    setDefault(minTrigLevel,0.0);
-    setDefault(maxTrigLevel,0.0);
-    setDefault(maxRecordLength,1);
-    setDefault(canBlockAverage,false);
-    setDefault(canMultiRecord,false);
-    setDefault(multiBlock,false);
-    setDefault(maxBytes,2);
 
     if(!containsArray(sampleRates))
         setArray(sampleRates,{

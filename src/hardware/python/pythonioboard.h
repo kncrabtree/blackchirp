@@ -24,8 +24,6 @@ class PythonIOBoard : public IOBoard, public PythonHardwareBase
 public:
     explicit PythonIOBoard(const QString &label, QObject *parent = nullptr);
 
-    static QVector<HwConfigParam> configParams();
-
 protected:
     void initialize() override;
     bool testConnection() override;

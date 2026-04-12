@@ -1,4 +1,11 @@
 #include <hardware/optional/ioboard/ioboard.h>
+#include <hardware/core/hardwareregistration.h>
+
+REGISTER_HARDWARE_SETTINGS(IOBoard,
+    {BC::Key::Digi::isTriggered, "Externally Triggered",
+     "Device uses external trigger (typically false for IO boards).",
+     false, QVariant{}, QVariant{}, HwSettingPriority::Optional}
+)
 
 IOBoard::IOBoard(const QString& impl, const QString& label, QObject *parent) :
     HardwareObject(QString(IOBoard::staticMetaObject.className()), impl, label, parent), IOBoardConfig(BC::Key::hwKey(QString(IOBoard::staticMetaObject.className()), label))
@@ -7,7 +14,6 @@ IOBoard::IOBoard(const QString& impl, const QString& label, QObject *parent) :
 
     using namespace BC::Key::Digi;
     using namespace BC::Store::Digi;
-    setDefault(isTriggered,false);
 
     for(int i=0; i<get(numAnalogChannels,0); ++i)
     {

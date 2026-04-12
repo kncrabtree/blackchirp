@@ -477,7 +477,7 @@ One Haiku agent per hardware type; for large types, split across multiple agents
 | HardwareObject | `critical`, `rInterval` | ✓ Done |
 | Clock | `manualTune` | Pending |
 | FlowController | `interval` | ✓ Done |
-| IOBoard | `isTriggered` | Pending |
+| IOBoard | `isTriggered` | ✓ Done |
 | TemperatureController | `interval` | ✓ Done |
 
 ##### Implementation Migration Status
@@ -490,7 +490,7 @@ One Haiku agent per hardware type; for large types, split across multiple agents
 | FlowController | All | — | ✓ 4 / 4 |
 | PressureController | All | — | ✓ 3 / 3 |
 | PulseGenerator | — | VirtualPulseGenerator, QC9518, QC9528, QC9214, BNC577, SRSDG645, PythonPulseGenerator | 0 / 7 |
-| IOBoard | — | VirtualIOBoard, LabJackU3, PythonIOBoard | 0 / 3 |
+| IOBoard | All | — | ✓ 3 / 3 |
 | GpibController | — | VirtualGpibController, PrologixGpibLAN, PrologixGpibUSB, PythonGpibController | 0 / 4 |
 | LifScope | — | VirtualLifScope, RigolDS2302A, M4i2211x8, PythonLifScope | 0 / 4 |
 | LifLaser | — | VirtualLifLaser, Opolette, SirahCobra, PythonLifLaser | 0 / 4 |

@@ -10,7 +10,40 @@
 // ============================================================================
 REGISTER_HARDWARE_META(PythonIOBoard, "Python IO Board (user-defined Python script)")
 REGISTER_HARDWARE_PROTOCOLS(PythonIOBoard, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
-REGISTER_HARDWARE_PARAMS(PythonIOBoard)
+REGISTER_HARDWARE_SETTINGS(PythonIOBoard,
+    {BC::Key::Digi::numAnalogChannels, "Analog Channels", "Number of analog input channels",
+     0, 0, 128, HwSettingPriority::Required},
+    {BC::Key::Digi::numDigitalChannels, "Digital Channels", "Number of digital input channels",
+     0, 0, 128, HwSettingPriority::Required},
+    {BC::Key::Digi::hasAuxTriggerChannel, "Aux Trigger Channel", "Has auxiliary trigger input",
+     false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::minFullScale, "Min Full Scale (V)", "Minimum full-scale voltage range",
+     0.1, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::maxFullScale, "Max Full Scale (V)", "Maximum full-scale voltage range",
+     10.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::minVOffset, "Min V Offset (V)", "Minimum vertical offset",
+     0.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::maxVOffset, "Max V Offset (V)", "Maximum vertical offset",
+     0.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::minTrigDelay, "Min Trig Delay (us)", "Minimum trigger delay in microseconds",
+     0.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::maxTrigDelay, "Max Trig Delay (us)", "Maximum trigger delay in microseconds",
+     0.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::minTrigLevel, "Min Trig Level (V)", "Minimum trigger threshold voltage",
+     0.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::maxTrigLevel, "Max Trig Level (V)", "Maximum trigger threshold voltage",
+     0.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::maxRecordLength, "Max Record Length", "Maximum record length in samples",
+     1, 1, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::canBlockAverage, "Block Average", "Supports block averaging",
+     false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::canMultiRecord, "Multi Record", "Supports multi-record acquisition",
+     false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::multiBlock, "Multi Block", "Can simultaneously block average and multi-record",
+     false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::maxBytes, "Max Bytes/Point", "Maximum bytes per sample",
+     2, 1, 8, HwSettingPriority::Optional}
+)
 
 // ============================================================================
 // Constructor / Destructor
@@ -21,23 +54,7 @@ PythonIOBoard::PythonIOBoard(const QString &label, QObject *parent) :
 {
     d_threaded = true;
 
-    using namespace BC::Key::Digi;
-    setDefault(numAnalogChannels, 0);
-    setDefault(numDigitalChannels, 0);
-
     save();
-}
-
-// ============================================================================
-// configParams()
-// ============================================================================
-QVector<HwConfigParam> PythonIOBoard::configParams()
-{
-    using namespace BC::Key::Digi;
-    return {
-        { numAnalogChannels,  QStringLiteral("Analog Channels"),  QVariant(0), QVariant(0), QVariant(32) },
-        { numDigitalChannels, QStringLiteral("Digital Channels"), QVariant(0), QVariant(0), QVariant(32) },
-    };
 }
 
 // ============================================================================
