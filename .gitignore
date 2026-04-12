@@ -28,3 +28,8 @@ cmake/BuildConfig.cmake
 
 # Claude Code assistant directory
 .claude/
+
+# clang and vscode files
+.cache/
+.clangd
+.vscode/*

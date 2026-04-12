@@ -432,8 +432,35 @@ in the TOML files. Key open questions include:
   or leave as constructor `setArray`?
 - `tempcontroller.toml`: `interval` lives in the base class only — register
   in implementations or leave as base-class `setDefault`?
+  
+#### Step 2: Base class registrations
 
-#### Step 2: Implementation (pending review completion)
+Settings for HardwareObject and hardware types (FtmwScope, etc) need to be
+evaluated for registration, and for registered settings, the UI should
+merge Important and Optional settings from base classes with those from
+the implementations. For HardwareObject, settings and decisions are:
+
+- name: Do not register; programmatically generated
+- key: Do not register
+- model: Do not register
+- critical: Register, optional. Suggest a tooltip that conveys the idea that 
+            critical hardware must be connected/communicating in order to run
+            experiments, and experiments are aborted if any failure occurs
+            involving critical hardware
+- commType: Do not register; controlled separately
+- rInterval: Register, optional.
+
+For hardware type clases, registration should only be considered for setDefault
+calls that are currently in the base class constructor. Some setDefault calls
+may remain explicitly unregistered. Provide suggestions on whether to register and
+if the user confirms registration, present suggestions for priority, default value,
+tooltip, min/max values, etc to the user for confirmation; setting-by-setting.
+
+To merge the correct base class keys without type-specific logic, consider
+using QMetaObject::superClass() in a recursive loop until the returned
+QMetaObject's className is "HardwareObject" or if it is nullptr.
+
+#### Step 3: Implementation (pending review completion)
 
 Once all TOML files have `decision` fields filled in and labels/priorities
 approved, implement for each class:
@@ -458,40 +485,94 @@ maxAverages, maxRecords for VirtualFtmwScope).
 After all classes are migrated, remove `HwConfigParam`,
 `REGISTER_HARDWARE_PARAMS`, `addConfigParams()`, and `getConfigParams()`.
 
-### Phase 5: HWDialog Enhancement (optional follow-up)
+### Phase 5: Shared Settings Widget + HWDialog Replacement
 
-Update `HWSettingsModel` and `HWDialog` to use registry metadata:
+**Status: Partially complete — `AddProfileDialog` wired; `HWDialog` deferred until Phase 4 is finished**
 
-- Replace raw key display with `label` from `HwSettingDef`
-- Add `description` as tooltip
-- Group by priority; mark Required settings read-only
-- Replace `forbiddenKeys` filtering with registry-based visibility
+Rather than patching `HWSettingsModel` and keeping two divergent
+code paths, Phase 5 introduces a shared `HwSettingsWidget` that both
+`AddProfileDialog` and `HWDialog` embed. This gives a consistent
+experience and a single maintenance point for the settings UI.
 
-#### Array settings editing in AddProfileDialog
+#### New classes
 
-Currently array settings are shown as read-only count summaries ("N
-entries") in `AddProfileDialog`. Users creating a new profile may want
-to customize array contents at creation time (e.g., available sample
-rates for a Python digitizer whose actual hardware differs from the
-registered defaults).
+**`src/gui/widget/hwsettingswidget.h/.cpp`** — `HwSettingsWidget` ✓ Done
 
-Consider how best to expose array editing. Options to evaluate:
+An embeddable `QWidget` that renders hardware settings from registry
+metadata in two modes:
 
-- **Inline sub-dialog**: clicking the summary label opens a child
-  dialog showing the array as an editable table (rows = entries,
-  columns = sub-keys), with add/remove row buttons. Values are written
-  to `QSettings` on accept, alongside the scalar settings.
-- **Delegate to HWDialog**: keep arrays read-only in AddProfileDialog
-  and direct users to Hardware > [device] after profile creation.
-  Simpler, but means the profile must be constructed with defaults
-  before the user can customize array settings.
-- **Inline expandable rows**: expand the `QTableWidget` row in-place
-  to show a nested table of array entries, similar to a tree view.
+- `HwSettingsMode::Create` — Required settings shown as an editable
+  `QFormLayout` (typed widgets). Used in `AddProfileDialog`.
+- `HwSettingsMode::Edit` — Required settings shown as read-only text
+  in a `QFormLayout`. Intended for `HWDialog` (not yet wired).
 
-The right mechanism depends on how commonly users need non-default
-array values at creation time versus post-creation. This should be
-decided before or alongside the HWDialog metadata work, since both
-touch the same display layer.
+Settings are presented in a `QTabWidget` (fixed 350 px tall):
+- **Settings tab**: Required group box (`QFormLayout`) + Important
+  group box (two-column `QTableWidget`, Setting | Value). Either or
+  both are hidden when empty.
+- **Advanced tab**: second two-column `QTableWidget` in a `QScrollArea`;
+  tab is only added when Optional/Advanced settings exist.
+- If no settings exist at all, the tab widget is hidden and a
+  "No settings available." `QLabel` is shown instead.
+
+Row rendering within each table:
+- Scalar rows: typed widget (`QSpinBox`, `ScientificSpinBox`,
+  `QCheckBox`, or `QLineEdit`) in the value column.
+- Array rows: inline `QLabel("N entries")` + `QPushButton("Edit...")`
+  in the value column; button opens `HwArrayEditDialog`.
+
+Each table uses `AdjustToContents` + `ScrollBarAlwaysOff`; scrolling
+is handled by the `QScrollArea` wrapping it in each tab.
+
+Public API:
+```cpp
+HwSettingsWidget(const QString& hwType, const QString& impl,
+                 HwSettingsMode mode,
+                 const QString& storageKey = {},  // non-empty → load current values from SettingsStorage
+                 QWidget* parent = nullptr);
+
+QHash<QString, QVariant> values() const;   // scalar values
+QMap<QString, std::vector<SettingsStorage::SettingsMap>> arrayValues() const;
+void saveToStorage(const QString& storageKey) const;
+```
+
+**`src/gui/dialog/hwarrayeditdialog.h/.cpp`** — `HwArrayEditDialog` ✓ Done
+
+Sub-dialog opened from an array row's Edit button. Shows entries in a
+`QTableWidget` (rows = entries, columns = sub-keys). Provides Add,
+Remove, Move Up, Move Down buttons. Column names come from the
+registered `HwArraySettingDef` entries, falling back to the keys of
+the first stored entry.
+
+```cpp
+HwArrayEditDialog(const QString& label,
+                  const QStringList& subKeys,
+                  std::vector<SettingsStorage::SettingsMap> entries,
+                  QWidget* parent = nullptr);
+
+std::vector<SettingsStorage::SettingsMap> result() const;
+```
+
+#### Changes to existing classes
+
+**`AddProfileDialog`** ✓ Done: Hosts an `HwSettingsWidget` (Create mode)
+inside a plain container widget; dialog minimum width is 520 px.
+`updateSettingsDefs()` deletes the old widget and constructs a new one
+for the selected implementation. `accept()` calls
+`widget->saveToStorage(key)` before creating the profile.
+
+**`HWDialog`** — Pending (after Phase 4): Remove the `QTreeView`,
+`HWSettingsModel` include, and `insertBefore`/`insertAfter`/`remove`
+slots. Replace with an `HwSettingsWidget` instance (Edit mode,
+initialized with the existing storage key). Because `HWDialog` hosts a
+hardware-specific control widget (which can be complex, e.g. the pulse
+generator channel table) and optionally a `PythonSettingsWidget`, the
+`HwSettingsWidget` should be placed in its own tab within `HWDialog`'s
+tab widget rather than stacked with the control widget.
+`accept()` calls `widget->saveToStorage(key)`.
+
+**`HWSettingsModel`** (`src/data/model/hwsettingsmodel.h/.cpp`):
+Delete both files once HWDialog no longer depends on them.
 
 ## Open Questions
 

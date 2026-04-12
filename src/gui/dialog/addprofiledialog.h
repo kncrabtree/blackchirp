@@ -2,15 +2,13 @@
 #define ADDPROFILEDIALOG_H
 
 #include <QDialog>
-#include <QHash>
 
 class QComboBox;
 class QLineEdit;
 class QLabel;
-class QGroupBox;
-class QFormLayout;
-class QTableWidget;
+class QWidget;
 class QDialogButtonBox;
+class HwSettingsWidget;
 
 class AddProfileDialog : public QDialog
 {
@@ -38,14 +36,9 @@ private:
     QLabel *p_protocolLabel;
     QLineEdit *p_labelEdit;
     QLabel *p_validationLabel;
-    QGroupBox *p_requiredParamsGroup;
-    QFormLayout *p_requiredParamsLayout;
-    QGroupBox *p_importantParamsGroup;
-    QFormLayout *p_importantParamsLayout;
-    QGroupBox *p_advancedParamsGroup;
-    QTableWidget *p_advancedTable;
+    QWidget *p_settingsContainer;
+    HwSettingsWidget *p_settingsWidget{nullptr};
     QDialogButtonBox *p_buttonBox;
-    QHash<QString, QWidget*> d_paramWidgets;
 };
 
 #endif // ADDPROFILEDIALOG_H

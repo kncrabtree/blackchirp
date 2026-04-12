@@ -243,6 +243,7 @@ static const QString trackingDir{"rollingdata"};
 class SettingsStorage
 {
     friend class SettingsStorageTest; // Allow test class access to protected methods
+    friend class HwSettingsWidget;    // Allow direct storage writes for hardware settings UI
 public:
 
     using SettingsGetter = std::function<QVariant()>; /*!< Alias for a getter function */

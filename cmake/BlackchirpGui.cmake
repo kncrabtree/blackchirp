@@ -29,6 +29,7 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/batchsequencedialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/bcsavepathdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/communicationdialog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/hwarrayeditdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/hwdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/peaklistexportdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/quickexptdialog.cpp
@@ -106,6 +107,7 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/gpibprotocolwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/pulsestatusbox.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/rfconfigwidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/hwsettingswidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificspinbox.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificinputwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/temperaturecontrolwidget.cpp
@@ -140,6 +142,7 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/batchsequencedialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/bcsavepathdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/communicationdialog.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/hwarrayeditdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/hwdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/peaklistexportdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/quickexptdialog.h
@@ -217,6 +220,7 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/gpibprotocolwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/pulsestatusbox.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/rfconfigwidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/hwsettingswidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificspinbox.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificinputwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/temperaturecontrolwidget.h
