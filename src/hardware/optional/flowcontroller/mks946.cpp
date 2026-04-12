@@ -6,6 +6,29 @@ using namespace BC::Key::Flow;
 // Register hardware implementation using new metaobject system
 REGISTER_HARDWARE_META(Mks946, "MKS 946 vacuum transducer controller")
 REGISTER_HARDWARE_PROTOCOLS(Mks946, CommunicationProtocol::Rs232)
+REGISTER_HARDWARE_SETTINGS(Mks946,
+    {BC::Key::Flow::flowChannels, "Flow Channels",
+     "Number of mass flow controller channels connected.",
+     4, 1, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::Flow::pUnits, "Pressure Units",
+     "Units for pressure reading display.",
+     QString("kTorr"), QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Flow::pMax, "Max Pressure",
+     "Full-scale pressure for display scaling.",
+     10.0, 0.0, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Flow::pDec, "Pressure Decimals",
+     "Number of decimal places in pressure display.",
+     3, 0, 10, HwSettingPriority::Optional},
+    {BC::Key::Flow::address, "Device Address",
+     "RS-232 device address (default 253 = broadcast).",
+     253, 0, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Flow::offset, "Channel Offset",
+     "First MFC channel number on the controller (1-indexed).",
+     1, 0, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Flow::pressureChannel, "Pressure Channel",
+     "Channel number of the pressure transducer input.",
+     5, 0, QVariant{}, HwSettingPriority::Optional}
+)
 
 Mks946::Mks946(const QString& label, QObject *parent) :
     FlowController(QString(Mks946::staticMetaObject.className()), label, parent)
@@ -21,15 +44,7 @@ Mks946::Mks946(const QString& label, QObject *parent) :
         setArray(channels,l,true);
     }
 
-    setDefault(address,253);
-    setDefault(offset,1);
-    setDefault(pressureChannel,5);
-
-    setDefault(pUnits,QString("kTorr"));
-    setDefault(pMax,10.0);
-    setDefault(pDec,3);
-
-    // Communication defaults  
+    // Communication defaults
     setDefault(BC::Key::Comm::timeout, 100);
     setDefault(BC::Key::Comm::termChar, QString(";FF"));
 

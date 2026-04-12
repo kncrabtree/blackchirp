@@ -17,6 +17,7 @@ public:
 
 public slots:
     void applySettings();
+    void rebuild();
     void updateFlow(const QString key, int ch, double val);
     void updateFlowName(const QString key, int ch, const QString name);
     void updateFlowSetpoint(const QString key, int ch, double val);

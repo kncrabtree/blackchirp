@@ -58,6 +58,48 @@ GasFlowDisplayBox::GasFlowDisplayBox(const QString key, QWidget *parent) : Hardw
     applySettings();
 }
 
+void GasFlowDisplayBox::rebuild()
+{
+    auto gl = qobject_cast<QGridLayout*>(layout());
+
+    for (auto& fw : d_flowWidgets)
+    {
+        gl->removeWidget(std::get<0>(fw));
+        gl->removeWidget(std::get<1>(fw));
+        gl->removeWidget(std::get<2>(fw));
+        delete std::get<0>(fw);
+        delete std::get<1>(fw);
+        delete std::get<2>(fw);
+    }
+    d_flowWidgets.clear();
+
+    SettingsStorage fc(d_key, SettingsStorage::Hardware);
+    int n = fc.get(flowChannels, 0);
+    for (int i = 0; i < n; ++i)
+    {
+        auto name = fc.getArrayValue(channels, i, chName, QString("Ch%1").arg(i+1));
+        auto nameLabel = new QLabel(name);
+        nameLabel->setMinimumWidth(QFontMetrics(QFont(QString("sans-serif"))).horizontalAdvance(QString("MMMMMMMM")));
+        nameLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+
+        auto led = new Led();
+
+        auto displayBox = new QDoubleSpinBox();
+        displayBox->blockSignals(true);
+        displayBox->setReadOnly(true);
+        displayBox->setFocusPolicy(Qt::ClickFocus);
+        displayBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+
+        d_flowWidgets.append({nameLabel, displayBox, led});
+
+        gl->addWidget(nameLabel, i+1, 0, 1, 1, Qt::AlignRight);
+        gl->addWidget(displayBox, i+1, 1, 1, 1);
+        gl->addWidget(led, i+1, 2, 1, 1);
+    }
+
+    applySettings();
+}
+
 void GasFlowDisplayBox::applySettings()
 {
     SettingsStorage fc(d_key,SettingsStorage::Hardware);

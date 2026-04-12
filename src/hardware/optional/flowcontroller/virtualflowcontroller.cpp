@@ -5,6 +5,20 @@ using namespace BC::Key;
 
 // Register hardware implementation using new metaobject system
 REGISTER_HARDWARE_META(VirtualFlowController, "Virtual flow controller for testing and development")
+REGISTER_HARDWARE_SETTINGS(VirtualFlowController,
+    {BC::Key::Flow::flowChannels, "Flow Channels",
+     "Number of mass flow controller channels connected.",
+     4, 1, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::Flow::pUnits, "Pressure Units",
+     "Units for pressure reading display.",
+     QString("kTorr"), QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Flow::pMax, "Max Pressure",
+     "Full-scale pressure for display scaling.",
+     10.0, 0.0, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Flow::pDec, "Pressure Decimals",
+     "Number of decimal places in pressure display.",
+     3, 0, 10, HwSettingPriority::Optional}
+)
 
 VirtualFlowController::VirtualFlowController(const QString& label, QObject *parent) :
     FlowController(QString(VirtualFlowController::staticMetaObject.className()), label, parent)
@@ -20,10 +34,6 @@ VirtualFlowController::VirtualFlowController(const QString& label, QObject *pare
 
         setArray(Flow::channels,l,true);
     }
-
-    setDefault(Flow::pUnits,QString("kTorr"));
-    setDefault(Flow::pMax,10.0);
-    setDefault(Flow::pDec,3);
 
     save();
 }

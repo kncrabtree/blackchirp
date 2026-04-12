@@ -387,7 +387,7 @@ will be removed once Phase 4 is complete.
 
 ### Phase 4: Full Migration
 
-**Status: Steps 1 and 2 complete** — All TOML decisions approved; ready for Step 3 implementation.
+**Status: Step 3 in progress** — Steps 1 and 2 complete; FlowController migrated; remaining types pending.
 
 #### Step 1: Settings Review (COMPLETE)
 
@@ -465,7 +465,36 @@ To merge the correct base class keys without type-specific logic, consider
 using QMetaObject::superClass() in a recursive loop until the returned
 QMetaObject's className is "HardwareObject" or if it is nullptr.
 
-#### Step 3: Implementation (pending review completion)
+#### Step 3: Implementation (in progress)
+
+Agent instructions are in `dev-docs/phase4-settings/agent-instructions.md`.
+One Haiku agent per hardware type; for large types, split across multiple agents.
+
+##### Base Class Registration Status
+
+| Class | Settings | Status |
+|---|---|---|
+| HardwareObject | `critical`, `rInterval` | Pending |
+| Clock | `manualTune` | Pending |
+| FlowController | `interval` | ✓ Done |
+| IOBoard | `isTriggered` | Pending |
+| TemperatureController | `interval` | Pending |
+
+##### Implementation Migration Status
+
+| Hardware Type | Done | Remaining | Progress |
+|---|---|---|---|
+| FtmwScope | VirtualFtmwScope | Dpo71254b, Dsa71604c, DSOv204A, DSOx92004A, MSO64B, MSO72004C, M4i2220x8 | 1 / 8 |
+| ChirpSource | VirtualAwg, PythonAwg | AWG70002a, AWG5204, AWG7122b, M8190, M8195a, AD9914 | 2 / 8 |
+| Clock | — | Valon5015, Valon5009, HP83712B, FixedClock, PythonClock | 0 / 5 |
+| FlowController | All | — | ✓ 4 / 4 |
+| PressureController | — | VirtualPressureController, IntelliSysIQPlus, PythonPressureController | 0 / 3 |
+| PulseGenerator | — | VirtualPulseGenerator, QC9518, QC9528, QC9214, BNC577, SRSDG645, PythonPulseGenerator | 0 / 7 |
+| IOBoard | — | VirtualIOBoard, LabJackU3, PythonIOBoard | 0 / 3 |
+| GpibController | — | VirtualGpibController, PrologixGpibLAN, PrologixGpibUSB, PythonGpibController | 0 / 4 |
+| LifScope | — | VirtualLifScope, RigolDS2302A, M4i2211x8, PythonLifScope | 0 / 4 |
+| LifLaser | — | VirtualLifLaser, Opolette, SirahCobra, PythonLifLaser | 0 / 4 |
+| TemperatureController | — | Lakeshore218, VirtualTemperatureController, PythonTemperatureController | 0 / 3 |
 
 Once all TOML files have `decision` fields filled in and labels/priorities
 approved, implement for each class:

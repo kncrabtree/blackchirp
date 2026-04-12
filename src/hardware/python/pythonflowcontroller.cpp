@@ -9,6 +9,20 @@
 // ============================================================================
 REGISTER_HARDWARE_META(PythonFlowController, "Python Flow Controller (user-defined Python script)")
 REGISTER_HARDWARE_PROTOCOLS(PythonFlowController, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
+REGISTER_HARDWARE_SETTINGS(PythonFlowController,
+    {BC::Key::Flow::flowChannels, "Flow Channels",
+     "Number of mass flow controller channels connected.",
+     4, 1, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::Flow::pUnits, "Pressure Units",
+     "Units for pressure reading display.",
+     QString("Torr"), QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Flow::pMax, "Max Pressure",
+     "Full-scale pressure for display scaling.",
+     1000.0, 0.0, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Flow::pDec, "Pressure Decimals",
+     "Number of decimal places in pressure display.",
+     3, 0, 10, HwSettingPriority::Optional}
+)
 
 // ============================================================================
 // Constructor / Destructor
@@ -31,10 +45,6 @@ PythonFlowController::PythonFlowController(const QString &label, QObject *parent
 
         setArray(BC::Key::Flow::channels, l, true);
     }
-
-    setDefault(BC::Key::Flow::pUnits,   QString("Torr"));
-    setDefault(BC::Key::Flow::pMax,     1000.0);
-    setDefault(BC::Key::Flow::pDec,     3);
 
     save();
 }

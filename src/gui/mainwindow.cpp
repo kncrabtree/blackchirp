@@ -278,7 +278,7 @@ void MainWindow::buildHardwareUI()
 
                 QWidget *cw = implName.contains(QStringLiteral("Python")) ? wrapWithPythonWidget(key, gcw) : gcw;
                 auto d = createHWDialog(key,cw);
-                connect(d,&QDialog::accepted,w,&GasFlowDisplayBox::applySettings);
+                connect(d,&QDialog::accepted,w,&GasFlowDisplayBox::rebuild);
 
             }));
         }

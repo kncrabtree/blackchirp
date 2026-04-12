@@ -52,7 +52,7 @@ private:
     virtual int hwReadPressureControlMode() =0;
 
     FlowConfig d_config;
-    const int d_numChannels;
+    int d_numChannels;
     int d_nextRead{0};
     QTimer *p_readTimer;
 
@@ -60,6 +60,7 @@ protected:
     void initialize() override final;
     bool testConnection() override final;
     bool prepareForExperiment(Experiment &e) override final;
+    void readSettings() override;
     virtual void fcInitialize() =0;
     virtual bool fcTestConnection() =0;
 

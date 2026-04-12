@@ -1,16 +1,21 @@
 #include <hardware/optional/flowcontroller/flowcontroller.h>
+#include <hardware/core/hardwareregistration.h>
 
 using namespace BC::Key;
+
+REGISTER_HARDWARE_SETTINGS(FlowController,
+    {BC::Key::Flow::interval, "Poll Interval (ms)",
+     "Interval between flow controller readback queries in milliseconds.",
+     333, 1, QVariant{}, HwSettingPriority::Optional}
+)
 
 FlowController::FlowController(const QString& impl, const QString& label, QObject *parent) :
     HardwareObject(QString(FlowController::staticMetaObject.className()), impl, label, parent),
     d_config(BC::Key::hwKey(QString(FlowController::staticMetaObject.className()), label)),
-    d_numChannels(getOrSetDefault(Flow::flowChannels,4))
+    d_numChannels(get(Flow::flowChannels,4))
 {
     for(int i=0; i<d_numChannels; ++i)
         d_config.addCh({});
-
-    setDefault(Flow::interval,333);
 
     if(containsArray(Flow::channels))
     {
@@ -34,6 +39,31 @@ FlowController::~FlowController()
         appendArrayMap(Flow::channels,m);
     }
     save();
+}
+
+void FlowController::readSettings()
+{
+    using namespace BC::Key::Flow;
+    int newCount = get(flowChannels, d_numChannels);
+    if (newCount == d_numChannels)
+        return;
+
+    // Rebuild d_config preserving data for channels that still exist
+    FlowConfig newConfig(d_config.headerKey());
+    int preserve = qMin(d_numChannels, newCount);
+    for (int i = 0; i < newCount; ++i)
+    {
+        if (i < preserve)
+            newConfig.addCh(d_config.setting(i, FlowConfig::Setpoint).toDouble(),
+                            d_config.setting(i, FlowConfig::Name).toString());
+        else
+            newConfig.addCh(0.0, getArrayValue(channels, i, chName, QString("Ch%1").arg(i+1)));
+    }
+    d_config = newConfig;
+    d_numChannels = newCount;
+
+    if (d_nextRead >= d_numChannels)
+        d_nextRead = -1;
 }
 
 void FlowController::setAll(const FlowConfig &c)
