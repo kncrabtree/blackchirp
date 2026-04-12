@@ -130,7 +130,7 @@ priority = "Optional"
 label    = "Grating Stage Parameters"
 tooltip  = "Grating and motor geometry parameters (instrument-specific calibration)"
 priority = "Optional"
-decision = ""
+decision = "exclude"
 # Has 1 entry with ~12 sub-keys: sStart, sHigh, sRamp, sMax, sbls,
 # sLeverLength, sLinearOffset, sAngleOffset, sGrooves, sGrazingAngle,
 # sPitch, sMotorResolution.
@@ -139,14 +139,14 @@ decision = ""
 label    = "Crystal Polynomial"
 tooltip  = "Wavelength calibration polynomial for the crystal stage (7 coefficients)"
 priority = "Optional"
-decision = ""
+decision = "exclude"
 # 7 entries, each {polyOrder: int, polyValue: double}
 
 [arrays.SirahCobra.extStageCompPoly]
 label    = "Compensator Polynomial"
 tooltip  = "Wavelength calibration polynomial for the compensator stage (3 coefficients)"
 priority = "Optional"
-decision = ""
+decision = "exclude"
 # 3 entries, each {polyOrder: int, polyValue: double}
 
 # ── Reference: Default Values per Implementation ───────────────────────────────

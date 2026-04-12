@@ -1,0 +1,103 @@
+# Base Class Settings Review
+# Status: approved
+#
+# This file documents settings registered in hardware base classes (not
+# implementations). During Step 3, these classes receive their own
+# REGISTER_HARDWARE_SETTINGS macro. The UI merges base class settings
+# with implementation settings by walking QMetaObject::superClass()
+# until reaching HardwareObject or nullptr.
+#
+# Classes covered:
+#   HardwareObject  (all hardware inherits from this)
+#   Clock           (Valon5015, Valon5009, HP83712B, FixedClock, PythonClock)
+#   FlowController  (VirtualFlowController, Mks946, Mks647c, PythonFlowController)
+#   IOBoard         (VirtualIOBoard, LabJackU3, PythonIOBoard)
+#   TemperatureController (Lakeshore218, VirtualTemperatureController, PythonTemperatureController)
+#
+# Classes with NO base-class setDefault calls (nothing to register):
+#   FtmwScope, ChirpSource/AWG, PressureController, PulseGenerator,
+#   GpibController, LifScope, LifLaser
+#
+# ==============================================================================
+
+# ── HardwareObject ─────────────────────────────────────────────────────────────
+#
+# Settings reviewed:
+#   name      -> Do not register (programmatically generated)
+#   key       -> Do not register
+#   model     -> Do not register
+#   commType  -> Do not register (controlled separately via comm protocol UI)
+#   critical  -> Register as Optional (see below)
+#   rInterval -> Register as Optional (see below)
+
+[HardwareObject.critical]
+key      = "critical"
+label    = "Critical Hardware"
+tooltip  = "If enabled, a communication failure with this device will abort any running experiment."
+default  = true
+priority = "Optional"
+
+[HardwareObject.rInterval]
+key      = "rollingDataIntervalSec"
+label    = "Rolling Data Interval (s)"
+tooltip  = "Period for periodic rolling-data readback in seconds. Set to 0 to disable."
+default  = 0
+min      = 0
+priority = "Optional"
+
+# ── Clock ──────────────────────────────────────────────────────────────────────
+#
+# Settings reviewed:
+#   tunable   -> Do not register. Hardware-fixed value set from constructor arg;
+#                PythonClock already handles it as a Required configParam.
+#   manualTune -> Register as Optional (see below)
+
+[Clock.manualTune]
+key      = "manualTune"
+label    = "Manual Tune"
+tooltip  = "Allow manual frequency adjustment of this clock from the main window."
+default  = false
+priority = "Optional"
+
+# ── FlowController ─────────────────────────────────────────────────────────────
+#
+# Settings reviewed:
+#   interval   -> Register as Optional (see below)
+#   channels[] -> Runtime state (saved/restored in destructor). Not a registration candidate.
+#   flowChannels -> Handled in flowcontroller.toml as add_to_all (implementation level)
+
+[FlowController.interval]
+key      = "intervalMs"
+label    = "Poll Interval (ms)"
+tooltip  = "Interval between flow controller readback queries in milliseconds."
+default  = 333
+min      = 1
+priority = "Optional"
+
+# ── IOBoard ────────────────────────────────────────────────────────────────────
+#
+# Settings reviewed:
+#   isTriggered -> Register as Optional (see below)
+
+[IOBoard.isTriggered]
+key      = "isTriggered"
+label    = "Triggered Acquisition"
+tooltip  = "Enable triggered acquisition mode for this IO board."
+default  = false
+priority = "Optional"
+
+# ── TemperatureController ──────────────────────────────────────────────────────
+#
+# Settings reviewed:
+#   interval  -> Register as Optional (see below)
+#   channels[] -> Runtime state (channel names and enabled state). Not a registration candidate.
+#   numChannels -> Subclass-specific, set via set() not setDefault(). Not registered here;
+#                  PythonTemperatureController handles it as Required in tempcontroller.toml.
+
+[TemperatureController.interval]
+key      = "pollIntervalMs"
+label    = "Poll Interval (ms)"
+tooltip  = "Interval between temperature sensor readings in milliseconds."
+default  = 500
+min      = 1
+priority = "Optional"

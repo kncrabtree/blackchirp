@@ -387,10 +387,9 @@ will be removed once Phase 4 is complete.
 
 ### Phase 4: Full Migration
 
-**Status: Review in progress** — TOML review files generated; awaiting user
-approval before implementation begins.
+**Status: Steps 1 and 2 complete** — All TOML decisions approved; ready for Step 3 implementation.
 
-#### Step 1: Settings Review (IN PROGRESS)
+#### Step 1: Settings Review (COMPLETE)
 
 TOML review files have been generated for every hardware type and are located
 in `dev-docs/phase4-settings/`. One file per hardware type:
@@ -435,26 +434,32 @@ in the TOML files. Key open questions include:
   
 #### Step 2: Base class registrations
 
-Settings for HardwareObject and hardware types (FtmwScope, etc) need to be
-evaluated for registration, and for registered settings, the UI should
-merge Important and Optional settings from base classes with those from
-the implementations. For HardwareObject, settings and decisions are:
+**Status: Complete** — All decisions approved; see `dev-docs/phase4-settings/baseclass.toml`.
 
-- name: Do not register; programmatically generated
-- key: Do not register
-- model: Do not register
-- critical: Register, optional. Suggest a tooltip that conveys the idea that 
-            critical hardware must be connected/communicating in order to run
-            experiments, and experiments are aborted if any failure occurs
-            involving critical hardware
-- commType: Do not register; controlled separately
-- rInterval: Register, optional.
+Settings are merged in the UI by walking `QMetaObject::superClass()` until
+reaching `HardwareObject` or `nullptr`.
 
-For hardware type clases, registration should only be considered for setDefault
-calls that are currently in the base class constructor. Some setDefault calls
-may remain explicitly unregistered. Provide suggestions on whether to register and
-if the user confirms registration, present suggestions for priority, default value,
-tooltip, min/max values, etc to the user for confirmation; setting-by-setting.
+**HardwareObject** (registered as Optional):
+- `critical` — "Critical Hardware"; default true
+- `rInterval` — "Rolling Data Interval (s)"; default 0, min 0
+- `name`, `key`, `model`, `commType`: do not register
+
+**Clock** (registered as Optional):
+- `manualTune` — "Manual Tune"; default false
+- `tunable`: do not register (hardware-fixed; PythonClock handles it as Required)
+
+**FlowController** (registered as Optional):
+- `interval` (`intervalMs`) — "Poll Interval (ms)"; default 333, min 1
+
+**IOBoard** (registered as Optional):
+- `isTriggered` — "Triggered Acquisition"; default false
+
+**TemperatureController** (registered as Optional):
+- `interval` (`pollIntervalMs`) — "Poll Interval (ms)"; default 500, min 1
+
+Classes with no base-class setDefault to register:
+FtmwScope, AWG, PressureController, PulseGenerator, GpibController,
+LifScope, LifLaser.
 
 To merge the correct base class keys without type-specific logic, consider
 using QMetaObject::superClass() in a recursive loop until the returned

@@ -162,7 +162,7 @@ default  = 101
 min      = 1
 priority = "Optional"
 # DECISION: register as Optional (existing_only), or leave as setDefault only?
-decision = ""
+decision = "existing_only"
 
 # ── Sample Rates Array ─────────────────────────────────────────────────────────
 
