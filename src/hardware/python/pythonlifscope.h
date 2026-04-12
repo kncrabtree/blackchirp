@@ -29,8 +29,6 @@ class PythonLifScope : public LifScope, public PythonHardwareBase
 public:
     explicit PythonLifScope(const QString &label, QObject *parent = nullptr);
 
-    static QVector<HwConfigParam> configParams();
-
 public slots:
     bool configure(const LifDigitizerConfig &c) override;
     void beginAcquisition() override;

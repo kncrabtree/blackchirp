@@ -492,7 +492,7 @@ One Haiku agent per hardware type; for large types, split across multiple agents
 | PulseGenerator | — | VirtualPulseGenerator, QC9518, QC9528, QC9214, BNC577, SRSDG645, PythonPulseGenerator | 0 / 7 |
 | IOBoard | All | — | ✓ 3 / 3 |
 | GpibController | All | — | ✓ 4 / 4 |
-| LifScope | — | VirtualLifScope, RigolDS2302A, M4i2211x8, PythonLifScope | 0 / 4 |
+| LifScope | All | — | ✓ 4 / 4 |
 | LifLaser | All | — | ✓ 4 / 4 |
 | TemperatureController | All | — | ✓ 3 / 3 |
 
