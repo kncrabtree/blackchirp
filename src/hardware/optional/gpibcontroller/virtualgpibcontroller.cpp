@@ -3,6 +3,7 @@
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(VirtualGpibController, "Virtual GPIB Controller for Testing")
+REGISTER_HARDWARE_SETTINGS(VirtualGpibController)
 
 VirtualGpibController::VirtualGpibController(const QString& label, QObject *parent) :
     GpibController(QString(VirtualGpibController::staticMetaObject.className()), label, parent)

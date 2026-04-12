@@ -28,8 +28,6 @@ class PythonGpibController : public GpibController, public PythonHardwareBase
 public:
     explicit PythonGpibController(const QString &label, QObject *parent = nullptr);
 
-    static QVector<HwConfigParam> configParams();
-
 protected:
     void initialize() override;
     bool testConnection() override;

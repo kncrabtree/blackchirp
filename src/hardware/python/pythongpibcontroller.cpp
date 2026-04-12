@@ -9,7 +9,7 @@
 // ============================================================================
 REGISTER_HARDWARE_META(PythonGpibController, "Python GPIB Controller (user-defined Python script)")
 REGISTER_HARDWARE_PROTOCOLS(PythonGpibController, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
-REGISTER_HARDWARE_PARAMS(PythonGpibController)
+REGISTER_HARDWARE_SETTINGS(PythonGpibController)
 
 // ============================================================================
 // Constructor
@@ -19,14 +19,6 @@ PythonGpibController::PythonGpibController(const QString &label, QObject *parent
     PythonHardwareBase(d_key, d_model)
 {
     d_threaded = true;
-}
-
-// ============================================================================
-// configParams()
-// ============================================================================
-QVector<HwConfigParam> PythonGpibController::configParams()
-{
-    return {};
 }
 
 // ============================================================================

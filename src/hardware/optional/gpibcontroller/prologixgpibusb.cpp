@@ -4,6 +4,7 @@
 // Register hardware implementation
 REGISTER_HARDWARE_META(PrologixGpibUsb, "Prologix GPIB-USB Controller")
 REGISTER_HARDWARE_PROTOCOLS(PrologixGpibUsb, CommunicationProtocol::Rs232)
+REGISTER_HARDWARE_SETTINGS(PrologixGpibUsb)
 
 PrologixGpibUsb::PrologixGpibUsb(const QString& label, QObject *parent) :
     PrologixGpibController(QString(PrologixGpibUsb::staticMetaObject.className()), label, 
