@@ -26,26 +26,26 @@
 label    = "Sample Rate (Hz)"
 tooltip  = "DAC output sample rate"
 min      = 1e6
-max      = 100e9
+max      = 1000e9
 priority = "Important"
 
 [settings.samples]
 label    = "Max Samples"
 tooltip  = "Maximum waveform sample count"
-min      = 0.0
-priority = "Optional"
+min      = 0
+priority = "Important"
 
 [settings.min]
 label    = "Min Freq (MHz)"
 tooltip  = "Minimum chirp frequency in MHz"
 min      = 0.0
-priority = "Optional"
+priority = "Important"
 
 [settings.max]
 label    = "Max Freq (MHz)"
 tooltip  = "Maximum chirp frequency in MHz"
 min      = 0.0
-priority = "Optional"
+priority = "Important"
 
 [settings.prot]
 label    = "Protection Pulse"

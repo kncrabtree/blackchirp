@@ -10,7 +10,7 @@
 # NOTES:
 #   1. PythonPressureController has a configParam: readOnly (bool, default false).
 #      This is a pre-construction parameter (determines whether a valve is
-#      controlled). It must become Required.
+#      controlled). It must become Required for all implementations.
 #   2. VirtualPressureController min = -1.0 vs IntelliSysIQPlus min = 0.0.
 #      The virtual device allows reading negative pressures (gauge sense);
 #      IntelliSys is absolute. This difference is intentional.
@@ -39,7 +39,7 @@ priority = "Optional"
 [settings.units]
 label    = "Pressure Units"
 tooltip  = "Pressure units for display"
-priority = "Optional"
+priority = "Important"
 
 [settings.readInterval]
 label    = "Read Interval (ms)"
@@ -59,6 +59,7 @@ label    = "Read Only"
 tooltip  = "Device is a read-only pressure gauge (no valve control)"
 default  = false
 priority = "Required"
+decision = "add_to_missing"
 
 # ── Reference: Default Values per Implementation ───────────────────────────────
 #

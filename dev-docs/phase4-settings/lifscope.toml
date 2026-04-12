@@ -29,6 +29,10 @@
 #
 #   7. LifScope shares the BC::Key::Digi namespace with FtmwScope and IOBoard,
 #      but bandwidth is never set (not relevant for LIF digitizers).
+#
+#   USER DECISION: Do not register canMultiRecord, maxRecords, or multiBlock. These
+#                  are hardcoded to false, 1, and false. If we add support in the
+#                  future, it is easy to register them later.
 # ==============================================================================
 
 # ── Common Scalar Settings ─────────────────────────────────────────────────────
@@ -37,14 +41,14 @@
 label    = "Analog Channels"
 tooltip  = "Number of analog input channels"
 min      = 1
-max      = 32
+max      = 128
 priority = "Required"
 
 [settings.numDigitalChannels]
 label    = "Digital Channels"
 tooltip  = "Number of digital input channels"
 min      = 0
-max      = 32
+max      = 128
 priority = "Required"
 
 [settings.hasAuxTriggerChannel]
@@ -55,12 +59,12 @@ priority = "Optional"
 [settings.minFullScale]
 label    = "Min Full Scale (V)"
 tooltip  = "Minimum full-scale voltage range"
-priority = "Optional"
+priority = "Important"
 
 [settings.maxFullScale]
 label    = "Max Full Scale (V)"
 tooltip  = "Maximum full-scale voltage range"
-priority = "Optional"
+priority = "Important"
 
 [settings.minVOffset]
 label    = "Min V Offset (V)"
@@ -125,7 +129,7 @@ priority = "Optional"
 label            = "Max Record Length"
 tooltip          = "Maximum record length in samples"
 priority         = "Optional"
-default_if_added = 100000000
+default_if_added = [100000000, 1073741824]
 missing_from     = ["VirtualLifScope", "M4i2211x8"]
 # RigolDS2302A = 1400000; PythonLifScope = 100000000
 # M4i2211x8 default needs verification from Spectrum M4i.2211-x8 manual.
@@ -135,7 +139,7 @@ decision         = "add_to_missing"
 label            = "Max Averages"
 tooltip          = "Maximum number of block averages"
 priority         = "Optional"
-default_if_added = 100
+default_if_added = 10000
 missing_from     = ["VirtualLifScope", "M4i2211x8"]
 # RigolDS2302A = 1; PythonLifScope = 100
 decision         = "add_to_missing"

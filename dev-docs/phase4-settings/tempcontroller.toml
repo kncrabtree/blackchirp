@@ -34,7 +34,7 @@ priority         = "Optional"
 default_if_added = 500
 missing_from     = []   # not registered in any implementation currently
 # Set in TemperatureController base constructor. Register in all impls, or leave in base?
-decision         = ""
+decision         = "register in base class only, propagate to impls"
 
 # ── PythonTemperatureController-Only (from configParams -- must become Required) ─
 

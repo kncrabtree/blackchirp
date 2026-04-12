@@ -10,16 +10,16 @@
 # NOTES:
 #   1. VirtualPulseGenerator is missing canDisableChannels. All hardware impls
 #      have it (either true or false). DECISION NEEDED: add to VirtualPulseGenerator?
-#      Suggested default: true.
+#      Suggested default: true. (USER RESPONSE: YES)
 #
 #   2. PythonPulseGenerator has a configParam: numChannels (int, 1-64, default 8).
 #      This is a pre-construction parameter and must become Required.
-#      PythonPulseGenerator has NO other setDefault calls.
+#      PythonPulseGenerator has NO other setDefault calls. (USER RESPONSE: Make Required for all)
 #
 #   3. BNC577 has two constructors (likely for 6-channel and 8-channel variants).
 #      Both constructors set identical settings. They will share the same
 #      registration macro -- the channel count is passed as a constructor argument
-#      and is NOT a registrable setting.
+#      and is NOT a registrable setting. (USER RESPONSE: Refactor to use Required setting and 1 constructor, move PulseGenConfig intialization/rebuild to readSettings if needed)
 #
 #   4. SRSDG645 differences from the majority:
 #        canDutyCycle = false  (no duty-cycle mode)
@@ -106,7 +106,7 @@ tooltip          = "Individual channels can be independently enabled/disabled"
 priority         = "Optional"
 default_if_added = true
 missing_from     = ["VirtualPulseGenerator"]
-decision         = ""
+decision         = "add"
 
 # ── PythonPulseGenerator-Only (from configParams -- must become Required) ────────
 

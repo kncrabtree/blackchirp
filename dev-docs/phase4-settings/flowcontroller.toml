@@ -24,7 +24,8 @@
 #   3. FlowController base class sets interval=333 in its constructor. This is
 #      shared across all implementations and is NOT in individual constructors.
 #      It can stay as a base-class setDefault (no registration needed unless
-#      you want it visible in AddProfileDialog).
+#      you want it visible in AddProfileDialog). USER RESPONSE: Register in base class;
+#      implementations should merge with base class settings.)
 #
 #   4. Mks946 has unique settings: address, offset, pressureChannel.
 #      These are instrument-specific configuration items.
@@ -51,7 +52,7 @@ priority = "Optional"
 label    = "Pressure Decimals"
 tooltip  = "Number of decimal places in pressure display"
 min      = 0
-max      = 6
+max      = 10
 priority = "Optional"
 
 # ── Unregistered Pre-Construction Parameter ────────────────────────────────────
@@ -59,11 +60,12 @@ priority = "Optional"
 [partial.flowChannels]
 label            = "Number of Flow Channels"
 tooltip          = "Number of mass flow controller channels connected"
-priority         = "Required"
+priority         = "Important"
 default_if_added = 4
 missing_from     = []   # not registered anywhere currently
 # DECISION: add_to_all (all 4 impls) or setdefault_only (leave as implicit get())
-decision         = ""
+decision         = "add_to_all"
+note             = "Need to make runtime-adjustable (Mks946 can be reconfigured). FlowController may need refactor for data structure creation (FlowConfig could be built/rebuilt in readSettings())"
 
 # ── Implementation-Only Settings ───────────────────────────────────────────────
 

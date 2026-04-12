@@ -43,7 +43,7 @@ Custom) and chirp-relative timing. AWGs report `markerCount` and pack their own 
 Phase 2 adds absolute timing and per-chirp marker overrides.
 
 ### [Hardware Settings Registry](settings-registry.md)
-Unified settings registration system with metadata (labels, descriptions,
+**In Progress** Unified settings registration system with metadata (labels, descriptions,
 priority levels). Hardware classes declare settings via static macros;
 settings are available before construction and presented at profile creation
 time. Replaces the `HwConfigParam` system and eliminates the gap where users
@@ -53,8 +53,16 @@ Next: Phase 3 (creation-time UI) after dialog refactoring.
 
 ## Large
 
+### [String Usage](string-usage.md)
+QString is used extensively throughout the codebase, which has performance and
+memory consequences. Evaluate the usages of QString across Blackchirp, considering
+whether QAnyStringView should replace QString in functions and whether settings/header
+keys etc. should be replaced with inline constexpr auto x = "string"_s, available
+in the Qt::StringLiterals namespace. A preliminary analysis of the performance and
+memory tradeoffs by Gemini is provided.
+
 ### [Python Hardware Implementations](python-hardware.md) **COMPLETE**
-**In progress** User-editable Python scripts as hardware drivers via JSON IPC.
+User-editable Python scripts as hardware drivers via JSON IPC.
 A C++ trampoline class per hardware type dispatches virtual methods to a user's Python
 class. Users can use Blackchirp's CommunicationProtocol or bring their own vendor
 libraries. Phased rollout: simple polling types first, then pulse generator and AWG,
@@ -74,3 +82,21 @@ Eliminate qDebug in favor of the log system, downgrade diagnostic traces from Er
 to Debug, and remove development scaffolding. Bulk of work is in FTMW digitizer files
 (~285 calls) and HardwareManager (~74 calls). Should be one of the last tasks before
 documentation revision for 2.0.0.
+
+### Documentation Revision
+The sphinx/breathe documentation is outdated and needs to be updated for the
+`cmakemigration` branch. The goals are:
+- Improve the readme and program summary for the landing page and Github
+- Update the user guide to provide a walkthrough of major program features and use-cases
+- Maintain a hardware catalog of C++ drivers/capabilities
+- Create a developer's guide to explain the overall code structure, conventions, major 
+data classes, and guides for adding new hardware and implementations
+- Provide an API reference for the most important classes for developers. Specifically, 
+these should be classes like SettingsStorage, HardwareObject, etc that are used 
+throughout the code. These classes should have Doxygen-style annotations in headers for 
+autogeneration with breathe.
+
+### Packaging and Binary Generation (Github Actions)
+Ensure that cmake packaging instructions (cmake/Packaging.cmake) are compatible with 
+Github Actions runners for binary compilation for Windows, MacOS, and Linux (rpm and 
+deb). Binaries should be generated only on tagged releases, not on every push. 

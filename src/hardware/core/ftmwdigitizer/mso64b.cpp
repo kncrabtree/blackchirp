@@ -9,7 +9,7 @@ using namespace BC::Key::FtmwScope;
 using namespace BC::Key::Digi;
 
 // Register this hardware implementation
-REGISTER_HARDWARE_META(MSO64B, "Tektronix MSO64B FTMW Digitizer (1 GHz, 6.25 GS/s)")
+REGISTER_HARDWARE_META(MSO64B, "Tektronix MSO64B FTMW Digitizer (10 GHz, 50 GS/s)")
 REGISTER_HARDWARE_PROTOCOLS(MSO64B, CommunicationProtocol::Tcp)
 
 MSO64B::MSO64B(const QString& label, QObject *parent) :

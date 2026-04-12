@@ -35,14 +35,14 @@
 label    = "Analog Channels"
 tooltip  = "Number of analog input channels"
 min      = 0
-max      = 32
+max      = 128
 priority = "Required"
 
 [settings.numDigitalChannels]
 label    = "Digital Channels"
 tooltip  = "Number of digital input channels"
 min      = 0
-max      = 32
+max      = 128
 priority = "Required"
 
 [settings.hasAuxTriggerChannel]
@@ -120,7 +120,7 @@ priority = "Optional"
 label    = "Max Bytes/Point"
 tooltip  = "Maximum bytes per sample"
 min      = 1
-max      = 4
+max      = 8
 priority = "Optional"
 
 # ── Partial Settings ───────────────────────────────────────────────────────────
@@ -133,7 +133,7 @@ tooltip          = "(see settings.hasAuxTriggerChannel)"
 priority         = "Optional"
 default_if_added = false
 missing_from     = ["PythonIOBoard"]
-decision         = ""
+decision         = "Add this and all other missing entries to PythonIOBoard. Default minFullScale 0.1 and maxFullScale 10; others can follow LabJackU3."
 
 # (Add similar entries for minFullScale, maxFullScale, etc. if desired.
 #  Most likely these should all be "existing_only" or "setdefault_only" for

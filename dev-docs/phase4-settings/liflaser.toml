@@ -27,6 +27,11 @@
 #
 #   4. SirahCobra extStagePort ("COM9") is a serial port name. This is more
 #      like a communication setting. DECISION NEEDED: register or exclude?
+#
+#   USER DECISION: Do not register SirahCobra-specific settings. Future work
+#                  could involve designing a better approach for calibration
+#                  data and composite instruments with mutliple Communication
+#                  Protocols.
 # ==============================================================================
 
 # ── Common Scalar Settings ─────────────────────────────────────────────────────
@@ -44,7 +49,7 @@ priority = "Important"
 [settings.units]
 label    = "Position Units"
 tooltip  = "Units for position display (e.g. nm, cm-1)"
-priority = "Optional"
+priority = "Important"
 
 [settings.decimals]
 label    = "Display Decimals"
@@ -55,7 +60,7 @@ priority = "Optional"
 
 [settings.hasFl]
 label    = "Has Flashlamp"
-tooltip  = "Laser has a flashlamp (pumped with separate trigger)"
+tooltip  = "Laser has a software-controlled flashlamp"
 priority = "Optional"
 
 # ── SirahCobra-Only Scalar Settings ───────────────────────────────────────────
@@ -72,7 +77,7 @@ tooltip  = "Serial port name for the external crystal stage controller"
 default  = "COM9"
 priority = "Optional"
 # DECISION: register, or treat as communication config (exclude)?
-decision = ""
+decision = "exclude"
 
 [impl_only.SirahCobra.extStageBaud]
 label    = "Ext Stage Baud Rate"
