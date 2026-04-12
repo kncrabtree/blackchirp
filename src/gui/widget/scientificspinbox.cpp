@@ -22,7 +22,8 @@ ScientificSpinBox::ScientificSpinBox(QWidget *parent)
     
     // Initialize display
     updateDisplayText();
-    
+    lineEdit()->setText(d_cachedDisplayText);
+
     // Set default size policy
     setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
 }
