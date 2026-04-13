@@ -385,139 +385,41 @@ will be removed once Phase 4 is complete.
 `PythonFtmwScope`, whose Required settings are now fully covered by its
 `REGISTER_HARDWARE_SETTINGS` entries.
 
-### Phase 4: Full Migration
+### Phase 4: Full Migration **COMPLETE**
 
-**Status: Step 3 in progress** — Steps 1 and 2 complete; FlowController migrated; remaining types pending.
+All hardware implementations and base classes have been migrated to
+`REGISTER_HARDWARE_SETTINGS`. The `dev-docs/phase4-settings/` working
+directory has been removed.
 
-#### Step 1: Settings Review (COMPLETE)
+#### Base Class Registrations (Complete)
 
-TOML review files have been generated for every hardware type and are located
-in `dev-docs/phase4-settings/`. One file per hardware type:
+| Class | Settings |
+|---|---|
+| HardwareObject | `critical`, `rInterval` |
+| Clock | `manualTune` |
+| FlowController | `interval` |
+| IOBoard | `isTriggered` |
+| TemperatureController | `interval` |
 
-| File | Hardware Type | Implementations |
-|---|---|---|
-| `ftmwscope.toml` | FtmwScope | VirtualFtmwScope ✓, Dpo71254b, Dsa71604c, DSOv204A, DSOx92004A, MSO64B, MSO72004C, M4i2220x8 |
-| `chirpsource.toml` | ChirpSource (AWG) | VirtualAwg ✓, PythonAwg ✓, AWG70002a, AWG5204, AWG7122b, M8190, M8195a, AD9914 |
-| `clock.toml` | Clock | Valon5015, Valon5009, HP83712B, FixedClock, PythonClock |
-| `flowcontroller.toml` | FlowController | VirtualFlowController, Mks946, Mks647c, PythonFlowController |
-| `pressurecontroller.toml` | PressureController | VirtualPressureController, IntelliSysIQPlus, PythonPressureController |
-| `pulsegenerator.toml` | PulseGenerator | VirtualPulseGenerator, Qc9510Series, Qc9520Series, Qc9210Series, Bnc577, SRSDG645, PythonPulseGenerator |
-| `ioboard.toml` | IOBoard | VirtualIOBoard, LabJackU3, PythonIOBoard |
-| `gpibcontroller.toml` | GpibController | VirtualGpibController, PrologixGpibLAN, PrologixGpibUSB, PythonGpibController |
-| `lifscope.toml` | LifScope | VirtualLifScope, RigolDS2302A, M4i2211x8, PythonLifScope |
-| `liflaser.toml` | LifLaser | VirtualLifLaser, Opolette, SirahCobra, PythonLifLaser |
-| `tempcontroller.toml` | TemperatureController | Lakeshore218, VirtualTemperatureController, PythonTemperatureController |
-
-Each TOML file contains:
-- `[settings.KEY]` entries to edit: label, tooltip, min, max, priority
-- `[partial.KEY]` entries for settings missing from some implementations,
-  with a `decision` field to fill in
-- `[impl_only.IMPL.KEY]` entries for implementation-specific settings
-- `[arrays.KEY]` entries for array setting metadata
-- A reference table (as comments) showing current default values per
-  implementation, with differences from the majority marked with `*`
-
-**Open decisions requiring user input** are marked with `decision = ""`
-in the TOML files. Key open questions include:
-- `ftmwscope.toml`: maxRecordLength/maxAverages/maxRecords defaults for
-  M4i2220x8 (need Spectrum hardware manual)
-- `chirpsource.toml`: AD9914 rampOnly/prot/amp — fixed DDS limitations,
-  consider making Required and non-editable
-- `flowcontroller.toml`: `flowChannels` is read pre-construction but never
-  registered anywhere — add as Required?
-- `ioboard.toml`: PythonIOBoard only registers 2 settings — register the
-  rest as Optional or leave missing?
-- `liflaser.toml`: SirahCobra calibration arrays — register as Optional
-  or leave as constructor `setArray`?
-- `tempcontroller.toml`: `interval` lives in the base class only — register
-  in implementations or leave as base-class `setDefault`?
-  
-#### Step 2: Base class registrations
-
-**Status: Complete** — All decisions approved; see `dev-docs/phase4-settings/baseclass.toml`.
-
-Settings are merged in the UI by walking `QMetaObject::superClass()` until
-reaching `HardwareObject` or `nullptr`.
-
-**HardwareObject** (registered as Optional):
-- `critical` — "Critical Hardware"; default true
-- `rInterval` — "Rolling Data Interval (s)"; default 0, min 0
-- `name`, `key`, `model`, `commType`: do not register
-
-**Clock** (registered as Optional):
-- `manualTune` — "Manual Tune"; default false
-- `tunable`: do not register (hardware-fixed; PythonClock handles it as Required)
-
-**FlowController** (registered as Optional):
-- `interval` (`intervalMs`) — "Poll Interval (ms)"; default 333, min 1
-
-**IOBoard** (registered as Optional):
-- `isTriggered` — "Triggered Acquisition"; default false
-
-**TemperatureController** (registered as Optional):
-- `interval` (`pollIntervalMs`) — "Poll Interval (ms)"; default 500, min 1
-
-Classes with no base-class setDefault to register:
+Classes with no base-class settings to register:
 FtmwScope, AWG, PressureController, PulseGenerator, GpibController,
 LifScope, LifLaser.
 
-To merge the correct base class keys without type-specific logic, consider
-using QMetaObject::superClass() in a recursive loop until the returned
-QMetaObject's className is "HardwareObject" or if it is nullptr.
+#### Implementation Migration (Complete)
 
-#### Step 3: Implementation (in progress)
-
-Agent instructions are in `dev-docs/phase4-settings/agent-instructions.md`.
-One Haiku agent per hardware type; for large types, split across multiple agents.
-
-##### Base Class Registration Status
-
-| Class | Settings | Status |
-|---|---|---|
-| HardwareObject | `critical`, `rInterval` | ✓ Done |
-| Clock | `manualTune` | ✓ Done |
-| FlowController | `interval` | ✓ Done |
-| IOBoard | `isTriggered` | ✓ Done |
-| TemperatureController | `interval` | ✓ Done |
-
-##### Implementation Migration Status
-
-| Hardware Type | Done | Remaining | Progress |
-|---|---|---|---|
-| FtmwScope | All | — | ✓ 8 / 8 |
-| ChirpSource | All | — | ✓ 8 / 8 |
-| Clock | All | — | ✓ 5 / 5 |
-| FlowController | All | — | ✓ 4 / 4 |
-| PressureController | All | — | ✓ 3 / 3 |
-| PulseGenerator | — | VirtualPulseGenerator, Qc9510Series, Qc9520Series, Qc9210Series, Bnc577, SRSDG645, PythonPulseGenerator | 0 / 7 |
-| IOBoard | All | — | ✓ 3 / 3 |
-| GpibController | All | — | ✓ 4 / 4 |
-| LifScope | All | — | ✓ 4 / 4 |
-| LifLaser | All | — | ✓ 4 / 4 |
-| TemperatureController | All | — | ✓ 3 / 3 |
-
-Once all TOML files have `decision` fields filled in and labels/priorities
-approved, implement for each class:
-
-1. Add `REGISTER_HARDWARE_SETTINGS` macro (and `REGISTER_HARDWARE_ARRAY` /
-   `REGISTER_HARDWARE_ARRAY_ENTRY` where applicable) using the approved
-   values from the TOML file
-2. Remove constructor `setDefault`/`setArray` calls for all registered settings
-3. Migrate any `configParams()` entries to Required-priority settings in the
-   `REGISTER_HARDWARE_SETTINGS` macro
-4. Remove `REGISTER_HARDWARE_PARAMS` and the `configParams()` static method
-
-**Also required for already-migrated classes** (VirtualFtmwScope,
-PythonFtmwScope, VirtualAwg, PythonAwg): retroactively add any approved
-settings that were omitted from the Phase 2 pilot (notably maxRecordLength,
-maxAverages, maxRecords for VirtualFtmwScope).
-
-**Bugs to fix during migration:**
-- M4i2211x8 and PythonLifScope: sample rate text `"1250 GSa/s"` should
-  be `"1250 MSa/s"`
-
-After all classes are migrated, remove `HwConfigParam`,
-`REGISTER_HARDWARE_PARAMS`, `addConfigParams()`, and `getConfigParams()`.
+| Hardware Type | Implementations |
+|---|---|
+| FtmwScope | ✓ 8 / 8 |
+| ChirpSource | ✓ 8 / 8 |
+| Clock | ✓ 5 / 5 |
+| FlowController | ✓ 4 / 4 |
+| PressureController | ✓ 3 / 3 |
+| PulseGenerator | ✓ 7 / 7 |
+| IOBoard | ✓ 3 / 3 |
+| GpibController | ✓ 4 / 4 |
+| LifScope | ✓ 4 / 4 |
+| LifLaser | ✓ 4 / 4 |
+| TemperatureController | ✓ 3 / 3 |
 
 ### Phase 5: Shared Settings Widget + HWDialog Replacement
 

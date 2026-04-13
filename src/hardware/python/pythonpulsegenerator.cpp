@@ -11,7 +11,11 @@
 // ============================================================================
 REGISTER_HARDWARE_META(PythonPulseGenerator, "Python Pulse Generator (user-defined Python script)")
 REGISTER_HARDWARE_PROTOCOLS(PythonPulseGenerator, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
-REGISTER_HARDWARE_PARAMS(PythonPulseGenerator)
+REGISTER_HARDWARE_SETTINGS(PythonPulseGenerator,
+    {BC::Key::PGen::numChannels, "Number of Channels",
+     "Number of pulse output channels",
+     8, 1, 64, HwSettingPriority::Required}
+)
 
 // ============================================================================
 // Constructor
@@ -30,16 +34,6 @@ PythonPulseGenerator::PythonPulseGenerator(const QString &label, QObject *parent
     PythonHardwareBase(d_key, d_model)
 {
     d_threaded = true;
-}
-
-// ============================================================================
-// configParams()
-// ============================================================================
-QVector<HwConfigParam> PythonPulseGenerator::configParams()
-{
-    return {
-        { BC::Key::PGen::numChannels, QStringLiteral("Number of Channels"), QVariant(8), QVariant(1), QVariant(64) },
-    };
 }
 
 // ============================================================================

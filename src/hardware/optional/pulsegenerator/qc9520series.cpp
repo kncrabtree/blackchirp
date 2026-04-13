@@ -7,25 +7,51 @@ REGISTER_HARDWARE_PROTOCOLS(Qc9520Series,
     CommunicationProtocol::Rs232,
     CommunicationProtocol::Tcp,
     CommunicationProtocol::Gpib)
+REGISTER_HARDWARE_SETTINGS(Qc9520Series,
+    {BC::Key::PGen::numChannels, "Number of Channels",
+     "Number of pulse output channels",
+     8, 1, 64, HwSettingPriority::Required},
+    {BC::Key::PGen::minWidth, "Min Pulse Width (us)",
+     "Minimum pulse width in microseconds",
+     0.004, 0.0, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::PGen::maxWidth, "Max Pulse Width (us)",
+     "Maximum pulse width in microseconds",
+     1e5, 0.0, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::PGen::minDelay, "Min Delay (us)",
+     "Minimum channel delay in microseconds",
+     0.0, 0.0, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::PGen::maxDelay, "Max Delay (us)",
+     "Maximum channel delay in microseconds",
+     1e5, 0.0, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::PGen::minRepRate, "Min Rep Rate (Hz)",
+     "Minimum repetition rate in Hz",
+     0.01, 0.0, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::PGen::maxRepRate, "Max Rep Rate (Hz)",
+     "Maximum repetition rate in Hz",
+     1e5, 0.0, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::PGen::lockExternal, "External Clock Lock",
+     "Default to external 10 MHz clock reference",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::PGen::canDutyCycle, "Duty Cycle Mode",
+     "Supports duty-cycle triggered mode",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::PGen::canTrigger, "External Trigger",
+     "Supports external trigger input",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::PGen::dutyMax, "Max Duty Cycles",
+     "Maximum number of pulses per duty cycle burst",
+     100000, 1, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::PGen::canSyncToChannel, "Sync to Channel",
+     "Channels can be synchronized to another channel output",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::PGen::canDisableChannels, "Can Disable Channels",
+     "Individual channels can be independently enabled/disabled",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional}
+)
 
 Qc9520Series::Qc9520Series(const QString& label, QObject *parent) :
     QCPulseGenerator(QString(Qc9520Series::staticMetaObject.className()), label, 8, parent)
 {
-    using namespace BC::Key::PGen;
-    setDefault(minWidth,0.004);
-    setDefault(maxWidth,1e5);
-    setDefault(minDelay,0.0);
-    setDefault(maxDelay,1e5);
-    setDefault(minRepRate,0.01);
-    setDefault(maxRepRate,1e5);
-    setDefault(lockExternal,true);
-    setDefault(canDutyCycle,true);
-    setDefault(canTrigger,true);
-    setDefault(dutyMax,100000);
-    setDefault(canSyncToChannel,true);
-    setDefault(canDisableChannels,true);
-
-    save();
 }
 
 Qc9520Series::~Qc9520Series()

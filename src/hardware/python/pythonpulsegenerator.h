@@ -32,8 +32,6 @@ class PythonPulseGenerator : public PulseGenerator, public PythonHardwareBase
 public:
     explicit PythonPulseGenerator(const QString &label, QObject *parent = nullptr);
 
-    static QVector<HwConfigParam> configParams();
-
 protected:
     void initializePGen() override;
     bool testConnection() override;
