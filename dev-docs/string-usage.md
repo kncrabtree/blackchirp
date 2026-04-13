@@ -1,315 +1,302 @@
-# String Usage (analysis from Gemini Flash 3)
+# String Usage
 
-## Key usage
+Policy and migration guidance for `QString`, string literals, and
+string-keyed containers in Blackchirp.
 
-**Prompt**: In a Qt6 application, I currently have a large number of static 
-const QString variables that I use throughout my program declared with literals 
-(e.g., static const QString myKey("key");), mostly as lookup keys in data 
-structures. What are the performance, memory, or other tradeoffs I should 
-consider for that approach vs wrapping the literals in QStringLiteral or using a 
-QStringView?
+## Context and Motivation
 
-Moving from standard `static const QString` declarations to more modern Qt6 
-idioms can provide noticeable improvements in startup time and memory footprint, 
-especially when dealing with a "large number" of strings.
+Blackchirp uses `QString` pervasively, but the current patterns predate Qt 6
+idioms and waste both startup time and memory. A walk of the codebase finds:
 
-Here is a breakdown of the tradeoffs for each approach.
+- **Central key headers use `static const QString` at namespace scope**:
+  - `src/data/settings/hardwarekeys.h` — 127 declarations across nested
+    namespaces (`HW`, `Comm`, `RS232`, `TCP`, `GPIB`, `FtmwScope`, `Digi`,
+    `Clock`, `AWG`, `PGen`, `Flow`, `PController`, `TC`, …).
+  - `src/data/bcglobals.h` — a handful more in `BC::Key` and `BC::Unit`.
+  - `src/data/storage/settingsstorage.h` — ~8 more near lines 23–32.
+  - Per-subsystem: `src/data/experiment/auxdatakeys.h`,
+    `src/data/lif/lifstorage.h`, `src/data/lif/lifconfig.h`,
+    `src/hardware/core/hardwaremanager.h`,
+    `src/hardware/core/runtimehardwareconfig.h`.
 
----
+  `static` at namespace scope in a header gives the declaration **internal
+  linkage**, so every translation unit that includes the header gets its own
+  copy of each `QString`. With ~130 keys in `hardwarekeys.h` and dozens of
+  hardware translation units, that is a meaningful multiplier on both
+  heap-allocation cost at startup and binary bloat. The cost is per-TU, not
+  per-process.
 
-## 1. The Current Approach: `static const QString`
+- **Beyond the central headers, ~747 `static const QString` declarations
+  exist across ~105 files**, roughly 40% in headers and the rest in .cpp
+  files. Migration scope is the whole codebase, not just the key headers.
 
-`static const QString myKey("key");`
+- **String literal style is mid-migration without a policy**: ~1432
+  occurrences of `"..."_s` (Qt::StringLiterals) coexist with ~559
+  occurrences of `QStringLiteral(...)`. Zero header-scope `inline` or
+  `constexpr` string constants exist — every `_s` usage is local inside a
+  function body.
 
-* **Performance:** Every time your application starts, the `QString` constructor 
-must run. It takes the `const char*` literal, detects the encoding (usually 
-UTF-8), calculates the length, and **allocates memory on the heap** to store the 
-UTF-16 version of that string.
-* **Memory:** You are paying for a heap allocation for every single key. If you 
-have hundreds of keys, this adds up to fragmented memory and slower 
-initialization.
-* **Static Init Order Fiasco:** If these are global statics, you run the risk of 
-them being accessed before they are initialized if they are used across 
-different translation units.
+- **~282 `std::map<QString, T>` sites exist**, none using `std::less<>`
+  for heterogeneous lookup.
 
-## 2. The Optimized Standard: `QStringLiteral`
+- **By-value `QString` parameters are common in hot-call APIs**:
+  - `LogHandler::logMessage(const QString text, ...)` —
+    `src/data/loghandler.h:34`, ~445 call sites.
+  - `CommunicationProtocol::writeCmd(QString cmd)` and
+    `queryCmd(QString cmd, bool)` —
+    `src/hardware/core/communication/communicationprotocol.h:93,119`.
+  - `SettingsStorage::get(const QString key, ...)` and its overloads —
+    `src/data/storage/settingsstorage.h:332` and peers.
 
-`static const auto myKey = QStringLiteral("key");`
+  `const QString` taken by value (not by reference) is strictly worse than
+  `const QString &`: it bumps the implicit-sharing refcount on every call
+  with no upside.
 
-* **Performance:** This is the "gold standard" for internal constants. 
-`QStringLiteral` generates the UTF-16 data at **compile-time** and stores it in 
-the read-only data section (RODATA) of your binary.
-* **Memory:** At runtime, `QString` simply points to that existing binary data. 
-There is **zero heap allocation** and zero conversion overhead.
-* **Tradeoff:** It increases the size of your compiled binary slightly because 
-the strings are stored as 2-byte `char16_t` rather than 1-byte `char`.
+### What is *not* the motivation
 
-## 3. The Modern Qt6 Way: `_s` Literals
-In Qt6, you can use the `Qt::StringLiterals` namespace for a cleaner syntax that 
-behaves like `QStringLiteral`.
+- **Hot-path data flow is already QString-free.** `FtmwScope::emitShot()`
+  and its callers operate on `QVector<qint64>` waveforms. Settings are
+  read once at construction and in `hwPrepareForExperiment()`, never in
+  per-shot loops. String-level optimization does not affect acquisition
+  throughput.
+- **Translation / i18n is not a concern.** There are no `.ts` / `.qm`
+  files, no `QT_TR_NOOP`, and no translation pipeline. The ~59 `tr()` calls
+  are inherited from `QObject` with no translations behind them. i18n is
+  not on the roadmap; see "Out of Scope" below.
 
-```cpp
-using namespace Qt::StringLiterals;
-inline constexpr auto myKey = "key"_s;
-```
+The motivation is therefore **startup cost, binary size, API hygiene, and
+consistency** — not hot-path throughput and not i18n compatibility.
 
-* **Why use this?** It combines the power of `QStringLiteral` with `constexpr` 
-and `inline` (C++17/20), making it perfect for header-only constant definitions 
-without worrying about multiple definition errors or initialization order.
+## House Style for String Literals
 
-## 4. The "No-String" Approach: `QStringView` / `QAnyStringView`
+For new code:
 
-`static constexpr QAnyStringView myKey("key");`
+- **Use `"..."_s`** from `Qt::StringLiterals` for `QString` literals. This
+  is the house style going forward and is already the dominant form in the
+  codebase.
+- **Use `u"..."_s`** (UTF-16 prefix) for literals containing non-ASCII
+  characters. Example: `BC::Unit::us` currently uses
+  `QString::fromUtf8("μs")`; its modern form is `u"μs"_s`.
+- **`QStringLiteral(...)` is not used in new code.** Existing sites are
+  left alone — a mechanical sweep is possible but not required.
+- **`"..."_L1`** produces a `QLatin1StringView` for ASCII-only constants
+  where a non-`QString` view is desired (see Pattern B under Key
+  Declaration).
 
-* **Performance:** A "view" is just a pointer and a length. It does absolutely 
-nothing until you actually use it.
-* **Memory:** It occupies only 16 bytes (the size of the pointer + length) and 
-performs no allocations.
-* **Qt6 Specifics:** Most Qt6 functions (like `QHash::value`, 
-`QMap::operator[]`, or `setObjectName`) now accept `QAnyStringView`. When you 
-pass a view to these functions, Qt can often perform the lookup without ever 
-promoting the view to a full `QString`.
-* **Tradeoff:** You cannot use a view if the underlying data (the literal) goes 
-out of scope, but for `static` globals, this isn't an issue.
+The C++23 standard (`CMAKE_CXX_STANDARD 23` in `CMakeLists.txt`) and Qt 6
+minimum guarantee that `_s`, `_L1`, `QAnyStringView`, and
+`inline constexpr QStringView` are all available.
 
----
+## Key Declaration Idiom
 
-## Comparison Table
+Three portable patterns are documented here. The implementation task picks
+one per header based on how the keys are consumed. **No single pattern
+wins in all cases.**
 
-| Feature | `static const QString` | `QStringLiteral` / `_s` | `QAnyStringView` |
-| :--- | :--- | :--- | :--- |
-| **Heap Allocation** | Yes (Always) | **No** | **No** |
-| **Initialization** | Runtime (Slow) | Compile-time (Fast) | Compile-time (Instant) |
-| **Binary Size** | Smaller (UTF-8) | Larger (UTF-16) | **Smallest** |
-| **Best Use Case** | Small projects/Quick scripts | Internal logic & lookup keys | Function params & High-perf lookups |
+All three replace the current `static const QString k{"key"};` idiom, and
+all three eliminate the per-TU duplication.
 
----
-
-## Recommendations for Qt6
-
-1.  **For Lookup Keys (QHash/QMap):** Use `QStringLiteral` or the `_s` suffix. 
-Since containers like `QHash<QString, T>` specifically require a `QString` key, 
-using a literal ensures the `QString` object exists without the cost of a heap 
-allocation.
-2.  **For Header-Only Constants:** Use `inline constexpr QAnyStringView`. This 
-is the most lightweight way to define a constant in a header file that can be 
-used across your entire app.
-3.  **For Function Arguments:** Stop passing `const QString &`. Use 
-`QAnyStringView` instead. It allows the caller to pass a `QString`, a 
-`QByteArray`, or a `"literal"` without any temporary allocations.
-
-**Pro-Tip:** If you are using C++17 or 20, prefer `inline constexpr` for your 
-global constants to avoid the "Static Initialization Order Fiasco" entirely.
+### Pattern A — `inline const QString`
 
 ```cpp
-// YourConstants.h
-namespace Keys {
-    using namespace Qt::StringLiterals; 
-    inline constexpr auto user_id = "user_id"_s;
-    inline constexpr auto session_token = "token"_s;
-}
+inline const QString trigCh = u"trigCh"_s;
 ```
 
-## Compatibility with STL containers
+- ODR-safe via `inline`; single definition across all translation units.
+- Not `constexpr` — `QString` is not a C++ literal type — but the `_s`
+  literal stores the UTF-16 data in `.rodata`, and the `QString`
+  constructor performs no heap allocation.
+- One constructor call per process, not per TU.
+- Stores directly into `std::map<QString, T>` and `QHash<QString, T>`
+  with zero conversion.
+- Best when the consumers of these keys already take `QString` /
+  `const QString &` and signatures are not changing in the same pass.
 
-**Prompt**: Are there special considerations for the interaction of 
-QStringLiteral / _s with std::map or other containers in the STL? My application 
-prefers using STL containers over Qt containers in most cases unless required by 
-the Qt API.
+This is the lowest-risk migration target for the existing key headers.
 
-When using `QStringLiteral` or the `_s` literal in a Qt6 application with STL 
-containers like `std::map` or `std::unordered_map`, you are combining the memory 
-efficiency of Qt's **Implicit Sharing** with the strict performance 
-characteristics of the STL.
-
-Because `QStringLiteral` generates a `QString` that points directly to read-only 
-static memory, it is highly compatible with STL containers. Here are the 
-specific considerations:
-
----
-
-### 1. Storage: Implicit Sharing is Your Friend
-STL containers like `std::map<QString, Value>` store the `QString` object 
-itself. In Qt, a `QString` is just a pointer to a control block.
-* **Memory Efficiency:** When you insert a `QStringLiteral` into a `std::map`, 
-the map stores the small `QString` handle (8–16 bytes).
-* **The "Static" Advantage:** `QStringLiteral` marks its internal data as 
-"static/read-only." This means that when the STL container copies the key during 
-insertion, Qt **does not increment a reference count**. It simply copies the 
-pointer. This makes `std::map` insertions of literals significantly faster than 
-standard `std::string` copies.
-
-### 2. The Performance Trap: Conversion Overhead If you have a 
-`std::map<QString, Value>`, calling `map.find("key")` with a raw C-string will 
-construct a **temporary `QString`**, allocate heap memory, and convert the 
-string. To avoid this in STL containers, you should use **Heterogeneous 
-Lookup**.
-
-For `std::map` (C++14 and later) By default, `std::map` only allows lookups 
-using the exact key type. Use `std::less<void>` to enable "transparent" 
-comparisons:
+### Pattern B — `inline constexpr QLatin1StringView`
 
 ```cpp
-// Define your map with a transparent comparator
-std::map<QString, int, std::less<>> myMap;
-
-// Now these lookups are fast and avoid temporary QString allocations: 
-myMap.find(QStringLiteral("key")); // Best: Uses existing static data 
-myMap.find("key"_s);               // Best: Same as above 
-myMap.find(QStringView(u"key"));   // Fast: No heap allocation
+inline constexpr QLatin1StringView trigCh = "trigCh"_L1;
 ```
 
-For `std::unordered_map` (C++20 and later) Unordered maps require a 
-transparent hash and equal_to operator. Qt 6.1+ provides `std::hash<QString>`, 
-but to use `QStringView` for lookup in a `QString` map, you'll need to provide a 
-custom transparent hasher.
+- True `constexpr`; zero runtime cost at the constant's own expense.
+- Consumers must accept `QAnyStringView`, or the containing container
+  must use heterogeneous lookup
+  (`std::map<QString, T, std::less<>>`), or the call site must pay the
+  `QString` construction that pattern A avoids.
+- Best when the consumer API is migrating to `QAnyStringView` in the same
+  change — the container / signature migration and the key declaration
+  migration land together.
+- ASCII-only. Use pattern C for non-ASCII keys.
 
----
-
-### 3. Comparison of Literal Approaches
-
-| Feature | `QStringLiteral` / `_s` | `QStringView` / `QAnyStringView` | 
-| :--- | :--- | :--- |
-| **Use in `std::map`** | **Primary Key Type.** Store these as keys. | **Lookup Only.** Do not store as keys (risk of dangling pointers). |
-| **Conversion** | Zero. It *is* a `QString`. | Low. Can be converted to `QString` if needed. |
-| **Safety** | High. Data lives in the binary's `.rodata`. | High for literals; Low for dynamic strings. |
-
----
-
-### 4. Memory/Binary Tradeoffs
-
-* **Static Data:** Using `QStringLiteral` or `_s` many times will increase your 
-executable size because each string is stored in UTF-16 (2 bytes per char). 
-However, this is offset by the fact that you have **zero heap allocations** for 
-these strings at runtime.
-* **De-duplication:** Compilers are usually smart enough to de-duplicate the raw 
-string data, but `QStringLiteral` objects themselves might not be de-duplicated 
-across different translation units unless you use `inline constexpr` (Qt 6.2+).
-
-### Summary Checklist for your STL Preference:
-1.  **Use `_s` for storage:** Use `inline constexpr auto key = "myKey"_s;` in 
-headers. This is the cleanest Qt6 way to store keys.
-2.  **Enable `std::less<>`:** Always declare your maps as
-`std::map<QString, Value, std::less<>>`.
-3.  **Avoid `std::string` mixing:** Don't use `std::map<std::string, Value>` if 
-you have to pass those keys back into the Qt API frequently. The conversion from 
-`std::string` to `QString` (UTF-8 to UTF-16) is much more expensive than the STL 
-lookup itself.
-
-## Migration Strategy and Translation
-
-**Prompt**: Given that I am migrating a large codebase, how should I prioritize 
-refactoring? I would think that changing the keys is easy and can be done in one 
-shot, but moving function arguments or other one-off strings may be more 
-difficult and should start with performance-sensitive code. Also, currently the 
-application does not support translation; if I want to enable it in the future, 
-does that affect this analysis?
-
-You have a solid intuition here. Refactoring a large codebase is a marathon, not 
-a sprint, and "touching everything at once" is usually a recipe for a week-long 
-debugging session. 
-
-Here is how you should prioritize your efforts, keeping the "translation-shaped" 
-cloud on the horizon in mind.
-
----
-
-## 1. Priority 1: Internal Keys and Constants (The "Low-Hanging Fruit") You are 
-correct—changing your `static const QString` keys to `QStringLiteral` (or `_s`) 
-is the highest ROI task.
-
-* **Why:** These are purely internal logic. They will **never** be translated.
-* **The Move:** Convert these to `inline constexpr auto key = "value"_s;` in 
-your headers (Qt 6.2+).
-* **Impact:** You’ll see an immediate reduction in heap allocations during 
-startup and a slightly smaller memory footprint. Since these are used in lookups 
-(maps/hashes), removing the "check if null/allocate/copy" overhead of the 
-`QString` constructor is a win.
-
-## 2. Priority 2: Performance-Sensitive Call Sites Before you change every 
-function signature in the app, look for "hot paths"—loops, data-processing 
-logic, or frequently called getters.
-
-* **The Move:** If a function takes a `const QString &` but only uses it for a 
-comparison or to pass it to another function, change the signature to 
-**`QAnyStringView`**.
-* **Why:** This allows you to pass C-string literals, `std::string`, or 
-`QString` without a temporary allocation.
-* **Wait on the rest:** For "cold" code (e.g., a setup menu that runs once), the 
-overhead of a `const QString &` is negligible. Don't waste your life refactoring 
-`setWindowIconDescription()`.
-
----
-
-## 3. The "Fly in the Ointment": Future Translation (i18n)
-If you plan to support translation later, your refactoring strategy changes 
-significantly for any string that might be visible to a user.
-
-### The Conflict: `tr()` vs. `QStringLiteral`
-You cannot use `QStringLiteral` or `_s` on strings that need to be translated.
-* **`QStringLiteral` / `_s`**: Evaluated at **compile-time**. It freezes the 
-string into the binary.
-* **`tr()`**: Evaluated at **runtime**. It looks up the translation in a `.qm` 
-file based on the current locale.
-
-### How to Categorize Your Strings
-Before you refactor, split your strings into two buckets:
-
-| String Type | Example | Refactor To... |
-| :--- | :--- | :--- |
-|**Logic/System** | `"json_key"`, `"internal_id"`, `"settings_path"` | `_s` or `QStringLiteral` |
-| **UI/User-Facing** | `"File Not Found"`, `"Submit"`, `"Username"` | **`tr("...")`** (Leave them alone!) |
-
-**Important Note:** If you wrap a UI string in `QStringLiteral`, the Qt 
-translation tools (`lupdate`) will have a harder time extracting them, and 
-you'll eventually have to undo that work to wrap them in `tr()`. 
-
----
-
-## 4. The Recommended Workflow
-
-1.  **Mass-Convert Logic Keys:** Use a regex or refactoring tool to flip your 
-`static const` keys to `inline constexpr` using the `_s` literal.
-    * *Search:* `static const QString (\w+)\("([^"]+)"\);`
-    * *Replace:* `inline constexpr auto $1 = "$2"_s;`
-2.  **Audit for UI Strings:** If a string is currently a `static const QString` 
-but is used in a `QLabel` or `QMessageBox`, **do not** use `QStringLiteral`. 
-Instead, mark it for future translation, perhaps using the `QT_TR_NOOP` macro, 
-which flags the string for translation without actually translating it yet.
-3. **Targeted `QAnyStringView` Migration:** Change function arguments only in 
-base classes, utilities, or high-frequency data handlers.
-
-### A Modern Header Pattern
-For your keys, move toward this pattern to avoid "Static Initialization Order" 
-headaches:
+### Pattern C — `inline constexpr QStringView`
 
 ```cpp
-#pragma once
-#include <QString>
-#include <QCoreApplication>
-
-namespace Constants {
-    using namespace Qt::StringLiterals;
-
-    // --- 1. INTERNAL KEYS (Use _s) ---
-    // These are for your std::map lookups. They are never translated.
-    // 'inline' ensures they don't violate ODR; 'constexpr' ensures zero runtime cost.
-    namespace Keys {
-        inline constexpr auto UserId     = "user_id"_s;
-        inline constexpr auto AuthToken  = "auth_token"_s;
-        inline constexpr auto LastActive = "last_active"_s;
-    }
-
-    // --- 2. TRANSLATABLE UI STRINGS (The "Pending" Strategy) ---
-    // Since you don't support i18n yet, use NOOP macros. 
-    // This allows lupdate to "see" these strings later without breaking _s logic.
-    namespace UI {
-        // QT_TR_NOOP marks this for the translation tool but returns the raw char*
-        // We wrap it in a function so it's not converted until requested.
-        inline QString appName() { return QCoreApplication::translate("Context", "My Great App"); }
-        
-        // OR: If you just want a marker for now:
-        #define MSG_WELCOME QT_TR_NOOP("Welcome Back!")
-    }
-}
+inline constexpr QStringView us = u"μs";
 ```
+
+- Same tradeoff as pattern B but UTF-16, so non-ASCII keys are safe.
+- Useful for `BC::Unit` and any other namespace with non-ASCII content.
+
+### Do not use
+
+```cpp
+// Does NOT compile portably — QString is not a literal type.
+inline constexpr auto trigCh = "trigCh"_s;
+```
+
+`QString`'s internal `QArrayDataPointer` has a non-trivial destructor and
+non-`constexpr` members, so `constexpr QString` is not valid in the Qt
+versions this project targets. `constexpr auto` with `_s` deduces to
+`QString` and fails for the same reason. Guidance that recommends this
+pattern predates the Qt/C++ reality — do not use it in Blackchirp.
+
+## Function Signature Policy
+
+Rules of thumb, in order of preference:
+
+1. **Never pass `QString` by value** unless the callee is going to take
+   ownership and move. The current offenders are listed in
+   [Context and Motivation](#context-and-motivation). All should be
+   corrected.
+2. **`const QString &`** is the conservative default for parameters when
+   the callee needs a `QString` (to pass to another `QString` API, to
+   store, or to do `QString`-specific operations like `arg()`).
+3. **`QAnyStringView`** is appropriate when the function is a pure
+   lookup, comparison, or passthrough — it lets callers pass `QString`,
+   `QStringView`, `QLatin1StringView`, `const char *`, or a `"..."_s`
+   literal without any temporary `QString`. Good candidates:
+   - `SettingsStorage::get` / `set` / `containsValue`
+   - `HeaderStorage` lookup methods
+   - `HardwareObject::validationKeys` consumers
+4. **`QStringView`** when you need `constexpr`-eligibility on the
+   parameter and the function is truly view-only. Less useful than
+   `QAnyStringView` in Blackchirp because of the Latin-1 /  `const char *`
+   paths.
+
+### Priority
+
+Signature migration is **deprioritized relative to key consolidation**.
+Blackchirp's hot paths are QString-free, so the performance upside is
+modest. The real upside is API hygiene: fixing the by-value parameters
+and removing temporary `QString` allocations at call sites. Do this
+incrementally as specific APIs are touched for other reasons, not as a
+codebase-wide sweep.
+
+## Virtual Cascade Hotspots
+
+Any signature change on a virtual function forces every override to
+change in the same commit. The following base classes are the
+coordination points — scope any signature migration accordingly:
+
+- **`CommunicationProtocol::writeCmd` / `queryCmd`** —
+  `src/hardware/core/communication/communicationprotocol.h:93,119`. Taken
+  by value today. Overridden by `Rs232Instrument`, `TcpInstrument`,
+  `GpibInstrument`, `CustomInstrument`, `VirtualInstrument`, and the
+  Python-hardware wrappers (~8 overrides total). Fixing these to
+  `const QString &` is a straightforward cleanup; going further to
+  `QAnyStringView` requires coordinated subclass edits.
+- **`HardwareObject` QString/QStringList virtuals** —
+  `src/hardware/core/hardwareobject.h:232,404` and peers
+  (`validationKeys`, `forbiddenKeys`, …). ~100 subclass overrides across
+  `src/hardware/core/` and `src/hardware/optional/`. Any signature
+  migration here is a heavy coordinated refactor.
+- **`DataStorageBase`** —
+  `src/data/storage/datastoragebase.h:18`. Constructor takes
+  `QString path = ""`.
+- **`FileParser::canParse`** —
+  `src/data/processing/parsers/fileparser.h:26`. Takes `const QString &`,
+  already reasonable.
+
+Migrations touching virtual functions should be done as single commits
+per base class, with all overrides updated together.
+
+## Container Policy
+
+- **`std::map<QString, T, std::less<>>`** is the default declaration for
+  new maps. The `std::less<>` transparent comparator enables
+  heterogeneous lookup, so callers can `find("..."_s)`,
+  `find(QStringView(...))`, or `find(QLatin1StringView(...))` without
+  allocating a temporary `QString`.
+- Blanket retrofitting `std::less<>` onto the ~282 existing
+  `std::map<QString, T>` declarations is **cheap and safe**, but the
+  benefit is *deferred* — it only materializes once lookups start
+  passing non-`QString` keys. Practically, the retrofit is worth doing
+  wherever Pattern B / C keys or `QAnyStringView` signatures are being
+  rolled out in the same change.
+- **`SettingsStorage::SettingsMap`** — `src/data/storage/settingsstorage.h`
+  line 24 (`using SettingsMap = std::map<QString, QVariant>;`) is the
+  central typedef for the class of map most affected by this policy.
+  Updating it updates all downstream sites uniformly.
+- **`QHash<QString, T>`** is rare in Blackchirp (~4 sites). Qt 6 supports
+  `QHash` heterogeneous lookup via `qHash(QStringView)`; no special
+  declaration is needed.
+
+## Out of Scope
+
+- **Internationalization / `tr()` / `.ts` files.** Blackchirp has no
+  translation infrastructure and none is planned. Existing `tr()` calls
+  are cosmetic. If i18n is ever added, UI strings will need a separate
+  audit; this document does not reserve the `tr()` path and does not
+  introduce `QT_TR_NOOP`.
+- **Hot-path optimization of digitizer data flow.** FTMW acquisition,
+  accumulation, and shot handling do not touch `QString`. See the
+  [Digitizer Data Flow Optimization](digitizer-data-flow.md) task for
+  the relevant concerns in that area.
+- **`QStringLiteral(...)` mass rewrite.** Existing occurrences can stay.
+  The policy applies to new code and to sites that are already being
+  edited for another reason.
+
+## Migration Sequencing
+
+When the implementation task is picked up, follow this order. Each step
+is independently valuable and can be committed on its own.
+
+1. **Standardize new code on `"..."_s`.** No sweep; just policy.
+2. **Consolidate and migrate central key headers.** Target list:
+   - `src/data/settings/hardwarekeys.h`
+   - `src/data/bcglobals.h`
+   - `src/data/storage/settingsstorage.h` (the top-of-file constants)
+   - `src/data/experiment/auxdatakeys.h`
+   - `src/data/lif/lifstorage.h`
+   - `src/data/lif/lifconfig.h`
+   - `src/hardware/core/hardwaremanager.h`
+   - `src/hardware/core/runtimehardwareconfig.h`
+
+   For each header, pick **Pattern A** (default), **Pattern B**, or
+   **Pattern C** based on how its keys are consumed:
+   - Pattern A if consumers take `QString` / `const QString &` and are
+     not being migrated.
+   - Pattern B if the container or consumer API is migrating to
+     `QAnyStringView` / heterogeneous lookup in the same change (ASCII
+     keys only).
+   - Pattern C for non-ASCII keys in the same situation.
+3. **Fix by-value `QString` parameters.** Minimum target:
+   `LogHandler::logMessage`, `CommunicationProtocol::writeCmd`,
+   `CommunicationProtocol::queryCmd`, `SettingsStorage::get` and peers.
+   `const QString &` is the conservative fix; `QAnyStringView` is the
+   aggressive one. Match the choice to what the callee actually does
+   with the parameter.
+4. **Retrofit `std::less<>` on `std::map<QString, T>`** where pattern B
+   or C keys land, or where signature migrations create
+   non-`QString` lookup callers. A codebase-wide sweep is optional.
+5. **Long-tail signature migration to `QAnyStringView`.** Only as
+   specific APIs are touched for other reasons. Not a sweep.
+
+## Verification
+
+Any change informed by this document should be validated with a debug
+build and the existing test suite:
+
+```
+cmake . -B build/Desktop-Debug/
+make -C build/Desktop-Debug/ -j$(nproc)
+cmake . -B build/tests
+make -C build/tests tests -j$(nproc)
+ctest --test-dir build/tests
+```
+
+Settings-adjacent tests (`tst_settingsstoragetest`,
+`tst_headerstoragetest`) are the primary regression surface for key
+declaration changes.

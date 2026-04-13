@@ -1,47 +1,3 @@
-We are in the middle of a hardware settings registry migration for the Blackchirp project
-(cmakemigration branch). The goal is to replace runtime setDefault() calls in hardware
-constructors with static REGISTER_HARDWARE_SETTINGS macros so that settings are available
-before object construction.
-
-Start by reading these planning documents in full:
-  - dev-docs/settings-registry.md — overall design and current status (the Step 3 status
-    tables show what is done and what remains)
-  - dev-docs/phase4-settings/agent-instructions.md — the instructions given to each Haiku
-    agent that performs a migration
-  - dev-docs/phase4-settings/baseclass.toml — approved settings for hardware base classes
-  - The per-type TOML file in dev-docs/phase4-settings/ for the type you are about to work 
-on
-
-Your role is orchestrator. Choose 1 hardware type to migrate, then spawn a Haiku subagent
-(using the Agent tool with model: "haiku") to carry out the migration. The agent
-instructions file explains exactly what each agent must do. Use the status tables in
-settings-registry.md to determine what remains and update the table when a type is
-complete. After the agent finishes, stop and wait — do not pre-select or queue the next
-type. The user will test, confirm, and prompt you to commit changes before moving on.
-
-Key constraints to pass on to each agent (and follow yourself):
-  - No worktrees — agents edit files in place
-  - No building — the user builds and reviews after the agent completes
-  - Agents may use codebase-memory-mcp (project: home-kncrabtree-github-blackchirp-src) if
-    they need to explore code beyond the files listed in the instructions
-
-The per-type research (reading source files, finding setDefault calls, checking for
-configParams) belongs in the agent, not the orchestrator. The agent is already instructed
-to read the TOML and reference files; give it the list of source files to modify and let
-it do the archaeology. Your job before spawning is narrower: glance at the source files
-just enough to identify any non-obvious situations that the agent might not infer from the
-TOML alone (e.g., a constructor lambda that reads a setting before the base class is
-constructed, or a two-class file that requires a refactor). Flag those in the brief; do
-not pre-compute the macro content.
-
-Base class registrations (HardwareObject, Clock, IOBoard, TemperatureController — see
-baseclass.toml) are not covered by any per-type TOML. Handle them as a standalone agent
-or fold them into the first agent for the corresponding hardware type.
-
-The FlowController migration (commit ba485294) is the reference for how a completed
-migration looks.
-
-
 # Development Roadmap
 
 Projects sorted by estimated complexity (smallest first). All are largely independent.
@@ -98,12 +54,10 @@ Next: Phase 3 (creation-time UI) after dialog refactoring.
 ## Large
 
 ### [String Usage](string-usage.md)
-QString is used extensively throughout the codebase, which has performance and
-memory consequences. Evaluate the usages of QString across Blackchirp, considering
-whether QAnyStringView should replace QString in functions and whether settings/header
-keys etc. should be replaced with inline constexpr auto x = "string"_s, available
-in the Qt::StringLiterals namespace. A preliminary analysis of the performance and
-memory tradeoffs by Gemini is provided.
+Policy surrounding usage of QStrings in Blackchirp. Describes a migration strategy to
+eliminate inefficient QString usage, transition important QString argument uses to
+QAnyStringView, and ensure that STL containers use std::less<> for heterogeneous
+lookup when certain strings are migrated.
 
 ### [Python Hardware Implementations](python-hardware.md) **COMPLETE**
 User-editable Python scripts as hardware drivers via JSON IPC.
