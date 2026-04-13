@@ -6,7 +6,7 @@
 
 using namespace BC::Key::TC;
 
-REGISTER_HARDWARE_SETTINGS(TemperatureController,
+REGISTER_HARDWARE_BASE(TemperatureController,
     {BC::Key::TC::interval, "Poll Interval (ms)",
      "Interval between temperature sensor readings in milliseconds.",
      500, 1, QVariant{}, HwSettingPriority::Optional}

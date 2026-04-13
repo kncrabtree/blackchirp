@@ -8,7 +8,7 @@
 #include <hardware/optional/gpibcontroller/gpibcontroller.h>
 #include <hardware/core/communication/gpibinstrument.h>
 
-REGISTER_HARDWARE_SETTINGS(HardwareObject,
+REGISTER_HARDWARE_BASE(HardwareObject,
     {BC::Key::HW::critical, "Critical Hardware",
      "If enabled, a communication failure with this device will abort any running experiment.",
      true, QVariant{}, QVariant{}, HwSettingPriority::Optional},

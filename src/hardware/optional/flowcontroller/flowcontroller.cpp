@@ -3,7 +3,7 @@
 
 using namespace BC::Key;
 
-REGISTER_HARDWARE_SETTINGS(FlowController,
+REGISTER_HARDWARE_BASE(FlowController,
     {BC::Key::Flow::interval, "Poll Interval (ms)",
      "Interval between flow controller readback queries in milliseconds.",
      333, 1, QVariant{}, HwSettingPriority::Optional}

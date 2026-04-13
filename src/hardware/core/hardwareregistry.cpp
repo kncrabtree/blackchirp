@@ -26,29 +26,30 @@ HardwareRegistry& HardwareRegistry::instance()
     return *s_instance;
 }
 
-bool HardwareRegistry::registerHardware(const QString& key, const QString& subKey, 
+bool HardwareRegistry::registerHardware(const QString& key, const QString& subKey,
                                        const QString& description,
-                                       std::function<HardwareObject*(const QString&)> factory)
+                                       std::function<HardwareObject*(const QString&)> factory,
+                                       const QStringList& inheritanceChain)
 {
     QMutexLocker locker(&d_registryMutex);
-    
+
     QString registryKey = makeRegistryKey(key, subKey);
-    
+
     // Check if already registered
     if (d_registrations.contains(registryKey)) {
         qWarning() << "Hardware already registered:" << key << subKey;
         return false;
     }
-    
+
     // Validate required parameters
     if (key.isEmpty() || subKey.isEmpty() || description.isEmpty() || !factory) {
         qWarning() << "Invalid hardware registration parameters for" << key << subKey;
         return false;
     }
-    
+
     // Create registration
-    HardwareRegistration reg(key, subKey, description, factory);
-    
+    HardwareRegistration reg(key, subKey, description, factory, inheritanceChain);
+
     // Store registration
     d_registrations.insert(registryKey, reg);
 
@@ -267,7 +268,16 @@ QVector<HwSettingDef> HardwareRegistry::getSettingDefs(const QString& key, const
     if (it == d_registrations.end())
         return {};
 
-    return it.value().settingDefs;
+    QVector<HwSettingDef> result = it.value().settingDefs;
+
+    // Append settings from each base class in order (nearest base first)
+    for (const QString& baseClass : it.value().inheritanceChain) {
+        auto baseIt = d_baseSettingDefs.find(baseClass);
+        if (baseIt != d_baseSettingDefs.end())
+            result.append(baseIt.value());
+    }
+
+    return result;
 }
 
 bool HardwareRegistry::addArraySettingDef(const QString& key, const QString& subKey,
@@ -323,7 +333,61 @@ QMap<QString, HwArraySettingDef> HardwareRegistry::getArraySettingDefs(
     if (it == d_registrations.end())
         return {};
 
-    return it.value().arraySettingDefs;
+    // Start with base class array defs (outermost ancestor first), then let
+    // nearer bases and the implementation override by inserting later.
+    QMap<QString, HwArraySettingDef> result;
+    const QStringList& chain = it.value().inheritanceChain;
+    for (int i = chain.size() - 1; i >= 0; --i) {
+        auto baseIt = d_baseArrayDefs.find(chain[i]);
+        if (baseIt != d_baseArrayDefs.end()) {
+            for (auto aIt = baseIt->cbegin(); aIt != baseIt->cend(); ++aIt)
+                result.insert(aIt.key(), aIt.value());
+        }
+    }
+    // Implementation-specific defs override base class defs for the same key
+    for (auto aIt = it.value().arraySettingDefs.cbegin();
+         aIt != it.value().arraySettingDefs.cend(); ++aIt)
+        result.insert(aIt.key(), aIt.value());
+
+    return result;
+}
+
+bool HardwareRegistry::addBaseSettingDefs(const QString& className,
+                                          const QVector<HwSettingDef>& settings)
+{
+    QMutexLocker locker(&d_registryMutex);
+    d_baseSettingDefs[className].append(settings);
+    return true;
+}
+
+bool HardwareRegistry::addBaseArraySettingDef(const QString& className, const QString& arrayKey,
+                                              const QString& label, const QString& description,
+                                              HwSettingPriority priority)
+{
+    QMutexLocker locker(&d_registryMutex);
+    d_baseArrayDefs[className][arrayKey] = HwArraySettingDef{arrayKey, label, description, {}, priority};
+    return true;
+}
+
+bool HardwareRegistry::addBaseArraySettingEntry(const QString& className, const QString& arrayKey,
+                                                const SettingsStorage::SettingsMap& entry)
+{
+    QMutexLocker locker(&d_registryMutex);
+
+    auto classIt = d_baseArrayDefs.find(className);
+    if (classIt == d_baseArrayDefs.end()) {
+        qWarning() << "Cannot add base array entry - class not registered:" << className;
+        return false;
+    }
+
+    auto arrayIt = classIt->find(arrayKey);
+    if (arrayIt == classIt->end()) {
+        qWarning() << "Cannot add base array entry - array key not registered:" << arrayKey << "for" << className;
+        return false;
+    }
+
+    arrayIt->entries.push_back(entry);
+    return true;
 }
 
 bool HardwareRegistry::addLibraryDependency(const QString& key, const QString& subKey, const QString& libraryName,

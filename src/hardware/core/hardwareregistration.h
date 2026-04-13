@@ -18,19 +18,20 @@ class HardwareObject;
 
 /*!
  * \brief Auto-registration helper class
- * 
+ *
  * This class performs hardware registration in its constructor, allowing
  * for automatic registration when a static instance is created.
  */
 class HardwareAutoRegistration
 {
 public:
-    HardwareAutoRegistration(const QString& key, const QString& subKey, 
+    HardwareAutoRegistration(const QString& key, const QString& subKey,
                            const QString& description,
-                           std::function<HardwareObject*(const QString&)> factory)
+                           std::function<HardwareObject*(const QString&)> factory,
+                           const QStringList& inheritanceChain = {})
     {
         HardwareRegistry::instance().registerHardware(
-            key, subKey, description, factory
+            key, subKey, description, factory, inheritanceChain
         );
     }
 };
@@ -55,8 +56,29 @@ inline QString findHardwareBaseType(const QMetaObject* metaObj) {
 }
 
 /*!
+ * \brief Build the inheritance chain for a hardware implementation class
+ *
+ * Walks the Qt metaobject superClass() chain from the implementation's direct
+ * base up to (but not including) QObject, collecting class names. The result
+ * is stored in HardwareRegistration::inheritanceChain so that getSettingDefs
+ * and getArraySettingDefs can merge in base class settings.
+ *
+ * Example: for Valon5009 (Valon5009 -> Clock -> HardwareObject -> QObject),
+ * returns {"Clock", "HardwareObject"}.
+ */
+inline QStringList buildInheritanceChain(const QMetaObject* metaObj) {
+    QStringList chain;
+    const QMetaObject* current = metaObj->superClass();
+    while (current && QString(current->className()) != "QObject") {
+        chain.append(current->className());
+        current = current->superClass();
+    }
+    return chain;
+}
+
+/*!
  * \brief Register hardware implementation using Qt metaobjects
- * 
+ *
  * This macro uses Qt's metaobject system to automatically derive hardware
  * type and implementation keys from class names, eliminating the need for
  * manual key management and preventing static counter increments.
@@ -71,7 +93,8 @@ inline QString findHardwareBaseType(const QMetaObject* metaObj) {
         DESC, \
         [](const QString& label) -> HardwareObject* { \
             return new CLASS(label); \
-        } \
+        }, \
+        buildInheritanceChain(&CLASS::staticMetaObject) \
     );
 
 /*!
@@ -146,6 +169,54 @@ inline QString findHardwareBaseType(const QMetaObject* metaObj) {
             findHardwareBaseType(&CLASS::staticMetaObject), \
             QString(CLASS::staticMetaObject.className()), \
             {__VA_ARGS__} \
+        );
+
+/*!
+ * \brief Register scalar settings for a non-instantiable base hardware class
+ *
+ * Stores setting definitions in the base-class settings map rather than the
+ * main hardware registry, so no prior registerHardware call is required.
+ * These settings are automatically merged into getSettingDefs results for any
+ * implementation whose inheritanceChain includes CLASS.
+ *
+ * \param CLASS Base hardware class name (e.g., HardwareObject, Clock)
+ * \param ... HwSettingDef initializer lists: {key, "Label", "Description", defaultVal, min, max, priority}
+ */
+#define REGISTER_HARDWARE_BASE(CLASS, ...) \
+    static bool base_settings_registered_##CLASS = \
+        HardwareRegistry::instance().addBaseSettingDefs( \
+            QString(CLASS::staticMetaObject.className()), \
+            {__VA_ARGS__} \
+        );
+
+/*!
+ * \brief Register array setting metadata for a base hardware class (call once per array key)
+ *
+ * \param CLASS Base hardware class name
+ * \param ARRAY_KEY String constant for the array key
+ * \param LABEL User-facing display label
+ * \param DESC Explanatory description/tooltip
+ * \param PRIORITY HwSettingPriority value
+ */
+#define REGISTER_HARDWARE_BASE_ARRAY(CLASS, ARRAY_KEY, LABEL, DESC, PRIORITY) \
+    static bool BC_ARRDEF_VAR(CLASS, ARRAY_KEY) = \
+        HardwareRegistry::instance().addBaseArraySettingDef( \
+            QString(CLASS::staticMetaObject.className()), \
+            ARRAY_KEY, LABEL, DESC, PRIORITY);
+
+/*!
+ * \brief Add one entry to a base class array setting (call once per entry)
+ *
+ * \param CLASS Base hardware class name
+ * \param ARRAY_KEY String constant for the array key (must match a prior REGISTER_HARDWARE_BASE_ARRAY)
+ * \param ... Key-value pairs: {{subKey1, value1}, {subKey2, value2}}
+ */
+#define REGISTER_HARDWARE_BASE_ARRAY_ENTRY(CLASS, ARRAY_KEY, ...) \
+    static bool BC_ARRENTRY_VAR(CLASS, __COUNTER__) = \
+        HardwareRegistry::instance().addBaseArraySettingEntry( \
+            QString(CLASS::staticMetaObject.className()), \
+            ARRAY_KEY, \
+            SettingsStorage::SettingsMap{__VA_ARGS__} \
         );
 
 /*!

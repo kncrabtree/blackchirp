@@ -85,6 +85,7 @@ struct HardwareRegistration {
     QString subKey;                                            /*!< Implementation key (e.g., "m4i2220x8") */
     QString description;                                       /*!< Description of the hardware */
     std::function<HardwareObject*(const QString&)> factory;   /*!< Factory function to create hardware instance with label */
+    QStringList inheritanceChain;                             /*!< Class names from direct base up to (not including) QObject */
     QStringList libraryDependencies;                          /*!< List of vendor libraries this hardware depends on */
     QVector<CommunicationProtocol::CommType> supportedProtocols; /*!< Communication protocols supported by this hardware */
     QVector<HwConfigParam> configParams;                       /*!< Parameters requiring UI input before construction */
@@ -94,9 +95,10 @@ struct HardwareRegistration {
     // Constructor
     HardwareRegistration() = default;
     HardwareRegistration(const QString& k, const QString& sk, const QString& desc,
-                        std::function<HardwareObject*(const QString&)> fact)
-        : key(k), subKey(sk), description(desc), factory(fact), libraryDependencies({}),
-          supportedProtocols({CommunicationProtocol::Virtual}) {}
+                        std::function<HardwareObject*(const QString&)> fact,
+                        const QStringList& chain = {})
+        : key(k), subKey(sk), description(desc), factory(fact), inheritanceChain(chain),
+          libraryDependencies({}), supportedProtocols({CommunicationProtocol::Virtual}) {}
 };
 
 /*!
@@ -146,10 +148,12 @@ public:
      * \param subKey Implementation key (e.g., "m4i2220x8")
      * \param description Description of the hardware (should include manufacturer and model)
      * \param factory Factory function to create hardware instances with label
+     * \param inheritanceChain Class names from the implementation's direct base up to (not including) QObject
      * \return True if registration was successful
      */
     bool registerHardware(const QString& key, const QString& subKey, const QString& description,
-                          std::function<HardwareObject*(const QString&)> factory);
+                          std::function<HardwareObject*(const QString&)> factory,
+                          const QStringList& inheritanceChain = {});
     
     /*!
      * \brief Create an instance of the specified hardware
@@ -310,10 +314,45 @@ public:
      * \brief Get all array setting definitions for a hardware implementation
      * \param key Hardware type key
      * \param subKey Implementation key
-     * \return Map of array key to array setting definitions, or empty if none registered
+     * \return Map of array key to array setting definitions, merged with inherited base class definitions
      */
     QMap<QString, HwArraySettingDef> getArraySettingDefs(
         const QString& key, const QString& subKey) const;
+
+    /*!
+     * \brief Register scalar setting definitions for a base (non-instantiable) hardware class
+     * \param className The class name (e.g., "HardwareObject", "Clock")
+     * \param settings List of setting definitions with metadata
+     * \return True if successfully stored
+     *
+     * Unlike addSettingDefs, this does not require a prior registerHardware call.
+     * Settings are merged into getSettingDefs results for any implementation whose
+     * inheritanceChain contains className.
+     */
+    bool addBaseSettingDefs(const QString& className, const QVector<HwSettingDef>& settings);
+
+    /*!
+     * \brief Register array setting metadata for a base hardware class
+     * \param className The class name (e.g., "HardwareObject", "Clock")
+     * \param arrayKey The array setting key
+     * \param label User-facing display label
+     * \param description Explanatory tooltip/help text
+     * \param priority Visibility priority level
+     * \return True if successfully stored
+     */
+    bool addBaseArraySettingDef(const QString& className, const QString& arrayKey,
+                                const QString& label, const QString& description,
+                                HwSettingPriority priority);
+
+    /*!
+     * \brief Add one entry to a base class array setting
+     * \param className The class name
+     * \param arrayKey The array setting key (must already be registered via addBaseArraySettingDef)
+     * \param entry Map of sub-key/value pairs for this entry
+     * \return True if successfully stored
+     */
+    bool addBaseArraySettingEntry(const QString& className, const QString& arrayKey,
+                                  const SettingsStorage::SettingsMap& entry);
 
     /*!
      * \brief Add library dependency to existing hardware registration
@@ -363,9 +402,11 @@ private:
     QString makeRegistryKey(const QString& key, const QString& subKey) const;
     
     static HardwareRegistry* s_instance;
-    QHash<QString, HardwareRegistration> d_registrations;  /*!< All registered hardware */
+    QHash<QString, HardwareRegistration> d_registrations;              /*!< All registered hardware implementations */
+    QHash<QString, QVector<HwSettingDef>> d_baseSettingDefs;           /*!< Base class scalar settings, keyed by class name */
+    QHash<QString, QMap<QString, HwArraySettingDef>> d_baseArrayDefs;  /*!< Base class array settings, keyed by class name */
     QHash<QString, std::function<VendorLibrary*()>> d_libraryGetters;  /*!< Library instance getters by name */
-    mutable QMutex d_registryMutex;                        /*!< Thread safety for registry access */
+    mutable QMutex d_registryMutex;                                    /*!< Thread safety for registry access */
 };
 
 #endif // HARDWAREREGISTRY_H

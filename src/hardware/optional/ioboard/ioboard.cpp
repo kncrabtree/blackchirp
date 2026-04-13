@@ -1,7 +1,7 @@
 #include <hardware/optional/ioboard/ioboard.h>
 #include <hardware/core/hardwareregistration.h>
 
-REGISTER_HARDWARE_SETTINGS(IOBoard,
+REGISTER_HARDWARE_BASE(IOBoard,
     {BC::Key::Digi::isTriggered, "Externally Triggered",
      "Device uses external trigger (typically false for IO boards).",
      false, QVariant{}, QVariant{}, HwSettingPriority::Optional}

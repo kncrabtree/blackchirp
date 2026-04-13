@@ -3,7 +3,7 @@
 #include <QMetaEnum>
 #include <hardware/core/hardwareregistration.h>
 
-REGISTER_HARDWARE_SETTINGS(Clock,
+REGISTER_HARDWARE_BASE(Clock,
     {BC::Key::Clock::manualTune, "Manual Tune", "Allow manual frequency adjustment of this clock from the main window.", false, QVariant{}, QVariant{}, HwSettingPriority::Optional}
 )
 
