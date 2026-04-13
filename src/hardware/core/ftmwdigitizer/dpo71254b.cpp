@@ -12,41 +12,67 @@ using namespace BC::Key::Digi;
 // Register this hardware implementation
 REGISTER_HARDWARE_META(Dpo71254b, "Tektronix DPO71254B FTMW Digitizer (12.5 GHz, 50 GS/s)")
 REGISTER_HARDWARE_PROTOCOLS(Dpo71254b, CommunicationProtocol::Tcp)
+REGISTER_HARDWARE_SETTINGS(Dpo71254b,
+    {numAnalogChannels,  "Analog Channels",  "Number of analog inputs",
+     4, 1, 32, HwSettingPriority::Required},
+    {numDigitalChannels, "Digital Channels",  "Number of digital inputs",
+     0, 0, 32, HwSettingPriority::Required},
+    {hasAuxTriggerChannel, "Aux Trigger Channel", "Has auxiliary trigger input",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {minFullScale,       "Min Full Scale (V)", "Minimum full scale voltage",
+     5e-2, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxFullScale,       "Max Full Scale (V)", "Maximum full scale voltage",
+     2.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {minVOffset,         "Min V Offset (V)",   "Minimum voltage offset",
+     -2.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxVOffset,         "Max V Offset (V)",   "Maximum voltage offset",
+     2.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {isTriggered,        "Triggered",          "Digitizer uses external trigger",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {minTrigDelay,       "Min Trig Delay (us)", "Minimum trigger delay",
+     -10.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxTrigDelay,       "Max Trig Delay (us)", "Maximum trigger delay",
+     10.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {minTrigLevel,       "Min Trig Level (V)",  "Minimum trigger level",
+     -5.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxTrigLevel,       "Max Trig Level (V)",  "Maximum trigger level",
+     5.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxRecordLength,    "Max Record Length",   "Maximum record length in samples",
+     100000000, 0, QVariant{}, HwSettingPriority::Optional},
+    {canBlockAverage,    "Block Average",       "Supports block averaging",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxAverages,        "Max Averages",        "Maximum number of averages",
+     100, 1, QVariant{}, HwSettingPriority::Optional},
+    {canMultiRecord,     "Multi Record",        "Supports multi-record acquisition",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxRecords,         "Max Records",         "Maximum number of records",
+     100, 1, QVariant{}, HwSettingPriority::Optional},
+    {multiBlock,         "Multi Block",         "Can block average and multi-record simultaneously",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxBytes,           "Max Bytes/Point",     "Maximum bytes per data point",
+     2, 1, 8, HwSettingPriority::Optional},
+    {bandwidth,          "Bandwidth (MHz)",     "Analog bandwidth",
+     12500.0, QVariant{}, QVariant{}, HwSettingPriority::Important}
+)
+REGISTER_HARDWARE_ARRAY(Dpo71254b, sampleRates,
+    "Sample Rates", "Available digitizer sample rates",
+    HwSettingPriority::Important)
+REGISTER_HARDWARE_ARRAY_ENTRY(Dpo71254b, sampleRates,
+    {{srText, "3.125 GSa/s"}, {srValue, 3.125e9}})
+REGISTER_HARDWARE_ARRAY_ENTRY(Dpo71254b, sampleRates,
+    {{srText, "6.25 GSa/s"}, {srValue, 6.25e9}})
+REGISTER_HARDWARE_ARRAY_ENTRY(Dpo71254b, sampleRates,
+    {{srText, "12.5 GSa/s"}, {srValue, 12.5e9}})
+REGISTER_HARDWARE_ARRAY_ENTRY(Dpo71254b, sampleRates,
+    {{srText, "25 GSa/s"}, {srValue, 25e9}})
+REGISTER_HARDWARE_ARRAY_ENTRY(Dpo71254b, sampleRates,
+    {{srText, "50 GSa/s"}, {srValue, 50e9}})
 
 Dpo71254b::Dpo71254b(const QString& label, QObject *parent) :
     FtmwScope(QString(Dpo71254b::staticMetaObject.className()), label, parent),
     d_waitingForReply(false), d_foundHeader(false),
     d_headerNumBytes(0), d_waveformBytes(0)
 {
-    setDefault(numAnalogChannels,4);
-    setDefault(numDigitalChannels,0);
-    setDefault(hasAuxTriggerChannel,true);
-    setDefault(minFullScale,5e-2);
-    setDefault(maxFullScale,2.0);
-    setDefault(minVOffset,-2.0);
-    setDefault(maxVOffset,2.0);
-    setDefault(isTriggered,true);
-    setDefault(minTrigDelay,-10.0);
-    setDefault(maxTrigDelay,10.0);
-    setDefault(minTrigLevel,-5.0);
-    setDefault(maxTrigLevel,5.0);
-    setDefault(maxRecordLength,100000000);
-    setDefault(canBlockAverage,true);
-    setDefault(maxAverages,100);
-    setDefault(canMultiRecord,true);
-    setDefault(maxRecords,100);
-    setDefault(multiBlock,true);
-    setDefault(maxBytes,2);
-    setDefault(bandwidth,12500.0);
-
-    if(!containsArray(sampleRates))
-        setArray(sampleRates,{
-                {{srText,"3.125 GSa/s"},{srValue,3.125e9}},
-                {{srText,"6.25 GSa/s"},{srValue,6.25e9}},
-                {{srText,"12.5 GSa/s"},{srValue,12.5e9}},
-                {{srText,"25 GSa/s"},{srValue,25e9}},
-                {{srText,"50 GSa/s"},{srValue,50e9}},
-                            });
 
     // Communication defaults
     setDefault(BC::Key::Comm::timeout, 1000);

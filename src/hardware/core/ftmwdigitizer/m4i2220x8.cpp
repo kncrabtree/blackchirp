@@ -13,6 +13,63 @@ using namespace Spectrum::M4i;
 REGISTER_HARDWARE_META(M4i2220x8, "Spectrum Instrumentation M4i.2220-x8 FTMW Digitizer (2.5 GS/s, 1.25 GHz Bandwidth)")
 REGISTER_HARDWARE_PROTOCOLS(M4i2220x8, CommunicationProtocol::Custom)
 REGISTER_LIBRARY(M4i2220x8, SpectrumLibrary)
+REGISTER_HARDWARE_SETTINGS(M4i2220x8,
+    {numAnalogChannels,  "Analog Channels",  "Number of analog inputs",
+     1, 1, 32, HwSettingPriority::Required},
+    {numDigitalChannels, "Digital Channels",  "Number of digital inputs",
+     0, 0, 32, HwSettingPriority::Required},
+    {hasAuxTriggerChannel, "Aux Trigger Channel", "Has auxiliary trigger input",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {minFullScale,       "Min Full Scale (V)", "Minimum full scale voltage",
+     5e-2, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxFullScale,       "Max Full Scale (V)", "Maximum full scale voltage",
+     2.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {minVOffset,         "Min V Offset (V)",   "Minimum voltage offset",
+     -2.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxVOffset,         "Max V Offset (V)",   "Maximum voltage offset",
+     2.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {isTriggered,        "Triggered",          "Digitizer uses external trigger",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {minTrigDelay,       "Min Trig Delay (us)", "Minimum trigger delay",
+     -10.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxTrigDelay,       "Max Trig Delay (us)", "Maximum trigger delay",
+     10.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {minTrigLevel,       "Min Trig Level (V)",  "Minimum trigger level",
+     -5.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxTrigLevel,       "Max Trig Level (V)",  "Maximum trigger level",
+     5.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxRecordLength,    "Max Record Length",   "Maximum record length in samples",
+     1073741824, 0, QVariant{}, HwSettingPriority::Optional},
+    {canBlockAverage,    "Block Average",       "Supports block averaging",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxAverages,        "Max Averages",        "Maximum number of averages",
+     1048576, 1, QVariant{}, HwSettingPriority::Optional},
+    {canMultiRecord,     "Multi Record",        "Supports multi-record acquisition",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxRecords,         "Max Records",         "Maximum number of records",
+     100, 1, QVariant{}, HwSettingPriority::Optional},
+    {multiBlock,         "Multi Block",         "Can block average and multi-record simultaneously",
+     false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxBytes,           "Max Bytes/Point",     "Maximum bytes per data point",
+     2, 1, 8, HwSettingPriority::Optional},
+    {bandwidth,          "Bandwidth (MHz)",     "Analog bandwidth",
+     1250.0, QVariant{}, QVariant{}, HwSettingPriority::Important}
+)
+REGISTER_HARDWARE_ARRAY(M4i2220x8, sampleRates,
+    "Sample Rates", "Available digitizer sample rates",
+    HwSettingPriority::Important)
+REGISTER_HARDWARE_ARRAY_ENTRY(M4i2220x8, sampleRates,
+    {{srText, "78.125 MSa/s"}, {srValue, 2.5e9/32}})
+REGISTER_HARDWARE_ARRAY_ENTRY(M4i2220x8, sampleRates,
+    {{srText, "156.25 MSa/s"}, {srValue, 2.5e9/16}})
+REGISTER_HARDWARE_ARRAY_ENTRY(M4i2220x8, sampleRates,
+    {{srText, "312.5 MSa/s"}, {srValue, 2.5e9/8}})
+REGISTER_HARDWARE_ARRAY_ENTRY(M4i2220x8, sampleRates,
+    {{srText, "625 MSa/s"}, {srValue, 2.5e9/4}})
+REGISTER_HARDWARE_ARRAY_ENTRY(M4i2220x8, sampleRates,
+    {{srText, "1250 MSa/s"}, {srValue, 2.5e9/2}})
+REGISTER_HARDWARE_ARRAY_ENTRY(M4i2220x8, sampleRates,
+    {{srText, "2500 MSa/s"}, {srValue, 2.5e9}})
 
 /*!
  * \brief Helper function to get SpectrumLibrary instance with availability check
@@ -31,34 +88,6 @@ static SpectrumLibrary* getSpectrumLibrary()
 M4i2220x8::M4i2220x8(const QString& label, QObject *parent) :
     FtmwScope(QString(M4i2220x8::staticMetaObject.className()), label, parent), p_handle(nullptr)
 {
-    setDefault(numAnalogChannels,1);
-    setDefault(numDigitalChannels,0);
-    setDefault(hasAuxTriggerChannel,true);
-    setDefault(minFullScale,5e-2);
-    setDefault(maxFullScale,2.0);
-    setDefault(minVOffset,-2.0);
-    setDefault(maxVOffset,2.0);
-    setDefault(isTriggered,true);
-    setDefault(minTrigDelay,-10.0);
-    setDefault(maxTrigDelay,10.0);
-    setDefault(minTrigLevel,-5.0);
-    setDefault(maxTrigLevel,5.0);
-    setDefault(canBlockAverage,true);
-    setDefault(canMultiRecord,true);
-    setDefault(multiBlock,false);
-    setDefault(maxBytes,2);
-    setDefault(bandwidth,1250.0);
-
-    if(!containsArray(sampleRates))
-        setArray(sampleRates,{
-                     {{srText,"78.125 MSa/s"},{srValue,2.5e9/32}},
-                     {{srText,"156.25 MSa/s"},{srValue,2.5e9/16}},
-                     {{srText,"312.5 MSa/s"},{srValue,2.5e9/8}},
-                     {{srText,"625 MSa/s"},{srValue,2.5e9/4}},
-                     {{srText,"1250 MSa/s"},{srValue,2.5e9/2}},
-                     {{srText,"2500 MSa/s"},{srValue,2.5e9}}
-                 });
-
     if(!containsArray(BC::Key::Custom::comm))
         setArray(BC::Key::Custom::comm, {
                     {{BC::Key::Custom::key,"devPath"},
