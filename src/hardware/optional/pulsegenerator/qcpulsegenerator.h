@@ -5,12 +5,12 @@
 
 namespace BC::Key::PGen {
 // All QC pulse generator keys always available - no conditional compilation
-static const QString qc9528{"qc9528"};
-static const QString qc9528Name("Pulse Generator QC 9528");
-static const QString qc9518{"QC9518"};
-static const QString qc9518Name("Pulse Generator QC 9518");
-static const QString qc9214{"QC9214"};
-static const QString qc9214Name("Pulse Generator QC 9214");
+static const QString qc9520series{"qc9520series"};
+static const QString qc9520seriesName("QuantumComposers 9520 Series Pulse Generator");
+static const QString qc9510series{"qc9510series"};
+static const QString qc9510seriesName("QuantumComposers 9510 Series Pulse Generator");
+static const QString qc9210series{"qc9210series"};
+static const QString qc9210seriesName("QuantumComposers 9210 Series Pulse Generator");
 }
 
 
@@ -69,12 +69,12 @@ private:
 };
 
 // All QC pulse generator implementations always available - no conditional compilation
-class Qc9518 : public QCPulseGenerator
+class Qc9510Series : public QCPulseGenerator
 {
     Q_OBJECT
 public:
-    explicit Qc9518(const QString& label, QObject *parent = nullptr);
-    ~Qc9518();
+    explicit Qc9510Series(const QString& label, QObject *parent = nullptr);
+    ~Qc9510Series();
 
     // HardwareObject interface
 public slots:
@@ -96,19 +96,19 @@ protected:
     inline QString trigEdgeBase() override { return te; }
 
 private:
-    const QString id{"9518+"};
+    const QString id{"951"};
     const QString sys{"SPULSE"};
     const QString clock{"1"};
     const QString tb{":SPULSE:EXT:MOD"};
     const QString te{":SPULSE:EXT:EDGE"};
 };
 
-class Qc9528 : public QCPulseGenerator
+class Qc9520Series : public QCPulseGenerator
 {
     Q_OBJECT
 public:
-    explicit Qc9528(const QString& label, QObject *parent = nullptr);
-    ~Qc9528();
+    explicit Qc9520Series(const QString& label, QObject *parent = nullptr);
+    ~Qc9520Series();
 
     // HardwareObject interface
 public slots:
@@ -131,19 +131,19 @@ protected:
     inline QString trigEdgeBase() override { return te; }
 
 private:
-    const QString id{"QC,9528"};
+    const QString id{"952"};
     const QString sys{"PULSE0"};
     const QString clock{"EXT10"};
     const QString tb{":PULSE:TRIG:MODE"};
     const QString te{":PULS:TRIG:EDGE"};
 };
 
-class Qc9214 : public QCPulseGenerator
+class Qc9210Series : public QCPulseGenerator
 {
     Q_OBJECT
 public:
-    explicit Qc9214(const QString& label, QObject *parent = nullptr);
-    ~Qc9214();
+    explicit Qc9210Series(const QString& label, QObject *parent = nullptr);
+    ~Qc9210Series();
 
     // HardwareObject interface
 public slots:
@@ -166,7 +166,7 @@ protected:
     inline QString trigEdgeBase() override { return te; }
 
 private:
-    const QString id{"QC,9214"};
+    const QString id{"921"};
     const QString sys{"PULSE0"};
     const QString clock{"EXT10"};
     const QString tb{":PULSE0:EXT:MOD"};

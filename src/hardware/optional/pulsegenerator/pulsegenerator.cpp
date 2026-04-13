@@ -2,7 +2,7 @@
 
 PulseGenerator::PulseGenerator(const QString& impl, const QString& label, int numChannels, QObject *parent) :
     HardwareObject(QString(PulseGenerator::staticMetaObject.className()), impl, label, parent),
-    d_numChannels{numChannels}, d_config(BC::Key::hwKey(QString(PulseGenerator::staticMetaObject.className()), label))
+    d_numChannels{get(BC::Key::PGen::numChannels, numChannels)}, d_config(BC::Key::hwKey(QString(PulseGenerator::staticMetaObject.className()), label))
 {
     set(BC::Key::PGen::numChannels,d_numChannels,true);
 
@@ -498,4 +498,28 @@ void PulseGenerator::sleep(bool b)
 QStringList PulseGenerator::forbiddenKeys() const
 {
     return {BC::Key::PGen::numChannels};
+}
+
+void PulseGenerator::readSettings()
+{
+    int newCount = get(BC::Key::PGen::numChannels, d_numChannels);
+    if (newCount == d_numChannels)
+        return;
+
+    PulseGenConfig newConfig(d_config.headerKey());
+    int preserve = qMin(d_numChannels, newCount);
+    for (int i = 0; i < newCount; ++i)
+    {
+        newConfig.addChannel();
+        if (i < preserve)
+        {
+            newConfig.setCh(i, PulseGenConfig::NameSetting,
+                            d_config.setting(i, PulseGenConfig::NameSetting));
+            newConfig.setCh(i, PulseGenConfig::RoleSetting,
+                            d_config.setting(i, PulseGenConfig::RoleSetting));
+        }
+    }
+    d_config = newConfig;
+    d_numChannels = newCount;
+    set(BC::Key::PGen::numChannels, d_numChannels, true);
 }

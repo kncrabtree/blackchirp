@@ -74,12 +74,12 @@ set(BC_AWG "" CACHE STRING "AWG implementation")
 # ============================================================================
 # Available implementations:
 #   virtual        - Virtual pulse generator for testing
-#   qc9528         - Quantum Composers 9528 pulse generator
-#   qc9518         - Quantum Composers 9518 pulse generator
-#   qc9214         - Quantum Composers 9214 pulse generator
-#   bnc577         - BNC 577 4-channel pulse generator
-#   bnc577_8       - BNC 577 8-channel pulse generator
+#   qc9510series   - QuantumComposers 9510 series pulse generator
+#   qc9520series   - QuantumComposers 9520 series pulse generator
+#   qc9210series   - QuantumComposers 9210 series pulse generator
+#   bnc577         - BNC 577 pulse generator
 #   srsdg645       - Stanford Research Systems DG645 delay generator
+#   python         - Python-based pulse generator
 
 set(BC_PGEN "" CACHE STRING "Pulse generator implementations (semicolon-separated)")
 

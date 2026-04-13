@@ -2,20 +2,23 @@
 #include <hardware/core/hardwareregistration.h>
 
 // Register hardware implementation
-REGISTER_HARDWARE_META(Qc9528, "QuantumComposers 9528 Pulse Generator")
-REGISTER_HARDWARE_PROTOCOLS(Qc9528, CommunicationProtocol::Rs232)
+REGISTER_HARDWARE_META(Qc9210Series, "QuantumComposers 9210 Series Pulse Generator")
+REGISTER_HARDWARE_PROTOCOLS(Qc9210Series,
+    CommunicationProtocol::Rs232,
+    CommunicationProtocol::Tcp,
+    CommunicationProtocol::Gpib)
 
-Qc9528::Qc9528(const QString& label, QObject *parent) :
-    QCPulseGenerator(QString(Qc9528::staticMetaObject.className()), label, 8, parent)
+Qc9210Series::Qc9210Series(const QString& label, QObject *parent) :
+    QCPulseGenerator(QString(Qc9210Series::staticMetaObject.className()), label, 4, parent)
 {
     using namespace BC::Key::PGen;
-    setDefault(minWidth,0.004);
+    setDefault(minWidth,0.01);
     setDefault(maxWidth,1e5);
     setDefault(minDelay,0.0);
     setDefault(maxDelay,1e5);
     setDefault(minRepRate,0.01);
     setDefault(maxRepRate,1e5);
-    setDefault(lockExternal,true);
+    setDefault(lockExternal,false);
     setDefault(canDutyCycle,true);
     setDefault(canTrigger,true);
     setDefault(dutyMax,100000);
@@ -25,28 +28,26 @@ Qc9528::Qc9528(const QString& label, QObject *parent) :
     save();
 }
 
-Qc9528::~Qc9528()
+Qc9210Series::~Qc9210Series()
 {
 
 }
 
-void Qc9528::initializePGen()
+void Qc9210Series::initializePGen()
 {
     setDefault(BC::Key::Comm::timeout, 200);
     setDefault(BC::Key::Comm::termChar, QString("\r\n"));
 }
 
-void Qc9528::beginAcquisition()
+void Qc9210Series::beginAcquisition()
 {
-    lockKeys(true);
 }
 
-void Qc9528::endAcquisition()
+void Qc9210Series::endAcquisition()
 {
-    lockKeys(false);
 }
 
-bool Qc9528::pGenWriteCmd(QString cmd)
+bool Qc9210Series::pGenWriteCmd(QString cmd)
 {
     auto resp = pGenQueryCmd(cmd);
 
@@ -58,9 +59,7 @@ bool Qc9528::pGenWriteCmd(QString cmd)
     return false;
 }
 
-QByteArray Qc9528::pGenQueryCmd(QString cmd)
+QByteArray Qc9210Series::pGenQueryCmd(QString cmd)
 {
     return p_comm->queryCmd(cmd.append(QString("\r\n")));
 }
-
-

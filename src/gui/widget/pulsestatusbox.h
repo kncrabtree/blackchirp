@@ -18,6 +18,7 @@ public:
 public slots:
     void updatePulseLeds(const QString k, const PulseGenConfig &cc);
     void updatePulseSetting(const QString k,int index,PulseGenConfig::Setting s, QVariant val);
+    void rebuild();
 
 signals:
 

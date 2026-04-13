@@ -18,7 +18,8 @@ set(VALID_AWGS
 )
 
 set(VALID_PGENS
-    "virtual" "qc9518" "qc9528" "qc9214" "dg645"
+    "virtual" "qc9510series" "qc9520series" "qc9210series"
+    "bnc577" "srsdg645" "python"
 )
 
 set(VALID_FCS

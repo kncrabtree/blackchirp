@@ -333,7 +333,8 @@ void MainWindow::buildHardwareUI()
                connect(p_hwm,&HardwareManager::pGenSettingUpdate,pcw,&PulseConfigWidget::newSetting);
                connect(pcw,&PulseConfigWidget::changeSetting,p_hwm,&HardwareManager::setPGenSetting);
                QWidget *cw = implName.contains(QStringLiteral("Python")) ? wrapWithPythonWidget(key, pcw) : pcw;
-               createHWDialog(key,cw);
+               auto d = createHWDialog(key,cw);
+               connect(d, &QDialog::accepted, psb, &PulseStatusBox::rebuild);
             }));
 
         }

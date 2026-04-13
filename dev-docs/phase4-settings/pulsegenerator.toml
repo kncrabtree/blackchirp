@@ -2,32 +2,35 @@
 # Status: pending
 #
 # Implementations:
-#   VirtualPulseGenerator, QC9518, QC9528, QC9214, BNC577, SRSDG645, PythonPulseGenerator
+#   VirtualPulseGenerator, Qc9510Series, Qc9520Series, Qc9210Series,
+#   Bnc577, SRSDG645, PythonPulseGenerator
 #
 # Priority: Required | Important | Optional
 # Decision (partial): add_to_missing | existing_only | setdefault_only | remove
 #
 # NOTES:
-#   1. VirtualPulseGenerator is missing canDisableChannels. All hardware impls
-#      have it (either true or false). DECISION NEEDED: add to VirtualPulseGenerator?
-#      Suggested default: true. (USER RESPONSE: YES)
+#   1. VirtualPulseGenerator was missing canDisableChannels. RESOLVED: added
+#      with default true in the pulsegenerator refactor.
 #
-#   2. PythonPulseGenerator has a configParam: numChannels (int, 1-64, default 8).
-#      This is a pre-construction parameter and must become Required.
-#      PythonPulseGenerator has NO other setDefault calls. (USER RESPONSE: Make Required for all)
+#   2. numChannels: the PulseGenerator base class constructor now reads
+#      numChannels from settings (via get()), and readSettings() rebuilds the
+#      channel config when the value changes. Register as Required for all
+#      implementations (including PythonPulseGenerator, replacing its former
+#      configParam). SRSDG645 has 4 fixed channels; mark it Required but
+#      non-editable after profile creation.
 #
-#   3. BNC577 has two constructors (likely for 6-channel and 8-channel variants).
-#      Both constructors set identical settings. They will share the same
-#      registration macro -- the channel count is passed as a constructor argument
-#      and is NOT a registrable setting. (USER RESPONSE: Refactor to use Required setting and 1 constructor, move PulseGenConfig intialization/rebuild to readSettings if needed)
+#   3. BNC577 consolidation: RESOLVED. Bnc577_4 and Bnc577_8 have been merged
+#      into a single Bnc577 class. The channel count defaults to 8 and is read
+#      from settings at construction, consistent with the Qc series.
 #
 #   4. SRSDG645 differences from the majority:
 #        canDutyCycle = false  (no duty-cycle mode)
 #        canDisableChannels = false  (all channels always active)
 #        minWidth = 0.0 (vs 0.004-0.01 for others)
+#        numChannels = 4 (fixed by hardware)
 #
-#   5. QC9528 lockExternal = true (defaults to external clock), vs QC9518/QC9214
-#      and others which default to false (internal clock).
+#   5. Qc9520Series lockExternal = true (defaults to external clock), vs
+#      Qc9510Series/Qc9210Series and others which default to false.
 #
 #   6. PulseGenerator base class calls setArray(channels, {}) in its constructor.
 #      This initializes an empty channels array that gets filled at initialize time.
@@ -35,6 +38,14 @@
 # ==============================================================================
 
 # ── Common Scalar Settings ─────────────────────────────────────────────────────
+
+[settings.numChannels]
+label    = "Number of Channels"
+tooltip  = "Number of pulse output channels"
+default  = 8
+min      = 1
+max      = 64
+priority = "Required"
 
 [settings.minWidth]
 label    = "Min Pulse Width (us)"
@@ -98,42 +109,27 @@ label    = "Sync to Channel"
 tooltip  = "Channels can be synchronized to another channel output"
 priority = "Optional"
 
-# ── Partial Settings ───────────────────────────────────────────────────────────
-
-[partial.canDisableChannels]
-label            = "Can Disable Channels"
-tooltip          = "Individual channels can be independently enabled/disabled"
-priority         = "Optional"
-default_if_added = true
-missing_from     = ["VirtualPulseGenerator"]
-decision         = "add"
-
-# ── PythonPulseGenerator-Only (from configParams -- must become Required) ────────
-
-[impl_only.PythonPulseGenerator.numChannels]
-label    = "Number of Channels"
-tooltip  = "Number of pulse output channels"
-default  = 8
-min      = 1
-max      = 64
-priority = "Required"
+[settings.canDisableChannels]
+label    = "Can Disable Channels"
+tooltip  = "Individual channels can be independently enabled/disabled"
+priority = "Optional"
 
 # ── Reference: Default Values per Implementation ───────────────────────────────
 #
-# Key                |  Virtual |   QC9518 |   QC9528 |   QC9214 |    BNC577 |  SRSDG645 |   Python
-# -------------------|----------|----------|----------|----------|-----------|-----------|----------
-# minWidth (us)      |    0.010 |    0.004 |    0.004 |     0.01 |      0.01 |       0.0*|        --
-# maxWidth (us)      |    1e+5  |    1e+5  |    1e+5  |    1e+5  |     1e+5  |     1e+5  |        --
-# minDelay (us)      |      0.0 |      0.0 |      0.0 |      0.0 |       0.0 |       0.0 |        --
-# maxDelay (us)      |    1e+5  |    1e+5  |    1e+5  |    1e+5  |     1e+5  |     1e+5  |        --
-# minRepRate (Hz)    |     0.01 |     0.01 |     0.01 |     0.01 |      0.01 |      0.01 |        --
-# maxRepRate (Hz)    |    1e+5  |    1e+5  |    1e+5  |    1e+5  |     1e+5  |     1e+5  |        --
-# lockExternal       |    false |    false |     true*|    false |     false |     false |        --
-# canDutyCycle       |     true |     true |     true |     true |      true |     false*|        --
-# canTrigger         |     true |     true |     true |     true |      true |      true |        --
-# dutyMax            |   100000 |   100000 |   100000 |   100000 |    100000 |    100000 |        --
-# canSyncToChannel   |     true |     true |     true |     true |      true |      true |        --
-# canDisableChannels |        ─ |     true |     true |     true |      true |     false*|        --
-# numChannels        |       -- |       -- |       -- |       -- |        -- |        -- |   8 (req)
+# Key                | Virtual | Qc9510Series | Qc9520Series | Qc9210Series |  Bnc577 | SRSDG645 |  Python
+# -------------------|---------|--------------|--------------|--------------|---------|----------|----------
+# numChannels        |       8 |            8 |            8 |            4*|       8 |       4* |  8 (req)
+# minWidth (us)      |   0.010 |        0.004 |        0.004 |         0.01 |    0.01 |     0.0* |       --
+# maxWidth (us)      |   1e+5  |        1e+5  |        1e+5  |        1e+5  |   1e+5  |    1e+5  |       --
+# minDelay (us)      |     0.0 |          0.0 |          0.0 |          0.0 |     0.0 |      0.0 |       --
+# maxDelay (us)      |   1e+5  |        1e+5  |        1e+5  |        1e+5  |   1e+5  |    1e+5  |       --
+# minRepRate (Hz)    |    0.01 |         0.01 |         0.01 |         0.01 |    0.01 |     0.01 |       --
+# maxRepRate (Hz)    |   1e+5  |        1e+5  |        1e+5  |        1e+5  |   1e+5  |    1e+5  |       --
+# lockExternal       |   false |        false |        true* |        false |   false |    false |       --
+# canDutyCycle       |    true |         true |         true |         true |    true |   false* |       --
+# canTrigger         |    true |         true |         true |         true |    true |     true |       --
+# dutyMax            |  100000 |       100000 |       100000 |       100000 |  100000 |   100000 |       --
+# canSyncToChannel   |    true |         true |         true |         true |    true |     true |       --
+# canDisableChannels |    true |         true |         true |         true |    true |   false* |       --
 #
 # * = differs from majority

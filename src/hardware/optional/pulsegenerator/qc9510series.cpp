@@ -2,11 +2,14 @@
 #include <hardware/core/hardwareregistration.h>
 
 // Register hardware implementation
-REGISTER_HARDWARE_META(Qc9518, "QuantumComposers 9518 Pulse Generator")
-REGISTER_HARDWARE_PROTOCOLS(Qc9518, CommunicationProtocol::Rs232)
+REGISTER_HARDWARE_META(Qc9510Series, "QuantumComposers 9510 Series Pulse Generator")
+REGISTER_HARDWARE_PROTOCOLS(Qc9510Series,
+    CommunicationProtocol::Rs232,
+    CommunicationProtocol::Tcp,
+    CommunicationProtocol::Gpib)
 
-Qc9518::Qc9518(const QString& label, QObject *parent) :
-    QCPulseGenerator(QString(Qc9518::staticMetaObject.className()), label, 8, parent)
+Qc9510Series::Qc9510Series(const QString& label, QObject *parent) :
+    QCPulseGenerator(QString(Qc9510Series::staticMetaObject.className()), label, 8, parent)
 {
     using namespace BC::Key::PGen;
     setDefault(minWidth,0.004);
@@ -25,18 +28,18 @@ Qc9518::Qc9518(const QString& label, QObject *parent) :
     save();
 }
 
-Qc9518::~Qc9518()
+Qc9510Series::~Qc9510Series()
 {
 
 }
 
-void Qc9518::initializePGen()
+void Qc9510Series::initializePGen()
 {
     setDefault(BC::Key::Comm::timeout, 100);
     setDefault(BC::Key::Comm::termChar, QString("\r\n"));
 }
 
-bool Qc9518::pGenWriteCmd(QString cmd)
+bool Qc9510Series::pGenWriteCmd(QString cmd)
 {
     int maxAttempts = 10;
     for(int i=0; i<maxAttempts; i++)
@@ -54,18 +57,17 @@ bool Qc9518::pGenWriteCmd(QString cmd)
     return false;
 }
 
-QByteArray Qc9518::pGenQueryCmd(QString cmd)
+QByteArray Qc9510Series::pGenQueryCmd(QString cmd)
 {
     return p_comm->queryCmd(cmd.append(QString("\n")));
 }
 
-void Qc9518::beginAcquisition()
+void Qc9510Series::beginAcquisition()
 {
     lockKeys(true);
 }
 
-void Qc9518::endAcquisition()
+void Qc9510Series::endAcquisition()
 {
     lockKeys(false);
 }
-

@@ -401,7 +401,7 @@ in `dev-docs/phase4-settings/`. One file per hardware type:
 | `clock.toml` | Clock | Valon5015, Valon5009, HP83712B, FixedClock, PythonClock |
 | `flowcontroller.toml` | FlowController | VirtualFlowController, Mks946, Mks647c, PythonFlowController |
 | `pressurecontroller.toml` | PressureController | VirtualPressureController, IntelliSysIQPlus, PythonPressureController |
-| `pulsegenerator.toml` | PulseGenerator | VirtualPulseGenerator, QC9518, QC9528, QC9214, BNC577, SRSDG645, PythonPulseGenerator |
+| `pulsegenerator.toml` | PulseGenerator | VirtualPulseGenerator, Qc9510Series, Qc9520Series, Qc9210Series, Bnc577, SRSDG645, PythonPulseGenerator |
 | `ioboard.toml` | IOBoard | VirtualIOBoard, LabJackU3, PythonIOBoard |
 | `gpibcontroller.toml` | GpibController | VirtualGpibController, PrologixGpibLAN, PrologixGpibUSB, PythonGpibController |
 | `lifscope.toml` | LifScope | VirtualLifScope, RigolDS2302A, M4i2211x8, PythonLifScope |
@@ -489,7 +489,7 @@ One Haiku agent per hardware type; for large types, split across multiple agents
 | Clock | All | — | ✓ 5 / 5 |
 | FlowController | All | — | ✓ 4 / 4 |
 | PressureController | All | — | ✓ 3 / 3 |
-| PulseGenerator | — | VirtualPulseGenerator, QC9518, QC9528, QC9214, BNC577, SRSDG645, PythonPulseGenerator | 0 / 7 |
+| PulseGenerator | — | VirtualPulseGenerator, Qc9510Series, Qc9520Series, Qc9210Series, Bnc577, SRSDG645, PythonPulseGenerator | 0 / 7 |
 | IOBoard | All | — | ✓ 3 / 3 |
 | GpibController | All | — | ✓ 4 / 4 |
 | LifScope | All | — | ✓ 4 / 4 |

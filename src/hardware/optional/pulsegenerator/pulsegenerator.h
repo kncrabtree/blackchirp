@@ -44,6 +44,7 @@ signals:
     // void pulseEnabledUpdate(bool,QPrivateSignal);
 
 protected:
+    void readSettings() override;
     void readAll();
 
     const PulseGenConfig &getConfig() const { return d_config; }
@@ -75,7 +76,7 @@ protected:
     virtual double readHwRepRate() =0;
     virtual bool readHwPulseEnabled() =0;
 
-    const int d_numChannels;
+    int d_numChannels;
 
     // HardwareObject interface
 public slots:

@@ -27,7 +27,8 @@ PulseStatusBox::PulseStatusBox(QString key, QWidget *parent) :
 
         d_ledList.push_back({lbl,led});
     }
-    for(int i=0; i<8; i++)
+    int numCols = channels > 4 ? 8 : channels*2;
+    for(int i=0; i<numCols; i++)
         gl->setColumnStretch(i,(i%2)+1);
 
     auto r = gl->rowCount();
@@ -42,6 +43,48 @@ PulseStatusBox::PulseStatusBox(QString key, QWidget *parent) :
 
     setLayout(gl);
 
+}
+
+void PulseStatusBox::rebuild()
+{
+    auto gl = qobject_cast<QGridLayout*>(layout());
+
+    for(auto& [lbl, led] : d_ledList)
+    {
+        gl->removeWidget(lbl);
+        gl->removeWidget(led);
+        delete lbl;
+        delete led;
+    }
+    d_ledList.clear();
+
+    gl->removeWidget(p_repLabel);
+    gl->removeWidget(p_enLed);
+
+    SettingsStorage pg(d_key, SettingsStorage::Hardware);
+    int channels = pg.get(BC::Key::PGen::numChannels, 8);
+    d_ledList.reserve(channels);
+    for(int i=0; i<channels; i++)
+    {
+        QLabel *lbl = new QLabel(QString("Ch%1").arg(i+1),this);
+        lbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
+
+        Led *led = new Led(this);
+        gl->addWidget(lbl,i/4,(2*i)%8,1,1,Qt::AlignVCenter);
+        gl->addWidget(led,i/4,((2*i)%8)+1,1,1,Qt::AlignVCenter);
+
+        d_ledList.push_back({lbl,led});
+    }
+
+    int numCols = channels > 4 ? 8 : channels*2;
+    for(int i=0; i<numCols; i++)
+        gl->setColumnStretch(i,(i%2)+1);
+
+    int r = (channels + 3) / 4;
+    gl->addWidget(p_repLabel,r,0,1,7,Qt::AlignRight);
+    gl->addWidget(p_enLed,r,7);
+
+    updateAll();
 }
 
 void PulseStatusBox::updatePulseLeds(const QString k, const PulseGenConfig &cc)

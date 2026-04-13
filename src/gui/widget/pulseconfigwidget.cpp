@@ -405,7 +405,7 @@ void PulseConfigWidget::launchChannelConfig(int ch)
 
 void PulseConfigWidget::newSetting(QString key, int index, PulseGenConfig::Setting s, QVariant val)
 {
-    if(index > d_widgetList.size() || key != d_key)
+    if(index >= d_widgetList.size() || key != d_key)
         return;
 
     blockSignals(true);
@@ -469,7 +469,7 @@ void PulseConfigWidget::setFromConfig(QString key, const PulseGenConfig &c)
 
     blockSignals(true);
     ps_config = std::make_shared<PulseGenConfig>(c);
-    for(int i=0; i<c.size(); i++)
+    for(int i=0; i<qMin(c.size(), (int)d_widgetList.size()); i++)
     {
         auto ch = c.d_channels.at(i);
         d_widgetList.at(i).delayBox->setValue(ch.delay);

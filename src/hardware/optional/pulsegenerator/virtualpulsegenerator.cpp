@@ -19,6 +19,7 @@ VirtualPulseGenerator::VirtualPulseGenerator(const QString& label, QObject *pare
     setDefault(canTrigger,true);
     setDefault(dutyMax,100000);
     setDefault(canSyncToChannel,true);
+    setDefault(canDisableChannels,true);
 
     save();
 }
