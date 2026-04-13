@@ -9,17 +9,27 @@
 // Register hardware implementation
 REGISTER_HARDWARE_META(AD9914, "Analog Devices AD9914 Direct Digital Synthesizer")
 REGISTER_HARDWARE_PROTOCOLS(AD9914, CommunicationProtocol::Rs232)
+REGISTER_HARDWARE_SETTINGS(AD9914,
+    {BC::Key::AWG::rate, "Sample Rate (Hz)", "DAC output sample rate",
+     3.75e9, 1e6, 1000e9, HwSettingPriority::Important},
+    {BC::Key::AWG::samples, "Max Samples", "Maximum waveform sample count",
+     1e9, 0, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::AWG::min, "Min Freq (MHz)", "Minimum chirp frequency in MHz",
+     0.0, 0.0, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::AWG::max, "Max Freq (MHz)", "Maximum chirp frequency in MHz",
+     1500.0, 0.0, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::AWG::prot, "Protection Pulse", "AWG outputs a protection pulse channel",
+     false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::AWG::amp, "Amp Enable Pulse", "AWG outputs an amplifier enable pulse channel",
+     false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::AWG::rampOnly, "Ramp Only", "Restrict to linear frequency ramp chirps (no arbitrary waveforms)",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::AWG::triggered, "Triggered", "AWG waits for an external trigger before outputting",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional}
+)
 
 AD9914::AD9914(const QString& label, QObject *parent) : AWG(QString(AD9914::staticMetaObject.className()), label, parent)
 {
-    setDefault(BC::Key::AWG::rate,3.75e9);
-    setDefault(BC::Key::AWG::samples,1e9);
-    setDefault(BC::Key::AWG::min,0.0);
-    setDefault(BC::Key::AWG::max,3.75e9*0.4/1e6);
-    setDefault(BC::Key::AWG::prot,false);
-    setDefault(BC::Key::AWG::amp,false);
-    setDefault(BC::Key::AWG::rampOnly,true);
-    setDefault(BC::Key::AWG::triggered,true);
 }
 
 

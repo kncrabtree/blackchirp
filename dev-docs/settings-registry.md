@@ -485,7 +485,7 @@ One Haiku agent per hardware type; for large types, split across multiple agents
 | Hardware Type | Done | Remaining | Progress |
 |---|---|---|---|
 | FtmwScope | All | — | ✓ 8 / 8 |
-| ChirpSource | VirtualAwg, PythonAwg | AWG70002a, AWG5204, AWG7122b, M8190, M8195a, AD9914 | 2 / 8 |
+| ChirpSource | All | — | ✓ 8 / 8 |
 | Clock | All | — | ✓ 5 / 5 |
 | FlowController | All | — | ✓ 4 / 4 |
 | PressureController | All | — | ✓ 3 / 3 |

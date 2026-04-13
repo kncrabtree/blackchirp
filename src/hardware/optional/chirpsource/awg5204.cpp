@@ -8,18 +8,28 @@
 // Register hardware implementation
 REGISTER_HARDWARE_META(AWG5204, "Tektronix AWG5204 AWG")
 REGISTER_HARDWARE_PROTOCOLS(AWG5204, CommunicationProtocol::Tcp)
+REGISTER_HARDWARE_SETTINGS(AWG5204,
+    {BC::Key::AWG::rate, "Sample Rate (Hz)", "DAC output sample rate",
+     10e9, 1e6, 1000e9, HwSettingPriority::Important},
+    {BC::Key::AWG::samples, "Max Samples", "Maximum waveform sample count",
+     2e9, 0, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::AWG::min, "Min Freq (MHz)", "Minimum chirp frequency in MHz",
+     100.0, 0.0, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::AWG::max, "Max Freq (MHz)", "Maximum chirp frequency in MHz",
+     2500.0, 0.0, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::AWG::prot, "Protection Pulse", "AWG outputs a protection pulse channel",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::AWG::amp, "Amp Enable Pulse", "AWG outputs an amplifier enable pulse channel",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::AWG::rampOnly, "Ramp Only", "Restrict to linear frequency ramp chirps (no arbitrary waveforms)",
+     false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::AWG::triggered, "Triggered", "AWG waits for an external trigger before outputting",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional}
+)
 
 AWG5204::AWG5204(const QString& label, QObject *parent) :
     AWG(QString(AWG5204::staticMetaObject.className()), label, parent)
 {
-    setDefault(BC::Key::AWG::rate,10e9);
-    setDefault(BC::Key::AWG::samples,2e9);
-    setDefault(BC::Key::AWG::min,100.0);
-    setDefault(BC::Key::AWG::max,2500);
-    setDefault(BC::Key::AWG::prot,true);
-    setDefault(BC::Key::AWG::amp,true);
-    setDefault(BC::Key::AWG::rampOnly,false);
-    setDefault(BC::Key::AWG::triggered,true);
 
     // Communication defaults
     setDefault(BC::Key::Comm::timeout, 10000);
@@ -76,6 +86,8 @@ bool AWG5204::prepareForExperiment(Experiment &exp)
     }
 
     p_comm->writeCmd(QString("Source1:Waveform \"%1\"\n").arg(wfmName));
+    // Trigger mode is hardcoded. A conditional on BC::Key::AWG::triggered should be
+    // added to support continuous (free-running) operation alongside triggered mode.
     p_comm->writeCmd(QString("Source1:RMode Triggered\n"));
     p_comm->writeCmd(QString("Source1:TINPut ATRigger\n"));
     p_comm->writeCmd(QString("TRIGger:MODE SYNChronous\n"));

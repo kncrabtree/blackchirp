@@ -6,18 +6,28 @@
 // Register hardware implementation
 REGISTER_HARDWARE_META(AWG7122B, "Tektronix AWG7122B AWG")
 REGISTER_HARDWARE_PROTOCOLS(AWG7122B, CommunicationProtocol::Tcp)
+REGISTER_HARDWARE_SETTINGS(AWG7122B,
+    {BC::Key::AWG::rate, "Sample Rate (Hz)", "DAC output sample rate",
+     24e9, 1e6, 1000e9, HwSettingPriority::Important},
+    {BC::Key::AWG::samples, "Max Samples", "Maximum waveform sample count",
+     2e9, 0, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::AWG::min, "Min Freq (MHz)", "Minimum chirp frequency in MHz",
+     50.0, 0.0, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::AWG::max, "Max Freq (MHz)", "Maximum chirp frequency in MHz",
+     12000.0, 0.0, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::AWG::prot, "Protection Pulse", "AWG outputs a protection pulse channel",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::AWG::amp, "Amp Enable Pulse", "AWG outputs an amplifier enable pulse channel",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::AWG::rampOnly, "Ramp Only", "Restrict to linear frequency ramp chirps (no arbitrary waveforms)",
+     false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::AWG::triggered, "Triggered", "AWG waits for an external trigger before outputting",
+     false, QVariant{}, QVariant{}, HwSettingPriority::Optional}
+)
 
 AWG7122B::AWG7122B(const QString& label, QObject *parent) :
     AWG(QString(AWG7122B::staticMetaObject.className()), label, parent)
 {
-    setDefault(BC::Key::AWG::rate,24e9);
-    setDefault(BC::Key::AWG::samples,2e9);
-    setDefault(BC::Key::AWG::min,50.0);
-    setDefault(BC::Key::AWG::max,12000.0);
-    setDefault(BC::Key::AWG::prot,true);
-    setDefault(BC::Key::AWG::amp,true);
-    setDefault(BC::Key::AWG::rampOnly,false);
-    setDefault(BC::Key::AWG::triggered,false);
 
     // Communication defaults
     setDefault(BC::Key::Comm::timeout, 10000);
@@ -74,6 +84,7 @@ void AWG7122B::initialize()
 
 bool AWG7122B::prepareForExperiment(Experiment &exp)
 {
+    d_triggered = get<bool>(BC::Key::AWG::triggered);
     d_enabledForExperiment = exp.ftmwEnabled();
     if(!d_enabledForExperiment)
         return true;

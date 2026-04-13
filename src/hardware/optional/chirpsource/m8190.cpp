@@ -6,17 +6,27 @@
 // Register hardware implementation
 REGISTER_HARDWARE_META(M8190, "Keysight M8190 AWG")
 REGISTER_HARDWARE_PROTOCOLS(M8190, CommunicationProtocol::Tcp)
+REGISTER_HARDWARE_SETTINGS(M8190,
+    {BC::Key::AWG::rate, "Sample Rate (Hz)", "DAC output sample rate",
+     9.375e9, 1e6, 1000e9, HwSettingPriority::Important},
+    {BC::Key::AWG::samples, "Max Samples", "Maximum waveform sample count",
+     2e9, 0, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::AWG::min, "Min Freq (MHz)", "Minimum chirp frequency in MHz",
+     0.0, 0.0, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::AWG::max, "Max Freq (MHz)", "Maximum chirp frequency in MHz",
+     5000.0, 0.0, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::AWG::prot, "Protection Pulse", "AWG outputs a protection pulse channel",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::AWG::amp, "Amp Enable Pulse", "AWG outputs an amplifier enable pulse channel",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::AWG::rampOnly, "Ramp Only", "Restrict to linear frequency ramp chirps (no arbitrary waveforms)",
+     false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::AWG::triggered, "Triggered", "AWG waits for an external trigger before outputting",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Optional}
+)
 
 M8190::M8190(const QString& label, QObject *parent) : AWG(QString(M8190::staticMetaObject.className()), label, parent)
 {
-    setDefault(BC::Key::AWG::rate,9.375e9); //12 GS/s max
-    setDefault(BC::Key::AWG::samples,2e9);
-    setDefault(BC::Key::AWG::min,0.0);
-    setDefault(BC::Key::AWG::max,5000.0);
-    setDefault(BC::Key::AWG::prot,true);
-    setDefault(BC::Key::AWG::amp,true);
-    setDefault(BC::Key::AWG::rampOnly,false);
-    setDefault(BC::Key::AWG::triggered,true);
 
     // Communication defaults
     setDefault(BC::Key::Comm::timeout, 10000);
