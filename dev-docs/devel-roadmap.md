@@ -36,11 +36,12 @@ ConfigIO flag — because UD manages state internally). Three approaches to eval
 3. Platform-conditional code paths calling UD easy functions on Windows
 Note: LJM library does NOT support U3 (T-series only).
 
-### [Generalized AWG Marker System](awg-marker-system.md)
+### [Generalized AWG Marker System](awg-marker-system.md) **COMPLETE**
 Replace the hardcoded 2-marker (protection/gate) system with a flexible N-marker
 architecture. Users define named marker channels with roles (Protection, Gate, Trigger,
 Custom) and chirp-relative timing. AWGs report `markerCount` and pack their own bitfields.
-Phase 2 adds absolute timing and per-chirp marker overrides.
+Phase 2 adds absolute timing and per-chirp marker overrides, but is deferred for a future
+release.
 
 ### [Hardware Settings Registry](settings-registry.md) **COMPLETE**
 Unified settings registration system with metadata (labels, descriptions, priority
@@ -55,7 +56,8 @@ human-readable labels, tooltips, and priority-based grouping. Replaces the
 Policy surrounding usage of QStrings in Blackchirp. Describes a migration strategy to
 eliminate inefficient QString usage, transition important QString argument uses to
 QAnyStringView, and ensure that STL containers use std::less<> for heterogeneous
-lookup when certain strings are migrated.
+lookup when certain strings are migrated. Also addresses a refactor of LogHandler and a
+survey/cleanup of log/qDebug usage throughout the codebase.
 
 ### [Python Hardware Implementations](python-hardware.md) **COMPLETE**
 User-editable Python scripts as hardware drivers via JSON IPC.
@@ -71,13 +73,6 @@ the active loadout with a "Reset to Loadout Defaults" button. Includes loadout s
 UI, save prompts, and experiment initialization priority logic.
 
 ## Pre-Release
-
-### [Logging and Debug Message Cleanup](logging-cleanup.md)
-Review and rationalize all qDebug() (~41 calls) and logMessage() (~445 calls) output.
-Eliminate qDebug in favor of the log system, downgrade diagnostic traces from Error/Normal
-to Debug, and remove development scaffolding. Bulk of work is in FTMW digitizer files
-(~285 calls) and HardwareManager (~74 calls). Should be one of the last tasks before
-documentation revision for 2.0.0.
 
 ### Documentation Revision
 The sphinx/breathe documentation is outdated and needs to be updated for the
