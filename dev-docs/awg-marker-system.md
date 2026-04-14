@@ -271,10 +271,14 @@ Step 2 — AWG implementations (all 7 + PythonAwg): **COMPLETE**
 - [x] AWG5204: remove `getTriggerData()` call; trigger is now a regular channel
 - [x] PythonAwg: serialize marker channel definitions into `config['chirp']['markers']` JSON array
 
-Step 3 — UI:
-- Add `MarkerTableModel` (new class, analogous to `ChirpTableModel`
-  at `src/data/model/chirptablemodel.h/.cpp`)
-- Replace 4 spinboxes in `chirpconfigwidget.ui` + `ChirpConfigWidget` with table view
+Step 3 — UI: **COMPLETE**
+- [x] Add `MarkerTableModel` (`src/data/model/markertablemodel.h/.cpp`), analogous to
+  `ChirpTableModel`; inherits `SettingsStorage` for last-used persistence across sessions
+- [x] Replace 4 fixed spinboxes in `chirpconfigwidget.ui` + `ChirpConfigWidget` with a
+  `QTabWidget`: "Chirp Segments" tab (existing controls) and "Markers" tab (`markerTable`)
+- [x] Marker tab hidden when AWG `markerCount == 0`
+- [x] `ExperimentChirpConfigPage::validate()` emits warnings when protection marker is
+  absent/disabled, does not cover the full chirp, or does not enclose the amp enable pulse
 
 Step 4 — Python AWG:
 - `_compute_markers()` in `python_awg_template.py`

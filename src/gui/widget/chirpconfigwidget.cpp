@@ -11,22 +11,34 @@
 
 ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     QWidget(parent), SettingsStorage(BC::Key::ChirpConfigWidget::key),
-    ui(new Ui::ChirpConfigWidget), p_ctm(new ChirpTableModel(this)), d_rampOnly(false)
+    ui(new Ui::ChirpConfigWidget),
+    p_ctm(new ChirpTableModel(this)),
+    p_mtm(new MarkerTableModel(this)),
+    d_rampOnly(false)
 {
     ui->setupUi(this);
-    
+
     // Override icons with theme-aware versions - differentiated for clarity
-    ui->addButton->setIcon(ThemeColors::createThemedIcon(":/icons/plus-circle.svg", ThemeColors::IconPrimary, this));           // Add with content (filled circle)
-    ui->insertButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-turn-down-right.svg", ThemeColors::IconPrimary, this)); // Insert at position
-    ui->addEmptyButton->setIcon(ThemeColors::createThemedIcon(":/icons/plus.svg", ThemeColors::IconSecondary, this));          // Add empty placeholder (outline)
-    ui->insertEmptyButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-down.svg", ThemeColors::IconSecondary, this)); // Insert empty at position
+    ui->addButton->setIcon(ThemeColors::createThemedIcon(":/icons/plus-circle.svg", ThemeColors::IconPrimary, this));
+    ui->insertButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-turn-down-right.svg", ThemeColors::IconPrimary, this));
+    ui->addEmptyButton->setIcon(ThemeColors::createThemedIcon(":/icons/plus.svg", ThemeColors::IconSecondary, this));
+    ui->insertEmptyButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-down.svg", ThemeColors::IconSecondary, this));
     ui->removeButton->setIcon(ThemeColors::createThemedIcon(":/icons/minus.svg", ThemeColors::IconPrimary, this));
     ui->moveUpButton->setIcon(ThemeColors::createThemedIcon(":/icons/chevron-up.svg", ThemeColors::IconSecondary, this));
     ui->moveDownButton->setIcon(ThemeColors::createThemedIcon(":/icons/chevron-down.svg", ThemeColors::IconSecondary, this));
     ui->clearButton->setIcon(ThemeColors::createThemedIcon(":/icons/backspace.svg", ThemeColors::IconSecondary, this));
-    
+
     ui->chirpTable->setModel(p_ctm);
     ui->chirpTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
+    ui->markerTable->setModel(p_mtm);
+    ui->markerTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->markerTable->setItemDelegate(new MarkerDelegate(this));
+    ui->markerTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+
+    // Hide the marker tab if the AWG has no marker channels
+    if(p_mtm->markerCount() == 0)
+        ui->configTabWidget->setTabVisible(1, false);
 
     SettingsStorage s(BC::Key::FtmwScope::ftmwScope,SettingsStorage::Hardware);
     bool ff = s.get(BC::Key::Digi::canMultiRecord,false);
@@ -42,48 +54,23 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
 
     using namespace BC::Key::ChirpConfigWidget;
     QString us = QString::fromUtf8(" μs");
-    double _minPreProt = getOrSetDefault(minPreProt,0.0);
-    double _minPreGate = getOrSetDefault(minPreGate,0.0);
-    double _minPostGate = getOrSetDefault(minPostGate,-0.5);
-    double _minPostProt = getOrSetDefault(minPostProt,0.0);
-
-    ui->preChirpProtectionDoubleSpinBox->setMinimum(_minPreProt);
-    ui->preChirpDelayDoubleSpinBox->setMinimum(_minPreGate);
-    ui->postChirpDelayDoubleSpinBox->setMinimum(_minPostGate);
-    ui->postChirpProtectionDoubleSpinBox->setMinimum(_minPostProt);
-
-    ui->preChirpDelayDoubleSpinBox->setSuffix(us);
-    ui->preChirpProtectionDoubleSpinBox->setSuffix(us);
-    ui->postChirpDelayDoubleSpinBox->setSuffix(us);
-    ui->postChirpProtectionDoubleSpinBox->setSuffix(us);
     ui->chirpIntervalDoubleSpinBox->setSuffix(us);
 
-    ui->preChirpProtectionDoubleSpinBox->setValue(get(preProt,0.5));
-    ui->postChirpProtectionDoubleSpinBox->setValue(get(postProt,0.5));
-    ui->preChirpDelayDoubleSpinBox->setValue(get(preGate,0.5));
-    ui->postChirpDelayDoubleSpinBox->setValue(get(postGate,0.5));
     ui->chirpsSpinBox->setValue(get(numChirps,1));
     ui->chirpIntervalDoubleSpinBox->setValue(get(interval,20));
     ui->chirpIntervalDoubleSpinBox->setEnabled(ui->chirpsSpinBox->value()>1);
     ui->applyToAllBox->setChecked(get(applyAll,true));
 
-    registerGetter(preProt,ui->preChirpProtectionDoubleSpinBox,&QDoubleSpinBox::value);
-    registerGetter(postProt,ui->postChirpProtectionDoubleSpinBox,&QDoubleSpinBox::value);
-    registerGetter(preGate,ui->preChirpDelayDoubleSpinBox,&QDoubleSpinBox::value);
-    registerGetter(postGate,ui->postChirpDelayDoubleSpinBox,&QDoubleSpinBox::value);
     registerGetter(numChirps,ui->chirpsSpinBox,&QSpinBox::value);
     registerGetter(interval,ui->chirpIntervalDoubleSpinBox,&QDoubleSpinBox::value);
     registerGetter<QAbstractButton>(applyAll,ui->applyToAllBox,&QCheckBox::isChecked);
 
-
-
     connect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::setButtonStates);
     connect(ui->chirpTable->selectionModel(),&QItemSelectionModel::selectionChanged,this,&ChirpConfigWidget::setButtonStates);
     connect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::updateChirpPlot);
+    connect(p_mtm,&MarkerTableModel::modelChanged,this,&ChirpConfigWidget::updateChirpPlot);
 
     setButtonStates();
-
-
 
     connect(ui->addButton,&QPushButton::clicked,this,&ChirpConfigWidget::addSegment);
     connect(ui->addEmptyButton,&QPushButton::clicked,this,&ChirpConfigWidget::addEmptySegment);
@@ -96,10 +83,6 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
 
     auto vc = static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged);
     auto dvc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
-    connect(ui->preChirpProtectionDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot);
-    connect(ui->preChirpDelayDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot);
-    connect(ui->postChirpDelayDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot);
-    connect(ui->postChirpProtectionDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot);
     connect(ui->chirpsSpinBox,vc,p_ctm,&ChirpTableModel::setNumChirps);
     connect(ui->chirpsSpinBox,vc,ui->currentChirpBox,&QSpinBox::setMaximum);
     connect(ui->chirpsSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
@@ -110,8 +93,6 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     connect(ui->applyToAllBox,&QCheckBox::toggled,[this](bool en){p_ctm->d_allIdentical = en;});
 
     ui->chirpTable->setItemDelegate(new ChirpDoubleSpinBoxDelegate);
-
-
 }
 
 ChirpConfigWidget::~ChirpConfigWidget()
@@ -124,6 +105,7 @@ void ChirpConfigWidget::initialize(const RfConfig &rfc)
 {
     d_rfConfig = rfc;
     p_ctm->initialize(&d_rfConfig);
+    p_mtm->setFromChirpConfig(d_rfConfig.d_chirpConfig);
     updateChirpPlot();
 }
 
@@ -144,8 +126,6 @@ void ChirpConfigWidget::setFromRfConfig(const RfConfig &rfc)
         }
     }
 
-
-
     auto &cc = d_rfConfig.d_chirpConfig;
 
     ui->chirpsSpinBox->blockSignals(true);
@@ -155,7 +135,6 @@ void ChirpConfigWidget::setFromRfConfig(const RfConfig &rfc)
     ui->applyToAllBox->blockSignals(true);
     ui->applyToAllBox->setChecked(cc.allChirpsIdentical());
     ui->applyToAllBox->blockSignals(false);
-
 
     if(!cc.chirpList().isEmpty())
     {
@@ -170,6 +149,7 @@ void ChirpConfigWidget::setFromRfConfig(const RfConfig &rfc)
 
     p_ctm->setFromRfConfig(&d_rfConfig);
     p_ctm->d_allIdentical = cc.allChirpsIdentical();
+    p_mtm->setFromChirpConfig(cc);
     connect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::updateChirpPlot);
     updateChirpPlot();
 }
@@ -186,8 +166,6 @@ void ChirpConfigWidget::enableEditing(bool enabled)
 
 void ChirpConfigWidget::setButtonStates()
 {
-    //set which buttons should be enabled
-    //get selection
     QModelIndexList l = ui->chirpTable->selectionModel()->selectedRows();
     bool c = isSelectionContiguous(l);
 
@@ -197,21 +175,13 @@ void ChirpConfigWidget::setButtonStates()
         ui->addEmptyButton->setEnabled(false);
     }
 
-    //insert button only enabled if one item is selected
     ui->insertButton->setEnabled(l.size() == 1 && !d_rampOnly);
     ui->insertEmptyButton->setEnabled(l.size() == 1 && !d_rampOnly);
-
-    //remove button active if one or more rows selected
     ui->removeButton->setEnabled(l.size() > 0);
-
-    //move buttons enabled only if selection is contiguous
     ui->moveDownButton->setEnabled(c && p_ctm->rowCount(QModelIndex()) > 0);
     ui->moveUpButton->setEnabled(c && p_ctm->rowCount(QModelIndex()) > 0);
-
-    //clear button only enabled if table is not empty
     ui->clearButton->setEnabled(p_ctm->rowCount(QModelIndex()) > 0);
 
-    //get number of chirps associated with current chirp config
     auto cl = p_ctm->chirpList();
     ui->currentChirpBox->setRange(1,qMax(1,cl.size()));
     ui->applyToAllBox->setEnabled(p_ctm->d_allIdentical);
@@ -256,14 +226,12 @@ void ChirpConfigWidget::moveSegments(int direction)
     if(l.isEmpty())
         return;
 
-    //get the selected rows
     QList<int> sortList;
     for(int i=0; i<l.size(); i++)
         sortList.append(l.at(i).row());
 
     std::sort(sortList.begin(),sortList.end());
 
-    //make sure selection is contiguous
     if(sortList.size()>1 && sortList.at(sortList.size()-1) - sortList.at(0) != sortList.size()-1)
         return;
 
@@ -312,6 +280,7 @@ void ChirpConfigWidget::updateRfConfig()
     cc.setChirpInterval(ui->chirpIntervalDoubleSpinBox->value());
     cc.setChirpList(l);
     cc.setAwgSampleRate(d_awgSampleRate);
+    cc.setMarkerChannels(p_mtm->markerChannels());
 }
 
 bool ChirpConfigWidget::isSelectionContiguous(QModelIndexList l)
@@ -322,7 +291,6 @@ bool ChirpConfigWidget::isSelectionContiguous(QModelIndexList l)
     if(l.size()==1)
         return true;
 
-    //selection is contiguous if the last row minus first row is equal to the size, after the list has been sorted
     QList<int> sortList;
     for(int i=0; i<l.size(); i++)
         sortList.append(l.at(i).row());
