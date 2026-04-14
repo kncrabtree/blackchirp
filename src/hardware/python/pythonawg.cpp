@@ -237,14 +237,6 @@ void PythonAwg::readSettings()
 }
 
 // ============================================================================
-// forbiddenKeys()
-// ============================================================================
-QStringList PythonAwg::forbiddenKeys() const
-{
-    return pythonForbiddenKeys();
-}
-
-// ============================================================================
 // parseAuxDataResult()
 // ============================================================================
 AuxDataStorage::AuxDataMap PythonAwg::parseAuxDataResult(const QJsonObject &response)

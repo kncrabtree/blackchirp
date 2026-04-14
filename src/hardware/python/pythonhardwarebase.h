@@ -32,15 +32,6 @@ public:
     virtual ~PythonHardwareBase();
 
     /*!
-     * \brief Returns forbidden keys contributed by the Python mixin
-     *
-     * Concrete classes should append these to their own forbiddenKeys() list.
-     * Currently returns commType and model keys, since these are managed
-     * by the runtime hardware config for Python hardware.
-     */
-    static QStringList pythonForbiddenKeys();
-
-    /*!
      * \brief Stop the Python subprocess if it is running
      */
     void stopProcess();

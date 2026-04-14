@@ -221,16 +221,6 @@ void PythonFtmwScope::sleep(bool b)
 }
 
 // ============================================================================
-// forbiddenKeys()
-// ============================================================================
-QStringList PythonFtmwScope::forbiddenKeys() const
-{
-    auto keys = FtmwScope::forbiddenKeys();
-    keys << pythonForbiddenKeys();
-    return keys;
-}
-
-// ============================================================================
 // configToJson()
 // ============================================================================
 QJsonObject PythonFtmwScope::configToJson(const FtmwDigitizerConfig &config) const

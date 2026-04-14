@@ -29,10 +29,6 @@ public slots:
     void setAcquisitionGated(bool gated);
     virtual void flushAcquisitionBuffer() {}
 
-    // HardwareObject interface
-public slots:
-    QStringList forbiddenKeys() const override;
-
 public:
     WaveformBuffer* waveformBuffer() const { return pu_waveformBuffer.get(); }
 

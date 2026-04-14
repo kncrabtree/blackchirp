@@ -35,7 +35,6 @@ protected:
 
     void sleep(bool b) override;
     void readSettings() override;
-    QStringList forbiddenKeys() const override;
 
 private:
     QJsonObject configToJson(const IOBoardConfig &config) const;

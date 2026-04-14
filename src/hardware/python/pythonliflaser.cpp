@@ -150,10 +150,3 @@ void PythonLifLaser::sleep(bool b)
     pythonSleep(b);
 }
 
-// ============================================================================
-// forbiddenKeys()
-// ============================================================================
-QStringList PythonLifLaser::forbiddenKeys() const
-{
-    return LifLaser::forbiddenKeys() + pythonForbiddenKeys();
-}

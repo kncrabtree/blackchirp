@@ -58,11 +58,3 @@ double FixedClock::readHwFrequency(int outputIndex)
     return d_currentFrequencyList.at(outputIndex);
 }
 
-
-QStringList FixedClock::forbiddenKeys() const
-{
-    auto out = Clock::forbiddenKeys();
-    out.append(BC::Key::Clock::ch);
-    return out;
-}
-

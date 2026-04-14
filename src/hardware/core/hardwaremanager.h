@@ -128,8 +128,6 @@ public slots:
     void testAll();
     void testObjectConnection(const QString hwKey);
     void updateObjectSettings(const QString key);
-    QStringList getForbiddenKeys(const QString key) const;
-
     void getAuxData();
 
     QHash<RfConfig::ClockType,RfConfig::ClockFreq> getClocks();

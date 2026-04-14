@@ -176,10 +176,3 @@ QStringList TemperatureController::validationKeys() const
 
     return out;
 }
-
-
-QStringList TemperatureController::forbiddenKeys() const
-{
-    using namespace BC::Key::TC;
-    return {chName,enabled,::numChannels};
-}

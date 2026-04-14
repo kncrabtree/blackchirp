@@ -345,12 +345,3 @@ void PythonIOBoard::readSettings()
         static_cast<IOBoardConfig&>(*this) = config;
 }
 
-// ============================================================================
-// forbiddenKeys()
-// ============================================================================
-QStringList PythonIOBoard::forbiddenKeys() const
-{
-    auto keys = pythonForbiddenKeys();
-    keys << BC::Key::Digi::numAnalogChannels << BC::Key::Digi::numDigitalChannels;
-    return keys;
-}

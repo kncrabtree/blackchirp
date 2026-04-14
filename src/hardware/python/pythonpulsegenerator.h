@@ -37,7 +37,6 @@ protected:
     bool testConnection() override;
 
     void readSettings() override;
-    QStringList forbiddenKeys() const override;
 
 private:
     // Per-channel set virtuals

@@ -33,7 +33,6 @@ protected:
     double readHwTemperature(const uint ch) override;
 
     void sleep(bool b) override;
-    QStringList forbiddenKeys() const override;
 
 };
 

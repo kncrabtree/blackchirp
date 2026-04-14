@@ -210,16 +210,6 @@ void PythonLifScope::sleep(bool b)
 }
 
 // ============================================================================
-// forbiddenKeys()
-// ============================================================================
-QStringList PythonLifScope::forbiddenKeys() const
-{
-    auto keys = LifScope::forbiddenKeys();
-    keys << pythonForbiddenKeys();
-    return keys;
-}
-
-// ============================================================================
 // configToJson()
 // ============================================================================
 QJsonObject PythonLifScope::configToJson(const LifDigitizerConfig &config) const

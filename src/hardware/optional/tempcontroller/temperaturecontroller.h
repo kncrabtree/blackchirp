@@ -61,9 +61,6 @@ private:
 public:
     QStringList validationKeys() const override;
 
-    // HardwareObject interface
-public slots:
-    QStringList forbiddenKeys() const override;
 };
 
 #endif // TEMPERATURECONTROLLER_H

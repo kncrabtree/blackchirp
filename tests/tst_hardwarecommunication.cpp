@@ -38,7 +38,6 @@ public:
 protected:
     bool testConnection() override { return true; }
     void initialize() override {}
-    QStringList forbiddenKeys() const override { return {}; }
     void readSettings() override {}
     
 private:

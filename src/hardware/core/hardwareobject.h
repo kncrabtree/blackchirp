@@ -109,7 +109,6 @@
  * 
  * - validationKeys()
  * - sleep()
- * - forbiddenKeys()
  * - beginAcquisition()
  * - endAcquisition()
  * - prepareForExperiment()
@@ -389,19 +388,6 @@ public slots:
      * \return Whether initialization was successful
      */
     virtual bool hwPrepareForExperiment(Experiment &exp);
-    
-    /*!
-     * \brief Returns list of settings keys which should not be user-adjustable.
-     * 
-     * If any settings should not be changed by the user, this function can be
-     * overriden to return a list of the keys corresponding to those settings.
-     * The default implementation returns an empty list. Note that settings
-     * defined by HardwareObject are excluded automatically with the exceptions
-     * of #BC::Key::HW::critical and BC::Key::HW::rInterval.
-     * 
-     * \return List of keys to exclude
-     */
-    virtual QStringList forbiddenKeys() const { return {}; }
     
     /*!
      * \brief Function called when experiment begins.

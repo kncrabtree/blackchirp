@@ -44,7 +44,6 @@ protected:
 
     void readSettings() override;
     void sleep(bool b) override;
-    QStringList forbiddenKeys() const override;
 
 };
 

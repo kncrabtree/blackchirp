@@ -31,7 +31,6 @@ protected:
     bool fcTestConnection() override;
 
     void readSettings() override;
-    QStringList forbiddenKeys() const override;
 
 private:
     void hwSetPressureControlMode(bool enabled) override;

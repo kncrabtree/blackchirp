@@ -494,12 +494,6 @@ void PulseGenerator::sleep(bool b)
         setPulseEnabled(false);
 }
 
-
-QStringList PulseGenerator::forbiddenKeys() const
-{
-    return {BC::Key::PGen::numChannels};
-}
-
 void PulseGenerator::readSettings()
 {
     int newCount = get(BC::Key::PGen::numChannels, d_numChannels);

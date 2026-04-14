@@ -48,9 +48,6 @@ public slots:
     bool hwPrepareForExperiment(Experiment &exp) override final;
     IOBoardConfig getConfig() { return static_cast<IOBoardConfig&>(*this); }
 
-    // HardwareObject interface
-public slots:
-    QStringList forbiddenKeys() const override;
 };
 
 #endif // IOBOARD_H

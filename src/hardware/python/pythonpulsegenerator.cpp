@@ -75,14 +75,6 @@ void PythonPulseGenerator::readSettings()
 }
 
 // ============================================================================
-// forbiddenKeys()
-// ============================================================================
-QStringList PythonPulseGenerator::forbiddenKeys() const
-{
-    return PulseGenerator::forbiddenKeys() + pythonForbiddenKeys();
-}
-
-// ============================================================================
 // Per-channel set virtuals
 // ============================================================================
 

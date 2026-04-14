@@ -20,11 +20,6 @@ PythonHardwareBase::~PythonHardwareBase()
         pu_process->stop();
 }
 
-QStringList PythonHardwareBase::pythonForbiddenKeys()
-{
-    return {BC::Key::HW::commType, BC::Key::HW::model};
-}
-
 void PythonHardwareBase::stopProcess()
 {
     if (pu_process)

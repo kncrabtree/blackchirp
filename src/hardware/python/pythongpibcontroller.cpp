@@ -102,10 +102,3 @@ void PythonGpibController::readSettings()
     pythonReadSettings();
 }
 
-// ============================================================================
-// forbiddenKeys()
-// ============================================================================
-QStringList PythonGpibController::forbiddenKeys() const
-{
-    return GpibController::forbiddenKeys() + pythonForbiddenKeys();
-}

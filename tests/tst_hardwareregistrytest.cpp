@@ -20,7 +20,6 @@ public:
     
     bool testConnection() override { return true; }
     void initialize() override {}
-    QStringList forbiddenKeys() const override { return {}; }
 };
 
 class FailingMockHardware : public HardwareObject
@@ -35,7 +34,6 @@ public:
     
     bool testConnection() override { return false; }
     void initialize() override {}
-    QStringList forbiddenKeys() const override { return {}; }
 };
 
 class HardwareRegistryTest : public QObject

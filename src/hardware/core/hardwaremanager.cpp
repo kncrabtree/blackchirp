@@ -255,14 +255,6 @@ void HardwareManager::updateObjectSettings(const QString key)
         QMetaObject::invokeMethod(obj,&HardwareObject::bcReadSettings);
 }
 
-QStringList HardwareManager::getForbiddenKeys(const QString key) const
-{
-    auto hw = findHardware<HardwareObject>(key);
-    if(hw)
-        return hw->forbiddenKeys();
-
-    return {};
-}
 
 void HardwareManager::getAuxData()
 {

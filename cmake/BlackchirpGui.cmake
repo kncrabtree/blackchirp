@@ -125,7 +125,6 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/chirptablemodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/clocktablemodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/exptsummarymodel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/hwsettingsmodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/overlaytablemodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/peaklistmodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/validationmodel.cpp
@@ -238,7 +237,6 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/chirptablemodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/clocktablemodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/exptsummarymodel.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/hwsettingsmodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/overlaytablemodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/peaklistmodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/validationmodel.h

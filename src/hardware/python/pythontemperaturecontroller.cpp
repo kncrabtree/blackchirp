@@ -97,10 +97,3 @@ void PythonTemperatureController::sleep(bool b)
     pythonSleep(b);
 }
 
-// ============================================================================
-// forbiddenKeys()
-// ============================================================================
-QStringList PythonTemperatureController::forbiddenKeys() const
-{
-    return TemperatureController::forbiddenKeys() + pythonForbiddenKeys();
-}

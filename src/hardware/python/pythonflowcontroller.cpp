@@ -88,14 +88,6 @@ void PythonFlowController::readSettings()
 }
 
 // ============================================================================
-// forbiddenKeys()
-// ============================================================================
-QStringList PythonFlowController::forbiddenKeys() const
-{
-    return FlowController::forbiddenKeys() + pythonForbiddenKeys();
-}
-
-// ============================================================================
 // hw* pure virtual implementations
 // ============================================================================
 

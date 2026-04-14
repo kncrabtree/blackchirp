@@ -1246,7 +1246,7 @@ QWidget *MainWindow::wrapWithPythonWidget(const QString &hwKey, QWidget *typeWid
 
 HWDialog *MainWindow::createHWDialog(const QString key, QWidget *controlWidget)
 {
-    auto out = new HWDialog(key,p_hwm->getForbiddenKeys(key),controlWidget);
+    auto out = new HWDialog(key,controlWidget);
     d_openDialogs.insert({key,out});
     connect(out,&HWDialog::accepted,[this,key](){
         QMetaObject::invokeMethod(p_hwm,[this,key](){ p_hwm->updateObjectSettings(key); });

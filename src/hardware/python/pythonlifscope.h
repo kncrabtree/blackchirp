@@ -40,7 +40,6 @@ protected:
     bool testConnection() override;
     void readSettings() override;
     void sleep(bool b) override;
-    QStringList forbiddenKeys() const override;
 
 private slots:
     void onWaveformReceived(const QByteArray &data, quint64 shotCount);

@@ -78,10 +78,6 @@ protected:
 
     int d_numChannels;
 
-    // HardwareObject interface
-public slots:
-    QStringList forbiddenKeys() const override;
-
 private:
     PulseGenConfig d_config;
 

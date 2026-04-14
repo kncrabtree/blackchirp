@@ -268,9 +268,3 @@ QStringList FlowController::validationKeys() const
 
     return out;
 }
-
-
-QStringList FlowController::forbiddenKeys() const
-{
-    return {BC::Key::Flow::flowChannels};
-}

@@ -42,14 +42,12 @@ architecture. Users define named marker channels with roles (Protection, Gate, T
 Custom) and chirp-relative timing. AWGs report `markerCount` and pack their own bitfields.
 Phase 2 adds absolute timing and per-chirp marker overrides.
 
-### [Hardware Settings Registry](settings-registry.md)
-**In Progress** Unified settings registration system with metadata (labels, descriptions,
-priority levels). Hardware classes declare settings via static macros;
-settings are available before construction and presented at profile creation
-time. Replaces the `HwConfigParam` system and eliminates the gap where users
-must manually discover and configure settings after profile creation.
-**Progress:** Phases 1-2 complete (infrastructure + 4 pilot classes).
-Next: Phase 3 (creation-time UI) after dialog refactoring.
+### [Hardware Settings Registry](settings-registry.md) **COMPLETE**
+Unified settings registration system with metadata (labels, descriptions, priority
+levels). Hardware classes declare settings via static macros; settings are available
+before construction and presented to the user at profile creation time with
+human-readable labels, tooltips, and priority-based grouping. Replaces the
+`HwConfigParam` system and raw key/value tree in the hardware settings dialog.
 
 ## Large
 

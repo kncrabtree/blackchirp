@@ -39,7 +39,6 @@ public slots:
     void readPressureControlMode();
 
     void poll();
-    QStringList forbiddenKeys() const override;
 
 private:
     virtual void hwSetPressureControlMode(bool enabled) =0;

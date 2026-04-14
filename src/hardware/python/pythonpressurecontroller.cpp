@@ -105,15 +105,6 @@ void PythonPressureController::sleep(bool b)
     pythonSleep(b);
 }
 
-// ============================================================================
-// forbiddenKeys()
-// ============================================================================
-QStringList PythonPressureController::forbiddenKeys() const
-{
-    auto keys = pythonForbiddenKeys();
-    keys << BC::Key::PController::readOnly;
-    return keys;
-}
 
 // ============================================================================
 // hw* pure virtual implementations

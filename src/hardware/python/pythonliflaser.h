@@ -34,7 +34,6 @@ protected:
     bool testConnection() override;
     void readSettings() override;
     void sleep(bool b) override;
-    QStringList forbiddenKeys() const override;
 
 private:
     double readPos() override;

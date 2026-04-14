@@ -34,7 +34,6 @@ private:
     void endAcquisition() override;
     void sleep(bool b) override;
     void readSettings() override;
-    QStringList forbiddenKeys() const override;
 
     AuxDataStorage::AuxDataMap parseAuxDataResult(const QJsonObject &response);
 };

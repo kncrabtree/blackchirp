@@ -134,12 +134,3 @@ void PythonClock::sleep(bool b)
     pythonSleep(b);
 }
 
-// ============================================================================
-// forbiddenKeys()
-// ============================================================================
-QStringList PythonClock::forbiddenKeys() const
-{
-    auto keys = pythonForbiddenKeys();
-    keys << BC::Key::PythonClock::numOutputs << BC::Key::Clock::tunable;
-    return keys;
-}

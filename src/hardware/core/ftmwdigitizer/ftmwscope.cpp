@@ -79,11 +79,6 @@ bool FtmwScope::hwPrepareForExperiment(Experiment &exp)
 
 
 
-QStringList FtmwScope::forbiddenKeys() const
-{
-    return {BC::Key::Digi::numAnalogChannels, BC::Key::Digi::numDigitalChannels};
-}
-
 void FtmwScope::setAcquisitionGated(bool gated)
 {
     d_acquisitionGated = gated;

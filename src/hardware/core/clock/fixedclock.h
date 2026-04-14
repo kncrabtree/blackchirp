@@ -25,10 +25,6 @@ protected:
 private:
     QList<double> d_currentFrequencyList;
 
-    // HardwareObject interface
-public slots:
-    QStringList forbiddenKeys() const override;
-
 };
 
 #endif // FIXEDCLOCK_H
