@@ -290,8 +290,505 @@ Step 4 — Python AWG: **COMPLETE**
   (replaces the removed `pre_chirp_*`/`post_chirp_*` keys)
 - [x] Update all docstrings to reflect the new `markers` list format and return types
 
-**Phase 2: Absolute timing and per-chirp markers**
-- Enable `TimingMode::Absolute` in UI
-- Extend marker storage to per-chirp definitions (marker table becomes segment-aware,
-  similar to chirp segment table)
-- Per-chirp marker overrides with an "apply to all" default
+## Phase 2 — Absolute Timing and Per-Chirp Markers
+
+### Status
+
+**Deferred.** Phase 1 covers the concrete known use cases (generalized channel count,
+trigger-as-marker, flexible role assignment). Phase 2 adds two independent but related
+capabilities — absolute timing and per-chirp overrides — that together roughly double
+the surface area of the marker system. The plan below is preserved so the work can be
+resumed once a user requests a feature Phase 1 cannot express. Do not implement it
+speculatively.
+
+The two capabilities have very different costs and should be considered separately:
+
+1. **Absolute timing alone** — moderate scope, mostly isolated to `ChirpConfig`,
+   `ChirpConfigPlot`, validation, and the Python template. Viable as a standalone phase.
+2. **Per-chirp marker overrides** — large scope, touches the storage schema, the
+   UI model, validation, waveform hashing, and "all chirps identical" semantics. The
+   bulk of Phase 2's risk lives here.
+
+### Known Use Cases (to justify implementation)
+
+Before building Phase 2, collect at least one concrete user scenario that Phase 1
+cannot express. Candidates:
+
+- **Absolute**: fire a single digitizer-arm pulse at a fixed waveform offset (e.g.
+  8 µs after the first chirp begins) without wanting it to repeat per chirp. Phase 1
+  always repeats markers per chirp interval.
+- **Per-chirp**: in a multi-chirp waveform with different per-chirp durations, drive
+  a device-specific trigger on only one chirp, or with different timing per chirp.
+  Phase 1 forces identical marker timing across all chirps.
+
+If neither is actually requested, leave Phase 2 deferred.
+
+### Feature 2A — Absolute Timing
+
+#### Data Model Changes
+
+The `MarkerChannel::timingMode` field already exists from Phase 1; only the
+`Absolute` branch needs to be honored.
+
+Define the origin: **absolute t = 0 is the first chirp start**, not waveform sample 0.
+This matches the existing chirp-relative convention (`startTime` is relative to the
+chirp start), keeps the relationship "ChirpRelative with start = 0 == Absolute with
+start = 0 on chirp 0" intuitive, and means an absolute marker's window is
+`[startTime, endTime]` in "elapsed time since first chirp start" coordinates.
+
+Invariants:
+
+- An absolute marker fires **once** over the whole waveform, regardless of
+  `numChirps`.
+- Negative `startTime` means "before the first chirp begins" — this extends the
+  waveform lead.
+- `endTime` > `(numChirps - 1) * chirpInterval + lastChirpDur` extends the waveform
+  tail.
+
+#### `leadTimeUs` / `tailTimeUs` / `totalDuration`
+
+These three functions become the bulk of the algorithmic complexity.
+
+```cpp
+double ChirpConfig::leadTimeUs() const
+{
+    double lead = 0.0;
+    for (const auto &m : d_markerChannels) {
+        if (!m.enabled) continue;
+        if (m.timingMode == MarkerChannel::ChirpRelative)
+            lead = qMax(lead, -m.startTime);
+        else // Absolute
+            lead = qMax(lead, -m.startTime);  // same formula, different meaning
+    }
+    return qMax(0.0, lead);
+}
+```
+
+Chirp-relative `startTime` is relative to each chirp start, and the first chirp
+starts at `lead`. Absolute `startTime` is already measured from "first chirp start"
+(= `lead`). So `-m.startTime` still yields the required pre-roll for both modes,
+and `leadTimeUs` collapses to the existing Phase 1 implementation. **No change
+needed** — this was the reason for choosing "first chirp start" as the origin.
+
+```cpp
+double ChirpConfig::tailTimeUs() const
+{
+    double chirpRelTail = 0.0;
+    double absExtra = 0.0;
+    double lastChirpEndAbs = (numChirps() - 1) * d_chirpInterval + chirpDurationUs(numChirps() - 1);
+    for (const auto &m : d_markerChannels) {
+        if (!m.enabled) continue;
+        if (m.timingMode == MarkerChannel::ChirpRelative) {
+            chirpRelTail = qMax(chirpRelTail, m.endTime);
+        } else {
+            // Absolute endTime is waveform-absolute (from first chirp start).
+            // Tail beyond the last chirp end is (m.endTime - lastChirpEndAbs).
+            absExtra = qMax(absExtra, m.endTime - lastChirpEndAbs);
+        }
+    }
+    return qMax(0.0, qMax(chirpRelTail, absExtra));
+}
+```
+
+`totalDuration` continues to work as-is (`lead + (N-1)*interval + lastChirpDur + tail`)
+because both modes collapse into the same `leadTimeUs` / `tailTimeUs` outputs.
+
+#### `getMarkerData` Algorithm
+
+The current per-interval loop handles chirp-relative markers. Absolute markers need
+to be written **after** the per-interval loop as a direct sample-range fill per
+channel, since they are waveform-global and do not repeat:
+
+```cpp
+// (existing interval loop for chirp-relative markers — unchanged)
+
+// Overlay absolute markers
+double firstChirpStartAbs = leadTimeUs();
+for (int ch = 0; ch < numChannels; ++ch) {
+    const auto &m = d_markerChannels.at(ch);
+    if (!m.enabled || m.timingMode != MarkerChannel::Absolute) continue;
+
+    double absStart = firstChirpStartAbs + m.startTime;  // in waveform sample time
+    double absEnd   = firstChirpStartAbs + m.endTime;
+    int s0 = getFirstSample(absStart);
+    int s1 = getLastSample(absEnd);
+    s0 = qMax(0, s0);
+    s1 = qMin(numSamples - 1, s1);
+    for (int s = s0; s <= s1; ++s)
+        out[ch][s] = true;
+}
+```
+
+The per-interval loop skips channels with `timingMode == Absolute` so the two
+branches do not overwrite each other.
+
+#### `ChirpConfigPlot::newChirp`
+
+The existing plot draws one rectangle per chirp per marker. For absolute markers,
+draw a single rectangle at `(firstChirpStartAbs + m.startTime, firstChirpStartAbs + m.endTime)`
+instead of iterating per-chirp. Add a branch on `m.timingMode` inside the existing
+channel loop.
+
+#### Validation
+
+`ExperimentChirpConfigPage::validate` currently compares `prot->startTime` /
+`prot->endTime` directly against the chirp (assumes chirp-relative). For absolute
+protection markers, translate the window into per-chirp coverage and check that
+*every* chirp is fully enclosed:
+
+```cpp
+for (int i = 0; i < cc.numChirps(); ++i) {
+    double chirpStartAbs = i * cc.chirpInterval();         // relative to first chirp start
+    double chirpEndAbs   = chirpStartAbs + cc.chirpDurationUs(i);
+    bool covered = false;
+    for (const auto &m : cc.markerChannels()) {
+        if (!m.enabled || m.role != MarkerRole::Protection) continue;
+        if (m.timingMode == MarkerChannel::ChirpRelative) {
+            if (m.startTime < 0.0 && m.endTime > 0.0) { covered = true; break; }
+        } else {
+            if (m.startTime <= chirpStartAbs && m.endTime >= chirpEndAbs) { covered = true; break; }
+        }
+    }
+    if (!covered)
+        emit warning(QString("Chirp %1 is not fully enclosed by an enabled protection marker.").arg(i + 1));
+}
+```
+
+The gate-enclosure check needs the same treatment, pairwise against any active gate.
+
+#### Python IPC and Template
+
+`PythonAwg::prepareForExperiment` adds a `timing_mode` string (`"chirp_relative"` or
+`"absolute"`) to each marker dict in `config['chirp']['markers']`.
+
+`_compute_markers()` in `python_awg_template.py` splits the enabled markers into
+two lists and handles them in parallel. `_compute_waveform()`'s lead/tail derivation
+already uses `max(0, -m['start_us'])` / `max(0, m['end_us'])`, which remains correct
+because of the "first chirp start = 0" origin choice.
+
+#### Storage
+
+`markers.csv` already has a `TimingMode` column from Phase 1 (read/write code is in
+`readMarkersFile`/`writeMarkersFile`). No schema change needed for Feature 2A alone.
+
+#### Hash
+
+`waveformHash` must include `m.timingMode` so two configs that differ only by timing
+mode hash differently. Add one line:
+
+```cpp
+c.addData(QByteArray::number(static_cast<int>(m.timingMode)));
+```
+
+#### UI
+
+Add a "Mode" column to `MarkerTableModel` (Absolute / ChirpRelative combo box).
+Update the tooltips on the Start (µs) and End (µs) columns to say what the value
+means in each mode — this is the hardest UX part. Suggested wording:
+
+- ChirpRelative Start: "µs relative to each chirp's start (negative = before)"
+- ChirpRelative End:   "µs relative to each chirp's end (positive = after)"
+- Absolute Start:      "µs from the first chirp's start (negative = before)"
+- Absolute End:        "µs from the first chirp's start"
+
+Consider making the headers change ("Start (rel)" / "End (abs)") when the active
+row's mode changes, or add a per-cell tooltip that reflects the row's current mode.
+
+Default when the user switches a row from ChirpRelative to Absolute: compute the
+equivalent absolute window for chirp 0 so the marker does not visually jump.
+
+#### Feature 2A Scope Summary
+
+| Area | LOC | Risk |
+|------|-----|------|
+| `chirpconfig.h/cpp` (data + marker gen + hash) | ~80 | Medium — edge cases in multi-chirp absolute coverage |
+| `chirpconfigplot.cpp` | ~30 | Low |
+| `experimentchirpconfigpage.cpp` (validation) | ~60 | **High** — safety-critical; must be tested against real hardware |
+| `markertablemodel.h/cpp` (mode column + delegate) | ~80 | Medium — UX clarity |
+| `pythonawg.cpp` + `python_awg_template.py` | ~50 | Low |
+| Unit tests | ~150 | Should add coverage for absolute + mixed cases |
+
+**AWG implementations (AWG70002A, AWG7122B, AWG5204, M8195A, M8190, VirtualAWG):
+no changes.** The packed `quint32` interface insulates them completely from the
+timing-mode dimension. This is by design and a strong argument for the current
+Phase 1 abstraction.
+
+**Estimated effort for Feature 2A only: 2–3 days.**
+
+### Feature 2B — Per-Chirp Marker Overrides
+
+This is where the scope explodes. Proceed with caution; consider whether Feature 2A
+alone satisfies the user's actual need before tackling per-chirp overrides.
+
+#### Data Model
+
+The cleanest model is a **default + overrides** structure per channel:
+
+```cpp
+struct MarkerChannel {
+    QString name;
+    MarkerRole role{MarkerRole::Custom};
+    bool enabled{true};
+    // Default entry applied to every chirp unless overridden
+    MarkerTiming defaultTiming;
+    // Sparse per-chirp overrides keyed by chirp index
+    QMap<int, MarkerTiming> overrides;
+};
+
+struct MarkerTiming {
+    enum Mode { Absolute, ChirpRelative };
+    Mode mode{ChirpRelative};
+    double startTime{-0.5};
+    double endTime{0.5};
+    // An override may also disable the marker for that specific chirp
+    bool enabled{true};
+};
+```
+
+Rationale over the alternative (`QVector<QVector<MarkerChannel>>` — one per-chirp
+full channel set):
+
+- Preserves the notion that a channel is a physical output with a fixed role and
+  name, independent of chirp.
+- Keeps the common case (same timing on every chirp) compact.
+- Validation reasons across "chirp i's effective timing" rather than searching a
+  flat list for matches.
+- Matches the UX model of "default + exceptions" that users of the chirp segment
+  table already know (`d_allIdentical` + `currentChirpBox`).
+
+Trade-off: an extra indirection when generating marker samples (for each chirp i,
+look up `overrides.value(i, defaultTiming)`).
+
+#### Interaction with Absolute Mode
+
+**Decision:** per-chirp overrides only apply to ChirpRelative timing. Absolute
+markers are by definition waveform-global and cannot have per-chirp overrides
+(they would not have a meaningful "chirp index" to key on). Enforce this in the
+UI (overrides column is disabled when `defaultTiming.mode == Absolute`) and in
+validation (`overrides.isEmpty()` required when default mode is Absolute).
+
+#### `allChirpsIdentical`
+
+Currently this function checks only segment shape. With per-chirp markers it must
+also consider marker overrides — otherwise the "apply to all" checkbox semantics
+break. Add a parallel `allChirpMarkersIdentical()` helper, or extend the existing
+one.
+
+#### Waveform Generation
+
+`getMarkerData`'s per-interval loop must fetch the effective timing for channel
+`ch` on interval `currentInterval` on every iteration:
+
+```cpp
+const MarkerChannel &m = d_markerChannels.at(ch);
+const MarkerTiming &t = m.overrides.value(currentInterval, m.defaultTiming);
+if (!t.enabled) continue;
+markerStartSample[ch] = getFirstSample(chirpStartTime + t.startTime);
+markerEndSample[ch]   = getLastSample(chirpEndTime + t.endTime) - 1;
+```
+
+This is a small code change but the validation story is what grows.
+
+#### `leadTimeUs` / `tailTimeUs`
+
+Must also walk `overrides`:
+
+```cpp
+double ChirpConfig::leadTimeUs() const {
+    double lead = 0.0;
+    for (const auto &m : d_markerChannels) {
+        if (!m.enabled) continue;
+        if (m.defaultTiming.enabled)
+            lead = qMax(lead, -m.defaultTiming.startTime);
+        for (const auto &t : m.overrides)
+            if (t.enabled)
+                lead = qMax(lead, -t.startTime);
+    }
+    return qMax(0.0, lead);
+}
+```
+
+Absolute markers still behave as described in Feature 2A; they do not participate
+in overrides.
+
+#### Storage Schema
+
+Add a `ChirpIndex` column to `markers.csv`; -1 means "default for all chirps", 0..N-1
+means "override for chirp i". An entry with `ChirpIndex != -1` and
+`TimingMode == "Absolute"` is an error on read and should be rejected with a log
+warning.
+
+**Backward compatibility:** Phase 1 `markers.csv` files have no `ChirpIndex` column.
+The reader must detect the old format (6 columns + header without `ChirpIndex`) and
+treat every row as a default entry for its `Channel`. Add a test case for this.
+
+#### Validation
+
+Protection validation must check **each chirp index separately**:
+
+```cpp
+for (int i = 0; i < cc.numChirps(); ++i) {
+    // Find effective timings for protection and gate on chirp i
+    // (default + override lookups across all channels)
+    // Check: protection exists, covers chirp i, encloses gate on chirp i
+}
+```
+
+This is where the validation logic stops fitting on a screen. Expect the validator
+to grow from ~70 lines to ~150–200 lines. It is safety-critical and should have
+dedicated unit tests (table-driven: N chirps × M channels × pathological overrides).
+
+#### UI
+
+**This is the biggest single piece of Phase 2B work.** The marker table must
+become chirp-aware while remaining readable.
+
+Recommended approach: mirror the chirp segment table UX.
+
+- Add an "Apply to all chirps" checkbox next to the marker table.
+- When checked (default), `MarkerTableModel` shows a single marker row per channel
+  editing `defaultTiming` only. Overrides are hidden and cleared on commit.
+- When unchecked, reuse the existing `currentChirpBox` (or add a marker-scoped one)
+  to choose which chirp's effective timing is shown. Rows edit
+  `overrides.value(currentChirp, defaultTiming)`; an "Override" column lets the user
+  mark a row as overridden, at which point edits write to the override map instead
+  of the default.
+- Rows with no override appear greyed out and display "(default)" in the override
+  column.
+
+Alternative (rejected): give each chirp its own tab. Too many chirps makes this
+unusable, and it loses the visual equivalence between chirps.
+
+`ChirpConfigPlot::newChirp` walks chirp intervals already; change the inner
+marker loop to use the chirp-specific effective timing. Absolute markers still
+draw a single rectangle in waveform-absolute coordinates.
+
+#### Python IPC
+
+Two options:
+
+1. **Preserve flat list, annotate with chirp index** — each marker dict gains
+   `chirp_index` (-1 for default, 0..N-1 for override). Simple to serialize.
+2. **Nested structure** — each channel dict contains `default: {...}` and
+   `overrides: [{chirp, ...}]`. More explicit, slightly more work.
+
+Option 1 is simpler and lets the Python template iterate a single list.
+`_compute_markers()` becomes:
+
+```python
+for i in range(num_chirps):
+    for ch_idx in range(num_channels):
+        timing = _effective_timing(markers, ch_idx, i)  # override or default
+        if not timing['enabled']: continue
+        # fill arrays[ch_idx][sample_range] = True
+```
+
+The template's docstring and return shape (indices + per-channel arrays) remain
+unchanged — the per-chirp complexity is fully hidden inside the helper.
+
+#### `waveformHash`
+
+Must include `overrides`:
+
+```cpp
+for (const auto &m : d_markerChannels) {
+    // ... existing default fields ...
+    for (auto it = m.overrides.cbegin(); it != m.overrides.cend(); ++it) {
+        c.addData(QByteArray::number(it.key()));
+        // hash the override timing
+    }
+}
+```
+
+#### Feature 2B Scope Summary
+
+| Area | LOC | Risk |
+|------|-----|------|
+| `chirpconfig.h/cpp` (data model + marker gen + hash + lead/tail) | ~150 | Medium |
+| `experimentchirpconfigpage.cpp` (validation) | ~150 | **Very high** — safety-critical; per-chirp combinatorics expand the bug surface |
+| `markertablemodel.h/cpp` + delegate (override editing, override column, apply-to-all) | ~250 | **High** — biggest piece of work; UX ambiguity |
+| `chirpconfigwidget.cpp` (sync currentChirp between tabs) | ~40 | Medium — easy for users to miss which chirp they are editing |
+| `chirpconfigplot.cpp` | ~20 | Low |
+| `blackchirpcsv.h` + read/write markers.csv (+ back-compat) | ~60 | Low–Medium |
+| `pythonawg.cpp` + `python_awg_template.py` | ~80 | Medium |
+| Unit tests (per-chirp validation, round-trip storage, back-compat read) | ~300 | Must add |
+
+**AWG implementations: still no changes.** The `quint32` packed interface remains
+the isolation boundary. This is the single biggest reason Phase 2B remains
+feasible at all.
+
+**Estimated effort for Feature 2B: 4–6 days**, dominated by the validator rewrite
+and the UI model.
+
+### Risks
+
+1. **Validation is safety-critical.** Protection markers prevent damage to the
+   amplifier. Every change to `validate()` must be covered by a table-driven unit
+   test. The Phase 2B validator is large enough that bugs are likely; allocate
+   time for real-hardware verification, not just unit tests.
+
+2. **UI for per-chirp overrides is easy to misuse.** A user editing "chirp 3"'s
+   markers while the chirp segment tab still shows chirp 1 can create silent
+   mismatches. Mitigation: either sync the "current chirp" selector between the
+   segment tab and the marker tab, or forbid override editing entirely when
+   "apply to all" is checked.
+
+3. **Absolute timing semantics are subtle.** The origin choice ("absolute 0 =
+   first chirp start") is correct and keeps Phase 1 behavior unchanged, but users
+   will expect "absolute 0 = waveform sample 0". Document prominently and
+   consider a tooltip or example on the UI. Explicit unit tests for the origin
+   choice.
+
+4. **Backward compatibility of `markers.csv`.** Any Phase 2 schema change must
+   read Phase 1 files. Add a regression test that loads a Phase 1 `markers.csv`
+   and produces the expected Phase 2 data.
+
+5. **`waveformHash` regression.** If any new field is forgotten in the hash,
+   experiments with the same chirp segments but different new-field markers will
+   collide. Add a test.
+
+6. **`allChirpsIdentical` semantic drift.** Callers of this function (e.g.
+   `chirpconfigwidget.cpp:136`) expect segment identity; changing it to include
+   markers may alter the "apply to all" checkbox state unexpectedly. Consider a
+   separate `allChirpMarkersIdentical()` method instead.
+
+7. **Python template backward compatibility.** Users with customized
+   `python_awg_template.py` scripts will need to port their changes when
+   `_compute_markers()`'s helper shape evolves. Keep the return type stable
+   (`(indices, arrays)`) even if the internal implementation changes.
+
+### Recommendation
+
+**Defer Phase 2 until a specific user request justifies it.** Phase 1's generalized
+channel count with chirp-relative timing already addresses:
+
+- Flexible use of all AWG marker outputs (up to 4 on AWG5204, more elsewhere)
+- Trigger-as-marker (the AWG5204 special case is gone)
+- Custom marker channels with user-defined names and roles
+- Safety validation for protection and gate enclosure
+- Per-AWG capability reporting via `markerCount`
+
+The remaining Phase 2 capability — **absolute timing** and **per-chirp
+overrides** — is elegant but speculative. Neither has a currently-known user
+asking for it. The implementation cost is ~6–9 days total (2–3 for 2A + 4–6 for
+2B), and the long-tail risk lives in the safety validator.
+
+When a real use case appears:
+
+- **If the use case needs absolute timing only** (e.g., "fire one pulse once
+  per waveform, not once per chirp"), implement Feature 2A. It is self-contained
+  and comparatively low-risk.
+- **If the use case needs per-chirp markers** (e.g., "different trigger on chirp
+  3 vs chirp 1 in a multi-chirp waveform"), implement 2A first, then 2B. Do not
+  try to ship 2B without 2A — absolute timing is a much cleaner way to express
+  "once over the waveform" than a per-chirp override workaround.
+
+### Things That Are Explicitly *Not* Phase 2
+
+- Per-segment markers (markers whose timing is relative to segment boundaries
+  within a chirp). Not part of this plan. Would need a different data model
+  again.
+- Programmable marker pulse trains within a window (pulse width / rep rate /
+  count). Out of scope; use the pulse generator for that.
+- Independent enable toggles per chirp for a channel *without* changing timing.
+  Already covered by `overrides[i].enabled = false` in the 2B model.
