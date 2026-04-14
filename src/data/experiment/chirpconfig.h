@@ -6,20 +6,28 @@
 #include <QVector>
 #include <QMap>
 #include <QVariant>
-#include <QPair>
+#include <QString>
 
 #include <data/storage/headerstorage.h>
 
 namespace BC::Store::CC {
 static const QString key{"ChirpConfig"};
-static const QString preProt{"PreProtection"};
-static const QString postProt{"PostProtection"};
-static const QString preGate{"PreGate"};
-static const QString postGate{"PostGate"};
 static const QString interval{"ChirpInterval"};
 static const QString sampleRate{"SampleRate"};
 static const QString sampleInterval{"SampleInterval"};
 }
+
+enum class MarkerRole { Protection, Gate, Trigger, Custom };
+
+struct MarkerChannel {
+    QString name;
+    enum TimingMode { Absolute, ChirpRelative };
+    TimingMode timingMode{ChirpRelative};
+    double startTime{-0.5};  // us -- relative to chirp start (negative = before)
+    double endTime{0.5};     // us -- relative to chirp end (positive = after)
+    bool enabled{true};
+    MarkerRole role{MarkerRole::Custom};
+};
 
 class BlackchirpCSV;
 
@@ -40,13 +48,11 @@ public:
 
     void readChirpFile(BlackchirpCSV *csv, int num, QString path = QString(""));
     bool writeChirpFile(int num) const;
+    void readMarkersFile(BlackchirpCSV *csv, int num, QString path = QString(""));
+    bool writeMarkersFile(int num) const;
 
-    double preChirpProtectionDelay() const;
-    double preChirpGateDelay() const;
-    double postChirpGateDelay() const;
-    double postChirpProtectionDelay() const;
-    double totalProtectionWidth() const;
-    double totalGateWidth() const;
+    double leadTimeUs() const;
+    double tailTimeUs() const;
     int numChirps() const;
     double chirpInterval() const;
     bool allChirpsIdentical() const;
@@ -62,36 +68,27 @@ public:
     double totalDuration() const;
     QVector<QPointF> getChirpMicroseconds() const;
     QVector<QPointF> getChirpSegmentMicroSeconds(double t1, double t2) const;
-    QVector<QPair<bool,bool>> getMarkerData() const;
+    QVector<QVector<bool>> getMarkerData() const;
+    QVector<quint32> getPackedMarkerData() const;
 
-    //HMC only: trigger 100 us before chirp start
-    //TODO: Generalize this and make it more general
-    QVector<bool> getTriggerData() const;
+    const QVector<MarkerChannel>& markerChannels() const;
+    const MarkerChannel* findEnabledMarkerByRole(MarkerRole role) const;
 
     void setAwgSampleRate(const double samplesPerSecond);
-    void setPreChirpProtectionDelay(const double d);
-    void setPreChirpGateDelay(const double d);
-    void setPostChirpGateDelay(const double d);
-    void setPostChirpProtectionDelay(const double d);
     void setNumChirps(const int n);
     void setChirpInterval(const double i);
+    void setMarkerChannels(const QVector<MarkerChannel>& channels);
     void addSegment(const double startMHz, const double endMHz, const double durationUs, const int chirpNum = -1);
     void addEmptySegment(const double durationUs, const int chirpNum = -1);
     void setChirpList(const QVector<QVector<ChirpSegment> > l);
 
 private:
-    struct Markers {
-        double preProt{0.5};
-        double postProt{0.5};
-        double preGate{0.5};
-        double postGate{0.5};
-    } d_markers;
-
+    QVector<MarkerChannel> d_markerChannels;
     double d_chirpInterval{-1.0}; //units: us
 
 
     //working data to improve efficiency; do not record to disk!
-    double d_sampleRateSperUS; //awg rate, samples per microecond
+    double d_sampleRateSperUS; //awg rate, samples per microsecond
     double d_sampleIntervalUS; //awg sample interval in microseconds
 
     int getFirstSample(double time) const;

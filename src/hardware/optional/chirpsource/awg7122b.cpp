@@ -15,10 +15,8 @@ REGISTER_HARDWARE_SETTINGS(AWG7122B,
      50.0, 0.0, QVariant{}, HwSettingPriority::Important},
     {BC::Key::AWG::max, "Max Freq (MHz)", "Maximum chirp frequency in MHz",
      12000.0, 0.0, QVariant{}, HwSettingPriority::Important},
-    {BC::Key::AWG::prot, "Protection Pulse", "AWG outputs a protection pulse channel",
-     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::AWG::amp, "Amp Enable Pulse", "AWG outputs an amplifier enable pulse channel",
-     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::AWG::markerCount, "Marker Count", "Number of physical marker output channels",
+     2, 0, QVariant{}, HwSettingPriority::Required},
     {BC::Key::AWG::rampOnly, "Ramp Only", "Restrict to linear frequency ramp chirps (no arbitrary waveforms)",
      false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
     {BC::Key::AWG::triggered, "Triggered", "AWG waits for an external trigger before outputting",
@@ -216,9 +214,9 @@ QString AWG7122B::writeWaveform(const ChirpConfig cc)
     QString name = QDateTime::currentDateTime().toString(QString("yyyy.MM.dd.hh.mm.ss.zzz"));
 
     QVector<QPointF> data = cc.getChirpMicroseconds();
-    QVector<QPair<bool,bool>> markerData = cc.getMarkerData();
+    auto packedMarkers = cc.getPackedMarkerData();
 
-    Q_ASSERT(data.size() == markerData.size());
+    Q_ASSERT(packedMarkers.isEmpty() || data.size() == packedMarkers.size());
 
     //create new waveform on AWG
     if(!p_comm->writeCmd(QString("WList:Waveform:New \"%1\", %2,REAL\n").arg(name).arg(data.size())))
@@ -254,9 +252,10 @@ QString AWG7122B::writeWaveform(const ChirpConfig cc)
         {
             float val = static_cast<float>(data.at(startIndex+i).y());
             char *c = reinterpret_cast<char*>(&val);
-            quint8 byte = 0;
-            byte += (static_cast<int>(markerData.at(startIndex+i).second) << 7) +
-                    (static_cast<int>(markerData.at(startIndex+i).first) << 6);
+            quint32 packed = (startIndex+i < packedMarkers.size()) ? packedMarkers.at(startIndex+i) : 0u;
+            quint8 byte = static_cast<quint8>(
+                ((packed >> 0) & 1) << 7 |   // channel 0 → bit 7
+                ((packed >> 1) & 1) << 6);   // channel 1 → bit 6
 
 #if Q_BYTE_ORDER == Q_LITTLE_ENDIAN
             chunkData.append(c,4);

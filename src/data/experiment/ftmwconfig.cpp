@@ -151,13 +151,20 @@ QPair<int, int> FtmwConfig::chirpRange() const
 
     int samples = dur*1e-6*ps_scopeConfig->d_sampleRate;
 
-    //we assume that the scope is triggered at the beginning of the protection pulse
-    //unless the user has specified a custom start time
+    //compute where the chirp starts in the digitizer's time frame.
+    //if a Trigger marker is active, use its start time (negative = before chirp start,
+    //so -startTime gives the interval from trigger fire to chirp start).
+    //otherwise fall back to leadTimeUs(), assuming the digitizer is triggered at the
+    //beginning of the waveform (protection pulse leading edge).
     double startUs = 0.0;
     if(d_chirpOffsetUs < 0.0)
     {
         auto cc = d_rfConfig.d_chirpConfig;
-        startUs = cc.preChirpGateDelay() + cc.preChirpProtectionDelay() - ps_scopeConfig->d_triggerDelayUSec;
+        auto *trig = cc.findEnabledMarkerByRole(MarkerRole::Trigger);
+        if(trig)
+            startUs = -trig->startTime - ps_scopeConfig->d_triggerDelayUSec;
+        else
+            startUs = cc.leadTimeUs() - ps_scopeConfig->d_triggerDelayUSec;
     }
     else
         startUs = d_chirpOffsetUs;

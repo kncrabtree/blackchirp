@@ -35,6 +35,7 @@ static const QString objectivesFile{"objectives.csv"};
 static const QString hwFile{"hardware.csv"};
 static const QString headerFile{"header.csv"};
 static const QString chirpFile{"chirps.csv"};
+static const QString markersFile{"markers.csv"};
 static const QString clockFile{"clocks.csv"};
 static const QString auxFile{"auxdata.csv"};
 

@@ -15,10 +15,8 @@ REGISTER_HARDWARE_SETTINGS(M8190,
      0.0, 0.0, QVariant{}, HwSettingPriority::Important},
     {BC::Key::AWG::max, "Max Freq (MHz)", "Maximum chirp frequency in MHz",
      5000.0, 0.0, QVariant{}, HwSettingPriority::Important},
-    {BC::Key::AWG::prot, "Protection Pulse", "AWG outputs a protection pulse channel",
-     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::AWG::amp, "Amp Enable Pulse", "AWG outputs an amplifier enable pulse channel",
-     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::AWG::markerCount, "Marker Count", "Number of physical marker output channels",
+     2, 0, QVariant{}, HwSettingPriority::Required},
     {BC::Key::AWG::rampOnly, "Ramp Only", "Restrict to linear frequency ramp chirps (no arbitrary waveforms)",
      false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
     {BC::Key::AWG::triggered, "Triggered", "AWG waits for an external trigger before outputting",
@@ -132,13 +130,7 @@ bool M8190::prepareForExperiment(Experiment &exp)
     }
 
     auto data = exp.ftmwConfig()->d_rfConfig.d_chirpConfig.getChirpMicroseconds();
-    auto markerData = exp.ftmwConfig()->d_rfConfig.d_chirpConfig.getMarkerData();
-
-    if(data.size() != markerData.size())
-    {
-        exp.d_errorString = QString("Waveform and marker data are not same length. This is a bug; please report it.");
-        return false;
-    }
+    auto packedMarkers = exp.ftmwConfig()->d_rfConfig.d_chirpConfig.getPackedMarkerData();
 
     //use speed mode, 12-bit
     if(!m8190Write(QString(":TRAC1:DWIDth WSPeed;:TRAC2:DWIDth WSPeed\n")))

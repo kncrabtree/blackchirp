@@ -17,18 +17,11 @@ ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(BC::Key::chirpPl
     // Disable QwtPlot's automatic memory management
     setAutoDelete(false);
 
-    // Create curves using CurveFactory
+    // Create chirp waveform curve using CurveFactory
     p_chirpCurve = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::chirpCurve);
     p_chirpCurve->attach(this);
 
-    p_ampEnableCurve = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::ampCurve);
-    p_ampEnableCurve->attach(this);
-
-    p_protectionCurve = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::protCurve);
-    p_protectionCurve->attach(this);
-
     insertLegend(new QwtLegend(this));
-
 }
 
 ChirpConfigPlot::~ChirpConfigPlot()
@@ -44,11 +37,27 @@ void ChirpConfigPlot::newChirp(const ChirpConfig cc)
     bool as = p_chirpCurve->curveData().isEmpty();
 
     auto chirpData = cc.getChirpMicroseconds();
+    const auto &channels = cc.markerChannels();
+    int numChannels = channels.size();
+
+    // Resize marker curves: destroying a unique_ptr detaches the curve from the plot
+    while(d_markerCurves.size() > static_cast<std::size_t>(numChannels))
+        d_markerCurves.pop_back();
+
+    while(d_markerCurves.size() < static_cast<std::size_t>(numChannels))
+    {
+        int idx = static_cast<int>(d_markerCurves.size());
+        auto curve = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(
+            QString("Marker%1").arg(idx));
+        curve->attach(this);
+        d_markerCurves.push_back(std::move(curve));
+    }
+
     if(chirpData.isEmpty())
     {
         p_chirpCurve->setCurveData(QVector<QPointF>());
-        p_ampEnableCurve->setCurveData(QVector<QPointF>());
-        p_protectionCurve->setCurveData(QVector<QPointF>());
+        for(auto &c : d_markerCurves)
+            c->setCurveData(QVector<QPointF>());
         autoScale();
         return;
     }
@@ -56,36 +65,51 @@ void ChirpConfigPlot::newChirp(const ChirpConfig cc)
     if(as)
         autoScale();
 
-    QVector<QPointF> ampData, protectionData;
+    // Build per-channel curve data
+    QVector<QVector<QPointF>> markerData(numChannels);
+    double lead = cc.leadTimeUs();
 
-    for(int i=0; i<cc.numChirps(); i++)
+    for(int i = 0; i < cc.numChirps(); i++)
     {
-        double segmentStartTime = cc.chirpInterval()*static_cast<double>(i);
-        double twtEnableTime = segmentStartTime + cc.preChirpProtectionDelay();
-        double chirpEndTime = twtEnableTime + cc.preChirpGateDelay() + cc.chirpDurationUs(i);
-        double twtEndTime = chirpEndTime + cc.postChirpGateDelay();
-        double protectionEndTime = chirpEndTime + cc.postChirpProtectionDelay();
+        double intervalStart = cc.chirpInterval() * static_cast<double>(i);
+        double chirpStart = intervalStart + lead;
+        double chirpEnd = chirpStart + cc.chirpDurationUs(i);
 
-        //build protection data
-        protectionData.append(QPointF(segmentStartTime,0.0));
-        protectionData.append(QPointF(segmentStartTime,1.0));
-        protectionData.append(QPointF(protectionEndTime,1.0));
-        protectionData.append(QPointF(protectionEndTime,0.0));
+        for(int ch = 0; ch < numChannels; ++ch)
+        {
+            const auto &m = channels.at(ch);
+            if(!m.enabled)
+                continue;
 
-
-        //build Enable data
-        ampData.append(QPointF(segmentStartTime,0.0));
-        ampData.append(QPointF(twtEnableTime,0.0));
-        ampData.append(QPointF(twtEnableTime,1.0));
-        ampData.append(QPointF(twtEndTime,1.0));
-        ampData.append(QPointF(twtEndTime,0.0));
-        ampData.append(QPointF(protectionEndTime,0.0));
-
+            double mStart = chirpStart + m.startTime;
+            double mEnd = chirpEnd + m.endTime;
+            auto &pts = markerData[ch];
+            pts.append(QPointF(intervalStart, 0.0));
+            pts.append(QPointF(mStart, 0.0));
+            pts.append(QPointF(mStart, 1.0));
+            pts.append(QPointF(mEnd, 1.0));
+            pts.append(QPointF(mEnd, 0.0));
+        }
     }
 
     p_chirpCurve->setCurveData(chirpData);
-    p_ampEnableCurve->setCurveData(ampData);
-    p_protectionCurve->setCurveData(protectionData);
+
+    for(int ch = 0; ch < numChannels; ++ch)
+    {
+        const auto &m = channels.at(ch);
+
+        QString label = QString("Marker %1").arg(ch);
+        switch(m.role)
+        {
+        case MarkerRole::Protection: label += " (Protection)"; break;
+        case MarkerRole::Gate:       label += " (Gate)";       break;
+        case MarkerRole::Trigger:    label += " (Trigger)";    break;
+        default: break;
+        }
+
+        d_markerCurves.at(ch)->setTitle(label);
+        d_markerCurves.at(ch)->setCurveData(markerData.at(ch));
+    }
 
     replot();
 }

@@ -3,6 +3,7 @@
 
 #include <gui/plot/zoompanplot.h>
 #include <memory>
+#include <vector>
 
 class ChirpConfig;
 class BlackchirpPlotCurve;
@@ -10,8 +11,6 @@ class BlackchirpPlotCurve;
 namespace BC::Key {
 static const QString chirpPlot{"ChirpConfigPlot"};
 static const QString chirpCurve{"Chirp"};
-static const QString ampCurve{"AmpEnable"};
-static const QString protCurve{"Protection"};
 }
 
 class ChirpConfigPlot : public ZoomPanPlot
@@ -25,8 +24,7 @@ public slots:
 
 private:
     std::unique_ptr<BlackchirpPlotCurve> p_chirpCurve;
-    std::unique_ptr<BlackchirpPlotCurve> p_ampEnableCurve;
-    std::unique_ptr<BlackchirpPlotCurve> p_protectionCurve;
+    std::vector<std::unique_ptr<BlackchirpPlotCurve>> d_markerCurves;
 };
 
 #endif // CHIRPCONFIGPLOT_H

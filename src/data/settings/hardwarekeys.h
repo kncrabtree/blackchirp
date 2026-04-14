@@ -132,8 +132,7 @@ namespace ClockManager {
 // AWG/Chirp source keys (from AWG base class)
 namespace AWG {
     static const QString key{"AWG"}; /*!< AWG hardware type key */
-    static const QString prot{"hasProtectionPulse"}; /*!< Whether AWG has protection pulse digital output */
-    static const QString amp{"hasAmpEnablePulse"}; /*!< Whether AWG has amplifier enable pulse digital output */
+    static const QString markerCount{"markerCount"}; /*!< Number of physical marker output channels */
     static const QString min{"minFreqMHz"}; /*!< Minimum frequency in MHz */
     static const QString max{"maxFreqMHz"}; /*!< Maximum frequency in MHz */
     static const QString rampOnly{"rampOnly"}; /*!< Whether AWG can only generate frequency ramps */

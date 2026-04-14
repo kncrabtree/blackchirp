@@ -19,10 +19,8 @@ REGISTER_HARDWARE_SETTINGS(PythonAwg,
      100.0, 0.0, QVariant{}, HwSettingPriority::Optional},
     {BC::Key::AWG::max,       "Max Freq (MHz)",    "Maximum chirp frequency",
      6250.0, 0.0, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::AWG::prot,      "Protection Pulse",  "AWG outputs a protection pulse",
-     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::AWG::amp,       "Amp Enable Pulse",  "AWG outputs an amplifier enable pulse",
-     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::AWG::markerCount, "Marker Count", "Number of physical marker output channels",
+     0, 0, QVariant{}, HwSettingPriority::Required},
     {BC::Key::AWG::rampOnly,  "Ramp Only",         "Restrict to linear ramp chirps",
      false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
     {BC::Key::AWG::triggered, "Triggered",         "AWG waits for external trigger",
@@ -154,10 +152,18 @@ bool PythonAwg::prepareForExperiment(Experiment &exp)
         chirpObj[QStringLiteral("segments")] = segmentsArray;
         chirpObj[QStringLiteral("num_chirps")] = cc.numChirps();
         chirpObj[QStringLiteral("chirp_interval_us")] = cc.chirpInterval();
-        chirpObj[QStringLiteral("pre_chirp_protection_us")] = cc.preChirpProtectionDelay();
-        chirpObj[QStringLiteral("post_chirp_protection_us")] = cc.postChirpProtectionDelay();
-        chirpObj[QStringLiteral("pre_chirp_gate_us")] = cc.preChirpGateDelay();
-        chirpObj[QStringLiteral("post_chirp_gate_us")] = cc.postChirpGateDelay();
+        QJsonArray markersArray;
+        for(const auto &m : cc.markerChannels())
+        {
+            QJsonObject mObj;
+            mObj[QStringLiteral("name")] = m.name;
+            mObj[QStringLiteral("role")] = static_cast<int>(m.role);
+            mObj[QStringLiteral("start_us")] = m.startTime;
+            mObj[QStringLiteral("end_us")] = m.endTime;
+            mObj[QStringLiteral("enabled")] = m.enabled;
+            markersArray.append(mObj);
+        }
+        chirpObj[QStringLiteral("markers")] = markersArray;
         chirpObj[QStringLiteral("sample_rate_hz")] = get<double>(BC::Key::AWG::rate);
         config[QStringLiteral("chirp")] = chirpObj;
 

@@ -15,10 +15,8 @@ REGISTER_HARDWARE_SETTINGS(M8195A,
      0.0, 0.0, QVariant{}, HwSettingPriority::Important},
     {BC::Key::AWG::max, "Max Freq (MHz)", "Maximum chirp frequency in MHz",
      26500.0, 0.0, QVariant{}, HwSettingPriority::Important},
-    {BC::Key::AWG::prot, "Protection Pulse", "AWG outputs a protection pulse channel",
-     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::AWG::amp, "Amp Enable Pulse", "AWG outputs an amplifier enable pulse channel",
-     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::AWG::markerCount, "Marker Count", "Number of physical marker output channels",
+     2, 0, QVariant{}, HwSettingPriority::Required},
     {BC::Key::AWG::rampOnly, "Ramp Only", "Restrict to linear frequency ramp chirps (no arbitrary waveforms)",
      false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
     {BC::Key::AWG::triggered, "Triggered", "AWG waits for an external trigger before outputting",
@@ -130,13 +128,7 @@ bool M8195A::prepareForExperiment(Experiment &exp)
     }
 
     auto data = exp.ftmwConfig()->d_rfConfig.d_chirpConfig.getChirpMicroseconds();
-    auto markerData = exp.ftmwConfig()->d_rfConfig.d_chirpConfig.getMarkerData();
-
-    if(data.size() != markerData.size())
-    {
-        exp.d_errorString = QString("Waveform and marker data are not same length. This is a bug; please report it.");
-        return false;
-    }
+    auto packedMarkers = exp.ftmwConfig()->d_rfConfig.d_chirpConfig.getPackedMarkerData();
 
     int pad = (256 - (data.size()%256))%256;
     int len = data.size() + pad;
@@ -176,16 +168,10 @@ bool M8195A::prepareForExperiment(Experiment &exp)
             if(startIndex + i < data.size())
                  chirpVal = qBound(low,static_cast<qint8>(round(data.at(startIndex+i).y()*127.0)),high);
 
-            //markers are binary switches: marker 1 (ch 3) is bit 0; marker 2 (ch 4) is bit 1
+            //markers: bit 0 = physical output 1 (channel 0), bit 1 = physical output 2 (channel 1)
             qint8 markerVal = 0;
-
-            if(startIndex + i < data.size())
-            {
-                if(markerData.at(startIndex+i).first) //marker 1 (protection)
-                    markerVal++;
-                if(markerData.at(startIndex+i).second) //marker 2 (amp gate)
-                    markerVal+=2;
-            }
+            if(startIndex + i < packedMarkers.size())
+                markerVal = static_cast<qint8>(packedMarkers.at(startIndex+i) & 0x03);
 
             chunkData.append(chirpVal).append(markerVal);
         }

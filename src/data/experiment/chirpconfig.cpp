@@ -104,34 +104,106 @@ bool ChirpConfig::writeChirpFile(int num) const
     return false;
 }
 
-double ChirpConfig::preChirpProtectionDelay() const
+void ChirpConfig::readMarkersFile(BlackchirpCSV *csv, int num, QString path)
 {
-    return d_markers.preProt;
+    auto d = BlackchirpCSV::exptDir(num,path);
+    QFile f(d.absoluteFilePath(BC::CSV::markersFile));
+    if(f.open(QIODevice::ReadOnly))
+    {
+        d_markerChannels.clear();
+        while(!f.atEnd())
+        {
+            auto l = csv->readLine(f);
+            if(l.isEmpty())
+                continue;
+            if(l.constFirst().toString().startsWith("Channel"))
+                continue;
+            if(l.size() == 7)
+            {
+                bool ok = false;
+                int ch = l.at(0).toInt(&ok);
+                if(!ok)
+                    continue;
+                QString name = l.at(1).toString();
+                QString roleStr = l.at(2).toString();
+                QString modeStr = l.at(3).toString();
+                double start = l.at(4).toDouble(&ok);
+                if(!ok)
+                    continue;
+                double end = l.at(5).toDouble(&ok);
+                if(!ok)
+                    continue;
+                bool enabled = QVariant(l.at(6)).toBool();
+
+                MarkerRole role = MarkerRole::Custom;
+                if(roleStr == "Protection")
+                    role = MarkerRole::Protection;
+                else if(roleStr == "Gate")
+                    role = MarkerRole::Gate;
+                else if(roleStr == "Trigger")
+                    role = MarkerRole::Trigger;
+
+                MarkerChannel::TimingMode mode = MarkerChannel::ChirpRelative;
+                if(modeStr == "Absolute")
+                    mode = MarkerChannel::Absolute;
+
+                MarkerChannel mc{name, mode, start, end, enabled, role};
+                while(d_markerChannels.size() < ch + 1)
+                    d_markerChannels.append(MarkerChannel{});
+                d_markerChannels[ch] = mc;
+            }
+        }
+    }
 }
 
-double ChirpConfig::preChirpGateDelay() const
+bool ChirpConfig::writeMarkersFile(int num) const
 {
-    return d_markers.preGate;
+    QDir d(BlackchirpCSV::exptDir(num));
+    QSaveFile f(d.absoluteFilePath(BC::CSV::markersFile));
+    if(f.open(QIODevice::WriteOnly|QIODevice::Text))
+    {
+        QTextStream t(&f);
+        BlackchirpCSV::writeLine(t,{"Channel","Name","Role","TimingMode","StartUs","EndUs","Enabled"});
+        for(int i=0; i<d_markerChannels.size(); ++i)
+        {
+            const auto &m = d_markerChannels.at(i);
+            QString roleStr;
+            switch(m.role)
+            {
+            case MarkerRole::Protection: roleStr = "Protection"; break;
+            case MarkerRole::Gate:       roleStr = "Gate";       break;
+            case MarkerRole::Trigger:    roleStr = "Trigger";    break;
+            default:                     roleStr = "Custom";     break;
+            }
+            QString timingModeStr = (m.timingMode == MarkerChannel::Absolute) ? "Absolute" : "ChirpRelative";
+            BlackchirpCSV::writeLine(t,{i,m.name,roleStr,timingModeStr,m.startTime,m.endTime,m.enabled});
+        }
+        return f.commit();
+    }
+
+    return false;
 }
 
-double ChirpConfig::postChirpGateDelay() const
+double ChirpConfig::leadTimeUs() const
 {
-    return d_markers.postGate;
+    double lead = 0.0;
+    for(const auto &m : d_markerChannels)
+    {
+        if(m.enabled)
+            lead = qMax(lead, -m.startTime);
+    }
+    return qMax(0.0, lead);
 }
 
-double ChirpConfig::postChirpProtectionDelay() const
+double ChirpConfig::tailTimeUs() const
 {
-    return d_markers.postProt;
-}
-
-double ChirpConfig::totalProtectionWidth() const
-{
-    return d_markers.preProt + d_markers.preGate + chirpDurationUs(0) + d_markers.postProt;
-}
-
-double ChirpConfig::totalGateWidth() const
-{
-    return d_markers.preGate + chirpDurationUs(0) + d_markers.postGate;
+    double tail = 0.0;
+    for(const auto &m : d_markerChannels)
+    {
+        if(m.enabled)
+            tail = qMax(tail, m.endTime);
+    }
+    return qMax(0.0, tail);
 }
 
 int ChirpConfig::numChirps() const
@@ -193,7 +265,7 @@ double ChirpConfig::chirpDurationUs(int chirpNum) const
 
 double ChirpConfig::totalDuration() const
 {
-    double length = preChirpProtectionDelay() + preChirpGateDelay() + postChirpProtectionDelay();
+    double length = leadTimeUs() + tailTimeUs();
     length += (static_cast<double>(numChirps())-1.0)*d_chirpInterval + chirpDurationUs(numChirps()-1);
     return length;
 }
@@ -250,9 +322,14 @@ bool ChirpConfig::segmentEmpty(int chirp, int segment) const
 QByteArray ChirpConfig::waveformHash() const
 {
     QCryptographicHash c(QCryptographicHash::Sha256);
-    c.addData(QByteArray::number(preChirpProtectionDelay()));
-    c.addData(QByteArray::number(preChirpGateDelay()));
-    c.addData(QByteArray::number(postChirpGateDelay()));
+    for(const auto &m : d_markerChannels)
+    {
+        c.addData(m.name.toUtf8());
+        c.addData(QByteArray::number(static_cast<int>(m.role)));
+        c.addData(QByteArray::number(m.startTime));
+        c.addData(QByteArray::number(m.endTime));
+        c.addData(QByteArray::number(static_cast<int>(m.enabled)));
+    }
     for(int j=0; j<d_chirpList.size(); j++)
     {
         for(int i=0; i<d_chirpList.at(j).size(); i++)
@@ -265,7 +342,6 @@ QByteArray ChirpConfig::waveformHash() const
     }
     c.addData(QByteArray::number(numChirps()));
     c.addData(QByteArray::number(d_chirpInterval));
-    c.addData(QByteArray::number(postChirpProtectionDelay()));
 
     return c.result();
 }
@@ -283,6 +359,8 @@ QVector<QPointF> ChirpConfig::getChirpSegmentMicroSeconds(double t1, double t2) 
     //x values are in microseconds
     if(d_chirpList.isEmpty())
         return QVector<QPointF>();
+
+    double lead = leadTimeUs();
 
     int firstSample = getFirstSample(t1);
     int invalidSample = getFirstSample(t2); //invalid sample is the point AFTER the last point to be included
@@ -314,7 +392,7 @@ QVector<QPointF> ChirpConfig::getChirpSegmentMicroSeconds(double t1, double t2) 
             //this is the last interval
             done = true;
         }
-        int currentIntervalChirpStart = getFirstSample(getSampleTime(currentIntervalStartSample) + preChirpProtectionDelay() + preChirpGateDelay());
+        int currentIntervalChirpStart = getFirstSample(getSampleTime(currentIntervalStartSample) + lead);
         int currentIntervalChirpEnd = getLastSample(getSampleTime(currentIntervalChirpStart) + chirpDurationUs(currentInterval));
 
         //start times for each segment
@@ -343,10 +421,10 @@ QVector<QPointF> ChirpConfig::getChirpSegmentMicroSeconds(double t1, double t2) 
         int nextSegmentSample;
         if(d_chirpList.at(currentInterval).isEmpty())
         {
-            nextSegmentSample = firstSample+currentSample + getFirstSample(preChirpProtectionDelay() + preChirpGateDelay());
+            nextSegmentSample = firstSample+currentSample + getFirstSample(lead);
         }
         else
-            nextSegmentSample = firstSample+currentSample + getFirstSample(preChirpProtectionDelay() + preChirpGateDelay() + d_chirpList.at(currentInterval).at(0).durationUs);
+            nextSegmentSample = firstSample+currentSample + getFirstSample(lead + d_chirpList.at(currentInterval).at(0).durationUs);
         if(d_chirpList.at(currentInterval).size() == 1)
             nextSegmentSample = currentIntervalChirpEnd;
         else
@@ -403,146 +481,111 @@ QVector<QPointF> ChirpConfig::getChirpSegmentMicroSeconds(double t1, double t2) 
     return out;
 }
 
-QVector<QPair<bool, bool> > ChirpConfig::getMarkerData() const
+QVector<QVector<bool>> ChirpConfig::getMarkerData() const
 {
-    if(d_chirpList.isEmpty())
-        return QVector<QPair<bool,bool>>();
+    if(d_chirpList.isEmpty() || d_markerChannels.isEmpty())
+        return {};
 
-    int currentSample = 0;
-    int firstSample = 0;
-    int invalidSample = getFirstSample(totalDuration()) + 1; //invalid sample is the point AFTER the last point to be included
+    int numChannels = d_markerChannels.size();
+    int invalidSample = getFirstSample(totalDuration()) + 1;
     int numSamples = invalidSample - 1;
 
-    QVector<QPair<bool,bool>> out(numSamples);
+    QVector<QVector<bool>> out(numChannels, QVector<bool>(numSamples, false));
 
+    double lead = leadTimeUs();
+    int currentSample = 0;
     bool done = false;
 
-    while(!done) // loop that allows interval crossing
+    while(!done)
     {
-        //starting an interval
-        double currentTime = getSampleTime(firstSample+currentSample);
+        double currentTime = getSampleTime(currentSample);
         int currentInterval = static_cast<int>(floor(currentTime/d_chirpInterval));
-        int currentIntervalStartSample = getFirstSample(static_cast<double>(currentInterval)*d_chirpInterval);
+        double intervalStartTime = static_cast<double>(currentInterval)*d_chirpInterval;
         int nextIntervalStartSample = getFirstSample((static_cast<double>(currentInterval) + 1.0) * d_chirpInterval);
-        if(nextIntervalStartSample > firstSample+numSamples)
+        if(nextIntervalStartSample > numSamples)
         {
-            //this is the last interval
             done = true;
-            nextIntervalStartSample = firstSample+numSamples;
+            nextIntervalStartSample = numSamples;
         }
-        int currentIntervalChirpStart = getFirstSample(getSampleTime(currentIntervalStartSample) + preChirpProtectionDelay() + preChirpGateDelay());
-        int currentIntervalGateStart = getFirstSample(getSampleTime(currentIntervalStartSample) + preChirpProtectionDelay());
-        int currentIntervalChirpEnd = getLastSample(getSampleTime(currentIntervalChirpStart) + chirpDurationUs(currentInterval));
-        int currentIntervalGateEnd = getLastSample(getSampleTime(currentIntervalChirpEnd) + postChirpGateDelay())-1;
-        int currentIntervalProtEnd = getLastSample(getSampleTime(currentIntervalChirpEnd) + postChirpProtectionDelay())-1;
 
-        //sections will correspond to marker states:
-        //0 = prot high, gate low
-        //1 = both high
-        //2 = prot high, gate low
-        //3 = both low
+        double chirpStartTime = intervalStartTime + lead;
+        double chirpEndTime = chirpStartTime + chirpDurationUs(currentInterval);
 
-        bool prot = true;
-        bool gate = false;
-
-        while(currentSample < nextIntervalStartSample)
+        QVector<int> markerStartSample(numChannels, 0);
+        QVector<int> markerEndSample(numChannels, -1);
+        for(int ch = 0; ch < numChannels; ++ch)
         {
-            //assess section state
-            if(currentSample == currentIntervalGateStart)
-                gate = true;
-            if(currentSample == currentIntervalGateEnd)
-                gate = false;
-            if(currentSample == currentIntervalProtEnd)
-                prot = false;
+            const auto &m = d_markerChannels.at(ch);
+            if(!m.enabled)
+                continue;
+            markerStartSample[ch] = getFirstSample(chirpStartTime + m.startTime);
+            markerEndSample[ch] = getLastSample(chirpEndTime + m.endTime) - 1;
+        }
 
-            out[currentSample] = qMakePair(prot,gate);
-
+        while(currentSample < nextIntervalStartSample && currentSample < numSamples)
+        {
+            for(int ch = 0; ch < numChannels; ++ch)
+            {
+                const auto &m = d_markerChannels.at(ch);
+                if(!m.enabled)
+                    continue;
+                out[ch][currentSample] = (currentSample >= markerStartSample[ch] &&
+                                          currentSample <= markerEndSample[ch]);
+            }
             currentSample++;
         }
     }
-    //fill with zeroes until total length
-    while(currentSample < invalidSample-1)
-        out[currentSample] = qMakePair(false,false);
 
     return out;
-
 }
 
-QVector<bool> ChirpConfig::getTriggerData() const
+QVector<quint32> ChirpConfig::getPackedMarkerData() const
 {
-    ///TODO: merge this with previous function; make generic
-    if(d_chirpList.isEmpty())
-        return QVector<bool>();
+    auto data = getMarkerData();
+    if(data.isEmpty())
+        return {};
 
-    int currentSample = 0;
-    int firstSample = 0;
-    int invalidSample = getFirstSample(totalDuration()) + 1; //invalid sample is the point AFTER the last point to be included
-    int numSamples = invalidSample - 1;
+    int numSamples = data.at(0).size();
+    int numChannels = data.size();
+    QVector<quint32> out(numSamples, 0u);
 
-    QVector<bool> out(numSamples);
-
-    bool done = false;
-
-    while(!done) // loop that allows interval crossing
+    for(int ch = 0; ch < numChannels; ++ch)
     {
-        //starting an interval
-        double currentTime = getSampleTime(firstSample+currentSample);
-        int currentInterval = static_cast<int>(floor(currentTime/d_chirpInterval));
-        int currentIntervalStartSample = getFirstSample(static_cast<double>(currentInterval)*d_chirpInterval);
-        int nextIntervalStartSample = getFirstSample((static_cast<double>(currentInterval) + 1.0) * d_chirpInterval);
-        if(nextIntervalStartSample > firstSample+numSamples)
+        quint32 mask = (1u << ch);
+        for(int s = 0; s < numSamples; ++s)
         {
-            //this is the last interval
-            done = true;
-            nextIntervalStartSample = firstSample+numSamples;
-        }
-        int currentIntervalChirpStart = getFirstSample(getSampleTime(currentIntervalStartSample) + preChirpProtectionDelay() + preChirpGateDelay());
-        int currentIntervalChirpEnd = getLastSample(getSampleTime(currentIntervalChirpStart) + chirpDurationUs(currentInterval));
-        int currentIntervalProtEnd = getLastSample(getSampleTime(currentIntervalChirpEnd) + postChirpProtectionDelay())-1;
-        int triggerStart = getFirstSample(getSampleTime(currentIntervalChirpStart)-.1); //TODO: Don't hardcode this!
-
-
-        while(currentSample < nextIntervalStartSample)
-        {
-            if(currentSample < triggerStart || currentSample >= currentIntervalProtEnd)
-                out[currentSample] = false;
-            else
-                out[currentSample] = true;
-
-            currentSample++;
+            if(data.at(ch).at(s))
+                out[s] |= mask;
         }
     }
-    //fill with zeroes until total length
-    while(currentSample < invalidSample-1)
-        out[currentSample] = false;
 
     return out;
+}
+
+const QVector<MarkerChannel>& ChirpConfig::markerChannels() const
+{
+    return d_markerChannels;
+}
+
+const MarkerChannel* ChirpConfig::findEnabledMarkerByRole(MarkerRole role) const
+{
+    for(const auto &m : d_markerChannels)
+    {
+        if(m.enabled && m.role == role)
+            return &m;
+    }
+    return nullptr;
+}
+
+void ChirpConfig::setMarkerChannels(const QVector<MarkerChannel>& channels)
+{
+    d_markerChannels = channels;
 }
 
 void ChirpConfig::setAwgSampleRate(const double samplesPerSecond)
 {
     d_sampleRateSperUS = samplesPerSecond/1e6;
     d_sampleIntervalUS = 1.0/d_sampleRateSperUS;
-}
-
-void ChirpConfig::setPreChirpProtectionDelay(const double d)
-{
-    d_markers.preProt = d;
-}
-
-void ChirpConfig::setPreChirpGateDelay(const double d)
-{
-    d_markers.preGate = d;
-}
-
-void ChirpConfig::setPostChirpGateDelay(const double d)
-{
-    d_markers.postGate = d;
-}
-
-void ChirpConfig::setPostChirpProtectionDelay(const double d)
-{
-    d_markers.postProt = d;
 }
 
 void ChirpConfig::setNumChirps(const int n)
@@ -564,7 +607,7 @@ void ChirpConfig::setNumChirps(const int n)
     {
         while(d_chirpList.size() > n)
             d_chirpList.removeLast();
-    }    
+    }
 }
 
 void ChirpConfig::setChirpInterval(const double i)
@@ -676,10 +719,6 @@ double ChirpConfig::calculateEndingPhaseRadians(const ChirpSegment segment, cons
 void ChirpConfig::storeValues()
 {
     using namespace BC::Store::CC;
-    store(preProt,d_markers.preProt,BC::Unit::us);
-    store(postProt,d_markers.postProt,BC::Unit::us);
-    store(preGate,d_markers.preGate,BC::Unit::us);
-    store(postGate,d_markers.postGate,BC::Unit::us);
     store(interval,d_chirpInterval,BC::Unit::us);
     store(sampleRate,d_sampleRateSperUS,BC::Unit::MHz);
     store(sampleInterval,d_sampleIntervalUS,BC::Unit::us);
@@ -688,10 +727,6 @@ void ChirpConfig::storeValues()
 void ChirpConfig::retrieveValues()
 {
     using namespace BC::Store::CC;
-    d_markers.preProt = retrieve(preProt,0.5);
-    d_markers.postProt = retrieve(postProt,0.5);
-    d_markers.preGate = retrieve(preGate,0.5);
-    d_markers.postGate = retrieve(postGate,0.5);
     d_chirpInterval = retrieve(interval,-1.0);
     d_sampleRateSperUS = retrieve(sampleRate,1.0);
     d_sampleIntervalUS = retrieve(sampleInterval,1.0);

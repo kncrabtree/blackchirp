@@ -148,22 +148,6 @@ void ChirpConfigWidget::setFromRfConfig(const RfConfig &rfc)
 
     auto &cc = d_rfConfig.d_chirpConfig;
 
-    ui->preChirpProtectionDoubleSpinBox->blockSignals(true);
-    ui->preChirpProtectionDoubleSpinBox->setValue(cc.preChirpProtectionDelay());
-    ui->preChirpProtectionDoubleSpinBox->blockSignals(false);
-
-    ui->preChirpDelayDoubleSpinBox->blockSignals(true);
-    ui->preChirpDelayDoubleSpinBox->setValue(cc.preChirpGateDelay());
-    ui->preChirpDelayDoubleSpinBox->blockSignals(false);
-
-    ui->postChirpDelayDoubleSpinBox->blockSignals(true);
-    ui->postChirpDelayDoubleSpinBox->setValue(cc.postChirpGateDelay());
-    ui->postChirpDelayDoubleSpinBox->blockSignals(false);
-
-    ui->postChirpProtectionDoubleSpinBox->blockSignals(true);
-    ui->postChirpProtectionDoubleSpinBox->setValue(cc.postChirpProtectionDelay());
-    ui->postChirpProtectionDoubleSpinBox->blockSignals(false);
-
     ui->chirpsSpinBox->blockSignals(true);
     ui->chirpsSpinBox->setValue(cc.numChirps());
     ui->chirpsSpinBox->blockSignals(false);
@@ -324,10 +308,6 @@ void ChirpConfigWidget::updateRfConfig()
 {
     auto l = p_ctm->chirpList();
     auto &cc = d_rfConfig.d_chirpConfig;
-    cc.setPreChirpProtectionDelay(ui->preChirpProtectionDoubleSpinBox->value());
-    cc.setPreChirpGateDelay(ui->preChirpDelayDoubleSpinBox->value());
-    cc.setPostChirpGateDelay(ui->postChirpDelayDoubleSpinBox->value());
-    cc.setPostChirpProtectionDelay(ui->postChirpProtectionDoubleSpinBox->value());
     cc.setNumChirps(ui->chirpsSpinBox->value());
     cc.setChirpInterval(ui->chirpIntervalDoubleSpinBox->value());
     cc.setChirpList(l);
