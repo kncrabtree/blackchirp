@@ -280,8 +280,15 @@ Step 3 — UI: **COMPLETE**
 - [x] `ExperimentChirpConfigPage::validate()` emits warnings when protection marker is
   absent/disabled, does not cover the full chirp, or does not enclose the amp enable pulse
 
-Step 4 — Python AWG:
-- `_compute_markers()` in `python_awg_template.py`
+Step 4 — Python AWG: **COMPLETE**
+- [x] Rewrite `_compute_markers()` in `python_awg_template.py` to iterate over
+  `config['chirp']['markers']` and return `(indices, arrays)`: one bool array per
+  enabled channel plus the corresponding original channel indices
+- [x] Add `_compute_markers_packed()`: packs the per-channel arrays into a `uint32`
+  array (LSB = channel 0), matching `ChirpConfig::getPackedMarkerData()`
+- [x] Update `_compute_waveform()` to derive lead/tail times from the markers list
+  (replaces the removed `pre_chirp_*`/`post_chirp_*` keys)
+- [x] Update all docstrings to reflect the new `markers` list format and return types
 
 **Phase 2: Absolute timing and per-chirp markers**
 - Enable `TimingMode::Absolute` in UI
