@@ -7,7 +7,7 @@
 #include <QTimer>
 
 namespace BC::Key::FtmwScope {
-static const QString interval{"shotIntervalMs"};
+inline constexpr QLatin1StringView interval{"shotIntervalMs"};
 }
 
 class VirtualFtmwScope : public FtmwScope

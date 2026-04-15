@@ -85,7 +85,7 @@ ExptSummaryModel::ExptSummaryModel(Experiment *exp, QObject *parent) : QAbstract
                     else
                         segItem->appendChild(new ExptTreeItem({"Empty",QVariant(true).toString(),""},segItem));
                     segItem->appendChild(new ExptTreeItem({"Duration",QVariant(seg.durationUs).toString(),
-                                                           BC::Unit::us},segItem));
+                                                           BC::Unit::us.toString()},segItem));
 
                 }
             }

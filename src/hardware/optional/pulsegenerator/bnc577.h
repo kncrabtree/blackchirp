@@ -4,8 +4,8 @@
 #include "qcpulsegenerator.h"
 
 namespace BC::Key::PGen {
-static const QString bnc577{"bnc577"};
-static const QString bnc577Name{"Pulse Generator BNC 577"};
+inline constexpr QLatin1StringView bnc577{"bnc577"};
+inline constexpr QLatin1StringView bnc577Name{"Pulse Generator BNC 577"};
 }
 
 class Bnc577 : public QCPulseGenerator

@@ -7,35 +7,35 @@
 #include "curveappearancewidget.h"
 
 namespace BC::Key::CurveAppearancePresets {
-static const QString key{"CurveAppearancePresets"};
-static const QString presetList{"presetList"};
-static const QString defaultsCreated{"defaultsCreated"};
+inline constexpr QLatin1StringView key{"CurveAppearancePresets"};
+inline constexpr QLatin1StringView presetList{"presetList"};
+inline constexpr QLatin1StringView defaultsCreated{"defaultsCreated"};
 
 // Default preset names
-static const QString curvePrimary{"Curve - Primary"};
-static const QString curveSecondary{"Curve - Secondary"};
-static const QString curveTertiary{"Curve - Tertiary"};
-static const QString stemPrimary{"Stem - Primary"};
-static const QString stemSecondary{"Stem - Secondary"};
-static const QString stemTertiary{"Stem - Tertiary"};
-static const QString scatterCircles{"Scatter - Circles"};
-static const QString scatterSquares{"Scatter - Squares"};
-static const QString scatterDiamonds{"Scatter - Diamonds"};
+inline constexpr QLatin1StringView curvePrimary{"Curve - Primary"};
+inline constexpr QLatin1StringView curveSecondary{"Curve - Secondary"};
+inline constexpr QLatin1StringView curveTertiary{"Curve - Tertiary"};
+inline constexpr QLatin1StringView stemPrimary{"Stem - Primary"};
+inline constexpr QLatin1StringView stemSecondary{"Stem - Secondary"};
+inline constexpr QLatin1StringView stemTertiary{"Stem - Tertiary"};
+inline constexpr QLatin1StringView scatterCircles{"Scatter - Circles"};
+inline constexpr QLatin1StringView scatterSquares{"Scatter - Squares"};
+inline constexpr QLatin1StringView scatterDiamonds{"Scatter - Diamonds"};
 
 // QVariantMap serialization keys
-static const QString name{"name"};
-static const QString created{"created"};
-static const QString lastUsed{"lastUsed"};
-static const QString isDefault{"isDefault"};
-static const QString color{"color"};
-static const QString curveStyle{"curveStyle"};
-static const QString lineThickness{"lineThickness"};
-static const QString lineStyle{"lineStyle"};
-static const QString markerStyle{"markerStyle"};
-static const QString markerSize{"markerSize"};
-static const QString visible{"visible"};
-static const QString autoscale{"autoscale"};
-static const QString yAxis{"yAxis"};
+inline constexpr QLatin1StringView name{"name"};
+inline constexpr QLatin1StringView created{"created"};
+inline constexpr QLatin1StringView lastUsed{"lastUsed"};
+inline constexpr QLatin1StringView isDefault{"isDefault"};
+inline constexpr QLatin1StringView color{"color"};
+inline constexpr QLatin1StringView curveStyle{"curveStyle"};
+inline constexpr QLatin1StringView lineThickness{"lineThickness"};
+inline constexpr QLatin1StringView lineStyle{"lineStyle"};
+inline constexpr QLatin1StringView markerStyle{"markerStyle"};
+inline constexpr QLatin1StringView markerSize{"markerSize"};
+inline constexpr QLatin1StringView visible{"visible"};
+inline constexpr QLatin1StringView autoscale{"autoscale"};
+inline constexpr QLatin1StringView yAxis{"yAxis"};
 }
 
 class CurveAppearancePresetManager : public QObject, public SettingsStorage

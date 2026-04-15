@@ -19,20 +19,20 @@
 #endif
 
 namespace BC::Store::FTMW {
-static const QString key{"FtmwConfig"};
-static const QString duration{"Duration"};
-static const QString enabled{"Enabled"};
-static const QString phase{"PhaseCorrectionEnabled"};
-static const QString chirp{"ChirpScoringEnabled"};
-static const QString chirpThresh{"ChirpRMSThreshold"};
-static const QString chirpOffset{"ChirpOffset"};
-static const QString ftType{"Type"};
-static const QString tShots{"TargetShots"};
-static const QString objective{"Objective"};
+inline constexpr QLatin1StringView key{"FtmwConfig"};
+inline constexpr QLatin1StringView duration{"Duration"};
+inline constexpr QLatin1StringView enabled{"Enabled"};
+inline constexpr QLatin1StringView phase{"PhaseCorrectionEnabled"};
+inline constexpr QLatin1StringView chirp{"ChirpScoringEnabled"};
+inline constexpr QLatin1StringView chirpThresh{"ChirpRMSThreshold"};
+inline constexpr QLatin1StringView chirpOffset{"ChirpOffset"};
+inline constexpr QLatin1StringView ftType{"Type"};
+inline constexpr QLatin1StringView tShots{"TargetShots"};
+inline constexpr QLatin1StringView objective{"Objective"};
 }
 
 namespace BC::Config::Exp {
-static const QString ftmwType{"FtmwType"};
+inline constexpr QLatin1StringView ftmwType{"FtmwType"};
 }
 
 struct WaveformEntry;

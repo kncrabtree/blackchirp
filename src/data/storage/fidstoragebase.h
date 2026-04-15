@@ -3,6 +3,7 @@
 
 #include <queue>
 #include <QDateTime>
+#include <QLatin1StringView>
 
 #include <data/storage/datastoragebase.h>
 #include <data/experiment/fid.h>
@@ -11,14 +12,14 @@
 class BlackchirpCSV;
 
 namespace BC::Key::FidStorage {
-static const QString fidStart{"FidStartUs"};
-static const QString fidEnd{"FidEndUs"};
-static const QString fidExp{"FidExpfUs"};
-static const QString zpf{"FidZeroPadFactor"};
-static const QString rdc{"FidRemoveDC"};
-static const QString units{"FtUnits"};
-static const QString autoscaleIgnore{"AutoscaleIgnoreMHz"};
-static const QString winf{"FidWindowFunction"};
+inline constexpr QLatin1StringView fidStart{"FidStartUs"};
+inline constexpr QLatin1StringView fidEnd{"FidEndUs"};
+inline constexpr QLatin1StringView fidExp{"FidExpfUs"};
+inline constexpr QLatin1StringView zpf{"FidZeroPadFactor"};
+inline constexpr QLatin1StringView rdc{"FidRemoveDC"};
+inline constexpr QLatin1StringView units{"FtUnits"};
+inline constexpr QLatin1StringView autoscaleIgnore{"AutoscaleIgnoreMHz"};
+inline constexpr QLatin1StringView winf{"FidWindowFunction"};
 }
 
 class FidStorageBase : public DataStorageBase

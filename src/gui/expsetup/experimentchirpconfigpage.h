@@ -7,8 +7,8 @@ class ChirpConfigWidget;
 class RfConfig;
 
 namespace BC::Key::WizChirp {
-static const QString key{"WizardChirpConfigPage"};
-static const QString title{"Chirp(s)"};
+inline constexpr QLatin1StringView key{"WizardChirpConfigPage"};
+inline constexpr QLatin1StringView title{"Chirp(s)"};
 }
 
 class ExperimentChirpConfigPage : public ExperimentConfigPage

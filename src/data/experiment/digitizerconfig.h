@@ -9,26 +9,26 @@
 #include <data/settings/hardwarekeys.h>
 
 namespace BC::Store::Digi {
-static const QString an{"AnalogChannel"};
-static const QString dig{"DigitalChannel"};
-static const QString chIndex{"Index"};
-static const QString digInp{"Input"};
-static const QString digRole{"Role"};
-static const QString en{"Enabled"};
-static const QString fs{"FullScale"};
-static const QString offset{"VerticalOffset"};
-static const QString trigSlope{"TriggerEdge"};
-static const QString trigCh{"TriggerChannel"};
-static const QString trigDelay{"TriggerDelay"};
-static const QString trigLevel{"TriggerLevel"};
-static const QString bpp{"BytesPerPoint"};
-static const QString bo{"ByteOrder"};
-static const QString sRate{"SampleRate"};
-static const QString recLen{"RecordLength"};
-static const QString blockAvg{"BlockAverageEnabled"};
-static const QString numAvg{"BlockAverages"};
-static const QString multiRec{"MultiRecordEnabled"};
-static const QString multiRecNum{"MultiRecordNum"};
+inline constexpr QLatin1StringView an{"AnalogChannel"};
+inline constexpr QLatin1StringView dig{"DigitalChannel"};
+inline constexpr QLatin1StringView chIndex{"Index"};
+inline constexpr QLatin1StringView digInp{"Input"};
+inline constexpr QLatin1StringView digRole{"Role"};
+inline constexpr QLatin1StringView en{"Enabled"};
+inline constexpr QLatin1StringView fs{"FullScale"};
+inline constexpr QLatin1StringView offset{"VerticalOffset"};
+inline constexpr QLatin1StringView trigSlope{"TriggerEdge"};
+inline constexpr QLatin1StringView trigCh{"TriggerChannel"};
+inline constexpr QLatin1StringView trigDelay{"TriggerDelay"};
+inline constexpr QLatin1StringView trigLevel{"TriggerLevel"};
+inline constexpr QLatin1StringView bpp{"BytesPerPoint"};
+inline constexpr QLatin1StringView bo{"ByteOrder"};
+inline constexpr QLatin1StringView sRate{"SampleRate"};
+inline constexpr QLatin1StringView recLen{"RecordLength"};
+inline constexpr QLatin1StringView blockAvg{"BlockAverageEnabled"};
+inline constexpr QLatin1StringView numAvg{"BlockAverages"};
+inline constexpr QLatin1StringView multiRec{"MultiRecordEnabled"};
+inline constexpr QLatin1StringView multiRecNum{"MultiRecordNum"};
 }
 
 class DigitizerConfig : public HeaderStorage

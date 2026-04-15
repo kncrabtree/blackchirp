@@ -93,14 +93,14 @@ protected:
 };
 
 namespace BC::Store::FtmwLO {
-static const QString upStart{"UpLOBegin"};
-static const QString upEnd{"UpLOEnd"};
-static const QString upMin{"UpMinorSteps"};
-static const QString upMaj{"UpMajorSteps"};
-static const QString downStart{"DownLOBegin"};
-static const QString downEnd{"DownLOEnd"};
-static const QString downMin{"DownMinorSteps"};
-static const QString downMaj{"DownMajorSteps"};
+inline constexpr QLatin1StringView upStart{"UpLOBegin"};
+inline constexpr QLatin1StringView upEnd{"UpLOEnd"};
+inline constexpr QLatin1StringView upMin{"UpMinorSteps"};
+inline constexpr QLatin1StringView upMaj{"UpMajorSteps"};
+inline constexpr QLatin1StringView downStart{"DownLOBegin"};
+inline constexpr QLatin1StringView downEnd{"DownLOEnd"};
+inline constexpr QLatin1StringView downMin{"DownMinorSteps"};
+inline constexpr QLatin1StringView downMaj{"DownMajorSteps"};
 }
 
 class FtmwConfigLOScan : public FtmwConfig
@@ -127,10 +127,10 @@ protected:
 };
 
 namespace BC::Store::FtmwDR {
-static const QString drStart{"DRBegin"};
-static const QString drStep{"DRStep"};
-static const QString drEnd{"DREnd"};
-static const QString drNumSteps{"DRNumSteps"};
+inline constexpr QLatin1StringView drStart{"DRBegin"};
+inline constexpr QLatin1StringView drStep{"DRStep"};
+inline constexpr QLatin1StringView drEnd{"DREnd"};
+inline constexpr QLatin1StringView drNumSteps{"DRNumSteps"};
 }
 
 class FtmwConfigDRScan : public FtmwConfig

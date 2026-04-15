@@ -6,9 +6,9 @@
 #include "u3.h"
 
 namespace BC::Key::IOB {
-static const QString labjacku3{"labjacku3"};
-static const QString labjacku3Name("Labjack U3 IO Board");
-static const QString serialNo{"serialNo"};
+inline constexpr QLatin1StringView labjacku3{"labjacku3"};
+inline const QString labjacku3Name{"Labjack U3 IO Board"};
+inline constexpr QLatin1StringView serialNo{"serialNo"};
 }
 
 class LabjackU3 : public IOBoard

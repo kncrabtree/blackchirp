@@ -32,11 +32,11 @@
  * Keys for storing vendor library configuration in SettingsStorage
  */
 namespace BC::Key::VendorLib {
-    static const QString vendorLibraries{"vendorLibraries"};           /*!< Root key for all vendor library settings */
-    static const QString userProvidedPath{"userProvidedPath"};         /*!< User-specified library path */
-    static const QString lastWorkingPath{"lastWorkingPath"};           /*!< Last successful library path */
-    static const QString searchPaths{"searchPaths"};                   /*!< User-specified additional search paths */
-    static const QString enableAutoDiscovery{"enableAutoDiscovery"};   /*!< Whether to enable automatic discovery */
+    inline constexpr QLatin1StringView vendorLibraries{"vendorLibraries"};           /*!< Root key for all vendor library settings */
+    inline constexpr QLatin1StringView userProvidedPath{"userProvidedPath"};         /*!< User-specified library path */
+    inline constexpr QLatin1StringView lastWorkingPath{"lastWorkingPath"};           /*!< Last successful library path */
+    inline constexpr QLatin1StringView searchPaths{"searchPaths"};                   /*!< User-specified additional search paths */
+    inline constexpr QLatin1StringView enableAutoDiscovery{"enableAutoDiscovery"};   /*!< Whether to enable automatic discovery */
 }
 
 class VendorLibrary : public QObject, public SettingsStorage

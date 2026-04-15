@@ -12,12 +12,12 @@
 #include <data/storage/settingsstorage.h>
 
 namespace BC::Key::Validation {
-static const QString key{"ValidationTable"};
-static const QString items{"items"};
-static const QString objKey{"objKey"};
-static const QString valKey{"valueKey"};
-static const QString min{"min"};
-static const QString max{"max"};
+inline constexpr QLatin1StringView key{"ValidationTable"};
+inline constexpr QLatin1StringView items{"items"};
+inline constexpr QLatin1StringView objKey{"objKey"};
+inline constexpr QLatin1StringView valKey{"valueKey"};
+inline constexpr QLatin1StringView min{"min"};
+inline constexpr QLatin1StringView max{"max"};
 }
 
 class ValidationModel : public QAbstractTableModel, public SettingsStorage

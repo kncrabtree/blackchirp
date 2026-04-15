@@ -660,16 +660,16 @@ private:
  * \brief Settings keys for hardware profile storage
  */
 namespace BC::Key::HardwareProfiles {
-    static const QString profiles{"HardwareProfiles"};      /*!< Base settings group */
-    static const QString implementation{"implementation"};   /*!< Implementation subkey */
-    static const QString active{"active"};                  /*!< Active state subkey */
-    static const QString created{"created"};                /*!< Creation time subkey */
-    static const QString modified{"modified"};              /*!< Modified time subkey */
-    static const QString description{"description"};        /*!< Description subkey */
-    static const QString threaded{"threaded"};              /*!< Threading override subkey */
-    static const QString pythonScriptPath{"pythonScriptPath"}; /*!< Python script path subkey */
-    static const QString pythonClassName{"pythonClassName"};   /*!< Python class name subkey */
-    static const QString pythonEnvPath{"pythonEnvPath"};       /*!< Python environment directory subkey */
+    inline constexpr QLatin1StringView profiles{"HardwareProfiles"};      /*!< Base settings group */
+    inline constexpr QLatin1StringView implementation{"implementation"};   /*!< Implementation subkey */
+    inline constexpr QLatin1StringView active{"active"};                  /*!< Active state subkey */
+    inline constexpr QLatin1StringView created{"created"};                /*!< Creation time subkey */
+    inline constexpr QLatin1StringView modified{"modified"};              /*!< Modified time subkey */
+    inline constexpr QLatin1StringView description{"description"};        /*!< Description subkey */
+    inline constexpr QLatin1StringView threaded{"threaded"};              /*!< Threading override subkey */
+    inline constexpr QLatin1StringView pythonScriptPath{"pythonScriptPath"}; /*!< Python script path subkey */
+    inline constexpr QLatin1StringView pythonClassName{"pythonClassName"};   /*!< Python class name subkey */
+    inline constexpr QLatin1StringView pythonEnvPath{"pythonEnvPath"};       /*!< Python environment directory subkey */
 }
 
 Q_DECLARE_METATYPE(HardwareProfileData)

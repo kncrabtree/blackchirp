@@ -5,12 +5,12 @@
 
 
 namespace BC::Store::Digi {
-static const QString chName{"Name"};
+inline constexpr QLatin1StringView chName{"Name"};
 }
 
 namespace BC::Aux::IOB {
-static const QString ain{"AnalogInput%1"};
-static const QString din{"DigitalInput%1"};
+inline const QString ain{"AnalogInput%1"};
+inline const QString din{"DigitalInput%1"};
 }
 
 class IOBoardConfig : public DigitizerConfig

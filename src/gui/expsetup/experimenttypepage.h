@@ -12,29 +12,29 @@ class QDoubleSpinBox;
 class QLabel;
 
 namespace BC::Key::WizStart {
-static const QString key{"ExperimentTypePage"};
-static const QString title{"Experiment Type"};
-static const QString ftmw{"FtmwEnabled"};
-static const QString ftmwType{"FtmwType"};
-static const QString ftmwShots{"FtmwShots"};
-static const QString ftmwDuration{"FtmwDuration"};
-static const QString ftmwPhase{"FtmwPhaseCorrection"};
-static const QString ftmwScoring{"FtmwChirpScoring"};
-static const QString ftmwThresh{"FtmwChirpScoringThreshold"};
-static const QString ftmwOffset{"FtmwChirpOffset"};
-static const QString auxInterval{"AuxDataInterval"};
-static const QString backup{"BackupInterval"};
-static const QString lif{"LifEnabled"};
-static const QString lifDelayStart{"LifDelayStart"};
-static const QString lifDelayStep{"LifDelayStep"};
-static const QString lifDelayPoints{"LifDelayPoints"};
-static const QString lifDelayRandom{"LifDelayRandom"};
-static const QString lifLaserStart{"LifLaserStart"};
-static const QString lifLaserStep{"LifLaserStep"};
-static const QString lifLaserPoints{"LifLaserPoints"};
-static const QString lifOrder{"LifOrder"};
-static const QString lifCompleteMode{"LifCompleteMode"};
-static const QString lifFlashlampDisable{"LifFlashlampDisable"};
+inline constexpr QLatin1StringView key{"ExperimentTypePage"};
+inline constexpr QLatin1StringView title{"Experiment Type"};
+inline constexpr QLatin1StringView ftmw{"FtmwEnabled"};
+inline constexpr QLatin1StringView ftmwType{"FtmwType"};
+inline constexpr QLatin1StringView ftmwShots{"FtmwShots"};
+inline constexpr QLatin1StringView ftmwDuration{"FtmwDuration"};
+inline constexpr QLatin1StringView ftmwPhase{"FtmwPhaseCorrection"};
+inline constexpr QLatin1StringView ftmwScoring{"FtmwChirpScoring"};
+inline constexpr QLatin1StringView ftmwThresh{"FtmwChirpScoringThreshold"};
+inline constexpr QLatin1StringView ftmwOffset{"FtmwChirpOffset"};
+inline constexpr QLatin1StringView auxInterval{"AuxDataInterval"};
+inline constexpr QLatin1StringView backup{"BackupInterval"};
+inline constexpr QLatin1StringView lif{"LifEnabled"};
+inline constexpr QLatin1StringView lifDelayStart{"LifDelayStart"};
+inline constexpr QLatin1StringView lifDelayStep{"LifDelayStep"};
+inline constexpr QLatin1StringView lifDelayPoints{"LifDelayPoints"};
+inline constexpr QLatin1StringView lifDelayRandom{"LifDelayRandom"};
+inline constexpr QLatin1StringView lifLaserStart{"LifLaserStart"};
+inline constexpr QLatin1StringView lifLaserStep{"LifLaserStep"};
+inline constexpr QLatin1StringView lifLaserPoints{"LifLaserPoints"};
+inline constexpr QLatin1StringView lifOrder{"LifOrder"};
+inline constexpr QLatin1StringView lifCompleteMode{"LifCompleteMode"};
+inline constexpr QLatin1StringView lifFlashlampDisable{"LifFlashlampDisable"};
 }
 
 class ExperimentTypePage : public ExperimentConfigPage

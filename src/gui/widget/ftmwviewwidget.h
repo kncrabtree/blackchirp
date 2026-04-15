@@ -47,8 +47,8 @@ class FtmwViewWidget;
 }
 
 namespace BC::Key::FtmwView {
-static const QString key{"FtmwViewWidget"};
-static const QString refresh{"refreshMs"};
+inline constexpr QLatin1StringView key{"FtmwViewWidget"};
+inline constexpr QLatin1StringView refresh{"refreshMs"};
 }
 
 class FtmwViewWidget : public QWidget, public SettingsStorage

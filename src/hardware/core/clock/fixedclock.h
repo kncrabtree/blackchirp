@@ -4,8 +4,8 @@
 #include <hardware/core/clock/clock.h>
 
 namespace BC::Key::Clock {
-static const QString ch{"fixedOutputs"};
-static const QString freq{"lastFreqMHz"};
+inline constexpr QLatin1StringView ch{"fixedOutputs"};
+inline constexpr QLatin1StringView freq{"lastFreqMHz"};
 }
 
 class FixedClock : public Clock

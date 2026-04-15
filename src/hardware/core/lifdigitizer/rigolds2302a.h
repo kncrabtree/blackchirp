@@ -4,7 +4,7 @@
 #include "lifscope.h"
 
 namespace BC::Key::LifDigi {
-static const QString queryIntervalMs{"queryInterval_ms"};
+inline constexpr QLatin1StringView queryIntervalMs{"queryInterval_ms"};
 }
 
 class RigolDS2302A : public LifScope

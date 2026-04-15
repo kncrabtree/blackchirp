@@ -8,11 +8,12 @@
 #include <QString>
 #include <QVariant>
 #include <QDateTime>
+#include <QStringView>
 
 class BlackchirpCSV;
 
 namespace  BC::Aux {
-static const QString keyTemplate{"%1.%2"};
+inline const QString keyTemplate{"%1.%2"};
 }
 
 class AuxDataStorage

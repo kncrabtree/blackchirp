@@ -32,8 +32,8 @@ class ExperimentViewWidget;
 
 namespace Ui {
 class MainWindow;
-static const QString actionStr{"Action"};
-static const QString sbStr{"StatusBox"};
+inline constexpr QLatin1StringView actionStr{"Action"};
+inline constexpr QLatin1StringView sbStr{"StatusBox"};
 }
 
 class MainWindow : public QMainWindow

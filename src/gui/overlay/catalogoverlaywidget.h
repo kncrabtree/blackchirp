@@ -25,37 +25,37 @@
 class FtmwViewWidget;
 
 namespace BC::Key::CatalogWidget {
-static const QString key{"CatalogOverlayWidget"};
-static const QString lastFilePath{"lastFilePath"};
-static const QString convolutionEnabled{"convolutionEnabled"};
-static const QString lineshapeType{"lineshapeType"};
-static const QString linewidthKHz{"linewidthKHz"};
-static const QString convMinFreqMHz{"convMinFreqMHz"};
-static const QString convMaxFreqMHz{"convMaxFreqMHz"};
-static const QString numConvolutionPoints{"numConvolutionPoints"};
-static const QString saveRangeOnly{"saveRangeOnly"};
-static const QString filterMinFreqMHz{"filterMinFreqMHz"};
-static const QString filterMaxFreqMHz{"filterMaxFreqMHz"};
+inline constexpr QLatin1StringView key{"CatalogOverlayWidget"};
+inline constexpr QLatin1StringView lastFilePath{"lastFilePath"};
+inline constexpr QLatin1StringView convolutionEnabled{"convolutionEnabled"};
+inline constexpr QLatin1StringView lineshapeType{"lineshapeType"};
+inline constexpr QLatin1StringView linewidthKHz{"linewidthKHz"};
+inline constexpr QLatin1StringView convMinFreqMHz{"convMinFreqMHz"};
+inline constexpr QLatin1StringView convMaxFreqMHz{"convMaxFreqMHz"};
+inline constexpr QLatin1StringView numConvolutionPoints{"numConvolutionPoints"};
+inline constexpr QLatin1StringView saveRangeOnly{"saveRangeOnly"};
+inline constexpr QLatin1StringView filterMinFreqMHz{"filterMinFreqMHz"};
+inline constexpr QLatin1StringView filterMaxFreqMHz{"filterMaxFreqMHz"};
 
 // Additional keys for settings hash (not persisted to settings storage)
-static const QString filePath{"filePath"};
-static const QString fileValid{"fileValid"};
-static const QString catalogSize{"catalogSize"};
-static const QString catalogSourceProgram{"catalogSourceProgram"};
-static const QString catalogMoleculeName{"catalogMoleculeName"};
+inline constexpr QLatin1StringView filePath{"filePath"};
+inline constexpr QLatin1StringView fileValid{"fileValid"};
+inline constexpr QLatin1StringView catalogSize{"catalogSize"};
+inline constexpr QLatin1StringView catalogSourceProgram{"catalogSourceProgram"};
+inline constexpr QLatin1StringView catalogMoleculeName{"catalogMoleculeName"};
 
 // Metasettings for spinbox configuration
-static const QString linewidthMin{"linewidthMin"};
-static const QString linewidthMax{"linewidthMax"};
-static const QString linewidthDecimals{"linewidthDecimals"};
-static const QString linewidthStep{"linewidthStep"};
-static const QString freqMin{"freqMin"};
-static const QString freqMax{"freqMax"};
-static const QString freqDecimals{"freqDecimals"};
-static const QString freqStep{"freqStep"};
-static const QString numPointsMin{"numPointsMin"};
-static const QString numPointsMax{"numPointsMax"};
-static const QString numPointsStep{"numPointsStep"};
+inline constexpr QLatin1StringView linewidthMin{"linewidthMin"};
+inline constexpr QLatin1StringView linewidthMax{"linewidthMax"};
+inline constexpr QLatin1StringView linewidthDecimals{"linewidthDecimals"};
+inline constexpr QLatin1StringView linewidthStep{"linewidthStep"};
+inline constexpr QLatin1StringView freqMin{"freqMin"};
+inline constexpr QLatin1StringView freqMax{"freqMax"};
+inline constexpr QLatin1StringView freqDecimals{"freqDecimals"};
+inline constexpr QLatin1StringView freqStep{"freqStep"};
+inline constexpr QLatin1StringView numPointsMin{"numPointsMin"};
+inline constexpr QLatin1StringView numPointsMax{"numPointsMax"};
+inline constexpr QLatin1StringView numPointsStep{"numPointsStep"};
 }
 
 /**
@@ -95,7 +95,7 @@ public:
     QHash<QString, QVariant> getSettingsHash() const override;
     
     // Operation declaration interface
-    constexpr QVector<OperationCapability> getSupportedOperations() const override
+    QVector<OperationCapability> getSupportedOperations() const override
     {
         return {
             OperationCapability(
@@ -129,7 +129,7 @@ public:
         };
     }
     
-    constexpr bool supportsBackgroundOperation(OperationCapability::Type type) const override
+    bool supportsBackgroundOperation(OperationCapability::Type type) const override
     {
         switch (type) {
         case OperationCapability::Convolution:

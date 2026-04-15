@@ -2,10 +2,12 @@
 #define BCGLOBALS_H
 
 #include <QString>
+#include <QLatin1StringView>
+#include <QStringView>
 
 namespace BC::Key {
 
-static const QString hwIndexSep(".");
+inline constexpr QLatin1StringView hwIndexSep{"."};
 
 // New label-based API
 QString hwKey(const QString& type, const QString& label);
@@ -26,11 +28,11 @@ QString hwKey(const QString& k, const int index);
 }
 
 namespace BC::Unit{
-static const QString us{QString::fromUtf8("μs")};
-static const QString MHz("MHz");
-static const QString V("V");
-static const QString s("s");
-static const QString Hz("Hz");
+inline constexpr QStringView us{u"μs"};
+inline constexpr QLatin1StringView MHz{"MHz"};
+inline constexpr QLatin1StringView V{"V"};
+inline constexpr QLatin1StringView s{"s"};
+inline constexpr QLatin1StringView Hz{"Hz"};
 }
 
 #endif // BCGLOBALS_H

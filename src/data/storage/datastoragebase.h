@@ -5,11 +5,12 @@
 #include <QString>
 #include <QMutex>
 #include <QVariant>
+#include <QLatin1StringView>
 
 class BlackchirpCSV;
 
 namespace BC::Key::DS {
-static const QString proc("processing.csv");
+inline constexpr QLatin1StringView proc{"processing.csv"};
 }
 
 class DataStorageBase

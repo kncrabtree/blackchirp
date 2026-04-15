@@ -5,7 +5,7 @@
 #include <cstdint>
 
 namespace BC::Key::Spectrum {
-    static const QString spectrumM4i{"spectrumM4i"};  /*!< Settings key for Spectrum M4i library */
+    inline constexpr QLatin1StringView spectrumM4i{"spectrumM4i"};  /*!< Settings key for Spectrum M4i library */
 }
 
 /*!

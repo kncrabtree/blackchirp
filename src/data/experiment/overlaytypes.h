@@ -8,43 +8,43 @@
 
 namespace BC::Key::Overlay {
 // FT metadata keys
-static const QString ftYMin{"ftYMin"};
-static const QString ftYMax{"ftYMax"};
-static const QString ftX0MHz{"ftX0MHz"};
-static const QString ftSpacingMHz{"ftSpacingMHz"};
-static const QString ftLoFreqMHz{"ftLoFreqMHz"};
-static const QString ftShots{"ftShots"};
+inline constexpr QLatin1StringView ftYMin{"ftYMin"};
+inline constexpr QLatin1StringView ftYMax{"ftYMax"};
+inline constexpr QLatin1StringView ftX0MHz{"ftX0MHz"};
+inline constexpr QLatin1StringView ftSpacingMHz{"ftSpacingMHz"};
+inline constexpr QLatin1StringView ftLoFreqMHz{"ftLoFreqMHz"};
+inline constexpr QLatin1StringView ftShots{"ftShots"};
 
 // Catalog overlay specific keys
 namespace Catalog {
-    static const QString sourceProgram{"catalogSourceProgram"};
-    static const QString moleculeName{"catalogMoleculeName"};
-    static const QString convolutionEnabled{"catalogConvolutionEnabled"};
-    static const QString lineshapeType{"catalogLineshapeType"};
-    static const QString linewidthKHz{"catalogLinewidthKHz"};            // FWHM in kHz
-    static const QString convolutionMinFreq{"catalogConvolutionMinFreq"}; // MHz
-    static const QString convolutionMaxFreq{"catalogConvolutionMaxFreq"}; // MHz
-    static const QString numConvolutionPoints{"catalogNumConvolutionPoints"};  // Number of points in convolution grid
-    static const QString transitionCount{"catalogTransitionCount"};
-    static const QString frequencyRange{"catalogFrequencyRange"};
-    static const QString filterMinFreq{"catalogFilterMinFreq"};          // MHz - filtering range minimum
-    static const QString filterMaxFreq{"catalogFilterMaxFreq"};          // MHz - filtering range maximum
+    inline constexpr QLatin1StringView sourceProgram{"catalogSourceProgram"};
+    inline constexpr QLatin1StringView moleculeName{"catalogMoleculeName"};
+    inline constexpr QLatin1StringView convolutionEnabled{"catalogConvolutionEnabled"};
+    inline constexpr QLatin1StringView lineshapeType{"catalogLineshapeType"};
+    inline constexpr QLatin1StringView linewidthKHz{"catalogLinewidthKHz"};            // FWHM in kHz
+    inline constexpr QLatin1StringView convolutionMinFreq{"catalogConvolutionMinFreq"}; // MHz
+    inline constexpr QLatin1StringView convolutionMaxFreq{"catalogConvolutionMaxFreq"}; // MHz
+    inline constexpr QLatin1StringView numConvolutionPoints{"catalogNumConvolutionPoints"};  // Number of points in convolution grid
+    inline constexpr QLatin1StringView transitionCount{"catalogTransitionCount"};
+    inline constexpr QLatin1StringView frequencyRange{"catalogFrequencyRange"};
+    inline constexpr QLatin1StringView filterMinFreq{"catalogFilterMinFreq"};          // MHz - filtering range minimum
+    inline constexpr QLatin1StringView filterMaxFreq{"catalogFilterMaxFreq"};          // MHz - filtering range maximum
 }
 
 // GenericXY overlay specific keys
 namespace GenericXY {
-    static const QString delimiter{"genericXYDelimiter"};
-    static const QString headerLines{"genericXYHeaderLines"};
-    static const QString xColumn{"genericXYXColumn"};
-    static const QString yColumn{"genericXYYColumn"};
-    static const QString columnNames{"genericXYColumnNames"};
-    static const QString dataPoints{"genericXYDataPoints"};
-    static const QString xMin{"genericXYXMin"};
-    static const QString xMax{"genericXYXMax"};
-    static const QString yMin{"genericXYYMin"};
-    static const QString yMax{"genericXYYMax"};
-    static const QString filterMinX{"genericXYFilterMinX"};
-    static const QString filterMaxX{"genericXYFilterMaxX"};
+    inline constexpr QLatin1StringView delimiter{"genericXYDelimiter"};
+    inline constexpr QLatin1StringView headerLines{"genericXYHeaderLines"};
+    inline constexpr QLatin1StringView xColumn{"genericXYXColumn"};
+    inline constexpr QLatin1StringView yColumn{"genericXYYColumn"};
+    inline constexpr QLatin1StringView columnNames{"genericXYColumnNames"};
+    inline constexpr QLatin1StringView dataPoints{"genericXYDataPoints"};
+    inline constexpr QLatin1StringView xMin{"genericXYXMin"};
+    inline constexpr QLatin1StringView xMax{"genericXYXMax"};
+    inline constexpr QLatin1StringView yMin{"genericXYYMin"};
+    inline constexpr QLatin1StringView yMax{"genericXYYMax"};
+    inline constexpr QLatin1StringView filterMinX{"genericXYFilterMinX"};
+    inline constexpr QLatin1StringView filterMaxX{"genericXYFilterMaxX"};
 }
 }
 

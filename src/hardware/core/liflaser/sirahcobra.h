@@ -6,33 +6,33 @@
 class QSerialPort;
 
 namespace BC::Key::LifLaser {
-static const QString mFactor{"multFactor"};
-static const QString stages{"stages"};
-static const QString sStart{"stageStartFreqHz"};
-static const QString sHigh{"stageHighFreqHz"};
-static const QString sRamp{"stageRampLength"};
-static const QString sMax{"stageMaxPos"};
-static const QString sbls{"stageBacklashSteps"};
-static const QString sLeverLength{"stageLeverLengthMm"};
-static const QString sLinearOffset{"stageLinearOffsetMm"};
-static const QString sAngleOffset{"stageAngleOffsetDeg"};
-static const QString sGrazingAngle{"stageGrazingAngleDeg"};
-static const QString sGrooves{"stageGratingGroovesPerMm"};
-static const QString sPitch{"stageScrewPitchmmPerRev"};
-static const QString sMotorResolution{"stageMotorResolutionStepsPerRev"};
-static const QString hasExtStage{"hasExternalStage"};
-static const QString extStagePort{"externalStagePort"};
-static const QString extStageBaud{"externalStageBaudRate"};
-static const QString extStageCrystalAddress{"externalStageCrystalAddress"};
-static const QString extStageCompAddress{"externalStageCompensatorAddress"};
-static const QString extStageCrystalTheta0{"externalStageCrystalAngle0deg"};
-static const QString extStageCrystalSlope{"externalStageCrystalSlopeDegPerNm"};
-static const QString extStageCompTheta0{"externalStageCompensatorAngle0deg"};
-static const QString extStageCompSlope{"externalStageCompensatorSlopeDegPerNm"};
-static const QString extStageCrystalPoly{"externalStageCrystalPolynomial"};
-static const QString extStageCompPoly{"externalStageCompPolynomial"};
-static const QString polyOrder{"order"};
-static const QString polyValue{"value"};
+inline constexpr QLatin1StringView mFactor{"multFactor"};
+inline constexpr QLatin1StringView stages{"stages"};
+inline constexpr QLatin1StringView sStart{"stageStartFreqHz"};
+inline constexpr QLatin1StringView sHigh{"stageHighFreqHz"};
+inline constexpr QLatin1StringView sRamp{"stageRampLength"};
+inline constexpr QLatin1StringView sMax{"stageMaxPos"};
+inline constexpr QLatin1StringView sbls{"stageBacklashSteps"};
+inline constexpr QLatin1StringView sLeverLength{"stageLeverLengthMm"};
+inline constexpr QLatin1StringView sLinearOffset{"stageLinearOffsetMm"};
+inline constexpr QLatin1StringView sAngleOffset{"stageAngleOffsetDeg"};
+inline constexpr QLatin1StringView sGrazingAngle{"stageGrazingAngleDeg"};
+inline constexpr QLatin1StringView sGrooves{"stageGratingGroovesPerMm"};
+inline constexpr QLatin1StringView sPitch{"stageScrewPitchmmPerRev"};
+inline constexpr QLatin1StringView sMotorResolution{"stageMotorResolutionStepsPerRev"};
+inline constexpr QLatin1StringView hasExtStage{"hasExternalStage"};
+inline constexpr QLatin1StringView extStagePort{"externalStagePort"};
+inline constexpr QLatin1StringView extStageBaud{"externalStageBaudRate"};
+inline constexpr QLatin1StringView extStageCrystalAddress{"externalStageCrystalAddress"};
+inline constexpr QLatin1StringView extStageCompAddress{"externalStageCompensatorAddress"};
+inline constexpr QLatin1StringView extStageCrystalTheta0{"externalStageCrystalAngle0deg"};
+inline constexpr QLatin1StringView extStageCrystalSlope{"externalStageCrystalSlopeDegPerNm"};
+inline constexpr QLatin1StringView extStageCompTheta0{"externalStageCompensatorAngle0deg"};
+inline constexpr QLatin1StringView extStageCompSlope{"externalStageCompensatorSlopeDegPerNm"};
+inline constexpr QLatin1StringView extStageCrystalPoly{"externalStageCrystalPolynomial"};
+inline constexpr QLatin1StringView extStageCompPoly{"externalStageCompPolynomial"};
+inline constexpr QLatin1StringView polyOrder{"order"};
+inline constexpr QLatin1StringView polyValue{"value"};
 }
 
 class SirahCobra : public LifLaser

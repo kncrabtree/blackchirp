@@ -6,7 +6,7 @@
 class IOBoardConfigWidget;
 
 namespace BC::Key::WizIOB {
-static const QString key{"WizardIOBoardConfigPage"};
+inline constexpr QLatin1StringView key{"WizardIOBoardConfigPage"};
 }
 
 class ExperimentIOBoardConfigPage : public ExperimentConfigPage

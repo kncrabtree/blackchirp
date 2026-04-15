@@ -21,10 +21,10 @@ class PulsePlot;
 class QSpinBox;
 
 namespace BC::Key::PulseWidget {
-static const QString key{"PulseWidget"};
-static const QString channels{"channels"};
-static const QString delayStep{"delayStepUs"};
-static const QString widthStep{"widthStepUs"};
+inline constexpr QLatin1StringView key{"PulseWidget"};
+inline constexpr QLatin1StringView channels{"channels"};
+inline constexpr QLatin1StringView delayStep{"delayStepUs"};
+inline constexpr QLatin1StringView widthStep{"widthStepUs"};
 }
 
 class PulseConfigWidget : public QWidget, public SettingsStorage

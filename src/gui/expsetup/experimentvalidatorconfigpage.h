@@ -7,8 +7,8 @@ class QTableView;
 class QToolButton;
 
 namespace BC::Key::WizardVal {
-static const QString key{"ValidationPage"};
-static const QString title{"Validation Settings"};
+inline constexpr QLatin1StringView key{"ValidationPage"};
+inline constexpr QLatin1StringView title{"Validation Settings"};
 }
 
 class ExperimentValidatorConfigPage : public ExperimentConfigPage

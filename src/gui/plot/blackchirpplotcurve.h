@@ -20,18 +20,18 @@ class CurveStorageInterface;
 class OverlayMetadataStorage;
 
 namespace BC::Key {
-static const QString bcCurve{"Curve"};
-static const QString bcCurveColor{"color"};
-static const QString bcCurveCurveStyle{"curveStyle"};
-static const QString bcCurveLineStyle{"lineStyle"};
-static const QString bcCurveThickness{"thickness"};
-static const QString bcCurveMarker{"marker"};
-static const QString bcCurveMarkerSize{"markerSize"};
-static const QString bcCurveAxisX{"xAxis"};
-static const QString bcCurveAxisY{"yAxis"};
-static const QString bcCurveVisible{"visible"};
-static const QString bcCurveAutoscale{"autoscale"};
-static const QString bcCurvePlotIndex{"plotIndex"};
+inline constexpr QLatin1StringView bcCurve{"Curve"};
+inline constexpr QLatin1StringView bcCurveColor{"color"};
+inline constexpr QLatin1StringView bcCurveCurveStyle{"curveStyle"};
+inline constexpr QLatin1StringView bcCurveLineStyle{"lineStyle"};
+inline constexpr QLatin1StringView bcCurveThickness{"thickness"};
+inline constexpr QLatin1StringView bcCurveMarker{"marker"};
+inline constexpr QLatin1StringView bcCurveMarkerSize{"markerSize"};
+inline constexpr QLatin1StringView bcCurveAxisX{"xAxis"};
+inline constexpr QLatin1StringView bcCurveAxisY{"yAxis"};
+inline constexpr QLatin1StringView bcCurveVisible{"visible"};
+inline constexpr QLatin1StringView bcCurveAutoscale{"autoscale"};
+inline constexpr QLatin1StringView bcCurvePlotIndex{"plotIndex"};
 }
 
 class BlackchirpPlotCurveBase : public QwtPlotCurve

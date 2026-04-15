@@ -18,20 +18,20 @@ class QMutex;
 
 
 namespace BC::Key {
-static const QString axes{"axes"};
-static const QString bottom{"Bottom"};
-static const QString top{"Top"};
-static const QString left{"Left"};
-static const QString right{"Right"};
-static const QString kzCenter{"keyZoomYCenter"};
-static const QString zoomFactor{"zoomFactor"};
-static const QString trackerDecimals{"trackerDecimals"};
-static const QString trackerScientific{"trackerScientific"};
-static const QString trackerEn{"trackerEnabled"};
-static const QString majorGridColor{"majorGridColor"};
-static const QString majorGridStyle{"majorGridStyle"};
-static const QString minorGridColor{"minorGridColor"};
-static const QString minorGridStyle{"minorGridStyle"};
+inline constexpr QLatin1StringView axes{"axes"};
+inline constexpr QLatin1StringView bottom{"Bottom"};
+inline constexpr QLatin1StringView top{"Top"};
+inline constexpr QLatin1StringView left{"Left"};
+inline constexpr QLatin1StringView right{"Right"};
+inline constexpr QLatin1StringView kzCenter{"keyZoomYCenter"};
+inline constexpr QLatin1StringView zoomFactor{"zoomFactor"};
+inline constexpr QLatin1StringView trackerDecimals{"trackerDecimals"};
+inline constexpr QLatin1StringView trackerScientific{"trackerScientific"};
+inline constexpr QLatin1StringView trackerEn{"trackerEnabled"};
+inline constexpr QLatin1StringView majorGridColor{"majorGridColor"};
+inline constexpr QLatin1StringView majorGridStyle{"majorGridStyle"};
+inline constexpr QLatin1StringView minorGridColor{"minorGridColor"};
+inline constexpr QLatin1StringView minorGridStyle{"minorGridStyle"};
 }
 
 class ZoomPanPlot : public QwtPlot, public SettingsStorage

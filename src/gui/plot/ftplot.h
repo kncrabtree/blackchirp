@@ -15,9 +15,9 @@
 class OverlayBase;
 
 namespace BC::Key {
-static const QString ftPlot{"FtPlot"};
-static const QString ftCurve{"FT"};
-static const QString peakCurve{"FTPeaks"};
+inline constexpr QLatin1StringView ftPlot{"FtPlot"};
+inline constexpr QLatin1StringView ftCurve{"FT"};
+inline constexpr QLatin1StringView peakCurve{"FTPeaks"};
 }
 
 class BlackchirpFTCurve;

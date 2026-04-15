@@ -16,18 +16,18 @@ class PeakListExportDialog;
 }
 
 namespace BC::Key {
-static const QString plExport{"peakListExport"};
-static const QString plAscii{"ascii"};
-static const QString plDipoleEn{"dipoleEnabled"};
-static const QString plDipole{"dipole"};
-static const QString plDrOnlyEn{"drOnlyEnabled"};
-static const QString plDrOnlyThresh{"drOnlyThresh"};
-static const QString plDefaultShots{"defaultShots"};
-static const QString plDrPower{"drPower"};
-static const QString plDrPowerEn{"drPowerEnabled"};
-static const QString plShotsTab{"shotsTable"};
-static const QString plShots{"shots"};
-static const QString plIntensity{"intensity"};
+inline constexpr QLatin1StringView plExport{"peakListExport"};
+inline constexpr QLatin1StringView plAscii{"ascii"};
+inline constexpr QLatin1StringView plDipoleEn{"dipoleEnabled"};
+inline constexpr QLatin1StringView plDipole{"dipole"};
+inline constexpr QLatin1StringView plDrOnlyEn{"drOnlyEnabled"};
+inline constexpr QLatin1StringView plDrOnlyThresh{"drOnlyThresh"};
+inline constexpr QLatin1StringView plDefaultShots{"defaultShots"};
+inline constexpr QLatin1StringView plDrPower{"drPower"};
+inline constexpr QLatin1StringView plDrPowerEn{"drPowerEnabled"};
+inline constexpr QLatin1StringView plShotsTab{"shotsTable"};
+inline constexpr QLatin1StringView plShots{"shots"};
+inline constexpr QLatin1StringView plIntensity{"intensity"};
 }
 
 class ShotsModel;

@@ -57,7 +57,7 @@ public:
     QHash<QString, QVariant> getSettingsHash() const override;
     
     // Operation declaration interface
-    constexpr QVector<OperationCapability> getSupportedOperations() const override
+    QVector<OperationCapability> getSupportedOperations() const override
     {
         // BCExperiment overlays support creation and validation
         return {
@@ -78,7 +78,7 @@ public:
         };
     }
     
-    constexpr bool supportsBackgroundOperation(OperationCapability::Type type) const override
+    bool supportsBackgroundOperation(OperationCapability::Type type) const override
     {
         // BCExperiment operations are generally fast, no background processing needed
         Q_UNUSED(type);

@@ -5,6 +5,7 @@
 #include <QMutex>
 #include <QVariant>
 #include <QFont>
+#include <QLatin1StringView>
 
 /*!
  * \brief Declarative application option descriptor
@@ -164,11 +165,11 @@ private:
  * \brief Settings keys for application configuration
  */
 namespace BC::Key::AppConfig {
-    static const QString appConfig{"applicationConfig"};     /*!< Base settings key */
-    static const QString lifEnabled{"lifEnabled"};           /*!< LIF enabled state */
-    static const QString cudaEnabled{"cudaEnabled"};         /*!< CUDA enabled state */
-    static const QString debugLogging{"debugLogging"};       /*!< Debug logging enabled state */
-    static const QString appFont{"appFont"};                 /*!< Application font */
+    inline constexpr QLatin1StringView appConfig{"applicationConfig"};     /*!< Base settings key */
+    inline constexpr QLatin1StringView lifEnabled{"lifEnabled"};           /*!< LIF enabled state */
+    inline constexpr QLatin1StringView cudaEnabled{"cudaEnabled"};         /*!< CUDA enabled state */
+    inline constexpr QLatin1StringView debugLogging{"debugLogging"};       /*!< Debug logging enabled state */
+    inline constexpr QLatin1StringView appFont{"appFont"};                 /*!< Application font */
 }
 
 #endif // APPLICATIONCONFIGMANAGER_H

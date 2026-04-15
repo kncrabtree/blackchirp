@@ -6,7 +6,7 @@
 #include <memory>
 
 namespace BC::Key::FtMainPlot {
-static const QString id{"Main"};
+inline constexpr QLatin1StringView id{"Main"};
 }
 
 class MainFtPlot : public FtPlot

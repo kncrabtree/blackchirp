@@ -12,9 +12,9 @@ class QwtPlotZoneItem;
 class QwtPlotTextLabel;
 
 namespace BC::Key {
-static const QString lifTracePlot{"lifTracePlot"};
-static const QString lifCurve{"lifCurve"};
-static const QString refCurve{"lifRefCurve"};
+inline constexpr QLatin1StringView lifTracePlot{"lifTracePlot"};
+inline constexpr QLatin1StringView lifCurve{"lifCurve"};
+inline constexpr QLatin1StringView refCurve{"lifRefCurve"};
 }
 
 class LifTracePlot : public ZoomPanPlot

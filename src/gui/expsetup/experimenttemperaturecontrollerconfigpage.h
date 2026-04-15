@@ -6,7 +6,7 @@
 class TemperatureControlWidget;
 
 namespace BC::Key::WizTC {
-static const QString key{"WizardTemperatureControllerConfigPage"};
+inline constexpr QLatin1StringView key{"WizardTemperatureControllerConfigPage"};
 }
 
 class ExperimentTemperatureControllerConfigPage : public ExperimentConfigPage

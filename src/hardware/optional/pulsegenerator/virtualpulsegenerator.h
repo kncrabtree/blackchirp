@@ -4,7 +4,7 @@
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 
 namespace BC::Key::PGen {
-static const QString vpGen("Virtual Pulse Generator");
+inline const QString vpGen{"Virtual Pulse Generator"};
 }
 
 class VirtualPulseGenerator : public PulseGenerator

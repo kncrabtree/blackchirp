@@ -8,20 +8,20 @@
 #include <QMap>
 
 namespace BC::Store::PGenConfig {
-static const QString rate{"RepRate"};
-static const QString channel{"Channel"};
-static const QString delay{"Delay"};
-static const QString width{"Width"};
-static const QString level{"ActiveLevel"};
-static const QString role{"Role"};
-static const QString name{"Name"};
-static const QString enabled{"Enabled"};
-static const QString chMode{"Mode"};
-static const QString syncCh{"SyncChannel"};
-static const QString dutyOn{"DutyOn"};
-static const QString dutyOff{"DutyOff"};
-static const QString pGenMode{"PulseGenMode"};
-static const QString pGenEnabled{"PulseGenEnabled"};
+inline constexpr QLatin1StringView rate{"RepRate"};
+inline constexpr QLatin1StringView channel{"Channel"};
+inline constexpr QLatin1StringView delay{"Delay"};
+inline constexpr QLatin1StringView width{"Width"};
+inline constexpr QLatin1StringView level{"ActiveLevel"};
+inline constexpr QLatin1StringView role{"Role"};
+inline constexpr QLatin1StringView name{"Name"};
+inline constexpr QLatin1StringView enabled{"Enabled"};
+inline constexpr QLatin1StringView chMode{"Mode"};
+inline constexpr QLatin1StringView syncCh{"SyncChannel"};
+inline constexpr QLatin1StringView dutyOn{"DutyOn"};
+inline constexpr QLatin1StringView dutyOff{"DutyOff"};
+inline constexpr QLatin1StringView pGenMode{"PulseGenMode"};
+inline constexpr QLatin1StringView pGenEnabled{"PulseGenEnabled"};
 }
 
 class PulseGenConfig : public HeaderStorage

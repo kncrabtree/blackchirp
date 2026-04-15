@@ -4,7 +4,7 @@
 #include "vendorlibrary.h"
 
 namespace BC::Key::LabJack {
-    static const QString labjackU3{"labjackU3"};  /*!< Settings key for LabJack U3 library */
+    inline constexpr QLatin1StringView labjackU3{"labjackU3"};  /*!< Settings key for LabJack U3 library */
 }
 
 // Forward declarations for LabJack types to avoid including vendor headers

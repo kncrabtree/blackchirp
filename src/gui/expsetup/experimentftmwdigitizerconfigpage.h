@@ -6,8 +6,8 @@
 class FtmwDigitizerConfigWidget;
 
 namespace BC::Key::WizFtDig {
-static const QString key{"WizardFtmwDigitizerPage"};
-static const QString title{"Digitizer"};
+inline constexpr QLatin1StringView key{"WizardFtmwDigitizerPage"};
+inline constexpr QLatin1StringView title{"Digitizer"};
 }
 
 class ExperimentFtmwDigitizerConfigPage : public ExperimentConfigPage

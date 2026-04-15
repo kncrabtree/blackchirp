@@ -17,10 +17,10 @@ class ChirpConfigWidget;
 }
 
 namespace BC::Key::ChirpConfigWidget {
-static const QString key{"ChirpConfigWidget"};
-static const QString numChirps{"numChirps"};
-static const QString interval{"chirpIntervalUs"};
-static const QString applyAll{"applyToAll"};
+inline constexpr QLatin1StringView key{"ChirpConfigWidget"};
+inline constexpr QLatin1StringView numChirps{"numChirps"};
+inline constexpr QLatin1StringView interval{"chirpIntervalUs"};
+inline constexpr QLatin1StringView applyAll{"applyToAll"};
 }
 
 /*!

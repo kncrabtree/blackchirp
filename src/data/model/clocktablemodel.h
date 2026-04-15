@@ -7,14 +7,14 @@
 #include <data/experiment/rfconfig.h>
 
 namespace BC::Key::ClockTable {
-static const QString ctKey{"ClockConfigTable"};
-static const QString ctClocks{"clocks"};
-static const QString ctClockType{"type"};
-static const QString ctHwKey{"hwKey"};
-static const QString ctOutput{"output"};
-static const QString ctOp{"operation"};
-static const QString ctFactor{"factor"};
-static const QString ctFreq{"freqMHz"};
+inline constexpr QLatin1StringView ctKey{"ClockConfigTable"};
+inline constexpr QLatin1StringView ctClocks{"clocks"};
+inline constexpr QLatin1StringView ctClockType{"type"};
+inline constexpr QLatin1StringView ctHwKey{"hwKey"};
+inline constexpr QLatin1StringView ctOutput{"output"};
+inline constexpr QLatin1StringView ctOp{"operation"};
+inline constexpr QLatin1StringView ctFactor{"factor"};
+inline constexpr QLatin1StringView ctFreq{"freqMHz"};
 }
 
 class ClockTableModel : public QAbstractTableModel, public SettingsStorage

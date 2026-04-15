@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QVariant>
+#include <QAnyStringView>
 
 #include <data/bcglobals.h>
 
@@ -56,7 +57,7 @@ class HeaderStorage
 {
 public:
     using ValueUnit = std::pair<QVariant,QString>; /*!< Alias for storing a value and unit */
-    using HeaderMap = std::map<QString,ValueUnit>; /*!< Alias for a map of key-value+unit pairs */
+    using HeaderMap = std::map<QString,ValueUnit,std::less<>>; /*!< Alias for a map of key-value+unit pairs */
     using HeaderArray = std::vector<HeaderMap>; /*!< Alias for a list of HeaderMap values */
     using HeaderStrings = std::multimap<QString,std::tuple<QString,QString,QString,QString,QString>>; /*!< Alias for a set of strings representing header data, together with the object key */
 
@@ -66,7 +67,7 @@ public:
      * 
      * \param objKey The object key. Values written to the header file will be
      */
-    HeaderStorage(const QString objKey);
+    HeaderStorage(QAnyStringView objKey);
     
     /*!
      * \brief Destructor. Does nothing
@@ -111,7 +112,7 @@ protected:
      * \param unit Unit associated with the value
      */
     template<typename T>
-    void store(const QString key, const T& val, const QString unit = "") {
+    void store(QAnyStringView key, const T& val, QAnyStringView unit = {}) {
         store(key,QVariant::fromValue(val),unit);
     }
 
@@ -121,7 +122,7 @@ protected:
      * \param val The value to store
      * \param unit Unit associated with the value
      */
-    void store(const QString key, const QVariant val, const QString unit = "");
+    void store(QAnyStringView key, const QVariant val, QAnyStringView unit = {});
 
     /*!
      * \brief Stores a value-unit pair as part of an array (overload)
@@ -138,7 +139,7 @@ protected:
      * \param unit Unit associated with the value
      */
     template<typename T>
-    void storeArrayValue(const QString arrayKey, std::size_t index, const QString key, const T& val, const QString unit = "") {
+    void storeArrayValue(QAnyStringView arrayKey, std::size_t index, QAnyStringView key, const T& val, QAnyStringView unit = {}) {
         storeArrayValue(arrayKey,index,key,QVariant::fromValue(val),unit);
     }
 
@@ -156,7 +157,7 @@ protected:
      * \param val Value to be stored
      * \param unit Unit associated with the value (optional
      */
-    void storeArrayValue(const QString arrayKey, std::size_t index, const QString key, const QVariant val, const QString unit = "");
+    void storeArrayValue(QAnyStringView arrayKey, std::size_t index, QAnyStringView key, const QVariant val, QAnyStringView unit = {});
 
     /*!
      * \brief Retrieves a value from storage
@@ -170,7 +171,7 @@ protected:
      * \return The value, or default value
      */
     template<typename T>
-    T retrieve(const QString key, const T& defaultValue = QVariant().value<T>()) {
+    T retrieve(QAnyStringView key, const T& defaultValue = QVariant().value<T>()) {
         auto out = defaultValue;
         auto it = d_values.find(key);
         if(it != d_values.end())
@@ -187,7 +188,7 @@ protected:
      * \param key The key of the array
      * \return The size of the array. Returns 0 if the array does not exist.
      */
-    std::size_t arrayStoreSize(const QString key) const;
+    std::size_t arrayStoreSize(QAnyStringView key) const;
 
     /*!
      * \brief Equivalent to retrieve() but for array values
@@ -203,7 +204,7 @@ protected:
      * \return The value, or default value
      */
     template<typename T>
-    T retrieveArrayValue(const QString arrayKey, std::size_t index, const QString key,
+    T retrieveArrayValue(QAnyStringView arrayKey, std::size_t index, QAnyStringView key,
                             const T& defaultValue = QVariant().value<T>()) {
         auto out = defaultValue;
 
@@ -321,7 +322,7 @@ public:
 
 private:
     HeaderMap d_values; /*!< Map containing key-value pairs */
-    std::map<QString,HeaderArray> d_arrayValues; /*!< Map containing lists of key-value pairs */
+    std::map<QString,HeaderArray,std::less<>> d_arrayValues; /*!< Map containing lists of key-value pairs */
     std::vector<HeaderStorage*> d_children; /*!< List containing pointers to children */
 
 };

@@ -5,12 +5,12 @@
 
 namespace BC::Key::PGen {
 // All QC pulse generator keys always available - no conditional compilation
-static const QString qc9520series{"qc9520series"};
-static const QString qc9520seriesName("QuantumComposers 9520 Series Pulse Generator");
-static const QString qc9510series{"qc9510series"};
-static const QString qc9510seriesName("QuantumComposers 9510 Series Pulse Generator");
-static const QString qc9210series{"qc9210series"};
-static const QString qc9210seriesName("QuantumComposers 9210 Series Pulse Generator");
+inline constexpr QLatin1StringView qc9520series{"qc9520series"};
+inline const QString qc9520seriesName{"QuantumComposers 9520 Series Pulse Generator"};
+inline constexpr QLatin1StringView qc9510series{"qc9510series"};
+inline const QString qc9510seriesName{"QuantumComposers 9510 Series Pulse Generator"};
+inline constexpr QLatin1StringView qc9210series{"qc9210series"};
+inline const QString qc9210seriesName{"QuantumComposers 9210 Series Pulse Generator"};
 }
 
 

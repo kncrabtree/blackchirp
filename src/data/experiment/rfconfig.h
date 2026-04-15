@@ -7,14 +7,14 @@
 #include <data/experiment/chirpconfig.h>
 
 namespace BC::Store::RFC {
-static const QString key{"RfConfig"};
-static const QString commonLO{"CommonUpDownLO"};
-static const QString targetSweeps{"TargetSweeps"};
-static const QString shots{"ShotsPerClockConfig"};
-static const QString awgM{"AwgMult"};
-static const QString upSB{"UpconversionSideband"};
-static const QString chirpM{"ChirpMult"};
-static const QString downSB{"DownconversionSideband"};
+inline constexpr QLatin1StringView key{"RfConfig"};
+inline constexpr QLatin1StringView commonLO{"CommonUpDownLO"};
+inline constexpr QLatin1StringView targetSweeps{"TargetSweeps"};
+inline constexpr QLatin1StringView shots{"ShotsPerClockConfig"};
+inline constexpr QLatin1StringView awgM{"AwgMult"};
+inline constexpr QLatin1StringView upSB{"UpconversionSideband"};
+inline constexpr QLatin1StringView chirpM{"ChirpMult"};
+inline constexpr QLatin1StringView downSB{"DownconversionSideband"};
 }
 
 /**

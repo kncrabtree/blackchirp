@@ -6,8 +6,8 @@
 class LifControlWidget;
 
 namespace BC::Key::WizLif {
-static const QString key{"WizardLifConfigPage"};
-static const QString title{"LIF Configuration"};
+inline constexpr QLatin1StringView key{"WizardLifConfigPage"};
+inline constexpr QLatin1StringView title{"LIF Configuration"};
 }
 
 class ExperimentLifConfigPage : public ExperimentConfigPage

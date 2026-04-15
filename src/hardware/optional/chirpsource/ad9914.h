@@ -4,8 +4,8 @@
 #include <hardware/optional/chirpsource/awg.h>
 
 namespace BC::Key::AWG {
-static const QString ad9914{"ad9914"};
-static const QString ad9914Name("AD9914 Direct Digital Synthesizer");
+inline constexpr QLatin1StringView ad9914{"ad9914"};
+inline const QString ad9914Name{"AD9914 Direct Digital Synthesizer"};
 }
 
 class AD9914 : public AWG

@@ -4,8 +4,8 @@
 #include "pulsegenerator.h"
 
 namespace BC::Key::PGen {
-static const QString dg645{"dg645"};
-static const QString dg645Name{"Pulse Generator SRS DG645"};
+inline constexpr QLatin1StringView dg645{"dg645"};
+inline constexpr QLatin1StringView dg645Name{"Pulse Generator SRS DG645"};
 }
 
 class SRSDG645 : public PulseGenerator

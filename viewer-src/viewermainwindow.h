@@ -25,10 +25,10 @@
 class QMenu;
 
 namespace BC::Key::Viewer {
-static const QString recentExperiments{"recentExperiments"};
-static const QString lastBrowseDir{"lastBrowseDir"};
-static const QString recentNum{"num"};
-static const QString recentPath{"path"};
+inline constexpr QLatin1StringView recentExperiments{"recentExperiments"};
+inline constexpr QLatin1StringView lastBrowseDir{"lastBrowseDir"};
+inline constexpr QLatin1StringView recentNum{"num"};
+inline constexpr QLatin1StringView recentPath{"path"};
 }
 
 class ViewerMainWindow : public QMainWindow, public SettingsStorage

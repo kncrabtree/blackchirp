@@ -430,9 +430,9 @@ private:
  * \brief Settings keys for runtime hardware configuration
  */
 namespace BC::Key::RuntimeHw {
-    static const QString runtimeHw{"runtimeHardware"};     /*!< Base settings key */
-    static const QString selection{"selection"};           /*!< Selection subkey */
-    static const QString enabled{"enabled"};               /*!< Enabled state subkey */
+    inline constexpr QLatin1StringView runtimeHw{"runtimeHardware"};     /*!< Base settings key */
+    inline constexpr QLatin1StringView selection{"selection"};           /*!< Selection subkey */
+    inline constexpr QLatin1StringView enabled{"enabled"};               /*!< Enabled state subkey */
 }
 
 #endif // RUNTIMEHARDWARECONFIG_H

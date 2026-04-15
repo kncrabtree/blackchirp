@@ -4,11 +4,11 @@
 #include <hardware/core/hardwareobject.h>
 
 namespace BC::Key::LifLaser {
-static const QString units{"units"};
-static const QString decimals{"decimals"};
-static const QString minPos{"minPos"};
-static const QString maxPos{"maxPos"};
-static const QString hasFl{"hasFlashlampControl"};
+inline constexpr QLatin1StringView units{"units"};
+inline constexpr QLatin1StringView decimals{"decimals"};
+inline constexpr QLatin1StringView minPos{"minPos"};
+inline constexpr QLatin1StringView maxPos{"maxPos"};
+inline constexpr QLatin1StringView hasFl{"hasFlashlampControl"};
 }
 
 class LifLaser : public HardwareObject

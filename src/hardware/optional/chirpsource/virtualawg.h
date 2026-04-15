@@ -4,8 +4,8 @@
 #include <hardware/optional/chirpsource/awg.h>
 
 namespace BC::Key::AWG {
-static const QString virtualAwg{"virtualAwg"};
-static const QString virtualAwgName("Virtual Arbitrary Waveform Generator");
+inline constexpr QLatin1StringView virtualAwg{"virtualAwg"};
+inline const QString virtualAwgName{"Virtual Arbitrary Waveform Generator"};
 }
 
 class VirtualAwg : public AWG

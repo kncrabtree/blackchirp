@@ -4,7 +4,7 @@
 #include <data/experiment/digitizerconfig.h>
 
 namespace BC::Store::Digi {
-static const QString fidCh{"FidChannel"};
+inline constexpr QLatin1StringView fidCh{"FidChannel"};
 }
 
 class FtmwDigitizerConfig : public DigitizerConfig

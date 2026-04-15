@@ -9,8 +9,8 @@ class ChirpConfig;
 class BlackchirpPlotCurve;
 
 namespace BC::Key {
-static const QString chirpPlot{"ChirpConfigPlot"};
-static const QString chirpCurve{"Chirp"};
+inline constexpr QLatin1StringView chirpPlot{"ChirpConfigPlot"};
+inline constexpr QLatin1StringView chirpCurve{"Chirp"};
 }
 
 class ChirpConfigPlot : public ZoomPanPlot

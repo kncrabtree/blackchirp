@@ -11,14 +11,14 @@
 class BlackchirpCSV;
 
 namespace BC::Key::LifStorage {
-static const QString lifGateStart("LifGateStartPoint");
-static const QString lifGateEnd("LifGateEndPoint");
-static const QString refGateStart("RefGateStartPoint");
-static const QString refGateEnd("RefGateEndPoint");
-static const QString lowPassAlpha("LowPassAlpha");
-static const QString savGol{"SavGolEnabled"};
-static const QString sgWin{"SavGolWindow"};
-static const QString sgPoly{"SavGolPoly"};
+inline constexpr QLatin1StringView lifGateStart("LifGateStartPoint");
+inline constexpr QLatin1StringView lifGateEnd("LifGateEndPoint");
+inline constexpr QLatin1StringView refGateStart("RefGateStartPoint");
+inline constexpr QLatin1StringView refGateEnd("RefGateEndPoint");
+inline constexpr QLatin1StringView lowPassAlpha("LowPassAlpha");
+inline constexpr QLatin1StringView savGol{"SavGolEnabled"};
+inline constexpr QLatin1StringView sgWin{"SavGolWindow"};
+inline constexpr QLatin1StringView sgPoly{"SavGolPoly"};
 }
 
 class LifStorage : public DataStorageBase

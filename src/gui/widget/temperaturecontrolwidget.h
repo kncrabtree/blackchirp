@@ -10,7 +10,7 @@ class QLineEdit;
 class QPushButton;
 
 namespace BC::Key::TCW {
-static const QString key{"TemperatureControlWidget"};
+inline constexpr QLatin1StringView key{"TemperatureControlWidget"};
 }
 
 class TemperatureControlWidget : public QWidget, public SettingsStorage

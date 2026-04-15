@@ -524,27 +524,100 @@ Steps 1–2 and 9–11 are the "string usage" core; steps 3–8 and 12
 are the "logging cleanup" core; step 3 is the integration point that
 makes the rest of the plan coherent.
 
-1. **Standardize new code on `"..."_s`.** No sweep; just policy.
+1. ✅ **Standardize new code on `"..."_s`.** No sweep; just policy.
    This is the baseline for every subsequent step.
+   *Completed: policy documented in `CLAUDE.md`.*
 
-2. **Consolidate and migrate central key headers.** Target list:
-   - `src/data/settings/hardwarekeys.h`
-   - `src/data/bcglobals.h`
-   - `src/data/storage/settingsstorage.h` (top-of-file constants)
-   - `src/data/experiment/auxdatakeys.h`
-   - `src/data/lif/lifstorage.h`
-   - `src/data/lif/lifconfig.h`
-   - `src/hardware/core/hardwaremanager.h`
-   - `src/hardware/core/runtimehardwareconfig.h`
+2. ✅ **Consolidate and migrate all key headers, coordinated with API
+   migration of the primary consumer classes.**
 
-   For each header, pick **Pattern A** (default), **Pattern B**, or
-   **Pattern C** based on how its keys are consumed:
-   - Pattern A if consumers take `QString` / `const QString &` and
-     are not being migrated.
-   - Pattern B if the container or consumer API is migrating to
-     `QAnyStringView` / heterogeneous lookup in the same change
-     (ASCII keys only).
-   - Pattern C for non-ASCII keys in the same situation.
+   **Consumer API migration (prerequisite for Pattern B/C):**
+   The three classes that consume nearly all string keys are
+   `SettingsStorage`, `HeaderStorage`, and `BlackchirpCSV`. Migrating
+   them unlocks Pattern B/C for the key declarations:
+   - **`SettingsStorage`**: change `SettingsMap` typedef to
+     `std::map<QString, QVariant, std::less<>>` and migrate all
+     key-taking methods (`get`, `set`, `getOrSetDefault`, `getArray`,
+     `getArrayValue`, `getArrayMap`, `getArraySize`, `getMultiple`,
+     `getGroup`, `containsValue`, `registerGetter`, `registerSetter`)
+     to accept `QAnyStringView` for the key parameter. No virtual
+     cascade — none of these are virtual.
+   - **`HeaderStorage`**: change `HeaderMap` typedef to
+     `std::map<QString, ValueUnit, std::less<>>` and migrate
+     `store`, `storeArrayValue`, `retrieve`, `retrieveArrayValue`,
+     `arrayStoreSize` to accept `QAnyStringView` for key and unit
+     parameters.
+   - **`BlackchirpCSV`**: no API surface needs changing — its
+     constants are used directly with Qt string operations
+     (`QTextStream <<`, `QString::split`, etc.) that already accept
+     `QLatin1StringView`; Pattern B works without any API change.
+   - **`BC::Key` functions in `bcglobals.cpp`** (`hwKey`, `parseKey`,
+     `parseIndexKey`, `widgetKey`, `migrateIndexKey`,
+     `generateDefaultLabel`): migrate `const QString &` parameters to
+     `QAnyStringView` where the body only reads the string (lookup,
+     comparison, `split`, `arg`). Return types stay `QString`.
+
+   **Key declaration migration:**
+   Apply to *all* headers with `static const QString` key declarations
+   (a full list is derivable from `grep -r "static const QString" src/`):
+
+   - **Pattern B** (`inline constexpr QLatin1StringView k = "..."_L1`)
+     for all ASCII keys whose consumers have been migrated above.
+     This covers the original eight headers plus all data experiment
+     configs (`chirpconfig.h`, `ftmwconfig.h`, `digitizerconfig.h`,
+     `rfconfig.h`, `ftmwconfigtypes.h`, `flowconfig.h`,
+     `pulsegenconfig.h`, `pressurecontrollerconfig.h`,
+     `temperaturecontrollerconfig.h`, `ioboardconfig.h`,
+     `lifdigitizerconfig.h`, `markertablemodel.h`, `validationmodel.h`,
+     `clocktablemodel.h`, `chirptablemodel.h`, `fidstoragebase.h`,
+     `curveappearance.h`, `overlaystorage.h`,
+     `applicationconfigmanager.h`), hardware headers
+     (`hardwareprofilemanager.h`, `vendorlibrary.h`, `liflaser.h`,
+     `sirahcobra.h`, `fixedclock.h`, and implementation-specific
+     headers in `src/hardware/optional/` and `src/hardware/core/`),
+     and GUI headers (widgets, dialogs, plots, expsetup pages in
+     `src/gui/`).
+   - **Pattern C** (`inline constexpr QStringView k = u"..."`) for
+     non-ASCII keys. The only known case is `BC::Unit::us`; its value
+     changes from `QString::fromUtf8("μs")` to `u"μs"`.
+   - **Pattern A** (`inline const QString k = "..."_s`) for any key
+     on which `QString`-specific member functions are called directly
+     (e.g., `.arg()`). Known exceptions:
+     - `BC::Aux::Flow::flow` (`"Flow%1"`) — `.arg(i+1)` at call site
+     - `AuxDataStorage::keyTemplate` (`"%1.%2"`) — `.arg()` at call
+       site
+     - `TemperatureController::temperature` (`"Temperature%1"`) —
+       `.arg()` at call site
+     If any other template strings are found during the sweep, apply
+     Pattern A and note them.
+   - For **class-member** statics (e.g., in `RuntimeHardwareConfig`,
+     `HardwareProfileManager`, `ApplicationConfigManager`,
+     `VendorLibrary`, `SpectrumLibrary`, `LabJackLibrary`): the
+     syntax is `inline static constexpr QLatin1StringView k = "..."_L1`
+     (Pattern B) rather than namespace-scope `inline constexpr`.
+
+   **Note on Steps 9–10:** The `SettingsStorage` and `HeaderStorage`
+   API migrations above subsume the SettingsStorage portion of Step 9
+   and the map-typedef portion of Step 10. Step 9 retains only the
+   `CommunicationProtocol` virtual cascade fixes; Step 10 retains only
+   the optional codebase-wide sweep of remaining `std::map<QString, T>`
+   sites not touched here.
+
+   *Completed: all consumer APIs migrated; 722 `static const QString`
+   declarations across 102 headers converted. Implementation notes:*
+   - *Pattern B uses constructor form `{"..."}` rather than `"..."_L1`
+     to avoid requiring `using namespace Qt::Literals::StringLiterals`
+     in headers.*
+   - *`BC::Unit::us` is Pattern C (`inline constexpr QStringView`).*
+   - *Pattern A exceptions confirmed: `BC::Aux::Flow::flow`,
+     `BC::Aux::keyTemplate`, `TemperatureController::temperature`.*
+   - *One call-site fix required: `exptsummarymodel.cpp` uses
+     `BC::Unit::us.toString()` where a `QStringList` initializer
+     required `QString`, not `QStringView`.*
+   - *Hardware AWG/pulse-generator display-name strings (e.g.,
+     `"Arbitrary Waveform Generator AWG70002A"`) were kept as
+     `inline const QString` rather than `QLatin1StringView`; these
+     are correct but suboptimal — can be swept in Step 10.*
 
 3. **Redesign `LogHandler` as a thread-safe global singleton with a
    `QAnyStringView` API.** Introduce
@@ -577,16 +650,18 @@ makes the rest of the plan coherent.
    protocols, optional hardware, LIF components, Highlight usage.
 
 9. **Fix remaining by-value `QString` parameters.**
-   `CommunicationProtocol::writeCmd`,
-   `CommunicationProtocol::queryCmd`, `SettingsStorage::get` and
-   peers. `const QString &` is the conservative fix;
+   `CommunicationProtocol::writeCmd` and `queryCmd` are the primary
+   remaining targets (`SettingsStorage` and `HeaderStorage` are
+   handled in step 2). `const QString &` is the conservative fix;
    `QAnyStringView` is the aggressive one. Match the choice to what
    the callee actually does with the parameter. Virtual cascades
-   (see above) must be updated in a single commit per base class.
+   (see [Virtual Cascade Hotspots](#virtual-cascade-hotspots)) must
+   be updated in a single commit per base class.
 
-10. **Retrofit `std::less<>` on `std::map<QString, T>`** where
-    pattern B or C keys land, or where signature migrations create
-    non-`QString` lookup callers. A codebase-wide sweep is optional.
+10. **Retrofit `std::less<>` on remaining `std::map<QString, T>`**
+    sites not already updated in step 2. The `SettingsStorage` and
+    `HeaderStorage` maps are handled there. A codebase-wide sweep of
+    remaining sites is optional but cheap.
 
 11. **Long-tail signature migration to `QAnyStringView`.** Only as
     specific APIs are touched for other reasons. Not a sweep.

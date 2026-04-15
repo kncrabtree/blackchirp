@@ -5,9 +5,9 @@
 
 namespace BC::Key::Flow {
 // Implementation-specific keys for MKS946
-static const QString address{"mksaddress"};
-static const QString pressureChannel{"pressureChannel"};
-static const QString offset{"channelOffset"};
+inline constexpr QLatin1StringView address{"mksaddress"};
+inline constexpr QLatin1StringView pressureChannel{"pressureChannel"};
+inline constexpr QLatin1StringView offset{"channelOffset"};
 }
 
 class Mks946 : public FlowController

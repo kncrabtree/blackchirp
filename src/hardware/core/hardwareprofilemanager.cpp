@@ -37,7 +37,7 @@ HardwareProfileManager& HardwareProfileManager::instance()
 // ========================================================================
 
 HardwareProfileManager::HardwareProfileManager()
-    : SettingsStorage({BC::Key::HardwareProfiles::profiles})
+    : SettingsStorage(QStringList{BC::Key::HardwareProfiles::profiles})
 {
     loadProfiles();
 }

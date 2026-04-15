@@ -8,15 +8,16 @@
 #include <QVector>
 #include <QFuture>
 #include <QObject>
+#include <QLatin1StringView>
 
 namespace BC::Key::Overlay {
-static const QString overlayDir{"overlays"};
-static const QString overlayMdFile{"overlays.csv"};
-static const QString bcMajorVersion{"BCMajorVersion"};
-static const QString bcMinorVersion{"BCMinorVersion"};
-static const QString bcPatchVersion{"BCPatchVersion"};
-static const QString bcReleaseVersion{"BCReleaseVersion"};
-static const QString bcBuildVersion{"BCBuildVersion"};
+inline constexpr QLatin1StringView overlayDir{"overlays"};
+inline constexpr QLatin1StringView overlayMdFile{"overlays.csv"};
+inline constexpr QLatin1StringView bcMajorVersion{"BCMajorVersion"};
+inline constexpr QLatin1StringView bcMinorVersion{"BCMinorVersion"};
+inline constexpr QLatin1StringView bcPatchVersion{"BCPatchVersion"};
+inline constexpr QLatin1StringView bcReleaseVersion{"BCReleaseVersion"};
+inline constexpr QLatin1StringView bcBuildVersion{"BCBuildVersion"};
 }
 
 class OverlayStorage : public QObject, public DataStorageBase

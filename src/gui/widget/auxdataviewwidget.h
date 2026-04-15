@@ -16,12 +16,12 @@ class BlackchirpPlotCurve;
 class BlackchirpPlotCurveBase;
 
 namespace BC::Key {
-static const QString auxDataWidget{"AuxDataWidget"};
-static const QString rollingDataWidget{"RollingDataWidget"};
-static const QString numPlots{"numPlots"};
-static const QString viewonly{"View"};
-static const QString plot{"Plot"};
-static const QString history{"historyHours"};
+inline constexpr QLatin1StringView auxDataWidget{"AuxDataWidget"};
+inline constexpr QLatin1StringView rollingDataWidget{"RollingDataWidget"};
+inline constexpr QLatin1StringView numPlots{"numPlots"};
+inline constexpr QLatin1StringView viewonly{"View"};
+inline constexpr QLatin1StringView plot{"Plot"};
+inline constexpr QLatin1StringView history{"historyHours"};
 }
 
 class AuxDataViewWidget : public QWidget, public SettingsStorage

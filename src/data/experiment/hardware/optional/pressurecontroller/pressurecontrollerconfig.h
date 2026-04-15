@@ -4,8 +4,8 @@
 #include <data/storage/headerstorage.h>
 
 namespace BC::Store::PressureController {
-static const QString pSetPoint{"SetPoint"};
-static const QString pcEnabled{"ControlEnabled"};
+inline constexpr QLatin1StringView pSetPoint{"SetPoint"};
+inline constexpr QLatin1StringView pcEnabled{"ControlEnabled"};
 }
 
 class PressureControllerConfig : public HeaderStorage

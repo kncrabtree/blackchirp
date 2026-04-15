@@ -10,21 +10,21 @@
 class OverlayMetadataStorage;
 
 namespace BC::Key::Overlay {
-static const QString oLabel{"label"};
-static const QString oSourceFile{"sourceFile"};
-static const QString oDestFile{"destFile"};
-static const QString oPlotId{"plotId"};
-static const QString oYScale{"yScale"};
-static const QString oYOffset{"yOffset"};
-static const QString oXOffset{"xOffset"};
-static const QString oMinFreqEnabled{"minFreqEnabled"};
-static const QString oMinFreqValue{"minFreqValue"};
-static const QString oMaxFreqEnabled{"maxFreqEnabled"};
-static const QString oMaxFreqValue{"maxFreqValue"};
-static const QString oEnabled{"enabled"};
-static const QString oComment{"comment"};
-static const QString overlaySettingsFile{"%1.settings.csv"};
-static const QString overlayDataFile{"%1.data.csv"};
+inline constexpr QLatin1StringView oLabel{"label"};
+inline constexpr QLatin1StringView oSourceFile{"sourceFile"};
+inline constexpr QLatin1StringView oDestFile{"destFile"};
+inline constexpr QLatin1StringView oPlotId{"plotId"};
+inline constexpr QLatin1StringView oYScale{"yScale"};
+inline constexpr QLatin1StringView oYOffset{"yOffset"};
+inline constexpr QLatin1StringView oXOffset{"xOffset"};
+inline constexpr QLatin1StringView oMinFreqEnabled{"minFreqEnabled"};
+inline constexpr QLatin1StringView oMinFreqValue{"minFreqValue"};
+inline constexpr QLatin1StringView oMaxFreqEnabled{"maxFreqEnabled"};
+inline constexpr QLatin1StringView oMaxFreqValue{"maxFreqValue"};
+inline constexpr QLatin1StringView oEnabled{"enabled"};
+inline constexpr QLatin1StringView oComment{"comment"};
+inline const QString overlaySettingsFile{"%1.settings.csv"};
+inline const QString overlayDataFile{"%1.data.csv"};
 }
 
 class OverlayBase

@@ -8,7 +8,7 @@ class QTimer;
 
 
 namespace BC::Aux::TC {
-static const QString temperature("Temperature%1");
+inline const QString temperature{"Temperature%1"};
 }
 
 class TemperatureController : public HardwareObject

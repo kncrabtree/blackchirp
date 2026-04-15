@@ -10,14 +10,14 @@
 #include <data/experiment/rfconfig.h>
 
 namespace BC::Key::ChirpTableModel {
-static const QString key{"ChirpTableModel"};
-static const QString ctChirps{"chirps"};
-static const QString chirpIndex{"chirpIndex"};
-static const QString segIndex{"segmentIndex"};
-static const QString start{"startFreqMHz"};
-static const QString end{"endFreqMHz"};
-static const QString duration{"durationUs"};
-static const QString empty{"empty"};
+inline constexpr QLatin1StringView key{"ChirpTableModel"};
+inline constexpr QLatin1StringView ctChirps{"chirps"};
+inline constexpr QLatin1StringView chirpIndex{"chirpIndex"};
+inline constexpr QLatin1StringView segIndex{"segmentIndex"};
+inline constexpr QLatin1StringView start{"startFreqMHz"};
+inline constexpr QLatin1StringView end{"endFreqMHz"};
+inline constexpr QLatin1StringView duration{"durationUs"};
+inline constexpr QLatin1StringView empty{"empty"};
 }
 
 class ChirpTableModel : public QAbstractTableModel, public SettingsStorage

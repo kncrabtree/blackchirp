@@ -11,10 +11,10 @@
 #include <data/storage/headerstorage.h>
 
 namespace BC::Store::CC {
-static const QString key{"ChirpConfig"};
-static const QString interval{"ChirpInterval"};
-static const QString sampleRate{"SampleRate"};
-static const QString sampleInterval{"SampleInterval"};
+inline constexpr QLatin1StringView key{"ChirpConfig"};
+inline constexpr QLatin1StringView interval{"ChirpInterval"};
+inline constexpr QLatin1StringView sampleRate{"SampleRate"};
+inline constexpr QLatin1StringView sampleInterval{"SampleInterval"};
 }
 
 enum class MarkerRole { Protection, Gate, Trigger, Custom };

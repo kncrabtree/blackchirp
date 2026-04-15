@@ -4,8 +4,8 @@
 #include <hardware/optional/chirpsource/awg.h>
 
 namespace BC::Key::AWG {
-static const QString m8195a{"m8195a"};
-static const QString m8195aName("Arbitrary Waveform Generator M8195A");
+inline constexpr QLatin1StringView m8195a{"m8195a"};
+inline const QString m8195aName{"Arbitrary Waveform Generator M8195A"};
 }
 
 /*!

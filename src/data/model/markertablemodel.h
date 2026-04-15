@@ -8,13 +8,13 @@
 #include <data/storage/settingsstorage.h>
 
 namespace BC::Key::MarkerTableModel {
-static const QString key{"MarkerTableModel"};
-static const QString markers{"markers"};
-static const QString chName{"name"};
-static const QString chRole{"role"};
-static const QString chStart{"startUs"};
-static const QString chEnd{"endUs"};
-static const QString chEnabled{"enabled"};
+inline constexpr QLatin1StringView key{"MarkerTableModel"};
+inline constexpr QLatin1StringView markers{"markers"};
+inline constexpr QLatin1StringView chName{"name"};
+inline constexpr QLatin1StringView chRole{"role"};
+inline constexpr QLatin1StringView chStart{"startUs"};
+inline constexpr QLatin1StringView chEnd{"endUs"};
+inline constexpr QLatin1StringView chEnabled{"enabled"};
 }
 
 class MarkerTableModel : public QAbstractTableModel, public SettingsStorage

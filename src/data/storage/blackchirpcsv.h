@@ -9,47 +9,48 @@
 #include <QVector>
 #include <QPointF>
 #include <QDir>
+#include <QLatin1StringView>
 
 #include <data/experiment/fid.h>
 #include <data/bcglobals.h>
 
 namespace BC::CSV {
 
-static const QString del{";"};
-static const QString altDel{"|"}; // Alternative delimiter for QStringList serialization
-static const QString nl{"\n"};
-static const QString x{"x"};
-static const QString y{"y"};
-static const QString sep{"_"};
+inline constexpr QLatin1StringView del{";"};
+inline constexpr QLatin1StringView altDel{"|"}; // Alternative delimiter for QStringList serialization
+inline constexpr QLatin1StringView nl{"\n"};
+inline constexpr QLatin1StringView x{"x"};
+inline constexpr QLatin1StringView y{"y"};
+inline constexpr QLatin1StringView sep{"_"};
 
-static const QString ok{"ObjKey"};
-static const QString ak{"ArrayKey"};
-static const QString ai{"ArrayIndex"};
-static const QString vk{"ValueKey"};
-static const QString vv{"Value"};
-static const QString vu{"Units"};
+inline constexpr QLatin1StringView ok{"ObjKey"};
+inline constexpr QLatin1StringView ak{"ArrayKey"};
+inline constexpr QLatin1StringView ai{"ArrayIndex"};
+inline constexpr QLatin1StringView vk{"ValueKey"};
+inline constexpr QLatin1StringView vv{"Value"};
+inline constexpr QLatin1StringView vu{"Units"};
 
-static const QString versionFile{"version.csv"};
-static const QString validationFile{"validation.csv"};
-static const QString objectivesFile{"objectives.csv"};
-static const QString hwFile{"hardware.csv"};
-static const QString headerFile{"header.csv"};
-static const QString chirpFile{"chirps.csv"};
-static const QString markersFile{"markers.csv"};
-static const QString clockFile{"clocks.csv"};
-static const QString auxFile{"auxdata.csv"};
+inline constexpr QLatin1StringView versionFile{"version.csv"};
+inline constexpr QLatin1StringView validationFile{"validation.csv"};
+inline constexpr QLatin1StringView objectivesFile{"objectives.csv"};
+inline constexpr QLatin1StringView hwFile{"hardware.csv"};
+inline constexpr QLatin1StringView headerFile{"header.csv"};
+inline constexpr QLatin1StringView chirpFile{"chirps.csv"};
+inline constexpr QLatin1StringView markersFile{"markers.csv"};
+inline constexpr QLatin1StringView clockFile{"clocks.csv"};
+inline constexpr QLatin1StringView auxFile{"auxdata.csv"};
 
-static const QString majver{"BCMajorVersion"};
-static const QString minver{"BCMinorVersion"};
-static const QString patchver{"BCPatchVersion"};
-static const QString relver{"BCReleaseVersion"};
-static const QString buildver{"BCBuildVersion"};
+inline constexpr QLatin1StringView majver{"BCMajorVersion"};
+inline constexpr QLatin1StringView minver{"BCMinorVersion"};
+inline constexpr QLatin1StringView patchver{"BCPatchVersion"};
+inline constexpr QLatin1StringView relver{"BCReleaseVersion"};
+inline constexpr QLatin1StringView buildver{"BCBuildVersion"};
 
-static const QString fidparams{"fidparams.csv"};
-static const QString fidDir{"fid"};
+inline constexpr QLatin1StringView fidparams{"fidparams.csv"};
+inline constexpr QLatin1StringView fidDir{"fid"};
 
-static const QString lifparams{"lifparams.csv"};
-static const QString lifDir{"lif"};
+inline constexpr QLatin1StringView lifparams{"lifparams.csv"};
+inline constexpr QLatin1StringView lifDir{"lif"};
 
 }
 

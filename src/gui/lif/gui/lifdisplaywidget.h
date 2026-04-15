@@ -16,10 +16,10 @@ class LifProcessingWidget;
 class QSpinBox;
 
 namespace BC::Key::LifDW {
-static const QString lifDwKey{"LifDisplayWidget"};
-static const QString refresh{"refreshIntervalMs"};
-static const QString lifSpectrumPlot{"lifSpectrumPlot"};
-static const QString lifTimePlot{"lifTimePlot"};
+inline constexpr QLatin1StringView lifDwKey{"LifDisplayWidget"};
+inline constexpr QLatin1StringView refresh{"refreshIntervalMs"};
+inline constexpr QLatin1StringView lifSpectrumPlot{"lifSpectrumPlot"};
+inline constexpr QLatin1StringView lifTimePlot{"lifTimePlot"};
 }
 
 class LifDisplayWidget : public QWidget, public SettingsStorage

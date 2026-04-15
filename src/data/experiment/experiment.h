@@ -31,17 +31,17 @@
 #include <data/lif/lifconfig.h>
 
 namespace BC::Store::Exp {
-static const QString key{"Experiment"};
-static const QString num{"Number"};
-static const QString timeData{"TimeDataInterval"};
-static const QString backupInterval{"BackupInterval"};
-static const QString ftmwEn{"FtmwEnabled"};
-static const QString ftmwType{"FtmwType"};
-static const QString majver{"BCMajorVersion"};
-static const QString minver{"BCMinorVersion"};
-static const QString patchver{"BCPatchVersion"};
-static const QString relver{"BCReleaseVersion"};
-static const QString buildver{"BCBuildVersion"};
+inline constexpr QLatin1StringView key{"Experiment"};
+inline constexpr QLatin1StringView num{"Number"};
+inline constexpr QLatin1StringView timeData{"TimeDataInterval"};
+inline constexpr QLatin1StringView backupInterval{"BackupInterval"};
+inline constexpr QLatin1StringView ftmwEn{"FtmwEnabled"};
+inline constexpr QLatin1StringView ftmwType{"FtmwType"};
+inline constexpr QLatin1StringView majver{"BCMajorVersion"};
+inline constexpr QLatin1StringView minver{"BCMinorVersion"};
+inline constexpr QLatin1StringView patchver{"BCPatchVersion"};
+inline constexpr QLatin1StringView relver{"BCReleaseVersion"};
+inline constexpr QLatin1StringView buildver{"BCBuildVersion"};
 }
 
 class Experiment : private HeaderStorage

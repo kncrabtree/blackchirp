@@ -6,7 +6,7 @@
 class PressureControlWidget;
 
 namespace BC::Key::WizPC {
-static const QString key{"WizardPressureControllerConfigPage"};
+inline constexpr QLatin1StringView key{"WizardPressureControllerConfigPage"};
 }
 
 class ExperimentPressureControllerConfigPage : public ExperimentConfigPage

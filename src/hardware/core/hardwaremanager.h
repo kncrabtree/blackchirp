@@ -27,8 +27,8 @@ class Experiment;
 class GpibController;
 
 namespace BC::Key {
-static const QString hw{"hardware"};
-static const QString allHw{"instruments"};
+inline constexpr QLatin1StringView hw{"hardware"};
+inline constexpr QLatin1StringView allHw{"instruments"};
 }
 
 class HardwareManager : public QObject, public SettingsStorage

@@ -24,9 +24,9 @@
 
 
 namespace BC::Key::OverlayManager {
-static const QString key{"OverlayManagerWidget"};
-static const QString geometry{"geometry"};
-static const QString windowState{"windowState"};
+inline constexpr QLatin1StringView key{"OverlayManagerWidget"};
+inline constexpr QLatin1StringView geometry{"geometry"};
+inline constexpr QLatin1StringView windowState{"windowState"};
 }
 
 class OverlayManagerWidget : public QWidget, public SettingsStorage

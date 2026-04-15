@@ -1,26 +1,26 @@
 #include "headerstorage.h"
 
-HeaderStorage::HeaderStorage(const QString objKey) :
-    d_headerKey{objKey}
+HeaderStorage::HeaderStorage(QAnyStringView objKey) :
+    d_headerKey{(objKey).toString()}
 {
 
 }
 
-void HeaderStorage::store(const QString key, const QVariant val, const QString unit)
+void HeaderStorage::store(QAnyStringView key, const QVariant val, QAnyStringView unit)
 {
-    ValueUnit v{val,unit};
-    d_values.insert_or_assign(key,v);
+    ValueUnit v{val,(unit).toString()};
+    d_values.insert_or_assign((key).toString(),v);
 }
 
-void HeaderStorage::storeArrayValue(const QString arrayKey, std::size_t index, const QString key, const QVariant val, const QString unit)
+void HeaderStorage::storeArrayValue(QAnyStringView arrayKey, std::size_t index, QAnyStringView key, const QVariant val, QAnyStringView unit)
 {
     auto it = d_arrayValues.find(arrayKey);
     if(it != d_arrayValues.end())
     {
         while(index >= it->second.size())
             it->second.push_back({});
-        ValueUnit v{val,unit};
-        it->second[index].insert_or_assign(key,v);
+        ValueUnit v{val,(unit).toString()};
+        it->second[index].insert_or_assign((key).toString(),v);
         return;
     }
 
@@ -28,13 +28,13 @@ void HeaderStorage::storeArrayValue(const QString arrayKey, std::size_t index, c
     while(index >= l.size())
         l.push_back({});
 ;
-    ValueUnit v{val,unit};
-    l[index].insert_or_assign(key,v);
+    ValueUnit v{val,(unit).toString()};
+    l[index].insert_or_assign((key).toString(),v);
 
-    d_arrayValues.emplace(arrayKey,l);
+    d_arrayValues.emplace((arrayKey).toString(),l);
 }
 
-std::size_t HeaderStorage::arrayStoreSize(const QString key) const
+std::size_t HeaderStorage::arrayStoreSize(QAnyStringView key) const
 {
     auto it = d_arrayValues.find(key);
     if(it != d_arrayValues.end())

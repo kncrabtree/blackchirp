@@ -12,8 +12,8 @@ class QwtPlotCurve;
 class QwtPlotMarker;
 
 namespace BC::Key {
-static const QString pulsePlot{"pulsePlot"};
-static const QString pulseChannel{"PulseChannel"};
+inline constexpr QLatin1StringView pulsePlot{"pulsePlot"};
+inline constexpr QLatin1StringView pulseChannel{"PulseChannel"};
 }
 
 class PulsePlot : public ZoomPanPlot

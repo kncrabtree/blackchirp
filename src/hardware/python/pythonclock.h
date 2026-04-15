@@ -7,7 +7,7 @@
 #include "pythonhardwarebase.h"
 
 namespace BC::Key::PythonClock {
-static const QString numOutputs{"numOutputs"};
+inline constexpr QLatin1StringView numOutputs{"numOutputs"};
 }
 
 /*!

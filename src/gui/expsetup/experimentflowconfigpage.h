@@ -6,7 +6,7 @@
 class GasControlWidget;
 
 namespace BC::Key::WizFlow {
-static const QString key{"WizardFlowConfigPage"};
+inline constexpr QLatin1StringView key{"WizardFlowConfigPage"};
 }
 
 class ExperimentFlowConfigPage : public ExperimentConfigPage

@@ -6,7 +6,7 @@
 
 
 namespace BC::Aux::PController {
-static const QString pressure{"ChamberPressure"};
+inline constexpr QLatin1StringView pressure{"ChamberPressure"};
 }
 
 class PressureController : public HardwareObject

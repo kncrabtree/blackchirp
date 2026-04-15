@@ -4,9 +4,9 @@
 #include <data/storage/headerstorage.h>
 
 namespace BC::Store::TempControlConfig {
-static const QString channel{"Channel"};
-static const QString name{"Name"};
-static const QString enabled{"Enabled"};
+inline constexpr QLatin1StringView channel{"Channel"};
+inline constexpr QLatin1StringView name{"Name"};
+inline constexpr QLatin1StringView enabled{"Enabled"};
 }
 
 class TemperatureControllerConfig : public HeaderStorage

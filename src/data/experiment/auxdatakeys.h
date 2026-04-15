@@ -2,6 +2,8 @@
 #define AUXDATAKEYS_H
 
 #include <QString>
+#include <QLatin1StringView>
+#include <QStringView>
 
 //! \file auxdatakeys.h
 //! \brief Auxiliary data keys used for experiment validation and abort conditions
@@ -18,8 +20,8 @@ namespace BC::Aux {
 
 // Flow controller auxiliary data keys
 namespace Flow {
-    static const QString pressure{"Pressure"}; /*!< Pressure auxiliary data key */
-    static const QString flow{"Flow%1"}; /*!< Flow channel auxiliary data key template */
+    inline constexpr QLatin1StringView pressure{"Pressure"}; /*!< Pressure auxiliary data key */
+    inline const QString flow{"Flow%1"}; /*!< Flow channel auxiliary data key template */
 }
 
 } // namespace BC::Aux

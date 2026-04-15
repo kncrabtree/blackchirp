@@ -13,21 +13,21 @@
 #include <data/lif/lifdigitizerconfig.h>
 
 namespace BC::Store::LIF {
-static const QString key("LifConfig");
-static const QString order("ScanOrder");
-static const QString completeMode("CompleteMode");
-static const QString dStart("DelayStart");
-static const QString dStep("DelayStep");
-static const QString dPoints("DelayPoints");
-static const QString dRandom("DelayRandom");
-static const QString lStart("LaserStart");
-static const QString lStep("LaserStep");
-static const QString lPoints("LaserPoints");
-static const QString shotsPerPoint("ShotsPerPoint");
+inline constexpr QLatin1StringView key("LifConfig");
+inline constexpr QLatin1StringView order("ScanOrder");
+inline constexpr QLatin1StringView completeMode("CompleteMode");
+inline constexpr QLatin1StringView dStart("DelayStart");
+inline constexpr QLatin1StringView dStep("DelayStep");
+inline constexpr QLatin1StringView dPoints("DelayPoints");
+inline constexpr QLatin1StringView dRandom("DelayRandom");
+inline constexpr QLatin1StringView lStart("LaserStart");
+inline constexpr QLatin1StringView lStep("LaserStep");
+inline constexpr QLatin1StringView lPoints("LaserPoints");
+inline constexpr QLatin1StringView shotsPerPoint("ShotsPerPoint");
 }
 
 namespace BC::Config::Exp {
-static const QString lifType{"LifType"};
+inline constexpr QLatin1StringView lifType{"LifType"};
 }
 
 class LifConfig : public ExperimentObjective, public HeaderStorage

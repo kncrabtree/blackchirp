@@ -4,10 +4,10 @@
 #include <data/experiment/digitizerconfig.h>
 
 namespace BC::Store::Digi{
-static const QString lifChannel("LifChannel");
-static const QString lifRefChannel("LifRefChannel");
-static const QString lifRefEnabled("LifRefEnabled");
-static const QString lifChannelOrder("LifChannelOrder");
+inline constexpr QLatin1StringView lifChannel("LifChannel");
+inline constexpr QLatin1StringView lifRefChannel("LifRefChannel");
+inline constexpr QLatin1StringView lifRefEnabled("LifRefEnabled");
+inline constexpr QLatin1StringView lifChannelOrder("LifChannelOrder");
 }
 
 class LifDigitizerConfig : public DigitizerConfig

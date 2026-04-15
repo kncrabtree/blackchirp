@@ -24,8 +24,8 @@
 
 // Namespace for settings keys
 namespace BC::Key::OverlayBaseOptions {
-static const QString key{"OverlayBaseOptionsWidget"};
-static const QString autoscalePercentage{"autoscalePercentage"};
+inline constexpr QLatin1StringView key{"OverlayBaseOptionsWidget"};
+inline constexpr QLatin1StringView autoscalePercentage{"autoscalePercentage"};
 }
 
 class OverlayBaseOptionsWidget : public QWidget, public SettingsStorage

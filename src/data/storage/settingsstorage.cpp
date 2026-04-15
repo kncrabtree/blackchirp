@@ -15,7 +15,7 @@ SettingsStorage::SettingsStorage(const QStringList keys, Type /*type*/) : d_sett
     readAll();
 }
 
-SettingsStorage::SettingsStorage(const QString orgName, const QString appName, const QStringList keys, Type /*type*/) : d_settings{orgName,appName}
+SettingsStorage::SettingsStorage(QAnyStringView orgName, QAnyStringView appName, const QStringList keys, Type /*type*/) : d_settings{orgName.toString(),appName.toString()}
 {
     d_settings.setFallbacksEnabled(false);
 
@@ -30,8 +30,8 @@ SettingsStorage::SettingsStorage(const QString orgName, const QString appName, c
     readAll();
 }
 
-SettingsStorage::SettingsStorage(const QString key, Type type) :
-    SettingsStorage(QStringList(key),type)
+SettingsStorage::SettingsStorage(QAnyStringView key, Type type) :
+    SettingsStorage(QStringList(key.toString()),type)
 {
 
 }
@@ -42,17 +42,17 @@ SettingsStorage::~SettingsStorage()
     save();
 }
 
-bool SettingsStorage::containsValue(const QString key) const
+bool SettingsStorage::containsValue(QAnyStringView key) const
 {
     return d_values.contains(key) || d_getters.contains(key);
 }
 
-bool SettingsStorage::containsArray(const QString key) const
+bool SettingsStorage::containsArray(QAnyStringView key) const
 {
     return d_arrayValues.contains(key);
 }
 
-QVariant SettingsStorage::get(const QString key, const QVariant &defaultValue) const
+QVariant SettingsStorage::get(QAnyStringView key, const QVariant &defaultValue) const
 {
     //search for key in values map; return if found
     auto it = d_values.find(key);
@@ -80,23 +80,23 @@ SettingsStorage::SettingsMap SettingsStorage::getMultiple(const std::vector<QStr
     return out;
 }
 
-std::vector<SettingsStorage::SettingsMap> SettingsStorage::getArray(const QString key) const
+std::vector<SettingsStorage::SettingsMap> SettingsStorage::getArray(QAnyStringView key) const
 {
     if(containsArray(key))
-        return d_arrayValues.at(key);
+        return d_arrayValues.at((key).toString());
     else
         return std::vector<SettingsMap>();
 }
 
-std::size_t SettingsStorage::getArraySize(const QString key) const
+std::size_t SettingsStorage::getArraySize(QAnyStringView key) const
 {
     if(containsArray(key))
-        return d_arrayValues.at(key).size();
+        return d_arrayValues.at((key).toString()).size();
 
     return 0;
 }
 
-SettingsStorage::SettingsMap SettingsStorage::getArrayMap(const QString key, std::size_t i) const
+SettingsStorage::SettingsMap SettingsStorage::getArrayMap(QAnyStringView key, std::size_t i) const
 {
     auto v = getArray(key);
     if(i < v.size())
@@ -105,7 +105,7 @@ SettingsStorage::SettingsMap SettingsStorage::getArrayMap(const QString key, std
     return SettingsMap();
 }
 
-QVariant SettingsStorage::getArrayValue(const QString arrayKey, std::size_t i, const QString mapKey, const QVariant defaultValue) const
+QVariant SettingsStorage::getArrayValue(QAnyStringView arrayKey, std::size_t i, QAnyStringView mapKey, const QVariant defaultValue) const
 {
     auto m = getArrayMap(arrayKey,i);
     auto it = m.find(mapKey);
@@ -154,7 +154,7 @@ QStringList SettingsStorage::groupKeys() const
     return out;
 }
 
-QVariant SettingsStorage::unRegisterGetter(const QString key, bool write)
+QVariant SettingsStorage::unRegisterGetter(QAnyStringView key, bool write)
 {
     auto it = d_getters.find(key);
     if(it == d_getters.end())
@@ -191,7 +191,7 @@ void SettingsStorage::clearGetters(bool write)
         d_settings.sync();
 }
 
-QVariant SettingsStorage::getOrSetDefault(const QString key, const QVariant defaultValue)
+QVariant SettingsStorage::getOrSetDefault(QAnyStringView key, const QVariant defaultValue)
 {
     if(containsValue(key))
     {
@@ -209,7 +209,7 @@ QVariant SettingsStorage::getOrSetDefault(const QString key, const QVariant defa
     return defaultValue;
 }
 
-void SettingsStorage::setDefault(const QString key, const QVariant defaultValue)
+void SettingsStorage::setDefault(QAnyStringView key, const QVariant defaultValue)
 {
     if(containsValue(key) || containsArray(key))
         return;
@@ -217,7 +217,7 @@ void SettingsStorage::setDefault(const QString key, const QVariant defaultValue)
     set(key,defaultValue,true);
 }
 
-bool SettingsStorage::set(const QString key, const QVariant &value, bool write)
+bool SettingsStorage::set(QAnyStringView key, const QVariant &value, bool write)
 {
     //make sure there is no getter, array, or group associated with this key
     if(containsArray(key))
@@ -231,28 +231,28 @@ bool SettingsStorage::set(const QString key, const QVariant &value, bool write)
 
     d_edited = true;
 
-    d_values.insert_or_assign(key,value);
+    d_values.insert_or_assign((key).toString(),value);
 
     if(write)
     {
-        d_settings.setValue(key,value);
+        d_settings.setValue((key).toString(),value);
         d_settings.sync();
     }
 
     return true;
 }
 
-bool SettingsStorage::setArrayValue(const QString arrayKey, std::size_t i, const QString key, const QVariant &value, bool write)
+bool SettingsStorage::setArrayValue(QAnyStringView arrayKey, std::size_t i, QAnyStringView key, const QVariant &value, bool write)
 {
     if(!containsArray(arrayKey))
         return false;
 
-    if(i >= d_arrayValues.at(arrayKey).size())
+    if(i >= d_arrayValues.at((arrayKey).toString()).size())
         return false;
 
     d_edited = true;
 
-    d_arrayValues[arrayKey][i].insert_or_assign(key,value);
+    d_arrayValues[(arrayKey).toString()][i].insert_or_assign((key).toString(),value);
 
     if(write)
         writeArray(arrayKey);
@@ -260,18 +260,18 @@ bool SettingsStorage::setArrayValue(const QString arrayKey, std::size_t i, const
     return true;
 }
 
-void SettingsStorage::appendArrayMap(const QString key, const SettingsMap &map, bool write)
+void SettingsStorage::appendArrayMap(QAnyStringView key, const SettingsMap &map, bool write)
 {
     if(containsArray(key))
-        d_arrayValues[key].push_back(map);
+        d_arrayValues[(key).toString()].push_back(map);
     else
-        d_arrayValues.insert({key, {map}});
+        d_arrayValues.insert({(key).toString(), {map}});
 
     if(write)
         writeArray(key);
 }
 
-void SettingsStorage::clearValue(const QString key)
+void SettingsStorage::clearValue(QAnyStringView key)
 {
     d_edited = true;
     bool found = false;
@@ -317,7 +317,7 @@ void SettingsStorage::clearValue(const QString key)
 
 }
 
-QVariant SettingsStorage::getGroupValue(const QString groupKey, const QString key, const QVariant &defaultValue) const
+QVariant SettingsStorage::getGroupValue(QAnyStringView groupKey, QAnyStringView key, const QVariant &defaultValue) const
 {
     auto groupIt = d_groupValues.find(groupKey);
     if(groupIt != d_groupValues.end())
@@ -330,7 +330,7 @@ QVariant SettingsStorage::getGroupValue(const QString groupKey, const QString ke
     return defaultValue;
 }
 
-SettingsStorage::SettingsMap SettingsStorage::getGroup(const QString groupKey) const
+SettingsStorage::SettingsMap SettingsStorage::getGroup(QAnyStringView groupKey) const
 {
     auto groupIt = d_groupValues.find(groupKey);
     if(groupIt != d_groupValues.end())
@@ -339,7 +339,7 @@ SettingsStorage::SettingsMap SettingsStorage::getGroup(const QString groupKey) c
     return SettingsMap();
 }
 
-bool SettingsStorage::setGroupValue(const QString groupKey, const QString key, const QVariant &value, bool write)
+bool SettingsStorage::setGroupValue(QAnyStringView groupKey, QAnyStringView key, const QVariant &value, bool write)
 {
     // Cannot set group value for a key that's already used in other containers
     if(d_values.find(groupKey) != d_values.end() || 
@@ -351,9 +351,9 @@ bool SettingsStorage::setGroupValue(const QString groupKey, const QString key, c
     
     // Create group if it doesn't exist
     if(d_groupValues.find(groupKey) == d_groupValues.end())
-        d_groupValues[groupKey] = SettingsMap();
-    
-    d_groupValues[groupKey][key] = value;
+        d_groupValues[(groupKey).toString()] = SettingsMap();
+
+    d_groupValues[(groupKey).toString()][(key).toString()] = value;
     
     if(write)
         writeGroup(groupKey);
@@ -361,7 +361,7 @@ bool SettingsStorage::setGroupValue(const QString groupKey, const QString key, c
     return true;
 }
 
-std::map<QString,bool> SettingsStorage::setGroupValues(const QString groupKey, const SettingsMap &values, bool write)
+std::map<QString,bool> SettingsStorage::setGroupValues(QAnyStringView groupKey, const SettingsMap &values, bool write)
 {
     std::map<QString,bool> results;
     
@@ -377,7 +377,7 @@ std::map<QString,bool> SettingsStorage::setGroupValues(const QString groupKey, c
     return results;
 }
 
-std::map<QString,bool> SettingsStorage::setMultiple(const std::map<QString, QVariant> m, bool write)
+std::map<QString,bool> SettingsStorage::setMultiple(const std::map<QString, QVariant, std::less<>> m, bool write)
 {
     d_edited = true;
 
@@ -396,10 +396,10 @@ std::map<QString,bool> SettingsStorage::setMultiple(const std::map<QString, QVar
     return out;
 }
 
-void SettingsStorage::setArray(const QString key, const std::vector<std::map<QString, QVariant> > &array, bool write)
+void SettingsStorage::setArray(QAnyStringView key, const std::vector<std::map<QString, QVariant, std::less<>> > &array, bool write)
 {
     //passing an empty array will erase the value from the settings array and from QSettings
-    d_arrayValues.insert_or_assign(key,array);
+    d_arrayValues.insert_or_assign((key).toString(),array);
     d_edited = true;
 
     if(write)
@@ -423,11 +423,11 @@ void SettingsStorage::setArray(const QString key, const std::vector<std::map<QSt
 }
 
 
-void SettingsStorage::writeArray(const QString key)
+void SettingsStorage::writeArray(QAnyStringView key)
 {
     d_settings.remove(key);
     d_settings.beginWriteArray(key);
-    auto l = d_arrayValues.at(key);
+    auto l = d_arrayValues.at((key).toString());
     for(std::size_t i = 0; i < l.size(); ++i)
     {
         d_settings.setArrayIndex(i);
@@ -439,11 +439,11 @@ void SettingsStorage::writeArray(const QString key)
     d_settings.sync();
 }
 
-void SettingsStorage::writeGroup(const QString groupKey)
+void SettingsStorage::writeGroup(QAnyStringView groupKey)
 {
     d_settings.remove(groupKey);
     d_settings.beginGroup(groupKey);
-    auto group = d_groupValues.at(groupKey);
+    auto group = d_groupValues.at((groupKey).toString());
     for(auto it = group.cbegin(); it != group.cend(); ++it)
         d_settings.setValue(it->first, it->second);
     d_settings.endGroup();
@@ -471,11 +471,11 @@ void SettingsStorage::purgeGroup(const QStringList& keys)
     s.sync();
 }
 
-void SettingsStorage::purgeGroupsBySuffix(const QString& suffix)
+void SettingsStorage::purgeGroupsBySuffix(QAnyStringView suffix)
 {
     QSettings s(QCoreApplication::organizationName(), QCoreApplication::applicationName());
     s.setFallbacksEnabled(false);
-    const QString dotSuffix = QString(".") + suffix;
+    const QString dotSuffix = QString(".") + suffix.toString();
     const QStringList groups = s.childGroups();
     for (const QString& group : groups) {
         if (group.endsWith(dotSuffix)) {

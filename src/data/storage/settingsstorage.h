@@ -6,6 +6,8 @@
 #include <QList>
 #include <QSettings>
 #include <QCoreApplication>
+#include <QAnyStringView>
+#include <QLatin1StringView>
 
 #include <data/bcglobals.h>
 
@@ -21,14 +23,14 @@ namespace Key {
 }
 
 namespace BC::Key {
-static const QString BC{"Blackchirp"};
-static const QString exptNum{"exptNum"};
-static const QString savePath{"savePath"};
-static const QString appFont{"appFont"};
-static const QString exptDir{"experiments"};
-static const QString logDir{"log"};
-static const QString exportDir{"textexports"};
-static const QString trackingDir{"rollingdata"};
+inline constexpr QLatin1StringView BC{"Blackchirp"};
+inline constexpr QLatin1StringView exptNum{"exptNum"};
+inline constexpr QLatin1StringView savePath{"savePath"};
+inline constexpr QLatin1StringView appFont{"appFont"};
+inline constexpr QLatin1StringView exptDir{"experiments"};
+inline constexpr QLatin1StringView logDir{"log"};
+inline constexpr QLatin1StringView exportDir{"textexports"};
+inline constexpr QLatin1StringView trackingDir{"rollingdata"};
 }
 
 /*!
@@ -247,7 +249,7 @@ class SettingsStorage
 public:
 
     using SettingsGetter = std::function<QVariant()>; /*!< Alias for a getter function */
-    using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strings and variants */
+    using SettingsMap = std::map<QString,QVariant,std::less<>>; /*!< Alias for a map of strings and variants */
 
     /*!
      * \brief Used in constructor to indicate whether a hardware subkey is read from settings
@@ -284,7 +286,7 @@ public:
      * \param type If set to SettingsStorage::Hardware and the length of keys is 1,
      * the subKey for the current hardware will be read from settings and selected.
      */
-    SettingsStorage(const QString orgName, const QString appName, const QStringList keys = QStringList(), Type type = General);
+    SettingsStorage(QAnyStringView orgName, QAnyStringView appName, const QStringList keys = QStringList(), Type type = General);
 
     /*!
      * \brief Convenience constructor for a single key
@@ -292,7 +294,7 @@ public:
      * \param key The key for the group in `QSettings`. If empty, will be set to "Blackchirp"
      * \param type If set to Hardware, a subKey will be added (default: "virtual")
      */
-    SettingsStorage(const QString key, Type type = General);
+    SettingsStorage(QAnyStringView key, Type type = General);
 
     /*!
      * \brief Destructor. Saves all values to settings
@@ -308,7 +310,7 @@ public:
      * \param key The key to search for
      * \return If key is found
      */
-    bool containsValue(const QString key) const;
+    bool containsValue(QAnyStringView key) const;
 
     /*!
      * \brief Returns whether key is in the storage as an array
@@ -316,7 +318,7 @@ public:
      * \param key The key to search for
      * \return If key is found
      */
-    bool containsArray(const QString key) const;
+    bool containsArray(QAnyStringView key) const;
 
     /*!
      * \brief Gets the value of a setting
@@ -329,7 +331,7 @@ public:
      * \param defaultValue The value returned if key is not present (default: `QVariant()`)
      * \return The value
      */
-    QVariant get(const QString key, const QVariant &defaultValue = QVariant()) const;
+    QVariant get(QAnyStringView key, const QVariant &defaultValue = QVariant()) const;
 
     /*!
      * \brief Gets the value of a settting. Overloaded function.
@@ -345,7 +347,7 @@ public:
      * \return The value, or a default constructed value if the key is not present
      */
     template<typename T>
-    inline T get(const QString key, const T &defaultValue = QVariant().value<T>()) const { return (containsValue(key) ? get(key).value<T>() : defaultValue); }
+    inline T get(QAnyStringView key, const T &defaultValue = QVariant().value<T>()) const { return (containsValue(key) ? get(key).value<T>() : defaultValue); }
 
     /*!
      * \brief Gets values associated with a list of keys. Overloaded function
@@ -370,7 +372,7 @@ public:
      * \param key The key associated with the array
      * \return The array. An empty vector is returned if the key is not found
      */
-    std::vector<SettingsMap> getArray(const QString key) const;
+    std::vector<SettingsMap> getArray(QAnyStringView key) const;
 
     /*!
      * \brief Returns the size of the array value associated with key
@@ -378,7 +380,7 @@ public:
      * \param key The key of the array value
      * \return The number of maps in the array (0 if key does not exist);
      */
-    std::size_t getArraySize(const QString key) const;
+    std::size_t getArraySize(QAnyStringView key) const;
 
     /*!
      * \brief Returns a single map from an array associated with a key
@@ -388,7 +390,7 @@ public:
      * \return The selected map, which will be empty if key does not exist or
      * if i is out of bounds for the array
      */
-    SettingsMap getArrayMap(const QString key, std::size_t i) const;
+    SettingsMap getArrayMap(QAnyStringView key, std::size_t i) const;
 
     /*!
      * \brief Gets a single value from a map that is part of an array value
@@ -404,7 +406,7 @@ public:
      * i is out of bounds **or** mapKey does not exist
      * \return Stored value or defaultValue
      */
-    QVariant getArrayValue(const QString arrayKey, std::size_t i, const QString mapKey, const QVariant defaultValue = QVariant()) const;
+    QVariant getArrayValue(QAnyStringView arrayKey, std::size_t i, QAnyStringView mapKey, const QVariant defaultValue = QVariant()) const;
 
 
     /*!
@@ -418,7 +420,7 @@ public:
      * \return The value or the defaultValue, as appropriate
      */
     template<typename T>
-    inline T getArrayValue(const QString arrayKey, std::size_t i, const QString mapKey, T defaultValue = QVariant().value<T>()) const {
+    inline T getArrayValue(QAnyStringView arrayKey, std::size_t i, QAnyStringView mapKey, T defaultValue = QVariant().value<T>()) const {
         auto m = getArrayMap(arrayKey,i);
         auto it = m.find(mapKey);
         if(it != m.end())
@@ -439,7 +441,7 @@ public:
      * \param defaultValue Value returned if group or key doesn't exist
      * \return The stored QVariant or defaultValue if not found
      */
-    QVariant getGroupValue(const QString groupKey, const QString key, const QVariant &defaultValue = QVariant()) const;
+    QVariant getGroupValue(QAnyStringView groupKey, QAnyStringView key, const QVariant &defaultValue = QVariant()) const;
 
     /*!
      * \brief Gets a value from a group-based key-value store. Overloaded function
@@ -452,7 +454,7 @@ public:
      * \return The stored value converted to type T, or defaultValue if not found
      */
     template<typename T>
-    inline T getGroupValue(const QString groupKey, const QString key, const T &defaultValue = QVariant().value<T>()) const {
+    inline T getGroupValue(QAnyStringView groupKey, QAnyStringView key, const T &defaultValue = QVariant().value<T>()) const {
         auto groupIt = d_groupValues.find(groupKey);
         if(groupIt != d_groupValues.end())
         {
@@ -470,7 +472,7 @@ public:
      * \param groupKey The group identifier
      * \return SettingsMap containing all key-value pairs in the group (empty if group doesn't exist)
      */
-    SettingsMap getGroup(const QString groupKey) const;
+    SettingsMap getGroup(QAnyStringView groupKey) const;
 
     /*!
      * \brief Controls whether changes are wrtten to `QSettings`
@@ -520,7 +522,7 @@ protected:
      * \return Whether the getter was registered
      */
     template<class T, typename Out>
-    bool registerGetter(const QString key, T* obj, Out (T::*getter)() const)
+    bool registerGetter(QAnyStringView key, T* obj, Out (T::*getter)() const)
     {
         //cannot register a getter for an array value
         if(d_arrayValues.find(key) != d_arrayValues.end())
@@ -533,7 +535,7 @@ protected:
             d_values.erase(it->first);
 
         auto f = [obj, getter](){ return (obj->*getter)(); };
-        return d_getters.emplace(key,f).second;
+        return d_getters.emplace(key.toString(),f).second;
     }
 
     /*!
@@ -557,7 +559,7 @@ protected:
      *
      */
     template<typename T>
-    bool registerGetter(const QString key, std::function<T()> f)
+    bool registerGetter(QAnyStringView key, std::function<T()> f)
     {
         //cannot register a getter for an array value
         if(d_arrayValues.find(key) != d_arrayValues.end())
@@ -569,7 +571,7 @@ protected:
         if(it != d_values.end())
             d_values.erase(it->first);
 
-        return d_getters.emplace(key,f).second;
+        return d_getters.emplace(key.toString(),f).second;
     }
 
     /*!
@@ -588,7 +590,7 @@ protected:
      * \param write If true, value is written to persistent storage immediately
      * \return Return value of getter call, or empty QVariant if no getter was found.
      */
-    QVariant unRegisterGetter(const QString key, bool write = false);
+    QVariant unRegisterGetter(QAnyStringView key, bool write = false);
 
     /*!
      * \brief Removes all getter functions
@@ -624,7 +626,7 @@ protected:
      * \return Value associated with the key. If the key did not previously
      * exist, this will equal defaltValue
      */
-    QVariant getOrSetDefault(const QString key, const QVariant defaultValue);
+    QVariant getOrSetDefault(QAnyStringView key, const QVariant defaultValue);
 
     /*!
      * \brief Reads a settings, and sets a default value if it does not exist
@@ -639,7 +641,7 @@ protected:
      *
      */
     template<typename T>
-    T getOrSetDefault(const QString key, const T &defaultValue) {
+    T getOrSetDefault(QAnyStringView key, const T &defaultValue) {
         QVariant out = getOrSetDefault(key,QVariant::fromValue(defaultValue));
         return out.value<T>();
     }
@@ -652,7 +654,7 @@ protected:
      * \param key The key for the value
      * \param defaultValue Value to set if key is not found.
      */
-    void setDefault(const QString key, const QVariant defaultValue);
+    void setDefault(QAnyStringView key, const QVariant defaultValue);
 
     /*!
      * \brief Sets a default value if none exists. Overloaded function
@@ -663,7 +665,7 @@ protected:
      * \param defaultValue Value to set if key is not found.
      */
     template<typename T>
-    void setDefault(const QString key, const T &defaultValue) {
+    void setDefault(QAnyStringView key, const T &defaultValue) {
         setDefault(key,QVariant::fromValue(defaultValue));
     }
 
@@ -685,7 +687,7 @@ protected:
      * \return Whether or not the setting was made. If false, the key is already
      * associated with a getter or array value
      */
-    bool set(const QString key, const QVariant &value, bool write = false);
+    bool set(QAnyStringView key, const QVariant &value, bool write = false);
 
     /*!
      * \brief Stores a key-value setting. Overloaded function
@@ -699,7 +701,7 @@ protected:
      * associated with a getter or array value
      */
     template<typename T>
-    bool set(const QString key, const T &value, bool write = false) {
+    bool set(QAnyStringView key, const T &value, bool write = false) {
         return set(key,QVariant::fromValue(value),write);
     }
 
@@ -729,7 +731,7 @@ protected:
      * \param array The new array value (may be empty)
      * \param write If true, QSettings is updated immediately
      */
-    void setArray(const QString key, const std::vector<SettingsMap> &array, bool write = false);
+    void setArray(QAnyStringView key, const std::vector<SettingsMap> &array, bool write = false);
 
     /*!
      * \brief Sets a single value within a map assocuated with an array value
@@ -746,7 +748,7 @@ protected:
      * \param write If true, write updated array to `QSettings`
      * \return Whether setting was successfully made
      */
-    bool setArrayValue(const QString arrayKey, std::size_t i, const QString key, const QVariant &value, bool write = false);
+    bool setArrayValue(QAnyStringView arrayKey, std::size_t i, QAnyStringView key, const QVariant &value, bool write = false);
 
     /*!
      * \brief Sets a single value within a map assocuated with an array value.
@@ -763,7 +765,7 @@ protected:
      * \return Whether setting was successfully made
      */
     template<typename T>
-    bool setArrayValue(const QString arrayKey, std::size_t i, const QString key, const T &value, bool write = false) {
+    bool setArrayValue(QAnyStringView arrayKey, std::size_t i, QAnyStringView key, const T &value, bool write = false) {
         return setArrayValue(arrayKey,i,key,QVariant::fromValue(value),write);
     }
 
@@ -779,7 +781,7 @@ protected:
      * \param map The new map to append
      * \param Whether to update `QSettings` immediately
      */
-    void appendArrayMap(const QString key, const SettingsMap &map, bool write = false);
+    void appendArrayMap(QAnyStringView key, const SettingsMap &map, bool write = false);
 
     /*!
      * \brief Sets a value within a group-based key-value store
@@ -793,7 +795,7 @@ protected:
      * \param write If true, write to persistent storage immediately
      * \return Whether the setting was successfully made
      */
-    bool setGroupValue(const QString groupKey, const QString key, const QVariant &value, bool write = false);
+    bool setGroupValue(QAnyStringView groupKey, QAnyStringView key, const QVariant &value, bool write = false);
 
     /*!
      * \brief Sets a value within a group-based key-value store. Overloaded function
@@ -807,7 +809,7 @@ protected:
      * \return Whether the setting was successfully made
      */
     template<typename T>
-    bool setGroupValue(const QString groupKey, const QString key, const T &value, bool write = false) {
+    bool setGroupValue(QAnyStringView groupKey, QAnyStringView key, const T &value, bool write = false) {
         return setGroupValue(groupKey, key, QVariant::fromValue(value), write);
     }
 
@@ -819,7 +821,7 @@ protected:
      * \param write If true, write to persistent storage immediately
      * \return Map indicating success/failure for each key
      */
-    std::map<QString,bool> setGroupValues(const QString groupKey, const SettingsMap &values, bool write = false);
+    std::map<QString,bool> setGroupValues(QAnyStringView groupKey, const SettingsMap &values, bool write = false);
 
     /*!
      * \brief Clears all data associated with a key and removes it from QSettings
@@ -830,7 +832,7 @@ protected:
      *
      * \param key The key to clear from all storage forms
      */
-    void clearValue(const QString key);
+    void clearValue(QAnyStringView key);
 
     /*!
      * \brief Removes all settings for this object's group from persistent storage
@@ -862,7 +864,7 @@ protected:
      *
      * \param suffix The hardware key to match (e.g., "PulseGenerator.main")
      */
-    static void purgeGroupsBySuffix(const QString& suffix);
+    static void purgeGroupsBySuffix(QAnyStringView suffix);
 
     /*!
      * \brief Write all values to `QSettings`.
@@ -886,15 +888,15 @@ protected:
     
 private:
     explicit SettingsStorage(const QStringList keys, Type type, QSettings::Scope scope);
-    explicit SettingsStorage(const QString orgName, const QString appName, const QStringList keys, Type type, QSettings::Scope scope);
+    explicit SettingsStorage(QAnyStringView orgName, QAnyStringView appName, const QStringList keys, Type type, QSettings::Scope scope);
 
     SettingsMap d_values; /*!< Map of key-value pairs */
     bool d_discard{false}; /*! If set to true, changes will not be stored to QSettings */
     bool d_edited{false}; /*! Set to true when a value is changed. */
 
-    std::map<QString, SettingsGetter> d_getters; /*!< Map containing all registered getters */
-    std::map<QString,std::vector<SettingsMap>> d_arrayValues; /*!< Map containing all array values */
-    std::map<QString, SettingsMap> d_groupValues; /*!< Map containing group-based key-value pairs */
+    std::map<QString, SettingsGetter, std::less<>> d_getters; /*!< Map containing all registered getters */
+    std::map<QString,std::vector<SettingsMap>,std::less<>> d_arrayValues; /*!< Map containing all array values */
+    std::map<QString, SettingsMap, std::less<>> d_groupValues; /*!< Map containing group-based key-value pairs */
 
     QSettings d_settings; /*!< Handle to QSettings storage object */
 
@@ -902,13 +904,13 @@ private:
      * \brief Writes a single array to QSettings
      * \param key Key of the array to write
      */
-    void writeArray(const QString key);
+    void writeArray(QAnyStringView key);
 
     /*!
      * \brief Writes a single group to QSettings
      * \param groupKey Key of the group to write
      */
-    void writeGroup(const QString groupKey);
+    void writeGroup(QAnyStringView groupKey);
 
 
 };
