@@ -619,24 +619,39 @@ makes the rest of the plan coherent.
      `inline const QString` rather than `QLatin1StringView`; these
      are correct but suboptimal — can be swept in Step 10.*
 
-3. **Redesign `LogHandler` as a thread-safe global singleton with a
+3. ✅ **Redesign `LogHandler` as a thread-safe global singleton with a
    `QAnyStringView` API.** Introduce
    `LogHandler::instance().log(...)` and `bcLog(...)`. Keep the
    existing `emit logMessage()` signal in place as a shim that
    forwards to the new API, so the existing ~445 call sites keep
    compiling unchanged. This is the integration point between the
-   two projects.
+   two projects. Add `bcWarn`, `bcError`, `bcDebug`, and `bcHighlight`
+   convenience methods. `bcLog` can retain the second argument 
+   (defaults to LogHandler::Normal) for use in situations in which
+   the MessageCode is conditional.
 
-4. **Migrate `logMessage` call sites to `bcLog`.** Bulk mechanical
-   pass across all ~445 sites. Where the call site uses a literal,
-   adopt `"..."_s` at the same time. Once this pass completes,
-   remove the forwarding `emit logMessage()` shim and the signal
-   connection scaffolding from `HardwareManager`.
+   *Completed: `LogHandler` is now a singleton accessed via
+   `instance()`. `log(QAnyStringView, MessageCode)` is the primary
+   API. `std::atomic` members (`d_currentExperimentNum`,
+   `d_logToFile`, `d_debugLogging`) provide thread-safe reads from
+   worker threads; `QMutex d_fileMutex` serializes file I/O.
+   `logMessage` and `logMessageWithTime` slots forward to the private
+   `doLog()` helper, preserving all existing signal connections
+   without change. `MainWindow` now uses `&LogHandler::instance()`
+   instead of `new LogHandler`. `ExperimentViewWidget` continues to
+   create a local `LogHandler(false, parent)` for log replay — its
+   constructor remains public for this purpose.*
+
+4. **Migrate `logMessage` call sites to `bcLog`, `bcWarn`, etc.**
+   Bulk mechanical pass across all ~445 sites. Where the call site
+   uses a literal, adopt `"..."_s` at the same time. Once this pass
+   completes, remove the forwarding `emit logMessage()` shim and
+   the signal connection scaffolding from `HardwareManager`.
 
 5. **`qDebug()` elimination pass.** With the global logger in place
    and the signal cascade removed, every `qDebug()` call site can
-   call `bcLog(..., LogHandler::Debug)` directly regardless of
-   context. Straightforward mechanical replacement or deletion.
+   call `bcDebug` directly regardless of context. Straightforward
+   mechanical replacement or deletion.
 
 6. **`HardwareManager` severity reclassification.** Bulk Normal →
    Debug, keeping Error/Warning as-is and keeping user-facing

@@ -101,7 +101,7 @@ MainWindow::MainWindow(QWidget *parent) :
         }
     });
 
-    p_lh = new LogHandler(true,this);
+    p_lh = &LogHandler::instance();
     p_lh->setDebugLogging(ApplicationConfigManager::instance().isDebugLoggingEnabled());
     connect(&ApplicationConfigManager::instance(), &ApplicationConfigManager::debugLoggingChanged,
             p_lh, &LogHandler::setDebugLogging);

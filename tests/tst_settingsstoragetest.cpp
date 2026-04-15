@@ -296,7 +296,7 @@ void SettingsStorageTest::testDefault()
 void SettingsStorageTest::testSubkeyRead()
 {
     initSettingsFile();
-    SettingsStorage readOnly({"readOnly","subKey"},General);
+    SettingsStorage readOnly(QStringList{"readOnly","subKey"},General);
 
     QCOMPARE(readOnly.get("testInt").toInt(),420);
     QCOMPARE(readOnly.get<int>("testInt"),420);
