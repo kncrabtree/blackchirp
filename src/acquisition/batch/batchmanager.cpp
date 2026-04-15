@@ -16,10 +16,9 @@ void BatchManager::experimentComplete()
     auto exp = currentExperiment();
 
     if(!exp->d_errorString.isEmpty())
-        emit logMessage(exp->d_errorString,LogHandler::Error);
+        bcError(exp->d_errorString);
 
-
-    emit logMessage(exp->d_endLogMessage,exp->d_endLogMessageCode);
+    bcLog(exp->d_endLogMessage,exp->d_endLogMessageCode);
 
     ///TODO: Break this up and make processExperiment run in another thread
     /// For now, though, no batch does any processing, so save for later

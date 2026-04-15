@@ -9,6 +9,8 @@
 #include <QMutex>
 #include <QAnyStringView>
 
+using namespace Qt::Literals::StringLiterals;
+
 class LogHandler : public QObject
 {
     Q_OBJECT

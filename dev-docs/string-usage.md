@@ -234,10 +234,14 @@ Rules of thumb, in order of preference:
    API, to store, or to do `QString`-specific operations like
    `arg()`).
 3. **`QAnyStringView`** is appropriate when the function is a pure
-   lookup, comparison, or passthrough — it lets callers pass
-   `QString`, `QStringView`, `QLatin1StringView`, `const char *`, or
-   a `"..."_s` literal without any temporary `QString`. Good
-   candidates:
+   lookup, comparison, or passthrough — it accepts `QString`,
+   `QStringView`, `QLatin1StringView`, and `const char *` directly.
+   At call sites with string literals, use **`"..."_L1`** for ASCII
+   content and **`u"..."_s`** for non-ASCII content; both reach the
+   parameter as a zero-allocation view. Do *not* use `"..."_s` at
+   `QAnyStringView` call sites — `"..."_s` constructs a temporary
+   `QString`, defeating the purpose of the `QAnyStringView` parameter.
+   Good candidates:
    - `SettingsStorage::get` / `set` / `containsValue`
    - `HeaderStorage` lookup methods
    - `HardwareObject::validationKeys` consumers
@@ -644,9 +648,19 @@ makes the rest of the plan coherent.
 
 4. **Migrate `logMessage` call sites to `bcLog`, `bcWarn`, etc.**
    Bulk mechanical pass across all ~445 sites. Where the call site
-   uses a literal, adopt `"..."_s` at the same time. Once this pass
+   uses a string literal, use `"..."_L1` for ASCII content and
+   `u"..."_s` for non-ASCII content — not `"..."_s`, which would
+   construct a temporary `QString` against the intent of the
+   `QAnyStringView` parameter. Once this pass
    completes, remove the forwarding `emit logMessage()` shim and
    the signal connection scaffolding from `HardwareManager`.
+
+   *In progress: all call sites outside `src/hardware/` have been
+   migrated (9 calls across `gui/mainwindow.cpp`,
+   `acquisition/acquisitionmanager.cpp`,
+   `acquisition/batch/batchmanager.cpp`). All remaining
+   `emit logMessage` calls are in files under `src/hardware/` and
+   are covered by steps 6–8.*
 
 5. **`qDebug()` elimination pass.** With the global logger in place
    and the signal cascade removed, every `qDebug()` call site can

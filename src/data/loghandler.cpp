@@ -4,8 +4,6 @@
 #include <QFile>
 #include <QMutexLocker>
 
-using namespace Qt::Literals::StringLiterals;
-
 LogHandler *LogHandler::s_instance = nullptr;
 
 LogHandler &LogHandler::instance()

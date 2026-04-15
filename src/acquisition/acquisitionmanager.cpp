@@ -171,13 +171,13 @@ void AcquisitionManager::onProcessingComplete()
 
     if(!result.success)
     {
-        emit logMessage("Error processing FID data.",LogHandler::Error);
+        bcError("Error processing FID data."_L1);
         abort();
         return;
     }
 
     if(!result.warningString.isEmpty())
-        emit logMessage(result.warningString,LogHandler::Warning);
+        bcWarn(result.warningString);
 
     auto *ftmw = ps_currentExperiment->ftmwConfig();
 
@@ -220,7 +220,7 @@ void AcquisitionManager::lifHardwareReady(bool success)
         {
             if(!success)
             {
-                emit logMessage(QString("LIF delay and/or frequency could not be set. Aborting."),LogHandler::Error);
+                bcError("LIF delay and/or frequency could not be set. Aborting."_L1);
                 abort();
             }
             else
