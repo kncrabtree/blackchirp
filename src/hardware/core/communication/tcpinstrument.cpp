@@ -40,7 +40,8 @@ bool TcpInstrument::writeCmd(QString cmd)
         if(!connectSocket())
         {
             emit hardwareFailure();
-            emit logMessage(QString("Could not write command. Socket is not connected. (Command = %1)").arg(cmd));
+            bcError("Could not write command. Socket is not connected."_L1);
+            bcDebug(u"%1 writeCmd: Could not write command. Socket is not connected. Command = %2"_s.arg(d_key, cmd));
             return false;
         }
     }
@@ -55,7 +56,8 @@ bool TcpInstrument::writeBinary(QByteArray dat)
         if(!connectSocket())
         {
             emit hardwareFailure();
-            emit logMessage(QString("Could not write binary data. Socket is not connected. Data hex (first 25 bytes) = %1").arg(QString(dat.toHex()).mid(0,50)),LogHandler::Error);
+            bcError("Could not write binary data. Socket is not connected."_L1);
+            bcDebug(u"%1 writeBinary: Could not write binary data. Socket is not connected. Data hex (first 25 bytes) = %2"_s.arg(d_key, QString(dat.toHex()).mid(0,50)));
             return false;
         }
     }
@@ -72,7 +74,8 @@ QByteArray TcpInstrument::queryCmd(QString cmd, bool suppressError)
         if(!connectSocket())
         {
             emit hardwareFailure();
-            emit logMessage(QString("Could not write query. Socket is not connected. (Query = %1)").arg(cmd));
+            bcError("Could not write query. Socket is not connected."_L1);
+            bcDebug(u"%1 queryCmd: Could not write query. Socket is not connected. Query = %2"_s.arg(d_key, cmd));
             return QByteArray();
         }
     }

@@ -667,18 +667,160 @@ makes the rest of the plan coherent.
    call `bcDebug` directly regardless of context. Straightforward
    mechanical replacement or deletion.
 
-6. **`HardwareManager` severity reclassification.** Bulk Normal →
-   Debug, keeping Error/Warning as-is and keeping user-facing
-   connection-test Normal messages.
+6. **Hardware severity reclassification and `emit logMessage`
+   migration.** All `src/hardware/` files except the FTMW digitizers
+   (deferred to step 7). Migrates every `emit logMessage` call to the
+   appropriate `bcLog`/`bcWarn`/`bcError`/`bcDebug` free function and
+   applies the severity policy below. Once all files in this step are
+   complete, the `logMessage` shim slot and its forwarding signal
+   connections are removed (commit H).
+
+   #### Severity policy
+
+   **Error** — operation failed; hardware state may be unknown.
+   - Hardware read/write failures ("Could not read X", "No response
+     to Y query")
+   - Invalid parameters that prevent the operation from completing
+   - Communication timeout or port-closed failures
+
+   **Warning** — unexpected but recoverable; no data loss.
+   - Parameter clamped to nearest valid hardware value
+   - Command echo not received
+   - Unsupported device configuration detected (operation continues
+     with fallback)
+   - Virtual instrument in use (user needs to know)
+
+   **Normal** — significant event worth a log timestamp; few per
+   session during routine use.
+   - Hardware connected or failed (connection test outcome)
+   - Hardware added or removed from configuration
+   - Top-level operation completions (sync complete, library apply
+     summary)
+   - Results of explicit user actions (Python script reloaded)
+
+   **Debug** — technical detail; shown only when debug logging is
+   enabled.
+   - ID response strings emitted during `testConnection()`
+   - Internal lifecycle sub-steps (threads started, GPIB controllers
+     resolved, etc.)
+   - Raw command/response content and hex dumps
+   - Convergence loop internal diagnostics
+
+   #### Split pattern for error + diagnostic messages
+
+   When a single call combines a user-facing error with a raw
+   technical detail (response bytes, hex), split it into two calls:
+
+   ```cpp
+   // Before
+   emit logMessage(QString("Could not read %1 frequency. Response: %2 (Hex: %3)")
+                   .arg(ch).arg(resp).arg(resp.toHex()), LogHandler::Error);
+
+   // After
+   bcError(u"Could not read %1 frequency."_s.arg(ch));
+   bcDebug(u"%1: Could not read %2 frequency. Response = %3 (Hex: %4)"_s
+           .arg(d_key, ch, resp, resp.toHex()));
+   ```
+
+   The debug line must be self-contained: the debug log file contains
+   only Debug-level messages, so a reader cannot cross-reference it
+   against the normal log. The debug line therefore repeats the
+   user-facing error text *and* appends the technical detail, prefixed
+   with the device/object identifier (`d_key` for communication
+   protocol and hardware object subclasses).
+
+   For already-separate supplementary calls (e.g., a Normal hex dump
+   that immediately follows an Error), merge the error text and the
+   supplementary detail into a single bcDebug call using the same
+   pattern, and remove the now-redundant supplementary call.
+
+   #### Commented-out calls
+
+   Update the severity in the commented text to the appropriate
+   level (usually Debug) but leave the call commented out.
+
+   #### String literal form at call sites
+
+   - Pure literal (no `.arg()`): `"..."_L1` — zero allocation at the
+     call site.
+   - Formatted literal (with `.arg()`): `u"..."_s.arg(...)`.
+   - Existing `QStringLiteral(...)` at a site being edited: update
+     to `"..."_L1` or `u"..."_s.arg(...)` as appropriate.
+   - `using namespace Qt::StringLiterals` is available at all call
+     sites via the `loghandler.h` include — no extra `using`
+     declaration is needed.
+
+   #### File checklist
+
+   Commits are grouped logically; each group is one commit. Check off
+   files as they are completed.
+
+   **Commit A — Communication layer**
+   - [x] `src/hardware/core/communication/communicationprotocol.cpp`
+   - [x] `src/hardware/core/communication/gpibinstrument.cpp`
+   - [x] `src/hardware/core/communication/tcpinstrument.cpp`
+
+   **Commit B — Core hardware objects**
+   - [ ] `src/hardware/core/hardwareobject.cpp`
+   - [ ] `src/hardware/core/hardwaremanager.cpp`
+
+   **Commit C — Clock subsystem**
+   - [ ] `src/hardware/core/clock/clock.cpp`
+   - [ ] `src/hardware/core/clock/clockmanager.cpp`
+   - [ ] `src/hardware/core/clock/hp83712b.cpp`
+   - [ ] `src/hardware/core/clock/valon5009.cpp`
+   - [ ] `src/hardware/core/clock/valon5015.cpp`
+
+   **Commit D — LIF hardware**
+   - [ ] `src/hardware/core/lifdigitizer/m4i2211x8.cpp`
+   - [ ] `src/hardware/core/lifdigitizer/rigolds2302a.cpp`
+   - [ ] `src/hardware/core/liflaser/liflaser.cpp`
+   - [ ] `src/hardware/core/liflaser/opolette.cpp`
+   - [ ] `src/hardware/core/liflaser/sirahcobra.cpp`
+
+   **Commit E — AWG/RF sources, GPIB controller, I/O, pressure,
+   temperature**
+   - [ ] `src/hardware/optional/chirpsource/ad9914.cpp`
+   - [ ] `src/hardware/optional/chirpsource/awg5204.cpp`
+   - [ ] `src/hardware/optional/chirpsource/awg70002a.cpp`
+   - [ ] `src/hardware/optional/chirpsource/awg7122b.cpp`
+   - [ ] `src/hardware/optional/chirpsource/m8190.cpp`
+   - [ ] `src/hardware/optional/chirpsource/m8195a.cpp`
+   - [ ] `src/hardware/optional/gpibcontroller/prologixgpibcontroller.cpp`
+   - [ ] `src/hardware/optional/ioboard/labjacku3.cpp`
+   - [ ] `src/hardware/optional/pressurecontroller/intellisysiqplus.cpp`
+   - [ ] `src/hardware/optional/tempcontroller/lakeshore218.cpp`
+
+   **Commit F — Flow controllers and pulse generators**
+   - [ ] `src/hardware/optional/flowcontroller/flowcontroller.cpp`
+   - [ ] `src/hardware/optional/flowcontroller/mks647c.cpp`
+   - [ ] `src/hardware/optional/flowcontroller/mks946.cpp`
+   - [ ] `src/hardware/optional/pulsegenerator/bnc577.cpp`
+   - [ ] `src/hardware/optional/pulsegenerator/pulsegenerator.cpp`
+   - [ ] `src/hardware/optional/pulsegenerator/qc9210series.cpp`
+   - [ ] `src/hardware/optional/pulsegenerator/qc9510series.cpp`
+   - [ ] `src/hardware/optional/pulsegenerator/qc9520series.cpp`
+   - [ ] `src/hardware/optional/pulsegenerator/qcpulsegenerator.cpp`
+   - [ ] `src/hardware/optional/pulsegenerator/srsdg645.cpp`
+
+   **Commit G — Python hardware**
+   - [ ] `src/hardware/python/pythonawg.cpp`
+   - [ ] `src/hardware/python/pythonftmwscope.cpp`
+   - [ ] `src/hardware/python/pythonioboard.cpp`
+   - [ ] `src/hardware/python/pythonlifscope.cpp`
+   - [ ] `src/hardware/python/pythonprocess.cpp`
+
+   **Commit H — Shim removal** (after all files above are complete)
+   - [ ] Remove `logMessage` slot and shim body from `HardwareObject`
+   - [ ] Remove `logMessage` signal from `HardwareObject`
+   - [ ] Remove `logMessage` forwarding connections from
+         `HardwareManager`
 
 7. **FTMW digitizer message triage.** Per-file, per-message review
    of the ~285 calls. Most labor-intensive step; separate commits
    per file make review tractable.
 
-8. **Quick pass on remaining logging files.** Communication
-   protocols, optional hardware, LIF components, Highlight usage.
-
-9. **Fix remaining by-value `QString` parameters.**
+8. **Fix remaining by-value `QString` parameters.**
    `CommunicationProtocol::writeCmd` and `queryCmd` are the primary
    remaining targets (`SettingsStorage` and `HeaderStorage` are
    handled in step 2). `const QString &` is the conservative fix;
@@ -687,15 +829,15 @@ makes the rest of the plan coherent.
    (see [Virtual Cascade Hotspots](#virtual-cascade-hotspots)) must
    be updated in a single commit per base class.
 
-10. **Retrofit `std::less<>` on remaining `std::map<QString, T>`**
-    sites not already updated in step 2. The `SettingsStorage` and
-    `HeaderStorage` maps are handled there. A codebase-wide sweep of
-    remaining sites is optional but cheap.
+9. **Retrofit `std::less<>` on remaining `std::map<QString, T>`**
+   sites not already updated in step 2. The `SettingsStorage` and
+   `HeaderStorage` maps are handled there. A codebase-wide sweep of
+   remaining sites is optional but cheap.
 
-11. **Long-tail signature migration to `QAnyStringView`.** Only as
+10. **Long-tail signature migration to `QAnyStringView`.** Only as
     specific APIs are touched for other reasons. Not a sweep.
 
-12. **Final review.** Read through the log output of a typical
+11. **Final review.** Read through the log output of a typical
     startup + experiment cycle to verify the user sees a clean,
     informative log without noise. This is the pre-release
     checkpoint before documentation revision for 2.0.0.
@@ -705,9 +847,6 @@ makes the rest of the plan coherent.
 - Are there digitizer error messages that hardware vendors or
   support staff rely on seeing? If so, those should stay at Error
   even if they look diagnostic.
-- Exact threading model for the `LogHandler` singleton: internal
-  mutex with direct writes, or queued dispatch to the UI thread via
-  `QMetaObject::invokeMethod`? Both are viable; pick during step 3.
 
 ## Verification
 
