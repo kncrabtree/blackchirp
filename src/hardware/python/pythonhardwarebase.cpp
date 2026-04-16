@@ -3,7 +3,7 @@
 #include <QCoreApplication>
 #include <QFile>
 #include <QJsonObject>
-#include <QDebug>
+#include <data/loghandler.h>
 
 #include <hardware/core/hardwareprofilemanager.h>
 #include <data/settings/hardwarekeys.h>
@@ -51,7 +51,7 @@ bool PythonHardwareBase::testPythonConnection(CommunicationProtocol *comm)
 
     if (resp.contains(QStringLiteral("error"))) {
         d_pythonErrorString = resp[QStringLiteral("error")].toString();
-        qDebug() << d_pyKey << "test_connection error:" << d_pythonErrorString;
+        bcError(u"%1 test_connection error: %2"_s.arg(d_pyKey, d_pythonErrorString));
         return false;
     }
     return resp[QStringLiteral("result")].toBool(false);
@@ -64,21 +64,21 @@ bool PythonHardwareBase::startPythonProcess()
 
     if (scriptPath.isEmpty()) {
         d_pythonErrorString = QStringLiteral("No Python script path configured");
-        qDebug() << d_pyKey << d_pythonErrorString;
+        bcError(u"%1: %2"_s.arg(d_pyKey, d_pythonErrorString));
         return false;
     }
 
     QString hostScript = findHostScript();
     if (hostScript.isEmpty()) {
         d_pythonErrorString = QStringLiteral("Cannot find python_hw_host.py");
-        qDebug() << d_pyKey << d_pythonErrorString;
+        bcError(u"%1: %2"_s.arg(d_pyKey, d_pythonErrorString));
         return false;
     }
 
     QString className = HardwareProfileManager::instance().getPythonClassName(hwType, label);
     if (className.isEmpty()) {
         d_pythonErrorString = QStringLiteral("No Python class name configured");
-        qDebug() << d_pyKey << d_pythonErrorString;
+        bcError(u"%1: %2"_s.arg(d_pyKey, d_pythonErrorString));
         return false;
     }
 

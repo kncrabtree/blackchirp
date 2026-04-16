@@ -2,7 +2,6 @@
 #include <data/experiment/overlaytypes.h>
 #include <data/storage/blackchirpcsv.h>
 #include <QDir>
-#include <QDebug>
 #include <QRegularExpression>
 #include <QtConcurrent/QtConcurrent>
 #include <QFutureWatcher>
@@ -27,10 +26,7 @@ OverlayStorage::OverlayStorage(int number, QString path) :
         auto fileBase = it->first;
         auto type = it->second.value<OverlayBase::OverlayType>();
         
-        if (!loadOverlay(fileBase, type))
-        {
-            qDebug() << "Failed to load overlay:" << fileBase;
-        }
+        loadOverlay(fileBase, type);
     }
 }
 
@@ -152,7 +148,6 @@ std::shared_ptr<OverlayBase> OverlayStorage::createOverlayObject(OverlayBase::Ov
     case OverlayBase::GenericXY:
         return std::make_shared<GenericXYOverlay>();
     default:
-        qDebug() << "Unknown overlay type:" << static_cast<int>(type);
         return nullptr;
     }
 }
@@ -281,18 +276,12 @@ bool OverlayStorage::removeOverlay(const QString& label)
         
         // Delete associated files from disk (data file and metadata file)
         QString dataFilePath = getOverlayDataPath(label);
-        if (QFile::exists(dataFilePath)) {
-            if (!QFile::remove(dataFilePath)) {
-                qDebug() << "Warning: Failed to delete overlay data file:" << dataFilePath;
-            }
-        }
-        
+        if (QFile::exists(dataFilePath))
+            QFile::remove(dataFilePath);
+
         QString settingsFilePath = getOverlaySettingsPath(label);
-        if (QFile::exists(settingsFilePath)) {
-            if (!QFile::remove(settingsFilePath)) {
-                qDebug() << "Warning: Failed to delete overlay settings file:" << settingsFilePath;
-            }
-        }
+        if (QFile::exists(settingsFilePath))
+            QFile::remove(settingsFilePath);
         
         // Store reference to overlay before removing from storage
         auto overlay = it->second;

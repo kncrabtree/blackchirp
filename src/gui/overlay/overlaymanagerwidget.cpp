@@ -8,7 +8,6 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QDebug>
 #include <QTableView>
 #include <QHeaderView>
 #include <QMessageBox>
@@ -234,10 +233,8 @@ void OverlayManagerWidget::updateButtonStates()
 void OverlayManagerWidget::addOverlay(OverlayBase::OverlayType type)
 {
     // Ensure we have overlay storage connection
-    if (!p_overlayStorage) {
-        qDebug() << "Warning: No overlay storage connected to OverlayManagerWidget";
+    if (!p_overlayStorage)
         return;
-    }
 
     // Get the FtmwViewWidget parent for dialog constructors
     FtmwViewWidget* ftmwParent = qobject_cast<FtmwViewWidget*>(parentWidget());
@@ -337,11 +334,9 @@ void OverlayManagerWidget::removeOverlay()
         return;
         
     // Ensure we have overlay storage connection
-    if (!p_overlayStorage) {
-        qDebug() << "Warning: No overlay storage connected to OverlayManagerWidget";
+    if (!p_overlayStorage)
         return;
-    }
-    
+
     // Remove overlays in reverse order to maintain valid indices
     QVector<int> rows;
     for (const auto& index : selectedRows) {
@@ -353,13 +348,8 @@ void OverlayManagerWidget::removeOverlay()
         auto overlay = p_overlayModel->getOverlay(row);
         if (overlay) {
             // Remove from overlay storage - this will emit signals that FtmwViewWidget listens to
-            if (p_overlayStorage->removeOverlay(overlay->getLabel())) {
-                // Remove from unified model for display
+            if (p_overlayStorage->removeOverlay(overlay->getLabel()))
                 p_overlayModel->removeOverlay(row);
-                
-            } else {
-                qDebug() << "Failed to remove overlay from storage";
-            }
         }
     }
 }
@@ -427,14 +417,7 @@ void OverlayManagerWidget::setupKeyboardShortcuts()
         if (selectionInfo.singleRowSelected) {
             copyAppearanceSettings(selectionInfo.overlay);
         } else {
-            // Clear clipboard and provide feedback for invalid selection
-            /// TODO: Display message on UI
             d_clipboardAppearance.clear();
-            if (selectionInfo.multipleRowsSelected) {
-                qDebug() << "Cannot copy appearance: multiple rows selected. Clipboard cleared.";
-            } else {
-                qDebug() << "Cannot copy appearance: no row selected. Clipboard cleared.";
-            }
         }
     });
     
@@ -453,14 +436,7 @@ void OverlayManagerWidget::setupKeyboardShortcuts()
         if (selectionInfo.singleRowSelected) {
             copyOverlaySettings(selectionInfo.overlay);
         } else {
-            // Clear clipboard and provide feedback for invalid selection
-            /// TODO: Display message on UI
             d_clipboardSettings.clear();
-            if (selectionInfo.multipleRowsSelected) {
-                qDebug() << "Cannot copy overlay settings: multiple rows selected. Clipboard cleared.";
-            } else {
-                qDebug() << "Cannot copy overlay settings: no row selected. Clipboard cleared.";
-            }
         }
     });
     
@@ -572,11 +548,8 @@ void OverlayManagerWidget::captureUndoState(const QVector<std::shared_ptr<Overla
 
 void OverlayManagerWidget::performUndo()
 {
-    if (!d_undoData.hasUndoData || d_undoData.overlayStates.isEmpty()) {
-        /// TODO: Display message on UI
-        qDebug() << "No undo data available";
+    if (!d_undoData.hasUndoData || d_undoData.overlayStates.isEmpty())
         return;
-    }
     
     // Restore previous state for all overlays
     for (const auto& undoState : d_undoData.overlayStates) {
@@ -644,9 +617,6 @@ void OverlayManagerWidget::performUndo()
         emit overlayDataChanged(undoState.overlay);
     }
 
-    /// TODO: Display message on UI
-    qDebug() << "Undid" << d_undoData.operationType << "operation on" << d_undoData.overlayCount << "overlays";
-    
     // Clear undo data after use (only one level of undo)
     invalidateUndo();
 }
@@ -1171,8 +1141,6 @@ void OverlayManagerWidget::copyOverlaySettings(std::shared_ptr<OverlayBase> over
     d_clipboardSettings["maxFreqValue"] = overlay->getMaxFreqValue();
     d_clipboardSettings["enabled"] = overlay->getEnabled();
     
-    /// TODO: Display message on UI
-    qDebug() << "Copied overlay settings from:" << overlay->getLabel();
 }
 
 void OverlayManagerWidget::pasteOverlaySettings(std::shared_ptr<OverlayBase> overlay)
@@ -1209,8 +1177,6 @@ void OverlayManagerWidget::pasteOverlaySettings(std::shared_ptr<OverlayBase> ove
     // Emit signal to update the overlay display
     emit overlayDataChanged(overlay);
     
-    /// TODO: Display message on UI
-    qDebug() << "Pasted overlay settings to:" << overlay->getLabel();
 }
 
 bool OverlayManagerWidget::hasClipboardSettings() const
@@ -1239,8 +1205,6 @@ void OverlayManagerWidget::copyAppearanceSettings(std::shared_ptr<OverlayBase> o
     d_clipboardAppearance["curveAutoscale"] = overlay->getCurveMetadata(BC::Key::bcCurveAutoscale);
     d_clipboardAppearance["curveAxisY"] = overlay->getCurveMetadata(BC::Key::bcCurveAxisY);
     
-    /// TODO: Display message on UI
-    qDebug() << "Copied curve appearance from:" << overlay->getLabel();
 }
 
 void OverlayManagerWidget::pasteAppearanceSettings(std::shared_ptr<OverlayBase> overlay)
@@ -1281,8 +1245,6 @@ void OverlayManagerWidget::pasteAppearanceSettings(std::shared_ptr<OverlayBase> 
     // Emit signal to update the overlay display
     emit overlayDataChanged(overlay);
     
-    /// TODO: Display message on UI
-    qDebug() << "Pasted curve appearance to:" << overlay->getLabel();
 }
 
 bool OverlayManagerWidget::hasClipboardAppearance() const
@@ -1353,8 +1315,6 @@ void OverlayManagerWidget::pasteAppearanceToSelected()
         pasteAppearanceSettings(overlay);
     }
     
-    /// TODO: Display message on UI
-    qDebug() << "Pasted appearance to" << selectedOverlays.size() << "overlays";
 }
 
 void OverlayManagerWidget::pasteSettingsToSelected()
@@ -1391,8 +1351,6 @@ void OverlayManagerWidget::pasteSettingsToSelected()
         pasteOverlaySettings(overlay);
     }
     
-    /// TODO: Display message on UI
-    qDebug() << "Pasted settings to" << selectedOverlays.size() << "overlays";
 }
 
 void OverlayManagerWidget::closeEvent(QCloseEvent *event)

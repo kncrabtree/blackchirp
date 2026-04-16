@@ -1,6 +1,6 @@
 #include "labjacklibrary.h"
-#include <QDebug>
 #include <data/storage/settingsstorage.h>
+#include <data/loghandler.h>
 
 LabjackLibrary* LabjackLibrary::s_instance = nullptr;
 
@@ -93,13 +93,11 @@ void LabjackLibrary::loadFunctions()
     try {
         if (LJUSB_GetLibraryVersion) {
             float version = LJUSB_GetLibraryVersion();
-            qDebug() << "LabJack USB library version:" << version;
+            bcDebug(u"LabJack USB library version: %1"_s.arg(version));
         }
-        
+
         d_libraryLoaded = true;
         d_errorString.clear();
-        
-        qDebug() << "LabJack USB library loaded successfully";
         
     } catch (...) {
         d_errorString = "Exception occurred while testing LabJack library functions";

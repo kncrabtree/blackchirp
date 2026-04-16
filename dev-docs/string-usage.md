@@ -646,7 +646,7 @@ makes the rest of the plan coherent.
    create a local `LogHandler(false, parent)` for log replay — its
    constructor remains public for this purpose.*
 
-4. **Migrate `logMessage` call sites to `bcLog`, `bcWarn`, etc.**
+4. ✅ **Migrate `logMessage` call sites to `bcLog`, `bcWarn`, etc.**
    Bulk mechanical pass across all ~445 sites. Where the call site
    uses a string literal, use `"..."_L1` for ASCII content and
    `u"..."_s` for non-ASCII content — not `"..."_s`, which would
@@ -662,7 +662,7 @@ makes the rest of the plan coherent.
    `emit logMessage` calls are in files under `src/hardware/` and
    are covered by steps 6–8.*
 
-5. **`qDebug()` elimination pass.** With the global logger in place
+5. ✅ **`qDebug()` elimination pass.** With the global logger in place
    and the signal cascade removed, every `qDebug()` call site can
    call `bcDebug` directly regardless of context. Straightforward
    mechanical replacement or deletion.

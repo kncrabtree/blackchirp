@@ -121,7 +121,6 @@ bool OverlayProcessManager::cancelOperation(const QString& operationId)
             emit operationCancelled(operationId);
             return true;
         } else {
-            qDebug() << "Operation" << operationId << "cannot be cancelled";
             return false;
         }
     }
@@ -316,14 +315,12 @@ void OverlayProcessManager::onOperationFinished()
                 }
                 d_failedOperations++;
                 emit operationFailed(operationId, d_currentOperation->errorMessage);
-                qDebug() << "Operation" << operationId << "failed:" << d_currentOperation->errorMessage;
             }
         } catch (const std::exception& e) {
             d_currentOperation->state = OperationState::Failed;
             d_currentOperation->errorMessage = e.what();
             d_failedOperations++;
             emit operationFailed(operationId, d_currentOperation->errorMessage);
-            qDebug() << "Operation" << operationId << "failed:" << e.what();
         }
     }
     

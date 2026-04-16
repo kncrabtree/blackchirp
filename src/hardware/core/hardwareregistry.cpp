@@ -4,6 +4,7 @@
 
 #include <QMutexLocker>
 #include <QDebug>
+#include <data/loghandler.h>
 
 // Include base hardware classes for type-safe hardware type determination
 #include <hardware/core/ftmwdigitizer/ftmwscope.h>
@@ -53,7 +54,7 @@ bool HardwareRegistry::registerHardware(const QString& key, const QString& subKe
     // Store registration
     d_registrations.insert(registryKey, reg);
 
-    qDebug() << "Registered hardware:" << key << subKey << "(" << description << ")";
+    bcDebug(u"Registered hardware: %1 %2 (%3)"_s.arg(key, subKey, description));
 
     locker.unlock();  // Release mutex before emitting signal to avoid re-entrancy deadlocks.
     emit hardwareRegistered(key, subKey);
@@ -87,7 +88,7 @@ HardwareObject* HardwareRegistry::createHardware(const QString& key, const QStri
         try {
             hardware = factory(label);
             if (hardware) {
-                qDebug() << "Created hardware instance:" << key << subKey << "with label:" << label;
+                bcDebug(u"Created hardware instance: %1 %2, label: %3"_s.arg(key, subKey, label));
             } else {
                 qWarning() << "Factory returned null for" << key << subKey;
             }
@@ -405,13 +406,13 @@ bool HardwareRegistry::addLibraryDependency(const QString& key, const QString& s
     
     if (!it.value().libraryDependencies.contains(libraryName)) {
         it.value().libraryDependencies.append(libraryName);
-        qDebug() << "Added library dependency:" << libraryName << "to" << key << subKey;
+        bcDebug(u"Added library dependency: %1 to %2 %3"_s.arg(libraryName, key, subKey));
     }
     
     // Store the library getter function
     if (!d_libraryGetters.contains(libraryName)) {
         d_libraryGetters.insert(libraryName, libraryGetter);
-        qDebug() << "Registered library getter for:" << libraryName;
+        bcDebug(u"Registered library getter for: %1"_s.arg(libraryName));
     }
     
     return true;

@@ -9,6 +9,7 @@
 #include <QReadLocker>
 #include <QWriteLocker>
 #include <QDebug>
+#include <data/loghandler.h>
 
 // Static member definitions
 RuntimeHardwareConfig* RuntimeHardwareConfig::s_instance = nullptr;
@@ -16,7 +17,6 @@ RuntimeHardwareConfig* RuntimeHardwareConfig::s_instance = nullptr;
 RuntimeHardwareConfig::RuntimeHardwareConfig()
     : SettingsStorage(BC::Key::RuntimeHw::runtimeHw)
 {
-    qDebug() << "Initializing RuntimeHardwareConfig...";
     syncWithProfiles();
 }
 
@@ -388,7 +388,7 @@ bool RuntimeHardwareConfig::setHardwareSelection(const QString& hardwareType,
 
     d_activeHardware[key] = selection;
     
-    qDebug() << "Set hardware selection:" << key << "=" << implementation;
+    bcDebug(u"Set hardware selection: %1 = %2"_s.arg(key, implementation));
     
     // Update the profile manager
     activateProfile(hardwareType, label);
@@ -409,7 +409,7 @@ bool RuntimeHardwareConfig::removeHardwareSelection(const QString& hardwareType,
     bool removed = d_activeHardware.remove(key) > 0;
     
     if (removed) {
-        qDebug() << "Removed hardware selection for:" << key;
+        bcDebug(u"Removed hardware selection for: %1"_s.arg(key));
         
         // Update the profile manager
         deactivateProfile(hardwareType, label);
@@ -422,7 +422,6 @@ void RuntimeHardwareConfig::clearConfiguration()
 {
     QWriteLocker locker(&d_configLock);
     
-    qDebug() << "Clearing all hardware configuration...";
     d_activeHardware.clear();
 }
 
@@ -435,8 +434,6 @@ void RuntimeHardwareConfig::clearConfiguration()
 
 void RuntimeHardwareConfig::syncWithProfiles()
 {
-    qDebug() << "Syncing RuntimeHardwareConfig with active hardware profiles...";
-    
     QWriteLocker locker(&d_configLock);
     d_activeHardware.clear();
     
@@ -465,12 +462,12 @@ void RuntimeHardwareConfig::syncWithProfiles()
                 d_activeHardware[key] = selection;
                 loadedCount++;
                 
-                qDebug() << "Loaded active profile:" << key << "=" << implementation;
+                bcDebug(u"Loaded active profile: %1 = %2"_s.arg(key, implementation));
             }
         }
     }
     
-    qDebug() << "Loaded" << loadedCount << "active hardware profiles into runtime config";
+    bcDebug(u"Loaded %1 active hardware profiles into runtime config"_s.arg(loadedCount));
 }
 
 void RuntimeHardwareConfig::activateProfile(const QString& hardwareType, const QString& label)
@@ -590,7 +587,7 @@ void RuntimeHardwareConfig::activateMissingSystemProfiles()
             QString impl = profileManager.getImplementation(hwType, QStringLiteral("virtual"));
             if (!impl.isEmpty()) {
                 setHardwareSelection(hwType, QStringLiteral("virtual"), impl);
-                qDebug() << "RuntimeHardwareConfig::activateMissingSystemProfiles: Activated system profile for" << hwType;
+                bcDebug(u"Activated system profile for: %1"_s.arg(hwType));
             }
         }
     }

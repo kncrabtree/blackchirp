@@ -8,6 +8,7 @@
 #include <QIODevice>
 #include <QDebug>
 #include <QRegularExpression>
+#include <data/loghandler.h>
 #include <QReadLocker>
 #include <QWriteLocker>
 
@@ -949,7 +950,7 @@ void HardwareProfileManager::ensureSystemProfiles()
             if (actualLabel.isEmpty()) {
                 qWarning() << "HardwareProfileManager::ensureSystemProfiles: Failed to create system profile for" << hwType;
             } else {
-                qDebug() << "HardwareProfileManager::ensureSystemProfiles: Created system profile" << hwType << "virtual ->" << virtualImpl;
+                bcDebug(u"Created system profile: %1 virtual -> %2"_s.arg(hwType, virtualImpl));
             }
         }
     }
