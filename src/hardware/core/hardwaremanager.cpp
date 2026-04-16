@@ -39,7 +39,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 
     // Phase 3.3.6: Clean constructor - all hardware creation now goes through dynamic system
     // HardwareManager starts with empty d_hardwareMap and will be populated via syncWithRuntimeConfig()
-    emit logMessage("HardwareManager created. Hardware will be loaded from runtime configuration.", LogHandler::Normal);
+    bcDebug("HardwareManager created. Hardware will be loaded from runtime configuration."_L1);
 }
 
 HardwareManager::~HardwareManager()
@@ -75,7 +75,7 @@ void HardwareManager::initialize()
     RuntimeHardwareConfig::instance().activateMissingSystemProfiles();
 
     // Phase 3.3.6: Load hardware from runtime configuration before starting threads
-    emit logMessage("Loading hardware configuration from runtime profiles...", LogHandler::Normal);
+    bcLog("Loading hardware configuration from runtime profiles..."_L1);
     syncWithRuntimeConfig();
     
     // Emit virtual instrument warnings. Hardware initialization and threading is
@@ -84,8 +84,7 @@ void HardwareManager::initialize()
     {
         auto hw = it->second;
         if(hw->d_commType == CommunicationProtocol::Virtual)
-            emit logMessage(QString("%1 is a virtual instrument. Be cautious about taking real measurements!")
-                            .arg(hw->d_key),LogHandler::Warning);
+            bcWarn(u"%1 is a virtual instrument. Be cautious about taking real measurements!"_s.arg(hw->d_key));
     }
 
     emit hwInitializationComplete();
@@ -118,7 +117,7 @@ void HardwareManager::handleConnectionResult(const QString& hwKey, bool success,
     if(success)
     {
         connect(obj,&HardwareObject::hardwareFailure,this,&HardwareManager::hardwareFailure,Qt::UniqueConnection);
-        emit logMessage(obj->d_key + QString(": Connected successfully."));
+        bcLog(u"%1: Connected successfully."_s.arg(obj->d_key));
     }
     else
     {
@@ -126,9 +125,9 @@ void HardwareManager::handleConnectionResult(const QString& hwKey, bool success,
         LogHandler::MessageCode code = LogHandler::Error;
         if(!obj->d_critical)
             code = LogHandler::Warning;
-        emit logMessage(obj->d_key + QString(": Connection failed!"),code);
+        bcLog(u"%1: Connection failed!"_s.arg(obj->d_key), code);
         if(!msg.isEmpty())
-            emit logMessage(msg,code);
+            bcLog(msg, code);
     }
 
     // Emit unified connectionResult signal for both test results and connection changes
@@ -181,7 +180,7 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
 
             if(!success)
             {
-                emit logMessage(QString("Error initializing %1").arg(obj->d_key),LogHandler::Error);
+                bcError(u"Error initializing %1."_s.arg(obj->d_key));
                 break;
             }
         }
@@ -193,14 +192,14 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
     {
         auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifLaser>();
         if (activeKeys.isEmpty()) {
-            emit logMessage(QString("Could not perform LIF experiment because no LIF laser is configured."),LogHandler::Error);
+            bcError("Could not perform LIF experiment because no LIF laser is configured."_L1);
             emit lifSettingsComplete(false);
             exp->d_hardwareSuccess = false;
         } else {
             auto ll = findHardware<LifLaser>(activeKeys.first());
             if(!ll)
             {
-                emit logMessage(QString("Could not perform LIF experiment because no laser is available."),LogHandler::Error);
+                bcError("Could not perform LIF experiment because no laser is available."_L1);
                 emit lifSettingsComplete(false);
                 exp->d_hardwareSuccess = false;
             }
@@ -628,7 +627,7 @@ bool HardwareManager::setPGenLifDelay(double d)
     // Check for pulse generator availability
     auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<PulseGenerator>();
     if (activeKeys.isEmpty()) {
-        emit logMessage(QString("Could not set LIF delay because no pulse generator is available."), LogHandler::Error);
+        bcError("Could not set LIF delay because no pulse generator is available."_L1);
         return false;
     }
 
@@ -650,14 +649,14 @@ bool HardwareManager::setLifLaserPos(double pos)
 {
     auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifLaser>();
     if (activeKeys.isEmpty()) {
-        emit logMessage("Could not set LIF Laser position because no laser is configured.", LogHandler::Error);
+        bcError("Could not set LIF Laser position because no laser is configured."_L1);
         return false;
     }
     
     auto ll = findHardware<LifLaser>(activeKeys.first());
     if(!ll)
     {
-        emit logMessage(QString("Could not set LIF Laser position because no laser is available."),LogHandler::Error);
+        bcError("Could not set LIF Laser position because no laser is available."_L1);
         return false;
     }
 
@@ -674,14 +673,14 @@ void HardwareManager::startLifConfigAcq(const LifConfig &c)
 {
     auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifScope>();
     if (activeKeys.isEmpty()) {
-        emit logMessage("Could not initialize LIF acquisition because no LIF digitizer is configured.", LogHandler::Error);
+        bcError("Could not initialize LIF acquisition because no LIF digitizer is configured."_L1);
         return;
     }
     
     auto ld = findHardware<LifScope>(activeKeys.first());
     if(!ld)
     {
-        emit logMessage("Could not initialize LIF acquisition because no digitizer was found.",LogHandler::Error);
+        bcError("Could not initialize LIF acquisition because no digitizer was found."_L1);
         return;
     }
 
@@ -695,14 +694,14 @@ void HardwareManager::stopLifConfigAcq()
 {
     auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifScope>();
     if (activeKeys.isEmpty()) {
-        emit logMessage("Could not stop LIF acquisition because no LIF digitizer is configured.", LogHandler::Error);
+        bcError("Could not stop LIF acquisition because no LIF digitizer is configured."_L1);
         return;
     }
     
     auto ld = findHardware<LifScope>(activeKeys.first());
     if(!ld)
     {
-        emit logMessage("Could not stop LIF acquisition because no digitizer was found.",LogHandler::Error);
+        bcError("Could not stop LIF acquisition because no digitizer was found."_L1);
         return;
     }
 
@@ -716,14 +715,14 @@ double HardwareManager::lifLaserPos()
 {
     auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifLaser>();
     if (activeKeys.isEmpty()) {
-        emit logMessage("Could not read LIF Laser position because no laser is configured.", LogHandler::Error);
+        bcError("Could not read LIF Laser position because no laser is configured."_L1);
         return -1.0;
     }
     
     auto ll = findHardware<LifLaser>(activeKeys.first());
     if(!ll)
     {
-        emit logMessage(QString("Could not read LIF Laser position because no laser is available."),LogHandler::Error);
+        bcError("Could not read LIF Laser position because no laser is available."_L1);
         return -1.0;
     }
 
@@ -739,14 +738,14 @@ bool HardwareManager::lifLaserFlashlampEnabled()
 {
     auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifLaser>();
     if (activeKeys.isEmpty()) {
-        emit logMessage("Could not read LIF Laser flashlamp status because no laser is configured.", LogHandler::Error);
+        bcError("Could not read LIF Laser flashlamp status because no laser is configured."_L1);
         return false;
     }
     
     auto ll = findHardware<LifLaser>(activeKeys.first());
     if(!ll)
     {
-        emit logMessage(QString("Could not read LIF Laser flashlamp status because no laser is available."),LogHandler::Error);
+        bcError("Could not read LIF Laser flashlamp status because no laser is available."_L1);
         return false;
     }
 
@@ -762,14 +761,14 @@ void HardwareManager::setLifLaserFlashlampEnabled(bool en)
 {
     auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifLaser>();
     if (activeKeys.isEmpty()) {
-        emit logMessage("Could not set LIF Laser flashlamp status because no laser is configured.", LogHandler::Error);
+        bcError("Could not set LIF Laser flashlamp status because no laser is configured."_L1);
         return;
     }
     
     auto ll = findHardware<LifLaser>(activeKeys.first());
     if(!ll)
     {
-        emit logMessage(QString("Could not read LIF Laser flashlamp status because no laser is available."),LogHandler::Error);
+        bcError("Could not read LIF Laser flashlamp status because no laser is available."_L1);
         return;
     }
 
@@ -846,16 +845,14 @@ HardwareObject* HardwareManager::createSpecificHardware(const QString& type, con
     HardwareObject* hwObj = HardwareRegistry::instance().createHardware(type, implementation, label);
     
     if (!hwObj) {
-        emit logMessage(QString("Failed to create hardware: type=%1, implementation=%2, label=%3")
-                       .arg(type, implementation, label), LogHandler::Error);
+        bcError(u"Failed to create hardware: type=%1, implementation=%2, label=%3"_s.arg(type, implementation, label));
         return nullptr;
     }
     
     // Set up the hardware object with common signal connections
     setupHardwareObject(hwObj);
     
-    emit logMessage(QString("Successfully created hardware: %1")
-                   .arg(hwObj->d_key), LogHandler::Normal);
+    bcDebug(u"Successfully created hardware: %1"_s.arg(hwObj->d_key));
     
     return hwObj;
 }
@@ -871,7 +868,7 @@ void HardwareManager::removeHardwareInternal(const QString& hwKey)
         QWriteLocker locker(&d_hardwareMapLock);
         auto it = d_hardwareMap.find(hwKey);
         if (it == d_hardwareMap.end()) {
-            emit logMessage(QString("Hardware removal failed: Hardware key '%1' not found").arg(hwKey), LogHandler::Warning);
+            bcWarn(u"Hardware removal failed: Hardware key '%1' not found."_s.arg(hwKey));
             return;
         }
         
@@ -883,7 +880,7 @@ void HardwareManager::removeHardwareInternal(const QString& hwKey)
         return;
     }
     
-    emit logMessage(QString("Removing hardware: %1").arg(obj->d_key), LogHandler::Normal);
+    bcDebug(u"Removing hardware: %1"_s.arg(obj->d_key));
     
     // Step 2b: Use stored connection information for robust disconnection
     disconnectStoredConnections(hwKey);
@@ -895,7 +892,7 @@ void HardwareManager::removeHardwareInternal(const QString& hwKey)
             // Stop the thread gracefully
             thread->quit();
             if (!thread->wait(5000)) { // 5 second timeout
-                emit logMessage(QString("Warning: Thread for hardware %1 did not stop gracefully, terminating").arg(obj->d_key), LogHandler::Warning);
+                bcWarn(u"Thread for hardware %1 did not stop gracefully, terminating."_s.arg(obj->d_key));
                 thread->terminate();
                 thread->wait(1000); // Give it 1 more second after terminate
             }
@@ -920,7 +917,7 @@ void HardwareManager::removeHardwareInternal(const QString& hwKey)
     // Emit unified connectionResult signal (hardware removed = disconnected)  
     emit connectionResult(hwKey, false, QString("Hardware removed"));
     
-    emit logMessage(QString("Successfully removed hardware: %1").arg(hwKey), LogHandler::Normal);
+    bcLog(u"Successfully removed hardware: %1"_s.arg(hwKey));
 }
 
 // Phase 3.3.2: Connection tracking infrastructure implementation
@@ -1054,12 +1051,11 @@ void HardwareManager::addHardwareInternal(const QString& hwKey, const QString& i
     // Parse the hardware key to get type and label
     auto [hardwareType, label] = BC::Key::parseKey(hwKey);
     
-    emit logMessage(QString("Adding hardware: %1 (type=%2, implementation=%3, label=%4)")
-                   .arg(hwKey, hardwareType, implementation, label), LogHandler::Normal);
+    bcDebug(u"Adding hardware: %1 (type=%2, implementation=%3, label=%4)"_s.arg(hwKey, hardwareType, implementation, label));
     
     // Check if hardware already exists
     if (d_hardwareMap.find(hwKey) != d_hardwareMap.end()) {
-        emit logMessage(QString("Hardware addition failed: Hardware key '%1' already exists").arg(hwKey), LogHandler::Warning);
+        bcWarn(u"Hardware addition failed: Hardware key '%1' already exists."_s.arg(hwKey));
         return;
     }
     
@@ -1074,25 +1070,25 @@ void HardwareManager::addHardwareInternal(const QString& hwKey, const QString& i
     if (!hwObj) {
         QString errorMsg = QString("Hardware creation failed: Unable to create hardware (type=%1, implementation=%2, label=%3). Implementation may not be registered or factory failed.")
                           .arg(hardwareType, implementation, label);
-        emit logMessage(errorMsg, LogHandler::Error);
-        
+        bcError(errorMsg);
+
         // Remove from RuntimeHardwareConfig on critical error
         auto& runtimeConfig = RuntimeHardwareConfig::instance();
         runtimeConfig.removeHardwareSelection(hardwareType, label);
-        emit logMessage(QString("Removed failed hardware from configuration: %1.%2").arg(hardwareType, label), LogHandler::Warning);
+        bcWarn(u"Removed failed hardware from configuration: %1.%2"_s.arg(hardwareType, label));
         return;
     }
-    
+
     // Validate the created hardware object
     if (hwObj->d_key != hwKey) {
         QString errorMsg = QString("Hardware creation failed: Key mismatch (expected=%1, actual=%2)").arg(hwKey, hwObj->d_key);
-        emit logMessage(errorMsg, LogHandler::Error);
-        
+        bcError(errorMsg);
+
         // Clean up the created object and remove from config
         hwObj->deleteLater();
         auto& runtimeConfig = RuntimeHardwareConfig::instance();
         runtimeConfig.removeHardwareSelection(hardwareType, label);
-        emit logMessage(QString("Removed failed hardware from configuration: %1.%2").arg(hardwareType, label), LogHandler::Warning);
+        bcWarn(u"Removed failed hardware from configuration: %1.%2"_s.arg(hardwareType, label));
         return;
     }
     
@@ -1120,7 +1116,7 @@ void HardwareManager::addHardwareInternal(const QString& hwKey, const QString& i
             // Start the thread
             thread->start();
             
-            emit logMessage(QString("Started thread for hardware: %1").arg(hwObj->d_key), LogHandler::Normal);
+            bcDebug(u"Started thread for hardware: %1"_s.arg(hwObj->d_key));
         } else {
             hwObj->setParent(this);
             // Initialize non-threaded hardware directly
@@ -1129,13 +1125,12 @@ void HardwareManager::addHardwareInternal(const QString& hwKey, const QString& i
         
         // Note: Connection testing is deferred until all hardware changes are complete
         // to avoid GPIB controller resolution issues during dynamic creation
-        emit logMessage(QString("Hardware created and initialized: %1 (connection testing deferred)").arg(hwObj->d_key), LogHandler::Normal);
-
-        emit logMessage(QString("Successfully added hardware: %1").arg(hwKey), LogHandler::Normal);
+        bcDebug(u"Hardware created and initialized: %1 (connection testing deferred)"_s.arg(hwObj->d_key));
+        bcLog(u"Successfully added hardware: %1"_s.arg(hwKey));
         
     } catch (const std::exception& e) {
         QString errorMsg = QString("Hardware initialization failed with exception: %1").arg(e.what());
-        emit logMessage(errorMsg, LogHandler::Error);
+        bcError(errorMsg);
         
         // Clean up on failure
         disconnectStoredConnections(hwKey);
@@ -1159,10 +1154,10 @@ void HardwareManager::addHardwareInternal(const QString& hwKey, const QString& i
         // Remove from RuntimeHardwareConfig on failure
         auto& runtimeConfig = RuntimeHardwareConfig::instance();
         runtimeConfig.removeHardwareSelection(hardwareType, label);
-        emit logMessage(QString("Removed failed hardware from configuration: %1.%2").arg(hardwareType, label), LogHandler::Warning);
+        bcWarn(u"Removed failed hardware from configuration: %1.%2"_s.arg(hardwareType, label));
     } catch (...) {
         QString errorMsg = QString("Hardware initialization failed with unknown exception");
-        emit logMessage(errorMsg, LogHandler::Error);
+        bcError(errorMsg);
         
         // Clean up on failure - same as above
         disconnectStoredConnections(hwKey);
@@ -1184,14 +1179,13 @@ void HardwareManager::addHardwareInternal(const QString& hwKey, const QString& i
         
         auto& runtimeConfig = RuntimeHardwareConfig::instance();
         runtimeConfig.removeHardwareSelection(hardwareType, label);
-        emit logMessage(QString("Removed failed hardware from configuration: %1.%2").arg(hardwareType, label), LogHandler::Warning);
+        bcWarn(u"Removed failed hardware from configuration: %1.%2"_s.arg(hardwareType, label));
     }
 }
 
 void HardwareManager::replaceHardwareInternal(const QString& hwKey, const QString& newImplementation)
 {
-    emit logMessage(QString("Replacing hardware: %1 with new implementation: %2")
-                   .arg(hwKey, newImplementation), LogHandler::Normal);
+    bcDebug(u"Replacing hardware: %1 with new implementation: %2"_s.arg(hwKey, newImplementation));
     
     // Step 1: Remove old hardware completely (handles its own mutex protection)
     removeHardwareInternal(hwKey);
@@ -1199,46 +1193,45 @@ void HardwareManager::replaceHardwareInternal(const QString& hwKey, const QStrin
     // Step 2: Create new hardware from scratch (handles its own mutex protection)
     addHardwareInternal(hwKey, newImplementation);
     
-    emit logMessage(QString("Successfully replaced hardware: %1 with implementation: %2")
-                   .arg(hwKey, newImplementation), LogHandler::Normal);
+    bcLog(u"Successfully replaced hardware: %1 with implementation: %2"_s.arg(hwKey, newImplementation));
 }
 
 // Task 3.3.5: Atomic Synchronization Orchestrator implementation
 
 bool HardwareManager::applyVendorLibraryChanges()
 {
-    emit logMessage("Applying vendor library configuration changes", LogHandler::Normal);
-    
+    bcDebug("Applying vendor library configuration changes."_L1);
+
     bool allSuccess = true;
-    
+
     // Apply changes to SpectrumLibrary
     SpectrumLibrary& specLib = SpectrumLibrary::instance();
     if (specLib.hasUnstagedChanges()) {
-        emit logMessage("Applying Spectrum library configuration changes", LogHandler::Normal);
+        bcDebug("Applying Spectrum library configuration changes."_L1);
         if (!specLib.applyChanges()) {
-            emit logMessage(QString("Failed to apply Spectrum library changes: %1").arg(specLib.errorString()), LogHandler::Error);
+            bcError(u"Failed to apply Spectrum library changes: %1"_s.arg(specLib.errorString()));
             allSuccess = false;
         } else {
-            emit logMessage("Spectrum library configuration applied successfully", LogHandler::Normal);
+            bcDebug("Spectrum library configuration applied successfully."_L1);
         }
     }
-    
+
     // Apply changes to LabjackLibrary
     LabjackLibrary& ljLib = LabjackLibrary::instance();
     if (ljLib.hasUnstagedChanges()) {
-        emit logMessage("Applying LabJack library configuration changes", LogHandler::Normal);
+        bcDebug("Applying LabJack library configuration changes."_L1);
         if (!ljLib.applyChanges()) {
-            emit logMessage(QString("Failed to apply LabJack library changes: %1").arg(ljLib.errorString()), LogHandler::Error);
+            bcError(u"Failed to apply LabJack library changes: %1"_s.arg(ljLib.errorString()));
             allSuccess = false;
         } else {
-            emit logMessage("LabJack library configuration applied successfully", LogHandler::Normal);
+            bcDebug("LabJack library configuration applied successfully."_L1);
         }
     }
-    
+
     if (allSuccess) {
-        emit logMessage("All vendor library configuration changes applied successfully", LogHandler::Normal);
+        bcLog("All vendor library configuration changes applied successfully."_L1);
     } else {
-        emit logMessage("Some vendor library configuration changes failed to apply", LogHandler::Error);
+        bcError("Some vendor library configuration changes failed to apply."_L1);
     }
     
     return allSuccess;
@@ -1275,15 +1268,15 @@ void HardwareManager::reloadPythonScript(const QString &hwKey)
                               : pyBase->pythonErrorString();
         emit pythonScriptReloadResult(hwKey, success, msg);
         if (success)
-            emit logMessage(QStringLiteral("Python script reloaded for %1").arg(hwKey));
+            bcLog(u"Python script reloaded for %1."_s.arg(hwKey));
         else
-            emit logMessage(QStringLiteral("Python script reload failed for %1: %2").arg(hwKey, msg), LogHandler::Error);
+            bcError(u"Python script reload failed for %1: %2"_s.arg(hwKey, msg));
     });
 }
 
 void HardwareManager::syncWithRuntimeConfig()
 {
-    emit logMessage("Starting hardware synchronization with runtime configuration", LogHandler::Normal);
+    bcDebug("Starting hardware synchronization with runtime configuration."_L1);
     
     const auto& config = RuntimeHardwareConfig::constInstance();
     auto targetHardware = config.getCurrentHardware();
@@ -1303,8 +1296,8 @@ void HardwareManager::syncWithRuntimeConfig()
     // Add hardware dependent on changed libraries to recreation lists
     addLibraryDependentHardwareToRecreation(targetHardware, toRemove, toAdd, toReplace);
     
-    emit logMessage(QString("Hardware synchronization plan: %1 to remove, %2 to add, %3 to replace")
-                   .arg(toRemove.size()).arg(toAdd.size()).arg(toReplace.size()), LogHandler::Normal);
+    bcDebug(u"Hardware synchronization plan: %1 to remove, %2 to add, %3 to replace"_s
+            .arg(toRemove.size()).arg(toAdd.size()).arg(toReplace.size()));
     
     // Phase 1: Destroy hardware objects that need to be removed/replaced
     // This ensures hardware objects are destroyed using current/valid function pointers
@@ -1315,20 +1308,20 @@ void HardwareManager::syncWithRuntimeConfig()
     for(const auto& [hwKey, impl] : toReplace) {
         // replaceHardwareInternal calls removeHardwareInternal first, then addHardwareInternal
         // We'll need to split this to get proper timing for library changes
-        emit logMessage(QString("Removing hardware for replacement: %1").arg(hwKey), LogHandler::Normal);
+        bcDebug(u"Removing hardware for replacement: %1"_s.arg(hwKey));
         removeHardwareInternal(hwKey);
     }
     
     // Phase 2: Apply vendor library configuration changes at SAFE timing
     // All hardware objects that could use the libraries are now destroyed
     if (!applyVendorLibraryChanges()) {
-        emit logMessage("Warning: Some vendor library changes failed to apply, continuing with hardware synchronization", LogHandler::Warning);
+        bcWarn("Some vendor library changes failed to apply, continuing with hardware synchronization."_L1);
         // Continue with hardware sync even if library changes fail - user should be notified but not blocked
     }
     
     // Phase 3: Create new hardware objects (using updated libraries if any changes were applied)
     for(const auto& [hwKey, impl] : toReplace) {
-        emit logMessage(QString("Adding replacement hardware: %1 with implementation: %2").arg(hwKey, impl), LogHandler::Normal);
+        bcDebug(u"Adding replacement hardware: %1 with implementation: %2"_s.arg(hwKey, impl));
         addHardwareInternal(hwKey, impl);
     }
     
@@ -1336,7 +1329,7 @@ void HardwareManager::syncWithRuntimeConfig()
         addHardwareInternal(hwKey, impl);
     }
     
-    emit logMessage("Hardware synchronization changes applied successfully", LogHandler::Normal);
+    bcLog("Hardware synchronization changes applied successfully."_L1);
 
     // Report threading status for all hardware objects (Debug level)
     {
@@ -1345,17 +1338,14 @@ void HardwareManager::syncWithRuntimeConfig()
         QString managerThreadName = managerThread->objectName().isEmpty()
                                     ? QString("0x%1").arg(reinterpret_cast<quintptr>(managerThread), 0, 16)
                                     : managerThread->objectName();
-        emit logMessage(QString("Thread report - HardwareManager: %1").arg(managerThreadName),
-                        LogHandler::Debug);
+        bcDebug(u"Thread report - HardwareManager: %1"_s.arg(managerThreadName));
         for (auto& [hwKey, hwObj] : d_hardwareMap) {
             QThread* hwThread = hwObj->thread();
             QString hwThreadName = hwThread->objectName().isEmpty()
                                    ? QString("0x%1").arg(reinterpret_cast<quintptr>(hwThread), 0, 16)
                                    : hwThread->objectName();
             bool ownThread = (hwThread != managerThread);
-            emit logMessage(QString("Thread report - %1: %2 (%3)")
-                            .arg(hwKey, hwThreadName, ownThread ? "own thread" : "manager thread"),
-                            LogHandler::Debug);
+            bcDebug(u"Thread report - %1: %2 (%3)"_s.arg(hwKey, hwThreadName, ownThread ? "own thread" : "manager thread"));
         }
     }
 
@@ -1365,16 +1355,16 @@ void HardwareManager::syncWithRuntimeConfig()
     // Update ClockManager with current clocks
     updateClockManager();
     
-    emit logMessage("Starting connection testing after hardware synchronization", LogHandler::Normal);
+    bcDebug("Starting connection testing after hardware synchronization."_L1);
     testAll();
-    
-    emit logMessage("Hardware synchronization with runtime configuration complete", LogHandler::Normal);
+
+    bcLog("Hardware synchronization with runtime configuration complete."_L1);
 }
 
 void HardwareManager::updateClockManager()
 {
     if (!pu_clockManager) {
-        emit logMessage("ClockManager not initialized - cannot update clocks", LogHandler::Error);
+        bcError("ClockManager not initialized - cannot update clocks."_L1);
         return;
     }
     
@@ -1389,7 +1379,7 @@ void HardwareManager::updateClockManager()
         }
     }
     
-    emit logMessage(QString("Updating ClockManager with %1 clock(s)").arg(clocks.size()), LogHandler::Normal);
+    bcDebug(u"Updating ClockManager with %1 clock(s)."_s.arg(clocks.size()));
     pu_clockManager->setClocksFromHardwareManager(clocks);
 }
 
@@ -1451,7 +1441,7 @@ std::vector<std::pair<QString, QString>> HardwareManager::findHardwareToReplace(
 
 void HardwareManager::resolveGpibControllersForInstruments()
 {
-    emit logMessage("Resolving GPIB controllers for GPIB instruments", LogHandler::Normal);
+    bcDebug("Resolving GPIB controllers for GPIB instruments."_L1);
     
     // Use read lock for safe iteration over hardware map
     QReadLocker locker(&d_hardwareMapLock);
@@ -1468,7 +1458,7 @@ void HardwareManager::resolveGpibControllersForInstruments()
         QString controllerKey = s.getGroupValue(BC::Key::Comm::gpib, BC::Key::GPIB::gpibController, QString());
         
         if(controllerKey.isEmpty()) {
-            emit logMessage(QString("GPIB instrument %1 has no controller configured - connection testing will fail").arg(hwKey), LogHandler::Warning);
+            bcWarn(u"GPIB instrument %1 has no controller configured - connection testing will fail."_s.arg(hwKey));
             continue;
         }
         
@@ -1476,17 +1466,17 @@ void HardwareManager::resolveGpibControllersForInstruments()
         resolveGpibController(controllerKey, [this, hwKey, hwObj, controllerKey](GpibController* controller) {
             if(controller) {
                 // Controller found - complete the deferred initialization
-                emit logMessage(QString("Resolved GPIB controller %1 for instrument %2").arg(controllerKey, hwKey), LogHandler::Normal);
+                bcDebug(u"Resolved GPIB controller %1 for instrument %2."_s.arg(controllerKey, hwKey));
                 hwObj->buildCommunication(controller);
             } else {
                 // Controller not found - emit informative error message
-                emit logMessage(QString("GPIB controller %1 not found for instrument %2 - connection testing will fail").arg(controllerKey, hwKey), LogHandler::Warning);
+                bcWarn(u"GPIB controller %1 not found for instrument %2 - connection testing will fail."_s.arg(controllerKey, hwKey));
                 // Allow testConnection to fail naturally - don't force failure here
             }
         });
     }
     
-    emit logMessage("GPIB controller resolution complete", LogHandler::Normal);
+    bcDebug("GPIB controller resolution complete."_L1);
 }
 
 // ============================================================================
@@ -1499,13 +1489,13 @@ void HardwareManager::getHardwareCommunicationInfo(const QString& hwKey)
     
     auto it = d_hardwareMap.find(hwKey);
     if (it == d_hardwareMap.end()) {
-        emit logMessage(QString("Hardware %1 not found for communication info query").arg(hwKey), LogHandler::Warning);
+        bcWarn(u"Hardware %1 not found for communication info query."_s.arg(hwKey));
         return;
     }
     
     HardwareObject* hwObj = it->second;
     if (!hwObj) {
-        emit logMessage(QString("Hardware object %1 is null").arg(hwKey), LogHandler::Warning);
+        bcWarn(u"Hardware object %1 is null."_s.arg(hwKey));
         return;
     }
     
@@ -1656,8 +1646,7 @@ void HardwareManager::addLibraryDependentHardwareToRecreation(const std::map<QSt
     }
     
     for (const QString& libName : changedLibraries) {
-        emit logMessage(QString("Library %1 has staged changes - dependent hardware will be recreated")
-                       .arg(libName), LogHandler::Normal);
+        bcDebug(u"Library %1 has staged changes - dependent hardware will be recreated."_s.arg(libName));
     }
     
     // Find current hardware that depends on changed libraries
@@ -1670,8 +1659,7 @@ void HardwareManager::addLibraryDependentHardwareToRecreation(const std::map<QSt
         for (const QString& changedLib : changedLibraries) {
             if (deps.contains(changedLib)) {
                 needsRecreation = true;
-                emit logMessage(QString("Hardware %1 depends on changed library %2 - adding to recreation list")
-                               .arg(hwKey, changedLib), LogHandler::Normal);
+                bcDebug(u"Hardware %1 depends on changed library %2 - adding to recreation list."_s.arg(hwKey, changedLib));
                 break;
             }
         }
@@ -1685,7 +1673,7 @@ void HardwareManager::addLibraryDependentHardwareToRecreation(const std::map<QSt
             if (!alreadyInRemoval && !alreadyInReplacement) {
                 // Add to replacement list (same implementation, but needs recreation for library changes)
                 toReplace.emplace_back(hwKey, impl);
-                emit logMessage(QString("Added %1 to replacement list due to library dependency").arg(hwKey), LogHandler::Normal);
+                bcDebug(u"Added %1 to replacement list due to library dependency."_s.arg(hwKey));
             }
         }
     }

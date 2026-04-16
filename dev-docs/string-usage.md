@@ -761,8 +761,8 @@ makes the rest of the plan coherent.
    - [x] `src/hardware/core/communication/tcpinstrument.cpp`
 
    **Commit B — Core hardware objects**
-   - [ ] `src/hardware/core/hardwareobject.cpp`
-   - [ ] `src/hardware/core/hardwaremanager.cpp`
+   - [x] `src/hardware/core/hardwareobject.cpp`
+   - [x] `src/hardware/core/hardwaremanager.cpp`
 
    **Commit C — Clock subsystem**
    - [ ] `src/hardware/core/clock/clock.cpp`

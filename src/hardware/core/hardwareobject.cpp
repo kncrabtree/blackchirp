@@ -103,11 +103,11 @@ bool HardwareObject::setCommProtocol(CommunicationProtocol::CommType commType, Q
     auto supported = supportedProtocols();
     if (!supported.contains(commType)) {
         d_errorString = QString("Protocol %1 not supported by %2").arg(protocolName).arg(d_key);
-        emit logMessage(d_errorString, LogHandler::Error);
+        bcError(d_errorString);
         return false;
     }
 
-    emit logMessage(QString("Switching %1 to %2 protocol").arg(d_key).arg(protocolName), LogHandler::Normal);
+    bcDebug(u"Switching %1 to %2 protocol"_s.arg(d_key, protocolName));
     
     // Store the new protocol type in settings
     set(BC::Key::HW::commType, static_cast<int>(commType));
@@ -117,7 +117,7 @@ bool HardwareObject::setCommProtocol(CommunicationProtocol::CommType commType, Q
     // Rebuild communication with new protocol
     buildCommunication(gc, commType);
     
-    emit logMessage(QString("Protocol switch to %1 completed for %2").arg(protocolName).arg(d_key), LogHandler::Normal);
+    bcDebug(u"Protocol switch to %1 completed for %2"_s.arg(protocolName, d_key));
     
     return true;
 }
@@ -151,9 +151,8 @@ void HardwareObject::bcTestConnection()
 {
     d_isConnected = false;
     bcReadSettings();
-    emit logMessage(QString("bcTestConnection: key=%1 d_commType=%2 p_comm=%3")
-                    .arg(d_key).arg(static_cast<int>(d_commType)).arg(p_comm ? p_comm->metaObject()->className() : "null"),
-                    LogHandler::Debug);
+    bcDebug(u"bcTestConnection: key=%1 d_commType=%2 p_comm=%3"_s
+            .arg(d_key).arg(static_cast<int>(d_commType)).arg(p_comm ? p_comm->metaObject()->className() : "null"));
     if(p_comm)
     {
         if(!p_comm->bcTestConnection())
@@ -207,10 +206,9 @@ void HardwareObject::buildCommunication(QObject *gc, CommunicationProtocol::Comm
 {
     // GPIB support included
     GpibController *c = dynamic_cast<GpibController*>(gc);
-    emit logMessage(QString("buildCommunication: key=%1 gc=%2 commType=%3 c=%4")
-                    .arg(d_key).arg(gc ? gc->metaObject()->className() : "null")
-                    .arg(static_cast<int>(commType)).arg(c ? "valid" : "null"),
-                    LogHandler::Debug);
+    bcDebug(u"buildCommunication: key=%1 gc=%2 commType=%3 c=%4"_s
+            .arg(d_key, gc ? gc->metaObject()->className() : "null")
+            .arg(static_cast<int>(commType)).arg(c ? "valid" : "null"));
     
     // If no GPIB controller provided and we need GPIB, connection will fail during testing
     // GPIB controller resolution is handled during the synchronization phase when all hardware exists
