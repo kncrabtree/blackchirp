@@ -71,7 +71,7 @@ bool Bnc577::pGenWriteCmd(QString cmd)
         return true;
 
     emit hardwareFailure();
-    emit logMessage(QString("Error writing command %1").arg(cmd),LogHandler::Error);
+    hwError(u"Error writing command %1"_s.arg(cmd));
     return false;
 }
 

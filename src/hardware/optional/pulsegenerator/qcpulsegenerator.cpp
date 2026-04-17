@@ -26,7 +26,7 @@ bool QCPulseGenerator::testConnection()
         return false;
     }
 
-    emit logMessage(QString("ID response: %1").arg(QString(resp.trimmed())));
+    hwDebug(u"ID response: %1"_s.arg(QString(resp.trimmed())));
 
     if(get(BC::Key::PGen::lockExternal,true))
     {
@@ -138,7 +138,7 @@ double QCPulseGenerator::readChWidth(const int index)
     }
 
     emit hardwareFailure();
-    emit logMessage(QString("Could not read channel %1 width. Response: %2").arg(index+1).arg(QString(resp)));
+    hwError(u"Could not read channel %1 width. Response: %2"_s.arg(index+1).arg(QString(resp)));
     return nan("");
 }
 
@@ -154,7 +154,7 @@ double QCPulseGenerator::readChDelay(const int index)
     }
 
     emit hardwareFailure();
-    emit logMessage(QString("Could not read channel %1 delay. Response: %2").arg(index+1).arg(QString(resp)));
+    hwError(u"Could not read channel %1 delay. Response: %2"_s.arg(index+1).arg(QString(resp)));
     return nan("");
 }
 
@@ -170,7 +170,7 @@ PulseGenConfig::ActiveLevel QCPulseGenerator::readChActiveLevel(const int index)
     }
 
     emit hardwareFailure();
-    emit logMessage(QString("Could not read channel %1 active level. Response: %2").arg(index+1).arg(QString(resp)));
+    hwError(u"Could not read channel %1 active level. Response: %2"_s.arg(index+1).arg(QString(resp)));
     return PulseGenConfig::ActiveHigh;
 }
 
@@ -186,7 +186,7 @@ bool QCPulseGenerator::readChEnabled(const int index)
     }
 
     emit hardwareFailure();
-    emit logMessage(QString("Could not read channel %1 enabled state. Response: %2").arg(index+1).arg(QString(resp)));
+    hwError(u"Could not read channel %1 enabled state. Response: %2"_s.arg(index+1).arg(QString(resp)));
     return false;
 }
 
@@ -205,7 +205,7 @@ int QCPulseGenerator::readChSynchCh(const int index)
     }
 
     emit hardwareFailure();
-    emit logMessage(QString("Could not read channel %1 sync channel. Response: %2").arg(index+1).arg(QString(resp)));
+    hwError(u"Could not read channel %1 sync channel. Response: %2"_s.arg(index+1).arg(QString(resp)));
     return -1;
 }
 
@@ -222,7 +222,7 @@ PulseGenConfig::ChannelMode QCPulseGenerator::readChMode(const int index)
     }
 
     emit hardwareFailure();
-    emit logMessage(QString("Could not read channel %1 mode. Response: %2").arg(index+1).arg(QString(resp)));
+    hwError(u"Could not read channel %1 mode. Response: %2"_s.arg(index+1).arg(QString(resp)));
     return PulseGenConfig::Normal;
 }
 
@@ -239,7 +239,7 @@ int QCPulseGenerator::readChDutyOn(const int index)
     }
 
     emit hardwareFailure();
-    emit logMessage(QString("Could not read channel %1 duty cycle on pulses. Response: %2").arg(index).arg(QString(resp)));
+    hwError(u"Could not read channel %1 duty cycle on pulses. Response: %2"_s.arg(index).arg(QString(resp)));
     return -1;
 }
 
@@ -256,7 +256,7 @@ int QCPulseGenerator::readChDutyOff(const int index)
     }
 
     emit hardwareFailure();
-    emit logMessage(QString("Could not read channel %1 duty cycle off pulses. Response: %2").arg(index).arg(QString(resp)));
+    hwError(u"Could not read channel %1 duty cycle off pulses. Response: %2"_s.arg(index).arg(QString(resp)));
     return -1;
 }
 
@@ -277,14 +277,14 @@ PulseGenConfig::PGenMode QCPulseGenerator::readHwPulseMode()
             else
             {
                 emit hardwareFailure();
-                emit logMessage(QString("Could not read trigger edge. Response: %1").arg(QString(resp)));
+                hwError(u"Could not read trigger edge. Response: %1"_s.arg(QString(resp)));
                 return PulseGenConfig::Continuous;
             }
         }
     }
 
     emit hardwareFailure();
-    emit logMessage(QString("Could not read system pulse mode. Response: %1").arg(QString(resp)));
+    hwError(u"Could not read system pulse mode. Response: %1"_s.arg(QString(resp)));
     return PulseGenConfig::Continuous;
 }
 
@@ -300,7 +300,7 @@ double QCPulseGenerator::readHwRepRate()
     }
 
     emit hardwareFailure();
-    emit logMessage(QString("Could not read rep rate. Response: %1").arg(QString(resp)));
+    hwError(u"Could not read rep rate. Response: %1"_s.arg(QString(resp)));
     return nan("");
 }
 
@@ -316,7 +316,7 @@ bool QCPulseGenerator::readHwPulseEnabled()
     }
 
     emit hardwareFailure();
-    emit logMessage(QString("Could not read system pulse enabled status. Response: %1").arg(QString(resp)));
+    hwError(u"Could not read system pulse enabled status. Response: %1"_s.arg(QString(resp)));
     return false;
 }
 

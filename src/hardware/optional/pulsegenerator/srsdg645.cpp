@@ -73,13 +73,13 @@ bool SRSDG645::testConnection()
         return false;
     }
 
-    emit logMessage(QString("ID response: %1").arg(QString(resp.trimmed())));
+    hwDebug(u"ID response: %1"_s.arg(QString(resp.trimmed())));
 
     if(get(lockExternal,true))
     {
         resp = p_comm->queryCmd("TIMB?\n");
         if(!resp.contains('3'))
-            emit logMessage("Timebase is not set to external.",LogHandler::Warning);
+            hwWarn("Timebase is not set to external."_L1);
     }
 
     p_comm->writeCmd("*CLS\n");
@@ -231,7 +231,7 @@ double SRSDG645::readChWidth(const int index)
         if(l.size() < 2)
         {
             emit hardwareFailure();
-            emit logMessage(QString("Could not read Ch %1 width. Response: %2").arg(index).arg(QString(resp)),LogHandler::Error);
+            hwError(u"Could not read Ch %1 width. Response: %2"_s.arg(index).arg(QString(resp)));
             return -1.0;
         }
         auto i = l.constFirst().toInt();
@@ -247,7 +247,7 @@ double SRSDG645::readChWidth(const int index)
             else
             {
                 emit hardwareFailure();
-                emit logMessage(QString("Could not read Ch %1 width. Response: %2").arg(index).arg(QString(resp)),LogHandler::Error);
+                hwError(u"Could not read Ch %1 width. Response: %2"_s.arg(index).arg(QString(resp)));
                 return -1.0;
             }
         }
@@ -258,7 +258,7 @@ double SRSDG645::readChWidth(const int index)
             if(!ok)
             {
                 emit hardwareFailure();
-                emit logMessage(QString("Could not read Ch %1 width. Response: %2").arg(index).arg(QString(resp)),LogHandler::Error);
+                hwError(u"Could not read Ch %1 width. Response: %2"_s.arg(index).arg(QString(resp)));
                 return -1.0;
             }
             else
@@ -283,7 +283,7 @@ double SRSDG645::readChDelay(const int index)
     if(l.size() < 2)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read Ch %1 delay. Response: %2").arg(index).arg(QString(resp)),LogHandler::Error);
+        hwError(u"Could not read Ch %1 delay. Response: %2"_s.arg(index).arg(QString(resp)));
         return -1.0;
     }
 
@@ -292,7 +292,7 @@ double SRSDG645::readChDelay(const int index)
     if(!ok)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read Ch %1 delay. Response: %2").arg(index).arg(QString(resp)),LogHandler::Error);
+        hwError(u"Could not read Ch %1 delay. Response: %2"_s.arg(index).arg(QString(resp)));
         return -1.0;
     }
 
@@ -312,7 +312,7 @@ PulseGenConfig::ActiveLevel SRSDG645::readChActiveLevel(const int index)
         return PulseGenConfig::ActiveHigh;
 
     emit hardwareFailure();
-    emit logMessage(QString("Could not read Ch %1 active level. Response: %2").arg(index).arg(QString(resp)),LogHandler::Error);
+    hwError(u"Could not read Ch %1 active level. Response: %2"_s.arg(index).arg(QString(resp)));
     return PulseGenConfig::ActiveHigh;
 
 }
@@ -332,7 +332,7 @@ int SRSDG645::readChSynchCh(const int index)
     if(l.size() < 2)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read Ch %1 sync channel. Response: %2").arg(index).arg(QString(resp)),LogHandler::Error);
+        hwError(u"Could not read Ch %1 sync channel. Response: %2"_s.arg(index).arg(QString(resp)));
         return -1;
     }
 
@@ -341,7 +341,7 @@ int SRSDG645::readChSynchCh(const int index)
     if(!ok)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read Ch %1 sync channel. Response: %2").arg(index).arg(QString(resp)),LogHandler::Error);
+        hwError(u"Could not read Ch %1 sync channel. Response: %2"_s.arg(index).arg(QString(resp)));
         return -1;
     }
 
@@ -378,7 +378,7 @@ PulseGenConfig::PGenMode SRSDG645::readHwPulseMode()
     if(!ok)
     {
         emit hardwareFailure();
-        emit logMessage("Could not read pulse mode.",LogHandler::Error);
+        hwError("Could not read pulse mode."_L1);
         return PulseGenConfig::Continuous;
     }
 
@@ -402,7 +402,7 @@ PulseGenConfig::PGenMode SRSDG645::readHwPulseMode()
     }
     default:
         //triggering mode is set to something else; change it and throw a warning
-        emit logMessage(QString("Device is set to an unsupported trigger source. Disabling pulses."),LogHandler::Warning);
+        hwWarn("Device is set to an unsupported trigger source. Disabling pulses."_L1);
         setPulseEnabled(false);
         return PulseGenConfig::Continuous;
     }
@@ -419,7 +419,7 @@ double SRSDG645::readHwRepRate()
     if(!ok)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read rep rate. Response: %1").arg(QString(resp)),LogHandler::Error);
+        hwError(u"Could not read rep rate. Response: %1"_s.arg(QString(resp)));
         return -1.0;
     }
 
@@ -434,7 +434,7 @@ bool SRSDG645::readHwPulseEnabled()
     if(!ok)
     {
         emit hardwareFailure();
-        emit logMessage("Could not read pulse enabled status.",LogHandler::Error);
+        hwError("Could not read pulse enabled status."_L1);
         return false;
     }
 

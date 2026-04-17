@@ -70,7 +70,7 @@ void PulseGenerator::readChannel(const int index)
     success &= (w <= get<double>(BC::Key::PGen::maxWidth) && w >= get<double>(BC::Key::PGen::minWidth));
     if(!success)
     {
-        emit logMessage(QString("Could not read width for channel %1").arg(index),LogHandler::Error);
+        hwError(u"Could not read width for channel %1"_s.arg(index));
         return;
     }
 
@@ -78,7 +78,7 @@ void PulseGenerator::readChannel(const int index)
     success &= (d <= get<double>(BC::Key::PGen::maxDelay) && d >= get<double>(BC::Key::PGen::minDelay));
     if(!success)
     {
-        emit logMessage(QString("Could not read delay for channel %1").arg(index),LogHandler::Error);
+        hwError(u"Could not read delay for channel %1"_s.arg(index));
         return;
     }
 
@@ -116,8 +116,8 @@ double PulseGenerator::readRepRate()
     }
 
     if(!isnan(out))
-        emit logMessage(QString("Rep rate (%1 Hz) is outside valid range (%2 - %3 Hz)").
-                    arg(out,0,'e',2).arg(min,0,'e',2).arg(max,0,'e',2),LogHandler::Error);
+        hwError(u"Rep rate (%1 Hz) is outside valid range (%2 - %3 Hz)"_s
+                    .arg(out,0,'e',2).arg(min,0,'e',2).arg(max,0,'e',2));
     return nan("");
 }
 
@@ -141,7 +141,7 @@ bool PulseGenerator::setPGenSetting(const int index, const PulseGenConfig::Setti
 {
     if(index >= d_numChannels)
     {
-        emit logMessage(QString("Received invalid channel (%1). Allowed values: 0-%2").arg(index).arg(d_numChannels-1),LogHandler::Error);
+        hwError(u"Received invalid channel (%1). Allowed values: 0-%2"_s.arg(index).arg(d_numChannels-1));
         return false;
     }
 
@@ -186,7 +186,7 @@ bool PulseGenerator::setPGenSetting(const int index, const PulseGenConfig::Setti
         if((w < min) || (w > max))
         {
             success = false;
-            emit logMessage(QString("Requested width (%1) for channel %2 is outside the allowed range (%3 - %4)").arg(w,0,'e',2).arg(index).arg(min,0,'e',2).arg(max,0,'e',2),LogHandler::Error);
+            hwError(u"Requested width (%1) for channel %2 is outside the allowed range (%3 - %4)"_s.arg(w,0,'e',2).arg(index).arg(min,0,'e',2).arg(max,0,'e',2));
         }
         else
         {
@@ -211,7 +211,7 @@ bool PulseGenerator::setPGenSetting(const int index, const PulseGenConfig::Setti
         if((d < min) || (d > max))
         {
             success = false;
-            emit logMessage(QString("Requested delay (%1) for channel %2 is outside the allowed range (%3 - %4)").arg(d,0,'e',2).arg(index).arg(min,0,'e',2).arg(max,0,'e',2),LogHandler::Error);
+            hwError(u"Requested delay (%1) for channel %2 is outside the allowed range (%3 - %4)"_s.arg(d,0,'e',2).arg(index).arg(min,0,'e',2).arg(max,0,'e',2));
         }
         else
         {
@@ -236,7 +236,7 @@ bool PulseGenerator::setPGenSetting(const int index, const PulseGenConfig::Setti
         {
             success = false;
             result = PulseGenConfig::Normal;
-            emit logMessage("Duty cycle mode is not supported.",LogHandler::Error);
+            hwError("Duty cycle mode is not supported."_L1);
         }
         else
         {
@@ -259,12 +259,12 @@ bool PulseGenerator::setPGenSetting(const int index, const PulseGenConfig::Setti
         if(!ok && d != 0)
         {
             success = false;
-            emit logMessage(QString("Syncing one channel to another is not supported."),LogHandler::Error);
+            hwError("Syncing one channel to another is not supported."_L1);
         }
         else if (d < 0 || d > d_numChannels)
         {
             success = false;
-            emit logMessage(QString("Requested sync channel (%1) is invalid").arg(d),LogHandler::Error);
+            hwError(u"Requested sync channel (%1) is invalid"_s.arg(d));
         }
         else
         {
@@ -293,7 +293,7 @@ bool PulseGenerator::setPGenSetting(const int index, const PulseGenConfig::Setti
         if(d<1 || d > max)
         {
             success = false;
-            emit logMessage(QString("Requested number of duty cycle on pulses (%1) exceeds the maximum limit of %2.").arg(d).arg(max),LogHandler::Error);
+            hwError(u"Requested number of duty cycle on pulses (%1) exceeds the maximum limit of %2."_s.arg(d).arg(max));
         }
         else
         {
@@ -321,7 +321,7 @@ bool PulseGenerator::setPGenSetting(const int index, const PulseGenConfig::Setti
         if(d<1 || d > max)
         {
             success = false;
-            emit logMessage(QString("Requested number of duty cycle off pulses (%1) exceeds the maximum limit of %2.").arg(d).arg(max),LogHandler::Error);
+            hwError(u"Requested number of duty cycle off pulses (%1) exceeds the maximum limit of %2."_s.arg(d).arg(max));
         }
         else
         {
@@ -416,8 +416,8 @@ bool PulseGenerator::setRepRate(double d)
     auto max = get(BC::Key::PGen::maxRepRate,1e5);
     if((d < min) || (d > max))
     {
-        emit logMessage(QString("Requested rep rate (%1 Hz) is outside the allowed range (%2 - %3 Hz)").
-                        arg(d,0,'e',2).arg(min,0,'e',2).arg(max,0,'e',2),LogHandler::Error);
+        hwError(u"Requested rep rate (%1 Hz) is outside the allowed range (%2 - %3 Hz)"_s
+                        .arg(d,0,'e',2).arg(min,0,'e',2).arg(max,0,'e',2));
         return false;
     }
     bool success = setHwRepRate(d);
@@ -434,7 +434,7 @@ bool PulseGenerator::setPulseMode(PulseGenConfig::PGenMode mode)
     auto ok = get(BC::Key::PGen::canTrigger,false);
     if(!ok && mode != PulseGenConfig::Continuous)
     {
-        emit logMessage("Triggered mode is not supported.",LogHandler::Error);
+        hwError("Triggered mode is not supported."_L1);
         return false;
     }
 

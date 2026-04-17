@@ -810,16 +810,16 @@ makes the rest of the plan coherent.
    - [x] `src/hardware/optional/tempcontroller/lakeshore218.cpp`
 
    **Commit F — Flow controllers and pulse generators**
-   - [ ] `src/hardware/optional/flowcontroller/flowcontroller.cpp`
-   - [ ] `src/hardware/optional/flowcontroller/mks647c.cpp`
-   - [ ] `src/hardware/optional/flowcontroller/mks946.cpp`
-   - [ ] `src/hardware/optional/pulsegenerator/bnc577.cpp`
-   - [ ] `src/hardware/optional/pulsegenerator/pulsegenerator.cpp`
-   - [ ] `src/hardware/optional/pulsegenerator/qc9210series.cpp`
-   - [ ] `src/hardware/optional/pulsegenerator/qc9510series.cpp`
-   - [ ] `src/hardware/optional/pulsegenerator/qc9520series.cpp`
-   - [ ] `src/hardware/optional/pulsegenerator/qcpulsegenerator.cpp`
-   - [ ] `src/hardware/optional/pulsegenerator/srsdg645.cpp`
+   - [x] `src/hardware/optional/flowcontroller/flowcontroller.cpp`
+   - [x] `src/hardware/optional/flowcontroller/mks647c.cpp`
+   - [x] `src/hardware/optional/flowcontroller/mks946.cpp`
+   - [x] `src/hardware/optional/pulsegenerator/bnc577.cpp`
+   - [x] `src/hardware/optional/pulsegenerator/pulsegenerator.cpp`
+   - [x] `src/hardware/optional/pulsegenerator/qc9210series.cpp`
+   - [x] `src/hardware/optional/pulsegenerator/qc9510series.cpp`
+   - [x] `src/hardware/optional/pulsegenerator/qc9520series.cpp`
+   - [x] `src/hardware/optional/pulsegenerator/qcpulsegenerator.cpp`
+   - [x] `src/hardware/optional/pulsegenerator/srsdg645.cpp`
 
    **Commit G — Python hardware**
    - [ ] `src/hardware/python/pythonawg.cpp`
@@ -827,6 +827,31 @@ makes the rest of the plan coherent.
    - [ ] `src/hardware/python/pythonioboard.cpp`
    - [ ] `src/hardware/python/pythonlifscope.cpp`
    - [ ] `src/hardware/python/pythonprocess.cpp`
+
+   #### Session handoff notes (established patterns not explicit above)
+
+   **QByteArray to hw\* helpers.** `hw*`/`bc*` take `QAnyStringView`,
+   which accepts `QByteArray` directly. Drop any `QString::fromLatin1()`
+   wrapper when passing a raw `QByteArray` directly to a `hw*` call.
+   Keep the wrapper when assigning to `d_errorString` (which is
+   `QString`) or when used inside `.arg()` (Qt < 6.9 `.arg()` does not
+   accept `QAnyStringView`).
+
+   **Split trigger: only raw bytes / hex.** The split pattern applies
+   when a message combines a user-facing error with raw bytes or hex
+   dumps. Human-readable server error text appended to a message (e.g.,
+   `resp.mid(7)` after stripping an `ERROR:` prefix) does NOT trigger a
+   split — include it directly in the `hwError` call.
+
+   **Instrument error strings from `SYST:ERR?` / `System:Error:*?`.**
+   These responses are human-readable text, not raw bytes. When an
+   error helper (e.g., `m8190Write`) logs the instrument error string
+   alongside the failing command, keep them combined in a single
+   `hwError` — no split needed.
+
+   **`ClockManager` vs `HardwareObject` subclasses.** `ClockManager` is
+   not a `HardwareObject`; use bare `bc*` free functions there.
+   Everything else in `src/hardware/` that has `d_key` uses `hw*`.
 
    **Commit H — Shim removal** (after all files above are complete)
    - [ ] Remove `logMessage` slot and shim body from `HardwareObject`

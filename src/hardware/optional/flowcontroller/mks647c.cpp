@@ -110,8 +110,8 @@ bool Mks647c::fcTestConnection()
             }
         }
     }
-    emit logMessage(QString("ID response: %1").arg(QString(resp)));
-    emit logMessage(QString("Reading all settings. This will take a few seconds..."));
+    hwDebug(u"ID response: %1"_s.arg(QString(resp)));
+    hwLog("Reading all settings. This will take a few seconds..."_L1);
     return true;
 
 }
@@ -131,7 +131,7 @@ void Mks647c::hwSetFlowSetpoint(const int ch, const double val)
     if(sp >=0 && sp <=1100)
         p_comm->writeCmd(QString("FS%1%2;\r\n").arg(ch+1).arg(sp,4,10,QLatin1Char('0')));
     else
-        emit logMessage(QString("Flow setpoint (%1) invalid for current range. Converted value = %2 (valid range: 0-1100)").arg(val).arg(sp),LogHandler::Warning);
+        hwWarn(u"Flow setpoint (%1) invalid for current range. Converted value = %2 (valid range: 0-1100)"_s.arg(val).arg(sp));
 }
 
 void Mks647c::hwSetPressureSetpoint(const double val)
@@ -154,7 +154,7 @@ double Mks647c::hwReadFlowSetpoint(const int ch)
     if(resp.isEmpty())
     {
         emit hardwareFailure();
-        emit logMessage(QString("No response to flow range query for channel %1.").arg(ch+1),LogHandler::Error);
+        hwError(u"No response to flow range query for channel %1."_s.arg(ch+1));
 	   return -1.0;
     }
     //we don't actually care about the range right now...
@@ -165,7 +165,7 @@ double Mks647c::hwReadFlowSetpoint(const int ch)
     if(resp.isEmpty())
     {
         emit hardwareFailure();
-        emit logMessage(QString("No response to setpoint query for channel %1.").arg(ch+1),LogHandler::Error);
+        hwError(u"No response to setpoint query for channel %1."_s.arg(ch+1));
 	   return -1.0;
     }
 
@@ -174,7 +174,7 @@ double Mks647c::hwReadFlowSetpoint(const int ch)
     if(!ok)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read setpoint for channel %1. Response: %2").arg(ch+1).arg(QString(resp)),LogHandler::Error);
+        hwError(u"Could not read setpoint for channel %1. Response: %2"_s.arg(ch+1).arg(QString(resp)));
 	   return -1.0;
     }
 
@@ -197,7 +197,7 @@ double Mks647c::hwReadPressureSetpoint()
     if(resp.isEmpty())
     {
         emit hardwareFailure();
-        emit logMessage(QString("No response to pressure range query."),LogHandler::Error);
+        hwError("No response to pressure range query."_L1);
 	   return -1.0;
     }
     //we don't care about the pressure range....
@@ -208,7 +208,7 @@ double Mks647c::hwReadPressureSetpoint()
     if(resp.isEmpty())
     {
         emit hardwareFailure();
-        emit logMessage(QString("No response to pressure query."),LogHandler::Error);
+        hwError("No response to pressure query."_L1);
 	   return -1.0;
     }
 
@@ -217,7 +217,7 @@ double Mks647c::hwReadPressureSetpoint()
     if(!ok)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read pressure. Response: %1").arg(QString(resp)),LogHandler::Error);
+        hwError(u"Could not read pressure. Response: %1"_s.arg(QString(resp)));
 	   return -1.0;
     }
 
@@ -235,7 +235,7 @@ double Mks647c::hwReadFlow(const int ch)
     if(resp.isEmpty())
     {
         emit hardwareFailure();
-        emit logMessage(QString("No response to flow range query for channel %1.").arg(ch+1),LogHandler::Error);
+        hwError(u"No response to flow range query for channel %1."_s.arg(ch+1));
 	   return -1.0;
     }
 
@@ -244,8 +244,7 @@ double Mks647c::hwReadFlow(const int ch)
     if(!ok || i >= d_gasRangeList.size() || i<0)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read flow range for channel %1. Response: %2")
-                        .arg(ch+1).arg(QString(resp)),LogHandler::Error);
+        hwError(u"Could not read flow range for channel %1. Response: %2"_s.arg(ch+1).arg(QString(resp)));
 	   return -1.0;
     }
 
@@ -258,7 +257,7 @@ double Mks647c::hwReadFlow(const int ch)
     if(resp.isEmpty())
     {
         emit hardwareFailure();
-        emit logMessage(QString("No response to correction factor query for channel %1.").arg(ch+1),LogHandler::Error);
+        hwError(u"No response to correction factor query for channel %1."_s.arg(ch+1));
 	   return -1.0;
     }
 
@@ -267,8 +266,7 @@ double Mks647c::hwReadFlow(const int ch)
     if(!ok)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read correction factor for channel %1. Response: %2")
-                        .arg(ch+1).arg(QString(resp)),LogHandler::Error);
+        hwError(u"Could not read correction factor for channel %1. Response: %2"_s.arg(ch+1).arg(QString(resp)));
 	   return -1.0;
     }
 
@@ -277,7 +275,7 @@ double Mks647c::hwReadFlow(const int ch)
     if(resp.isEmpty())
     {
         emit hardwareFailure();
-        emit logMessage(QString("No response to flow query for channel %1.").arg(ch+1),LogHandler::Error);
+        hwError(u"No response to flow query for channel %1."_s.arg(ch+1));
 	   return -1.0;
     }
 
@@ -286,8 +284,7 @@ double Mks647c::hwReadFlow(const int ch)
     if(!ok && resp != "-----")
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read flow for channel %1. Response: %2")
-                        .arg(ch+1).arg(QString(resp)),LogHandler::Error);
+        hwError(u"Could not read flow for channel %1. Response: %2"_s.arg(ch+1).arg(QString(resp)));
 	   return -1.0;
     }
 
@@ -313,7 +310,7 @@ double Mks647c::hwReadPressure()
     if(resp.isEmpty())
     {
         emit hardwareFailure();
-        emit logMessage(QString("No response to pressure range query."),LogHandler::Error);
+        hwError("No response to pressure range query."_L1);
 	   return -1.0;
     }
 
@@ -322,7 +319,7 @@ double Mks647c::hwReadPressure()
     if(!ok || i >= d_pressureRangeList.size() || i<0)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read pressure gauge range. Response: %1").arg(QString(resp)),LogHandler::Error);
+        hwError(u"Could not read pressure gauge range. Response: %1"_s.arg(QString(resp)));
 	   return -1.0;
     }
 
@@ -332,7 +329,7 @@ double Mks647c::hwReadPressure()
     if(resp.isEmpty())
     {
         emit hardwareFailure();
-        emit logMessage(QString("No response to pressure query."),LogHandler::Error);
+        hwError("No response to pressure query."_L1);
 	   return -1.0;
     }
 
@@ -341,7 +338,7 @@ double Mks647c::hwReadPressure()
     if(!ok)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read pressure. Response: %1").arg(QString(resp)),LogHandler::Error);
+        hwError(u"Could not read pressure. Response: %1"_s.arg(QString(resp)));
 	   return -1.0;
     }
 
@@ -370,7 +367,7 @@ int Mks647c::hwReadPressureControlMode()
     if(resp.isEmpty())
     {
         emit hardwareFailure();
-        emit logMessage(QString("No response to pressure control mode query."),LogHandler::Error);
+        hwError("No response to pressure control mode query."_L1);
        return -1;
     }
 
@@ -379,7 +376,7 @@ int Mks647c::hwReadPressureControlMode()
     if(!ok)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not parse pressure control mode response. Response: %1").arg(QString(resp)),LogHandler::Error);
+        hwError(u"Could not parse pressure control mode response. Response: %1"_s.arg(QString(resp)));
        return -1;
     }
 
@@ -415,7 +412,7 @@ QByteArray Mks647c::mksQueryCmd(QString cmd, int respLength)
             if(resp.isEmpty() || resp.length() == respLength)
                 done = true;
         }
-//        emit logMessage(QString("Took %1 tries to get valid response").arg(tries));
+//        hwDebug(u"Took %1 tries to get valid response"_s.arg(tries));
     }
     return resp;
 }
