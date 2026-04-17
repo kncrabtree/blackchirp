@@ -790,11 +790,11 @@ makes the rest of the plan coherent.
    - [x] `src/hardware/core/clock/valon5015.cpp`
 
    **Commit D — LIF hardware**
-   - [ ] `src/hardware/core/lifdigitizer/m4i2211x8.cpp`
-   - [ ] `src/hardware/core/lifdigitizer/rigolds2302a.cpp`
-   - [ ] `src/hardware/core/liflaser/liflaser.cpp`
-   - [ ] `src/hardware/core/liflaser/opolette.cpp`
-   - [ ] `src/hardware/core/liflaser/sirahcobra.cpp`
+   - [x] `src/hardware/core/lifdigitizer/m4i2211x8.cpp`
+   - [x] `src/hardware/core/lifdigitizer/rigolds2302a.cpp`
+   - [x] `src/hardware/core/liflaser/liflaser.cpp`
+   - [x] `src/hardware/core/liflaser/opolette.cpp`
+   - [x] `src/hardware/core/liflaser/sirahcobra.cpp`
 
    **Commit E — AWG/RF sources, GPIB controller, I/O, pressure,
    temperature**

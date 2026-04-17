@@ -149,9 +149,9 @@ bool M4i2211x8::testConnection()
         return false;
     }
 
-    emit logMessage(QString("Card type: %1, Serial Number %2. Library V %3.%4 build %5. Kernel V %6.%7 build %8")
-                    .arg(cType).arg(serialNo).arg(driVer >> 24).arg((driVer >> 16) & 0xff).arg(driVer & 0xffff)
-                    .arg(kerVer >> 24).arg((kerVer >> 16) & 0xff).arg(kerVer & 0xffff));
+    hwDebug(u"Card type: %1, Serial Number %2. Library V %3.%4 build %5. Kernel V %6.%7 build %8"_s
+            .arg(cType).arg(serialNo).arg(driVer >> 24).arg((driVer >> 16) & 0xff).arg(driVer & 0xffff)
+            .arg(kerVer >> 24).arg((kerVer >> 16) & 0xff).arg(kerVer & 0xffff));
 
 
     if(errorCheck())
@@ -164,7 +164,7 @@ void M4i2211x8::readWaveform()
 {
     SpectrumLibrary* spcmLib = getSpectrumLibrary();
     if (!spcmLib) {
-        emit logMessage("Spectrum library not available", LogHandler::Error);
+        hwError("Spectrum library not available"_L1);
         emit hardwareFailure();
         stopCard();
         p_timer->stop();
@@ -178,7 +178,7 @@ void M4i2211x8::readWaveform()
     {
         QByteArray errText(1000,'\0');
         if(spcmLib->spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
-            emit logMessage(QString::fromLatin1(errText),LogHandler::Error);
+            hwError(errText);
 
         emit hardwareFailure();
         stopCard();
@@ -207,7 +207,7 @@ bool M4i2211x8::errorCheck()
     if (!spcmLib) {
         d_errorString = "Spectrum library not available";
         emit hardwareFailure();
-        emit logMessage(QString("An error occurred: %1").arg(d_errorString),LogHandler::Error);
+        hwError("Spectrum library not available"_L1);
         return true;
     }
     
@@ -218,7 +218,7 @@ bool M4i2211x8::errorCheck()
 
         d_errorString = QString::fromLatin1(errText);
         emit hardwareFailure();
-        emit logMessage(QString("An error occurred: %1").arg(d_errorString),LogHandler::Error);
+        hwError(u"An error occurred: %1"_s.arg(d_errorString));
         return true;
     }
 
@@ -246,7 +246,7 @@ bool M4i2211x8::configure(const LifDigitizerConfig &c)
 {
     SpectrumLibrary* spcmLib = getSpectrumLibrary();
     if (!spcmLib) {
-        emit logMessage("Spectrum library not available", LogHandler::Error);
+        hwError("Spectrum library not available"_L1);
         return false;
     }
 
@@ -275,7 +275,7 @@ bool M4i2211x8::configure(const LifDigitizerConfig &c)
         ch.fullScale = 2.5;
 
     if(qAbs(ch.fullScale-scale)>0.01)
-        emit logMessage(QString("LIF channel scale set to nearest allowed value (%1 V)").arg(ch.fullScale));
+        hwWarn(u"LIF channel scale set to nearest allowed value (%1 V)"_s.arg(ch.fullScale));
     spcmLib->spcm_dwSetParam_i32(p_handle,SPC_AMP0,static_cast<qint32>(round(ch.fullScale*1000.0)));
 
     //set offset to 0
@@ -301,7 +301,7 @@ bool M4i2211x8::configure(const LifDigitizerConfig &c)
             ch2.fullScale = 2.5;
 
         if(qAbs(ch2.fullScale-scale)>0.01)
-            emit logMessage(QString("Reference channel scale set to nearest allowed value (%1 V)").arg(ch2.fullScale));
+            hwWarn(u"Reference channel scale set to nearest allowed value (%1 V)"_s.arg(ch2.fullScale));
         spcmLib->spcm_dwSetParam_i32(p_handle,SPC_AMP1,static_cast<qint32>(round(ch2.fullScale*1000.0)));
 
         //set offset to 0
@@ -319,7 +319,7 @@ bool M4i2211x8::configure(const LifDigitizerConfig &c)
     rl = qMax(32,rl);
     rl = qMin(rl,65536);
     if(rl != d_recordLength)
-        emit logMessage(QString("Record length set to %1 instead of %2 because it must be a multiple of 32 between 32 and 65536.").arg(rl).arg(d_recordLength),LogHandler::Warning);
+        hwWarn(u"Record length set to %1 instead of %2 because it must be a multiple of 32 between 32 and 65536."_s.arg(rl).arg(d_recordLength));
     d_recordLength = rl;
 
     spcmLib->spcm_dwSetParam_i32(p_handle,SPC_CLOCKMODE,SPC_CM_INTPLL);

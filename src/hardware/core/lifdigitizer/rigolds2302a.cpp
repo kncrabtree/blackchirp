@@ -98,7 +98,7 @@ bool RigolDS2302A::testConnection()
 
     p_comm->writeCmd("*CLS\n");
 
-    emit logMessage(QString("ID response: %1").arg(QString(resp)));
+    hwDebug(u"ID response: %1"_s.arg(QString(resp)));
     return true;
 }
 
@@ -113,7 +113,7 @@ void RigolDS2302A::readWaveform()
 //    if(resp.isEmpty())
 //    {
 //        d_acquiring = false;
-//        emit logMessage("Communication failure.",LogHandler::Error);
+//        hwError("Communication failure."_L1);
 //        emit hardwareFailure();
 //        return;
 //    }
@@ -157,7 +157,8 @@ void RigolDS2302A::readWaveform()
             if(!resp.startsWith('#'))
             {
                 d_acquiring = false;
-                emit logMessage(QString("Communication failure parsing WAV:DATA: %1").arg(QString(resp.mid(0,10))),LogHandler::Error);
+                hwError("Communication failure parsing WAV:DATA."_L1);
+                hwDebug(u"Communication failure parsing WAV:DATA. Response = %1 (Hex: %2)"_s.arg(QString(resp.mid(0,10)), QString(resp.mid(0,10).toHex())));
                 emit hardwareFailure();
                 return;
             }
@@ -167,7 +168,8 @@ void RigolDS2302A::readWaveform()
             if(!ok)
             {
                 d_acquiring = false;
-                emit logMessage(QString("Communication failure parsing WAV:DATA: %1").arg(QString(resp.mid(0,10))),LogHandler::Error);
+                hwError("Communication failure parsing WAV:DATA."_L1);
+                hwDebug(u"Communication failure parsing WAV:DATA. Response = %1 (Hex: %2)"_s.arg(QString(resp.mid(0,10)), QString(resp.mid(0,10).toHex())));
                 emit hardwareFailure();
                 return;
             }
@@ -203,7 +205,7 @@ bool RigolDS2302A::configure(const LifDigitizerConfig &c)
     auto it = c.d_analogChannels.find(1);
     if(it == c.d_analogChannels.end() || !it->second.enabled)
     {
-        emit logMessage(QString("Channel 1 must be enabled."),LogHandler::Error);
+        hwError("Channel 1 must be enabled."_L1);
         return false;
     }
     const auto &ch1 = it->second;
@@ -261,17 +263,18 @@ bool RigolDS2302A::configure(const LifDigitizerConfig &c)
     double sr = resp.toDouble(&ok);
     if(!ok || sr < 1e6)
     {
-        emit logMessage(QString("Error reading sample rate. Response %1").arg(QString(resp)));
+        hwError("Could not read sample rate."_L1);
+        hwDebug(u"Could not read sample rate. Response = %1 (Hex: %2)"_s.arg(QString(resp), QString(resp.toHex())));
         return false;
     }
     if(abs(c.d_sampleRate-sr)>1e3)
-        emit logMessage(QString("Setting sample rate to actual value of %1 Sa/s").arg(QString::number(sr,'e',3)));
+        hwWarn(u"Setting sample rate to actual value of %1 Sa/s"_s.arg(QString::number(sr,'e',3)));
     d_sampleRate = sr;
 
     int recLen = static_cast<int>(round(c.d_sampleRate*hbase*7));
     if(recLen < c.d_recordLength)
     {
-        emit logMessage(QString("Setting record length to nearest value: %1").arg(recLen),LogHandler::Warning);
+        hwWarn(u"Setting record length to nearest value: %1"_s.arg(recLen));
         d_recordLength = recLen;
     }
 

@@ -140,7 +140,7 @@ double SirahCobra::readPos()
 {
     if(!prompt())
     {
-        emit logMessage(QString("Could not read position."),LogHandler::Error);
+        hwError("Could not read position."_L1);
         emit hardwareFailure();
         return 0.0;
     }
@@ -152,7 +152,7 @@ void SirahCobra::setPos(double pos)
 {
     if(!prompt())
     {
-        emit logMessage(QString("Could not set position to %1").arg(pos,0,'f',get(decimals,2)),LogHandler::Error);
+        hwError(u"Could not set position to %1"_s.arg(pos,0,'f',get(decimals,2)));
         return;
     }
 
@@ -203,19 +203,19 @@ void SirahCobra::setPos(double pos)
             cp += pow(pos,o)*v;
         qint32 compPos = static_cast<qint32>(round(cp));
 
-        emit logMessage("Crystal: "+QString::number(crystalPos));
-        // emit logMessage("Compensator: "+QString::number(compPos));
+        hwDebug(u"Crystal: %1"_s.arg(crystalPos));
+        // hwDebug(u"Compensator: %1"_s.arg(compPos));
         
         //calculate crystal commands
         auto dev = QString::number(get(extStageCrystalAddress,0));
         QString absmove = QString::number(crystalPos,16).rightJustified(8,'0').toUpper();
         QString crysCmd1 = QString("%1ma%2").arg(dev,absmove);
-        emit logMessage(QString("Crystal command: "+crysCmd1));
+        hwDebug(u"Crystal command: %1"_s.arg(crysCmd1));
 
         dev = QString::number(get(extStageCompAddress,0));
         absmove = QString::number(compPos,16).rightJustified(8,'0').toUpper();
         QString compCmd1 = QString("%1ma%2").arg(dev,absmove);
-        // emit logMessage(QString("Compensator command: "+compCmd1));
+        // hwDebug(u"Compensator command: %1"_s.arg(compCmd1));
         
         // std::vector<QString> cmds {crysCmd1,compCmd1};
         std::vector<QString> cmds {crysCmd1};
@@ -230,7 +230,7 @@ void SirahCobra::setPos(double pos)
            //     if(count > 25)
            //     {
            //         emit hardwareFailure();
-           //         emit logMessage(QString("Error in command %1. No response received.").arg(c),LogHandler::Error);
+           //         hwError(u"Error in command %1. No response received."_s.arg(c));
            //         return;
            //     }
            //     p_extStagePort->_device()->waitForReadyRead(250);
@@ -427,7 +427,7 @@ void SirahCobra::moveRelative(qint32 steps)
         if(!prompt())
             break;
 
-        // emit logMessage(QString("Target (rel): %1, Current: %2").arg(steps).arg(d_status.m1Pos));
+        // hwDebug(u"Target (rel): %1, Current: %2"_s.arg(steps).arg(d_status.m1Pos));
 
         //bit 0 tells whether the motor is running
         if(d_status.m1Status % 2)
@@ -446,7 +446,7 @@ void SirahCobra::moveRelative(qint32 steps)
     {
         //stop motor
         p_comm->writeBinary(buildCommand(0x04));
-        emit logMessage(QString("Did not set position successfully; stopped motor motion."),LogHandler::Error);
+        hwError("Did not set position successfully; stopped motor motion."_L1);
         emit hardwareFailure();
     }
 
@@ -481,12 +481,12 @@ bool SirahCobra::moveAbsolute(qint32 targetPos)
             auto d = qAbs(targetPos - d_status.m1Pos);
             if(d > lastDiff && d > 10)
             {
-                emit logMessage(QString("Diff increased!"),LogHandler::Error);
+                hwDebug("Diff increased."_L1);
                 break;
             }
             lastDiff = d;
         }
-        // emit logMessage(QString("Target: %1, Current: %2").arg(targetPos).arg(d_status.m1Pos));
+        // hwDebug(u"Target: %1, Current: %2"_s.arg(targetPos).arg(d_status.m1Pos));
 
         //bit 0 tells whether the motor is running
         if(d_status.m1Status % 2)
@@ -505,7 +505,7 @@ bool SirahCobra::moveAbsolute(qint32 targetPos)
     {
         //stop motor
         p_comm->writeBinary(buildCommand(0x04));
-        emit logMessage(QString("Did not set position successfully; stopped motor motion."),LogHandler::Error);
+        hwError("Did not set position successfully; stopped motor motion."_L1);
         emit hardwareFailure();
     }
 

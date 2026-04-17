@@ -44,7 +44,7 @@ double Opolette::readPos()
     auto resp = p_comm->queryCmd("LP?\n");
     if(resp.startsWith("ERROR:"))
     {
-        emit logMessage(QString("Could not read laser position. %1").arg(QString(resp.mid(7))),LogHandler::Error);
+        hwError(u"Could not read laser position. %1"_s.arg(QString(resp.mid(7))));
         return -1.0;
     }
 
@@ -52,7 +52,8 @@ double Opolette::readPos()
     auto out = QString(resp.trimmed()).toDouble(&ok);
     if(!ok)
     {
-        emit logMessage(QString("Could not parse wavelength response (%1)").arg(QString(resp)),LogHandler::Error);
+        hwError("Could not parse wavelength response."_L1);
+        hwDebug(u"Could not parse wavelength response. Response = %1 (Hex: %2)"_s.arg(QString(resp), QString(resp.toHex())));
                 return -1.0;
     }
     return out;
@@ -62,14 +63,14 @@ void Opolette::setPos(double pos)
 {
     auto resp = p_comm->queryCmd(QString("LP %1\n").arg(pos,0,'f',2));
     if(resp.startsWith("ERROR:"))
-        emit logMessage(QString("Could not set laser position. %1").arg(QString(resp.mid(7))),LogHandler::Error);
+        hwError(u"Could not set laser position. %1"_s.arg(QString(resp.mid(7))));
 }
 
 bool Opolette::readFl()
 {
     auto resp = p_comm->queryCmd(QString("FL?\n"));
     if(resp.startsWith("ERROR:"))
-        emit logMessage(QString("Could not read flashlamp status. %1").arg(QString(resp.mid(7))),LogHandler::Error);
+        hwError(u"Could not read flashlamp status. %1"_s.arg(QString(resp.mid(7))));
     else if(resp.startsWith("1"))
         return true;
 
@@ -86,7 +87,7 @@ bool Opolette::setFl(bool en)
 
     if(resp.startsWith("ERROR:"))
     {
-        emit logMessage(QString("Could not set flashlamp status. %1").arg(QString(resp.mid(7))),LogHandler::Error);
+        hwError(u"Could not set flashlamp status. %1"_s.arg(QString(resp.mid(7))));
         return false;
     }
 
