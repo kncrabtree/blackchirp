@@ -150,16 +150,13 @@ bool PythonFtmwScope::prepareForExperiment(Experiment &exp)
     auto resp = pu_process->sendRequest(req);
 
     if (resp.contains(QStringLiteral("error"))) {
-        emit logMessage(QString("PythonFtmwScope (%1) configure failed: %2")
-                        .arg(d_key, resp[QStringLiteral("error")].toString()),
-                        LogHandler::Error);
+        hwError(u"configure failed: %1"_s.arg(resp[QStringLiteral("error")].toString()));
         return false;
     }
 
     auto resultObj = resp[QStringLiteral("result")].toObject();
     if (!resultObj[QStringLiteral("success")].toBool(false)) {
-        emit logMessage(QString("PythonFtmwScope (%1) configure returned failure").arg(d_key),
-                        LogHandler::Error);
+        hwError("configure returned failure"_L1);
         return false;
     }
 

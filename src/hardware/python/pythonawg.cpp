@@ -192,9 +192,7 @@ bool PythonAwg::prepareForExperiment(Experiment &exp)
     auto resp = pu_process->sendRequest(req);
     if (resp.contains(QStringLiteral("error"))) {
         d_errorString = resp[QStringLiteral("error")].toString();
-        emit logMessage(QString("PythonAwg (%1): prepareForExperiment error: %2")
-                            .arg(d_key, d_errorString),
-                        LogHandler::Error);
+        hwError(u"prepareForExperiment error: %1"_s.arg(d_errorString));
         return false;
     }
     return resp[QStringLiteral("result")].toBool(true);

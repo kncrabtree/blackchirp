@@ -59,7 +59,7 @@ bool PythonProcess::start(const QString &pythonExe, const QString &hostScriptPat
     if (resp.contains(QStringLiteral("error"))) {
         auto errMsg = QString("Python startup failed: %1").arg(
             resp[QStringLiteral("error")].toString());
-        emit logMessage(errMsg, LogHandler::Error);
+        bcError(errMsg);
         emit processError(errMsg);
         stop();
         return false;
@@ -75,7 +75,7 @@ bool PythonProcess::start(const QString &pythonExe, const QString &hostScriptPat
     if (initResp.contains(QStringLiteral("error"))) {
         auto errMsg = QString("Python initialize() failed: %1").arg(
             initResp[QStringLiteral("error")].toString());
-        emit logMessage(errMsg, LogHandler::Error);
+        bcError(errMsg);
         emit processError(errMsg);
         stop();
         return false;
@@ -209,7 +209,7 @@ void PythonProcess::onReadyRead()
         if (msg.contains(QStringLiteral("log"))) {
             QString text = msg[QStringLiteral("log")].toString();
             auto code = parseLogLevel(msg[QStringLiteral("level")].toString());
-            emit logMessage(text, code);
+            bcLog(text, code);
             continue;
         }
 
@@ -250,7 +250,7 @@ void PythonProcess::handleStderr()
     if (!data.isEmpty()) {
         QString text = QString::fromUtf8(data).trimmed();
         if (!text.isEmpty())
-            emit logMessage(QString("Python stderr: %1").arg(text), LogHandler::Warning);
+            bcWarn(u"Python stderr: %1"_s.arg(text));
     }
 }
 
