@@ -65,7 +65,7 @@ bool AD9914::testConnection()
         return false;
     }
 
-    emit logMessage(QString("ID response: %1").arg(QString(resp.trimmed())));
+    hwDebug(u"ID response: %1"_s.arg(QString(resp.trimmed())));
 
     p_comm->writeCmd(QString("IN\n"));
 

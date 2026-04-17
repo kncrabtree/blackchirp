@@ -31,7 +31,7 @@ bool PrologixGpibController::testConnection()
         return false;
     }
 
-    emit logMessage(QString("%1 ID response: %2").arg(d_key).arg(QString(resp)));
+    hwDebug(u"ID response: %1"_s.arg(QString(resp)));
 
     // Send common configuration commands
     p_comm->writeCmd(QString("++auto 0\n"));
@@ -57,7 +57,8 @@ bool PrologixGpibController::readAddress()
     if(!success)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read address. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())));
+        hwError("Could not read address."_L1);
+        hwDebug(u"Could not read address. Response = %1 (Hex: %2)"_s.arg(QString(resp), QString(resp.toHex())));
     }
     return success;
 }
@@ -73,7 +74,7 @@ bool PrologixGpibController::setAddress(int a)
     if(d_currentAddress != a)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Address was not set to %1. Current address: %2").arg(a).arg(d_currentAddress),LogHandler::Error);
+        hwError(u"Address was not set to %1. Current address: %2"_s.arg(a).arg(d_currentAddress));
         return false;
     }
 

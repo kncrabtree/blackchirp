@@ -78,7 +78,7 @@ bool LabjackU3::configureTimers()
 {
     if(d_handle == nullptr)
     {
-        emit logMessage(QString("Handle is null."),LogHandler::Error);
+        hwError("Handle is null."_L1);
         return false;
     }
 
@@ -87,7 +87,7 @@ bool LabjackU3::configureTimers()
     long error = eTCConfig(d_handle,enableTimers,enableCounters,4,LJ_tc48MHZ,0,timerModes,timerValues,0,0);
     if(error)
     {
-        emit logMessage(QString("eTCConfig function call returned error code %1.").arg(error),LogHandler::Error);
+        hwError(u"eTCConfig function call returned error code %1."_s.arg(error));
         return false;
     }
 
@@ -130,7 +130,7 @@ bool LabjackU3::testConnection()
         return false;
     }
 
-    emit logMessage(QString("ID response: %1").arg(d_calInfo.prodID));
+    hwDebug(u"ID response: %1"_s.arg(d_calInfo.prodID));
     return true;
 
 }

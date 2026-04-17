@@ -798,16 +798,16 @@ makes the rest of the plan coherent.
 
    **Commit E — AWG/RF sources, GPIB controller, I/O, pressure,
    temperature**
-   - [ ] `src/hardware/optional/chirpsource/ad9914.cpp`
-   - [ ] `src/hardware/optional/chirpsource/awg5204.cpp`
-   - [ ] `src/hardware/optional/chirpsource/awg70002a.cpp`
-   - [ ] `src/hardware/optional/chirpsource/awg7122b.cpp`
-   - [ ] `src/hardware/optional/chirpsource/m8190.cpp`
-   - [ ] `src/hardware/optional/chirpsource/m8195a.cpp`
-   - [ ] `src/hardware/optional/gpibcontroller/prologixgpibcontroller.cpp`
-   - [ ] `src/hardware/optional/ioboard/labjacku3.cpp`
-   - [ ] `src/hardware/optional/pressurecontroller/intellisysiqplus.cpp`
-   - [ ] `src/hardware/optional/tempcontroller/lakeshore218.cpp`
+   - [x] `src/hardware/optional/chirpsource/ad9914.cpp`
+   - [x] `src/hardware/optional/chirpsource/awg5204.cpp`
+   - [x] `src/hardware/optional/chirpsource/awg70002a.cpp`
+   - [x] `src/hardware/optional/chirpsource/awg7122b.cpp`
+   - [x] `src/hardware/optional/chirpsource/m8190.cpp`
+   - [x] `src/hardware/optional/chirpsource/m8195a.cpp`
+   - [x] `src/hardware/optional/gpibcontroller/prologixgpibcontroller.cpp`
+   - [x] `src/hardware/optional/ioboard/labjacku3.cpp`
+   - [x] `src/hardware/optional/pressurecontroller/intellisysiqplus.cpp`
+   - [x] `src/hardware/optional/tempcontroller/lakeshore218.cpp`
 
    **Commit F — Flow controllers and pulse generators**
    - [ ] `src/hardware/optional/flowcontroller/flowcontroller.cpp`

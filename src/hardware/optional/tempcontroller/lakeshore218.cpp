@@ -33,7 +33,7 @@ bool Lakeshore218::tcTestConnection()
         return false;
     }
 
-    emit logMessage(QString("ID response: %1").arg(QString(resp)));
+    hwDebug(u"ID response: %1"_s.arg(QString(resp)));
     return true;
 
 }
@@ -49,7 +49,8 @@ double Lakeshore218::readHwTemperature(const uint ch)
     double t = temp.toDouble(&ok);
     if(!ok)
     {
-        emit logMessage(QString("Could not parse temperature response (%1)").arg(QString(temp)),LogHandler::Error);
+        hwError("Could not parse temperature response."_L1);
+        hwDebug(u"Could not parse temperature response. Response = %1 (Hex: %2)"_s.arg(QString(temp), QString(temp.toHex())));
         emit hardwareFailure();
         return nan("");
     }

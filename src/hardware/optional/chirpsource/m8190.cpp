@@ -51,7 +51,7 @@ bool M8190::testConnection()
         return false;
     }
 
-    emit logMessage(QString("ID response: %1").arg(QString(resp.trimmed())));
+    hwDebug(u"ID response: %1"_s.arg(QString(resp.trimmed())));
 
     p_comm->writeCmd(QString("*CLS\n"));
 
@@ -275,7 +275,7 @@ bool M8190::m8190Write(const QString cmd)
     QByteArray resp = p_comm->queryCmd(QString(":SYST:ERR?\n"));
     if(!resp.startsWith('0'))
     {
-       emit logMessage(QString("Could not write waveform data to AWG. Error %1. Command was: %2").arg(QString(resp)).arg(cmd),LogHandler::Error);
+       hwError(u"Could not write waveform data to AWG. Error: %1. Command was: %2"_s.arg(QString(resp), cmd));
         return false;
     }
 
