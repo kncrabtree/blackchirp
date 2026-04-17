@@ -51,9 +51,8 @@ double ClockManager::setClockFrequency(RfConfig::ClockType t, double freqMHz)
 {
     if(!d_clockRoles.contains(t))
     {
-        emit logMessage(QString("No clock configured for use as %1")
-                        .arg(QMetaEnum::fromType<RfConfig::ClockType>().valueToKey(t)),
-                        LogHandler::Warning);
+        bcWarn(u"No clock configured for use as %1"_s
+               .arg(QMetaEnum::fromType<RfConfig::ClockType>().valueToKey(t)));
         return -1.0;
     }
 
@@ -64,9 +63,8 @@ double ClockManager::readClockFrequency(RfConfig::ClockType t)
 {
     if(!d_clockRoles.contains(t))
     {
-        emit logMessage(QString("No clock configured for use as %1")
-                        .arg(QMetaEnum::fromType<RfConfig::ClockType>().valueToKey(t)),
-                        LogHandler::Warning);
+        bcWarn(u"No clock configured for use as %1"_s
+               .arg(QMetaEnum::fromType<RfConfig::ClockType>().valueToKey(t)));
         return -1.0;
     }
 
@@ -100,17 +98,16 @@ bool ClockManager::configureClocks(QHash<RfConfig::ClockType, RfConfig::ClockFre
 
         if(c == nullptr)
         {
-           emit logMessage(QString("Could not find hardware clock for %1 (%2 output %3)")
-                               .arg(QMetaEnum::fromType<RfConfig::ClockType>()
-                                    .valueToKey(type))
-                                    .arg(d.hwKey).arg(d.output),LogHandler::Error);
+            bcError(u"Could not find hardware clock for %1 (%2 output %3)"_s
+                    .arg(QMetaEnum::fromType<RfConfig::ClockType>().valueToKey(type))
+                    .arg(d.hwKey).arg(d.output));
             return false;
         }
 
         if(!c->addRole(type,d.output))
         {
-            emit logMessage(QString("The output number requested for %1 (%2) is out of range (only %3 outputs are available).")
-                               .arg(c->d_key).arg(d.output).arg(c->numOutputs()),LogHandler::Error);
+            bcError(u"The output number requested for %1 (%2) is out of range (only %3 outputs are available)."_s
+                    .arg(c->d_key).arg(d.output).arg(c->numOutputs()));
             return false;
         }
 
@@ -125,18 +122,18 @@ bool ClockManager::configureClocks(QHash<RfConfig::ClockType, RfConfig::ClockFre
         double actualFreq = c->setFrequency(type,d.desiredFreqMHz);
         if(actualFreq < 0.0)
         {
-            emit logMessage(QString("Could not set %1 to %2 MHz (raw frequency = %3 MHz).")
-                               .arg(c->d_key)
-                               .arg(d.desiredFreqMHz,0,'f',6)
-                               .arg(d.desiredFreqMHz/c->multFactor(d.output),0,'f',6),LogHandler::Error);
+            bcError(u"Could not set %1 to %2 MHz (raw frequency = %3 MHz)."_s
+                    .arg(c->d_key)
+                    .arg(d.desiredFreqMHz,0,'f',6)
+                    .arg(d.desiredFreqMHz/c->multFactor(d.output),0,'f',6));
             return false;
         }
         if(qAbs(actualFreq-d.desiredFreqMHz) > 0.1)
         {
-            emit logMessage(QString("Actual frequency of %1 (%2 MHz) is more than 100 kHz from desired frequency (%3 MHz)")
-                            .arg(QMetaEnum::fromType<RfConfig::ClockType>().valueToKey(type))
-                            .arg(actualFreq,0,'f',6)
-                            .arg(d.desiredFreqMHz,0,'f',6),LogHandler::Warning);
+            bcWarn(u"Actual frequency of %1 (%2 MHz) is more than 100 kHz from desired frequency (%3 MHz)"_s
+                   .arg(QMetaEnum::fromType<RfConfig::ClockType>().valueToKey(type))
+                   .arg(actualFreq,0,'f',6)
+                   .arg(d.desiredFreqMHz,0,'f',6));
         }
 
         d.desiredFreqMHz = actualFreq;

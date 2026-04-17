@@ -442,6 +442,11 @@ protected:
     bool d_enabledForExperiment; /*!< Whether the device is active in the current experiment. */
     CommunicationProtocol *p_comm; /*!< `QIODevice` subclass used for communication */
 
+    void hwLog(QAnyStringView text)   { bcLog(u"%1: %2"_s.arg(d_key, text));   }
+    void hwWarn(QAnyStringView text)  { bcWarn(u"%1: %2"_s.arg(d_key, text));  }
+    void hwError(QAnyStringView text) { bcError(u"%1: %2"_s.arg(d_key, text)); }
+    void hwDebug(QAnyStringView text) { bcDebug(u"%1: %2"_s.arg(d_key, text)); }
+
     /*!
      * \brief Initializes hardware before experiment.
      * 

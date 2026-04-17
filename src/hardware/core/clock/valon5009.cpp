@@ -37,7 +37,7 @@ bool Valon5009::testClockConnection()
         return false;
     }
 
-    emit logMessage(QString("ID response: %1").arg(QString(resp)));
+    hwDebug(u"ID response: %1"_s.arg(QString(resp)));
 
     return true;
 }
@@ -58,7 +58,8 @@ bool Valon5009::valonWriteCmd(QString cmd)
     if(!resp.contains(cmd.toLatin1()))
     {
         emit hardwareFailure();
-        emit logMessage(QString("Did not receive command echo. Command = %1, Echo = %2").arg(cmd).arg(QString(resp)));
+        hwWarn("Did not receive command echo."_L1);
+        hwDebug(u"Did not receive command echo. Command = %1, Echo = %2"_s.arg(cmd, QString(resp)));
         return false;
     }
 
@@ -98,21 +99,24 @@ double Valon5009::readHwFrequency(int outputIndex)
     if(resp.isEmpty())
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read %1 frequency. No response received.").arg(channelNames().at(outputIndex)),LogHandler::Error);
+        hwError(u"Could not read %1 frequency."_s.arg(channelNames().at(outputIndex)));
+        hwDebug(u"Could not read %1 frequency. No response received."_s.arg(channelNames().at(outputIndex)));
         return -1.0;
     }
 
     if(!resp.startsWith("F"))
     {
-        emit logMessage(QString("Could not read %1 frequency. Response: %2 (Hex: %3)")
-                            .arg(channelNames().at(outputIndex)).arg(QString(resp)).arg(QString(resp.toHex())));
+        hwError(u"Could not read %1 frequency."_s.arg(channelNames().at(outputIndex)));
+        hwDebug(u"Could not read %1 frequency. Response = %2 (Hex: %3)"_s
+                .arg(channelNames().at(outputIndex), QString(resp), QString(resp.toHex())));
         return -1.0;
     }
     QByteArrayList l = resp.split(' ');
     if(l.size() < 2)
     {
-        emit logMessage(QString("Could not parse %1 frequency response. Response: %2 (Hex: %3)")
-                        .arg(channelNames().at(outputIndex)).arg(QString(resp)).arg(QString(resp.toHex())));
+        hwError(u"Could not parse %1 frequency response."_s.arg(channelNames().at(outputIndex)));
+        hwDebug(u"Could not parse %1 frequency response. Response = %2 (Hex: %3)"_s
+                .arg(channelNames().at(outputIndex), QString(resp), QString(resp.toHex())));
         return -1.0;
     }
 
@@ -120,8 +124,9 @@ double Valon5009::readHwFrequency(int outputIndex)
     double f = l.at(1).trimmed().toDouble(&ok);
     if(!ok)
     {
-        emit logMessage(QString("Could not convert %1 frequency to number. Response: %2 (Hex: %3)")
-                        .arg(channelNames().at(outputIndex)).arg(QString(l.at(1).trimmed())).arg(QString(l.at(1).trimmed().toHex())));
+        hwError(u"Could not convert %1 frequency to number."_s.arg(channelNames().at(outputIndex)));
+        hwDebug(u"Could not convert %1 frequency to number. Response = %2 (Hex: %3)"_s
+                .arg(channelNames().at(outputIndex), QString(l.at(1).trimmed()), QString(l.at(1).trimmed().toHex())));
         return -1.0;
     }
 

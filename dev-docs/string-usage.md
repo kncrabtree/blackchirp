@@ -739,6 +739,24 @@ makes the rest of the plan coherent.
    Update the severity in the commented text to the appropriate
    level (usually Debug) but leave the call commented out.
 
+   #### `HardwareObject` subclass call sites
+
+   `HardwareObject` provides four protected inline helpers that
+   prepend `d_key` to the message automatically:
+
+   ```cpp
+   hwLog(text)   // Normal — replaces bcLog   at HardwareObject call sites
+   hwWarn(text)  // Warning — replaces bcWarn
+   hwError(text) // Error   — replaces bcError
+   hwDebug(text) // Debug   — replaces bcDebug
+   ```
+
+   Use these instead of the bare `bc*` free functions inside any
+   class that inherits `HardwareObject` (Clock subclasses, AWG,
+   pulse generators, etc.).  `ClockManager` is **not** a
+   `HardwareObject`; it continues to use the bare `bc*` free
+   functions directly.
+
    #### String literal form at call sites
 
    - Pure literal (no `.arg()`): `"..."_L1` — zero allocation at the
@@ -765,11 +783,11 @@ makes the rest of the plan coherent.
    - [x] `src/hardware/core/hardwaremanager.cpp`
 
    **Commit C — Clock subsystem**
-   - [ ] `src/hardware/core/clock/clock.cpp`
-   - [ ] `src/hardware/core/clock/clockmanager.cpp`
-   - [ ] `src/hardware/core/clock/hp83712b.cpp`
-   - [ ] `src/hardware/core/clock/valon5009.cpp`
-   - [ ] `src/hardware/core/clock/valon5015.cpp`
+   - [x] `src/hardware/core/clock/clock.cpp`
+   - [x] `src/hardware/core/clock/clockmanager.cpp`
+   - [x] `src/hardware/core/clock/hp83712b.cpp`
+   - [x] `src/hardware/core/clock/valon5009.cpp`
+   - [x] `src/hardware/core/clock/valon5015.cpp`
 
    **Commit D — LIF hardware**
    - [ ] `src/hardware/core/lifdigitizer/m4i2211x8.cpp`

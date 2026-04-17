@@ -39,7 +39,7 @@ bool HP83712B::testClockConnection()
         return false;
     }
 
-    emit logMessage(QString("ID response: %1").arg(QString(resp)));
+    hwDebug(u"ID response: %1"_s.arg(QString(resp)));
 
     return true;
 }
