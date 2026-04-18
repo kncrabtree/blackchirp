@@ -487,6 +487,28 @@ if(BC_BUILD_TESTS)
     
     # No hardware-specific compile definitions needed - all hardware available at runtime
 
+    # ScientificSpinBox Test — compile only the required sources to avoid pulling
+    # in the full blackchirp-gui library (which has hardware/singleton dependencies)
+    add_executable(tst_scientificspinboxtest
+        tests/tst_scientificspinboxtest.cpp
+        src/gui/widget/scientificspinbox.cpp
+        src/gui/style/themecolors.cpp
+    )
+    target_include_directories(tst_scientificspinboxtest PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    target_link_libraries(tst_scientificspinboxtest
+        Qt6::Test
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Widgets
+    )
+    add_blackchirp_definitions(tst_scientificspinboxtest)
+    add_test(NAME ScientificSpinBoxTest COMMAND tst_scientificspinboxtest)
+    set_tests_properties(ScientificSpinBoxTest PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+
     # Waveform Buffer Test
     add_executable(tst_waveformbuffertest tests/tst_waveformbuffertest.cpp)
     target_link_libraries(tst_waveformbuffertest
@@ -529,6 +551,7 @@ if(BC_BUILD_TESTS)
         tst_hardwareprofilemanagertest
         tst_hardwarekeys
         tst_experimentloading
+        tst_scientificspinboxtest
         tst_waveformbuffertest
         # tst_hardwarecommunication  # Disabled until HardwareManager migration complete
     )
