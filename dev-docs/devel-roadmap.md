@@ -52,12 +52,9 @@ human-readable labels, tooltips, and priority-based grouping. Replaces the
 
 ## Large
 
-### [String Usage](string-usage.md)
-Policy surrounding usage of QStrings in Blackchirp. Describes a migration strategy to
-eliminate inefficient QString usage, transition important QString argument uses to
-QAnyStringView, and ensure that STL containers use std::less<> for heterogeneous
-lookup when certain strings are migrated. Also addresses a refactor of LogHandler and a
-survey/cleanup of log/qDebug usage throughout the codebase.
+### [String Usage](string-usage.md) **COMPLETE**
+Reference document for string literals, key declaration patterns, function signature
+policy, container policy, and the logging API (`bcLog`/`bcWarn`/etc.).
 
 ### [Python Hardware Implementations](python-hardware.md) **COMPLETE**
 User-editable Python scripts as hardware drivers via JSON IPC.
