@@ -175,7 +175,7 @@ void VirtualFtmwScope::readWaveform()
                 }
             }
         }
-    //    emit logMessage(QString("Simulate: %1 ms").arg(d_testTime.elapsed()));
+    //    hwDebug(u"Simulate: %1 ms"_s.arg(d_testTime.elapsed()));
         emitShot(out);
 }
 

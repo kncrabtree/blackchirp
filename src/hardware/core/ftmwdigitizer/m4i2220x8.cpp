@@ -154,9 +154,10 @@ bool M4i2220x8::testConnection()
         return false;
     }
 
-    emit logMessage(QString("Card type: %1, Serial Number %2. Library V %3.%4 build %5. Kernel V %6.%7 build %8")
-                    .arg(cType).arg(serialNo).arg(driVer >> 24).arg((driVer >> 16) & 0xff).arg(driVer & 0xffff)
-                    .arg(kerVer >> 24).arg((kerVer >> 16) & 0xff).arg(kerVer & 0xffff));
+    hwDebug(u"%1: Card type: %2, Serial Number %3. Library V %4.%5 build %6. Kernel V %7.%8 build %9"_s
+                .arg(d_key).arg(cType).arg(serialNo)
+                .arg(driVer >> 24).arg((driVer >> 16) & 0xff).arg(driVer & 0xffff)
+                .arg(kerVer >> 24).arg((kerVer >> 16) & 0xff).arg(kerVer & 0xffff));
 
     return true;
 }
@@ -189,7 +190,7 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
 
     //this card only has 1 channel, so enable it and disable all others regardless of user's entry
     if(sc.d_fidChannel != 1)
-        emit logMessage(QString("FID channel set to 1 (selected: %1) because the device only has a single channel.").arg(sc.d_fidChannel),LogHandler::Warning);
+        hwWarn(u"FID channel set to 1 (selected: %1) because the device only has a single channel."_s.arg(sc.d_fidChannel));
     spcmLib->spcm_dwSetParam_i32(p_handle,SPC_CHENABLE,CHANNEL0);
     sc.d_fidChannel = 1;
 
@@ -205,7 +206,7 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
     }
     else if(r < 350)
     {
-        emit logMessage(QString("Input range set to 200 mV (selected: %1 mV). Valid values are 200, 500, 1000, and 2500 mV.").arg(r));
+        hwWarn(u"Input range set to 200 mV (selected: %1 mV). Valid values are 200, 500, 1000, and 2500 mV."_s.arg(r));
         sc.d_analogChannels[sc.d_fidChannel].fullScale = 0.2;
         range = 200;
     }
@@ -216,7 +217,7 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
     }
     else if(r < 750)
     {
-        emit logMessage(QString("Input range set to 500 mV (selected: %1 mV). Valid values are 200, 500, 1000, and 2500 mV.").arg(r));
+        hwWarn(u"Input range set to 500 mV (selected: %1 mV). Valid values are 200, 500, 1000, and 2500 mV."_s.arg(r));
         sc.d_analogChannels[sc.d_fidChannel].fullScale = 0.5;
         range = 500;
     }
@@ -227,7 +228,7 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
     }
     else if(r < 1750)
     {
-        emit logMessage(QString("Input range set to 1000 mV (selected: %1 mV). Valid values are 200, 500, 1000, and 2500 mV.").arg(r));
+        hwWarn(u"Input range set to 1000 mV (selected: %1 mV). Valid values are 200, 500, 1000, and 2500 mV."_s.arg(r));
         sc.d_analogChannels[sc.d_fidChannel].fullScale = 1.0;
         range = 1000;
     }
@@ -238,7 +239,7 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
     }
     else
     {
-        emit logMessage(QString("Input range set to 2500 mV (selected: %1 mV). Valid values are 200, 500, 1000, and 2500 mV.").arg(r));
+        hwWarn(u"Input range set to 2500 mV (selected: %1 mV). Valid values are 200, 500, 1000, and 2500 mV."_s.arg(r));
         sc.d_analogChannels[sc.d_fidChannel].fullScale = 2.5;
         range = 2500;
     }
@@ -268,7 +269,7 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
 
     //configure trigger
     if(sc.d_triggerChannel != 0)
-        emit logMessage(QString("Trigger channel set to External Input (selected: %1). Must trigger on Ext In."),LogHandler::Warning);
+        hwWarn(u"Trigger channel set to External Input (selected: %1). Must trigger on Ext In."_s.arg(sc.d_triggerChannel));
     sc.d_triggerChannel = 0;
 
 
@@ -308,7 +309,7 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
     if(sc.d_recordLength % 32)
     {
         sc.d_recordLength += (32 - (sc.d_recordLength % 32));
-        emit logMessage(QString("Setting record length to %1 because it must be a multiple of 32.").arg(sc.d_recordLength),LogHandler::Warning);
+        hwWarn(u"Setting record length to %1 because it must be a multiple of 32."_s.arg(sc.d_recordLength));
     }
 
     //configure record length
@@ -343,7 +344,7 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
         *cfg = sc;
     else
     {
-        emit logMessage("Could not record digitizer config settings",LogHandler::Error);
+        hwError("Could not record digitizer config settings."_L1);
         return false;
     }
 
@@ -356,7 +357,7 @@ void M4i2220x8::beginAcquisition()
     {
         SpectrumLibrary* spcmLib = getSpectrumLibrary();
         if (!spcmLib) {
-            emit logMessage("Spectrum library not available", LogHandler::Error);
+            hwError("Spectrum library not available."_L1);
             emit hardwareFailure();
             return;
         }
@@ -367,7 +368,7 @@ void M4i2220x8::beginAcquisition()
         QByteArray errText(1000,'\0');
         if(spcmLib->spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
         {
-            emit logMessage(QString::fromLatin1(errText),LogHandler::Error);
+            hwError(errText.constData());
             emit hardwareFailure();
             return;
         }
@@ -401,7 +402,7 @@ void M4i2220x8::readWaveform()
 {
     SpectrumLibrary* spcmLib = getSpectrumLibrary();
     if (!spcmLib) {
-        emit logMessage("Spectrum library not available", LogHandler::Error);
+        hwError("Spectrum library not available."_L1);
         emit hardwareFailure();
         p_timer->stop();
         disconnect(p_timer,&QTimer::timeout,this,&M4i2220x8::readWaveform);
@@ -416,7 +417,7 @@ void M4i2220x8::readWaveform()
     {
         QByteArray errText(1000,'\0');
         if(spcmLib->spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
-            emit logMessage(QString::fromLatin1(errText),LogHandler::Error);
+            hwError(errText.constData());
 
         emit hardwareFailure();
         p_timer->stop();
@@ -476,7 +477,7 @@ void M4i2220x8::readWaveform()
         QByteArray errText(1000,'\0');
         if(spcmLib->spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
         {
-            emit logMessage(QString::fromLatin1(errText),LogHandler::Error);
+            hwError(errText.constData());
             emit hardwareFailure();
             return;
         }

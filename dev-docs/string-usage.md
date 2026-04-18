@@ -673,107 +673,20 @@ makes the rest of the plan coherent.
    appropriate `bc*` free function or `hw*` helper for `HardwareObject`
    subclasses.
 
-7. **FTMW digitizer message triage.** Per-file, per-message review
-   of the ~285 calls. Most labor-intensive step; separate commits
-   per file make review tractable.
-
-   #### Severity policy
-
-   **Error** — operation failed; hardware state may be unknown.
-   - Hardware read/write failures ("Could not read X", "No response
-     to Y query")
-   - Invalid parameters that prevent the operation from completing
-   - Communication timeout or port-closed failures
-
-   **Warning** — unexpected but recoverable; no data loss.
-   - Parameter clamped to nearest valid hardware value
-   - Command echo not received
-   - Unsupported device configuration detected (operation continues
-     with fallback)
-   - Virtual instrument in use (user needs to know)
-
-   **Normal** — significant event worth a log timestamp; few per
-   session during routine use.
-   - Hardware connected or failed (connection test outcome)
-   - Hardware added or removed from configuration
-   - Top-level operation completions (sync complete, library apply
-     summary)
-   - Results of explicit user actions (Python script reloaded)
-
-   **Debug** — technical detail; shown only when debug logging is
-   enabled.
-   - ID response strings emitted during `testConnection()`
-   - Internal lifecycle sub-steps (threads started, GPIB controllers
-     resolved, etc.)
-   - Raw command/response content and hex dumps
-   - Convergence loop internal diagnostics
-
-   #### Split pattern for error + diagnostic messages
-
-   The split pattern applies only when a message combines a
-   user-facing error with raw bytes or hex dumps. Human-readable text
-   appended to an error message — including server error strings
-   extracted from a response (e.g. `resp.mid(7)` after stripping an
-   `ERROR:` prefix) and instrument error strings from `SYST:ERR?` /
-   `System:Error:*?` queries — does **not** trigger a split; include
-   it directly in the `hwError` call.
-
-   ```cpp
-   // Before
-   emit logMessage(QString("Could not read %1 frequency. Response: %2 (Hex: %3)")
-                   .arg(ch).arg(resp).arg(resp.toHex()), LogHandler::Error);
-
-   // After
-   hwError(u"Could not read %1 frequency."_s.arg(ch));
-   hwDebug(u"%1: Could not read %2 frequency. Response = %3 (Hex: %4)"_s
-           .arg(d_key, ch, resp, resp.toHex()));
-   ```
-
-   The debug line must be self-contained: the debug log file contains
-   only Debug-level messages, so a reader cannot cross-reference it
-   against the normal log. The debug line therefore repeats the
-   user-facing error text *and* appends the technical detail, prefixed
-   with the device identifier (`d_key`).
-
-   For already-separate supplementary calls (e.g., a Normal hex dump
-   that immediately follows an Error), merge the error text and the
-   supplementary detail into a single `hwDebug` call using the same
-   pattern, and remove the now-redundant supplementary call.
-
-   #### Commented-out calls
-
-   Update the severity in the commented text to the appropriate
-   level (usually Debug) but leave the call commented out.
-
-   #### `HardwareObject` subclass call sites
-
-   The FTMW digitizers inherit `HardwareObject` and have `d_key`.
-   Use the four protected inline helpers that prepend `d_key`
-   automatically:
-
-   ```cpp
-   hwLog(text)   // Normal — replaces bcLog
-   hwWarn(text)  // Warning — replaces bcWarn
-   hwError(text) // Error   — replaces bcError
-   hwDebug(text) // Debug   — replaces bcDebug
-   ```
-
-   **`QByteArray` arguments.** `hw*` helpers take `QAnyStringView`,
-   which accepts `QByteArray` directly. Drop any
-   `QString::fromLatin1()` wrapper when passing a raw `QByteArray`
-   directly to a `hw*` call. Keep the wrapper when assigning to
-   `d_errorString` (which is `QString`) or when used inside `.arg()`
-   (Qt < 6.9 `.arg()` does not accept `QAnyStringView`).
-
-   #### String literal form at call sites
-
-   - Pure literal (no `.arg()`): `"..."_L1` — zero allocation.
-   - Formatted literal (with `.arg()`): `u"..."_s.arg(...)`.
-   - Existing `QStringLiteral(...)` at a site being edited: update
-     to `"..."_L1` or `u"..."_s.arg(...)` as appropriate.
-   - `using namespace Qt::StringLiterals` is available at all call
-     sites via the `loghandler.h` include — no extra `using`
-     declaration is needed.
+7. ✅ **FTMW digitizer message triage.** All `emit logMessage` calls
+   migrated across all 7 digitizer files (`mso72004c.cpp`,
+   `dpo71254b.cpp`, `mso64b.cpp`, `dsa71604c.cpp`, `dsov204a.cpp`,
+   `dsox92004a.cpp`, `m4i2220x8.cpp`) plus `virtualftmwscope.cpp`.
+   Errors with raw hex responses were split into a user-facing
+   `hwError` and a self-contained `hwDebug` prefixed with `d_key`.
+   Commented-out calls were updated to `hw*` form but left commented.
+   One pre-existing bug was fixed: `m4i2220x8` trigger channel warning
+   was missing `.arg(sc.d_triggerChannel)`. One quirk was handled by
+   the split pattern: the Keysight scale response error had wrong format
+   indices (`%2`/`%3` with no `%1`); the `hwError` drops the response
+   detail entirely (plain string, no format args), and the `hwDebug`
+   line uses correct indices. Spectrum library `errText` buffers are
+   passed via `errText.constData()` to stop at the null terminator.
 
 8. **Shim removal.** With all `src/hardware/` `emit logMessage` calls
    migrated, remove the compatibility shim in a single commit:

@@ -187,7 +187,7 @@ bool DSOv204A::prepareForExperiment(Experiment &exp)
     {
         if(config.d_multiRecord)
         {
-            emit logMessage(QString("Simultaneous block averaging and multi record mode is not implemented for this oscilloscope."),LogHandler::Error);
+            hwError("Simultaneous block averaging and multi record mode is not implemented for this oscilloscope."_L1);
             return false;
 
             if(!scopeCommand(QString(":FUNCTION1:AVERAGE CHANNEL%1,%2").arg(config.d_fidChannel).arg(config.d_numAverages)))
@@ -237,7 +237,7 @@ bool DSOv204A::prepareForExperiment(Experiment &exp)
         if(resp.startsWith('0') || resp.isEmpty())
             break;
 
-        emit logMessage(QString(resp));
+        hwLog(resp);
 
     }
 
@@ -248,8 +248,9 @@ bool DSOv204A::prepareForExperiment(Experiment &exp)
         source = QString("FUNC1");
     if(resp.isEmpty() || !resp.contains(source.toLatin1()))
     {
-        emit logMessage(QString("Failed to set waveform source. Response to waveform source query: %1 (Hex: %2)")
-                        .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
+        hwError("Failed to set waveform source."_L1);
+        hwDebug(u"%1: Failed to set waveform source. Response = %2 (Hex: %3)"_s
+                    .arg(d_key, QString(resp), QString(resp.toHex())));
         return false;
     }
 
@@ -261,15 +262,16 @@ bool DSOv204A::prepareForExperiment(Experiment &exp)
         double offset = resp.trimmed().toDouble(&ok);
         if(!ok)
         {
-            emit logMessage(QString("Could not parse offset response. Response: %1 (Hex: %2)")
-                            .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
+            hwError("Could not parse offset response."_L1);
+            hwDebug(u"%1: Could not parse offset response. Response = %2 (Hex: %3)"_s
+                        .arg(d_key, QString(resp), QString(resp.toHex())));
             return false;
         }
         config.d_analogChannels[config.d_fidChannel].offset = offset;
     }
     else
     {
-        emit logMessage(QString("Gave an empty response to offset query."),LogHandler::Error);
+        hwError("Gave an empty response to offset query."_L1);
         return false;
     }
     resp = p_comm->queryCmd(QString(":CHAN%1:SCALE?\n").arg(config.d_fidChannel));
@@ -279,19 +281,20 @@ bool DSOv204A::prepareForExperiment(Experiment &exp)
         double scale = resp.trimmed().toDouble(&ok);
         if(!ok)
         {
-            emit logMessage(QString("Could not parse scale response. Response: %2 (Hex: %3)")
-                            .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
+            hwError("Could not parse scale response."_L1);
+            hwDebug(u"%1: Could not parse scale response. Response = %2 (Hex: %3)"_s
+                        .arg(d_key, QString(resp), QString(resp.toHex())));
             return false;
         }
         if(!(fabs(config.d_analogChannels[config.d_fidChannel].fullScale-scale*5.0) < 0.01))
-            emit logMessage(QString("Vertical scale is different than specified. Target: %1 V, Scope setting: %2 V")
-                            .arg(QString::number(config.d_analogChannels[config.d_fidChannel].fullScale,'f',3))
-                            .arg(QString::number(scale*5.0,'f',3)),LogHandler::Warning);
+            hwWarn(u"Vertical scale is different than specified. Target: %1 V, Scope setting: %2 V"_s
+                       .arg(QString::number(config.d_analogChannels[config.d_fidChannel].fullScale,'f',3))
+                       .arg(QString::number(scale*5.0,'f',3)));
         config.d_analogChannels[config.d_fidChannel].fullScale = scale*5.0;
     }
     else
     {
-        emit logMessage(QString("Gave an empty response to scale query."),LogHandler::Error);
+        hwError("Gave an empty response to scale query."_L1);
         return false;
     }
 
@@ -303,22 +306,23 @@ bool DSOv204A::prepareForExperiment(Experiment &exp)
         double sRate = resp.trimmed().toDouble(&ok);
         if(!ok)
         {
-            emit logMessage(QString("Sample rate query returned an invalid response. Response: %1 (Hex: %2)")
-                            .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
+            hwError("Sample rate query returned an invalid response."_L1);
+            hwDebug(u"%1: Sample rate query returned an invalid response. Response = %2 (Hex: %3)"_s
+                        .arg(d_key, QString(resp), QString(resp.toHex())));
             return false;
         }
         if(!(fabs(sRate - config.d_sampleRate)<1e6))
         {
-            emit logMessage(QString("Could not set sample rate successfully. Target: %1 GS/s, Scope setting: %2 GS/s")
-                            .arg(QString::number(config.d_sampleRate/1e9,'f',3))
-                            .arg(QString::number(sRate/1e9,'f',3)),LogHandler::Error);
+            hwError(u"Could not set sample rate successfully. Target: %1 GS/s, Scope setting: %2 GS/s"_s
+                        .arg(QString::number(config.d_sampleRate/1e9,'f',3))
+                        .arg(QString::number(sRate/1e9,'f',3)));
             return false;
         }
         config.d_sampleRate = sRate;
     }
     else
     {
-        emit logMessage(QString("Gave an empty response to sample rate query."),LogHandler::Error);
+        hwError("Gave an empty response to sample rate query."_L1);
         return false;
     }
 
@@ -329,29 +333,30 @@ bool DSOv204A::prepareForExperiment(Experiment &exp)
         int recLength = resp.trimmed().toInt(&ok);
         if(!ok)
         {
-            emit logMessage(QString("Record length query returned an invalid response. Response: %1 (Hex: %2)")
-                            .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
+            hwError("Record length query returned an invalid response."_L1);
+            hwDebug(u"%1: Record length query returned an invalid response. Response = %2 (Hex: %3)"_s
+                        .arg(d_key, QString(resp), QString(resp.toHex())));
             return false;
         }
         if(!(abs(recLength-config.d_recordLength) < 1000))
         {
-            emit logMessage(QString("Record length limited by scope memory. Length will be different than requested. Target: %1, Scope setting: %2")
-                            .arg(QString::number(config.d_recordLength))
-                            .arg(QString::number(recLength)),LogHandler::Warning);
+            hwWarn(u"Record length limited by scope memory. Length will be different than requested. Target: %1, Scope setting: %2"_s
+                       .arg(config.d_recordLength).arg(recLength));
         }
         config.d_recordLength = recLength;
     }
     else
     {
-        emit logMessage(QString("Gave an empty response to record length query."),LogHandler::Error);
+        hwError("Gave an empty response to record length query."_L1);
         return false;
     }
 
     resp = p_comm->queryCmd(QString(":TRIGGER:EDGE:SOURCE?\n"));
     if(resp.isEmpty() || !QString(resp).contains(trigCh),Qt::CaseInsensitive)
     {
-        emit logMessage(QString("Could not verify trigger channel. Response: %1 (Hex: %2)")
-                        .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
+        hwError("Could not verify trigger channel."_L1);
+        hwDebug(u"%1: Could not verify trigger channel. Response = %2 (Hex: %3)"_s
+                    .arg(d_key, QString(resp), QString(resp.toHex())));
         return false;
     }
 
@@ -359,8 +364,9 @@ bool DSOv204A::prepareForExperiment(Experiment &exp)
     resp = p_comm->queryCmd(QString(":TRIGGER:EDGE:SLOPE?\n"));
     if(resp.isEmpty() || !QString(resp).contains(slope))
     {
-        emit logMessage(QString("Could not verify trigger slope. Response: %1 (Hex: %2)")
-                        .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
+        hwError("Could not verify trigger slope."_L1);
+        hwDebug(u"%1: Could not verify trigger slope. Response = %2 (Hex: %3)"_s
+                    .arg(d_key, QString(resp), QString(resp.toHex())));
         return false;
     }
 
@@ -369,7 +375,7 @@ bool DSOv204A::prepareForExperiment(Experiment &exp)
         *cfg = config;
     else
     {
-        emit logMessage("Could not record digitizer config settings",LogHandler::Error);
+        hwError("Could not record digitizer config settings."_L1);
         return false;
     }
 
@@ -388,7 +394,7 @@ void DSOv204A::beginAcquisition()
         connect(p_socket,&QTcpSocket::readyRead,this,&DSOv204A::readWaveform);
         d_acquiring = true;
 //        d_processing = false;
-//        emit logMessage(QString("Sending first digitize command."));
+//        hwDebug("Sending first digitize command."_L1);
         p_comm->writeCmd(QString(":SYSTEM:GUI OFF;:DIGITIZE;:ADER?\n"));
     }
 }
@@ -397,7 +403,7 @@ void DSOv204A::endAcquisition()
 {
     if(d_enabledForExperiment)
     {
-//        emit logMessage(QString("Ending acquisition."));
+//        hwDebug("Ending acquisition."_L1);
         disconnect(p_socket,&QTcpSocket::readyRead,this,&DSOv204A::readWaveform);
         disconnect(p_socket, &QTcpSocket::readyRead, this, &DSOv204A::retrieveData);
 //        p_queryTimer->stop();
@@ -435,7 +441,7 @@ bool DSOv204A::testConnection()
         return false;
     }
 
-    emit logMessage(QString("ID response: %1").arg(QString(resp)));
+    hwDebug(u"%1: ID response: %2"_s.arg(d_key, QString(resp)));
     return true;
 }
 
@@ -443,13 +449,13 @@ void DSOv204A::readWaveform()
 {
 
     QByteArray resp = p_socket->readAll();
-//    emit logMessage(QString("In readWaveform. Response: %1").arg(QString(resp)));
+//    hwDebug(u"%1: In readWaveform. Response: %2"_s.arg(d_key, QString(resp)));
 
     if(d_acquiring)
     {
         if(resp.contains('1'))
         {
-//            emit logMessage(QString("Acquisition complete, requesting process complete."));
+//            hwDebug("Acquisition complete, requesting process complete."_L1);
             disconnect(p_socket,&QTcpSocket::readyRead,this,&DSOv204A::readWaveform);
             //begin next transfer -- TEST
             p_comm->writeCmd(QString(":DIGITIZE\n"));
@@ -466,7 +472,7 @@ void DSOv204A::readWaveform()
 //    {
 //        if(resp.contains('1'))
 //        {
-//            emit logMessage(QString("Processing complete, requesting data and initializing new acquisition"));
+//            hwDebug("Processing complete, requesting data and initializing new acquisition."_L1);
 //            d_processing = false;
 //            //begin next transfer -- TEST
 //            p_comm->writeCmd(QString(":DIGITIZE\n"));
@@ -484,7 +490,7 @@ void DSOv204A::readWaveform()
     else
     {
         //don't know what to do here
-        emit logMessage(QString("This branch of readWaveform should not be reached; this is a bug!"),LogHandler::Error);
+        hwError("This branch of readWaveform should not be reached; this is a bug!"_L1);
     }
 
 
@@ -496,11 +502,11 @@ void DSOv204A::retrieveData()
 
     if(p_socket->bytesAvailable() < bytes+2)
     {
-//        emit logMessage(QString("Waiting for waveform data (%1/%2).").arg(p_socket->bytesAvailable()).arg(bytes+2));
+//        hwDebug(u"%1: Waiting for waveform data (%2/%3)."_s.arg(d_key).arg(p_socket->bytesAvailable()).arg(bytes+2));
         return;
     }
 
-//    emit logMessage(QString("Waveform data received."));
+//    hwDebug("Waveform data received."_L1);
     disconnect(p_socket, &QTcpSocket::readyRead, this, &DSOv204A::retrieveData);
 
     char c = 0;
@@ -533,14 +539,14 @@ bool DSOv204A::scopeCommand(QString cmd)
     QByteArray resp = p_comm->queryCmd(cmd,true);
     if(resp.isEmpty())
     {
-        emit logMessage(QString("Timed out on query %1").arg(orig),LogHandler::Error);
+        hwError(u"Timed out on query %1"_s.arg(orig));
         return false;
     }
 
     int val = resp.trimmed().toInt();
     if(val != 0)
     {
-        emit logMessage(QString("Received error %1 on query %2").arg(val).arg(orig),LogHandler::Error);
+        hwError(u"Received error %1 on query %2"_s.arg(val).arg(orig));
         return false;
     }
     return true;
