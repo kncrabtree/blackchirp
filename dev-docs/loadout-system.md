@@ -29,7 +29,7 @@ since they represent the intended operating state for this hardware configuratio
 
 ChirpConfig stores set-only parameters (never read back from hardware):
 - Chirp segments (start/end frequencies, durations)
-- Timing markers (pre/post protection, pre/post gate)
+- Timing markers
 - Chirp interval (multi-chirp timing)
 - Number of chirps
 
@@ -38,10 +38,16 @@ in the loadout -- it will be populated from hardware settings when the loadout i
 
 ## Loadout Storage
 
-QSettings under `Loadouts/<name>/` group:
-- `hardwareMap` serialized as subkeys
-- `RfConfig/` subgroup for RF chain settings and clock frequencies
-- `ChirpConfig/` subgroup for chirp waveform definition
+Evaluate 2 options:
+
+1. QSettings under `Loadouts/<name>/` group:
+  - `hardwareMap` serialized as subkeys
+  - `RfConfig/` subgroup for RF chain settings and clock frequencies
+  - `ChirpConfig/` subgroup for chirp waveform definition
+  
+2. Separate ini-format file saved in the data storage location ('loadouts' directory).
+   Decouples loadouts from other settings, easier to reset settings without losing
+   loadout data.
 
 ## Hardware Configuration Dialog Changes
 
