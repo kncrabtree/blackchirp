@@ -7,7 +7,7 @@
 #include <QFutureWatcher>
 
 
-OverlayStorage::OverlayStorage(int number, QString path) :
+OverlayStorage::OverlayStorage(int number, const QString &path) :
     QObject(), DataStorageBase(number, path)
 {
     if (number < 1)
@@ -36,7 +36,7 @@ OverlayStorage::~OverlayStorage()
 }
 
 
-bool OverlayStorage::loadOverlay(QString fileBase, OverlayBase::OverlayType t)
+bool OverlayStorage::loadOverlay(const QString &fileBase, OverlayBase::OverlayType t)
 {
     if (d_number < 1)
         return false;

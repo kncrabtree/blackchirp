@@ -30,7 +30,7 @@
 #include <gui/plot/customtracker.h>
 
 
-ZoomPanPlot::ZoomPanPlot(const QString name, QWidget *parent) : QwtPlot(parent),
+ZoomPanPlot::ZoomPanPlot(const QString &name, QWidget *parent) : QwtPlot(parent),
     SettingsStorage(name,SettingsStorage::General), d_name(name), d_maxIndex(0), p_mutex{new QMutex}
 {
     setAutoReplot(false);
@@ -191,13 +191,13 @@ void ZoomPanPlot::setXRanges(const QwtScaleDiv &bottom, const QwtScaleDiv &top)
     replot();
 }
 
-void ZoomPanPlot::setPlotTitle(const QString text)
+void ZoomPanPlot::setPlotTitle(const QString &text)
 {
     QwtText t(text);
     setTitle(t);
 }
 
-void ZoomPanPlot::setPlotAxisTitle(QwtPlot::Axis a, const QString text)
+void ZoomPanPlot::setPlotAxisTitle(QwtPlot::Axis a, const QString &text)
 {
     QwtText t(text);
     setAxisTitle(a,t);

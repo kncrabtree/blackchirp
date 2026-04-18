@@ -89,7 +89,7 @@ void BlackchirpPlotCurveBase::setMarkerSize(int s)
     configureSymbol();
 }
 
-void BlackchirpPlotCurveBase::setName(const QString t)
+void BlackchirpPlotCurveBase::setName(const QString &t)
 {
     setTitle(t);
 }

@@ -65,7 +65,7 @@ void Qc9510Series::initializePGen()
     setDefault(BC::Key::Comm::termChar, QString("\r\n"));
 }
 
-bool Qc9510Series::pGenWriteCmd(QString cmd)
+bool Qc9510Series::pGenWriteCmd(const QString &cmd)
 {
     int maxAttempts = 10;
     for(int i=0; i<maxAttempts; i++)
@@ -83,9 +83,9 @@ bool Qc9510Series::pGenWriteCmd(QString cmd)
     return false;
 }
 
-QByteArray Qc9510Series::pGenQueryCmd(QString cmd)
+QByteArray Qc9510Series::pGenQueryCmd(const QString &cmd)
 {
-    return p_comm->queryCmd(cmd.append(QString("\n")));
+    return p_comm->queryCmd(cmd + "\n"_L1);
 }
 
 void Qc9510Series::beginAcquisition()

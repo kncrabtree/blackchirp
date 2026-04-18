@@ -403,7 +403,7 @@ void PulseConfigWidget::launchChannelConfig(int ch)
 
 }
 
-void PulseConfigWidget::newSetting(QString key, int index, PulseGenConfig::Setting s, QVariant val)
+void PulseConfigWidget::newSetting(const QString &key, int index, PulseGenConfig::Setting s, QVariant val)
 {
     if(index >= d_widgetList.size() || key != d_key)
         return;
@@ -462,7 +462,7 @@ void PulseConfigWidget::newSetting(QString key, int index, PulseGenConfig::Setti
     p_pulsePlot->updatePulsePlot();
 }
 
-void PulseConfigWidget::setFromConfig(QString key, const PulseGenConfig &c)
+void PulseConfigWidget::setFromConfig(const QString &key, const PulseGenConfig &c)
 {
     if(key != d_key)
         return;

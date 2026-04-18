@@ -38,7 +38,7 @@ private:
     QList<int> d_rangeIndexList;
     QList<double> d_gcfList;
 
-    QByteArray mksQueryCmd(QString cmd, int respLength);
+    QByteArray mksQueryCmd(const QString &cmd, int respLength);
     int d_maxTries;
 };
 

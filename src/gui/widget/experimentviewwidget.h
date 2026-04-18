@@ -15,7 +15,7 @@ class ExperimentViewWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit ExperimentViewWidget(int num, QString path = QString(""), bool overlaysEnabled = true, QWidget *parent = 0);
+    explicit ExperimentViewWidget(int num, const QString &path = {}, bool overlaysEnabled = true, QWidget *parent = 0);
 
     QSize sizeHint() const;
     FtWorker::FidProcessingSettings getFtmwProcessingSettings() const;
@@ -25,7 +25,7 @@ public:
     void notifyAlreadyOpen();
 
 signals:
-    void logMessage(QString msg, LogHandler::MessageCode t = LogHandler::Normal);
+    void logMessage(const QString &msg, LogHandler::MessageCode t = LogHandler::Normal);
     void widgetClosing();
 
 private:
@@ -36,9 +36,9 @@ private:
     bool d_overlaysEnabled{true};
 
     QWidget *buildHeaderWidget();
-    QWidget *buildFtmwWidget(QString path = QString(""));
+    QWidget *buildFtmwWidget(const QString &path = {});
     QWidget *buildTrackingWidget();
-    QWidget *buildLogWidget(QString path = QString(""));
+    QWidget *buildLogWidget(const QString &path = {});
 
     QWidget *buildLifWidget();
 

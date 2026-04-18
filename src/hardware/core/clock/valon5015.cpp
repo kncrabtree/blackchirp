@@ -123,7 +123,7 @@ double Valon5015::readHwFrequency(int outputIndex)
     return f;
 }
 
-bool Valon5015::valonWriteCmd(QString cmd)
+bool Valon5015::valonWriteCmd(const QString &cmd)
 {
     if(!p_comm->writeCmd(cmd))
         return false;
@@ -142,7 +142,7 @@ bool Valon5015::valonWriteCmd(QString cmd)
     return true;
 }
 
-QByteArray Valon5015::valonQueryCmd(QString cmd)
+QByteArray Valon5015::valonQueryCmd(const QString &cmd)
 {
 
     QByteArray resp = p_comm->queryCmd(cmd);

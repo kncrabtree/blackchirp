@@ -33,8 +33,8 @@ public slots:
 
 protected:
     void fcInitialize() override;
-    bool mksWrite(QString cmd);
-    QByteArray mksQuery(QString cmd);
+    bool mksWrite(const QString &cmd);
+    QByteArray mksQuery(const QString &cmd);
 
     // HardwareObject interface
 public slots:

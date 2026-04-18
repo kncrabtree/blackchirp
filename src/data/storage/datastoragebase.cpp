@@ -3,7 +3,7 @@
 #include <QSaveFile>
 #include <data/storage/blackchirpcsv.h>
 
-DataStorageBase::DataStorageBase(int number, QString path) : d_number(number), d_path(path)
+DataStorageBase::DataStorageBase(int number, const QString &path) : d_number(number), d_path(path)
 {
     pu_csv = std::make_unique<BlackchirpCSV>(number,path);
     pu_mutex = std::make_unique<QMutex>();
@@ -13,7 +13,7 @@ DataStorageBase::~DataStorageBase()
 {
 }
 
-void DataStorageBase::writeMetadata(QString file, const std::map<QString, QVariant, std::less<>> &dat, QString dir)
+void DataStorageBase::writeMetadata(const QString &file, const std::map<QString, QVariant, std::less<>> &dat, const QString &dir)
 {
     QDir d(BlackchirpCSV::exptDir(d_number,d_path));
     if(!dir.isEmpty())
@@ -39,7 +39,7 @@ void DataStorageBase::writeMetadata(QString file, const std::map<QString, QVaria
     f.commit();
 }
 
-void DataStorageBase::readMetadata(QString file, std::map<QString, QVariant, std::less<>> &out, QString dir)
+void DataStorageBase::readMetadata(const QString &file, std::map<QString, QVariant, std::less<>> &out, const QString &dir)
 {
     QDir d(BlackchirpCSV::exptDir(d_number,d_path));
     if(!dir.isEmpty())

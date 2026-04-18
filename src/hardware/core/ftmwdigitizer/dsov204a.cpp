@@ -529,14 +529,15 @@ void DSOv204A::retrieveData()
     p_comm->writeCmd(QString(":ADER?\n"));
 }
 
-bool DSOv204A::scopeCommand(QString cmd)
+bool DSOv204A::scopeCommand(const QString &cmd)
 {
     QString orig = cmd;
-    if(cmd.endsWith(QString("\n")))
-        cmd.chop(1);
+    QString modified = cmd;
+    if(modified.endsWith(QString("\n")))
+        modified.chop(1);
 
-    cmd.append(QString(";:SYSTEM:ERROR?\n"));
-    QByteArray resp = p_comm->queryCmd(cmd,true);
+    modified.append(QString(";:SYSTEM:ERROR?\n"));
+    QByteArray resp = p_comm->queryCmd(modified,true);
     if(resp.isEmpty())
     {
         hwError(u"Timed out on query %1"_s.arg(orig));

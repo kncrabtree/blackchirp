@@ -21,8 +21,8 @@ protected:
     bool prepareClock(Experiment &exp) override;
 
 private:
-    bool valonWriteCmd(QString cmd);
-    QByteArray valonQueryCmd(QString cmd);
+    bool valonWriteCmd(const QString &cmd);
+    QByteArray valonQueryCmd(const QString &cmd);
 };
 
 #endif // VALON5009_H

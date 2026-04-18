@@ -799,7 +799,7 @@ void MSO72004C::socketError(QAbstractSocket::SocketError e)
     emit hardwareFailure();
 }
 
-QByteArray MSO72004C::scopeQueryCmd(QString query)
+QByteArray MSO72004C::scopeQueryCmd(const QString &query)
 {
     //the scope is flaky. Sometimes, for no apparent reason, it doesn't respond
     //This will retry the query if it fails, suppressing any errors on the first try

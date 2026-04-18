@@ -31,7 +31,7 @@ public:
      * \brief Constructor. Initializes axes and plot options
      * \param parent Parent widget
      */
-    explicit FidPlot(const QString id, QWidget *parent = 0);
+    explicit FidPlot(const QString &id, QWidget *parent = 0);
     ~FidPlot();
 
 signals:

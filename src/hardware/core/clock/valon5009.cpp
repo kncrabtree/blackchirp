@@ -47,7 +47,7 @@ void Valon5009::initializeClock()
 }
 
 
-bool Valon5009::valonWriteCmd(QString cmd)
+bool Valon5009::valonWriteCmd(const QString &cmd)
 {
     if(!p_comm->writeCmd(cmd))
         return false;
@@ -67,7 +67,7 @@ bool Valon5009::valonWriteCmd(QString cmd)
 
 }
 
-QByteArray Valon5009::valonQueryCmd(QString cmd)
+QByteArray Valon5009::valonQueryCmd(const QString &cmd)
 {
 
     QByteArray resp = p_comm->queryCmd(cmd);

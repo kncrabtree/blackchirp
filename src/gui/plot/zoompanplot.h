@@ -38,7 +38,7 @@ class ZoomPanPlot : public QwtPlot, public SettingsStorage
 {
     Q_OBJECT
 public:
-    explicit ZoomPanPlot(const QString name, QWidget *parent = nullptr);
+    explicit ZoomPanPlot(const QString &name, QWidget *parent = nullptr);
     virtual ~ZoomPanPlot();
 
     bool isAutoScale();
@@ -46,8 +46,8 @@ public:
     void setSpectrogramMode(bool b = true);
     void setXRanges(const QwtScaleDiv &bottom, const QwtScaleDiv &top);
     void setMaxIndex(int i){ d_maxIndex = i; }
-    void setPlotTitle(const QString text);
-    void setPlotAxisTitle(QwtPlot::Axis a, const QString text);
+    void setPlotTitle(const QString &text);
+    void setPlotAxisTitle(QwtPlot::Axis a, const QString &text);
 
     const QString d_name;
 

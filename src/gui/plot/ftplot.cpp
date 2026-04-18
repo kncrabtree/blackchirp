@@ -28,7 +28,7 @@
 #include <gui/plot/blackchirpplotcurve.h>
 #include <data/experiment/overlaybase.h>
 
-FtPlot::FtPlot(const QString id, QWidget *parent) :
+FtPlot::FtPlot(const QString &id, QWidget *parent) :
     ZoomPanPlot(BC::Key::ftPlot+id,parent), d_number(0), d_id(id)
 {
 
@@ -147,7 +147,7 @@ void FtPlot::setNumShots(quint64 shots)
     p_shotsLabel->setText(text);
 }
 
-void FtPlot::setMessageText(QString msg)
+void FtPlot::setMessageText(const QString &msg)
 {
     auto text = p_messageLabel->text();
     text.setText(msg);

@@ -18,7 +18,7 @@
 #include <qwt6/qwt_plot_marker.h>
 #include <gui/plot/blackchirpplotcurve.h>
 
-FidPlot::FidPlot(const QString id, QWidget *parent) :
+FidPlot::FidPlot(const QString &id, QWidget *parent) :
     ZoomPanPlot(BC::Key::fidPlot+id,parent)
 {
 

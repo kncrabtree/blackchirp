@@ -1,6 +1,6 @@
 #include "hardwarestatusbox.h"
 
-HardwareStatusBox::HardwareStatusBox(QString key, QWidget *parent) :
+HardwareStatusBox::HardwareStatusBox(const QString &key, QWidget *parent) :
     QGroupBox(parent), d_key{key}
 {
     auto parts = d_key.split('.');

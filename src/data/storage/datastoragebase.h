@@ -16,7 +16,7 @@ inline constexpr QLatin1StringView proc{"processing.csv"};
 class DataStorageBase
 {
 public:
-    DataStorageBase(int number = -1, QString path = "");
+    DataStorageBase(int number = -1, const QString &path = {});
     virtual ~DataStorageBase();
 
     const int d_number;
@@ -31,8 +31,8 @@ protected:
     std::unique_ptr<QMutex> pu_mutex;
     std::unique_ptr<BlackchirpCSV> pu_csv;
 
-    void writeMetadata(QString file, const std::map<QString,QVariant,std::less<>> &dat,QString dir = "");
-    void readMetadata(QString file, std::map<QString,QVariant,std::less<>> &out, QString dir = "");
+    void writeMetadata(const QString &file, const std::map<QString,QVariant,std::less<>> &dat, const QString &dir = {});
+    void readMetadata(const QString &file, std::map<QString,QVariant,std::less<>> &out, const QString &dir = {});
 };
 
 #endif // DATASTORAGEBASE_H

@@ -2,7 +2,7 @@
 
 #include <data/storage/blackchirpcsv.h>
 
-AuxDataStorage::AuxDataStorage(BlackchirpCSV *csv, int number, const QString path) : d_number(number), d_path(path)
+AuxDataStorage::AuxDataStorage(BlackchirpCSV *csv, int number, const QString &path) : d_number(number), d_path(path)
 {
     auto d = BlackchirpCSV::exptDir(number,path);
     QFile aux(d.absoluteFilePath(BC::CSV::auxFile));
@@ -37,7 +37,7 @@ AuxDataStorage::AuxDataStorage(BlackchirpCSV *csv, int number, const QString pat
     }
 }
 
-void AuxDataStorage::registerKey(const QString objKey, const QString key)
+void AuxDataStorage::registerKey(const QString &objKey, const QString &key)
 {
     d_allowedKeys.insert(makeKey(objKey,key));
 }

@@ -7,7 +7,7 @@ class HardwareStatusBox : public QGroupBox
 {
     Q_OBJECT
 public:
-    HardwareStatusBox(QString key, QWidget *parent = nullptr);
+    HardwareStatusBox(const QString &key, QWidget *parent = nullptr);
 
 protected:
     QString d_key;

@@ -267,7 +267,7 @@ void M8190::endAcquisition()
     }
 }
 
-bool M8190::m8190Write(const QString cmd)
+bool M8190::m8190Write(const QString &cmd)
 {
     if(!p_comm->writeCmd(cmd))
         return false;

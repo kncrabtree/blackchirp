@@ -9,7 +9,7 @@
 
 #include <gui/plot/customtracker.h>
 
-TrackingPlot::TrackingPlot(QString name, QWidget *parent) : ZoomPanPlot(name, parent)
+TrackingPlot::TrackingPlot(const QString &name, QWidget *parent) : ZoomPanPlot(name, parent)
 {
     QwtLegend *l = new QwtLegend;
     insertLegend(l,QwtPlot::BottomLegend);

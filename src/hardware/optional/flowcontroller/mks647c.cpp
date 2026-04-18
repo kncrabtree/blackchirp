@@ -397,7 +397,7 @@ void Mks647c::sleep(bool b)
         p_comm->writeCmd(QString("ON0;\r\n"));
 }
 
-QByteArray Mks647c::mksQueryCmd(QString cmd, int respLength)
+QByteArray Mks647c::mksQueryCmd(const QString &cmd, int respLength)
 {
     QByteArray resp = p_comm->queryCmd(cmd).trimmed();
     if(resp.length() != respLength)

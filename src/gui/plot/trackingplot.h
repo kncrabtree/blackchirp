@@ -13,7 +13,7 @@ class TrackingPlot : public ZoomPanPlot
     Q_OBJECT
 
 public:
-    TrackingPlot(QString name, QWidget *parent = 0);
+    TrackingPlot(const QString &name, QWidget *parent = 0);
     ~TrackingPlot();
 
 

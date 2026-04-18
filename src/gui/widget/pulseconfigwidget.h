@@ -58,12 +58,12 @@ public:
     void configureForWizard();
 
 signals:
-    void changeSetting(QString,int,PulseGenConfig::Setting,QVariant);
+    void changeSetting(const QString&, int, PulseGenConfig::Setting, QVariant);
 
 public slots:
     void launchChannelConfig(int ch);
-    void setFromConfig(QString key, const PulseGenConfig &c);
-    void newSetting(QString key, int index, PulseGenConfig::Setting s, QVariant val);
+    void setFromConfig(const QString &key, const PulseGenConfig &c);
+    void newSetting(const QString &key, int index, PulseGenConfig::Setting s, QVariant val);
     void updateFromSettings();
 
 private:

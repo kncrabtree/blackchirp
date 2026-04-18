@@ -812,7 +812,7 @@ void Dpo71254b::socketError(QAbstractSocket::SocketError e)
     emit hardwareFailure();
 }
 
-QByteArray Dpo71254b::scopeQueryCmd(QString query)
+QByteArray Dpo71254b::scopeQueryCmd(const QString &query)
 {
     //the scope is flaky. Sometimes, for no apparent reason, it doesn't respond
     //This will retry the query if it fails, suppressing any errors on the first try

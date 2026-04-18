@@ -56,7 +56,7 @@ public:
     void setLineStyle(Qt::PenStyle s);
     void setMarkerStyle(QwtSymbol::Style s);
     void setMarkerSize(int s);
-    void setName(const QString t);
+    void setName(const QString &t);
     QString name() const { return title().text(); }
     QString key() const { return d_key; }
     

@@ -9,7 +9,7 @@ class HWDialog : public QDialog
 {
     Q_OBJECT
 public:
-    HWDialog(QString key, QWidget *controlWidget = nullptr, QWidget *parent = nullptr);
+    HWDialog(const QString &key, QWidget *controlWidget = nullptr, QWidget *parent = nullptr);
 
     void discardControlWidget();
 

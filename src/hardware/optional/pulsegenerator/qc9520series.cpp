@@ -75,7 +75,7 @@ void Qc9520Series::endAcquisition()
     lockKeys(false);
 }
 
-bool Qc9520Series::pGenWriteCmd(QString cmd)
+bool Qc9520Series::pGenWriteCmd(const QString &cmd)
 {
     auto resp = pGenQueryCmd(cmd);
 
@@ -87,7 +87,7 @@ bool Qc9520Series::pGenWriteCmd(QString cmd)
     return false;
 }
 
-QByteArray Qc9520Series::pGenQueryCmd(QString cmd)
+QByteArray Qc9520Series::pGenQueryCmd(const QString &cmd)
 {
-    return p_comm->queryCmd(cmd.append(QString("\r\n")));
+    return p_comm->queryCmd(cmd + "\r\n"_L1);
 }

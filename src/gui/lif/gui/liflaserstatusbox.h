@@ -12,7 +12,7 @@ class LifLaserStatusBox : public HardwareStatusBox
 {
     Q_OBJECT
 public:
-    LifLaserStatusBox(QString key, QWidget *parent = nullptr);
+    LifLaserStatusBox(const QString &key, QWidget *parent = nullptr);
 
     void applySettings();
     void setPosition(double d);

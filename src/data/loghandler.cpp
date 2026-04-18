@@ -53,12 +53,12 @@ void LogHandler::log(QAnyStringView text, MessageCode type)
     doLog(text.toString(), type, QDateTime::currentDateTime());
 }
 
-void LogHandler::logMessage(const QString text, const MessageCode type)
+void LogHandler::logMessage(const QString &text, const MessageCode type)
 {
     doLog(text, type, QDateTime::currentDateTime());
 }
 
-void LogHandler::logMessageWithTime(const QString text, const MessageCode type, QDateTime t)
+void LogHandler::logMessageWithTime(const QString &text, const MessageCode type, QDateTime t)
 {
     doLog(text, type, t);
 }

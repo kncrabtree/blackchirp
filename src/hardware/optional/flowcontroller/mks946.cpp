@@ -353,7 +353,7 @@ void Mks946::fcInitialize()
 {
 }
 
-bool Mks946::mksWrite(QString cmd)
+bool Mks946::mksWrite(const QString &cmd)
 {
     QByteArray resp = p_comm->queryCmd(QString("@%1%2;FF").arg(get(address,253),3,10,QChar('0')).arg(cmd));
     if(resp.contains(QByteArray("ACK")))
@@ -363,7 +363,7 @@ bool Mks946::mksWrite(QString cmd)
     return false;
 }
 
-QByteArray Mks946::mksQuery(QString cmd)
+QByteArray Mks946::mksQuery(const QString &cmd)
 {
     int a = get(address,253);
     QByteArray resp = p_comm->queryCmd(QString("@%1%2;FF").arg(a,3,10,QChar('0')).arg(cmd));

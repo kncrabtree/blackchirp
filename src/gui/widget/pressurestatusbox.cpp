@@ -7,7 +7,7 @@
 #include <gui/widget/led.h>
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
 
-PressureStatusBox::PressureStatusBox(QString key, QWidget *parent) : HardwareStatusBox(key,parent)
+PressureStatusBox::PressureStatusBox(const QString &key, QWidget *parent) : HardwareStatusBox(key,parent)
 {
     auto *gl = new QGridLayout;
 

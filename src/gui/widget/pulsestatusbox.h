@@ -13,7 +13,7 @@ class PulseStatusBox : public HardwareStatusBox
 {
     Q_OBJECT
 public:
-    explicit PulseStatusBox(QString key,QWidget *parent = nullptr);
+    explicit PulseStatusBox(const QString &key, QWidget *parent = nullptr);
 
 public slots:
     void updatePulseLeds(const QString k, const PulseGenConfig &cc);

@@ -23,7 +23,7 @@
 
 #include <gui/lif/gui/lifdisplaywidget.h>
 
-ExperimentViewWidget::ExperimentViewWidget(int num, QString path, bool overlaysEnabled, QWidget *parent) : QWidget(parent), p_ftmw(nullptr), p_lh(nullptr), d_overlaysEnabled(overlaysEnabled)
+ExperimentViewWidget::ExperimentViewWidget(int num, const QString &path, bool overlaysEnabled, QWidget *parent) : QWidget(parent), p_ftmw(nullptr), p_lh(nullptr), d_overlaysEnabled(overlaysEnabled)
 {
     pu_experiment = std::make_unique<Experiment>(num,path);
     setWindowFlags(Qt::Window);
@@ -96,7 +96,7 @@ QWidget *ExperimentViewWidget::buildHeaderWidget()
     return hdr;
 }
 
-QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
+QWidget *ExperimentViewWidget::buildFtmwWidget(const QString &path)
 {
     QWidget *out = nullptr;
     p_ftmw = nullptr;
@@ -157,7 +157,7 @@ QWidget *ExperimentViewWidget::buildTrackingWidget()
     return tracking;
 }
 
-QWidget *ExperimentViewWidget::buildLogWidget(QString path)
+QWidget *ExperimentViewWidget::buildLogWidget(const QString &path)
 {
     QWidget *log = new QWidget;
     QBoxLayout *vbl = new QVBoxLayout;

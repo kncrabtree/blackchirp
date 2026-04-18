@@ -30,7 +30,7 @@ private:
     QTcpSocket *p_socket;
     QTimer *p_queryTimer;
     void retrieveData();
-    bool scopeCommand(QString cmd);
+    bool scopeCommand(const QString &cmd);
 
     bool d_acquiring;
 };

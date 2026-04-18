@@ -25,7 +25,7 @@ QWidget *ToolBarWidgetAction::createWidget(QWidget *parent)
     return out;
 }
 
-void SpinBoxWidgetAction::setSpecialValueText(const QString text)
+void SpinBoxWidgetAction::setSpecialValueText(const QString &text)
 {
     d_specialText = text;
     auto box = dynamic_cast<QSpinBox*>(p_widget);
@@ -67,7 +67,7 @@ void SpinBoxWidgetAction::setMaximum(int max)
     }
 }
 
-void SpinBoxWidgetAction::setPrefix(const QString p)
+void SpinBoxWidgetAction::setPrefix(const QString &p)
 {
     d_prefix = p;
     for(auto w : createdWidgets())
@@ -78,7 +78,7 @@ void SpinBoxWidgetAction::setPrefix(const QString p)
     }
 }
 
-void SpinBoxWidgetAction::setSuffix(const QString s)
+void SpinBoxWidgetAction::setSuffix(const QString &s)
 {
     d_suffix = s;
     for(auto w : createdWidgets())
@@ -146,7 +146,7 @@ void SpinBoxWidgetAction::setValue(int v)
     emit valueChanged(d_value);
 }
 
-void DoubleSpinBoxWidgetAction::setSpecialValueText(QString text)
+void DoubleSpinBoxWidgetAction::setSpecialValueText(const QString &text)
 {
     d_specialText = text;
     for(auto w : createdWidgets())
@@ -190,7 +190,7 @@ void DoubleSpinBoxWidgetAction::setMaximum(double max)
     }
 }
 
-void DoubleSpinBoxWidgetAction::setPrefix(const QString p)
+void DoubleSpinBoxWidgetAction::setPrefix(const QString &p)
 {
     d_prefix = p;
     for(auto w : createdWidgets())
@@ -201,7 +201,7 @@ void DoubleSpinBoxWidgetAction::setPrefix(const QString p)
     }
 }
 
-void DoubleSpinBoxWidgetAction::setSuffix(const QString s)
+void DoubleSpinBoxWidgetAction::setSuffix(const QString &s)
 {
     d_suffix = s;
     for(auto w : createdWidgets())

@@ -31,7 +31,7 @@ protected:
     void initialize() override;
 
 private:
-    bool m8190Write(const QString cmd);
+    bool m8190Write(const QString &cmd);
 };
 
 #endif // M8190_H

@@ -41,8 +41,8 @@ signals:
 
 public slots:
     // Shim: forwards to log() so existing emit logMessage() call sites keep compiling.
-    void logMessage(const QString text, const MessageCode type = Normal);
-    void logMessageWithTime(const QString text, const MessageCode type = Normal,
+    void logMessage(const QString &text, const MessageCode type = Normal);
+    void logMessageWithTime(const QString &text, const MessageCode type = Normal,
                             QDateTime t = QDateTime::currentDateTime());
     void beginExperimentLog(int num, const QString &msg);
     void endExperimentLog();

@@ -20,8 +20,8 @@ protected:
 
     // QCPulseGenerator interface
 protected:
-    bool pGenWriteCmd(QString cmd) override;
-    QByteArray pGenQueryCmd(QString cmd) override;
+    bool pGenWriteCmd(const QString &cmd) override;
+    QByteArray pGenQueryCmd(const QString &cmd) override;
     QString idResponse() override { return "BNC,577"; }
     QString sysStr() override { return "PULSE0"; }
     QString clock10MHzStr() override { return "EXT10"; }

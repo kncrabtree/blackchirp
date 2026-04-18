@@ -798,7 +798,7 @@ void Dsa71604c::socketError(QAbstractSocket::SocketError e)
     emit hardwareFailure();
 }
 
-QByteArray Dsa71604c::scopeQueryCmd(QString query)
+QByteArray Dsa71604c::scopeQueryCmd(const QString &query)
 {
     //the scope is flaky. Sometimes, for no apparent reason, it doesn't respond
     //This will retry the query if it fails, suppressing any errors on the first try

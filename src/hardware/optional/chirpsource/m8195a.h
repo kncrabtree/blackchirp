@@ -31,7 +31,7 @@ protected:
     void initialize() override;
 
 private:
-    bool m8195aWrite(const QString cmd);
+    bool m8195aWrite(const QString &cmd);
 };
 
 #endif // M8195A_H

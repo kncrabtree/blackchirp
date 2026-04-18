@@ -12,7 +12,7 @@
 #include <data/storage/settingsstorage.h>
 #include <data/bcglobals.h>
 
-HWDialog::HWDialog(QString key, QWidget *controlWidget, QWidget *parent)
+HWDialog::HWDialog(const QString &key, QWidget *controlWidget, QWidget *parent)
     : QDialog(parent), d_hwKey(key), p_controlWidget(controlWidget)
 {
     setAttribute(Qt::WA_DeleteOnClose);

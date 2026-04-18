@@ -801,7 +801,7 @@ void MSO64B::socketError(QAbstractSocket::SocketError e)
     emit hardwareFailure();
 }
 
-QByteArray MSO64B::scopeQueryCmd(QString query)
+QByteArray MSO64B::scopeQueryCmd(const QString &query)
 {
     //the scope is flaky. Sometimes, for no apparent reason, it doesn't respond
     //This will retry the query if it fails, suppressing any errors on the first try

@@ -54,8 +54,8 @@ protected:
 
 protected:
     void lockKeys(bool lock);
-    virtual bool pGenWriteCmd(QString cmd) =0;
-    virtual QByteArray pGenQueryCmd(QString cmd) =0;
+    virtual bool pGenWriteCmd(const QString &cmd) =0;
+    virtual QByteArray pGenQueryCmd(const QString &cmd) =0;
 
 
     virtual QString idResponse() =0;
@@ -87,8 +87,8 @@ protected:
 
     // QCPulseGenerator interface
 protected:
-    bool pGenWriteCmd(QString cmd) override;
-    QByteArray pGenQueryCmd(QString cmd) override;
+    bool pGenWriteCmd(const QString &cmd) override;
+    QByteArray pGenQueryCmd(const QString &cmd) override;
     inline QString idResponse() override { return id; }
     inline QString sysStr() override { return sys; }
     inline QString clock10MHzStr() override { return clock; }
@@ -122,8 +122,8 @@ protected:
 
     // QCPulseGenerator interface
 protected:
-    bool pGenWriteCmd(QString cmd) override;
-    QByteArray pGenQueryCmd(QString cmd) override;
+    bool pGenWriteCmd(const QString &cmd) override;
+    QByteArray pGenQueryCmd(const QString &cmd) override;
     inline QString idResponse() override { return id; }
     inline QString sysStr() override { return sys; }
     inline QString clock10MHzStr() override { return clock; }
@@ -157,8 +157,8 @@ protected:
 
     // QCPulseGenerator interface
 protected:
-    bool pGenWriteCmd(QString cmd) override;
-    QByteArray pGenQueryCmd(QString cmd) override;
+    bool pGenWriteCmd(const QString &cmd) override;
+    QByteArray pGenQueryCmd(const QString &cmd) override;
     inline QString idResponse() override { return id; }
     inline QString sysStr() override { return sys; }
     inline QString clock10MHzStr() override { return clock; }

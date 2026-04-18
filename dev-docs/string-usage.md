@@ -716,10 +716,31 @@ makes the rest of the plan coherent.
     template types (`std::shared_ptr<X>`, `std::unique_ptr<X>`,
     `QVector<X>`, `QFuture<void>`) in a single perl pass.
 
-11. **Long-tail signature migration to `QAnyStringView`.** Prioritize
+11. ✅ **Long-tail signature migration to `QAnyStringView`.** Prioritize
     functions with many callers or in base classes, don't worry about
     fixing every use case, but at least change QString arguments to
     const QString& as they are found.
+
+    *Completed: All remaining by-value `QString` parameters changed to
+    `const QString &` across hardware helpers (virtual cascade
+    `QCPulseGenerator::pGenWriteCmd/pGenQueryCmd` + subclasses Qc9510/9520/9210/Bnc577;
+    FTMW digitizer private helpers `scopeQueryCmd/scopeCommand` in MSO72004C,
+    MSO64B, Dsa71604c, Dpo71254b, DSOx92004A, DSOv204A; flow controller
+    helpers `Mks946::mksWrite/mksQuery`, `Mks647c::mksQueryCmd`; AWG helpers
+    `M8195A::m8195aWrite`, `M8190::m8190Write`; clock helpers
+    `Valon5009/5015::valonWriteCmd/valonQueryCmd`), data layer
+    (`LogHandler::logMessage/logMessageWithTime` shim slots;
+    `DataStorageBase` constructor and `writeMetadata/readMetadata`;
+    `OverlayStorage` constructor and `loadOverlay`;
+    `AuxDataStorage` constructor, `registerKey`, `makeKey`), and
+    GUI layer (plot constructors `ZoomPanPlot/FidPlot/FtPlot/TrackingPlot`,
+    `setPlotTitle/setPlotAxisTitle/setMessageText/setName`;
+    widget constructors `HardwareStatusBox/PulseStatusBox/PressureStatusBox/LifLaserStatusBox/HWDialog`;
+    `PulseConfigWidget::setFromConfig/newSetting` and `changeSetting` signal;
+    `ToolBarWidgetAction` and subclass constructors and methods;
+    `ExperimentViewWidget` constructor, `buildFtmwWidget/buildLogWidget`, `logMessage` signal).
+    `pGenQueryCmd` implementations changed from mutating `.append()` to
+    non-mutating `+` operator.*
 
 12. **Final review.** Read through the log output of a typical
     startup + experiment cycle to verify the user sees a clean,

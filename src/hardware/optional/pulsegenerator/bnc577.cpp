@@ -63,7 +63,7 @@ void Bnc577::initializePGen()
 {
 }
 
-bool Bnc577::pGenWriteCmd(QString cmd)
+bool Bnc577::pGenWriteCmd(const QString &cmd)
 {
     auto resp = pGenQueryCmd(cmd);
 
@@ -75,7 +75,7 @@ bool Bnc577::pGenWriteCmd(QString cmd)
     return false;
 }
 
-QByteArray Bnc577::pGenQueryCmd(QString cmd)
+QByteArray Bnc577::pGenQueryCmd(const QString &cmd)
 {
-    return p_comm->queryCmd(cmd.append(QString("\r\n")));
+    return p_comm->queryCmd(cmd + "\r\n"_L1);
 }

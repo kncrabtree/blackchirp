@@ -38,7 +38,7 @@ private:
     int d_waveformBytes;
     QTimer *p_scopeTimeout;
 
-    QByteArray scopeQueryCmd(QString query);
+    QByteArray scopeQueryCmd(const QString &query);
     QTcpSocket *p_socket;
 };
 

@@ -8,7 +8,7 @@
 #include <QLabel>
 #include <QMetaEnum>
 
-PulseStatusBox::PulseStatusBox(QString key, QWidget *parent) :
+PulseStatusBox::PulseStatusBox(const QString &key, QWidget *parent) :
     HardwareStatusBox(key,parent), d_config(key)
 {
     QGridLayout *gl = new QGridLayout;

@@ -10,7 +10,7 @@ class PressureStatusBox : public HardwareStatusBox
 {
     Q_OBJECT
 public:
-    PressureStatusBox(QString key, QWidget *parent = nullptr);
+    PressureStatusBox(const QString &key, QWidget *parent = nullptr);
 
 public slots:
     void pressureUpdate(const QString key,double p);

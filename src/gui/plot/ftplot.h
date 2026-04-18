@@ -30,7 +30,7 @@ public:
      * \brief Initializes axes, etc. for the FT plot
      * \param parent Parent widget
      */
-    explicit FtPlot(const QString id, QWidget *parent = 0);
+    explicit FtPlot(const QString &id, QWidget *parent = 0);
     ~FtPlot();
 
     virtual void prepareForExperiment(const Experiment &e);
@@ -42,7 +42,7 @@ public slots:
     void configureUnits(FtWorker::FtUnits u);
     
     void setNumShots(quint64 shots);
-    void setMessageText(QString msg);
+    void setMessageText(const QString &msg);
     
     void addOverlay(std::shared_ptr<OverlayBase> overlay);
     void removeOverlay(std::shared_ptr<OverlayBase> overlay);

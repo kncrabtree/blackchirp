@@ -25,10 +25,10 @@ class OverlayStorage : public QObject, public DataStorageBase
     Q_OBJECT
     
 public:
-    OverlayStorage(int number, QString path);
+    OverlayStorage(int number, const QString &path);
     ~OverlayStorage();
-    
-    bool loadOverlay(QString fileBase, OverlayBase::OverlayType t);
+
+    bool loadOverlay(const QString &fileBase, OverlayBase::OverlayType t);
     
     // Add externally created overlay to storage
     bool addOverlay(std::shared_ptr<OverlayBase> overlay);
