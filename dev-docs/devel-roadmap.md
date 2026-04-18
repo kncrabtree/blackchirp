@@ -4,7 +4,10 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 
 ## Small
 
-None.
+### [ScientificSpinBox UX Improvements](scientificspinbox-ux.md)
+Five targeted improvements: auto/fixed/scientific display mode toggle with context menu,
+suffix/unit label support, invalid-input visual feedback (ThemeColors), clipboard copy
+via context menu, and Ctrl+Up/Down ×2 multiplicative stepping.
 
 
 ## Medium
