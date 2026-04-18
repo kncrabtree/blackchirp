@@ -45,6 +45,14 @@ before construction and presented to the user at profile creation time with
 human-readable labels, tooltips, and priority-based grouping. Replaces the
 `HwConfigParam` system and raw key/value tree in the hardware settings dialog.
 
+### [HwStatusBox Update](hwstatusbox-update.md)
+Remove spinbox displays from HwStatusBox subclasses and replace with QLabel.
+Add clickable target to open HwDialog for associated HardwareObject. Add data path display
+in addition to Experiment number (truncated, tooltip for full path) in top section,
+shortcut to open ApplicationConfigManager. For ClockStatusBox, add clickable target to
+open RfConfigDialog, and targets for each active clock to open associated HwObject.
+Add tooltips for pulse settings to PulseStatusBox
+
 ## Large
 
 ### [String Usage](string-usage.md) **COMPLETE**
