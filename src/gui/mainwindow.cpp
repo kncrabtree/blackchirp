@@ -132,7 +132,6 @@ MainWindow::MainWindow(QWidget *parent) :
         }
     });
 
-    connect(p_hwm,&HardwareManager::logMessage,p_lh,&LogHandler::logMessage);
     connect(p_hwm,&HardwareManager::statusMessage,ui->statusBar,&QStatusBar::showMessage);
     connect(p_hwm,&HardwareManager::allHardwareConnected,this,&MainWindow::hardwareInitialized);
 

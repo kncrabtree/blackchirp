@@ -45,7 +45,6 @@ public:
     std::set<QString> d_optHwTypes;
 
 signals:
-    void logMessage(QString,LogHandler::MessageCode = LogHandler::Normal);
     void statusMessage(QString,int=0);
     void hwInitializationComplete();
 

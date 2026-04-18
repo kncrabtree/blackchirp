@@ -52,8 +52,6 @@ void PythonAwg::initialize()
         }
     );
 
-    connect(pu_process.get(), &PythonProcess::logMessage,
-            this, &PythonAwg::logMessage);
 }
 
 // ============================================================================

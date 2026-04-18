@@ -31,7 +31,6 @@ public:
     explicit ClockManager(QObject *parent = nullptr);
 
 signals:
-    void logMessage(QString, LogHandler::MessageCode mc = LogHandler::Normal);
     void clockFrequencyUpdate(RfConfig::ClockType, double);
 
 public slots:

@@ -688,11 +688,15 @@ makes the rest of the plan coherent.
    line uses correct indices. Spectrum library `errText` buffers are
    passed via `errText.constData()` to stop at the null terminator.
 
-8. **Shim removal.** With all `src/hardware/` `emit logMessage` calls
-   migrated, remove the compatibility shim in a single commit:
-   - Remove `logMessage` slot and shim body from `HardwareObject`
-   - Remove `logMessage` signal from `HardwareObject`
-   - Remove `logMessage` forwarding connections from `HardwareManager`
+8. ✅ **Shim removal.** With all `src/hardware/` `emit logMessage` calls
+   migrated, removed all `logMessage` signals from hardware-module classes
+   (`HardwareObject`, `HardwareManager`, `CommunicationProtocol`,
+   `ClockManager`, `PythonProcess`) and all connections to them, including
+   forwarding lambdas in `HardwareManager`, the `p_comm` connection in
+   `HardwareObject`, the `PythonProcess` connections in all 11 Python
+   hardware files, the `Rs232Instrument` connection in `SirahCobra`, and
+   the `HardwareManager::logMessage` → `LogHandler` connection in
+   `MainWindow`.
 
 9. **Fix remaining by-value `QString` parameters.**
    `CommunicationProtocol::writeCmd` and `queryCmd` are the primary

@@ -63,8 +63,6 @@ void PythonFlowController::fcInitialize()
         }
     );
 
-    connect(pu_process.get(), &PythonProcess::logMessage,
-            this, &PythonFlowController::logMessage);
 }
 
 // ============================================================================

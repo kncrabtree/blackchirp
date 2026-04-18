@@ -82,8 +82,6 @@ void PythonLifScope::initialize()
 
     pu_process->setEnabledProxies({QStringLiteral("scope")});
 
-    connect(pu_process.get(), &PythonProcess::logMessage,
-            this, &PythonLifScope::logMessage);
     connect(pu_process.get(), &PythonProcess::waveformReceived,
             this, &PythonLifScope::onWaveformReceived);
 }

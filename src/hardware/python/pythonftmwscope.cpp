@@ -99,8 +99,6 @@ void PythonFtmwScope::initialize()
 
     pu_process->setEnabledProxies({QStringLiteral("scope")});
 
-    connect(pu_process.get(), &PythonProcess::logMessage,
-            this, &PythonFtmwScope::logMessage);
     connect(pu_process.get(), &PythonProcess::waveformReceived,
             this, &PythonFtmwScope::onWaveformReceived);
 }

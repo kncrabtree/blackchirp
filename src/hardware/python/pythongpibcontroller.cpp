@@ -35,8 +35,6 @@ void PythonGpibController::initialize()
         }
     );
 
-    connect(pu_process.get(), &PythonProcess::logMessage,
-            this, &PythonGpibController::logMessage);
 }
 
 // ============================================================================

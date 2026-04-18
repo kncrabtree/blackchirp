@@ -45,8 +45,6 @@ void PythonLifLaser::initialize()
         }
     );
 
-    connect(pu_process.get(), &PythonProcess::logMessage,
-            this, &PythonLifLaser::logMessage);
 }
 
 // ============================================================================

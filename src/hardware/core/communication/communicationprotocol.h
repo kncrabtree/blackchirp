@@ -161,13 +161,6 @@ public:
 
 signals:
     /*!
-     * \brief Sends message to Log for printing
-     * \param QString Message
-     * \param LogHandler::MessageCode Type of message
-     */
-    void logMessage(QString,LogHandler::MessageCode = LogHandler::Normal);
-    
-    /*!
      * \brief Emitted when a failure occurs with the QIODevice
      * 
      * \sa HardwareObject::hardwareFailure()

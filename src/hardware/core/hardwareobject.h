@@ -96,7 +96,7 @@
  * test to make sure that the connection works and that the correct device is
  * targeted. Usually, this takes the form of an ID query of some type (e.g.,
  * `*IDN?`). If unsuccessful, a message should be stored in d_errorString, but
- * messages may also be emitted to the UI using the logMessage() signal. The
+ * messages may also be stored in d_errorString. The
  * testConnection() function must return a bool indicating whether the
  * connection was successful. Note: testConnection() is called from the
  * bcTestConnection() wrapper function which reloads settings from
@@ -253,14 +253,6 @@ public:
     virtual QVector<CommunicationProtocol::CommType> supportedProtocols() const;
 	
 signals:
-    /*!
-     * \brief Displays a message on the log.
-     * \param QString The message to display
-     * \param Blackchirp::MessageCode The status incidator (Normal, Warning,
-     * Error, Highlight, Debug)
-     */
-	void logMessage(const QString, const LogHandler::MessageCode = LogHandler::Normal);
-
     /*!
      * \brief Indicates whether a connection is successful
      * \param bool True if connection is successful
@@ -429,7 +421,7 @@ public slots:
      * 
      * Uses the `d_comm` parameter passed in the constructor to create the
      * appropriate `CommunicationProtocol` subclass (::p_comm), and ties together the
-     * logMessage() and hardwareFailure() signals from each.
+     * hardwareFailure() signal from each.
      * 
      * \param gc Pointer to the `GpibController` object for GPIB devices.
      * If the device is not GPIB, this variable is unused.

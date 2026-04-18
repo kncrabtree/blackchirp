@@ -71,8 +71,6 @@ void PythonIOBoard::initialize()
         }
     );
 
-    connect(pu_process.get(), &PythonProcess::logMessage,
-            this, &PythonIOBoard::logMessage);
 }
 
 // ============================================================================

@@ -73,8 +73,6 @@ void PythonPressureController::pcInitialize()
         }
     );
 
-    connect(pu_process.get(), &PythonProcess::logMessage,
-            this, &PythonPressureController::logMessage);
 }
 
 // ============================================================================

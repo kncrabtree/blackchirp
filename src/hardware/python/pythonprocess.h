@@ -76,7 +76,6 @@ public:
     void setEnabledProxies(const QStringList &proxies) { d_enabledProxies = proxies; }
 
 signals:
-    void logMessage(const QString &msg, LogHandler::MessageCode code);
     void waveformReceived(const QByteArray &data, quint64 shotCount);
     void processError(const QString &errorString);
     void responseReady();  // internal: wakes sendRequest() event loop

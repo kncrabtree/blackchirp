@@ -34,7 +34,6 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     
     // Initialize ClockManager
     pu_clockManager = std::make_unique<ClockManager>(this);
-    connect(pu_clockManager.get(), &ClockManager::logMessage, this, &HardwareManager::logMessage);
     connect(pu_clockManager.get(), &ClockManager::clockFrequencyUpdate, this, &HardwareManager::clockFrequencyUpdate);
 
     // Phase 3.3.6: Clean constructor - all hardware creation now goes through dynamic system
@@ -809,9 +808,6 @@ void HardwareManager::resolveGpibController(const QString& controllerKey, std::f
 void HardwareManager::setupHardwareObject(HardwareObject* obj)
 {
     // Common signal connections for all hardware objects
-    connect(obj, &HardwareObject::logMessage, [this, obj](QString msg, LogHandler::MessageCode mc){
-        emit logMessage(QString("%1: %2").arg(obj->d_key).arg(msg), mc);
-    });
     connect(obj, &HardwareObject::connected, [obj, this](bool success, QString msg){
         handleConnectionResult(obj->d_key, success, msg);
     });
@@ -935,10 +931,6 @@ void HardwareManager::setupHardwareObjectWithTracking(HardwareObject* obj)
     d_hardwareConnections[hwKey].clear();
     
     // Common signal connections for all hardware objects - store each connection
-    storeConnection(hwKey, connect(obj, &HardwareObject::logMessage, [this, obj](QString msg, LogHandler::MessageCode mc){
-        emit logMessage(QString("%1: %2").arg(obj->d_key).arg(msg), mc);
-    }));
-    
     storeConnection(hwKey, connect(obj, &HardwareObject::connected, [obj, this](bool success, QString msg){
         handleConnectionResult(obj->d_key, success, msg);
     }));

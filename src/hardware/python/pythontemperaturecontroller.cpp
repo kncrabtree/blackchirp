@@ -54,8 +54,6 @@ void PythonTemperatureController::tcInitialize()
         }
     );
 
-    connect(pu_process.get(), &PythonProcess::logMessage,
-            this, &PythonTemperatureController::logMessage);
 }
 
 // ============================================================================

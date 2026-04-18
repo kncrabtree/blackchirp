@@ -93,7 +93,6 @@ void SirahCobra::initialize()
     if(get(hasExtStage,false))
     {
         p_extStagePort = new Rs232Instrument(d_key+"ExtStage",this);
-        connect(p_extStagePort,&Rs232Instrument::logMessage,this,&SirahCobra::logMessage);
         connect(p_extStagePort,&Rs232Instrument::hardwareFailure,this,&SirahCobra::hardwareFailure);
         p_extStagePort->initialize();
     }

@@ -63,8 +63,6 @@ void PythonClock::initializeClock()
         }
     );
 
-    connect(pu_process.get(), &PythonProcess::logMessage,
-            this, &PythonClock::logMessage);
 }
 
 // ============================================================================

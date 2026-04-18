@@ -252,7 +252,6 @@ void HardwareObject::buildCommunication(QObject *gc, CommunicationProtocol::Comm
 
     if(p_comm)
     {
-        connect(p_comm,&CommunicationProtocol::logMessage,this,&HardwareObject::logMessage);
         connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&HardwareObject::hardwareFailure);
         
         // Initialize the communication protocol to create underlying devices

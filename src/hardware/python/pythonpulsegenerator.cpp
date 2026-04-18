@@ -50,8 +50,6 @@ void PythonPulseGenerator::initializePGen()
         }
     );
 
-    connect(pu_process.get(), &PythonProcess::logMessage,
-            this, &PythonPulseGenerator::logMessage);
 }
 
 // ============================================================================
