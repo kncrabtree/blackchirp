@@ -742,32 +742,7 @@ makes the rest of the plan coherent.
     `pGenQueryCmd` implementations changed from mutating `.append()` to
     non-mutating `+` operator.*
 
-12. **Final review.** Read through the log output of a typical
+12. ✅ **Final review.** Read through the log output of a typical
     startup + experiment cycle to verify the user sees a clean,
     informative log without noise. This is the pre-release
     checkpoint before documentation revision for 2.0.0.
-
-## Open Questions
-
-- Are there digitizer error messages that hardware vendors or
-  support staff rely on seeing? If so, those should stay at Error
-  even if they look diagnostic.
-
-## Verification
-
-Any change informed by this document should be validated with a
-debug build and the existing test suite:
-
-```
-cmake . -B build/Desktop-Debug/
-make -C build/Desktop-Debug/ -j$(nproc)
-cmake . -B build/tests
-make -C build/tests tests -j$(nproc)
-ctest --test-dir build/tests
-```
-
-Settings-adjacent tests (`tst_settingsstoragetest`,
-`tst_headerstoragetest`) are the primary regression surface for key
-declaration changes. For logging changes, the regression surface is
-manual: start the application, run a typical experiment cycle, and
-review the log tab output for noise or missing information.

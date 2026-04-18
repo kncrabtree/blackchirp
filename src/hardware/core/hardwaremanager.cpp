@@ -116,7 +116,7 @@ void HardwareManager::handleConnectionResult(const QString& hwKey, bool success,
     if(success)
     {
         connect(obj,&HardwareObject::hardwareFailure,this,&HardwareManager::hardwareFailure,Qt::UniqueConnection);
-        bcLog(u"%1: Connected successfully."_s.arg(obj->d_key));
+        bcHighlight(u"%1: Connected successfully."_s.arg(obj->d_key));
     }
     else
     {
