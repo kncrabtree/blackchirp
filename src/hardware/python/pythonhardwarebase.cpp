@@ -46,15 +46,15 @@ bool PythonHardwareBase::testPythonConnection(CommunicationProtocol *comm)
     pu_process->setComm(comm);
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("test_connection");
+    req["method"_L1] = "test_connection"_L1;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error"))) {
-        d_pythonErrorString = resp[QStringLiteral("error")].toString();
+    if (resp.contains("error"_L1)) {
+        d_pythonErrorString = resp["error"_L1].toString();
         bcError(u"%1 test_connection error: %2"_s.arg(d_pyKey, d_pythonErrorString));
         return false;
     }
-    return resp[QStringLiteral("result")].toBool(false);
+    return resp["result"_L1].toBool(false);
 }
 
 bool PythonHardwareBase::startPythonProcess()
@@ -63,21 +63,21 @@ bool PythonHardwareBase::startPythonProcess()
     QString scriptPath = HardwareProfileManager::instance().getPythonScriptPath(hwType, label);
 
     if (scriptPath.isEmpty()) {
-        d_pythonErrorString = QStringLiteral("No Python script path configured");
+        d_pythonErrorString = "No Python script path configured"_L1;
         bcError(u"%1: %2"_s.arg(d_pyKey, d_pythonErrorString));
         return false;
     }
 
     QString hostScript = findHostScript();
     if (hostScript.isEmpty()) {
-        d_pythonErrorString = QStringLiteral("Cannot find python_hw_host.py");
+        d_pythonErrorString = "Cannot find python_hw_host.py"_L1;
         bcError(u"%1: %2"_s.arg(d_pyKey, d_pythonErrorString));
         return false;
     }
 
     QString className = HardwareProfileManager::instance().getPythonClassName(hwType, label);
     if (className.isEmpty()) {
-        d_pythonErrorString = QStringLiteral("No Python class name configured");
+        d_pythonErrorString = "No Python class name configured"_L1;
         bcError(u"%1: %2"_s.arg(d_pyKey, d_pythonErrorString));
         return false;
     }
@@ -91,12 +91,12 @@ bool PythonHardwareBase::startPythonProcess()
 QString PythonHardwareBase::resolvePythonExecutable(const QString &envPath)
 {
     if (envPath.isEmpty())
-        return QStringLiteral("python3");
+        return "python3"_L1;
 
     const QStringList candidates = {
-        envPath + QStringLiteral("/bin/python3"),
-        envPath + QStringLiteral("/bin/python"),
-        envPath + QStringLiteral("/Scripts/python.exe"),
+        envPath + "/bin/python3"_L1,
+        envPath + "/bin/python"_L1,
+        envPath + "/Scripts/python.exe"_L1,
     };
 
     for (const auto &path : candidates) {
@@ -104,14 +104,14 @@ QString PythonHardwareBase::resolvePythonExecutable(const QString &envPath)
             return path;
     }
 
-    return QStringLiteral("python3");
+    return "python3"_L1;
 }
 
 QString PythonHardwareBase::findHostScript()
 {
     QStringList searchPaths = {
-        QCoreApplication::applicationDirPath() + QStringLiteral("/python_hw_host.py"),
-        QCoreApplication::applicationDirPath() + QStringLiteral("/../share/blackchirp/python_hw_host.py"),
+        QCoreApplication::applicationDirPath() + "/python_hw_host.py"_L1,
+        QCoreApplication::applicationDirPath() + "/../share/blackchirp/python_hw_host.py"_L1,
     };
 
     for (const auto &path : searchPaths) {
@@ -128,8 +128,8 @@ void PythonHardwareBase::pythonSleep(bool b)
         return;
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("sleep");
-    req[QStringLiteral("sleeping")] = b;
+    req["method"_L1] = "sleep"_L1;
+    req["sleeping"_L1] = b;
     pu_process->sendRequest(req);
 }
 
@@ -137,7 +137,7 @@ void PythonHardwareBase::pythonReadSettings()
 {
     if (pu_process && pu_process->isRunning()) {
         QJsonObject req;
-        req[QStringLiteral("method")] = QStringLiteral("read_settings");
+        req["method"_L1] = "read_settings"_L1;
         pu_process->sendRequest(req);
     }
 }

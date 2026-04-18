@@ -72,13 +72,13 @@ double PythonLifLaser::readPos()
         return -1.0;
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("read_pos");
+    req["method"_L1] = "read_pos"_L1;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return -1.0;
 
-    return resp[QStringLiteral("result")].toDouble(-1.0);
+    return resp["result"_L1].toDouble(-1.0);
 }
 
 // ============================================================================
@@ -90,8 +90,8 @@ void PythonLifLaser::setPos(double pos)
         return;
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("set_pos");
-    req[QStringLiteral("pos")]    = pos;
+    req["method"_L1] = "set_pos"_L1;
+    req["pos"_L1]    = pos;
     pu_process->sendRequest(req);
 }
 
@@ -104,13 +104,13 @@ bool PythonLifLaser::readFl()
         return false;
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("read_fl");
+    req["method"_L1] = "read_fl"_L1;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return false;
 
-    return resp[QStringLiteral("result")].toBool(false);
+    return resp["result"_L1].toBool(false);
 }
 
 // ============================================================================
@@ -122,14 +122,14 @@ bool PythonLifLaser::setFl(bool en)
         return false;
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("set_fl");
-    req[QStringLiteral("enabled")] = en;
+    req["method"_L1]  = "set_fl"_L1;
+    req["enabled"_L1] = en;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return false;
 
-    return resp[QStringLiteral("result")].toBool(false);
+    return resp["result"_L1].toBool(false);
 }
 
 // ============================================================================

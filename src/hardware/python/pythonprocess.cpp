@@ -50,15 +50,15 @@ bool PythonProcess::start(const QString &pythonExe, const QString &hostScriptPat
 
     // Send _init message to inject proxies
     QJsonObject initReq;
-    initReq[QStringLiteral("method")]  = QStringLiteral("_init");
-    initReq[QStringLiteral("key")]     = d_hwKey;
-    initReq[QStringLiteral("model")]   = d_hwModel;
-    initReq[QStringLiteral("proxies")] = QJsonArray::fromStringList(d_enabledProxies);
+    initReq["method"_L1]  = "_init"_L1;
+    initReq["key"_L1]     = d_hwKey;
+    initReq["model"_L1]   = d_hwModel;
+    initReq["proxies"_L1] = QJsonArray::fromStringList(d_enabledProxies);
 
     auto resp = sendRequest(initReq);
-    if (resp.contains(QStringLiteral("error"))) {
+    if (resp.contains("error"_L1)) {
         auto errMsg = QString("Python startup failed: %1").arg(
-            resp[QStringLiteral("error")].toString());
+            resp["error"_L1].toString());
         bcError(errMsg);
         emit processError(errMsg);
         stop();
@@ -69,12 +69,12 @@ bool PythonProcess::start(const QString &pythonExe, const QString &hostScriptPat
     // testConnection. This mirrors the C++ HardwareObject lifecycle:
     // constructor -> initialize() -> testConnection().
     QJsonObject userInitReq;
-    userInitReq[QStringLiteral("method")] = QStringLiteral("initialize");
+    userInitReq["method"_L1] = "initialize"_L1;
 
     auto initResp = sendRequest(userInitReq);
-    if (initResp.contains(QStringLiteral("error"))) {
+    if (initResp.contains("error"_L1)) {
         auto errMsg = QString("Python initialize() failed: %1").arg(
-            initResp[QStringLiteral("error")].toString());
+            initResp["error"_L1].toString());
         bcError(errMsg);
         emit processError(errMsg);
         stop();
@@ -112,13 +112,13 @@ QJsonObject PythonProcess::sendRequest(const QJsonObject &request)
 {
     if (!isRunning()) {
         QJsonObject err;
-        err[QStringLiteral("error")] = QStringLiteral("Python process not running");
+        err["error"_L1] = "Python process not running"_L1;
         return err;
     }
 
     int id = d_nextId++;
     QJsonObject req = request;
-    req[QStringLiteral("id")] = id;
+    req["id"_L1] = id;
 
     d_expectedId = id;
     d_waitingForResponse = true;
@@ -146,11 +146,11 @@ QJsonObject PythonProcess::sendRequest(const QJsonObject &request)
                 stderrText = QString::fromUtf8(data).trimmed();
             }
             if (stderrText.isEmpty())
-                err[QStringLiteral("error")] = QStringLiteral("Python process terminated unexpectedly");
+                err["error"_L1] = "Python process terminated unexpectedly"_L1;
             else
-                err[QStringLiteral("error")] = QString("Python process terminated: %1").arg(stderrText);
+                err["error"_L1] = QString("Python process terminated: %1").arg(stderrText);
         } else {
-            err[QStringLiteral("error")] = QString("Timeout waiting for Python response (id=%1, %2ms)")
+            err["error"_L1] = QString("Timeout waiting for Python response (id=%1, %2ms)")
                                                .arg(id).arg(d_timeoutMs);
         }
         return err;
@@ -206,32 +206,32 @@ void PythonProcess::onReadyRead()
         QJsonObject msg = doc.object();
 
         // Log message (unsolicited)
-        if (msg.contains(QStringLiteral("log"))) {
-            QString text = msg[QStringLiteral("log")].toString();
-            auto code = parseLogLevel(msg[QStringLiteral("level")].toString());
+        if (msg.contains("log"_L1)) {
+            QString text = msg["log"_L1].toString();
+            auto code = parseLogLevel(msg["level"_L1].toString());
             bcLog(text, code);
             continue;
         }
 
         // Waveform push (unsolicited)
-        if (msg.contains(QStringLiteral("waveform"))) {
+        if (msg.contains("waveform"_L1)) {
             QByteArray data = QByteArray::fromBase64(
-                msg[QStringLiteral("waveform")].toString().toLatin1());
-            auto shots = static_cast<quint64>(msg[QStringLiteral("shots")].toInteger(1));
+                msg["waveform"_L1].toString().toLatin1());
+            auto shots = static_cast<quint64>(msg["shots"_L1].toInteger(1));
             emit waveformReceived(data, shots);
             continue;
         }
 
         // Relay request from Python
-        if (msg.contains(QStringLiteral("relay"))) {
+        if (msg.contains("relay"_L1)) {
             auto relayResp = handleRelayRequest(msg);
             writeLine(relayResp);
             continue;
         }
 
         // Response to sendRequest
-        if (msg.contains(QStringLiteral("id"))) {
-            int msgId = msg[QStringLiteral("id")].toInt();
+        if (msg.contains("id"_L1)) {
+            int msgId = msg["id"_L1].toInt();
             if (d_waitingForResponse && msgId == d_expectedId) {
                 d_pendingResponse = msg;
                 emit responseReady();
@@ -260,68 +260,68 @@ void PythonProcess::handleStderr()
 
 QJsonObject PythonProcess::handleRelayRequest(const QJsonObject &relayReq)
 {
-    QString relayType = relayReq[QStringLiteral("relay")].toString();
+    QString relayType = relayReq["relay"_L1].toString();
     QJsonObject resp;
 
     if (relayType == QLatin1String("comm_query")) {
         if (!p_comm) {
-            resp[QStringLiteral("relay_error")] = QStringLiteral("No communication protocol available");
+            resp["relay_error"_L1] = "No communication protocol available"_L1;
             return resp;
         }
-        QString cmd = relayReq[QStringLiteral("cmd")].toString();
+        QString cmd = relayReq["cmd"_L1].toString();
         QByteArray result = p_comm->queryCmd(cmd);
-        resp[QStringLiteral("relay_result")] = QString::fromUtf8(result);
+        resp["relay_result"_L1] = QString::fromUtf8(result);
 
     } else if (relayType == QLatin1String("comm_write")) {
         if (!p_comm) {
-            resp[QStringLiteral("relay_error")] = QStringLiteral("No communication protocol available");
+            resp["relay_error"_L1] = "No communication protocol available"_L1;
             return resp;
         }
-        QString cmd = relayReq[QStringLiteral("cmd")].toString();
+        QString cmd = relayReq["cmd"_L1].toString();
         bool ok = p_comm->writeCmd(cmd);
-        resp[QStringLiteral("relay_result")] = ok;
+        resp["relay_result"_L1] = ok;
 
     } else if (relayType == QLatin1String("comm_read_bytes")) {
         if (!p_comm) {
-            resp[QStringLiteral("relay_error")] = QStringLiteral("No communication protocol available");
+            resp["relay_error"_L1] = "No communication protocol available"_L1;
             return resp;
         }
-        qint64 n = relayReq[QStringLiteral("n")].toInteger();
+        qint64 n = relayReq["n"_L1].toInteger();
         QByteArray data = p_comm->readBytes(n);
-        resp[QStringLiteral("relay_result")] = QString::fromLatin1(data.toBase64());
+        resp["relay_result"_L1] = QString::fromLatin1(data.toBase64());
 
     } else if (relayType == QLatin1String("comm_write_binary")) {
         if (!p_comm) {
-            resp[QStringLiteral("relay_error")] = QStringLiteral("No communication protocol available");
+            resp["relay_error"_L1] = "No communication protocol available"_L1;
             return resp;
         }
         QByteArray data = QByteArray::fromBase64(
-            relayReq[QStringLiteral("data")].toString().toLatin1());
+            relayReq["data"_L1].toString().toLatin1());
         bool ok = p_comm->writeBinary(data);
-        resp[QStringLiteral("relay_result")] = ok;
+        resp["relay_result"_L1] = ok;
 
     } else if (relayType == QLatin1String("get_setting")) {
         if (!d_settingsGetter) {
-            resp[QStringLiteral("relay_error")] = QStringLiteral("No settings getter available");
+            resp["relay_error"_L1] = "No settings getter available"_L1;
             return resp;
         }
-        QString key = relayReq[QStringLiteral("key")].toString();
-        QVariant defaultVal = relayReq[QStringLiteral("default")].toVariant();
+        QString key = relayReq["key"_L1].toString();
+        QVariant defaultVal = relayReq["default"_L1].toVariant();
         QVariant val = d_settingsGetter(key, defaultVal);
-        resp[QStringLiteral("relay_result")] = QJsonValue::fromVariant(val);
+        resp["relay_result"_L1] = QJsonValue::fromVariant(val);
 
     } else if (relayType == QLatin1String("set_setting")) {
         if (!d_settingsSetter) {
-            resp[QStringLiteral("relay_error")] = QStringLiteral("No settings setter available");
+            resp["relay_error"_L1] = "No settings setter available"_L1;
             return resp;
         }
-        QString key = relayReq[QStringLiteral("key")].toString();
-        QVariant val = relayReq[QStringLiteral("value")].toVariant();
+        QString key = relayReq["key"_L1].toString();
+        QVariant val = relayReq["value"_L1].toVariant();
         d_settingsSetter(key, val);
-        resp[QStringLiteral("relay_result")] = QJsonValue();
+        resp["relay_result"_L1] = QJsonValue();
 
     } else {
-        resp[QStringLiteral("relay_error")] = QString("Unknown relay type: %1").arg(relayType);
+        resp["relay_error"_L1] = QString("Unknown relay type: %1").arg(relayType);
     }
 
     return resp;

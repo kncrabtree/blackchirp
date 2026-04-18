@@ -95,8 +95,8 @@ void PythonFlowController::hwSetPressureControlMode(bool enabled)
         return;
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("hw_set_pressure_control_mode");
-    req[QStringLiteral("enabled")] = enabled;
+    req["method"_L1]  = "hw_set_pressure_control_mode"_L1;
+    req["enabled"_L1] = enabled;
     pu_process->sendRequest(req);
 }
 
@@ -106,9 +106,9 @@ void PythonFlowController::hwSetFlowSetpoint(const int ch, const double val)
         return;
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("hw_set_flow_setpoint");
-    req[QStringLiteral("channel")] = ch;
-    req[QStringLiteral("value")]   = val;
+    req["method"_L1]  = "hw_set_flow_setpoint"_L1;
+    req["channel"_L1] = ch;
+    req["value"_L1]   = val;
     pu_process->sendRequest(req);
 }
 
@@ -118,8 +118,8 @@ void PythonFlowController::hwSetPressureSetpoint(const double val)
         return;
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("hw_set_pressure_setpoint");
-    req[QStringLiteral("value")]  = val;
+    req["method"_L1] = "hw_set_pressure_setpoint"_L1;
+    req["value"_L1]  = val;
     pu_process->sendRequest(req);
 }
 
@@ -129,14 +129,14 @@ double PythonFlowController::hwReadFlowSetpoint(const int ch)
         return -1.0;
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("hw_read_flow_setpoint");
-    req[QStringLiteral("channel")] = ch;
+    req["method"_L1]  = "hw_read_flow_setpoint"_L1;
+    req["channel"_L1] = ch;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return -1.0;
 
-    return resp[QStringLiteral("result")].toDouble(-1.0);
+    return resp["result"_L1].toDouble(-1.0);
 }
 
 double PythonFlowController::hwReadPressureSetpoint()
@@ -145,13 +145,13 @@ double PythonFlowController::hwReadPressureSetpoint()
         return -1.0;
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("hw_read_pressure_setpoint");
+    req["method"_L1] = "hw_read_pressure_setpoint"_L1;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return -1.0;
 
-    return resp[QStringLiteral("result")].toDouble(-1.0);
+    return resp["result"_L1].toDouble(-1.0);
 }
 
 double PythonFlowController::hwReadFlow(const int ch)
@@ -160,14 +160,14 @@ double PythonFlowController::hwReadFlow(const int ch)
         return -1.0;
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("hw_read_flow");
-    req[QStringLiteral("channel")] = ch;
+    req["method"_L1]  = "hw_read_flow"_L1;
+    req["channel"_L1] = ch;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return -1.0;
 
-    return resp[QStringLiteral("result")].toDouble(-1.0);
+    return resp["result"_L1].toDouble(-1.0);
 }
 
 double PythonFlowController::hwReadPressure()
@@ -176,13 +176,13 @@ double PythonFlowController::hwReadPressure()
         return -1.0;
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("hw_read_pressure");
+    req["method"_L1] = "hw_read_pressure"_L1;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return -1.0;
 
-    return resp[QStringLiteral("result")].toDouble(-1.0);
+    return resp["result"_L1].toDouble(-1.0);
 }
 
 int PythonFlowController::hwReadPressureControlMode()
@@ -191,11 +191,11 @@ int PythonFlowController::hwReadPressureControlMode()
         return -1;
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("hw_read_pressure_control_mode");
+    req["method"_L1] = "hw_read_pressure_control_mode"_L1;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return -1;
 
-    return resp[QStringLiteral("result")].toInt(-1);
+    return resp["result"_L1].toInt(-1);
 }

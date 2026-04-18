@@ -114,13 +114,13 @@ double PythonPressureController::hwReadPressure()
         return std::nan("");
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("hw_read_pressure");
+    req["method"_L1] = "hw_read_pressure"_L1;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return std::nan("");
 
-    return resp[QStringLiteral("result")].toDouble(std::nan(""));
+    return resp["result"_L1].toDouble(std::nan(""));
 }
 
 double PythonPressureController::hwSetPressureSetpoint(const double val)
@@ -129,14 +129,14 @@ double PythonPressureController::hwSetPressureSetpoint(const double val)
         return std::nan("");
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("hw_set_pressure_setpoint");
-    req[QStringLiteral("value")]  = val;
+    req["method"_L1] = "hw_set_pressure_setpoint"_L1;
+    req["value"_L1]  = val;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return std::nan("");
 
-    return resp[QStringLiteral("result")].toDouble(val);
+    return resp["result"_L1].toDouble(val);
 }
 
 double PythonPressureController::hwReadPressureSetpoint()
@@ -145,13 +145,13 @@ double PythonPressureController::hwReadPressureSetpoint()
         return std::nan("");
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("hw_read_pressure_setpoint");
+    req["method"_L1] = "hw_read_pressure_setpoint"_L1;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return std::nan("");
 
-    return resp[QStringLiteral("result")].toDouble(std::nan(""));
+    return resp["result"_L1].toDouble(std::nan(""));
 }
 
 void PythonPressureController::hwSetPressureControlMode(bool enabled)
@@ -160,8 +160,8 @@ void PythonPressureController::hwSetPressureControlMode(bool enabled)
         return;
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("hw_set_pressure_control_mode");
-    req[QStringLiteral("enabled")] = enabled;
+    req["method"_L1]  = "hw_set_pressure_control_mode"_L1;
+    req["enabled"_L1] = enabled;
     pu_process->sendRequest(req);
 }
 
@@ -171,13 +171,13 @@ int PythonPressureController::hwReadPressureControlMode()
         return -1;
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("hw_read_pressure_control_mode");
+    req["method"_L1] = "hw_read_pressure_control_mode"_L1;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return -1;
 
-    return resp[QStringLiteral("result")].toInt(-1);
+    return resp["result"_L1].toInt(-1);
 }
 
 void PythonPressureController::hwOpenGateValve()
@@ -186,7 +186,7 @@ void PythonPressureController::hwOpenGateValve()
         return;
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("hw_open_gate_valve");
+    req["method"_L1] = "hw_open_gate_valve"_L1;
     pu_process->sendRequest(req);
 }
 
@@ -196,6 +196,6 @@ void PythonPressureController::hwCloseGateValve()
         return;
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("hw_close_gate_valve");
+    req["method"_L1] = "hw_close_gate_valve"_L1;
     pu_process->sendRequest(req);
 }

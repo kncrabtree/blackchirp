@@ -97,7 +97,7 @@ void PythonFtmwScope::initialize()
         }
     );
 
-    pu_process->setEnabledProxies({QStringLiteral("scope")});
+    pu_process->setEnabledProxies({"scope"_L1});
 
     connect(pu_process.get(), &PythonProcess::waveformReceived,
             this, &PythonFtmwScope::onWaveformReceived);
@@ -115,18 +115,18 @@ bool PythonFtmwScope::testConnection()
 
     // Send current config to Python so it knows the initial state
     QJsonObject req = configToJson(static_cast<const FtmwDigitizerConfig&>(*this));
-    req[QStringLiteral("method")] = QStringLiteral("configure");
+    req["method"_L1] = "configure"_L1;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error"))) {
-        d_errorString = QStringLiteral("configure() failed after successful connection: ")
-                        + resp[QStringLiteral("error")].toString();
+    if (resp.contains("error"_L1)) {
+        d_errorString = "configure() failed after successful connection: "_L1
+                        + resp["error"_L1].toString();
         return false;
     }
 
-    auto resultObj = resp[QStringLiteral("result")].toObject();
-    if (!resultObj[QStringLiteral("success")].toBool(false)) {
-        d_errorString = QStringLiteral("configure() returned failure after successful connection");
+    auto resultObj = resp["result"_L1].toObject();
+    if (!resultObj["success"_L1].toBool(false)) {
+        d_errorString = "configure() returned failure after successful connection"_L1;
         return false;
     }
 
@@ -144,23 +144,23 @@ bool PythonFtmwScope::prepareForExperiment(Experiment &exp)
     auto desiredConfig = exp.ftmwConfig()->scopeConfig();
 
     QJsonObject req = configToJson(desiredConfig);
-    req[QStringLiteral("method")] = QStringLiteral("configure");
+    req["method"_L1] = "configure"_L1;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error"))) {
-        hwError(u"configure failed: %1"_s.arg(resp[QStringLiteral("error")].toString()));
+    if (resp.contains("error"_L1)) {
+        hwError(u"configure failed: %1"_s.arg(resp["error"_L1].toString()));
         return false;
     }
 
-    auto resultObj = resp[QStringLiteral("result")].toObject();
-    if (!resultObj[QStringLiteral("success")].toBool(false)) {
+    auto resultObj = resp["result"_L1].toObject();
+    if (!resultObj["success"_L1].toBool(false)) {
         hwError("configure returned failure"_L1);
         return false;
     }
 
     // Apply validated config returned from Python
-    if (resultObj.contains(QStringLiteral("config")))
-        jsonToConfig(resultObj[QStringLiteral("config")].toObject(), desiredConfig);
+    if (resultObj.contains("config"_L1))
+        jsonToConfig(resultObj["config"_L1].toObject(), desiredConfig);
 
     static_cast<FtmwDigitizerConfig&>(*this) = desiredConfig;
 
@@ -174,7 +174,7 @@ void PythonFtmwScope::beginAcquisition()
 {
     if (pu_process && pu_process->isRunning()) {
         QJsonObject req;
-        req[QStringLiteral("method")] = QStringLiteral("begin_acquisition");
+        req["method"_L1] = "begin_acquisition"_L1;
         pu_process->sendRequest(req);
     }
 }
@@ -186,7 +186,7 @@ void PythonFtmwScope::endAcquisition()
 {
     if (pu_process && pu_process->isRunning()) {
         QJsonObject req;
-        req[QStringLiteral("method")] = QStringLiteral("end_acquisition");
+        req["method"_L1] = "end_acquisition"_L1;
         pu_process->sendRequest(req);
     }
 }
@@ -226,48 +226,48 @@ QJsonObject PythonFtmwScope::configToJson(const FtmwDigitizerConfig &config) con
     QJsonObject anObj;
     for (auto const &[k, ch] : config.d_analogChannels) {
         QJsonObject chObj;
-        chObj[QStringLiteral("enabled")]    = ch.enabled;
-        chObj[QStringLiteral("full_scale")] = ch.fullScale;
-        chObj[QStringLiteral("offset")]     = ch.offset;
+        chObj["enabled"_L1]    = ch.enabled;
+        chObj["full_scale"_L1] = ch.fullScale;
+        chObj["offset"_L1]     = ch.offset;
         anObj[QString::number(k)] = chObj;
     }
-    obj[QStringLiteral("analog_channels")] = anObj;
+    obj["analog_channels"_L1] = anObj;
 
     // Digital channels
     QJsonObject digObj;
     for (auto const &[k, ch] : config.d_digitalChannels) {
         QJsonObject chObj;
-        chObj[QStringLiteral("enabled")] = ch.enabled;
-        chObj[QStringLiteral("input")]   = ch.input;
-        chObj[QStringLiteral("role")]    = ch.role;
+        chObj["enabled"_L1] = ch.enabled;
+        chObj["input"_L1]   = ch.input;
+        chObj["role"_L1]    = ch.role;
         digObj[QString::number(k)] = chObj;
     }
-    obj[QStringLiteral("digital_channels")] = digObj;
+    obj["digital_channels"_L1] = digObj;
 
     // Trigger settings
     QJsonObject trigObj;
-    trigObj[QStringLiteral("channel")]  = config.d_triggerChannel;
-    trigObj[QStringLiteral("slope")]    = static_cast<int>(config.d_triggerSlope);
-    trigObj[QStringLiteral("delay_us")] = config.d_triggerDelayUSec;
-    trigObj[QStringLiteral("level")]    = config.d_triggerLevel;
-    obj[QStringLiteral("trigger")] = trigObj;
+    trigObj["channel"_L1]  = config.d_triggerChannel;
+    trigObj["slope"_L1]    = static_cast<int>(config.d_triggerSlope);
+    trigObj["delay_us"_L1] = config.d_triggerDelayUSec;
+    trigObj["level"_L1]    = config.d_triggerLevel;
+    obj["trigger"_L1] = trigObj;
 
     // Horizontal / data transfer
-    obj[QStringLiteral("sample_rate")]     = config.d_sampleRate;
-    obj[QStringLiteral("record_length")]   = config.d_recordLength;
-    obj[QStringLiteral("bytes_per_point")] = config.d_bytesPerPoint;
-    obj[QStringLiteral("byte_order")]      = static_cast<int>(config.d_byteOrder);
+    obj["sample_rate"_L1]     = config.d_sampleRate;
+    obj["record_length"_L1]   = config.d_recordLength;
+    obj["bytes_per_point"_L1] = config.d_bytesPerPoint;
+    obj["byte_order"_L1]      = static_cast<int>(config.d_byteOrder);
 
     // Averaging
-    obj[QStringLiteral("block_average")] = config.d_blockAverage;
-    obj[QStringLiteral("num_averages")]  = config.d_numAverages;
+    obj["block_average"_L1] = config.d_blockAverage;
+    obj["num_averages"_L1]  = config.d_numAverages;
 
     // Multi-record
-    obj[QStringLiteral("multi_record")] = config.d_multiRecord;
-    obj[QStringLiteral("num_records")]  = config.d_numRecords;
+    obj["multi_record"_L1] = config.d_multiRecord;
+    obj["num_records"_L1]  = config.d_numRecords;
 
     // FtmwDigitizerConfig extra field
-    obj[QStringLiteral("fid_channel")] = config.d_fidChannel;
+    obj["fid_channel"_L1] = config.d_fidChannel;
 
     return obj;
 }
@@ -278,71 +278,71 @@ QJsonObject PythonFtmwScope::configToJson(const FtmwDigitizerConfig &config) con
 bool PythonFtmwScope::jsonToConfig(const QJsonObject &obj, FtmwDigitizerConfig &config) const
 {
     // Analog channels
-    if (obj.contains(QStringLiteral("analog_channels"))) {
-        auto anObj = obj[QStringLiteral("analog_channels")].toObject();
+    if (obj.contains("analog_channels"_L1)) {
+        auto anObj = obj["analog_channels"_L1].toObject();
         config.d_analogChannels.clear();
         for (auto it = anObj.begin(); it != anObj.end(); ++it) {
             int idx = it.key().toInt();
             auto chObj = it.value().toObject();
             DigitizerConfig::AnalogChannel ch;
-            ch.enabled   = chObj[QStringLiteral("enabled")].toBool();
-            ch.fullScale = chObj[QStringLiteral("full_scale")].toDouble();
-            ch.offset    = chObj[QStringLiteral("offset")].toDouble();
+            ch.enabled   = chObj["enabled"_L1].toBool();
+            ch.fullScale = chObj["full_scale"_L1].toDouble();
+            ch.offset    = chObj["offset"_L1].toDouble();
             config.d_analogChannels[idx] = ch;
         }
     }
 
     // Digital channels
-    if (obj.contains(QStringLiteral("digital_channels"))) {
-        auto digObj = obj[QStringLiteral("digital_channels")].toObject();
+    if (obj.contains("digital_channels"_L1)) {
+        auto digObj = obj["digital_channels"_L1].toObject();
         config.d_digitalChannels.clear();
         for (auto it = digObj.begin(); it != digObj.end(); ++it) {
             int idx = it.key().toInt();
             auto chObj = it.value().toObject();
             DigitizerConfig::DigitalChannel ch;
-            ch.enabled = chObj[QStringLiteral("enabled")].toBool();
-            ch.input   = chObj[QStringLiteral("input")].toBool(true);
-            ch.role    = chObj[QStringLiteral("role")].toInt(-1);
+            ch.enabled = chObj["enabled"_L1].toBool();
+            ch.input   = chObj["input"_L1].toBool(true);
+            ch.role    = chObj["role"_L1].toInt(-1);
             config.d_digitalChannels[idx] = ch;
         }
     }
 
     // Trigger
-    if (obj.contains(QStringLiteral("trigger"))) {
-        auto trigObj = obj[QStringLiteral("trigger")].toObject();
-        config.d_triggerChannel   = trigObj[QStringLiteral("channel")].toInt();
+    if (obj.contains("trigger"_L1)) {
+        auto trigObj = obj["trigger"_L1].toObject();
+        config.d_triggerChannel   = trigObj["channel"_L1].toInt();
         config.d_triggerSlope     = static_cast<DigitizerConfig::TriggerSlope>(
-                                        trigObj[QStringLiteral("slope")].toInt());
-        config.d_triggerDelayUSec = trigObj[QStringLiteral("delay_us")].toDouble();
-        config.d_triggerLevel     = trigObj[QStringLiteral("level")].toDouble();
+                                        trigObj["slope"_L1].toInt());
+        config.d_triggerDelayUSec = trigObj["delay_us"_L1].toDouble();
+        config.d_triggerLevel     = trigObj["level"_L1].toDouble();
     }
 
     // Horizontal / data transfer
-    if (obj.contains(QStringLiteral("sample_rate")))
-        config.d_sampleRate = obj[QStringLiteral("sample_rate")].toDouble();
-    if (obj.contains(QStringLiteral("record_length")))
-        config.d_recordLength = obj[QStringLiteral("record_length")].toInt();
-    if (obj.contains(QStringLiteral("bytes_per_point")))
-        config.d_bytesPerPoint = obj[QStringLiteral("bytes_per_point")].toInt();
-    if (obj.contains(QStringLiteral("byte_order")))
+    if (obj.contains("sample_rate"_L1))
+        config.d_sampleRate = obj["sample_rate"_L1].toDouble();
+    if (obj.contains("record_length"_L1))
+        config.d_recordLength = obj["record_length"_L1].toInt();
+    if (obj.contains("bytes_per_point"_L1))
+        config.d_bytesPerPoint = obj["bytes_per_point"_L1].toInt();
+    if (obj.contains("byte_order"_L1))
         config.d_byteOrder = static_cast<DigitizerConfig::ByteOrder>(
-                                 obj[QStringLiteral("byte_order")].toInt());
+                                 obj["byte_order"_L1].toInt());
 
     // Averaging
-    if (obj.contains(QStringLiteral("block_average")))
-        config.d_blockAverage = obj[QStringLiteral("block_average")].toBool();
-    if (obj.contains(QStringLiteral("num_averages")))
-        config.d_numAverages = obj[QStringLiteral("num_averages")].toInt();
+    if (obj.contains("block_average"_L1))
+        config.d_blockAverage = obj["block_average"_L1].toBool();
+    if (obj.contains("num_averages"_L1))
+        config.d_numAverages = obj["num_averages"_L1].toInt();
 
     // Multi-record
-    if (obj.contains(QStringLiteral("multi_record")))
-        config.d_multiRecord = obj[QStringLiteral("multi_record")].toBool();
-    if (obj.contains(QStringLiteral("num_records")))
-        config.d_numRecords = obj[QStringLiteral("num_records")].toInt();
+    if (obj.contains("multi_record"_L1))
+        config.d_multiRecord = obj["multi_record"_L1].toBool();
+    if (obj.contains("num_records"_L1))
+        config.d_numRecords = obj["num_records"_L1].toInt();
 
     // FtmwDigitizerConfig extra field
-    if (obj.contains(QStringLiteral("fid_channel")))
-        config.d_fidChannel = obj[QStringLiteral("fid_channel")].toInt();
+    if (obj.contains("fid_channel"_L1))
+        config.d_fidChannel = obj["fid_channel"_L1].toInt();
 
     return true;
 }

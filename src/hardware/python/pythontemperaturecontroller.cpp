@@ -77,14 +77,14 @@ double PythonTemperatureController::readHwTemperature(const uint ch)
         return std::nan("");
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("hw_read_temperature");
-    req[QStringLiteral("channel")] = static_cast<int>(ch);
+    req["method"_L1]  = "hw_read_temperature"_L1;
+    req["channel"_L1] = static_cast<int>(ch);
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return std::nan("");
 
-    return resp[QStringLiteral("result")].toDouble(std::nan(""));
+    return resp["result"_L1].toDouble(std::nan(""));
 }
 
 // ============================================================================

@@ -58,10 +58,10 @@ bool PythonGpibController::readAddress()
         return false;
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("read_address");
+    req["method"_L1] = "read_address"_L1;
     auto resp = pu_process->sendRequest(req);
-    return !resp.contains(QStringLiteral("error")) &&
-           resp[QStringLiteral("result")].toBool(false);
+    return !resp.contains("error"_L1) &&
+           resp["result"_L1].toBool(false);
 }
 
 // ============================================================================
@@ -73,11 +73,11 @@ bool PythonGpibController::setAddress(int a)
         return false;
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("set_address");
-    req[QStringLiteral("address")] = a;
+    req["method"_L1]  = "set_address"_L1;
+    req["address"_L1] = a;
     auto resp = pu_process->sendRequest(req);
-    if (!resp.contains(QStringLiteral("error")) &&
-        resp[QStringLiteral("result")].toBool(false)) {
+    if (!resp.contains("error"_L1) &&
+        resp["result"_L1].toBool(false)) {
         d_currentAddress = a;
         return true;
     }

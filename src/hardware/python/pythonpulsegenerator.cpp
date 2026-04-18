@@ -82,12 +82,12 @@ bool PythonPulseGenerator::setChWidth(const int index, const double width)
         return false;
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("set_ch_width");
-    req[QStringLiteral("channel")] = index;
-    req[QStringLiteral("width")]   = width;
+    req["method"_L1]  = "set_ch_width"_L1;
+    req["channel"_L1] = index;
+    req["width"_L1]   = width;
     auto resp = pu_process->sendRequest(req);
-    return !resp.contains(QStringLiteral("error")) &&
-           resp[QStringLiteral("result")].toBool(false);
+    return !resp.contains("error"_L1) &&
+           resp["result"_L1].toBool(false);
 }
 
 bool PythonPulseGenerator::setChDelay(const int index, const double delay)
@@ -96,12 +96,12 @@ bool PythonPulseGenerator::setChDelay(const int index, const double delay)
         return false;
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("set_ch_delay");
-    req[QStringLiteral("channel")] = index;
-    req[QStringLiteral("delay")]   = delay;
+    req["method"_L1]  = "set_ch_delay"_L1;
+    req["channel"_L1] = index;
+    req["delay"_L1]   = delay;
     auto resp = pu_process->sendRequest(req);
-    return !resp.contains(QStringLiteral("error")) &&
-           resp[QStringLiteral("result")].toBool(false);
+    return !resp.contains("error"_L1) &&
+           resp["result"_L1].toBool(false);
 }
 
 bool PythonPulseGenerator::setChActiveLevel(const int index, const PulseGenConfig::ActiveLevel level)
@@ -110,12 +110,12 @@ bool PythonPulseGenerator::setChActiveLevel(const int index, const PulseGenConfi
         return false;
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("set_ch_active_level");
-    req[QStringLiteral("channel")] = index;
-    req[QStringLiteral("level")]   = static_cast<int>(level);
+    req["method"_L1]  = "set_ch_active_level"_L1;
+    req["channel"_L1] = index;
+    req["level"_L1]   = static_cast<int>(level);
     auto resp = pu_process->sendRequest(req);
-    return !resp.contains(QStringLiteral("error")) &&
-           resp[QStringLiteral("result")].toBool(false);
+    return !resp.contains("error"_L1) &&
+           resp["result"_L1].toBool(false);
 }
 
 bool PythonPulseGenerator::setChEnabled(const int index, const bool en)
@@ -124,12 +124,12 @@ bool PythonPulseGenerator::setChEnabled(const int index, const bool en)
         return false;
 
     QJsonObject req;
-    req[QStringLiteral("method")]   = QStringLiteral("set_ch_enabled");
-    req[QStringLiteral("channel")]  = index;
-    req[QStringLiteral("enabled")]  = en;
+    req["method"_L1]   = "set_ch_enabled"_L1;
+    req["channel"_L1]  = index;
+    req["enabled"_L1]  = en;
     auto resp = pu_process->sendRequest(req);
-    return !resp.contains(QStringLiteral("error")) &&
-           resp[QStringLiteral("result")].toBool(false);
+    return !resp.contains("error"_L1) &&
+           resp["result"_L1].toBool(false);
 }
 
 bool PythonPulseGenerator::setChSyncCh(const int index, const int syncCh)
@@ -138,12 +138,12 @@ bool PythonPulseGenerator::setChSyncCh(const int index, const int syncCh)
         return false;
 
     QJsonObject req;
-    req[QStringLiteral("method")]   = QStringLiteral("set_ch_sync_ch");
-    req[QStringLiteral("channel")]  = index;
-    req[QStringLiteral("sync_ch")]  = syncCh;
+    req["method"_L1]   = "set_ch_sync_ch"_L1;
+    req["channel"_L1]  = index;
+    req["sync_ch"_L1]  = syncCh;
     auto resp = pu_process->sendRequest(req);
-    return !resp.contains(QStringLiteral("error")) &&
-           resp[QStringLiteral("result")].toBool(false);
+    return !resp.contains("error"_L1) &&
+           resp["result"_L1].toBool(false);
 }
 
 bool PythonPulseGenerator::setChMode(const int index, const PulseGenConfig::ChannelMode mode)
@@ -152,12 +152,12 @@ bool PythonPulseGenerator::setChMode(const int index, const PulseGenConfig::Chan
         return false;
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("set_ch_mode");
-    req[QStringLiteral("channel")] = index;
-    req[QStringLiteral("mode")]    = static_cast<int>(mode);
+    req["method"_L1]  = "set_ch_mode"_L1;
+    req["channel"_L1] = index;
+    req["mode"_L1]    = static_cast<int>(mode);
     auto resp = pu_process->sendRequest(req);
-    return !resp.contains(QStringLiteral("error")) &&
-           resp[QStringLiteral("result")].toBool(false);
+    return !resp.contains("error"_L1) &&
+           resp["result"_L1].toBool(false);
 }
 
 bool PythonPulseGenerator::setChDutyOn(const int index, const int pulses)
@@ -166,12 +166,12 @@ bool PythonPulseGenerator::setChDutyOn(const int index, const int pulses)
         return false;
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("set_ch_duty_on");
-    req[QStringLiteral("channel")] = index;
-    req[QStringLiteral("pulses")]  = pulses;
+    req["method"_L1]  = "set_ch_duty_on"_L1;
+    req["channel"_L1] = index;
+    req["pulses"_L1]  = pulses;
     auto resp = pu_process->sendRequest(req);
-    return !resp.contains(QStringLiteral("error")) &&
-           resp[QStringLiteral("result")].toBool(false);
+    return !resp.contains("error"_L1) &&
+           resp["result"_L1].toBool(false);
 }
 
 bool PythonPulseGenerator::setChDutyOff(const int index, const int pulses)
@@ -180,12 +180,12 @@ bool PythonPulseGenerator::setChDutyOff(const int index, const int pulses)
         return false;
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("set_ch_duty_off");
-    req[QStringLiteral("channel")] = index;
-    req[QStringLiteral("pulses")]  = pulses;
+    req["method"_L1]  = "set_ch_duty_off"_L1;
+    req["channel"_L1] = index;
+    req["pulses"_L1]  = pulses;
     auto resp = pu_process->sendRequest(req);
-    return !resp.contains(QStringLiteral("error")) &&
-           resp[QStringLiteral("result")].toBool(false);
+    return !resp.contains("error"_L1) &&
+           resp["result"_L1].toBool(false);
 }
 
 // ============================================================================
@@ -198,11 +198,11 @@ bool PythonPulseGenerator::setHwPulseMode(PulseGenConfig::PGenMode mode)
         return false;
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("set_hw_pulse_mode");
-    req[QStringLiteral("mode")]   = static_cast<int>(mode);
+    req["method"_L1] = "set_hw_pulse_mode"_L1;
+    req["mode"_L1]   = static_cast<int>(mode);
     auto resp = pu_process->sendRequest(req);
-    return !resp.contains(QStringLiteral("error")) &&
-           resp[QStringLiteral("result")].toBool(false);
+    return !resp.contains("error"_L1) &&
+           resp["result"_L1].toBool(false);
 }
 
 bool PythonPulseGenerator::setHwRepRate(double rr)
@@ -211,11 +211,11 @@ bool PythonPulseGenerator::setHwRepRate(double rr)
         return false;
 
     QJsonObject req;
-    req[QStringLiteral("method")]   = QStringLiteral("set_hw_rep_rate");
-    req[QStringLiteral("rep_rate")] = rr;
+    req["method"_L1]   = "set_hw_rep_rate"_L1;
+    req["rep_rate"_L1] = rr;
     auto resp = pu_process->sendRequest(req);
-    return !resp.contains(QStringLiteral("error")) &&
-           resp[QStringLiteral("result")].toBool(false);
+    return !resp.contains("error"_L1) &&
+           resp["result"_L1].toBool(false);
 }
 
 bool PythonPulseGenerator::setHwPulseEnabled(bool en)
@@ -224,11 +224,11 @@ bool PythonPulseGenerator::setHwPulseEnabled(bool en)
         return false;
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("set_hw_pulse_enabled");
-    req[QStringLiteral("enabled")] = en;
+    req["method"_L1]  = "set_hw_pulse_enabled"_L1;
+    req["enabled"_L1] = en;
     auto resp = pu_process->sendRequest(req);
-    return !resp.contains(QStringLiteral("error")) &&
-           resp[QStringLiteral("result")].toBool(false);
+    return !resp.contains("error"_L1) &&
+           resp["result"_L1].toBool(false);
 }
 
 // ============================================================================
@@ -241,14 +241,14 @@ double PythonPulseGenerator::readChWidth(const int index)
         return 0.0;
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("read_ch_width");
-    req[QStringLiteral("channel")] = index;
+    req["method"_L1]  = "read_ch_width"_L1;
+    req["channel"_L1] = index;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return 0.0;
 
-    return resp[QStringLiteral("result")].toDouble(0.0);
+    return resp["result"_L1].toDouble(0.0);
 }
 
 double PythonPulseGenerator::readChDelay(const int index)
@@ -257,14 +257,14 @@ double PythonPulseGenerator::readChDelay(const int index)
         return 0.0;
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("read_ch_delay");
-    req[QStringLiteral("channel")] = index;
+    req["method"_L1]  = "read_ch_delay"_L1;
+    req["channel"_L1] = index;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return 0.0;
 
-    return resp[QStringLiteral("result")].toDouble(0.0);
+    return resp["result"_L1].toDouble(0.0);
 }
 
 PulseGenConfig::ActiveLevel PythonPulseGenerator::readChActiveLevel(const int index)
@@ -273,15 +273,15 @@ PulseGenConfig::ActiveLevel PythonPulseGenerator::readChActiveLevel(const int in
         return PulseGenConfig::ActiveHigh;
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("read_ch_active_level");
-    req[QStringLiteral("channel")] = index;
+    req["method"_L1]  = "read_ch_active_level"_L1;
+    req["channel"_L1] = index;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return PulseGenConfig::ActiveHigh;
 
     return static_cast<PulseGenConfig::ActiveLevel>(
-        resp[QStringLiteral("result")].toInt(
+        resp["result"_L1].toInt(
             static_cast<int>(PulseGenConfig::ActiveHigh)));
 }
 
@@ -291,14 +291,14 @@ bool PythonPulseGenerator::readChEnabled(const int index)
         return false;
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("read_ch_enabled");
-    req[QStringLiteral("channel")] = index;
+    req["method"_L1]  = "read_ch_enabled"_L1;
+    req["channel"_L1] = index;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return false;
 
-    return resp[QStringLiteral("result")].toBool(false);
+    return resp["result"_L1].toBool(false);
 }
 
 int PythonPulseGenerator::readChSynchCh(const int index)
@@ -307,14 +307,14 @@ int PythonPulseGenerator::readChSynchCh(const int index)
         return 0;
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("read_ch_sync_ch");
-    req[QStringLiteral("channel")] = index;
+    req["method"_L1]  = "read_ch_sync_ch"_L1;
+    req["channel"_L1] = index;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return 0;
 
-    return resp[QStringLiteral("result")].toInt(0);
+    return resp["result"_L1].toInt(0);
 }
 
 PulseGenConfig::ChannelMode PythonPulseGenerator::readChMode(const int index)
@@ -323,15 +323,15 @@ PulseGenConfig::ChannelMode PythonPulseGenerator::readChMode(const int index)
         return PulseGenConfig::Normal;
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("read_ch_mode");
-    req[QStringLiteral("channel")] = index;
+    req["method"_L1]  = "read_ch_mode"_L1;
+    req["channel"_L1] = index;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return PulseGenConfig::Normal;
 
     return static_cast<PulseGenConfig::ChannelMode>(
-        resp[QStringLiteral("result")].toInt(
+        resp["result"_L1].toInt(
             static_cast<int>(PulseGenConfig::Normal)));
 }
 
@@ -341,14 +341,14 @@ int PythonPulseGenerator::readChDutyOn(const int index)
         return 1;
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("read_ch_duty_on");
-    req[QStringLiteral("channel")] = index;
+    req["method"_L1]  = "read_ch_duty_on"_L1;
+    req["channel"_L1] = index;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return 1;
 
-    return resp[QStringLiteral("result")].toInt(1);
+    return resp["result"_L1].toInt(1);
 }
 
 int PythonPulseGenerator::readChDutyOff(const int index)
@@ -357,14 +357,14 @@ int PythonPulseGenerator::readChDutyOff(const int index)
         return 1;
 
     QJsonObject req;
-    req[QStringLiteral("method")]  = QStringLiteral("read_ch_duty_off");
-    req[QStringLiteral("channel")] = index;
+    req["method"_L1]  = "read_ch_duty_off"_L1;
+    req["channel"_L1] = index;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return 1;
 
-    return resp[QStringLiteral("result")].toInt(1);
+    return resp["result"_L1].toInt(1);
 }
 
 // ============================================================================
@@ -377,14 +377,14 @@ PulseGenConfig::PGenMode PythonPulseGenerator::readHwPulseMode()
         return PulseGenConfig::Continuous;
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("read_hw_pulse_mode");
+    req["method"_L1] = "read_hw_pulse_mode"_L1;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return PulseGenConfig::Continuous;
 
     return static_cast<PulseGenConfig::PGenMode>(
-        resp[QStringLiteral("result")].toInt(
+        resp["result"_L1].toInt(
             static_cast<int>(PulseGenConfig::Continuous)));
 }
 
@@ -394,13 +394,13 @@ double PythonPulseGenerator::readHwRepRate()
         return 0.0;
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("read_hw_rep_rate");
+    req["method"_L1] = "read_hw_rep_rate"_L1;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return 0.0;
 
-    return resp[QStringLiteral("result")].toDouble(0.0);
+    return resp["result"_L1].toDouble(0.0);
 }
 
 bool PythonPulseGenerator::readHwPulseEnabled()
@@ -409,11 +409,11 @@ bool PythonPulseGenerator::readHwPulseEnabled()
         return false;
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("read_hw_pulse_enabled");
+    req["method"_L1] = "read_hw_pulse_enabled"_L1;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return false;
 
-    return resp[QStringLiteral("result")].toBool(false);
+    return resp["result"_L1].toBool(false);
 }

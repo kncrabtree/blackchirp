@@ -75,10 +75,10 @@ AuxDataStorage::AuxDataMap PythonAwg::readAuxData()
         return {};
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("read_aux_data");
+    req["method"_L1] = "read_aux_data"_L1;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return {};
 
     return parseAuxDataResult(resp);
@@ -93,10 +93,10 @@ AuxDataStorage::AuxDataMap PythonAwg::readValidationData()
         return {};
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("read_validation_data");
+    req["method"_L1] = "read_validation_data"_L1;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return {};
 
     return parseAuxDataResult(resp);
@@ -119,11 +119,11 @@ bool PythonAwg::prepareForExperiment(Experiment &exp)
         exp.auxData()->registerKey(d_key, it->first);
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("prepare_for_experiment");
+    req["method"_L1] = "prepare_for_experiment"_L1;
 
     QJsonObject config;
-    config[QStringLiteral("number")] = exp.d_number;
-    config[QStringLiteral("ftmw_enabled")] = exp.ftmwEnabled();
+    config["number"_L1] = exp.d_number;
+    config["ftmw_enabled"_L1] = exp.ftmwEnabled();
 
     if (exp.ftmwEnabled()) {
         const auto &rfConfig = exp.ftmwConfig()->d_rfConfig;
@@ -136,64 +136,64 @@ bool PythonAwg::prepareForExperiment(Experiment &exp)
             QJsonArray chirpArray;
             for (const auto &seg : chirp) {
                 QJsonObject segObj;
-                segObj[QStringLiteral("start_freq_mhz")] = seg.startFreqMHz;
-                segObj[QStringLiteral("end_freq_mhz")] = seg.endFreqMHz;
-                segObj[QStringLiteral("duration_us")] = seg.durationUs;
-                segObj[QStringLiteral("alpha_us")] = seg.alphaUs;
-                segObj[QStringLiteral("empty")] = seg.empty;
+                segObj["start_freq_mhz"_L1] = seg.startFreqMHz;
+                segObj["end_freq_mhz"_L1] = seg.endFreqMHz;
+                segObj["duration_us"_L1] = seg.durationUs;
+                segObj["alpha_us"_L1] = seg.alphaUs;
+                segObj["empty"_L1] = seg.empty;
                 chirpArray.append(segObj);
             }
             segmentsArray.append(chirpArray);
         }
 
         QJsonObject chirpObj;
-        chirpObj[QStringLiteral("segments")] = segmentsArray;
-        chirpObj[QStringLiteral("num_chirps")] = cc.numChirps();
-        chirpObj[QStringLiteral("chirp_interval_us")] = cc.chirpInterval();
+        chirpObj["segments"_L1] = segmentsArray;
+        chirpObj["num_chirps"_L1] = cc.numChirps();
+        chirpObj["chirp_interval_us"_L1] = cc.chirpInterval();
         QJsonArray markersArray;
         for(const auto &m : cc.markerChannels())
         {
             QJsonObject mObj;
-            mObj[QStringLiteral("name")] = m.name;
-            mObj[QStringLiteral("role")] = static_cast<int>(m.role);
-            mObj[QStringLiteral("start_us")] = m.startTime;
-            mObj[QStringLiteral("end_us")] = m.endTime;
-            mObj[QStringLiteral("enabled")] = m.enabled;
+            mObj["name"_L1] = m.name;
+            mObj["role"_L1] = static_cast<int>(m.role);
+            mObj["start_us"_L1] = m.startTime;
+            mObj["end_us"_L1] = m.endTime;
+            mObj["enabled"_L1] = m.enabled;
             markersArray.append(mObj);
         }
-        chirpObj[QStringLiteral("markers")] = markersArray;
-        chirpObj[QStringLiteral("sample_rate_hz")] = get<double>(BC::Key::AWG::rate);
-        config[QStringLiteral("chirp")] = chirpObj;
+        chirpObj["markers"_L1] = markersArray;
+        chirpObj["sample_rate_hz"_L1] = get<double>(BC::Key::AWG::rate);
+        config["chirp"_L1] = chirpObj;
 
         // RF chain parameters and clock assignments
         QJsonObject rfObj;
-        rfObj[QStringLiteral("awg_mult")] = rfConfig.d_awgMult;
-        rfObj[QStringLiteral("chirp_mult")] = rfConfig.d_chirpMult;
-        rfObj[QStringLiteral("up_mix_sideband")] = static_cast<int>(rfConfig.d_upMixSideband);
-        rfObj[QStringLiteral("down_mix_sideband")] = static_cast<int>(rfConfig.d_downMixSideband);
+        rfObj["awg_mult"_L1] = rfConfig.d_awgMult;
+        rfObj["chirp_mult"_L1] = rfConfig.d_chirpMult;
+        rfObj["up_mix_sideband"_L1] = static_cast<int>(rfConfig.d_upMixSideband);
+        rfObj["down_mix_sideband"_L1] = static_cast<int>(rfConfig.d_downMixSideband);
 
         QJsonObject clocksObj;
         const auto clocks = rfConfig.getClocks();
         for (auto it = clocks.cbegin(); it != clocks.cend(); ++it) {
             QJsonObject clkObj;
-            clkObj[QStringLiteral("freq_mhz")] = rfConfig.clockFrequency(it.key());
-            clkObj[QStringLiteral("hw_key")] = it.value().hwKey;
-            clkObj[QStringLiteral("output")] = it.value().output;
+            clkObj["freq_mhz"_L1] = rfConfig.clockFrequency(it.key());
+            clkObj["hw_key"_L1] = it.value().hwKey;
+            clkObj["output"_L1] = it.value().output;
             clocksObj[QString::number(static_cast<int>(it.key()))] = clkObj;
         }
-        rfObj[QStringLiteral("clocks")] = clocksObj;
-        config[QStringLiteral("rf_config")] = rfObj;
+        rfObj["clocks"_L1] = clocksObj;
+        config["rf_config"_L1] = rfObj;
     }
 
-    req[QStringLiteral("config")] = config;
+    req["config"_L1] = config;
 
     auto resp = pu_process->sendRequest(req);
-    if (resp.contains(QStringLiteral("error"))) {
-        d_errorString = resp[QStringLiteral("error")].toString();
+    if (resp.contains("error"_L1)) {
+        d_errorString = resp["error"_L1].toString();
         hwError(u"prepareForExperiment error: %1"_s.arg(d_errorString));
         return false;
     }
-    return resp[QStringLiteral("result")].toBool(true);
+    return resp["result"_L1].toBool(true);
 }
 
 // ============================================================================
@@ -205,7 +205,7 @@ void PythonAwg::beginAcquisition()
         return;
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("begin_acquisition");
+    req["method"_L1] = "begin_acquisition"_L1;
     pu_process->sendRequest(req);
 }
 
@@ -218,7 +218,7 @@ void PythonAwg::endAcquisition()
         return;
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("end_acquisition");
+    req["method"_L1] = "end_acquisition"_L1;
     pu_process->sendRequest(req);
 }
 
@@ -244,7 +244,7 @@ void PythonAwg::readSettings()
 AuxDataStorage::AuxDataMap PythonAwg::parseAuxDataResult(const QJsonObject &response)
 {
     AuxDataStorage::AuxDataMap out;
-    QJsonObject result = response[QStringLiteral("result")].toObject();
+    QJsonObject result = response["result"_L1].toObject();
     for (auto it = result.begin(); it != result.end(); ++it)
         out[it.key()] = QVariant(it.value().toDouble());
     return out;

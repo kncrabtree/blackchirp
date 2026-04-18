@@ -86,15 +86,15 @@ bool PythonClock::setHwFrequency(double freqMHz, int outputIndex)
         return false;
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("hw_set_frequency");
-    req[QStringLiteral("freq_mhz")] = freqMHz;
-    req[QStringLiteral("output")] = outputIndex;
+    req["method"_L1] = "hw_set_frequency"_L1;
+    req["freq_mhz"_L1] = freqMHz;
+    req["output"_L1] = outputIndex;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return false;
 
-    return resp[QStringLiteral("result")].toBool(false);
+    return resp["result"_L1].toBool(false);
 }
 
 // ============================================================================
@@ -106,14 +106,14 @@ double PythonClock::readHwFrequency(int outputIndex)
         return -1.0;
 
     QJsonObject req;
-    req[QStringLiteral("method")] = QStringLiteral("hw_read_frequency");
-    req[QStringLiteral("output")] = outputIndex;
+    req["method"_L1] = "hw_read_frequency"_L1;
+    req["output"_L1] = outputIndex;
     auto resp = pu_process->sendRequest(req);
 
-    if (resp.contains(QStringLiteral("error")))
+    if (resp.contains("error"_L1))
         return -1.0;
 
-    return resp[QStringLiteral("result")].toDouble(-1.0);
+    return resp["result"_L1].toDouble(-1.0);
 }
 
 // ============================================================================

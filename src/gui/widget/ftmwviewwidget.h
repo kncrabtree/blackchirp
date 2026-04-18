@@ -221,10 +221,10 @@ public:
     void setupUi(bool main, QWidget *FtmwViewWidget)
     {
         if (FtmwViewWidget->objectName().isEmpty())
-            FtmwViewWidget->setObjectName(QStringLiteral("FtmwViewWidget"));
+            FtmwViewWidget->setObjectName("FtmwViewWidget"_L1);
         FtmwViewWidget->resize(850, 520);
         exptLabel = new QLabel(FtmwViewWidget);
-        exptLabel->setObjectName(QStringLiteral("exptLabel"));
+        exptLabel->setObjectName("exptLabel"_L1);
         exptLabel->setGeometry(QRect(9, 9, 53, 16));
         QFont font;
         font.setBold(true);
@@ -232,25 +232,25 @@ public:
         exptLabel->setFont(font);
         exptLabel->setAlignment(Qt::AlignCenter);
         splitter = new QSplitter(FtmwViewWidget);
-        splitter->setObjectName(QStringLiteral("splitter"));
+        splitter->setObjectName("splitter"_L1);
         splitter->setGeometry(QRect(9, 27, 821, 471));
         splitter->setOrientation(Qt::Vertical);
         splitter->setChildrenCollapsible(false);
         widget = new QWidget(splitter);
-        widget->setObjectName(QStringLiteral("widget"));
+        widget->setObjectName("widget"_L1);
         verticalLayout = new QVBoxLayout(widget);
-        verticalLayout->setObjectName(QStringLiteral("verticalLayout"));
+        verticalLayout->setObjectName("verticalLayout"_L1);
         verticalLayout->setContentsMargins(0, 0, 0, 0);
         livePlotLayout = new QHBoxLayout();
-        livePlotLayout->setObjectName(QStringLiteral("livePlotLayout"));
+        livePlotLayout->setObjectName("livePlotLayout"_L1);
         liveFidPlot = new FidPlot(QString("Live"),widget);
-        liveFidPlot->setObjectName(QStringLiteral("liveFidPlot"));
+        liveFidPlot->setObjectName("liveFidPlot"_L1);
 //        liveFidPlot->setMinimumSize(QSize(0, 150));
 
         livePlotLayout->addWidget(liveFidPlot);
 
         liveFtPlot = new FtPlot(QString("Live"),widget);
-        liveFtPlot->setObjectName(QStringLiteral("liveFtPlot"));
+        liveFtPlot->setObjectName("liveFtPlot"_L1);
 
         livePlotLayout->addWidget(liveFtPlot);
 
@@ -260,30 +260,30 @@ public:
         verticalLayout->addLayout(livePlotLayout,1);
 
         plots12Layout = new QHBoxLayout();
-        plots12Layout->setObjectName(QStringLiteral("plots12Layout"));
+        plots12Layout->setObjectName("plots12Layout"_L1);
         plot1Layout = new QHBoxLayout();
-        plot1Layout->setObjectName(QStringLiteral("plot1Layout"));
+        plot1Layout->setObjectName("plot1Layout"_L1);
         fidPlot1 = new FidPlot(QString("1"),widget);
-        fidPlot1->setObjectName(QStringLiteral("fidPlot1"));
+        fidPlot1->setObjectName("fidPlot1"_L1);
 
         plot1Layout->addWidget(fidPlot1);
 
         ftPlot1 = new FtPlot(QString("1"),widget);
-        ftPlot1->setObjectName(QStringLiteral("ftPlot1"));
+        ftPlot1->setObjectName("ftPlot1"_L1);
 
         plot1Layout->addWidget(ftPlot1);
 
         plots12Layout->addLayout(plot1Layout);
 
         plot2Layout = new QHBoxLayout();
-        plot2Layout->setObjectName(QStringLiteral("plot2ayout"));
+        plot2Layout->setObjectName("plot2ayout"_L1);
         fidPlot2 = new FidPlot(QString("2"),widget);
-        fidPlot2->setObjectName(QStringLiteral("fidPlot2"));
+        fidPlot2->setObjectName("fidPlot2"_L1);
 
         plot2Layout->addWidget(fidPlot2);
 
         ftPlot2 = new FtPlot(QString("2"),widget);
-        ftPlot2->setObjectName(QStringLiteral("ftPlot2"));
+        ftPlot2->setObjectName("ftPlot2"_L1);
 
         plot2Layout->addWidget(ftPlot2);
 
@@ -297,7 +297,7 @@ public:
 //        verticalLayout->setStretch(1, 1);
         splitter->addWidget(widget);
         mainFtPlot = new MainFtPlot(splitter);
-        mainFtPlot->setObjectName(QStringLiteral("mainFtPlot"));
+        mainFtPlot->setObjectName("mainFtPlot"_L1);
         mainFtPlot->setMinimumSize(QSize(0, 100));
         splitter->addWidget(mainFtPlot);
         splitter->setStretchFactor(0,1);
