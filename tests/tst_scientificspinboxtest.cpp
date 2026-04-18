@@ -400,17 +400,17 @@ void ScientificSpinBoxTest::testStepSize_data()
     QTest::addColumn<int>("steps");
     QTest::addColumn<double>("expectedValue");
 
-    // Fixed range: step = 10^(1 - decimal_places)
-    QTest::newRow("1.5 up")    << 1.5    << 1  << 2.5;    // prec=1, step=1
-    QTest::newRow("1.5 down")  << 1.5    << -1 << 0.5;
-    QTest::newRow("1.23 up")   << 1.23   << 1  << 1.33;   // prec=2, step=0.1
-    QTest::newRow("0.00123 up")<< 0.00123<< 1  << 0.00133;// prec=5, step=1e-4
-    QTest::newRow("1000 up")   << 1000.0 << 1  << 1010.0; // prec=0, step=10
-    QTest::newRow("two steps") << 1.5    << 2  << 3.5;    // 2 × step=1
+    // Fixed range: step = 10^(-decimal_places)
+    QTest::newRow("1.5 up")    << 1.5    << 1  << 1.6;    // prec=1, step=0.1
+    QTest::newRow("1.5 down")  << 1.5    << -1 << 1.4;
+    QTest::newRow("1.23 up")   << 1.23   << 1  << 1.24;   // prec=2, step=0.01
+    QTest::newRow("0.00123 up")<< 0.00123<< 1  << 0.00124;// prec=5, step=1e-5
+    QTest::newRow("1000 up")   << 1000.0 << 1  << 1001.0; // prec=0, step=1
+    QTest::newRow("two steps") << 1.5    << 2  << 1.7;    // 2 × step=0.1
 
-    // Scientific range: step = 10^(exponent - precision + 1)
-    QTest::newRow("1.6e6 up")  << 1.6e6  << 1  << 2.6e6;  // prec=1, exp=6, step=1e6
-    QTest::newRow("1.6e6 down")<< 1.6e6  << -1 << 0.6e6;
+    // Scientific range: step = 10^(exponent - precision)
+    QTest::newRow("1.6e6 up")  << 1.6e6  << 1  << 1.7e6;  // prec=1, exp=6, step=1e5
+    QTest::newRow("1.6e6 down")<< 1.6e6  << -1 << 1.5e6;
     QTest::newRow("5e-8 up")   << 5e-8   << 1  << 6e-8;   // prec=0, exp=-8, step=1e-8
 }
 
@@ -650,12 +650,12 @@ void ScientificSpinBoxTest::testFixedStepSizeAbs()
 void ScientificSpinBoxTest::testFixedStepZeroFallback()
 {
     // Fixed mode with d_fixedStepSize == 0 falls through to adaptive behavior.
-    // From 1.5 (precision=1, adaptive step=1), stepBy(1) → 2.5.
+    // From 1.5 (precision=1, adaptive step=0.1), stepBy(1) → 1.6.
     ScientificSpinBox sb;
     sb.setStepMode(ScientificSpinBox::StepMode::Fixed);
     sb.setValue(1.5);
     sb.stepBy(1);
-    QCOMPARE(sb.value(), 2.5);
+    QCOMPARE(sb.value(), 1.6);
 }
 
 void ScientificSpinBoxTest::testFixedStepRangeClamp()
@@ -690,9 +690,9 @@ void ScientificSpinBoxTest::testRangeStep()
 {
     ScientificSpinBox sb;
     sb.setRange(0.0, 2.0);
-    sb.setValue(1.5); // prec=1, step=1
+    sb.setValue(1.9); // prec=1, step=0.1
 
-    sb.stepBy(1); // 1.5 + 1.0 = 2.5 → clamped to 2.0
+    sb.stepBy(2); // 1.9 + 2*0.1 = 2.1 → clamped to 2.0
     QCOMPARE(sb.value(), 2.0);
 
     sb.stepBy(-10); // clamped to 0.0

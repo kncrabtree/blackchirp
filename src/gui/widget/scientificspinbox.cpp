@@ -625,14 +625,12 @@ double ScientificSpinBox::calculateStepSize() const
         : (showFixed ? detectFixedPrecision(absValue) : detectSciPrecision(absValue));
 
     if (showFixed) {
-        // Step = place value of 2nd-to-last digit: 10^(1 - decimal_places)
-        return std::pow(10.0, 1 - effectivePrecision);
+        // Step = place value of last digit: 10^(-decimal_places)
+        return std::pow(10.0, -effectivePrecision);
     } else {
         const int exponent = static_cast<int>(std::floor(std::log10(absValue)));
-        if (effectivePrecision == 0)
-            return std::pow(10.0, exponent);
-        // Step = place value of 2nd-to-last mantissa digit: 10^(exponent - precision + 1)
-        return std::pow(10.0, exponent - effectivePrecision + 1);
+        // Step = place value of last mantissa digit: 10^(exponent - precision)
+        return std::pow(10.0, exponent - effectivePrecision);
     }
 }
 
