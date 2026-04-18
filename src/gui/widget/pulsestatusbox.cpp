@@ -41,13 +41,13 @@ PulseStatusBox::PulseStatusBox(const QString &key, QWidget *parent) :
     gl->setContentsMargins(3,3,3,3);
     gl->setSpacing(3);
 
-    setLayout(gl);
+    body()->setLayout(gl);
 
 }
 
 void PulseStatusBox::rebuild()
 {
-    auto gl = qobject_cast<QGridLayout*>(layout());
+    auto gl = qobject_cast<QGridLayout*>(body()->layout());
 
     for(auto& [lbl, led] : d_ledList)
     {

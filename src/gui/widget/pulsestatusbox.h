@@ -1,8 +1,6 @@
 #ifndef PULSESTATUSBOX_H
 #define PULSESTATUSBOX_H
 
-#include <QGroupBox>
-
 #include "hardwarestatusbox.h"
 #include <data/experiment/hardware/optional/pulsegenerator/pulsegenconfig.h>
 

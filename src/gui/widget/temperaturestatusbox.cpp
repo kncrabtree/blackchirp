@@ -43,7 +43,7 @@ TemperatureStatusBox::TemperatureStatusBox(const QString key, QWidget *parent) :
     gl->setColumnStretch(0,0);
     gl->setColumnStretch(1,1);
 
-    setLayout(gl);
+    body()->setLayout(gl);
 
     loadFromSettings();
 

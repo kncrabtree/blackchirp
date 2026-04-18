@@ -32,7 +32,7 @@ LifLaserStatusBox::LifLaserStatusBox(const QString &key, QWidget *parent) : Hard
     else
         p_led = nullptr;
 
-    setLayout(hbl);
+    body()->setLayout(hbl);
 
     applySettings();
 }

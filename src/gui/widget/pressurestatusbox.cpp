@@ -29,7 +29,7 @@ PressureStatusBox::PressureStatusBox(const QString &key, QWidget *parent) : Hard
     gl->setColumnStretch(1,1);
     gl->setColumnStretch(2,0);
 
-    setLayout(gl);
+    body()->setLayout(gl);
 
     updateFromSettings();
 }

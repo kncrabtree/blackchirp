@@ -185,7 +185,7 @@ Run full test suite (`ctest --test-dir build/tests`).
 ### Progress tracking
 
 - [x] Step 1 — formatting utility extracted (`src/gui/util/numericformat.{h,cpp}`, namespace `BC::Gui`), scientificspinbox test passes
-- [ ] Step 2 — `HardwareStatusBox` converted to `QFrame` with title row
+- [x] Step 2 — `HardwareStatusBox` converted to `QFrame` with collapse chevron + theme-aware configure cog; `body()` accessor; `configureRequested()` signal; tolerates empty key
 - [ ] Step 3A — PressureStatusBox
 - [ ] Step 3B — TemperatureStatusBox
 - [ ] Step 3C — GasFlowDisplayBox
