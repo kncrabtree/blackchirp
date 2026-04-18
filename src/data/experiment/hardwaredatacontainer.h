@@ -367,10 +367,10 @@ struct HardwareDataContainer {
     
     /*!
      * \brief Convert to legacy format for backward compatibility
-     * \return Map compatible with old std::map<QString,QString> format
+     * \return Map compatible with old std::map<QString,QString,std::less<>> format
      */
-    std::map<QString, QString> toLegacyMap() const {
-        std::map<QString, QString> legacy;
+    std::map<QString, QString, std::less<>> toLegacyMap() const {
+        std::map<QString, QString, std::less<>> legacy;
         for (auto it = hardwareMap.begin(); it != hardwareMap.end(); ++it) {
             legacy[it.key()] = it.value().implementation;
         }
@@ -382,7 +382,7 @@ struct HardwareDataContainer {
      * \param legacyMap Hardware map in old std::map format
      * \return HardwareDataContainer with populated hardwareMap (no type keys)
      */
-    static HardwareDataContainer fromLegacyMap(const std::map<QString, QString>& legacyMap) {
+    static HardwareDataContainer fromLegacyMap(const std::map<QString, QString, std::less<>>& legacyMap) {
         HardwareDataContainer container;
         for (const auto& [key, impl] : legacyMap) {
             HardwareType hwType = extractHardwareType(key);

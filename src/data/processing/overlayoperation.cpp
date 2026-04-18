@@ -45,7 +45,7 @@ void OverlayOperation::updateProgress(int percentage, const QString& message)
 // CreateOverlayOperation implementation
 
 CreateOverlayOperation::CreateOverlayOperation(OverlayBase::OverlayType type,
-                                             const std::map<QString, QVariant>& settings,
+                                             const std::map<QString, QVariant, std::less<>>& settings,
                                              QObject* parent)
     : OverlayOperation(Type::Deferred, Priority::Normal, parent),
       d_overlayType(type),

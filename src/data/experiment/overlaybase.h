@@ -92,8 +92,8 @@ protected:
     virtual void readFromDest() =0;
     virtual void writeToDest() =0;
     
-    virtual void _storeMetadata(std::map<QString,QVariant> &m) =0;
-    virtual void _retrieveMetadata(const std::map<QString,QVariant> &m) =0;
+    virtual void _storeMetadata(std::map<QString,QVariant,std::less<>> &m) =0;
+    virtual void _retrieveMetadata(const std::map<QString,QVariant,std::less<>> &m) =0;
     
     void invalidateCache();
 
@@ -119,7 +119,7 @@ private:
     bool d_modified{false};
     
     // Curve metadata storage for direct access by OverlayMetadataStorage
-    std::map<QString, QVariant> d_curveMetadata;
+    std::map<QString, QVariant, std::less<>> d_curveMetadata;
     
     // Caching for filtered xyData
     mutable QVector<QPointF> d_cachedFilteredData;
@@ -127,8 +127,8 @@ private:
     mutable double d_cachedYMax{0.0};
     
     
-    void storeMetadata(std::map<QString,QVariant> &m);
-    void retrieveMetadata(const std::map<QString,QVariant> &m);
+    void storeMetadata(std::map<QString,QVariant,std::less<>> &m);
+    void retrieveMetadata(const std::map<QString,QVariant,std::less<>> &m);
 };
 
 #endif // OVERLAYBASE_H

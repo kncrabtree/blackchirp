@@ -145,7 +145,7 @@ private:
     
     // Backup state for cancel functionality (settings context only)
     bool d_hasBackupState;
-    std::map<QString, QVariant> d_backupMetadata; // Complete overlay metadata backup
+    std::map<QString, QVariant, std::less<>> d_backupMetadata; // Complete overlay metadata backup
 };
 
 #endif // UNIFIEDOVERLAYWIDGET_H

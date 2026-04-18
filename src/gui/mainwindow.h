@@ -89,7 +89,7 @@ public slots:
 private:
     Ui::MainWindow *ui;
     QList<QPair<QThread*,QObject*> > d_threadObjectList;
-    std::map<QString,QDialog*> d_openDialogs;
+    std::map<QString,QDialog*,std::less<>> d_openDialogs;
     LogHandler *p_lh;
     HardwareManager *p_hwm;
     AcquisitionManager *p_am;
@@ -102,8 +102,8 @@ private:
         QWidget* statusWidget;  // GasFlowDisplayBox, PressureStatusBox, etc.
         QVector<QMetaObject::Connection> connections;
     };
-    std::map<QString, HardwareUIElements> d_hardwareUI;  // key.label -> UI elements
-    std::map<QString, bool> d_hardwareConnectionState;  // key.label -> connection status
+    std::map<QString, HardwareUIElements, std::less<>> d_hardwareUI;  // key.label -> UI elements
+    std::map<QString, bool, std::less<>> d_hardwareConnectionState;  // key.label -> connection status
 
     void configureUi(ProgramState s);
     void startBatch(BatchManager *bm);
@@ -131,7 +131,7 @@ private:
     BatchManager *p_batchManager{nullptr};
     
     // Track open experiment view widgets by experiment path
-    std::map<QString, std::unique_ptr<ExperimentViewWidget>> d_openExperiments;
+    std::map<QString, std::unique_ptr<ExperimentViewWidget>, std::less<>> d_openExperiments;
 
 
 protected:

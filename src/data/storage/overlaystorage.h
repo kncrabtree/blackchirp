@@ -71,11 +71,11 @@ signals:
     void pendingWritesChanged(int count);
     
 private:
-    std::map<QString, std::shared_ptr<OverlayBase>> d_overlays;
-    std::map<QString, QFuture<void>> d_pendingWrites; // Maps overlay label to write future
+    std::map<QString, std::shared_ptr<OverlayBase>, std::less<>> d_overlays;
+    std::map<QString, QFuture<void>, std::less<>> d_pendingWrites; // Maps overlay label to write future
     
     // Preview overlays (temporary, not persisted)
-    std::map<QString, std::shared_ptr<OverlayBase>> d_previewOverlays;
+    std::map<QString, std::shared_ptr<OverlayBase>, std::less<>> d_previewOverlays;
     
     // Factory method for creating overlay objects
     std::shared_ptr<OverlayBase> createOverlayObject(OverlayBase::OverlayType type);
@@ -84,7 +84,7 @@ private:
     QString sanitizeLabel(const QString& label) const;
     QString getOverlayDataPath(const QString& sanitizedLabel) const;
     QString getOverlaySettingsPath(const QString& sanitizedLabel) const;
-    void addVersionMetadata(std::map<QString, QVariant>& metadata) const;
+    void addVersionMetadata(std::map<QString, QVariant, std::less<>>& metadata) const;
     bool validateOverlayLabel(const QString& label) const;
     void onWriteCompleted(const QString& label, bool success, const QString& error = QString());
 };

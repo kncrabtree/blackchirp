@@ -161,7 +161,7 @@ public:
     QString buildVersion() const;
 
 private:
-    std::map<QString,QVariant> d_configMap;
+    std::map<QString,QVariant,std::less<>> d_configMap;
     QString d_delimiter;
 
 };

@@ -32,7 +32,7 @@
 #include <gui/lif/gui/experimentlifconfigpage.h>
 #include <data/storage/applicationconfigmanager.h>
 
-ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList> &valKeys, QWidget *parent)
+ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList, std::less<>> &valKeys, QWidget *parent)
     : QDialog{parent}
 {
     setWindowTitle("Experiment Setup");

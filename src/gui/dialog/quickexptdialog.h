@@ -27,7 +27,7 @@ public:
     };
     explicit QuickExptDialog(QWidget *parent = nullptr);
 
-    std::map<QString,bool> getOptHwSettings() const;
+    std::map<QString,bool,std::less<>> getOptHwSettings() const;
     int exptNumber() const;
 
 private slots:
@@ -40,8 +40,8 @@ private:
     QFormLayout *p_hwLayout;
     QPushButton *p_cfgButton, *p_startButton;
     ExperimentSummaryWidget *p_esw;
-    std::map<QString,QString> d_hardware;
-    std::map<QString,QCheckBox*> d_hwBoxes;
+    std::map<QString,QString,std::less<>> d_hardware;
+    std::map<QString,QCheckBox*,std::less<>> d_hwBoxes;
 };
 
 #endif // QUICKEXPTDIALOG_H

@@ -122,7 +122,7 @@ private:
     
     // Operation storage
     QQueue<std::shared_ptr<OperationInfo>> d_queuedOperations;
-    std::map<QString, std::shared_ptr<OperationInfo>> d_allOperations; // All operations (queued, running, completed)
+    std::map<QString, std::shared_ptr<OperationInfo>, std::less<>> d_allOperations; // All operations (queued, running, completed)
     std::shared_ptr<OperationInfo> d_currentOperation;
     
     // Configuration

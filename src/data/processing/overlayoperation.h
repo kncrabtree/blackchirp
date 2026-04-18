@@ -105,7 +105,7 @@ class CreateOverlayOperation : public OverlayOperation
 
 public:
     CreateOverlayOperation(OverlayBase::OverlayType type,
-                          const std::map<QString, QVariant>& settings,
+                          const std::map<QString, QVariant, std::less<>>& settings,
                           QObject* parent = nullptr);
 
     std::shared_ptr<OverlayBase> execute() override;
@@ -116,7 +116,7 @@ public:
 
 private:
     OverlayBase::OverlayType d_overlayType;
-    std::map<QString, QVariant> d_settings;
+    std::map<QString, QVariant, std::less<>> d_settings;
 };
 
 /**

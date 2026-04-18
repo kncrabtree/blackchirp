@@ -127,9 +127,9 @@ QuickExptDialog::QuickExptDialog(QWidget *parent) :
     p_expSpinBox->setValue(p_expSpinBox->maximum());
 }
 
-std::map<QString, bool> QuickExptDialog::getOptHwSettings() const
+std::map<QString, bool, std::less<>> QuickExptDialog::getOptHwSettings() const
 {
-    std::map<QString,bool> out;
+    std::map<QString,bool,std::less<>> out;
     for(const auto &[key,cb] : d_hwBoxes)
         out.emplace(key,cb->isChecked());
 

@@ -76,9 +76,9 @@ private:
     Ui::RuntimeHardwareConfigDialog *pu_ui;
 
     // Preview state
-    std::map<QString, QString> d_originalRuntimeConfig;
-    std::map<QString, QString> d_previewRuntimeConfig;
-    std::map<QString, ProfileOverrides> d_profileOverrides;
+    std::map<QString, QString, std::less<>> d_originalRuntimeConfig;
+    std::map<QString, QString, std::less<>> d_previewRuntimeConfig;
+    std::map<QString, ProfileOverrides, std::less<>> d_profileOverrides;
     QString d_currentHardwareType;
 
     static bool getTypeDefaultThreaded(const QString& hardwareType);

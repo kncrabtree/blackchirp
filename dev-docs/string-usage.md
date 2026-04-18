@@ -709,10 +709,12 @@ makes the rest of the plan coherent.
    `.append(queryTerminator())`; changed to `cmd + queryTerminator()`
    to allow the const-reference signature.
 
-10. **Retrofit `std::less<>` on remaining `std::map<QString, T>`**
-    sites not already updated in step 2. The `SettingsStorage` and
-    `HeaderStorage` maps are handled there. A codebase-wide sweep of
-    remaining sites is optional but cheap.
+10. ✅ **Retrofit `std::less<>` on remaining `std::map<QString, T>`**
+    Codebase-wide mechanical sweep across 37 files; all `std::map<QString, T>`
+    declarations without a comparator now carry `std::less<>`. Handled
+    simple value types (`bool`, `QString`, `QVariant`, etc.) and nested
+    template types (`std::shared_ptr<X>`, `std::unique_ptr<X>`,
+    `QVector<X>`, `QFuture<void>`) in a single perl pass.
 
 11. **Long-tail signature migration to `QAnyStringView`.** Prioritize
     functions with many callers or in base classes, don't worry about

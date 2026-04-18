@@ -361,9 +361,9 @@ bool SettingsStorage::setGroupValue(QAnyStringView groupKey, QAnyStringView key,
     return true;
 }
 
-std::map<QString,bool> SettingsStorage::setGroupValues(QAnyStringView groupKey, const SettingsMap &values, bool write)
+std::map<QString,bool,std::less<>> SettingsStorage::setGroupValues(QAnyStringView groupKey, const SettingsMap &values, bool write)
 {
-    std::map<QString,bool> results;
+    std::map<QString,bool,std::less<>> results;
     
     for(const auto& pair : values)
     {
@@ -377,11 +377,11 @@ std::map<QString,bool> SettingsStorage::setGroupValues(QAnyStringView groupKey, 
     return results;
 }
 
-std::map<QString,bool> SettingsStorage::setMultiple(const std::map<QString, QVariant, std::less<>> m, bool write)
+std::map<QString,bool,std::less<>> SettingsStorage::setMultiple(const std::map<QString, QVariant, std::less<>> m, bool write)
 {
     d_edited = true;
 
-    std::map<QString,bool> out;
+    std::map<QString,bool,std::less<>> out;
     for( auto it = m.cbegin(); it != m.cend(); ++it )
     {
         bool success = set(it->first,it->second);

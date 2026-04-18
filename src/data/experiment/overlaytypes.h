@@ -68,8 +68,8 @@ public:
 protected:
     void readFromDest() override;
     void writeToDest() override;
-    void _storeMetadata(std::map<QString, QVariant> &m) override;
-    void _retrieveMetadata(const std::map<QString, QVariant> &m) override;
+    void _storeMetadata(std::map<QString, QVariant, std::less<>> &m) override;
+    void _retrieveMetadata(const std::map<QString, QVariant, std::less<>> &m) override;
 
 
 private:
@@ -144,8 +144,8 @@ public:
 protected:
     void readFromDest() override;
     void writeToDest() override;
-    void _storeMetadata(std::map<QString, QVariant> &m) override;
-    void _retrieveMetadata(const std::map<QString, QVariant> &m) override;
+    void _storeMetadata(std::map<QString, QVariant, std::less<>> &m) override;
+    void _retrieveMetadata(const std::map<QString, QVariant, std::less<>> &m) override;
 
 private:
     QVector<QPointF> _xyData() const override;
@@ -245,8 +245,8 @@ public:
 protected:
     void readFromDest() override;
     void writeToDest() override;
-    void _storeMetadata(std::map<QString, QVariant> &m) override;
-    void _retrieveMetadata(const std::map<QString, QVariant> &m) override;
+    void _storeMetadata(std::map<QString, QVariant, std::less<>> &m) override;
+    void _retrieveMetadata(const std::map<QString, QVariant, std::less<>> &m) override;
 
 private:
     QVector<QPointF> _xyData() const override;

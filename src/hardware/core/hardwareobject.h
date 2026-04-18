@@ -501,7 +501,7 @@ private:
      * Derived classes may override this function to return data to be
      * displayed on the aux and/or rolling data plots.
      *
-     * \return AuxDataStorage::AuxDataMap (an alias for `std::map<QString,QVariant>`)
+     * \return AuxDataStorage::AuxDataMap (an alias for `std::map<QString,QVariant,std::less<>>`)
      * containing key-value pairs.
      */
     virtual AuxDataStorage::AuxDataMap readAuxData();
@@ -514,7 +514,7 @@ private:
      * returned in readAuxData(). This may, for example, consist of digital
      * data that is not appropriate for graphical presentaiton.
      * 
-     * \return AuxDataStorage::AuxDataMap (an alias for `std::map<QString,QVariant>`)
+     * \return AuxDataStorage::AuxDataMap (an alias for `std::map<QString,QVariant,std::less<>>`)
      * containing key-value pairs.
      */
     virtual AuxDataStorage::AuxDataMap readValidationData();

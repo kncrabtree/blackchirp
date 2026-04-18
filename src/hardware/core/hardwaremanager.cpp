@@ -398,10 +398,10 @@ FlowConfig HardwareManager::getFlowConfig(const QString key)
     return out;
 }
 
-std::map<QString, QStringList> HardwareManager::validationKeys() const
+std::map<QString, QStringList, std::less<>> HardwareManager::validationKeys() const
 {
     QReadLocker locker(&d_hardwareMapLock);
-    std::map<QString, QStringList> out;
+    std::map<QString, QStringList, std::less<>> out;
     for(auto &[key,obj] : d_hardwareMap)
         out.insert_or_assign(key,obj->validationKeys());
 
@@ -499,7 +499,7 @@ IOBoardConfig HardwareManager::getIOBoardConfig(const QString key)
 
 }
 
-void HardwareManager::storeAllOptHw(Experiment *exp, std::map<QString, bool> hw)
+void HardwareManager::storeAllOptHw(Experiment *exp, std::map<QString, bool, std::less<>> hw)
 {
     // TODO: This nested if/else pattern could be improved - consider refactoring to use
     // a dispatch table or visitor pattern to reduce complexity and improve maintainability
@@ -1375,7 +1375,7 @@ void HardwareManager::updateClockManager()
     pu_clockManager->setClocksFromHardwareManager(clocks);
 }
 
-std::vector<QString> HardwareManager::findHardwareToRemove(const std::map<QString, QString>& targetHardware)
+std::vector<QString> HardwareManager::findHardwareToRemove(const std::map<QString, QString, std::less<>>& targetHardware)
 {
     std::vector<QString> toRemove;
     
@@ -1390,7 +1390,7 @@ std::vector<QString> HardwareManager::findHardwareToRemove(const std::map<QStrin
     return toRemove;
 }
 
-std::vector<std::pair<QString, QString>> HardwareManager::findHardwareToAdd(const std::map<QString, QString>& targetHardware)
+std::vector<std::pair<QString, QString>> HardwareManager::findHardwareToAdd(const std::map<QString, QString, std::less<>>& targetHardware)
 {
     std::vector<std::pair<QString, QString>> toAdd;
     
@@ -1404,7 +1404,7 @@ std::vector<std::pair<QString, QString>> HardwareManager::findHardwareToAdd(cons
     return toAdd;
 }
 
-std::vector<std::pair<QString, QString>> HardwareManager::findHardwareToReplace(const std::map<QString, QString>& targetHardware)
+std::vector<std::pair<QString, QString>> HardwareManager::findHardwareToReplace(const std::map<QString, QString, std::less<>>& targetHardware)
 {
     std::vector<std::pair<QString, QString>> toReplace;
     
@@ -1623,7 +1623,7 @@ bool HardwareManager::allCriticalHardwareConnected() const
     return true;
 }
 
-void HardwareManager::addLibraryDependentHardwareToRecreation(const std::map<QString, QString>& /* targetHardware */,
+void HardwareManager::addLibraryDependentHardwareToRecreation(const std::map<QString, QString, std::less<>>& /* targetHardware */,
                                                             std::vector<QString>& toRemove,
                                                             std::vector<std::pair<QString, QString>>& /* toAdd */,
                                                             std::vector<std::pair<QString, QString>>& toReplace)

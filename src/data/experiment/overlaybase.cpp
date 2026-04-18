@@ -229,7 +229,7 @@ void OverlayBase::save()
 }
 
 
-void OverlayBase::storeMetadata(std::map<QString,QVariant> &m)
+void OverlayBase::storeMetadata(std::map<QString,QVariant,std::less<>> &m)
 {
     using namespace BC::Key::Overlay;
     m.emplace(oLabel,d_label);
@@ -255,7 +255,7 @@ void OverlayBase::storeMetadata(std::map<QString,QVariant> &m)
     
 }
 
-void OverlayBase::retrieveMetadata(const std::map<QString,QVariant> &m)
+void OverlayBase::retrieveMetadata(const std::map<QString,QVariant,std::less<>> &m)
 {
     using namespace BC::Key::Overlay;
     

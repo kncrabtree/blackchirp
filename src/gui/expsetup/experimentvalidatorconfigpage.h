@@ -15,7 +15,7 @@ class ExperimentValidatorConfigPage : public ExperimentConfigPage
 {
     Q_OBJECT
 public:
-    ExperimentValidatorConfigPage(Experiment *exp, const std::map<QString, QStringList> &valKeys, QWidget *parent = nullptr);
+    ExperimentValidatorConfigPage(Experiment *exp, const std::map<QString, QStringList, std::less<>> &valKeys, QWidget *parent = nullptr);
 
 private:
     QTableView *p_validationView;

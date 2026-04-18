@@ -118,7 +118,7 @@ inline constexpr QLatin1StringView trackingDir{"rollingdata"};
  *
  *
  * There is also the function getMultiple() that returns a
- * ``std::map<QString,QVariant>`` containing all keys that match the indicated
+ * ``std::map<QString,QVariant,std::less<>>`` containing all keys that match the indicated
  * values.
  *
  * Array values can be accessed with the getArray() function, which returns a
@@ -716,7 +716,7 @@ protected:
      * \param write If true, write to QSettings immediately
      * \return Return value of set() for each key
      */
-    std::map<QString,bool> setMultiple(const SettingsMap m, bool write = false);
+    std::map<QString,bool,std::less<>> setMultiple(const SettingsMap m, bool write = false);
 
     /*!
      * \brief Sets (or unsets) an array value
@@ -821,7 +821,7 @@ protected:
      * \param write If true, write to persistent storage immediately
      * \return Map indicating success/failure for each key
      */
-    std::map<QString,bool> setGroupValues(QAnyStringView groupKey, const SettingsMap &values, bool write = false);
+    std::map<QString,bool,std::less<>> setGroupValues(QAnyStringView groupKey, const SettingsMap &values, bool write = false);
 
     /*!
      * \brief Clears all data associated with a key and removes it from QSettings

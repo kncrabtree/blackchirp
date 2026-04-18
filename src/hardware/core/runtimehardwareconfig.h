@@ -147,7 +147,7 @@ public:
      * 
      * \return Map of hardware type key to implementation key (enabled hardware only)
      */
-    std::map<QString, QString> getCurrentHardware() const;
+    std::map<QString, QString, std::less<>> getCurrentHardware() const;
     
     /*!
      * \brief Create hardware data container for experiment classes
@@ -178,7 +178,7 @@ public:
      * \param hardwareMap Hardware configuration map ("hwType.label" -> "implementation")
      * \return List of validation error messages (empty list means configuration is valid)
      */
-    static QStringList validateHardwareConfiguration(const std::map<QString, QString>& hardwareMap);
+    static QStringList validateHardwareConfiguration(const std::map<QString, QString, std::less<>>& hardwareMap);
     
     /*!
      * \brief Validate entire hardware configuration
@@ -197,7 +197,7 @@ public:
      * \param hardwareMap Hardware configuration map ("hwType.label" -> "implementation")
      * \return True if configuration is valid (no validation errors)
      */
-    static bool isHardwareConfigurationValid(const std::map<QString, QString>& hardwareMap);
+    static bool isHardwareConfigurationValid(const std::map<QString, QString, std::less<>>& hardwareMap);
     
     /*!
      * \brief Check if entire configuration is valid
@@ -355,7 +355,7 @@ private:
      * \param config Hardware configuration map (hwType.label -> implementation)
      * \return True if configuration was applied successfully
      */
-    bool applyConfiguration(const std::map<QString, QString>& config);
+    bool applyConfiguration(const std::map<QString, QString, std::less<>>& config);
 
     /*!
      * \brief Set threading override for a hardware key

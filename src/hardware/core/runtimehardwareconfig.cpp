@@ -83,11 +83,11 @@ QStringList RuntimeHardwareConfig::getActiveKeys(const QString& hardwareType) co
     return activeKeys;
 }
 
-std::map<QString, QString> RuntimeHardwareConfig::getCurrentHardware() const
+std::map<QString, QString, std::less<>> RuntimeHardwareConfig::getCurrentHardware() const
 {
     QReadLocker locker(&d_configLock);
     
-    std::map<QString, QString> hardware;
+    std::map<QString, QString, std::less<>> hardware;
     
     for (auto it = d_activeHardware.cbegin(); it != d_activeHardware.cend(); ++it) {
         const QString& hwKey = it.key(); // Already in "type.label" format
@@ -139,7 +139,7 @@ BC::Data::HardwareDataContainer RuntimeHardwareConfig::createHardwareDataContain
     return container;
 }
 
-QStringList RuntimeHardwareConfig::validateHardwareConfiguration(const std::map<QString, QString>& hardwareMap)
+QStringList RuntimeHardwareConfig::validateHardwareConfiguration(const std::map<QString, QString, std::less<>>& hardwareMap)
 {
     QStringList errors;
     
@@ -245,7 +245,7 @@ QHash<QString, HardwareValidationResult> RuntimeHardwareConfig::validateConfigur
 }
 
 
-bool RuntimeHardwareConfig::isHardwareConfigurationValid(const std::map<QString, QString>& hardwareMap)
+bool RuntimeHardwareConfig::isHardwareConfigurationValid(const std::map<QString, QString, std::less<>>& hardwareMap)
 {
     QStringList errors = validateHardwareConfiguration(hardwareMap);
     return errors.isEmpty();
@@ -256,7 +256,7 @@ bool RuntimeHardwareConfig::isConfigurationValid() const
     QReadLocker locker(&d_configLock);
     
     // Convert internal hardware configuration to map format
-    std::map<QString, QString> currentConfig;
+    std::map<QString, QString, std::less<>> currentConfig;
     for (auto it = d_activeHardware.cbegin(); it != d_activeHardware.cend(); ++it) {
         const QString& hwKey = it.key();
         const HardwareSelection& selection = it.value();
@@ -619,7 +619,7 @@ void RuntimeHardwareConfig::setThreaded(const QString& hwKey, bool threaded)
         HardwareProfileManager::instance().setThreaded(hardwareType, label, threaded);
 }
 
-bool RuntimeHardwareConfig::applyConfiguration(const std::map<QString, QString>& config)
+bool RuntimeHardwareConfig::applyConfiguration(const std::map<QString, QString, std::less<>>& config)
 {
     QWriteLocker locker(&d_configLock);
 

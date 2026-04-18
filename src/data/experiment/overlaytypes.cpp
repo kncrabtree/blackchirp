@@ -94,7 +94,7 @@ void BCExpOverlay::writeToDest()
     }
 }
 
-void BCExpOverlay::_storeMetadata(std::map<QString, QVariant> &m)
+void BCExpOverlay::_storeMetadata(std::map<QString, QVariant, std::less<>> &m)
 {
     using namespace BC::Key::Overlay;
     m.emplace(ftYMin, d_ft.yMin());
@@ -105,7 +105,7 @@ void BCExpOverlay::_storeMetadata(std::map<QString, QVariant> &m)
     m.emplace(ftShots, static_cast<qulonglong>(d_ft.shots()));
 }
 
-void BCExpOverlay::_retrieveMetadata(const std::map<QString, QVariant> &m)
+void BCExpOverlay::_retrieveMetadata(const std::map<QString, QVariant, std::less<>> &m)
 {
     using namespace BC::Key::Overlay;
 
@@ -602,7 +602,7 @@ void CatalogOverlay::writeToDest()
     }
 }
 
-void CatalogOverlay::_storeMetadata(std::map<QString, QVariant> &m)
+void CatalogOverlay::_storeMetadata(std::map<QString, QVariant, std::less<>> &m)
 {
     using namespace BC::Key::Overlay::Catalog;
     
@@ -628,7 +628,7 @@ void CatalogOverlay::_storeMetadata(std::map<QString, QVariant> &m)
     }
 }
 
-void CatalogOverlay::_retrieveMetadata(const std::map<QString, QVariant> &m)
+void CatalogOverlay::_retrieveMetadata(const std::map<QString, QVariant, std::less<>> &m)
 {
     using namespace BC::Key::Overlay::Catalog;
     
@@ -945,7 +945,7 @@ void GenericXYOverlay::writeToDest()
     }
 }
 
-void GenericXYOverlay::_storeMetadata(std::map<QString, QVariant> &m)
+void GenericXYOverlay::_storeMetadata(std::map<QString, QVariant, std::less<>> &m)
 {
     using namespace BC::Key::Overlay::GenericXY;
     
@@ -966,7 +966,7 @@ void GenericXYOverlay::_storeMetadata(std::map<QString, QVariant> &m)
     m.emplace(BC::Key::Overlay::GenericXY::filterMaxX, d_filterMaxX);
 }
 
-void GenericXYOverlay::_retrieveMetadata(const std::map<QString, QVariant> &m)
+void GenericXYOverlay::_retrieveMetadata(const std::map<QString, QVariant, std::less<>> &m)
 {
     using namespace BC::Key::Overlay::GenericXY;
     

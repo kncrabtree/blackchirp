@@ -276,7 +276,7 @@ FidList FidStorageBase::getCurrentFidList()
 void FidStorageBase::writeProcessingSettings(const FtWorker::FidProcessingSettings &c)
 {
     using namespace BC::Key::FidStorage;
-    std::map<QString,QVariant> m;
+    std::map<QString,QVariant,std::less<>> m;
     m.emplace(fidStart,c.startUs);
     m.emplace(fidEnd,c.endUs);
     m.emplace(fidExp,c.expFilter);
@@ -292,7 +292,7 @@ void FidStorageBase::writeProcessingSettings(const FtWorker::FidProcessingSettin
 bool FidStorageBase::readProcessingSettings(FtWorker::FidProcessingSettings &out)
 {
     using namespace BC::Key::FidStorage;
-    std::map<QString,QVariant> m;
+    std::map<QString,QVariant,std::less<>> m;
     readMetadata(BC::Key::DS::proc,m,BC::CSV::fidDir);
 
     if(m.empty())

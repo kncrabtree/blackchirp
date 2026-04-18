@@ -10,7 +10,7 @@
 
 using namespace BC::Key::WizardVal;
 
-ExperimentValidatorConfigPage::ExperimentValidatorConfigPage(Experiment *exp, const std::map<QString, QStringList> &valKeys, QWidget *parent) :
+ExperimentValidatorConfigPage::ExperimentValidatorConfigPage(Experiment *exp, const std::map<QString, QStringList, std::less<>> &valKeys, QWidget *parent) :
     ExperimentConfigPage(key,title,exp,parent)
 {
     QVBoxLayout *vl = new QVBoxLayout;

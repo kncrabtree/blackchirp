@@ -135,7 +135,7 @@ private:
     std::shared_ptr<OverlayStorage> ps_overlayStorage;
 
     //optional hardware data
-    std::map<QString,std::shared_ptr<HeaderStorage>> d_optHwData;
+    std::map<QString,std::shared_ptr<HeaderStorage>,std::less<>> d_optHwData;
 
 
     QString d_path;

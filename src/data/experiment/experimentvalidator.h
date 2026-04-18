@@ -22,8 +22,8 @@ class ExperimentValidator : public HeaderStorage
 {
 public:
     using ValueRange = std::pair<double,double>;
-    using ObjectMap = std::map<QString,ValueRange>;
-    using ValidationMap = std::map<QString,ObjectMap>;
+    using ObjectMap = std::map<QString,ValueRange,std::less<>>;
+    using ValidationMap = std::map<QString,ObjectMap,std::less<>>;
 
     ExperimentValidator();
 

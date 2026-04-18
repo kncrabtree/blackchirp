@@ -13,7 +13,7 @@ DataStorageBase::~DataStorageBase()
 {
 }
 
-void DataStorageBase::writeMetadata(QString file, const std::map<QString, QVariant> &dat, QString dir)
+void DataStorageBase::writeMetadata(QString file, const std::map<QString, QVariant, std::less<>> &dat, QString dir)
 {
     QDir d(BlackchirpCSV::exptDir(d_number,d_path));
     if(!dir.isEmpty())
@@ -39,7 +39,7 @@ void DataStorageBase::writeMetadata(QString file, const std::map<QString, QVaria
     f.commit();
 }
 
-void DataStorageBase::readMetadata(QString file, std::map<QString, QVariant> &out, QString dir)
+void DataStorageBase::readMetadata(QString file, std::map<QString, QVariant, std::less<>> &out, QString dir)
 {
     QDir d(BlackchirpCSV::exptDir(d_number,d_path));
     if(!dir.isEmpty())

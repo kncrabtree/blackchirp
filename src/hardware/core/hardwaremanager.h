@@ -155,7 +155,7 @@ public slots:
 
     IOBoardConfig getIOBoardConfig(const QString key);
 
-    void storeAllOptHw(Experiment *exp, std::map<QString,bool> hw = {});
+    void storeAllOptHw(Experiment *exp, std::map<QString,bool,std::less<>> hw = {});
 
     void setLifParameters(double delay, double pos);
     bool setPGenLifDelay(double d);
@@ -183,7 +183,7 @@ public slots:
     void reloadPythonScript(const QString &hwKey);
 
 public:
-    std::map<QString,QStringList> validationKeys() const;
+    std::map<QString,QStringList,std::less<>> validationKeys() const;
     
     // Thread-safe GPIB controller resolution with callback
     void resolveGpibController(const QString& controllerKey, std::function<void(GpibController*)> callback) const;
@@ -221,14 +221,14 @@ private:
     void replaceHardwareInternal(const QString& hwKey, const QString& newImplementation);
     
     // Task 3.3.5: Synchronization orchestration
-    std::vector<QString> findHardwareToRemove(const std::map<QString, QString>& targetHardware);
-    std::vector<std::pair<QString, QString>> findHardwareToAdd(const std::map<QString, QString>& targetHardware);
-    std::vector<std::pair<QString, QString>> findHardwareToReplace(const std::map<QString, QString>& targetHardware);
+    std::vector<QString> findHardwareToRemove(const std::map<QString, QString, std::less<>>& targetHardware);
+    std::vector<std::pair<QString, QString>> findHardwareToAdd(const std::map<QString, QString, std::less<>>& targetHardware);
+    std::vector<std::pair<QString, QString>> findHardwareToReplace(const std::map<QString, QString, std::less<>>& targetHardware);
     void resolveGpibControllersForInstruments();
     void updateClockManager();
     
     // Phase 3.5.4: Library dependency tracking
-    void addLibraryDependentHardwareToRecreation(const std::map<QString, QString>& targetHardware,
+    void addLibraryDependentHardwareToRecreation(const std::map<QString, QString, std::less<>>& targetHardware,
                                                 std::vector<QString>& toRemove,
                                                 std::vector<std::pair<QString, QString>>& toAdd,
                                                 std::vector<std::pair<QString, QString>>& toReplace);
@@ -239,10 +239,10 @@ private:
     void setupHardwareSpecificConnectionsWithTracking(HardwareObject* obj);
     void disconnectStoredConnections(const QString& hwKey);
 
-    std::map<QString,HardwareObject*> d_hardwareMap;
+    std::map<QString,HardwareObject*,std::less<>> d_hardwareMap;
     
     // Connection tracking infrastructure for Task 3.3.2
-    std::map<QString, QVector<QMetaObject::Connection>> d_hardwareConnections;
+    std::map<QString, QVector<QMetaObject::Connection>, std::less<>> d_hardwareConnections;
     std::unique_ptr<ClockManager> pu_clockManager;
     
     // Static instance management for const access

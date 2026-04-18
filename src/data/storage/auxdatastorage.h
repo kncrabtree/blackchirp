@@ -19,7 +19,7 @@ inline const QString keyTemplate{"%1.%2"};
 class AuxDataStorage
 {
 public:
-    using AuxDataMap = std::map<QString,QVariant>;
+    using AuxDataMap = std::map<QString,QVariant,std::less<>>;
 
     struct TimePointData {
         QDateTime dateTime;

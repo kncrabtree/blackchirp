@@ -250,7 +250,7 @@ void LifStorage::addTrace(const LifTrace t)
 void LifStorage::writeProcessingSettings(const LifTrace::LifProcSettings &c)
 {
     using namespace BC::Key::LifStorage;
-    std::map<QString,QVariant> m;
+    std::map<QString,QVariant,std::less<>> m;
     m.emplace(lifGateStart,c.lifGateStart);
     m.emplace(lifGateEnd,c.lifGateEnd);
     m.emplace(refGateStart,c.refGateStart);
@@ -266,7 +266,7 @@ void LifStorage::writeProcessingSettings(const LifTrace::LifProcSettings &c)
 bool LifStorage::readProcessingSettings(LifTrace::LifProcSettings &out)
 {
     using namespace BC::Key::LifStorage;
-    std::map<QString,QVariant> m;
+    std::map<QString,QVariant,std::less<>> m;
     readMetadata(BC::Key::DS::proc,m,BC::CSV::lifDir);
 
     if(m.empty())

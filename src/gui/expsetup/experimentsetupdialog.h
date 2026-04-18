@@ -26,7 +26,7 @@ class ExperimentSetupDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit ExperimentSetupDialog(Experiment *exp, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList> &valKeys, QWidget *parent = nullptr);
+    explicit ExperimentSetupDialog(Experiment *exp, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList, std::less<>> &valKeys, QWidget *parent = nullptr);
 
     LifControlWidget *lifControlWidget();
     RfConfigWidget *rfConfigWidget();
@@ -58,7 +58,7 @@ private:
 
     Experiment *p_exp;
 
-    std::map<QString,PageData> d_pages;
+    std::map<QString,PageData,std::less<>> d_pages;
 
     template<typename T> std::tuple<T*,QTreeWidgetItem*> addConfigPage(QString k, QTreeWidgetItem *parentItem, bool en = true)
     {

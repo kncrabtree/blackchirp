@@ -164,7 +164,7 @@ private:
     QVector<std::shared_ptr<OverlayBase>> d_overlaysToCopy;
     QStringList d_plotNames;
     bool d_overlaysEnabled{true};
-    std::map<QString, FtPlot*> d_plotMap;  // Maps plot names to FtPlot instances
+    std::map<QString, FtPlot*, std::less<>> d_plotMap;  // Maps plot names to FtPlot instances
     const int d_liveId = 0, d_mainId = 3, d_plot1Id = 1, d_plot2Id = 2;
     const QString d_shotsString = QString("Shots: %1");
 

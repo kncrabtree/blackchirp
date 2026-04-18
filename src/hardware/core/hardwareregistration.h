@@ -242,7 +242,7 @@ inline QStringList buildInheritanceChain(const QMetaObject* metaObj) {
  * \brief Register one entry in an array setting (call once per entry)
  *
  * Adds a single entry to a previously declared array setting.
- * Each entry is a SettingsStorage::SettingsMap (std::map<QString,QVariant>).
+ * Each entry is a SettingsStorage::SettingsMap (std::map<QString,QVariant,std::less<>>).
  *
  * \param CLASS Hardware class name
  * \param ARRAY_KEY String constant for the array key (must match a prior REGISTER_HARDWARE_ARRAY)

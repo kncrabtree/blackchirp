@@ -37,7 +37,7 @@ public:
 	Qt::ItemFlags flags(const QModelIndex &index) const;
 	
     void addNewItem();
-    std::map<QString,QStringList> d_validationKeys;
+    std::map<QString,QStringList,std::less<>> d_validationKeys;
 	
 private:
     QVector<QVariantList> d_modelData;

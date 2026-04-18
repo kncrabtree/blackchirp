@@ -14,7 +14,7 @@ OverlayStorage::OverlayStorage(int number, QString path) :
         return;
         
     // Look for overlays.csv file, if found, load overlays
-    std::map<QString,QVariant> m;
+    std::map<QString,QVariant,std::less<>> m;
     readMetadata(BC::Key::Overlay::overlayMdFile, m, BC::Key::Overlay::overlayDir);
     
     for(auto it = m.cbegin(); it != m.cend(); ++it)
@@ -53,7 +53,7 @@ bool OverlayStorage::loadOverlay(QString fileBase, OverlayBase::OverlayType t)
     
     // Load overlay settings
     using namespace BC::Key::Overlay;
-    std::map<QString,QVariant> overlaySettings;
+    std::map<QString,QVariant,std::less<>> overlaySettings;
     QString settingsFile = overlaySettingsFile.arg(fileBase);
     readMetadata(settingsFile, overlaySettings, overlayDir);
     
@@ -96,7 +96,7 @@ void OverlayStorage::save()
     }
     
     using namespace BC::Key::Overlay;
-    std::map<QString,QVariant> m;
+    std::map<QString,QVariant,std::less<>> m;
     
     // Add version information
     addVersionMetadata(m);
@@ -111,7 +111,7 @@ void OverlayStorage::save()
         m.emplace(label, static_cast<int>(overlay->type()));
         
         // Save overlay-specific settings (metadata only)
-        std::map<QString,QVariant> overlaySettings;
+        std::map<QString,QVariant,std::less<>> overlaySettings;
         overlay->storeMetadata(overlaySettings);
         addVersionMetadata(overlaySettings);
         QString settingsFile = overlaySettingsFile.arg(label);
@@ -169,7 +169,7 @@ QString OverlayStorage::sanitizeLabel(const QString& label) const
     return sanitized;
 }
 
-void OverlayStorage::addVersionMetadata(std::map<QString, QVariant>& metadata) const
+void OverlayStorage::addVersionMetadata(std::map<QString, QVariant, std::less<>>& metadata) const
 {
     using namespace BC::Key::Overlay;
     metadata.emplace(bcMajorVersion, STRINGIFY(BC_MAJOR_VERSION));
@@ -442,7 +442,7 @@ void OverlayStorage::saveOverlayMetadata(std::shared_ptr<OverlayBase> overlay)
     
     // Save overlay-specific settings (metadata only)
     using namespace BC::Key::Overlay;
-    std::map<QString,QVariant> overlaySettings;
+    std::map<QString,QVariant,std::less<>> overlaySettings;
     overlay->storeMetadata(overlaySettings);
     addVersionMetadata(overlaySettings);
     QString settingsFile = overlaySettingsFile.arg(sanitizedLabel);
