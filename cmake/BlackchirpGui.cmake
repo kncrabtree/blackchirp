@@ -110,6 +110,7 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/hwsettingswidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificspinbox.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificinputwidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/util/numericformat.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/temperaturecontrolwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/temperaturestatusbox.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/toolbarwidgetaction.cpp
@@ -223,6 +224,7 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/hwsettingswidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificspinbox.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificinputwidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/util/numericformat.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/temperaturecontrolwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/temperaturestatusbox.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/toolbarwidgetaction.h

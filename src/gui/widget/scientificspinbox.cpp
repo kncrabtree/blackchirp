@@ -20,7 +20,8 @@
 #include <algorithm>
 #include <limits>
 
-#include "../style/themecolors.h"
+#include <gui/style/themecolors.h>
+#include <gui/util/numericformat.h>
 
 using namespace Qt::Literals::StringLiterals;
 
@@ -550,31 +551,14 @@ void ScientificSpinBox::updateEditText()
 
 QString ScientificSpinBox::formatForDisplay(double value) const
 {
-    if (qFuzzyIsNull(value))
-        return u"0"_s + d_suffix;
-
-    const double absValue = std::abs(value);
-    const bool showFixed = (d_displayMode == DisplayMode::Fixed) ||
-                           (d_displayMode == DisplayMode::Auto && absValue >= 1e-6 && absValue < 1e6);
-
-    QString result;
-    if (d_displayPrecision >= 0) {
-        if (showFixed)
-            result = QString::number(value, 'f', d_displayPrecision);
-        else
-            result = applySuperscript(QString::number(value, 'e', d_displayPrecision));
-    } else {
-        char buf[64];
-        if (showFixed) {
-            auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), value, std::chars_format::fixed);
-            result = QString::fromLatin1(buf, static_cast<int>(ptr - buf));
-        } else {
-            auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), value, std::chars_format::scientific);
-            result = applySuperscript(QString::fromLatin1(buf, static_cast<int>(ptr - buf)));
-        }
+    using BC::Gui::NumericDisplayMode;
+    NumericDisplayMode mode;
+    switch (d_displayMode) {
+    case DisplayMode::Fixed:      mode = NumericDisplayMode::Fixed;      break;
+    case DisplayMode::Scientific: mode = NumericDisplayMode::Scientific;  break;
+    default:                      mode = NumericDisplayMode::Auto;        break;
     }
-
-    return result + d_suffix;
+    return BC::Gui::formatNumberForDisplay(value, d_displayPrecision, mode) + d_suffix;
 }
 
 QString ScientificSpinBox::formatForEdit(double value) const
@@ -636,33 +620,7 @@ double ScientificSpinBox::calculateStepSize() const
 
 QString ScientificSpinBox::applySuperscript(const QString &text) const
 {
-    QString result = text;
-
-    QRegularExpression ePattern("[eE]([+-]?\\d+)");
-    QRegularExpressionMatch match = ePattern.match(result);
-
-    if (match.hasMatch()) {
-        QString exponent = match.captured(1);
-
-        if (exponent.startsWith('+'))
-            exponent = exponent.mid(1);
-
-        // Strip leading zeros, keeping at least one digit
-        const bool negative = exponent.startsWith('-');
-        if (negative)
-            exponent = exponent.mid(1);
-        while (exponent.length() > 1 && exponent.startsWith('0'))
-            exponent = exponent.mid(1);
-        if (negative)
-            exponent = '-' + exponent;
-
-        if (exponent.startsWith('-'))
-            result.replace(match.captured(0), QString(" × 10^(%1)").arg(exponent));
-        else
-            result.replace(match.captured(0), QString(" × 10^%1").arg(exponent));
-    }
-
-    return result;
+    return BC::Gui::formatScientificSuperscript(text);
 }
 
 QString ScientificSpinBox::removeSuperscript(const QString &text) const

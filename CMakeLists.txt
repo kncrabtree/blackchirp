@@ -492,6 +492,7 @@ if(BC_BUILD_TESTS)
     add_executable(tst_scientificspinboxtest
         tests/tst_scientificspinboxtest.cpp
         src/gui/widget/scientificspinbox.cpp
+        src/gui/util/numericformat.cpp
         src/gui/style/themecolors.cpp
     )
     target_include_directories(tst_scientificspinboxtest PRIVATE

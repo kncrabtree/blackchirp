@@ -62,6 +62,7 @@ set(BLACKCHIRP_VIEWER_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/peakfindwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificspinbox.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificinputwidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/util/numericformat.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/toolbarwidgetaction.cpp
     
     # Styling and theming
@@ -125,6 +126,7 @@ set(BLACKCHIRP_VIEWER_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/peakfindwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificspinbox.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificinputwidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/util/numericformat.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/toolbarwidgetaction.h
     
     # Styling and theming
