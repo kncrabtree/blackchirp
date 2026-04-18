@@ -23,9 +23,9 @@ protected:
 
 	// CommunicationProtocol interface
 public:
-    bool writeCmd(QString cmd) override;
-    bool writeBinary(QByteArray dat) override;
-    QByteArray queryCmd(QString cmd, bool suppressError=false) override;
+    bool writeCmd(const QString &cmd) override;
+    bool writeBinary(const QByteArray &dat) override;
+    QByteArray queryCmd(const QString &cmd, bool suppressError=false) override;
 
 public slots:
     void initialize() override;

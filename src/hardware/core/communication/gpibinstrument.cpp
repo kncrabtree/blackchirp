@@ -64,7 +64,7 @@ int GpibInstrument::address() const
 
 
 
-bool GpibInstrument::writeCmd(QString cmd)
+bool GpibInstrument::writeCmd(const QString &cmd)
 {
     if (!p_controller) {
         return false;
@@ -72,7 +72,7 @@ bool GpibInstrument::writeCmd(QString cmd)
     return p_controller->writeCmd(d_address,cmd);
 }
 
-bool GpibInstrument::writeBinary(QByteArray dat)
+bool GpibInstrument::writeBinary(const QByteArray &dat)
 {
     if (!p_controller) {
         return false;
@@ -80,7 +80,7 @@ bool GpibInstrument::writeBinary(QByteArray dat)
     return p_controller->writeBinary(d_address,dat);
 }
 
-QByteArray GpibInstrument::queryCmd(QString cmd, bool suppressError)
+QByteArray GpibInstrument::queryCmd(const QString &cmd, bool suppressError)
 {
     if (!p_controller) {
         return QByteArray();

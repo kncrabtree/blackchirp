@@ -698,22 +698,26 @@ makes the rest of the plan coherent.
    the `HardwareManager::logMessage` → `LogHandler` connection in
    `MainWindow`.
 
-9. **Fix remaining by-value `QString` parameters.**
-   `CommunicationProtocol::writeCmd` and `queryCmd` are the primary
-   remaining targets (`SettingsStorage` and `HeaderStorage` are
-   handled in step 2). `const QString &` is the conservative fix;
-   `QAnyStringView` is the aggressive one. Match the choice to what
-   the callee actually does with the parameter. Virtual cascades
-   (see [Virtual Cascade Hotspots](#virtual-cascade-hotspots)) must
-   be updated in a single commit per base class.
+9. ✅ **Fix remaining by-value `QString` parameters.**
+   `CommunicationProtocol::writeCmd`, `queryCmd`, and `writeBinary`
+   changed to `const QString &` / `const QByteArray &` throughout
+   both virtual cascades (`TcpInstrument`, `GpibInstrument`) and the
+   `GpibController` family (`GpibController`, `VirtualGpibController`).
+   `const QString &` was chosen over `QAnyStringView` because the
+   implementations call `.toLatin1()` on the parameter, requiring a
+   `QString`. `GpibController::queryCmd` previously mutated `cmd` with
+   `.append(queryTerminator())`; changed to `cmd + queryTerminator()`
+   to allow the const-reference signature.
 
 10. **Retrofit `std::less<>` on remaining `std::map<QString, T>`**
     sites not already updated in step 2. The `SettingsStorage` and
     `HeaderStorage` maps are handled there. A codebase-wide sweep of
     remaining sites is optional but cheap.
 
-11. **Long-tail signature migration to `QAnyStringView`.** Only as
-    specific APIs are touched for other reasons. Not a sweep.
+11. **Long-tail signature migration to `QAnyStringView`.** Prioritize
+    functions with many callers or in base classes, don't worry about
+    fixing every use case, but at least change QString arguments to
+    const QString& as they are found.
 
 12. **Final review.** Read through the log output of a typical
     startup + experiment cycle to verify the user sees a clean,

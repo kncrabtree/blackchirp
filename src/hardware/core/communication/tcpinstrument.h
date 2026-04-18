@@ -14,9 +14,9 @@ public:
     explicit TcpInstrument(QString key, QObject *parent = nullptr);
     ~TcpInstrument();
 
-    bool writeCmd(QString cmd) override;
-    bool writeBinary(QByteArray dat) override;
-    QByteArray queryCmd(QString cmd, bool suppressError = false) override;
+    bool writeCmd(const QString &cmd) override;
+    bool writeBinary(const QByteArray &dat) override;
+    QByteArray queryCmd(const QString &cmd, bool suppressError = false) override;
 
 public slots:
     virtual void initialize() override;

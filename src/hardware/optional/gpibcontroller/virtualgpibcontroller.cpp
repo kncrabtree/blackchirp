@@ -30,7 +30,7 @@ QString VirtualGpibController::getThreadInfo() const
     return threadName;
 }
 
-bool VirtualGpibController::writeCmd(int address, QString cmd)
+bool VirtualGpibController::writeCmd(int address, const QString &cmd)
 {
     QMutexLocker locker(&d_commMutex);
     
@@ -44,7 +44,7 @@ bool VirtualGpibController::writeCmd(int address, QString cmd)
     return true;
 }
 
-bool VirtualGpibController::writeBinary(int address, QByteArray dat)
+bool VirtualGpibController::writeBinary(int address, const QByteArray &dat)
 {
     QMutexLocker locker(&d_commMutex);
     
@@ -58,7 +58,7 @@ bool VirtualGpibController::writeBinary(int address, QByteArray dat)
     return true;
 }
 
-QByteArray VirtualGpibController::queryCmd(int address, QString cmd, bool suppressError)
+QByteArray VirtualGpibController::queryCmd(int address, const QString &cmd, bool suppressError)
 {
     QMutexLocker locker(&d_commMutex);
     

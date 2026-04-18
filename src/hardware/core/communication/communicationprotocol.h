@@ -90,7 +90,7 @@ public:
      * \param cmd Data to write
      * \return Whether data was written successfully
      */
-    virtual bool writeCmd(QString cmd);
+    virtual bool writeCmd(const QString &cmd);
     
     /*!
      * \brief Writes `dat` to the device as binary data
@@ -100,7 +100,7 @@ public:
      * \param dat Data to write
      * \return Whether data was written successfully
      */
-    virtual bool writeBinary(QByteArray dat);
+    virtual bool writeBinary(const QByteArray &dat);
     
     /*!
      * \brief Writes `cmd` to the device and attempts to read a response
@@ -116,7 +116,7 @@ public:
      * \param suppressError
      * \return Repsonse from device
      */
-    virtual QByteArray queryCmd(QString cmd, bool suppressError = false);
+    virtual QByteArray queryCmd(const QString &cmd, bool suppressError = false);
 
     /*!
      * \brief Reads n bytes from device, respecting timeout

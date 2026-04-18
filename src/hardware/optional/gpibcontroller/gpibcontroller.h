@@ -12,9 +12,9 @@ public:
     GpibController(const QString& impl, const QString& label, QObject *parent = nullptr);
     virtual ~GpibController();
 
-	bool writeCmd(int address, QString cmd);
-    bool writeBinary(int address, QByteArray dat);
-    QByteArray queryCmd(int address, QString cmd, bool suppressError=false);
+	bool writeCmd(int address, const QString &cmd);
+    bool writeBinary(int address, const QByteArray &dat);
+    QByteArray queryCmd(int address, const QString &cmd, bool suppressError=false);
     virtual QString queryTerminator() const { return QString(); }
     
     // GPIB Address Management

@@ -14,7 +14,7 @@ CommunicationProtocol::~CommunicationProtocol()
 
 }
 
-bool CommunicationProtocol::writeCmd(QString cmd)
+bool CommunicationProtocol::writeCmd(const QString &cmd)
 {
     if(_device() == nullptr)
         return true;
@@ -39,7 +39,7 @@ bool CommunicationProtocol::writeCmd(QString cmd)
     return true;
 }
 
-bool CommunicationProtocol::writeBinary(QByteArray dat)
+bool CommunicationProtocol::writeBinary(const QByteArray &dat)
 {
     if(_device() == nullptr)
         return true;
@@ -64,7 +64,7 @@ bool CommunicationProtocol::writeBinary(QByteArray dat)
     return true;
 }
 
-QByteArray CommunicationProtocol::queryCmd(QString cmd, bool suppressError)
+QByteArray CommunicationProtocol::queryCmd(const QString &cmd, bool suppressError)
 {
     if(_device() == nullptr)
         return QByteArray();

@@ -13,9 +13,9 @@ public:
 	~VirtualGpibController();
 
     // Override communication methods for debug output and multi-threading testing
-    bool writeCmd(int address, QString cmd);
-    bool writeBinary(int address, QByteArray dat);
-    QByteArray queryCmd(int address, QString cmd, bool suppressError=false);
+    bool writeCmd(int address, const QString &cmd);
+    bool writeBinary(int address, const QByteArray &dat);
+    QByteArray queryCmd(int address, const QString &cmd, bool suppressError=false);
 
 protected:
     bool testConnection() override;

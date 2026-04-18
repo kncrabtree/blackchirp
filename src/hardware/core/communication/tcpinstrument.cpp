@@ -32,7 +32,7 @@ bool TcpInstrument::testConnection()
 
 }
 
-bool TcpInstrument::writeCmd(QString cmd)
+bool TcpInstrument::writeCmd(const QString &cmd)
 {
 
     if(p_device->state() != QTcpSocket::ConnectedState)
@@ -49,7 +49,7 @@ bool TcpInstrument::writeCmd(QString cmd)
     return CommunicationProtocol::writeCmd(cmd);
 }
 
-bool TcpInstrument::writeBinary(QByteArray dat)
+bool TcpInstrument::writeBinary(const QByteArray &dat)
 {
     if(p_device->state() != QTcpSocket::ConnectedState)
     {
@@ -66,7 +66,7 @@ bool TcpInstrument::writeBinary(QByteArray dat)
 
 }
 
-QByteArray TcpInstrument::queryCmd(QString cmd, bool suppressError)
+QByteArray TcpInstrument::queryCmd(const QString &cmd, bool suppressError)
 {
 
     if(p_device->state() != QTcpSocket::ConnectedState)

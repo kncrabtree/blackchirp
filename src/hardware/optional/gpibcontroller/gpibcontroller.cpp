@@ -13,7 +13,7 @@ GpibController::~GpibController()
     d_addressOwners.clear();
 }
 
-bool GpibController::writeCmd(int address, QString cmd)
+bool GpibController::writeCmd(int address, const QString &cmd)
 {
     QMutexLocker locker(&d_commMutex);
     
@@ -26,7 +26,7 @@ bool GpibController::writeCmd(int address, QString cmd)
     return p_comm->writeCmd(cmd);
 }
 
-bool GpibController::writeBinary(int address, QByteArray dat)
+bool GpibController::writeBinary(int address, const QByteArray &dat)
 {
     QMutexLocker locker(&d_commMutex);
     
@@ -39,17 +39,17 @@ bool GpibController::writeBinary(int address, QByteArray dat)
     return p_comm->writeBinary(dat);
 }
 
-QByteArray GpibController::queryCmd(int address, QString cmd, bool suppressError)
+QByteArray GpibController::queryCmd(int address, const QString &cmd, bool suppressError)
 {
     QMutexLocker locker(&d_commMutex);
-    
+
 	if(address != d_currentAddress)
     {
         if(!setAddress(address))
             return QByteArray();
     }
 
-    return p_comm->queryCmd(cmd.append(queryTerminator()), suppressError);
+    return p_comm->queryCmd(cmd + queryTerminator(), suppressError);
 }
 
 bool GpibController::reserveAddress(int address, const QString& ownerKey, const QString& ownerName)
