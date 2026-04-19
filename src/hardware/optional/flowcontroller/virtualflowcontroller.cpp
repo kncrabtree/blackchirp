@@ -5,35 +5,20 @@ using namespace BC::Key;
 
 // Register hardware implementation using new metaobject system
 REGISTER_HARDWARE_META(VirtualFlowController, "Virtual flow controller for testing and development")
-REGISTER_HARDWARE_SETTINGS(VirtualFlowController,
-    {BC::Key::Flow::flowChannels, "Flow Channels",
-     "Number of mass flow controller channels connected.",
-     4, 1, QVariant{}, HwSettingPriority::Important},
-    {BC::Key::Flow::pUnits, "Pressure Units",
-     "Units for pressure reading display.",
-     QString("kTorr"), QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Flow::pMax, "Max Pressure",
-     "Full-scale pressure for display scaling.",
-     10.0, 0.0, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Flow::pDec, "Pressure Decimals",
-     "Number of decimal places in pressure display.",
-     3, 0, 10, HwSettingPriority::Optional}
-)
+REGISTER_HARDWARE_ARRAY(VirtualFlowController, BC::Key::Flow::channels,
+    "Flow Channels", "Per-channel mass flow controller configuration.", HwSettingPriority::Important)
+REGISTER_HARDWARE_ARRAY_ENTRY(VirtualFlowController, BC::Key::Flow::channels,
+    {{BC::Key::Flow::chUnits, QString("sccm")}, {BC::Key::Flow::chMax, 10000.0}, {BC::Key::Flow::chDecimals, 3}})
+REGISTER_HARDWARE_ARRAY_ENTRY(VirtualFlowController, BC::Key::Flow::channels,
+    {{BC::Key::Flow::chUnits, QString("sccm")}, {BC::Key::Flow::chMax, 10000.0}, {BC::Key::Flow::chDecimals, 3}})
+REGISTER_HARDWARE_ARRAY_ENTRY(VirtualFlowController, BC::Key::Flow::channels,
+    {{BC::Key::Flow::chUnits, QString("sccm")}, {BC::Key::Flow::chMax, 10000.0}, {BC::Key::Flow::chDecimals, 3}})
+REGISTER_HARDWARE_ARRAY_ENTRY(VirtualFlowController, BC::Key::Flow::channels,
+    {{BC::Key::Flow::chUnits, QString("sccm")}, {BC::Key::Flow::chMax, 10000.0}, {BC::Key::Flow::chDecimals, 3}})
 
 VirtualFlowController::VirtualFlowController(const QString& label, QObject *parent) :
     FlowController(QString(VirtualFlowController::staticMetaObject.className()), label, parent)
 {
-
-    if(!containsArray(Flow::channels))
-    {
-        std::vector<SettingsMap> l;
-        int ch = get(Flow::flowChannels,4);
-        l.reserve(ch);
-        for(int i=0; i<ch; ++i)
-            l.push_back({{Flow::chUnits,QString("sccm")},{Flow::chMax,10000.0},{Flow::chDecimals,3}});
-
-        setArray(Flow::channels,l,true);
-    }
 
     save();
 }
@@ -85,16 +70,26 @@ double VirtualFlowController::hwReadFlow(const int ch)
         return -1.0;
 
     double sp = d_config.setting(ch,FlowConfig::Setpoint).toDouble();
-//    double noise = sp*((double)(qrand()%100)-50.0)/1000.0;
-//    double flow = sp + noise;
-    d_config.setCh(ch,FlowConfig::Flow,sp);
-
-    return d_config.setting(ch,FlowConfig::Flow).toDouble();
+    double flow;
+    if(sp > 0.0)
+    {
+        std::normal_distribution<double> dist(sp, sp * 0.01);
+        flow = dist(d_rng);
+    }
+    else
+    {
+        std::normal_distribution<double> dist(0.0, 0.1);
+        flow = std::abs(dist(d_rng));
+    }
+    d_config.setCh(ch,FlowConfig::Flow,flow);
+    return flow;
 }
 
 double VirtualFlowController::hwReadPressure()
 {
-    return d_config.d_pressureSetpoint;
+    double sp = d_config.d_pressureSetpoint;
+    std::normal_distribution<double> dist(sp, 0.1);
+    return qMax(0.0, dist(d_rng));
 }
 
 void VirtualFlowController::hwSetPressureControlMode(bool enabled)

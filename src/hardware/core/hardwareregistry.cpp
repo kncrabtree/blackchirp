@@ -3,6 +3,7 @@
 #include <hardware/library/vendorlibrary.h>
 
 #include <QMutexLocker>
+#include <QSet>
 #include <QDebug>
 #include <data/loghandler.h>
 
@@ -271,11 +272,21 @@ QVector<HwSettingDef> HardwareRegistry::getSettingDefs(const QString& key, const
 
     QVector<HwSettingDef> result = it.value().settingDefs;
 
-    // Append settings from each base class in order (nearest base first)
+    QSet<QString> presentKeys;
+    for (const auto& def : result)
+        presentKeys.insert(def.key);
+
+    // Append base class settings, skipping any key already defined by the implementation
     for (const QString& baseClass : it.value().inheritanceChain) {
         auto baseIt = d_baseSettingDefs.find(baseClass);
-        if (baseIt != d_baseSettingDefs.end())
-            result.append(baseIt.value());
+        if (baseIt != d_baseSettingDefs.end()) {
+            for (const auto& def : *baseIt) {
+                if (!presentKeys.contains(def.key)) {
+                    result.append(def);
+                    presentKeys.insert(def.key);
+                }
+            }
+        }
     }
 
     return result;

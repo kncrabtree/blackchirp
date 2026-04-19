@@ -62,6 +62,31 @@ called from the base constructor. If a value already exists in `QSettings`
 precedence. Subclass constructors no longer need `setDefault` calls for
 registered settings.
 
+### Base-Class Override Pattern
+
+A setting declared with `REGISTER_HARDWARE_BASE` is shared by all
+implementations. If an implementation needs a **different default** for the
+same key, it can re-register that key with `REGISTER_HARDWARE_SETTINGS` —
+`getSettingDefs` returns the implementation's entry first and skips the
+base-class entry for that key, so no duplication occurs in the UI or in
+`applyRegisteredSettings`.
+
+```cpp
+// Base class: sensible default for all implementations
+REGISTER_HARDWARE_BASE(FlowController,
+    {BC::Key::Flow::pUnits, "Pressure Units", "...", QString("kTorr"), ...},
+)
+
+// Derived class: override only pUnits; all other base-class settings inherited
+REGISTER_HARDWARE_SETTINGS(PythonFlowController,
+    {BC::Key::Flow::pUnits, "Pressure Units", "...", QString("Torr"), ...},
+)
+```
+
+The same pattern applies to array settings: an implementation that registers
+its own `REGISTER_HARDWARE_ARRAY` for a key defined by `REGISTER_HARDWARE_BASE_ARRAY`
+will have its entries used in place of the base-class entries.
+
 ### UI Integration
 
 **Profile creation (`AddProfileDialog`):** When the user selects a hardware

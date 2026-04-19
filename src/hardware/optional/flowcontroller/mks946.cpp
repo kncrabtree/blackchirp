@@ -6,19 +6,17 @@ using namespace BC::Key::Flow;
 // Register hardware implementation using new metaobject system
 REGISTER_HARDWARE_META(Mks946, "MKS 946 vacuum transducer controller")
 REGISTER_HARDWARE_PROTOCOLS(Mks946, CommunicationProtocol::Rs232)
+REGISTER_HARDWARE_ARRAY(Mks946, BC::Key::Flow::channels,
+    "Flow Channels", "Per-channel mass flow controller configuration.", HwSettingPriority::Important)
+REGISTER_HARDWARE_ARRAY_ENTRY(Mks946, BC::Key::Flow::channels,
+    {{BC::Key::Flow::chUnits, QString("sccm")}, {BC::Key::Flow::chMax, 10000.0}, {BC::Key::Flow::chDecimals, 1}})
+REGISTER_HARDWARE_ARRAY_ENTRY(Mks946, BC::Key::Flow::channels,
+    {{BC::Key::Flow::chUnits, QString("sccm")}, {BC::Key::Flow::chMax, 10000.0}, {BC::Key::Flow::chDecimals, 1}})
+REGISTER_HARDWARE_ARRAY_ENTRY(Mks946, BC::Key::Flow::channels,
+    {{BC::Key::Flow::chUnits, QString("sccm")}, {BC::Key::Flow::chMax, 10000.0}, {BC::Key::Flow::chDecimals, 1}})
+REGISTER_HARDWARE_ARRAY_ENTRY(Mks946, BC::Key::Flow::channels,
+    {{BC::Key::Flow::chUnits, QString("sccm")}, {BC::Key::Flow::chMax, 10000.0}, {BC::Key::Flow::chDecimals, 1}})
 REGISTER_HARDWARE_SETTINGS(Mks946,
-    {BC::Key::Flow::flowChannels, "Flow Channels",
-     "Number of mass flow controller channels connected.",
-     4, 1, QVariant{}, HwSettingPriority::Important},
-    {BC::Key::Flow::pUnits, "Pressure Units",
-     "Units for pressure reading display.",
-     QString("kTorr"), QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Flow::pMax, "Max Pressure",
-     "Full-scale pressure for display scaling.",
-     10.0, 0.0, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Flow::pDec, "Pressure Decimals",
-     "Number of decimal places in pressure display.",
-     3, 0, 10, HwSettingPriority::Optional},
     {BC::Key::Flow::address, "Device Address",
      "RS-232 device address (default 253 = broadcast).",
      253, 0, QVariant{}, HwSettingPriority::Optional},
@@ -33,17 +31,6 @@ REGISTER_HARDWARE_SETTINGS(Mks946,
 Mks946::Mks946(const QString& label, QObject *parent) :
     FlowController(QString(Mks946::staticMetaObject.className()), label, parent)
 {
-    if(!containsArray(channels))
-    {
-        std::vector<SettingsMap> l;
-        int ch = get(flowChannels,4);
-        l.reserve(ch);
-        for(int i=0; i<ch; ++i)
-            l.push_back({{chUnits,QString("sccm")},{chMax,10000.0},{chDecimals,1}});
-
-        setArray(channels,l,true);
-    }
-
     // Communication defaults
     setDefault(BC::Key::Comm::timeout, 100);
     setDefault(BC::Key::Comm::termChar, QString(";FF"));

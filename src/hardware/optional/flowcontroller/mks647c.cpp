@@ -8,20 +8,6 @@ using namespace BC::Key::Flow;
 // Register hardware implementation using new metaobject system
 REGISTER_HARDWARE_META(Mks647c, "MKS 647C mass flow controller")
 REGISTER_HARDWARE_PROTOCOLS(Mks647c, CommunicationProtocol::Rs232)
-REGISTER_HARDWARE_SETTINGS(Mks647c,
-    {BC::Key::Flow::flowChannels, "Flow Channels",
-     "Number of mass flow controller channels connected.",
-     4, 1, QVariant{}, HwSettingPriority::Important},
-    {BC::Key::Flow::pUnits, "Pressure Units",
-     "Units for pressure reading display.",
-     QString("kTorr"), QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Flow::pMax, "Max Pressure",
-     "Full-scale pressure for display scaling.",
-     10.0, 0.0, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Flow::pDec, "Pressure Decimals",
-     "Number of decimal places in pressure display.",
-     3, 0, 10, HwSettingPriority::Optional}
-)
 
 Mks647c::Mks647c(const QString& label, QObject *parent) :
     FlowController(QString(Mks647c::staticMetaObject.className()), label, parent),
@@ -51,17 +37,6 @@ Mks647c::Mks647c(const QString& label, QObject *parent) :
     {
         d_rangeIndexList.append(4);
         d_gcfList.append(0.0);
-    }
-
-    if(!containsArray(channels))
-    {
-        std::vector<SettingsMap> l;
-        int ch = get(flowChannels,4);
-        l.reserve(ch);
-        for(int i=0; i<ch; ++i)
-            l.push_back({{chUnits,QString("sccm")},{chMax,500.0},{chDecimals,2}});
-
-        setArray(channels,l,true);
     }
 
     // Communication defaults

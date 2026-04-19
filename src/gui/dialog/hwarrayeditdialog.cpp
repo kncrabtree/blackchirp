@@ -14,7 +14,6 @@ HwArrayEditDialog::HwArrayEditDialog(const QString &label,
                                      QWidget *parent)
     : QDialog(parent), d_subKeys(subKeys), d_result(entries)
 {
-    setAttribute(Qt::WA_DeleteOnClose);
     setWindowTitle(QString("Edit: %1").arg(label));
     setModal(true);
 

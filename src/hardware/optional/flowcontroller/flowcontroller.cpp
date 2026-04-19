@@ -4,10 +4,32 @@
 using namespace BC::Key;
 
 REGISTER_HARDWARE_BASE(FlowController,
+    {BC::Key::Flow::flowChannels, "Flow Channels",
+     "Number of mass flow controller channels connected.",
+     4, 1, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::Flow::pUnits, "Pressure Units",
+     "Units for pressure reading display.",
+     QString("kTorr"), QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Flow::pMax, "Max Pressure",
+     "Full-scale pressure for display scaling.",
+     10.0, 0.0, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Flow::pDec, "Pressure Decimals",
+     "Number of decimal places in pressure display.",
+     3, 0, 10, HwSettingPriority::Optional},
     {BC::Key::Flow::interval, "Poll Interval (ms)",
      "Interval between flow controller readback queries in milliseconds.",
      333, 1, QVariant{}, HwSettingPriority::Optional}
 )
+REGISTER_HARDWARE_BASE_ARRAY(FlowController, BC::Key::Flow::channels,
+    "Flow Channels", "Per-channel mass flow controller configuration.", HwSettingPriority::Important)
+REGISTER_HARDWARE_BASE_ARRAY_ENTRY(FlowController, BC::Key::Flow::channels,
+    {{Flow::chUnits, QString("sccm")}, {Flow::chMax, 500.0}, {Flow::chDecimals, 2}})
+REGISTER_HARDWARE_BASE_ARRAY_ENTRY(FlowController, BC::Key::Flow::channels,
+    {{Flow::chUnits, QString("sccm")}, {Flow::chMax, 500.0}, {Flow::chDecimals, 2}})
+REGISTER_HARDWARE_BASE_ARRAY_ENTRY(FlowController, BC::Key::Flow::channels,
+    {{Flow::chUnits, QString("sccm")}, {Flow::chMax, 500.0}, {Flow::chDecimals, 2}})
+REGISTER_HARDWARE_BASE_ARRAY_ENTRY(FlowController, BC::Key::Flow::channels,
+    {{Flow::chUnits, QString("sccm")}, {Flow::chMax, 500.0}, {Flow::chDecimals, 2}})
 
 FlowController::FlowController(const QString& impl, const QString& label, QObject *parent) :
     HardwareObject(QString(FlowController::staticMetaObject.className()), impl, label, parent),
@@ -20,24 +42,23 @@ FlowController::FlowController(const QString& impl, const QString& label, QObjec
     if(containsArray(Flow::channels))
     {
         for(int i=0; i<d_numChannels; i++)
-            d_config.setCh(i,FlowConfig::Name,getArrayValue(Flow::channels,i,Flow::chName,QString("Ch%1").arg(i+1)));
+            d_config.setCh(i,FlowConfig::Name,getArrayValue(Flow::channels,i,Flow::chName,QString()));
     }
 }
 
 FlowController::~FlowController()
 {
-    setArray(Flow::channels, {});
-
+    std::vector<SettingsMap> maps;
+    maps.reserve(d_numChannels);
     for(int i=0; i<d_numChannels; i++)
     {
-        auto n = d_config.setting(i,FlowConfig::Name).toString();
-        if(n.isEmpty())
-            n = QString("Ch%1").arg(i+1);
-        SettingsMap m {
-            {Flow::chName,n},
-        };
-        appendArrayMap(Flow::channels,m);
+        SettingsMap m;
+        m[Flow::chName]     = d_config.setting(i,FlowConfig::Name);
+        m[Flow::chUnits]    = getArrayValue(Flow::channels,i,Flow::chUnits,QString("sccm"_L1));
+        m[Flow::chDecimals] = getArrayValue(Flow::channels,i,Flow::chDecimals,2);
+        maps.push_back(m);
     }
+    setArray(Flow::channels,maps);
     save();
 }
 

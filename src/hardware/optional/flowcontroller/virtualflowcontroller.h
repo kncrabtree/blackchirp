@@ -2,6 +2,7 @@
 #define VIRTUALFLOWCONTROLLER_H
 
 #include <hardware/optional/flowcontroller/flowcontroller.h>
+#include <random>
 
 class VirtualFlowController : public FlowController
 {
@@ -24,6 +25,9 @@ public slots:
 protected:
     bool fcTestConnection() override;
     void fcInitialize() override;
+
+private:
+    std::mt19937 d_rng{std::random_device{}()};
 };
 
 #endif // VIRTUALFLOWCONTROLLER_H
