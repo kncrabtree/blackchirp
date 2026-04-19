@@ -351,45 +351,54 @@ items marked **‖** can be dispatched in parallel.
 
 ### Phase A — Data Model & Persistence (no UI)
 
-#### A1. Define `RfConfigSnapshot`
+#### A1. Define `RfConfigSnapshot` — **DONE**
 
-- **New files:** `src/data/loadout/rfconfigsnapshot.h`, `.cpp`.
-- **Contract:**
-  - Plain struct; no QObject, no SettingsStorage.
-  - Fields per spec above.
-  - Free functions: `void writeRfConfigSnapshot(SettingsStorage &s, const QString &groupKey, const RfConfigSnapshot &snap);`
-    and `RfConfigSnapshot readRfConfigSnapshot(const SettingsStorage &s, const QString &groupKey);`.
-  - Inside the group, scalars are written via `setGroupValue`, clocks as a
-    SettingsStorage array (`setArray`) with map fields `{type, hwKey, output, op, factor, freqMHz}`.
-  - Conversion helpers: `RfConfigSnapshot fromRfConfig(const RfConfig &);` and
-    `void applyTo(RfConfig &) const;`.
-- **Add to build:** include in the appropriate `CMakeLists.txt` (check existing
-  `data/` source list).
-- **Acceptance:** compiles standalone; no other files touched.
+- **Files:** `src/data/loadout/rfconfigsnapshot.{h,cpp}`. Wired into
+  `cmake/BlackchirpData.cmake` (sources + headers lists, under "Loadout system").
+- **What landed:** plain struct with the five RF scalar fields plus
+  `QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks`. Static
+  `fromRfConfig(const RfConfig&)` and member `applyTo(RfConfig&) const`.
+  No SettingsStorage I/O lives here (see design note below).
+- **Design note for A2/A3/A5:** the spec originally proposed free
+  `writeXxx(SettingsStorage&, ...)` functions, but `setGroupValue`/`setArray`
+  are protected on SettingsStorage. Rather than friending many free fns, all
+  SettingsStorage I/O lives in `LoadoutManager` (a SettingsStorage subclass).
+  Sub-component files (`rfconfigsnapshot`, `chirpconfigloadout`,
+  `ftmwdigitizerloadout`) provide pure data structs + conversion helpers
+  to/from the parent type. LoadoutManager's private methods bridge those
+  to SettingsStorage `setGroupValue` / `setArray` calls.
+- **Build:** `make -C build/Desktop-Debug blackchirp-data` clean.
 
-#### A2. ChirpConfig loadout serializer ‖
+#### A2. ChirpConfig loadout helpers ‖
 
-- **New files:** `src/data/loadout/chirpconfigloadout.h`, `.cpp`.
-- **Why separate from `ChirpConfig` class:** ChirpConfig already has a file-based
-  serializer; we intentionally add a SettingsStorage-based one without touching
-  the existing class.
-- **Contract:**
-  - `void writeChirpConfigToSettings(SettingsStorage &s, const QString &groupKey, const ChirpConfig &cc);`
-  - `ChirpConfig readChirpConfigFromSettings(const SettingsStorage &s, const QString &groupKey, double awgSampleRateSps);`
-  - Stores: `numChirps`, `chirpInterval`, `allIdentical`; `segments` array (one row per
-    segment, with `chirpIndex` to disambiguate) and `markers` array.
-  - Reader sets sample rate via `setAwgSampleRate` so `chirpList()` reconstructs
-    correctly.
+- **New files:** `src/data/loadout/chirpconfigloadout.{h,cpp}`.
+- **Contract:** pure helpers, no SettingsStorage dependency.
+  - `SettingsStorage::SettingsMap chirpConfigScalarsMap(const ChirpConfig&);`
+    — returns scalars: `numChirps` (derived), `chirpInterval`, `allIdentical`.
+  - `std::vector<SettingsMap> chirpConfigSegmentsArray(const ChirpConfig&);`
+    — one map per segment with fields `{chirpIndex, segmentIndex, startFreqMHz,
+    endFreqMHz, durationUs, alphaUs, empty}`.
+  - `std::vector<SettingsMap> chirpConfigMarkersArray(const ChirpConfig&);`
+    — one map per marker with fields `{name, role, timingMode, startTime,
+    endTime, enabled}`.
+  - Inverse builder: `ChirpConfig chirpConfigFromMaps(const SettingsMap &scalars, const std::vector<SettingsMap> &segments, const std::vector<SettingsMap> &markers, double awgSampleRateSps);`
+    The reader calls `setAwgSampleRate(awgSampleRateSps)` so `chirpList()` is
+    reconstructed correctly.
 - **Acceptance:** compiles; no behavior change to existing `ChirpConfig` class.
 
-#### A3. FtmwDigitizerConfig loadout serializer ‖
+#### A3. FtmwDigitizerConfig loadout helpers ‖
 
-- **New files:** `src/data/loadout/ftmwdigitizerloadout.h`, `.cpp`.
-- **Contract:**
-  - `void writeDigitizerToSettings(SettingsStorage &s, const QString &groupKey, const FtmwDigitizerConfig &dc);`
-  - `FtmwDigitizerConfig readDigitizerFromSettings(const SettingsStorage &s, const QString &groupKey, const QString &digitizerHwKey);`
-  - Writes all `DigitizerConfig` fields plus `d_fidChannel`. Channel maps as
-    SettingsStorage arrays; remaining scalars via `setGroupValue`.
+- **New files:** `src/data/loadout/ftmwdigitizerloadout.{h,cpp}`.
+- **Contract:** pure helpers, no SettingsStorage dependency.
+  - `SettingsStorage::SettingsMap digitizerScalarsMap(const FtmwDigitizerConfig&);`
+    — trigger fields, sample rate, record length, bytes per point, byte order,
+    block average + count, multi-record + count, fidChannel.
+  - `std::vector<SettingsMap> digitizerAnalogArray(const FtmwDigitizerConfig&);`
+    — one map per analog channel `{index, enabled, fullScale, offset}`.
+  - `std::vector<SettingsMap> digitizerDigitalArray(const FtmwDigitizerConfig&);`
+    — one map per digital channel `{index, enabled, input, role}`.
+  - Inverse builder: `FtmwDigitizerConfig ftmwDigitizerFromMaps(const QString &hwKey, const SettingsMap &scalars, const std::vector<SettingsMap> &analog, const std::vector<SettingsMap> &digital);`
+    Constructs `FtmwDigitizerConfig(hwKey)` and populates all fields.
 - **Acceptance:** compiles; no behavior change to existing `DigitizerConfig` /
   `FtmwDigitizerConfig` classes.
 

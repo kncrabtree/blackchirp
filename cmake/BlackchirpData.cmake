@@ -43,7 +43,10 @@ set(BLACKCHIRP_DATA_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/experiment/overlaytypes.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/experiment/catalogdata.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/experiment/rfconfig.cpp
-    
+
+    # Loadout system
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loadout/rfconfigsnapshot.cpp
+
     # Hardware configuration classes (moved from hardware layer - pure data structures)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/experiment/hardware/core/ftmwdigitizerconfig.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/experiment/hardware/optional/pulsegenerator/pulsegenconfig.cpp
@@ -107,7 +110,10 @@ set(BLACKCHIRP_DATA_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/experiment/overlaytypes.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/experiment/catalogdata.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/experiment/rfconfig.h
-    
+
+    # Loadout system
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loadout/rfconfigsnapshot.h
+
     # Hardware configuration classes (moved from hardware layer - pure data structures)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/experiment/hardware/core/ftmwdigitizerconfig.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/experiment/hardware/optional/pulsegenerator/pulsegenconfig.h
