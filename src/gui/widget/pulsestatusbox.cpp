@@ -3,10 +3,13 @@
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 #include <gui/widget/pulseconfigwidget.h>
 #include <gui/widget/led.h>
+#include <gui/util/numericformat.h>
 
 #include <QGridLayout>
 #include <QLabel>
 #include <QMetaEnum>
+
+using namespace Qt::Literals::StringLiterals;
 
 PulseStatusBox::PulseStatusBox(const QString &key, QWidget *parent) :
     HardwareStatusBox(key,parent), d_config(key)
@@ -121,6 +124,7 @@ void PulseStatusBox::updatePulseSetting(const QString k, int index, PulseGenConf
             d_ledList.at(index).second->setColor(Led::Green);
         else
             d_ledList.at(index).second->setColor(Led::Yellow);
+        updateChannelTooltip(index);
         break;
     case PulseGenConfig::RepRateSetting:
         d_config.d_repRate = val.toDouble();
@@ -135,9 +139,52 @@ void PulseStatusBox::updatePulseSetting(const QString k, int index, PulseGenConf
         d_config.d_pulseEnabled = val.toBool();
         p_enLed->setState(d_config.d_pulseEnabled);
         break;
+    case PulseGenConfig::DelaySetting:
+    case PulseGenConfig::WidthSetting:
+    case PulseGenConfig::LevelSetting:
+    case PulseGenConfig::SyncSetting:
+    case PulseGenConfig::DutyOnSetting:
+    case PulseGenConfig::DutyOffSetting:
+        updateChannelTooltip(index);
+        break;
     default:
         break;
     }
+}
+
+void PulseStatusBox::updateChannelTooltip(int ch)
+{
+    if(ch < 0 || (std::size_t)ch >= d_ledList.size() || ch >= d_config.size())
+        return;
+
+    const auto &cc = d_config.d_channels.at(ch);
+
+    QString syncStr;
+    if(cc.syncCh == 0)
+        syncStr = "T0"_L1;
+    else
+        syncStr = QString("Ch%1").arg(cc.syncCh);
+
+    QString delayStr = BC::Gui::formatNumberForDisplay(cc.delay, 3) + u" μs"_s;
+    QString widthStr = BC::Gui::formatNumberForDisplay(cc.width, 3) + u" μs"_s;
+    QString levelStr = (cc.level == PulseGenConfig::ActiveHigh) ? "High"_L1 : "Low"_L1;
+
+    QString tip = "<table>"_L1
+        "<tr><td><b>Sync:</b></td><td>"_L1 + syncStr + "</td></tr>"_L1
+        "<tr><td><b>Delay:</b></td><td>"_L1 + delayStr + "</td></tr>"_L1
+        "<tr><td><b>Width:</b></td><td>"_L1 + widthStr + "</td></tr>"_L1
+        "<tr><td><b>Active:</b></td><td>"_L1 + levelStr + "</td></tr>"_L1;
+
+    if(cc.mode == PulseGenConfig::DutyCycle)
+    {
+        tip += "<tr><td><b>Duty On:</b></td><td>"_L1 + QString::number(cc.dutyOn) + "</td></tr>"_L1;
+        tip += "<tr><td><b>Duty Off:</b></td><td>"_L1 + QString::number(cc.dutyOff) + "</td></tr>"_L1;
+    }
+
+    tip += "</table>"_L1;
+
+    d_ledList.at(ch).first->setToolTip(tip);
+    d_ledList.at(ch).second->setToolTip(tip);
 }
 
 void PulseStatusBox::updateAll()
@@ -176,5 +223,6 @@ void PulseStatusBox::updateAll()
             d_ledList.at(i).second->setColor(Led::Yellow);
 
         d_ledList.at(i).second->setState(d_config.d_channels.at(i).enabled);
+        updateChannelTooltip(i);
     }
 }

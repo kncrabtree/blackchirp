@@ -1,26 +1,24 @@
 #include "liflaserstatusbox.h"
 
-#include <QDoubleSpinBox>
 #include <QHBoxLayout>
 #include <QLabel>
 
 #include <hardware/core/liflaser/liflaser.h>
 #include <gui/widget/led.h>
+#include <gui/util/numericformat.h>
 #include <data/storage/settingsstorage.h>
+
+using namespace Qt::Literals::StringLiterals;
 
 LifLaserStatusBox::LifLaserStatusBox(const QString &key, QWidget *parent) : HardwareStatusBox(key,parent)
 {
     auto hbl = new QHBoxLayout;
 
-    hbl->addWidget(new QLabel("Position"));
+    hbl->addWidget(new QLabel("Position"_L1));
 
-    p_posBox = new QDoubleSpinBox(this);
-    p_posBox->setReadOnly(true);
-    p_posBox->setKeyboardTracking(false);
-    p_posBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    p_posBox->setFocusPolicy(Qt::ClickFocus);
-
-    hbl->addWidget(p_posBox,1);
+    p_posLabel = new QLabel(this);
+    p_posLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    hbl->addWidget(p_posLabel,1);
 
     using namespace BC::Key::LifLaser;
     SettingsStorage s(d_key,SettingsStorage::Hardware);
@@ -41,15 +39,15 @@ void LifLaserStatusBox::applySettings()
 {
     using namespace BC::Key::LifLaser;
     SettingsStorage s(d_key,SettingsStorage::Hardware);
-    p_posBox->setMinimum(s.get(minPos,200.0));
-    p_posBox->setMaximum(s.get(maxPos,2000.0));
-    p_posBox->setSuffix(QString(" ").append(s.get(units,"nm").toString()));
-    p_posBox->setDecimals(s.get(decimals,2));
+    d_decimals = s.get(decimals,2);
+    d_suffix = " "_L1 + s.get(units,"nm"_L1).toString();
+    p_posLabel->setText(BC::Gui::formatNumberForDisplay(d_position, d_decimals) + d_suffix);
 }
 
 void LifLaserStatusBox::setPosition(double d)
 {
-    p_posBox->setValue(d);
+    d_position = d;
+    p_posLabel->setText(BC::Gui::formatNumberForDisplay(d_position, d_decimals) + d_suffix);
 }
 
 void LifLaserStatusBox::setFlashlampEnabled(bool en)

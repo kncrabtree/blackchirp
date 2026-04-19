@@ -1,11 +1,11 @@
 #ifndef LIFLASERSTATUSBOX_H
 #define LIFLASERSTATUSBOX_H
 
-#include <QGroupBox>
+#include <QString>
 
 #include <gui/widget/hardwarestatusbox.h>
 
-class QDoubleSpinBox;
+class QLabel;
 class Led;
 
 class LifLaserStatusBox : public HardwareStatusBox
@@ -19,8 +19,11 @@ public:
     void setFlashlampEnabled(bool en);
 
 private:
-    QDoubleSpinBox *p_posBox;
+    QLabel *p_posLabel;
     Led *p_led;
+    int d_decimals{2};
+    QString d_suffix;
+    double d_position{0.0};
 
 };
 

@@ -3,11 +3,13 @@
 
 #include "hardwarestatusbox.h"
 
+#include <QVector>
+
 class QLabel;
-class QDoubleSpinBox;
+class QGridLayout;
 class Led;
 
-using FlowWidgets = std::tuple<QLabel*,QDoubleSpinBox*,Led*>;
+using FlowWidgets = std::tuple<QLabel*,QLabel*,Led*>;
 
 class GasFlowDisplayBox : public HardwareStatusBox
 {
@@ -28,9 +30,17 @@ signals:
 
 private:
     QVector<FlowWidgets> d_flowWidgets;
-    QDoubleSpinBox *p_pressureBox;
-    Led *p_pressureLed;
+    QVector<int> d_channelDecimals;
+    QVector<QString> d_channelSuffix;
+    QVector<double> d_setpoints;
 
+    QLabel *p_pressureLabel;
+    Led *p_pressureLed;
+    int d_pressureDecimals{3};
+    QString d_pressureSuffix;
+
+    void addChannelsToGrid(QGridLayout *gl);
+    void updateSetpointTooltip(int ch);
 };
 
 #endif // GASFLOWDISPLAYWIDGET_H

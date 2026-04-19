@@ -4,7 +4,6 @@
 #include "hardwarestatusbox.h"
 
 class QLabel;
-class QDoubleSpinBox;
 
 class TemperatureStatusBox : public HardwareStatusBox
 {
@@ -12,7 +11,9 @@ class TemperatureStatusBox : public HardwareStatusBox
 public:
     struct ChWidgets {
         QLabel *label;
-        QDoubleSpinBox *box;
+        QLabel *value;
+        int decimals{4};
+        QString suffix;
         bool active{false};
     };
 

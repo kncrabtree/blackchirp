@@ -174,6 +174,15 @@ Single agent (after Steps 2 + 3).
 Build + launch the app; confirm tooltips, cog buttons, hide/show, layout.
 Run full test suite (`ctest --test-dir build/tests`).
 
+Notes to address:
+- Set a custom style sheet on the container for the HwStatusBoxes that customizes
+  the frame. Set the frame background to the window base color, and set a rounded
+  border that uses ThemeColors::ColorRole::SubtleText or some variant. Using
+  QFrame::setStyle is not effective.
+- In the subclasses, make sure the QLabel showing the name of a data item is next
+  to its data. This may mean setting the name label to Qt::AlignRight and ensuring the
+  QLabel fills the width of the grid item.
+
 ### Delegation order
 
 1. Step 1 (single agent, blocking) → build + ctest scientificspinbox.
@@ -186,12 +195,12 @@ Run full test suite (`ctest --test-dir build/tests`).
 
 - [x] Step 1 — formatting utility extracted (`src/gui/util/numericformat.{h,cpp}`, namespace `BC::Gui`), scientificspinbox test passes
 - [x] Step 2 — `HardwareStatusBox` converted to `QFrame` with collapse chevron + theme-aware configure cog; `body()` accessor; `configureRequested()` signal; tolerates empty key
-- [ ] Step 3A — PressureStatusBox
-- [ ] Step 3B — TemperatureStatusBox
-- [ ] Step 3C — GasFlowDisplayBox
-- [ ] Step 3D — PulseStatusBox
-- [ ] Step 3E — LifLaserStatusBox
-- [ ] Step 3F — ClockDisplayBox
+- [x] Step 3A — PressureStatusBox
+- [x] Step 3B — TemperatureStatusBox
+- [x] Step 3C — GasFlowDisplayBox
+- [x] Step 3D — PulseStatusBox
+- [x] Step 3E — LifLaserStatusBox
+- [x] Step 3F — ClockDisplayBox
 - [ ] Step 4 — Experiment information panel
 - [ ] Step 5 — MainWindow wiring + HardwareManager clockHardwareUpdate signal
 - [ ] Step 6 — Manual UI verification + full ctest

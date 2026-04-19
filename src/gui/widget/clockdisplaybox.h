@@ -1,29 +1,37 @@
 #ifndef CLOCKDISPLAYBOX_H
 #define CLOCKDISPLAYBOX_H
 
-#include <QGroupBox>
+#include <QHash>
 
 #include <data/experiment/rfconfig.h>
+#include <gui/widget/hardwarestatusbox.h>
 
-class QDoubleSpinBox;
+class QLabel;
+class QToolButton;
 
-class ClockDisplayBox : public QGroupBox
+class ClockDisplayBox : public HardwareStatusBox
 {
     Q_OBJECT
 public:
     explicit ClockDisplayBox(QWidget *parent = nullptr);
 
 signals:
+    void clockHardwareRequested(const QString &hwKey);
 
 public slots:
     void updateFrequency(RfConfig::ClockType t, double f);
+    void setClockHardware(RfConfig::ClockType type, const QString &hwKey, int output);
 
 private:
-    QHash<RfConfig::ClockType,QDoubleSpinBox*> d_boxes;
+    struct ClockRow {
+        QLabel *nameLabel{nullptr};
+        QLabel *valueLabel{nullptr};
+        QToolButton *cogButton{nullptr};
+        QString hwKey;
+    };
 
-    // QWidget interface
-public:
-    QSize sizeHint() const override;
+    QHash<RfConfig::ClockType, ClockRow> d_rows;
+    int d_decimals{4};
 };
 
 #endif // CLOCKDISPLAYBOX_H

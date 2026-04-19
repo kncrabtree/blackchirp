@@ -1,11 +1,13 @@
 #include "pressurestatusbox.h"
 
 #include <QGridLayout>
-#include <QDoubleSpinBox>
 #include <QLabel>
 
+#include <gui/util/numericformat.h>
 #include <gui/widget/led.h>
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
+
+using namespace Qt::Literals::StringLiterals;
 
 PressureStatusBox::PressureStatusBox(const QString &key, QWidget *parent) : HardwareStatusBox(key,parent)
 {
@@ -13,14 +15,10 @@ PressureStatusBox::PressureStatusBox(const QString &key, QWidget *parent) : Hard
 
     gl->addWidget(new QLabel("Chamber"),0,0);
 
-    p_cpBox = new QDoubleSpinBox(this);
+    p_cpLabel = new QLabel(this);
+    p_cpLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
-    p_cpBox->setReadOnly(true);
-    p_cpBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    p_cpBox->setKeyboardTracking(false);
-    p_cpBox->blockSignals(true);
-
-    gl->addWidget(p_cpBox,0,1);
+    gl->addWidget(p_cpLabel,0,1);
 
     p_led = new Led(this);
     gl->addWidget(p_led,0,2);
@@ -39,7 +37,7 @@ void PressureStatusBox::pressureUpdate(const QString key, double p)
     if(key != d_key)
         return;
 
-    p_cpBox->setValue(p);
+    p_cpLabel->setText(BC::Gui::formatNumberForDisplay(p, d_decimals) + d_suffix);
 }
 
 void PressureStatusBox::pressureControlUpdate(const QString key, bool en)
@@ -55,8 +53,6 @@ void PressureStatusBox::updateFromSettings()
     using namespace BC::Key::PController;
     SettingsStorage s(d_key,SettingsStorage::Hardware);
 
-    p_cpBox->setMinimum(s.get(min,-1.0));
-    p_cpBox->setMaximum(s.get(max,20.0));
-    p_cpBox->setDecimals(s.get(decimals,4));
-    p_cpBox->setSuffix(QString(" ")+s.get(units,QString("")));
+    d_decimals = s.get(decimals,4);
+    d_suffix = " "_L1 + s.get(units,QString(""));
 }

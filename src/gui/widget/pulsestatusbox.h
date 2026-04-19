@@ -26,6 +26,7 @@ private:
     Led *p_enLed;
 
     void updateAll();
+    void updateChannelTooltip(int ch);
     PulseGenConfig d_config;
 
 };

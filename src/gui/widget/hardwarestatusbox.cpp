@@ -36,8 +36,11 @@ HardwareStatusBox::HardwareStatusBox(const QString &key, QWidget *parent) :
     collapseButton->setIconSize({16, 16});
     titleRow->addWidget(collapseButton);
 
-    auto *titleLabel = new QLabel(title, this);
-    titleRow->addWidget(titleLabel);
+    p_titleLabel = new QLabel(title, this);
+    auto f = p_titleLabel->font();
+    f.setWeight(QFont::Bold);
+    p_titleLabel->setFont(f);
+    titleRow->addWidget(p_titleLabel);
     titleRow->addStretch();
 
     auto *configButton = new QToolButton(this);
@@ -59,6 +62,7 @@ HardwareStatusBox::HardwareStatusBox(const QString &key, QWidget *parent) :
             visible ? ":/icons/chevron-down.svg"_L1 : ":/icons/chevron-right.svg"_L1,
             ThemeColors::IconSecondary, this));
     });
+
 }
 
 QWidget *HardwareStatusBox::body() const
@@ -69,4 +73,9 @@ QWidget *HardwareStatusBox::body() const
 QSize HardwareStatusBox::sizeHint() const
 {
     return {250, 1};
+}
+
+void HardwareStatusBox::setTitle(const QString &t)
+{
+    p_titleLabel->setText(t);
 }

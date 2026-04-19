@@ -23,9 +23,11 @@ protected:
     // QWidget interface
 public:
     QSize sizeHint() const override;
+    void setTitle(const QString &t);
 
 private:
     QWidget *p_body;
+    QLabel *p_titleLabel;
 };
 
 #endif // HARDWARESTATUSBOX_H

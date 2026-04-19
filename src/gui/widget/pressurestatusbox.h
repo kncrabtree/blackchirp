@@ -3,7 +3,9 @@
 
 #include "hardwarestatusbox.h"
 
-class QDoubleSpinBox;
+#include <QString>
+
+class QLabel;
 class Led;
 
 class PressureStatusBox : public HardwareStatusBox
@@ -18,8 +20,10 @@ public slots:
     void updateFromSettings();
 
 private:
-    QDoubleSpinBox *p_cpBox;
+    QLabel *p_cpLabel;
     Led *p_led;
+    int d_decimals{4};
+    QString d_suffix;
 };
 
 #endif // PRESSURESTATUSBOX_H

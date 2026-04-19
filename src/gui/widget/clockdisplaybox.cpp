@@ -1,59 +1,95 @@
 #include "clockdisplaybox.h"
 
 #include <QGridLayout>
-#include <QDoubleSpinBox>
 #include <QLabel>
 #include <QMetaEnum>
+#include <QToolButton>
 
-#include <data/experiment/rfconfig.h>
+#include <gui/style/themecolors.h>
+#include <gui/util/numericformat.h>
 
-ClockDisplayBox::ClockDisplayBox(QWidget *parent) : QGroupBox(parent)
+using namespace Qt::Literals::StringLiterals;
+
+ClockDisplayBox::ClockDisplayBox(QWidget *parent) :
+    HardwareStatusBox(QString{}, parent)
 {
-    setTitle("Clocks");
-    setFlat(true);
     auto gl = new QGridLayout;
     gl->setSpacing(3);
-    gl->setContentsMargins(3,3,3,3);
+    gl->setContentsMargins(3, 3, 3, 3);
 
     auto ct = QMetaEnum::fromType<RfConfig::ClockType>();
 
-    for(int i=0; i<ct.keyCount(); i++)
-    {
-        auto key = ct.key(i);
+    for (int i = 0; i < ct.keyCount(); i++) {
+        auto *nameLabel = new QLabel(QString(ct.key(i)), body());
+        nameLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        nameLabel->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
 
-        auto *box = new QDoubleSpinBox(this);
-        box->setRange(-1.0,1e7);
-        box->setDecimals(6);
-        box->setSuffix(QString(" MHz"));
-        box->setButtonSymbols(QAbstractSpinBox::NoButtons);
-        box->setReadOnly(true);
-        box->setFocusPolicy(Qt::NoFocus);
-        box->setSpecialValueText(QString("Not Configured"));
-        box->setValue(-1.0);
-        box->blockSignals(true);
+        auto *valueLabel = new QLabel(body());
+        valueLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        valueLabel->setText(BC::Gui::formatNumberForDisplay(0.0, d_decimals) + " MHz"_L1);
 
-        auto *lbl = new QLabel(key);
-        lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
-        lbl->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::Preferred);
+        auto *cogButton = new QToolButton(body());
+        cogButton->setIcon(ThemeColors::createThemedIcon(":/icons/cog-6-tooth.svg"_L1, ThemeColors::IconSecondary, body()));
+        cogButton->setAutoRaise(true);
+        cogButton->setIconSize({16, 16});
 
-        gl->addWidget(lbl,i,0);
-        gl->addWidget(box,i,1);
-        d_boxes.insert(static_cast<RfConfig::ClockType>(ct.value(i)),box);
+        gl->addWidget(nameLabel, i, 0);
+        gl->addWidget(valueLabel, i, 1);
+        gl->addWidget(cogButton, i, 2);
+
+        auto type = static_cast<RfConfig::ClockType>(ct.value(i));
+        ClockRow row;
+        row.nameLabel = nameLabel;
+        row.valueLabel = valueLabel;
+        row.cogButton = cogButton;
+        d_rows.insert(type, row);
+
+        nameLabel->hide();
+        valueLabel->hide();
+        cogButton->hide();
     }
-    gl->setColumnStretch(0,0);
-    gl->setColumnStretch(1,1);
-    setLayout(gl);
+
+    gl->setColumnStretch(0, 0);
+    gl->setColumnStretch(1, 1);
+    gl->setColumnStretch(2, 0);
+    body()->setLayout(gl);
+
+    setTitle("Clock Configuration"_L1);
 }
 
 void ClockDisplayBox::updateFrequency(RfConfig::ClockType t, double f)
 {
-    auto box = d_boxes.value(t);
-    box->setValue(f);
-    box->setSpecialValueText(QString("Error"));
+    auto it = d_rows.find(t);
+    if (it == d_rows.end())
+        return;
+    it->valueLabel->setText(BC::Gui::formatNumberForDisplay(f, d_decimals) + " MHz"_L1);
 }
 
-
-QSize ClockDisplayBox::sizeHint() const
+void ClockDisplayBox::setClockHardware(RfConfig::ClockType type, const QString &hwKey, int output)
 {
-    return QGroupBox::sizeHint();
+    auto it = d_rows.find(type);
+    if (it == d_rows.end())
+        return;
+
+    it->hwKey = hwKey;
+
+    if (hwKey.isEmpty()) {
+        it->nameLabel->hide();
+        it->valueLabel->hide();
+        it->cogButton->hide();
+        return;
+    }
+
+    auto tooltip = QString("%1 output %2"_L1).arg(hwKey).arg(output);
+    it->nameLabel->setToolTip(tooltip);
+    it->valueLabel->setToolTip(tooltip);
+
+    disconnect(it->cogButton, &QToolButton::clicked, nullptr, nullptr);
+    connect(it->cogButton, &QToolButton::clicked, this, [this, hwKey]() {
+        emit clockHardwareRequested(hwKey);
+    });
+
+    it->nameLabel->show();
+    it->valueLabel->show();
+    it->cogButton->show();
 }

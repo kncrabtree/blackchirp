@@ -2,11 +2,13 @@
 
 #include <QGridLayout>
 #include <QLabel>
-#include <QDoubleSpinBox>
 
 #include <data/storage/settingsstorage.h>
 #include <gui/style/themecolors.h>
+#include <gui/util/numericformat.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
+
+using namespace Qt::Literals::StringLiterals;
 
 TemperatureStatusBox::TemperatureStatusBox(const QString key, QWidget *parent) :
     HardwareStatusBox(key,parent)
@@ -24,16 +26,15 @@ TemperatureStatusBox::TemperatureStatusBox(const QString key, QWidget *parent) :
         lbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
         gl->addWidget(lbl,i,0);
 
-        auto sb = new QDoubleSpinBox;
-        sb->setRange(0.0,1000.0);
-        sb->blockSignals(true);
-        sb->setKeyboardTracking(false);
-        sb->setButtonSymbols(QAbstractSpinBox::NoButtons);
-        gl->addWidget(sb,i,1);
+        auto val = new QLabel;
+        val->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
+        gl->addWidget(val,i,1);
 
-        d_widgets.push_back({lbl,sb,true});
+        int decimals = tc.getArrayValue(BC::Key::TC::channels,i,BC::Key::TC::decimals,4);
+        QString suffix = " "_L1 + tc.getArrayValue(BC::Key::TC::channels,i,BC::Key::TC::units,QString("K"));
+
+        d_widgets.push_back({lbl,val,decimals,suffix,true});
     }
-
 
     p_noActiveLabel = new QLabel(tr("No active channels"));
     p_noActiveLabel->setAlignment(Qt::AlignCenter);
@@ -46,7 +47,6 @@ TemperatureStatusBox::TemperatureStatusBox(const QString key, QWidget *parent) :
     body()->setLayout(gl);
 
     loadFromSettings();
-
 }
 
 void TemperatureStatusBox::loadFromSettings()
@@ -54,10 +54,8 @@ void TemperatureStatusBox::loadFromSettings()
     SettingsStorage tc(d_key,SettingsStorage::Hardware);
     for(std::size_t i=0; i<d_widgets.size(); ++i)
     {
-        d_widgets[i].box->setDecimals(tc.getArrayValue(BC::Key::TC::channels,i,BC::Key::TC::decimals,4));
-
-        d_widgets[i].box->setSuffix(QString(" ") + tc.getArrayValue(BC::Key::TC::channels,i,
-                                                     BC::Key::TC::units,QString("K")));
+        d_widgets[i].decimals = tc.getArrayValue(BC::Key::TC::channels,i,BC::Key::TC::decimals,4);
+        d_widgets[i].suffix = " "_L1 + tc.getArrayValue(BC::Key::TC::channels,i,BC::Key::TC::units,QString("K"));
     }
 }
 
@@ -69,7 +67,8 @@ void TemperatureStatusBox::setTemperature(const QString key, uint ch, double t)
     if(ch >= d_widgets.size())
         return;
 
-    d_widgets[ch].box->setValue(t);
+    auto &w = d_widgets[ch];
+    w.value->setText(BC::Gui::formatNumberForDisplay(t, w.decimals) + w.suffix);
 }
 
 void TemperatureStatusBox::setChannelName(const QString key, uint ch, const QString name)
@@ -97,7 +96,7 @@ void TemperatureStatusBox::setChannelEnabled(const QString key, uint ch, bool en
 
     auto &w = d_widgets[ch];
     w.label->setVisible(en);
-    w.box->setVisible(en);
+    w.value->setVisible(en);
     w.active = en;
 
     updateNoActiveLabel();
