@@ -1,7 +1,6 @@
 #include "gasflowdisplaywidget.h"
 
 #include <QGridLayout>
-#include <QHBoxLayout>
 #include <QLabel>
 
 #include <gui/widget/led.h>
@@ -13,33 +12,33 @@
 using namespace BC::Key::Flow;
 using namespace Qt::Literals::StringLiterals;
 
-static constexpr int kColumns = 2;
-
 GasFlowDisplayBox::GasFlowDisplayBox(const QString key, QWidget *parent) : HardwareStatusBox(key,parent)
 {
     auto gl = new QGridLayout;
     gl->setSpacing(3);
     gl->setContentsMargins(3,3,3,3);
+    gl->setColumnStretch(0, 1);
+    gl->setColumnStretch(1, 0);
+    gl->setColumnStretch(2, 0);
 
     p_pressureLabel = new QLabel;
-    p_pressureLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    p_pressureLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     p_pressureLed = new Led;
 
-    gl->addWidget(new QLabel("Pressure"_L1), 0, 0, 1, kColumns * 2, Qt::AlignRight | Qt::AlignVCenter);
-    gl->addWidget(p_pressureLabel, 0, kColumns * 2);
-    gl->addWidget(p_pressureLed, 0, kColumns * 2 + 1);
+    gl->addWidget(new QLabel("Pressure"_L1), 0, 0, Qt::AlignRight | Qt::AlignVCenter);
+    gl->addWidget(p_pressureLabel, 0, 1);
+    gl->addWidget(p_pressureLed,   0, 2);
 
     SettingsStorage fc(key, SettingsStorage::Hardware);
     int n = fc.get(flowChannels, 4);
     for (int i = 0; i < n; ++i)
     {
-        auto chName = fc.getArrayValue(channels, i, BC::Key::Flow::chName, QString("Ch%1"_L1).arg(i+1));
-        auto nameLabel = new QLabel(chName);
-        nameLabel->setMinimumWidth(QFontMetrics(QFont("sans-serif"_L1)).horizontalAdvance("MMMMMMMM"_L1));
+        auto name = fc.getArrayValue(channels, i, BC::Key::Flow::chName, QString());
+        auto nameLabel = new QLabel(name.isEmpty() ? QString("Ch%1"_L1).arg(i+1) : name);
         nameLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
         auto valueLabel = new QLabel;
-        valueLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        valueLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
         auto led = new Led;
 
@@ -47,18 +46,7 @@ GasFlowDisplayBox::GasFlowDisplayBox(const QString key, QWidget *parent) : Hardw
         d_channelDecimals.append(2);
         d_channelSuffix.append(QString());
         d_setpoints.append(0.0);
-
-        nameLabel->setVisible(false);
-        valueLabel->setVisible(false);
-        led->setVisible(false);
-    }
-
-    for (int col = 0; col < kColumns; ++col)
-    {
-        int baseCol = col * (kColumns + 1);
-        gl->setColumnStretch(baseCol, 1);
-        gl->setColumnStretch(baseCol + 1, 0);
-        gl->setColumnStretch(baseCol + 2, 0);
+        d_channelNames.append(name);
     }
 
     body()->setLayout(gl);
@@ -69,18 +57,13 @@ GasFlowDisplayBox::GasFlowDisplayBox(const QString key, QWidget *parent) : Hardw
 
 void GasFlowDisplayBox::addChannelsToGrid(QGridLayout *gl)
 {
-    int n = d_flowWidgets.size();
-    for (int i = 0; i < n; ++i)
+    for (int i = 0; i < d_flowWidgets.size(); ++i)
     {
-        int row = 1 + i / kColumns;
-        int col = i % kColumns;
-        int baseCol = col * (kColumns + 1);
-
         auto [nameLabel, valueLabel, led] = d_flowWidgets.at(i);
-
-        gl->addWidget(nameLabel,  row, baseCol,     1, 1, Qt::AlignRight);
-        gl->addWidget(valueLabel, row, baseCol + 1, 1, 1);
-        gl->addWidget(led,        row, baseCol + 2, 1, 1);
+        gl->addWidget(nameLabel,  i + 1, 0, Qt::AlignRight | Qt::AlignVCenter);
+        gl->addWidget(valueLabel, i + 1, 1);
+        gl->addWidget(led,        i + 1, 2);
+        updateChannelVisibility(i);
     }
 }
 
@@ -101,18 +84,18 @@ void GasFlowDisplayBox::rebuild()
     d_channelDecimals.clear();
     d_channelSuffix.clear();
     d_setpoints.clear();
+    d_channelNames.clear();
 
     SettingsStorage fc(d_key, SettingsStorage::Hardware);
     int n = fc.get(flowChannels, 0);
     for (int i = 0; i < n; ++i)
     {
-        auto name = fc.getArrayValue(channels, i, chName, QString("Ch%1"_L1).arg(i+1));
-        auto nameLabel = new QLabel(name);
-        nameLabel->setMinimumWidth(QFontMetrics(QFont("sans-serif"_L1)).horizontalAdvance("MMMMMMMM"_L1));
+        auto name = fc.getArrayValue(channels, i, chName, QString());
+        auto nameLabel = new QLabel(name.isEmpty() ? QString("Ch%1"_L1).arg(i+1) : name);
         nameLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
         auto valueLabel = new QLabel;
-        valueLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        valueLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
         auto led = new Led;
 
@@ -120,10 +103,7 @@ void GasFlowDisplayBox::rebuild()
         d_channelDecimals.append(2);
         d_channelSuffix.append(QString());
         d_setpoints.append(0.0);
-
-        nameLabel->setVisible(false);
-        valueLabel->setVisible(false);
-        led->setVisible(false);
+        d_channelNames.append(name);
     }
 
     addChannelsToGrid(gl);
@@ -142,6 +122,15 @@ void GasFlowDisplayBox::applySettings()
         d_channelDecimals[i] = fc.getArrayValue(channels, i, chDecimals, 2);
         d_channelSuffix[i] = QString(" "_L1) + fc.getArrayValue(channels, i, chUnits, QString());
     }
+}
+
+void GasFlowDisplayBox::updateChannelVisibility(int ch)
+{
+    bool visible = !qFuzzyCompare(1.0, d_setpoints.at(ch) + 1.0) || !d_channelNames.at(ch).isEmpty();
+    auto [nameLabel, valueLabel, led] = d_flowWidgets.at(ch);
+    nameLabel->setVisible(visible);
+    valueLabel->setVisible(visible);
+    led->setVisible(visible);
 }
 
 void GasFlowDisplayBox::updateFlow(const QString key, int ch, double val)
@@ -164,12 +153,12 @@ void GasFlowDisplayBox::updateFlowName(const QString key, int ch, const QString 
     if (ch < 0 || ch >= d_flowWidgets.size())
         return;
 
-    auto lbl = std::get<0>(d_flowWidgets.at(ch));
+    d_channelNames[ch] = name;
 
-    if (name.isEmpty())
-        lbl->setText(QString("Ch%1"_L1).arg(ch+1));
-    else
-        lbl->setText(name.mid(0, 9));
+    auto lbl = std::get<0>(d_flowWidgets.at(ch));
+    lbl->setText(name.isEmpty() ? QString("Ch%1"_L1).arg(ch+1) : name.mid(0, 9));
+
+    updateChannelVisibility(ch);
 }
 
 void GasFlowDisplayBox::updateSetpointTooltip(int ch)
@@ -196,11 +185,8 @@ void GasFlowDisplayBox::updateFlowSetpoint(const QString key, int ch, double val
     updateSetpointTooltip(ch);
 
     bool active = !qFuzzyCompare(1.0, val + 1.0);
-    auto [nameLabel, valueLabel, led] = d_flowWidgets.at(ch);
-    led->setState(active);
-    nameLabel->setVisible(active);
-    valueLabel->setVisible(active);
-    led->setVisible(active);
+    std::get<2>(d_flowWidgets.at(ch))->setState(active);
+    updateChannelVisibility(ch);
 }
 
 void GasFlowDisplayBox::updatePressureControl(const QString key, bool en)

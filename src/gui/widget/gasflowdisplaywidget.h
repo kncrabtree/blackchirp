@@ -33,6 +33,7 @@ private:
     QVector<int> d_channelDecimals;
     QVector<QString> d_channelSuffix;
     QVector<double> d_setpoints;
+    QVector<QString> d_channelNames;
 
     QLabel *p_pressureLabel;
     Led *p_pressureLed;
@@ -41,6 +42,7 @@ private:
 
     void addChannelsToGrid(QGridLayout *gl);
     void updateSetpointTooltip(int ch);
+    void updateChannelVisibility(int ch);
 };
 
 #endif // GASFLOWDISPLAYWIDGET_H
