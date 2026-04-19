@@ -112,6 +112,7 @@ bool ClockManager::configureClocks(QHash<RfConfig::ClockType, RfConfig::ClockFre
         }
 
         d_clockRoles.insert(type,c);
+        emit clockHardwareUpdate(type, c->d_key, d.output);
 
         double mf = d.factor;
         if(d.op == RfConfig::Divide)
@@ -209,7 +210,10 @@ void ClockManager::setupClocks()
         {
             auto type = static_cast<RfConfig::ClockType>(ct.value(i));
             if(c->hasRole(type))
+            {
                 d_clockRoles.insert(type,c);
+                emit clockHardwareUpdate(type, c->d_key, c->outputForRole(type));
+            }
         }
         connect(c,&Clock::frequencyUpdate,this,&ClockManager::clockFrequencyUpdate);
     }

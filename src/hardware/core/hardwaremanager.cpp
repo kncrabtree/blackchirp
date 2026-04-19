@@ -35,6 +35,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     // Initialize ClockManager
     pu_clockManager = std::make_unique<ClockManager>(this);
     connect(pu_clockManager.get(), &ClockManager::clockFrequencyUpdate, this, &HardwareManager::clockFrequencyUpdate);
+    connect(pu_clockManager.get(), &ClockManager::clockHardwareUpdate, this, &HardwareManager::clockHardwareUpdate);
 
     // Phase 3.3.6: Clean constructor - all hardware creation now goes through dynamic system
     // HardwareManager starts with empty d_hardwareMap and will be populated via syncWithRuntimeConfig()

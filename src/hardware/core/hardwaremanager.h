@@ -73,6 +73,7 @@ signals:
     void rollingData(AuxDataStorage::AuxDataMap,QDateTime);
 
     void clockFrequencyUpdate(RfConfig::ClockType, double);
+    void clockHardwareUpdate(RfConfig::ClockType, const QString &hwKey, int output);
     void allClocksReady(QHash<RfConfig::ClockType,RfConfig::ClockFreq>);
 
     void pGenSettingUpdate(QString,int,PulseGenConfig::Setting,QVariant);

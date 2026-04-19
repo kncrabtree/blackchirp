@@ -27,6 +27,7 @@
 #include <QtWidgets/QWidget>
 #include <QtWidgets/QSpacerItem>
 #include <QtWidgets/QScrollArea>
+#include <QtWidgets/QToolButton>
 #include <gui/widget/ftmwviewwidget.h>
 #include <gui/widget/led.h>
 #include <gui/widget/auxdataviewwidget.h>
@@ -68,7 +69,9 @@ public:
     QLabel *instStatusLabel;
     QGridLayout *statusLayout;
     QLabel *exptLabel;
-    QSpinBox *exptSpinBox;
+    QLabel *exptValueLabel;
+    QToolButton *exptConfigButton;
+    QLabel *savePathLabel;
     ClockDisplayBox *clockBox;
     QLabel *ftmwProgressLabel;
     QProgressBar *ftmwProgressBar;
@@ -233,40 +236,6 @@ public:
 
         instrumentStatusLayout->addWidget(instStatusLabel);
 
-        statusLayout = new QGridLayout();
-        statusLayout->setSpacing(6);
-        statusLayout->setObjectName(QString::fromUtf8("statusLayout"));
-
-        exptLabel = new QLabel(centralWidget);
-        exptLabel->setObjectName(QString::fromUtf8("exptLabel"));
-        QSizePolicy sizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
-        sizePolicy.setHorizontalStretch(0);
-        sizePolicy.setVerticalStretch(0);
-        sizePolicy.setHeightForWidth(exptLabel->sizePolicy().hasHeightForWidth());
-        exptLabel->setSizePolicy(sizePolicy);
-        exptLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-        statusLayout->addWidget(exptLabel,0,0);
-
-        exptSpinBox = new QSpinBox(centralWidget);
-        exptSpinBox->setObjectName(QString::fromUtf8("exptSpinBox"));
-        QSizePolicy sizePolicy1(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-        sizePolicy1.setHorizontalStretch(0);
-        sizePolicy1.setVerticalStretch(0);
-        sizePolicy1.setHeightForWidth(exptSpinBox->sizePolicy().hasHeightForWidth());
-        exptSpinBox->setSizePolicy(sizePolicy1);
-        exptSpinBox->setFocusPolicy(Qt::ClickFocus);
-        exptSpinBox->setReadOnly(true);
-        exptSpinBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
-        exptSpinBox->setMaximum(2147483647);
-        exptSpinBox->blockSignals(true);
-
-        statusLayout->addWidget(exptSpinBox,0,1);
-
-
-
-        instrumentStatusLayout->addLayout(statusLayout);
-
         hwStatusScrollArea = new QScrollArea(centralWidget);
         hwStatusScrollArea->setObjectName("HwStatusScrollArea");
         hwStatusScrollArea->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
@@ -284,6 +253,49 @@ public:
         hwStatusLayout->addWidget(clockBox,0);
 
         instrumentStatusLayout->addWidget(hwStatusScrollArea,0);
+
+        statusLayout = new QGridLayout();
+        statusLayout->setSpacing(6);
+        statusLayout->setObjectName(QString::fromUtf8("statusLayout"));
+
+        exptLabel = new QLabel(centralWidget);
+        exptLabel->setObjectName(QString::fromUtf8("exptLabel"));
+        QSizePolicy sizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+        sizePolicy.setHorizontalStretch(0);
+        sizePolicy.setVerticalStretch(0);
+        sizePolicy.setHeightForWidth(exptLabel->sizePolicy().hasHeightForWidth());
+        exptLabel->setSizePolicy(sizePolicy);
+        exptLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        statusLayout->addWidget(exptLabel,0,0);
+
+        exptValueLabel = new QLabel(centralWidget);
+        exptValueLabel->setObjectName(QString::fromUtf8("exptValueLabel"));
+        QSizePolicy sizePolicy1(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+        sizePolicy1.setHorizontalStretch(0);
+        sizePolicy1.setVerticalStretch(0);
+        sizePolicy1.setHeightForWidth(exptValueLabel->sizePolicy().hasHeightForWidth());
+        exptValueLabel->setSizePolicy(sizePolicy1);
+        exptValueLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        exptValueLabel->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
+
+        statusLayout->addWidget(exptValueLabel,0,1);
+
+        exptConfigButton = new QToolButton(centralWidget);
+        exptConfigButton->setObjectName(QString::fromUtf8("exptConfigButton"));
+        exptConfigButton->setAutoRaise(true);
+        exptConfigButton->setIconSize(QSize(16,16));
+        exptConfigButton->setToolTip(QApplication::translate("MainWindow", "Open application configuration", nullptr));
+
+        statusLayout->addWidget(exptConfigButton,0,2);
+
+        savePathLabel = new QLabel(centralWidget);
+        savePathLabel->setObjectName(QString::fromUtf8("savePathLabel"));
+        savePathLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+
+        statusLayout->addWidget(savePathLabel,1,0,1,3);
+
+        instrumentStatusLayout->addLayout(statusLayout);
 
         ftmwProgressLabel = new QLabel(centralWidget);
         ftmwProgressLabel->setObjectName(QString::fromUtf8("label_2"));
@@ -535,7 +547,7 @@ public:
         instStatusLabel->setText(QApplication::translate("MainWindow", "Instrument Status", nullptr));
         exptLabel->setText(QApplication::translate("MainWindow", "Expt", nullptr));
 #ifndef QT_NO_TOOLTIP
-        exptSpinBox->setToolTip(QApplication::translate("MainWindow", "Number of the most recent experiment", nullptr));
+        exptValueLabel->setToolTip(QApplication::translate("MainWindow", "Number of the most recent experiment", nullptr));
 #endif // QT_NO_TOOLTIP
         ftmwProgressLabel->setText(QApplication::translate("MainWindow", "FTMW Progress", nullptr));
         mainTabWidget->setTabText(mainTabWidget->indexOf(ftmwTab), QApplication::translate("MainWindow", "CP-FTMW", nullptr));

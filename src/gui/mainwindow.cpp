@@ -5,6 +5,8 @@
 #include <QDialogButtonBox>
 #include <QPushButton>
 #include <QCloseEvent>
+#include <QEvent>
+#include <QFontMetrics>
 #include <QLabel>
 #include <QDoubleSpinBox>
 #include <QLineEdit>
@@ -97,9 +99,13 @@ MainWindow::MainWindow(QWidget *parent) :
         if(d.exec() == QDialog::Accepted)
         {
             SettingsStorage s;
-            ui->exptSpinBox->setValue(s.get(BC::Key::exptNum, 0));
+            ui->exptValueLabel->setText(QString::number(s.get(BC::Key::exptNum, 0)));
+            updateSavePathLabel();
         }
     });
+
+    connect(ui->exptConfigButton, &QToolButton::clicked, ui->appConfigAction, &QAction::trigger);
+    ui->savePathLabel->installEventFilter(this);
 
     p_lh = &LogHandler::instance();
     p_lh->setDebugLogging(ApplicationConfigManager::instance().isDebugLoggingEnabled());
@@ -140,6 +146,13 @@ MainWindow::MainWindow(QWidget *parent) :
             this, &MainWindow::updateHardwareConnectionState);
 
     connect(p_hwm,&HardwareManager::clockFrequencyUpdate,ui->clockBox,&ClockDisplayBox::updateFrequency);
+    connect(p_hwm,&HardwareManager::clockHardwareUpdate,ui->clockBox,&ClockDisplayBox::setClockHardware);
+    connect(ui->clockBox,&ClockDisplayBox::configureRequested,this,&MainWindow::launchRfConfigDialog);
+    connect(ui->clockBox,&ClockDisplayBox::clockHardwareRequested,this,[this](const QString &hwKey){
+        auto it = d_hardwareUI.find(hwKey);
+        if(it != d_hardwareUI.end() && it->second.menuAction)
+            it->second.menuAction->trigger();
+    });
 
     connect(p_hwm, &HardwareManager::profileDeleted, this, [this](const QString& hwKey) {
         auto it = d_openDialogs.find(hwKey);
@@ -223,7 +236,8 @@ MainWindow::MainWindow(QWidget *parent) :
     }
 
     SettingsStorage bc;
-    ui->exptSpinBox->setValue(bc.get<int>(BC::Key::exptNum,0));
+    ui->exptValueLabel->setText(QString::number(bc.get<int>(BC::Key::exptNum,0)));
+    updateSavePathLabel();
     
     // Defer UI configuration until after the widget is fully rendered
     // This prevents LIF widgets from briefly appearing on wrong tabs during initialization
@@ -253,6 +267,7 @@ void MainWindow::buildHardwareUI()
             w->setObjectName(key+Ui::sbStr);
             ui->hwStatusLayout->addWidget(w);
             elements.statusWidget = w;
+            elements.connections.append(connect(w,&HardwareStatusBox::configureRequested,act,&QAction::trigger));
 
             elements.connections.append(connect(p_hwm,&HardwareManager::flowUpdate,w,&GasFlowDisplayBox::updateFlow));
             elements.connections.append(connect(p_hwm,&HardwareManager::flowSetpointUpdate,w,&GasFlowDisplayBox::updateFlowSetpoint));
@@ -287,6 +302,7 @@ void MainWindow::buildHardwareUI()
             psb->setObjectName(key);
             ui->hwStatusLayout->addWidget(psb);
             elements.statusWidget = psb;
+            elements.connections.append(connect(psb,&HardwareStatusBox::configureRequested,act,&QAction::trigger));
 
             elements.connections.append(connect(p_hwm,&HardwareManager::pressureUpdate,psb,&PressureStatusBox::pressureUpdate));
             elements.connections.append(connect(p_hwm,&HardwareManager::pressureControlMode,psb,&PressureStatusBox::pressureControlUpdate));
@@ -316,6 +332,7 @@ void MainWindow::buildHardwareUI()
             psb->setObjectName(key+Ui::sbStr);
             ui->hwStatusLayout->addWidget(psb);;
             elements.statusWidget = psb;
+            elements.connections.append(connect(psb,&HardwareStatusBox::configureRequested,act,&QAction::trigger));
 
             elements.connections.append(connect(p_hwm,&HardwareManager::pGenConfigUpdate,psb,&PulseStatusBox::updatePulseLeds));
             elements.connections.append(connect(p_hwm,&HardwareManager::pGenSettingUpdate,psb,&PulseStatusBox::updatePulseSetting));
@@ -343,6 +360,7 @@ void MainWindow::buildHardwareUI()
             tsb->setObjectName(key+Ui::sbStr);
             ui->hwStatusLayout->addWidget(tsb);
             elements.statusWidget = tsb;
+            elements.connections.append(connect(tsb,&HardwareStatusBox::configureRequested,act,&QAction::trigger));
 
             elements.connections.append(connect(p_hwm,&HardwareManager::temperatureEnableUpdate,tsb,&TemperatureStatusBox::setChannelEnabled));
             elements.connections.append(connect(p_hwm,&HardwareManager::temperatureUpdate,tsb,&TemperatureStatusBox::setTemperature));
@@ -371,6 +389,7 @@ void MainWindow::buildHardwareUI()
             lsb->setObjectName(key+Ui::sbStr);
             ui->hwStatusLayout->addWidget(lsb);
             elements.statusWidget = lsb;
+            elements.connections.append(connect(lsb,&HardwareStatusBox::configureRequested,act,&QAction::trigger));
 
             elements.connections.append(connect(p_hwm,&HardwareManager::lifLaserPosUpdate,lsb,&LifLaserStatusBox::setPosition));
             elements.connections.append(connect(p_hwm,&HardwareManager::lifLaserFlashlampUpdate,lsb,&LifLaserStatusBox::setFlashlampEnabled));
@@ -555,7 +574,7 @@ void MainWindow::startSequence()
     }
 
     BatchSequenceDialog d(this);
-    d.setQuickExptEnabled(ui->exptSpinBox->value() > 0);
+    d.setQuickExptEnabled(ui->exptValueLabel->text().toInt() > 0);
     int ret = d.exec();
 
     if(ret == QDialog::Rejected)
@@ -687,7 +706,7 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
     }
 
     if(exp->d_number > 0)
-        ui->exptSpinBox->setValue(exp->d_number);
+        ui->exptValueLabel->setText(QString::number(exp->d_number));
 
     d_currentExptNum = exp->d_number;
 
@@ -1104,7 +1123,7 @@ void MainWindow::viewExperiment()
     hl->addWidget(browseButton,0);
     fl->addRow(hl);
 
-    int lastCompletedExperiment = ui->exptSpinBox->value();
+    int lastCompletedExperiment = ui->exptValueLabel->text().toInt();
     if(p_batchManager && !p_batchManager->isComplete()
             && d_currentExptNum == lastCompletedExperiment)
         lastCompletedExperiment--;
@@ -1489,6 +1508,7 @@ void MainWindow::setupThemeAwareIconStyling()
     // Set action icons
     ui->viewExperimentAction->setIcon(ThemeColors::createThemedIcon(":/icons/viewold.svg", ThemeColors::IconSecondary, this));
     ui->appConfigAction->setIcon(ThemeColors::createThemedIcon(":/icons/cog-6-tooth.svg", ThemeColors::IconSecondary, this));
+    ui->exptConfigButton->setIcon(ThemeColors::createThemedIcon(":/icons/cog-6-tooth.svg", ThemeColors::IconSecondary, this));
     
     // Set tab icons
     ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->ftmwTab), ThemeColors::createThemedIcon(":/icons/signal.svg", ThemeColors::IconPrimary, this));
@@ -1512,4 +1532,24 @@ std::shared_ptr<Experiment> MainWindow::createExperiment()
     // Populate hardware data from RuntimeHardwareConfig
     exp->d_hardwareData = RuntimeHardwareConfig::constInstance().createHardwareDataContainer();
     return exp;
+}
+
+void MainWindow::updateSavePathLabel()
+{
+    SettingsStorage s;
+    d_savePath = s.get(BC::Key::savePath, QString(""));
+    ui->savePathLabel->setToolTip(d_savePath);
+    const QFontMetrics fm(ui->savePathLabel->font());
+    const int w = ui->savePathLabel->width();
+    ui->savePathLabel->setText(fm.elidedText(d_savePath, Qt::ElideMiddle, w > 0 ? w : 200));
+}
+
+bool MainWindow::eventFilter(QObject *watched, QEvent *event)
+{
+    if(watched == ui->savePathLabel && event->type() == QEvent::Resize)
+    {
+        const QFontMetrics fm(ui->savePathLabel->font());
+        ui->savePathLabel->setText(fm.elidedText(d_savePath, Qt::ElideMiddle, ui->savePathLabel->width()));
+    }
+    return QMainWindow::eventFilter(watched, event);
 }

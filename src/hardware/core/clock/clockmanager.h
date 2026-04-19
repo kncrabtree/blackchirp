@@ -32,6 +32,7 @@ public:
 
 signals:
     void clockFrequencyUpdate(RfConfig::ClockType, double);
+    void clockHardwareUpdate(RfConfig::ClockType, const QString &hwKey, int output);
 
 public slots:
     void readActiveClocks();

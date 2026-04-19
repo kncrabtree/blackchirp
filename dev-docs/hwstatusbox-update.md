@@ -201,6 +201,6 @@ Notes to address:
 - [x] Step 3D — PulseStatusBox
 - [x] Step 3E — LifLaserStatusBox
 - [x] Step 3F — ClockDisplayBox
-- [ ] Step 4 — Experiment information panel
-- [ ] Step 5 — MainWindow wiring + HardwareManager clockHardwareUpdate signal
+- [x] Step 4 — Experiment information panel (`exptSpinBox` → `exptValueLabel`, added elided `savePathLabel` with tooltip + resize event filter, added `exptConfigButton` cog wired to `appConfigAction`; block relocated below `hwStatusScrollArea` and above progress bars)
+- [x] Step 5 — MainWindow wiring + HardwareManager `clockHardwareUpdate` signal (per-status-box `configureRequested` → menu action trigger; `ClockDisplayBox::configureRequested` → `launchRfConfigDialog`; `clockHardwareRequested` → matching menu action; `ClockManager`/`HardwareManager` emit `clockHardwareUpdate` during clock configure)
 - [ ] Step 6 — Manual UI verification + full ctest

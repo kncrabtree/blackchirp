@@ -136,6 +136,11 @@ private:
 
 protected:
     void closeEvent(QCloseEvent *ev);
+    bool eventFilter(QObject *watched, QEvent *event) override;
+
+private:
+    QString d_savePath;
+    void updateSavePathLabel();
 
 };
 
