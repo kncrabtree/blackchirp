@@ -28,11 +28,13 @@
 #include <QtWidgets/QSpacerItem>
 #include <QtWidgets/QScrollArea>
 #include <QtWidgets/QToolButton>
+#include <QtWidgets/QFrame>
 #include <gui/widget/ftmwviewwidget.h>
 #include <gui/widget/led.h>
 #include <gui/widget/auxdataviewwidget.h>
 #include <gui/widget/clockdisplaybox.h>
 #include <gui/widget/toolbarwidgetaction.h>
+#include <gui/style/themecolors.h>
 
 #include <gui/lif/gui/lifdisplaywidget.h>
 #include <data/storage/applicationconfigmanager.h>
@@ -71,6 +73,7 @@ public:
     QLabel *exptLabel;
     QLabel *exptValueLabel;
     QToolButton *exptConfigButton;
+    QLabel *dataLabel;
     QLabel *savePathLabel;
     ClockDisplayBox *clockBox;
     QLabel *ftmwProgressLabel;
@@ -111,6 +114,7 @@ public:
 
     void setupUi(QMainWindow *MainWindow)
     {
+        using namespace Qt::Literals::StringLiterals;
         if (MainWindow->objectName().isEmpty())
             MainWindow->setObjectName(QString::fromUtf8("MainWindow"));
         // BlackChirp branding icon set programmatically in setupThemeAwareIconStyling()
@@ -256,6 +260,7 @@ public:
 
         statusLayout = new QGridLayout();
         statusLayout->setSpacing(6);
+        statusLayout->setVerticalSpacing(2);
         statusLayout->setObjectName(QString::fromUtf8("statusLayout"));
 
         exptLabel = new QLabel(centralWidget);
@@ -266,6 +271,11 @@ public:
         sizePolicy.setHeightForWidth(exptLabel->sizePolicy().hasHeightForWidth());
         exptLabel->setSizePolicy(sizePolicy);
         exptLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+        {
+            auto f = exptLabel->font();
+            f.setWeight(QFont::Bold);
+            exptLabel->setFont(f);
+        }
 
         statusLayout->addWidget(exptLabel,0,0);
 
@@ -278,6 +288,11 @@ public:
         exptValueLabel->setSizePolicy(sizePolicy1);
         exptValueLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
         exptValueLabel->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
+        {
+            auto f = exptValueLabel->font();
+            f.setWeight(QFont::Bold);
+            exptValueLabel->setFont(f);
+        }
 
         statusLayout->addWidget(exptValueLabel,0,1);
 
@@ -289,13 +304,32 @@ public:
 
         statusLayout->addWidget(exptConfigButton,0,2);
 
+        dataLabel = new QLabel("Data"_L1, centralWidget);
+        dataLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        {
+            auto f = dataLabel->font();
+            f.setWeight(QFont::Bold);
+            dataLabel->setFont(f);
+        }
+
+        statusLayout->addWidget(dataLabel,1,0);
+
         savePathLabel = new QLabel(centralWidget);
         savePathLabel->setObjectName(QString::fromUtf8("savePathLabel"));
         savePathLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
 
-        statusLayout->addWidget(savePathLabel,1,0,1,3);
+        statusLayout->addWidget(savePathLabel,1,1,1,2);
 
         instrumentStatusLayout->addLayout(statusLayout);
+
+        {
+            auto *separator = new QFrame(centralWidget);
+            separator->setFrameShape(QFrame::HLine);
+            separator->setFrameShadow(QFrame::Plain);
+            separator->setLineWidth(1);
+            separator->setStyleSheet(QString("QFrame { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, centralWidget)));
+            instrumentStatusLayout->addWidget(separator);
+        }
 
         ftmwProgressLabel = new QLabel(centralWidget);
         ftmwProgressLabel->setObjectName(QString::fromUtf8("label_2"));
@@ -545,7 +579,7 @@ public:
 #endif // QT_NO_SHORTCUT
         actionStart_Sequence->setText(QApplication::translate("MainWindow", "Start Seq&uence", nullptr));
         instStatusLabel->setText(QApplication::translate("MainWindow", "Instrument Status", nullptr));
-        exptLabel->setText(QApplication::translate("MainWindow", "Expt", nullptr));
+        exptLabel->setText(QApplication::translate("MainWindow", "Experiment", nullptr));
 #ifndef QT_NO_TOOLTIP
         exptValueLabel->setToolTip(QApplication::translate("MainWindow", "Number of the most recent experiment", nullptr));
 #endif // QT_NO_TOOLTIP

@@ -14,11 +14,13 @@ LifLaserStatusBox::LifLaserStatusBox(const QString &key, QWidget *parent) : Hard
 {
     auto hbl = new QHBoxLayout;
 
-    hbl->addWidget(new QLabel("Position"_L1));
+    auto *posNameLabel = new QLabel("Position"_L1, this);
+    posNameLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    hbl->addWidget(posNameLabel, 1);
 
     p_posLabel = new QLabel(this);
     p_posLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    hbl->addWidget(p_posLabel,1);
+    hbl->addWidget(p_posLabel,0);
 
     using namespace BC::Key::LifLaser;
     SettingsStorage s(d_key,SettingsStorage::Hardware);
@@ -40,7 +42,7 @@ void LifLaserStatusBox::applySettings()
     using namespace BC::Key::LifLaser;
     SettingsStorage s(d_key,SettingsStorage::Hardware);
     d_decimals = s.get(decimals,2);
-    d_suffix = " "_L1 + s.get(units,"nm"_L1).toString();
+    d_suffix = u" "_s + s.get(units,u"nm"_s);
     p_posLabel->setText(BC::Gui::formatNumberForDisplay(d_position, d_decimals) + d_suffix);
 }
 

@@ -41,8 +41,8 @@ TemperatureStatusBox::TemperatureStatusBox(const QString key, QWidget *parent) :
     p_noActiveLabel->setStyleSheet(QString("QLabel { color: %1; font-style: italic; }").arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, this)));
     gl->addWidget(p_noActiveLabel,nc,0,1,2);
 
-    gl->setColumnStretch(0,0);
-    gl->setColumnStretch(1,1);
+    gl->setColumnStretch(0,1);
+    gl->setColumnStretch(1,0);
 
     body()->setLayout(gl);
 

@@ -25,9 +25,9 @@ GasFlowDisplayBox::GasFlowDisplayBox(const QString key, QWidget *parent) : Hardw
     p_pressureLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     p_pressureLed = new Led;
 
-    gl->addWidget(new QLabel("Pressure"_L1), 0, 0, 1, 1, Qt::AlignRight);
-    gl->addWidget(p_pressureLabel, 0, 1, 1, kColumns * 2 - 1);
-    gl->addWidget(p_pressureLed, 0, kColumns * 2);
+    gl->addWidget(new QLabel("Pressure"_L1), 0, 0, 1, kColumns * 2, Qt::AlignRight | Qt::AlignVCenter);
+    gl->addWidget(p_pressureLabel, 0, kColumns * 2);
+    gl->addWidget(p_pressureLed, 0, kColumns * 2 + 1);
 
     SettingsStorage fc(key, SettingsStorage::Hardware);
     int n = fc.get(flowChannels, 4);
@@ -51,6 +51,14 @@ GasFlowDisplayBox::GasFlowDisplayBox(const QString key, QWidget *parent) : Hardw
         nameLabel->setVisible(false);
         valueLabel->setVisible(false);
         led->setVisible(false);
+    }
+
+    for (int col = 0; col < kColumns; ++col)
+    {
+        int baseCol = col * (kColumns + 1);
+        gl->setColumnStretch(baseCol, 1);
+        gl->setColumnStretch(baseCol + 1, 0);
+        gl->setColumnStretch(baseCol + 2, 0);
     }
 
     body()->setLayout(gl);

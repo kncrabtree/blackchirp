@@ -15,7 +15,7 @@ ClockDisplayBox::ClockDisplayBox(QWidget *parent) :
 {
     auto gl = new QGridLayout;
     gl->setSpacing(3);
-    gl->setContentsMargins(3, 3, 3, 3);
+    gl->setContentsMargins(3, 3, 0, 3);
 
     auto ct = QMetaEnum::fromType<RfConfig::ClockType>();
 
@@ -49,12 +49,13 @@ ClockDisplayBox::ClockDisplayBox(QWidget *parent) :
         cogButton->hide();
     }
 
-    gl->setColumnStretch(0, 0);
-    gl->setColumnStretch(1, 1);
+    gl->setColumnStretch(0, 1);
+    gl->setColumnStretch(1, 0);
     gl->setColumnStretch(2, 0);
     body()->setLayout(gl);
 
     setTitle("Clock Configuration"_L1);
+    setConfigButtonTooltip("Open Rf Configuration Dialog"_L1);
 }
 
 void ClockDisplayBox::updateFrequency(RfConfig::ClockType t, double f)
@@ -80,9 +81,10 @@ void ClockDisplayBox::setClockHardware(RfConfig::ClockType type, const QString &
         return;
     }
 
-    auto tooltip = QString("%1 output %2"_L1).arg(hwKey).arg(output);
+    auto tooltip = u"%1 output %2"_s.arg(hwKey).arg(output);
     it->nameLabel->setToolTip(tooltip);
     it->valueLabel->setToolTip(tooltip);
+    it->cogButton->setToolTip(u"Open %1 Settings Dialog"_s.arg(hwKey));
 
     disconnect(it->cogButton, &QToolButton::clicked, nullptr, nullptr);
     connect(it->cogButton, &QToolButton::clicked, this, [this, hwKey]() {

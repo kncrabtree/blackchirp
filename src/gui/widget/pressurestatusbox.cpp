@@ -13,7 +13,9 @@ PressureStatusBox::PressureStatusBox(const QString &key, QWidget *parent) : Hard
 {
     auto *gl = new QGridLayout;
 
-    gl->addWidget(new QLabel("Chamber"),0,0);
+    auto *chamberLabel = new QLabel("Chamber"_L1, this);
+    chamberLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    gl->addWidget(chamberLabel,0,0);
 
     p_cpLabel = new QLabel(this);
     p_cpLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
@@ -23,8 +25,8 @@ PressureStatusBox::PressureStatusBox(const QString &key, QWidget *parent) : Hard
     p_led = new Led(this);
     gl->addWidget(p_led,0,2);
 
-    gl->setColumnStretch(0,0);
-    gl->setColumnStretch(1,1);
+    gl->setColumnStretch(0,1);
+    gl->setColumnStretch(1,0);
     gl->setColumnStretch(2,0);
 
     body()->setLayout(gl);

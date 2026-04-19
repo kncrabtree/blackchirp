@@ -24,10 +24,12 @@ protected:
 public:
     QSize sizeHint() const override;
     void setTitle(const QString &t);
+    void setConfigButtonTooltip(const QString &t);
 
 private:
     QWidget *p_body;
-    QLabel *p_titleLabel;
+    QLabel *p_titleLabel{nullptr};
+    QToolButton *p_configButton{nullptr};
 };
 
 #endif // HARDWARESTATUSBOX_H

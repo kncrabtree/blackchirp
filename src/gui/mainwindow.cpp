@@ -15,8 +15,11 @@
 #include <QToolButton>
 #include <QFileDialog>
 #include <QDir>
+#include <QDesktopServices>
+#include <QMouseEvent>
 #include <QScreen>
 #include <QTimer>
+#include <QUrl>
 #include <functional>
 
 #include <gui/widget/digitizerconfigwidget.h>
@@ -1550,6 +1553,28 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
     {
         const QFontMetrics fm(ui->savePathLabel->font());
         ui->savePathLabel->setText(fm.elidedText(d_savePath, Qt::ElideMiddle, ui->savePathLabel->width()));
+    }
+    else if(watched == ui->savePathLabel && event->type() == QEvent::Enter)
+    {
+        setCursor(Qt::PointingHandCursor);
+        auto f = ui->savePathLabel->font();
+        f.setUnderline(true);
+        ui->savePathLabel->setFont(f);
+    }
+    else if(watched == ui->savePathLabel && event->type() == QEvent::Leave)
+    {
+        unsetCursor();
+        auto f = ui->savePathLabel->font();
+        f.setUnderline(false);
+        ui->savePathLabel->setFont(f);
+    }
+    else if(watched == ui->savePathLabel && event->type() == QEvent::MouseButtonRelease)
+    {
+        auto me = static_cast<QMouseEvent*>(event);
+        
+        if(me->button() == Qt::LeftButton && 
+        ui->savePathLabel->rect().contains(me->pos()))
+            QDesktopServices::openUrl(QUrl::fromLocalFile(d_savePath));
     }
     return QMainWindow::eventFilter(watched, event);
 }
