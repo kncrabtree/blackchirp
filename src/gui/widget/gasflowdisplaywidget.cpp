@@ -83,14 +83,17 @@ void GasFlowDisplayBox::rebuild()
     d_flowWidgets.clear();
     d_channelDecimals.clear();
     d_channelSuffix.clear();
-    d_setpoints.clear();
-    d_channelNames.clear();
 
     SettingsStorage fc(d_key, SettingsStorage::Hardware);
     int n = fc.get(flowChannels, 0);
+
+    // Preserve live state; resize to match new channel count
+    d_channelNames.resize(n);
+    d_setpoints.resize(n);
+
     for (int i = 0; i < n; ++i)
     {
-        auto name = fc.getArrayValue(channels, i, chName, QString());
+        const auto &name = d_channelNames.at(i);
         auto nameLabel = new QLabel(name.isEmpty() ? QString("Ch%1"_L1).arg(i+1) : name);
         nameLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
@@ -98,12 +101,11 @@ void GasFlowDisplayBox::rebuild()
         valueLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
         auto led = new Led;
+        led->setState(!qFuzzyCompare(1.0, d_setpoints.at(i) + 1.0));
 
         d_flowWidgets.append({nameLabel, valueLabel, led});
         d_channelDecimals.append(2);
         d_channelSuffix.append(QString());
-        d_setpoints.append(0.0);
-        d_channelNames.append(name);
     }
 
     addChannelsToGrid(gl);
