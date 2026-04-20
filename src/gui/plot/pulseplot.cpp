@@ -145,7 +145,7 @@ void PulsePlot::replot()
     maxTime *= 1.25;
 
     auto cit = c->d_channels.cbegin();
-    int plotIndex = 0;
+    std::size_t plotIndex = 0;
 
     for(int i=0 ;cit != c->d_channels.cend() && plotIndex < d_plotItems.size(); ++cit, ++plotIndex, ++i)
     {

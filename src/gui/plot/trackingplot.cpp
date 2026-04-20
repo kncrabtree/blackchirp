@@ -37,5 +37,5 @@ void TrackingPlot::buildContextMenu(QMouseEvent *me)
     QAction *asAllAction = menu->addAction(QString("Autoscale All"));
     connect(asAllAction,&QAction::triggered,this,&TrackingPlot::autoScaleAllRequested);
 
-    menu->popup(me->globalPos());
+    menu->popup(me->globalPosition().toPoint());
 }

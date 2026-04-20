@@ -1095,7 +1095,7 @@ QRectF ZoomPanPlot::getLimitRect(Axis xAx, Axis yAx) const
 void ZoomPanPlot::buildContextMenu(QMouseEvent *me)
 {
     QMenu *m = contextMenu();
-    m->popup(me->globalPos());
+    m->popup(me->globalPosition().toPoint());
 }
 
 QMenu *ZoomPanPlot::contextMenu()

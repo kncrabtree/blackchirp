@@ -359,12 +359,15 @@ QVector<OperationCapability> GenericXYOverlayWidget::getSupportedOperations() co
 
 bool GenericXYOverlayWidget::supportsBackgroundOperation(OperationCapability::Type type) const
 {
+    Q_UNUSED(type)
     return false; // Simplified for now
 }
 
 std::shared_ptr<OverlayOperation> GenericXYOverlayWidget::createOperation(OperationCapability::Type type,
                                                                          std::shared_ptr<OverlayBase> overlay) const
 {
+    Q_UNUSED(type)
+    Q_UNUSED(overlay)
     return nullptr; // Simplified for now
 }
 

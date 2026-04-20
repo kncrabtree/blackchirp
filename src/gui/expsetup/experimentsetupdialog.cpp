@@ -130,6 +130,8 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const QHash<RfConf
         lifItem->setData(0,Qt::UserRole,QString(""));
 
         auto [lifp,lifpItem] = addConfigPage<ExperimentLifConfigPage>(BC::Key::WizLif::key,lifItem,en);
+        Q_UNUSED(lifp)
+        Q_UNUSED(lifpItem)
     }
 
     addOptHwPages<ExperimentPulseGenConfigPage>(QString(PulseGenerator::staticMetaObject.className()),expTypeItem);

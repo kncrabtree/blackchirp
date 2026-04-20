@@ -32,6 +32,7 @@ QString VirtualGpibController::getThreadInfo() const
 
 bool VirtualGpibController::writeCmd(int address, const QString &cmd)
 {
+    Q_UNUSED(cmd)
     QMutexLocker locker(&d_commMutex);
     
     if(address != d_currentAddress)
@@ -46,6 +47,7 @@ bool VirtualGpibController::writeCmd(int address, const QString &cmd)
 
 bool VirtualGpibController::writeBinary(int address, const QByteArray &dat)
 {
+    Q_UNUSED(dat)
     QMutexLocker locker(&d_commMutex);
     
     if(address != d_currentAddress)

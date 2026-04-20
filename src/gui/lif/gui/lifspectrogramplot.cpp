@@ -285,7 +285,7 @@ void LifSpectrogramPlot::buildContextMenu(QMouseEvent *me)
         replot();
     });
 
-    menu->popup(me->globalPos());
+    menu->popup(me->globalPosition().toPoint());
 }
 
 double LifSpectrogramPlot::getldx() const

@@ -147,7 +147,7 @@ void QuickExptDialog::loadExperiment(int num)
     p_esw->setExperiment(&exp);
 
     bool hwIdentical = true;
-    if(d_hardware.size() != exp.d_hardwareData.hardwareMap.size())
+    if(d_hardware.size() != static_cast<std::size_t>(exp.d_hardwareData.hardwareMap.size()))
         hwIdentical = false;
     else
     {
