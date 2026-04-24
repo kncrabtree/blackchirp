@@ -17,11 +17,16 @@
 #include <data/bcglobals.h>
 #include <data/settings/hardwarekeys.h>
 #include <data/storage/applicationconfigmanager.h>
+#include <data/loadout/loadoutmanager.h>
 #include <hardware/core/hardwareregistry.h>
 #include <hardware/core/hardwareprofilemanager.h>
 #include <gui/style/themecolors.h>
 #include <gui/widget/pythonsettingswidget.h>
 #include <gui/widget/librarystatuswidget.h>
+
+#include <QInputDialog>
+
+using namespace Qt::StringLiterals;
 
 RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
     : QDialog(parent),
@@ -40,6 +45,9 @@ RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
     d_originalRuntimeConfig = RuntimeHardwareConfig::constInstance().getCurrentHardware();
     d_previewRuntimeConfig = d_originalRuntimeConfig;
 
+    // Track the active loadout (Save target and FTMW snapshot pointer; does not drive the preview)
+    d_activeLoadoutName = LoadoutManager::instance().currentLoadoutName();
+
     // Initialize threaded overrides from stored values
     for (auto& [hwKey, impl] : d_originalRuntimeConfig) {
         auto override = RuntimeHardwareConfig::constInstance().getThreaded(hwKey);
@@ -48,35 +56,27 @@ RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
     }
 
     // Auto-activate system profiles for required types that have no active entry
-    {
-        auto& profileManager = HardwareProfileManager::instance();
-        HardwareRegistry& registry = HardwareRegistry::instance();
-        for (const QString& hwType : registry.getHardwareTypes()) {
-            if (!RuntimeHardwareConfig::isHardwareRequired(hwType)) {
-                continue;
-            }
-            bool hasEntry = false;
-            for (auto& [key, impl] : d_previewRuntimeConfig) {
-                auto [type, label] = BC::Key::parseKey(key);
-                if (type == hwType) {
-                    hasEntry = true;
-                    break;
-                }
-            }
-            if (!hasEntry) {
-                QString impl = profileManager.getImplementation(hwType, QStringLiteral("virtual"));
-                if (!impl.isEmpty()) {
-                    d_previewRuntimeConfig[BC::Key::hwKey(hwType, QStringLiteral("virtual"))] = impl;
-                }
-            }
-        }
-    }
+    ensureRequiredTypes();
 
     // Populate configuration overview with actual hardware data
     populateConfigurationOverview();
 
     // Populate hardware browser and connect selection handling
     populateHardwareBrowser();
+
+    // Initialize loadout combo and wire loadout buttons
+    populateLoadoutCombo();
+    connect(pu_ui->p_loadoutCombo, &QComboBox::currentTextChanged,
+            this, &RuntimeHardwareConfigDialog::onLoadoutComboChanged);
+    connect(pu_ui->p_loadoutSave, &QPushButton::clicked,
+            this, &RuntimeHardwareConfigDialog::onLoadoutSave);
+    connect(pu_ui->p_loadoutSaveAs, &QPushButton::clicked,
+            this, &RuntimeHardwareConfigDialog::onLoadoutSaveAs);
+    connect(pu_ui->p_loadoutDelete, &QPushButton::clicked,
+            this, &RuntimeHardwareConfigDialog::onLoadoutDelete);
+    connect(pu_ui->p_loadoutSetDefault, &QPushButton::clicked,
+            this, &RuntimeHardwareConfigDialog::onLoadoutSetDefault);
+    updateLoadoutButtonStates();
 
     // Initialize Library Status tab
     p_libraryStatusWidget = new LibraryStatusWidget(pu_ui->libraryStatusTab);
@@ -1091,6 +1091,9 @@ void RuntimeHardwareConfigDialog::onDialogAccepted()
         // by HardwareManager::syncWithRuntimeConfig() which is called by MainWindow
         // after dialog close.
 
+        // Record the active loadout as the persisted current loadout
+        LoadoutManager::instance().setCurrentLoadoutName(d_activeLoadoutName);
+
         // Configuration applied successfully
         accept();
     } else {
@@ -1203,4 +1206,167 @@ bool RuntimeHardwareConfigDialog::getTypeDefaultThreaded(const QString& hardware
         QString(GpibController::staticMetaObject.className())
     };
     return threadedTypes.contains(hardwareType);
+}
+
+void RuntimeHardwareConfigDialog::ensureRequiredTypes()
+{
+    auto &profileManager = HardwareProfileManager::instance();
+    HardwareRegistry &registry = HardwareRegistry::instance();
+    for (const QString &hwType : registry.getHardwareTypes()) {
+        if (!RuntimeHardwareConfig::isHardwareRequired(hwType))
+            continue;
+        bool hasEntry = false;
+        for (auto &[key, impl] : d_previewRuntimeConfig) {
+            auto [type, label] = BC::Key::parseKey(key);
+            if (type == hwType) {
+                hasEntry = true;
+                break;
+            }
+        }
+        if (!hasEntry) {
+            const QString impl = profileManager.getImplementation(hwType, QStringLiteral("virtual"));
+            if (!impl.isEmpty())
+                d_previewRuntimeConfig[BC::Key::hwKey(hwType, QStringLiteral("virtual"))] = impl;
+        }
+    }
+}
+
+void RuntimeHardwareConfigDialog::populateLoadoutCombo()
+{
+    QSignalBlocker blocker(pu_ui->p_loadoutCombo);
+    pu_ui->p_loadoutCombo->clear();
+    pu_ui->p_loadoutCombo->addItems(LoadoutManager::instance().loadoutNames());
+    const int idx = pu_ui->p_loadoutCombo->findText(d_activeLoadoutName);
+    pu_ui->p_loadoutCombo->setCurrentIndex(idx >= 0 ? idx : 0);
+}
+
+void RuntimeHardwareConfigDialog::switchToLoadout(const QString &name)
+{
+    d_activeLoadoutName = name;
+    auto loadout = LoadoutManager::instance().getLoadout(name);
+    if (loadout.has_value() && !loadout->hardwareMap.empty()) {
+        d_previewRuntimeConfig.clear();
+        d_previewRuntimeConfig.insert(loadout->hardwareMap.begin(), loadout->hardwareMap.end());
+    } else
+        d_previewRuntimeConfig = d_originalRuntimeConfig;
+
+    ensureRequiredTypes();
+
+    {
+        QSignalBlocker blocker(pu_ui->p_loadoutCombo);
+        pu_ui->p_loadoutCombo->setCurrentText(name);
+    }
+
+    d_currentHardwareType.clear();
+    populateConfigurationOverview();
+    populateHardwareBrowser();
+    updateSelectionDisplay(QString{});
+    validatePreviewConfiguration();
+    updateLoadoutButtonStates();
+}
+
+void RuntimeHardwareConfigDialog::updateLoadoutButtonStates()
+{
+    const bool isDefault = (d_activeLoadoutName == LoadoutManager::instance().defaultLoadoutName());
+    pu_ui->p_loadoutSetDefault->setEnabled(!isDefault);
+}
+
+void RuntimeHardwareConfigDialog::onLoadoutComboChanged(const QString &name)
+{
+    if (name.isEmpty() || name == d_activeLoadoutName)
+        return;
+
+    const auto reply = QMessageBox::question(
+        this, u"Load Loadout"_s,
+        u"Load loadout '%1'? This will replace your current hardware preview."_s.arg(name),
+        QMessageBox::Yes | QMessageBox::No);
+
+    if (reply != QMessageBox::Yes) {
+        QSignalBlocker blocker(pu_ui->p_loadoutCombo);
+        pu_ui->p_loadoutCombo->setCurrentText(d_activeLoadoutName);
+        return;
+    }
+
+    switchToLoadout(name);
+}
+
+void RuntimeHardwareConfigDialog::onLoadoutSave()
+{
+    HardwareLoadout loadout;
+    loadout.name = d_activeLoadoutName;
+    loadout.hardwareMap = std::map<QString,QString>(d_previewRuntimeConfig.begin(), d_previewRuntimeConfig.end());
+    auto existing = LoadoutManager::instance().getLoadout(d_activeLoadoutName);
+    if (existing.has_value())
+        loadout.ftmw = existing->ftmw;
+    LoadoutManager::instance().putLoadout(loadout);
+}
+
+void RuntimeHardwareConfigDialog::onLoadoutSaveAs()
+{
+    bool ok = false;
+    const QString name = QInputDialog::getText(
+        this, u"Save Loadout As"_s, u"Loadout name:"_s,
+        QLineEdit::Normal, {}, &ok).trimmed();
+
+    if (!ok || name.isEmpty())
+        return;
+
+    if (LoadoutManager::instance().loadoutExists(name)) {
+        const auto reply = QMessageBox::question(
+            this, u"Overwrite Loadout"_s,
+            u"A loadout named '%1' already exists. Overwrite it?"_s.arg(name),
+            QMessageBox::Yes | QMessageBox::No);
+        if (reply != QMessageBox::Yes)
+            return;
+    }
+
+    HardwareLoadout loadout;
+    loadout.name = name;
+    loadout.hardwareMap = std::map<QString,QString>(d_previewRuntimeConfig.begin(), d_previewRuntimeConfig.end());
+    LoadoutManager::instance().putLoadout(loadout);
+
+    d_activeLoadoutName = name;
+    populateLoadoutCombo();
+    updateLoadoutButtonStates();
+
+    const auto reply = QMessageBox::question(
+        this, u"Configure FTMW Settings"_s,
+        u"Configure FTMW settings for loadout '%1'?"_s.arg(name),
+        QMessageBox::Yes | QMessageBox::No);
+    if (reply == QMessageBox::Yes)
+        d_openFtmwConfigOnClose = true;
+}
+
+void RuntimeHardwareConfigDialog::onLoadoutDelete()
+{
+    const auto reply = QMessageBox::question(
+        this, u"Delete Loadout"_s,
+        u"Delete loadout '%1'? This cannot be undone."_s.arg(d_activeLoadoutName),
+        QMessageBox::Yes | QMessageBox::No);
+    if (reply != QMessageBox::Yes)
+        return;
+
+    LoadoutManager::instance().removeLoadout(d_activeLoadoutName);
+
+    // Pick a new active loadout name (does not affect the preview hardware map)
+    QString newName = LoadoutManager::instance().currentLoadoutName();
+    if (newName.isEmpty()) {
+        HardwareLoadout def;
+        def.name = u"Default"_s;
+        def.hardwareMap = std::map<QString,QString>(d_originalRuntimeConfig.begin(), d_originalRuntimeConfig.end());
+        LoadoutManager::instance().putLoadout(def);
+        LoadoutManager::instance().setCurrentLoadoutName(def.name);
+        LoadoutManager::instance().setDefaultLoadoutName(def.name);
+        newName = def.name;
+    }
+
+    d_activeLoadoutName = newName;
+    populateLoadoutCombo();
+    updateLoadoutButtonStates();
+}
+
+void RuntimeHardwareConfigDialog::onLoadoutSetDefault()
+{
+    LoadoutManager::instance().setDefaultLoadoutName(d_activeLoadoutName);
+    updateLoadoutButtonStates();
 }

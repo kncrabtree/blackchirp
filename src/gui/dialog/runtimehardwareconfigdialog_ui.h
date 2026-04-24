@@ -14,6 +14,8 @@
 #include <QtWidgets/QTreeWidget>
 #include <QtWidgets/QTreeWidgetItem>
 #include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QComboBox>
+#include <QtWidgets/QGroupBox>
 #include <QtWidgets/QWidget>
 #include <gui/style/themecolors.h>
 
@@ -48,7 +50,16 @@ public:
     
     // Validation Status Bar
     QLabel *validationStatusLabel;
-    
+
+    // Loadout Management Group
+    QGroupBox *loadoutGroupBox;
+    QLabel *loadoutLabel;
+    QComboBox *p_loadoutCombo;
+    QPushButton *p_loadoutSave;
+    QPushButton *p_loadoutSaveAs;
+    QPushButton *p_loadoutDelete;
+    QPushButton *p_loadoutSetDefault;
+
     // Library Status Tab (content provided by LibraryStatusWidget)
     QWidget *libraryStatusTab;
     
@@ -157,7 +168,38 @@ public:
         
         // Set splitter sizes to 33% each
         hardwareConfigSplitter->setSizes({300, 300, 300});
-        
+
+        // Loadout Management Group
+        loadoutGroupBox = new QGroupBox("Loadout", hardwareConfigTab);
+        auto *loadoutRowLayout = new QHBoxLayout(loadoutGroupBox);
+        loadoutRowLayout->setSpacing(6);
+
+        loadoutLabel = new QLabel("Active:", loadoutGroupBox);
+        loadoutRowLayout->addWidget(loadoutLabel);
+
+        p_loadoutCombo = new QComboBox(loadoutGroupBox);
+        p_loadoutCombo->setObjectName(QString::fromUtf8("p_loadoutCombo"));
+        p_loadoutCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        loadoutRowLayout->addWidget(p_loadoutCombo, 1);
+
+        p_loadoutSave = new QPushButton("Save", loadoutGroupBox);
+        p_loadoutSave->setObjectName(QString::fromUtf8("p_loadoutSave"));
+        loadoutRowLayout->addWidget(p_loadoutSave);
+
+        p_loadoutSaveAs = new QPushButton("Save As...", loadoutGroupBox);
+        p_loadoutSaveAs->setObjectName(QString::fromUtf8("p_loadoutSaveAs"));
+        loadoutRowLayout->addWidget(p_loadoutSaveAs);
+
+        p_loadoutDelete = new QPushButton("Delete", loadoutGroupBox);
+        p_loadoutDelete->setObjectName(QString::fromUtf8("p_loadoutDelete"));
+        loadoutRowLayout->addWidget(p_loadoutDelete);
+
+        p_loadoutSetDefault = new QPushButton("Set as Default", loadoutGroupBox);
+        p_loadoutSetDefault->setObjectName(QString::fromUtf8("p_loadoutSetDefault"));
+        loadoutRowLayout->addWidget(p_loadoutSetDefault);
+
+        hardwareConfigLayout->addWidget(loadoutGroupBox, 0);
+
         hardwareConfigLayout->addWidget(hardwareConfigSplitter, 1);
         
         // Validation Status Bar at bottom

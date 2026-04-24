@@ -160,34 +160,49 @@ It does **not** gain RF/Chirp/Digitizer tabs. Rationale: those settings belong t
 distinct conceptual axis (FTMW operating point) and are managed in their own
 dialog. The Hardware Configuration dialog stays focused on hardware selection.
 
+**Design principle — runtime config is authoritative for hardware.** The dialog
+always opens with `d_previewRuntimeConfig` initialised from
+`RuntimeHardwareConfig::getCurrentHardware()`, not from any loadout. The runtime
+hardware config already persists itself to QSettings independently; embedding it
+inside a loadout would create a redundant, competing source of truth. Loadouts
+are named presets that a user can explicitly apply or save to; they do not
+silently track live hardware state. `d_activeLoadoutName` serves as a pointer to
+the FTMW snapshot target and as the destination for the **Save** button — it is
+not a constraint on what appears in the preview.
+
 Behavior:
 
-- On open: combo populated from `LoadoutManager::loadoutNames()`, selection set
-  to `currentLoadoutName()`. Editing the hardware map mutates
+- On open: `d_previewRuntimeConfig` = current runtime config (unchanged from
+  pre-loadout behavior). Combo populated from `LoadoutManager::loadoutNames()`,
+  selection set to `currentLoadoutName()`. Editing the hardware map mutates
   `d_previewRuntimeConfig` as today.
+- **Combo selection change**: selecting a different loadout is an explicit "load
+  this preset" action. A confirmation prompt ("Load loadout `<name>`? This will
+  replace your current hardware preview.") guards the destructive replacement of
+  `d_previewRuntimeConfig`. On confirm, the chosen loadout's `hardwareMap` is
+  copied into `d_previewRuntimeConfig` and the overview tree is refreshed;
+  `d_activeLoadoutName` is updated. On cancel, the combo reverts to the previous
+  selection without touching the preview.
 - **Save**: persist `d_previewRuntimeConfig` as the `hardwareMap` of the active
   loadout (FTMW snapshot unchanged).
-- **Save As**: prompt for new name; create the loadout with the current
-  `d_previewRuntimeConfig` as its `hardwareMap` and **no** `FtmwSnapshot`. Then
-  prompt: *"Configure FTMW settings for this loadout? [Yes] [No]"*. If **Yes**,
-  after this dialog closes, open the FTMW Configuration dialog (where the user
-  can selectively load values from compatible loadouts via the per-tab "Load
-  from loadout" combos). If **No**, leave the FTMW snapshot empty; it can be
-  added later by opening FTMW Configuration.
-- **Delete**: confirm; remove. If the active loadout is deleted, fall back to
-  another (prefer the default loadout; otherwise the first remaining; otherwise
-  recreate "Default" from current hardware state).
-- **Set as Default**: writes `Loadouts/defaultLoadout = currentSelection`. The
-  default loadout is the fallback target when the active loadout is deleted.
-- On dialog accept (existing path): apply hardware map. Then, if the active
-  loadout has an `FtmwSnapshot`, push its clock frequencies via
+- **Save As**: prompt for a name; validate it is non-empty and not a duplicate
+  (overwrite confirmation on conflict). Create the loadout with the current
+  `d_previewRuntimeConfig` as its `hardwareMap` and **no** `FtmwSnapshot`.
+  Update `d_activeLoadoutName` to the new name. Then prompt: *"Configure FTMW
+  settings for this loadout? [Yes] [No]"*. If **Yes**, set `d_openFtmwConfigOnClose`
+  so that `MainWindow` opens the FTMW Configuration dialog after this dialog
+  closes. If **No**, no further action.
+- **Delete**: confirm; remove. Does **not** alter `d_previewRuntimeConfig`.
+  `d_activeLoadoutName` is reassigned to `LoadoutManager::currentLoadoutName()`
+  after removal (the manager picks the default or first remaining). If all
+  loadouts were deleted, recreate a "Default" loadout from `d_originalRuntimeConfig`.
+- **Set as Default**: `LoadoutManager::setDefaultLoadoutName(currentSelection)`.
+  Button is disabled when the active loadout is already the default.
+- On dialog accept: apply hardware map (existing path). Call
+  `LoadoutManager::setCurrentLoadoutName(d_activeLoadoutName)`. Then, if the
+  active loadout has an `FtmwSnapshot`, push its clock frequencies via
   `HardwareManager::configureClocks` (clocks whose `hwKey` is not in the new
   hardware map are skipped with a warning).
-
-**Loadout combobox change-while-open**: switching the combo selection mid-dialog
-loads the chosen loadout's `hardwareMap` into `d_previewRuntimeConfig` and
-refreshes the overview tree. If `d_previewRuntimeConfig` had unsaved edits
-relative to the previously-active loadout, prompt to discard or save first.
 
 ### Prepopulation: per-component "Load from loadout"
 
@@ -449,34 +464,41 @@ Read the current dialog before starting:
 - `src/gui/dialog/runtimehardwareconfigdialog.{h,cpp}`
 - `src/gui/dialog/runtimehardwareconfigdialog_ui.h`
 
-#### B1. Add Loadout group + Save / Save As / Delete / Set as Default
+#### B1. Add Loadout group + Save / Save As / Delete / Set as Default — **DONE**
 
-- **Files:** `runtimehardwareconfigdialog_ui.h` (add widgets to the existing
-  Hardware Configuration tab layout, above `configOverviewTree`),
-  `runtimehardwareconfigdialog.{h,cpp}`.
-- **Add private members:** `QComboBox *p_loadoutCombo`,
-  `QPushButton *p_loadoutSave`, `*p_loadoutSaveAs`, `*p_loadoutDelete`,
-  `*p_loadoutSetDefault`; `QString d_activeLoadoutName`.
-- **Wire:**
-  - On open: populate combo from `LoadoutManager::loadoutNames()`, select
-    `currentLoadoutName()`. Load that loadout's hardwareMap into
-    `d_previewRuntimeConfig`, repopulate the overview tree.
-  - Combo `currentTextChanged`: if `d_previewRuntimeConfig` differs from the
-    previously-active loadout's hardwareMap, prompt to save or discard. On
-    confirm, switch.
-  - **Save**: write a `HardwareLoadout` whose `hardwareMap = d_previewRuntimeConfig`
-    and `ftmw` = whatever the existing active loadout had (preserve FTMW snapshot).
-  - **Save As**: name prompt. Build a new `HardwareLoadout` with current
-    `d_previewRuntimeConfig` and **no** `FtmwSnapshot`. Persist via `put()`.
-    Then prompt: *"Configure FTMW settings for this loadout? [Yes] [No]"*. If
-    Yes, set a flag that `MainWindow` reads after dialog close to launch the
-    FTMW Configuration dialog (where the user picks per-tab load sources);
-    if No, no further action.
-  - **Delete**: confirm; `LoadoutManager::remove`. Reselect default-or-first; if
-    none remain, recreate Default.
-  - **Set as Default**: `LoadoutManager::setDefaultLoadoutName(currentSelection)`.
-    Update button enable state (button could be disabled if active is already
-    default).
+**Implementation summary:**
+
+- `runtimehardwareconfigdialog_ui.h`: Added a `QGroupBox("Loadout")` above the
+  hardware splitter containing `QComboBox *p_loadoutCombo` (stretchy) and four
+  `QPushButton`s: `p_loadoutSave`, `p_loadoutSaveAs`, `p_loadoutDelete`,
+  `p_loadoutSetDefault`.
+- `runtimehardwareconfigdialog.h`: Added `QString d_activeLoadoutName`,
+  `bool d_openFtmwConfigOnClose`, public `openFtmwConfigOnClose()` getter, and
+  private methods: `populateLoadoutCombo`, `switchToLoadout`, `updateLoadoutButtonStates`,
+  `ensureRequiredTypes`, `onLoadoutComboChanged`, `onLoadoutSave`, `onLoadoutSaveAs`,
+  `onLoadoutDelete`, `onLoadoutSetDefault`.
+- `runtimehardwareconfigdialog.cpp`:
+  - Constructor: `d_previewRuntimeConfig` is still initialised from the current
+    runtime config (unchanged). `d_activeLoadoutName` is set to
+    `LoadoutManager::instance().currentLoadoutName()`. The auto-activate-required-types
+    block was extracted into `ensureRequiredTypes()`. Loadout combo is populated and
+    all five signals are wired after `populateHardwareBrowser()`.
+  - `onLoadoutComboChanged`: confirmation prompt on every selection change; on
+    confirm calls `switchToLoadout` which copies the loadout's `hardwareMap` into
+    `d_previewRuntimeConfig` and refreshes all panels. On cancel reverts the combo.
+  - `onLoadoutSave`: builds `HardwareLoadout` from `d_previewRuntimeConfig`,
+    preserving any existing FTMW snapshot; calls `putLoadout`.
+  - `onLoadoutSaveAs`: trims and validates name; prompts on duplicate; saves with no
+    FTMW snapshot; updates `d_activeLoadoutName`; prompts for FTMW configuration and
+    sets `d_openFtmwConfigOnClose` if yes.
+  - `onLoadoutDelete`: removes the loadout; reassigns `d_activeLoadoutName` from
+    `LoadoutManager::currentLoadoutName()`; recreates "Default" from
+    `d_originalRuntimeConfig` if all loadouts were deleted. Does not alter the preview.
+  - `onLoadoutSetDefault`: delegates to `LoadoutManager::setDefaultLoadoutName`.
+  - `onDialogAccepted`: calls `LoadoutManager::setCurrentLoadoutName(d_activeLoadoutName)`
+    before `accept()`. The `setCurrentLoadoutName` call in B2 is therefore already
+    implemented; what remains in B2 is the clock push in the `MainWindow` `finished`
+    lambda.
 
 #### B2. Apply-on-accept wiring for clocks
 
