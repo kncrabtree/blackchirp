@@ -520,6 +520,15 @@ if(BC_BUILD_TESTS)
     add_blackchirp_definitions(tst_waveformbuffertest)
     add_test(NAME WaveformBufferTest COMMAND tst_waveformbuffertest)
 
+    add_executable(tst_loadoutmanagertest tests/tst_loadoutmanagertest.cpp)
+    target_link_libraries(tst_loadoutmanagertest
+        blackchirp-data
+        Qt6::Test
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_loadoutmanagertest)
+    add_test(NAME LoadoutManagerTest COMMAND tst_loadoutmanagertest)
+
     # Hardware Communication Test
     # TODO: Temporarily disabled due to HardwareManager dependencies in HardwareObject
     # This test will be re-enabled once Phase 2 runtime hardware migration is complete
@@ -554,6 +563,7 @@ if(BC_BUILD_TESTS)
         tst_experimentloading
         tst_scientificspinboxtest
         tst_waveformbuffertest
+        tst_loadoutmanagertest
         # tst_hardwarecommunication  # Disabled until HardwareManager migration complete
     )
     

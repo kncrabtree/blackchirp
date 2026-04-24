@@ -46,6 +46,10 @@ set(BLACKCHIRP_DATA_SOURCES
 
     # Loadout system
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loadout/rfconfigsnapshot.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loadout/chirpconfigloadout.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loadout/ftmwdigitizerloadout.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loadout/hardwareloadout.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loadout/loadoutmanager.cpp
 
     # Hardware configuration classes (moved from hardware layer - pure data structures)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/experiment/hardware/core/ftmwdigitizerconfig.cpp
@@ -113,6 +117,10 @@ set(BLACKCHIRP_DATA_HEADERS
 
     # Loadout system
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loadout/rfconfigsnapshot.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loadout/chirpconfigloadout.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loadout/ftmwdigitizerloadout.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loadout/hardwareloadout.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loadout/loadoutmanager.h
 
     # Hardware configuration classes (moved from hardware layer - pure data structures)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/experiment/hardware/core/ftmwdigitizerconfig.h

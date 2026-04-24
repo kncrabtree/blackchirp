@@ -332,11 +332,12 @@ On first launch after this feature lands:
 
 ## Implementation Plan
 
-The plan is structured for an orchestrator that dispatches Haiku/Sonnet agents per
-task. Each task lists target files, the contract to add or modify, and the
-acceptance check the orchestrator should run after the agent reports completion.
+The plan is structured for an orchestrator that may dispatch Haiku/Sonnet agents per
+task as needed. Repetitive and/or token-heavy tasks should be delegated, otherwise
+can be executed by the orchestator. Each task lists target files, the contract to add
+ or modify, and the acceptance check the orchestrator should run after completion.
 
-The orchestrator (not the agents) runs builds and tests. Use:
+The orchestrator (not any agents) runs builds and tests. Use:
 
 ```bash
 cmake . -B build/Desktop-Debug/
@@ -346,137 +347,98 @@ make -C build/tests tests -j$(nproc)
 ctest --test-dir build/tests
 ```
 
-Phases A and B are largely sequential. C, D, and E depend on A+B. Within a phase,
-items marked **‖** can be dispatched in parallel.
+Phases A and B are largely sequential. C, D, and E depend on A+B.
 
-### Phase A — Data Model & Persistence (no UI)
+## Dispatch Notes for the Orchestrator
 
-#### A1. Define `RfConfigSnapshot` — **DONE**
+- Tasks marked **‖** within a phase can run in parallel agent sessions.
+- Each agent task is self-contained: it lists files, signatures, and behavior.
+  Avoid passing the whole spec; pass only the relevant section plus any updated
+  context from prior phases.
+- After every agent task: run the appropriate build target (debug first, then
+  tests). Do not advance to the next phase until the current phase's gate is
+  green.
+- Phase A is well within Haiku's range (pure data + serialization). Phases B, C,
+  and D involve UI wiring and inter-dialog handoffs — start with Sonnet for
+  those, escalate from Haiku if needed.
 
-- **Files:** `src/data/loadout/rfconfigsnapshot.{h,cpp}`. Wired into
-  `cmake/BlackchirpData.cmake` (sources + headers lists, under "Loadout system").
-- **What landed:** plain struct with the five RF scalar fields plus
-  `QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks`. Static
-  `fromRfConfig(const RfConfig&)` and member `applyTo(RfConfig&) const`.
-  No SettingsStorage I/O lives here (see design note below).
-- **Design note for A2/A3/A5:** the spec originally proposed free
-  `writeXxx(SettingsStorage&, ...)` functions, but `setGroupValue`/`setArray`
-  are protected on SettingsStorage. Rather than friending many free fns, all
-  SettingsStorage I/O lives in `LoadoutManager` (a SettingsStorage subclass).
-  Sub-component files (`rfconfigsnapshot`, `chirpconfigloadout`,
-  `ftmwdigitizerloadout`) provide pure data structs + conversion helpers
-  to/from the parent type. LoadoutManager's private methods bridge those
-  to SettingsStorage `setGroupValue` / `setArray` calls.
-- **Build:** `make -C build/Desktop-Debug blackchirp-data` clean.
+### Phase A — Data Model & Persistence (no UI) — **DONE**
 
-#### A2. ChirpConfig loadout helpers ‖
+All source files live under `src/data/loadout/` and are wired into
+`cmake/BlackchirpData.cmake`. The test suite is in
+`tests/tst_loadoutmanagertest.cpp` (registered in the root `CMakeLists.txt`).
 
-- **New files:** `src/data/loadout/chirpconfigloadout.{h,cpp}`.
-- **Contract:** pure helpers, no SettingsStorage dependency.
-  - `SettingsStorage::SettingsMap chirpConfigScalarsMap(const ChirpConfig&);`
-    — returns scalars: `numChirps` (derived), `chirpInterval`, `allIdentical`.
-  - `std::vector<SettingsMap> chirpConfigSegmentsArray(const ChirpConfig&);`
-    — one map per segment with fields `{chirpIndex, segmentIndex, startFreqMHz,
-    endFreqMHz, durationUs, alphaUs, empty}`.
-  - `std::vector<SettingsMap> chirpConfigMarkersArray(const ChirpConfig&);`
-    — one map per marker with fields `{name, role, timingMode, startTime,
-    endTime, enabled}`.
-  - Inverse builder: `ChirpConfig chirpConfigFromMaps(const SettingsMap &scalars, const std::vector<SettingsMap> &segments, const std::vector<SettingsMap> &markers, double awgSampleRateSps);`
-    The reader calls `setAwgSampleRate(awgSampleRateSps)` so `chirpList()` is
-    reconstructed correctly.
-- **Acceptance:** compiles; no behavior change to existing `ChirpConfig` class.
+#### Design note: where SettingsStorage I/O lives
 
-#### A3. FtmwDigitizerConfig loadout helpers ‖
+`setGroupValue`/`setArray` are protected on `SettingsStorage`. Rather than
+friending many free functions, all QSettings I/O is concentrated in
+`LoadoutManager`, which subclasses `SettingsStorage`. The sub-component helper
+files provide pure data-conversion functions (no storage dependency) that
+`LoadoutManager`'s private methods call when reading and writing.
 
-- **New files:** `src/data/loadout/ftmwdigitizerloadout.{h,cpp}`.
-- **Contract:** pure helpers, no SettingsStorage dependency.
-  - `SettingsStorage::SettingsMap digitizerScalarsMap(const FtmwDigitizerConfig&);`
-    — trigger fields, sample rate, record length, bytes per point, byte order,
-    block average + count, multi-record + count, fidChannel.
-  - `std::vector<SettingsMap> digitizerAnalogArray(const FtmwDigitizerConfig&);`
-    — one map per analog channel `{index, enabled, fullScale, offset}`.
-  - `std::vector<SettingsMap> digitizerDigitalArray(const FtmwDigitizerConfig&);`
-    — one map per digital channel `{index, enabled, input, role}`.
-  - Inverse builder: `FtmwDigitizerConfig ftmwDigitizerFromMaps(const QString &hwKey, const SettingsMap &scalars, const std::vector<SettingsMap> &analog, const std::vector<SettingsMap> &digital);`
-    Constructs `FtmwDigitizerConfig(hwKey)` and populates all fields.
-- **Acceptance:** compiles; no behavior change to existing `DigitizerConfig` /
-  `FtmwDigitizerConfig` classes.
+#### `RfConfigSnapshot` (`rfconfigsnapshot.{h,cpp}`)
 
-#### A4. Define `FtmwSnapshot` and `HardwareLoadout` + composite serializer
+A plain struct holding the set-only RF operating parameters: five scalars
+(`commonUpDownLO`, `awgMult`, `upMixSideband`, `chirpMult`,
+`downMixSideband`) and a `QHash<RfConfig::ClockType, RfConfig::ClockFreq>
+clocks`. Provides `fromRfConfig(const RfConfig&)` and `applyTo(RfConfig&)`
+for converting to/from the full runtime `RfConfig`.
 
-- **New files:** `src/data/loadout/hardwareloadout.h`, `.cpp`.
-- **Contract:**
-  - `FtmwSnapshot { RfConfigSnapshot, ChirpConfig, FtmwDigitizerConfig }`.
-  - `HardwareLoadout` per spec.
-  - Free functions writing/reading the full loadout under a given group key,
-    delegating to A1/A2/A3 helpers for the FTMW sub-fields.
-- **Acceptance:** compiles; depends on A1/A2/A3 + bcglobals.
+#### ChirpConfig loadout helpers (`chirpconfigloadout.{h,cpp}`)
 
-#### A5. `LoadoutManager` singleton
+Free functions in `namespace BC::Loadout` that convert a `ChirpConfig` into
+the three `SettingsMap` / `vector<SettingsMap>` structures that
+`LoadoutManager` writes to QSettings, and reconstruct a `ChirpConfig` from
+them. AWG sample rate is not stored in the loadout; the inverse builder takes
+it as a parameter so callers can pass the live hardware value.
 
-- **New files:** `src/data/loadout/loadoutmanager.h`, `.cpp`.
-- **Contract:**
-  - Singleton: `static LoadoutManager& instance();` (mirror `HardwareProfileManager`).
-  - Reads on construction; mutators write immediately via `save()`.
-  - Public API:
-    - `QStringList loadoutNames() const;`
-    - `bool exists(const QString &name) const;`
-    - `std::optional<HardwareLoadout> get(const QString &name) const;`
-    - `bool put(const HardwareLoadout &loadout);`
-    - `bool remove(const QString &name);`
-    - `QString currentLoadoutName() const;`
-    - `void setCurrentLoadoutName(const QString &name);`
-    - `std::optional<HardwareLoadout> currentLoadout() const;`
-    - `QString defaultLoadoutName() const;`
-    - `void setDefaultLoadoutName(const QString &name);`
-    - `std::optional<HardwareLoadout> defaultLoadout() const;`
-    - `QStringList loadoutsMatchingHwKey(const QString &hwKey) const;`
-      — returns names of loadouts whose `hardwareMap` contains `hwKey` as a
-      key. Drives the FTMW Configuration "Load from loadout" combos
-      (combo for RF/Chirp tabs filters by AWG hwKey; combo for Digitizer tab
-      filters by FtmwDigitizer hwKey).
-    - Per-component copy primitives (free functions in the same header, not
-      member functions, so they operate on `FtmwSnapshot` directly without
-      requiring the loadout to be persisted yet):
-      - `void copyClocksMatching(const RfConfigSnapshot &source, RfConfigSnapshot &dest, const std::set<QString> &allowedHwKeys);`
-        — copies entries from `source.clocks` into `dest.clocks` whose
-        `hwKey` is present in `allowedHwKeys` (typically derived from the
-        active hardware map's Clock entries).
-      - `void copyRfScalars(const RfConfigSnapshot &source, RfConfigSnapshot &dest);`
-        — copies `awgMult`, `chirpMult`, sidebands, `commonUpDownLO`.
-      - (Chirp and digitizer copies are trivial whole-struct assignments;
-        no helper required.)
-  - Storage: SettingsStorage with key list `{"Loadouts"}`, layout per spec.
-  - Thread safety: `QMutex` around mutating ops (HardwareProfileManager pattern).
-- **Signals:** `loadoutAdded(QString)`, `loadoutRemoved(QString)`,
-  `loadoutChanged(QString)`, `currentLoadoutChanged(QString)`,
-  `defaultLoadoutChanged(QString)`.
-- **First-run migration:** if `loadoutNames().isEmpty()` on construction, build
-  "Default" per the Migration section, `put()` it, set as both current and default.
-- **Acceptance:** compiles; not yet wired anywhere.
+#### FtmwDigitizerConfig loadout helpers (`ftmwdigitizerloadout.{h,cpp}`)
 
-#### A6. Unit tests
+Same pattern as the chirp helpers, but for `FtmwDigitizerConfig`. Covers all
+trigger, horizontal, averaging, and channel fields. The inverse builder takes
+the digitizer `hwKey` so the returned object is correctly keyed.
 
-- **New file:** `tests/tst_loadoutmanagertest.cpp`.
-- **Add to:** `tests/CMakeLists.txt`.
-- **Cases:**
-  - Round-trip: build a `HardwareLoadout` (with full `FtmwSnapshot`), `put()`,
-    then `get()` from a fresh `LoadoutManager` instance; assert all fields equal.
-    Use `QTemporaryDir` / explicit org+app names (see `tst_settingsstoragetest`)
-    to isolate from user settings.
-  - Round-trip with `ftmw` empty.
-  - `remove()` cleans up the group and reassigns `currentLoadout` if needed.
-  - `setCurrentLoadoutName()` / `setDefaultLoadoutName()` persistence.
-  - Clock array round-trip preserves all six fields per clock.
-  - Digitizer analog/digital channel array round-trip.
-  - `loadoutsMatchingHwKey`: insert loadouts with overlapping and
-    non-overlapping `hardwareMap` keys; assert query returns only matching
-    names.
-  - `copyClocksMatching`: source clock entries with hwKeys outside
-    `allowedHwKeys` are not copied; entries inside are copied verbatim;
-    pre-existing `dest.clocks` entries with non-matching hwKeys are preserved.
-  - `copyRfScalars`: round-trip of all five scalar fields.
-- **Acceptance:** `ctest --test-dir build/tests` passes including new test.
+#### `FtmwSnapshot` and `HardwareLoadout` (`hardwareloadout.{h,cpp}`)
+
+`FtmwSnapshot` bundles `RfConfigSnapshot`, `ChirpConfig`, `FtmwDigitizerConfig`,
+and `digiHwKey`. `HardwareLoadout` adds a `name`, `std::map<QString,QString>
+hardwareMap`, and `std::optional<FtmwSnapshot> ftmw`.
+
+`hardwareloadout.cpp` provides the remaining `BC::Loadout` free functions:
+`rfConfigScalarsMap`, `rfConfigClocksArray`, `rfConfigSnapshotFromMaps`,
+`hardwareMapArray`, `hardwareMapFromArray`, and the two per-component copy
+helpers used by `FtmwConfigDialog` tabs:
+
+- `copyClocksMatching(source, dest, allowedHwKeys)` — copies only the clock
+  entries whose `ClockFreq::hwKey` is in `allowedHwKeys`; leaves other dest
+  clocks untouched.
+- `copyRfScalars(source, dest)` — copies the five RF scalar fields; does not
+  touch `clocks`.
+
+#### `LoadoutManager` (`loadoutmanager.{h,cpp}`)
+
+A `QObject` + `SettingsStorage` singleton (keyed under `"Loadouts"`) that owns
+the in-memory loadout map and is the single point of QSettings I/O. Key
+behaviors:
+
+- **CRUD** — `getLoadout`, `putLoadout`, `removeLoadout`, `loadoutExists`,
+  `loadoutNames`. Mutations write through to QSettings immediately.
+- **Current / default tracking** — `currentLoadoutName`,
+  `setCurrentLoadoutName`, `currentLoadout` (and matching default variants).
+  `removeLoadout` reassigns `current` away from the removed name automatically.
+- **Filtering** — `loadoutsMatchingHwKey(hwKey)` returns the names of all
+  loadouts whose `hardwareMap` contains `hwKey` as a key; used by the FTMW
+  Configuration dialog to populate its per-tab "Load from loadout" combos.
+- **Signals** — `loadoutAdded`, `loadoutRemoved`, `loadoutChanged`,
+  `currentLoadoutChanged`, `defaultLoadoutChanged`.
+- **First-run** — if the settings store is empty on construction, a default
+  loadout named `"Default"` (no FTMW snapshot) is created, persisted, and set
+  as both current and default.
+- **Thread safety** — `QMutex` guards all mutations (same pattern as
+  `HardwareProfileManager`).
+- **Test isolation** — a private constructor
+  `LoadoutManager(QAnyStringView org, QAnyStringView app)` bypasses the
+  singleton for unit tests; `LoadoutManagerTest` is declared a friend.
 
 > **Orchestrator gate after Phase A:** full build + all tests green before starting Phase B.
 
@@ -719,15 +681,3 @@ Read the current dialog before starting:
 
 ---
 
-## Dispatch Notes for the Orchestrator
-
-- Tasks marked **‖** within a phase can run in parallel agent sessions.
-- Each agent task is self-contained: it lists files, signatures, and behavior.
-  Avoid passing the whole spec; pass only the relevant section plus any updated
-  context from prior phases.
-- After every agent task: run the appropriate build target (debug first, then
-  tests). Do not advance to the next phase until the current phase's gate is
-  green.
-- Phase A is well within Haiku's range (pure data + serialization). Phases B, C,
-  and D involve UI wiring and inter-dialog handoffs — start with Sonnet for
-  those, escalate from Haiku if needed.

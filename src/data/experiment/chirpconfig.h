@@ -15,6 +15,23 @@ inline constexpr QLatin1StringView key{"ChirpConfig"};
 inline constexpr QLatin1StringView interval{"ChirpInterval"};
 inline constexpr QLatin1StringView sampleRate{"SampleRate"};
 inline constexpr QLatin1StringView sampleInterval{"SampleInterval"};
+
+// Loadout serialization keys
+inline constexpr QLatin1StringView numChirps{"NumChirps"};
+inline constexpr QLatin1StringView allIdentical{"AllChirpsIdentical"};
+inline constexpr QLatin1StringView chirpIndex{"ChirpIndex"};
+inline constexpr QLatin1StringView segmentIndex{"SegmentIndex"};
+inline constexpr QLatin1StringView startFreqMHz{"StartFreqMHz"};
+inline constexpr QLatin1StringView endFreqMHz{"EndFreqMHz"};
+inline constexpr QLatin1StringView durationUs{"DurationUs"};
+inline constexpr QLatin1StringView alphaUs{"AlphaUs"};
+inline constexpr QLatin1StringView segEmpty{"Empty"};
+inline constexpr QLatin1StringView markerName{"Name"};
+inline constexpr QLatin1StringView markerRole{"Role"};
+inline constexpr QLatin1StringView timingMode{"TimingMode"};
+inline constexpr QLatin1StringView markerStart{"StartTime"};
+inline constexpr QLatin1StringView markerEnd{"EndTime"};
+inline constexpr QLatin1StringView markerEnabled{"Enabled"};
 }
 
 enum class MarkerRole { Protection, Gate, Trigger, Custom };

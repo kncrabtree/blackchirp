@@ -4,7 +4,13 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 
 ## Small
 
-Address TODO item on line 106 of quickexptdialog.cpp - optional HW from runtimeconfig.
+- Address TODO item on line 106 of quickexptdialog.cpp - optional HW from HardwareRegistry?
+- Remove dead configParams code from HardwareRegistry (and any callers)
+- Move most settings registrations to base classes; subclasses override base class defaults. See
+  hardware json files removed in commit 67bd00442be2c41da79ad51a686439520453857d for
+  a convenient summary of implementation values to decide on sensible defaults for base
+  classes. Remove registrations from derived classes unless they differ from base class
+  defaults. (Mostly a mechanical refactor even though there are many files involved)
 
 ## Medium
 
