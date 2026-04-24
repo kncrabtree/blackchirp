@@ -500,21 +500,25 @@ Read the current dialog before starting:
     implemented; what remains in B2 is the clock push in the `MainWindow` `finished`
     lambda.
 
-#### B2. Apply-on-accept wiring for clocks
+#### B2. Apply-on-accept wiring for clocks — **DONE**
 
-- **Files:** `runtimehardwareconfigdialog.cpp` (`onDialogAccepted`),
-  `src/gui/mainwindow.cpp` (the lambda passed into the
-  `RuntimeHardwareConfigDialog` `finished` signal).
-- **Sequence in `onDialogAccepted`:**
-  1. Apply hardware map (existing code).
-  2. `LoadoutManager::setCurrentLoadoutName(d_activeLoadoutName)`.
-- **In MainWindow's `finished` lambda:** after `syncWithRuntimeConfig`, if active
-  loadout has an `FtmwSnapshot`, push clocks via
-  `QMetaObject::invokeMethod(p_hwm, [snap](){ p_hwm->configureClocks(snap.rfConfig.clocks); })`.
-  Then, if the Save As "configure FTMW" flag was set, open the FTMW Configuration
-  dialog (Phase D delivers the dialog itself; this line is added when D ships).
-- **Acceptance:** dialog opens, switches loadouts, saves, deletes; clock values
-  appear on hardware on accept. Manual smoke (no automated UI test exists).
+**Implementation summary:**
+
+- `onDialogAccepted` already calls `LoadoutManager::setCurrentLoadoutName(d_activeLoadoutName)`
+  (delivered in B1).
+- `src/gui/mainwindow.cpp`: a second `finished` lambda (added after the existing
+  hardware-sync lambda) checks `result == QDialog::Accepted`, reads the current
+  loadout's `FtmwSnapshot` from `LoadoutManager::instance().currentLoadout()`, and
+  posts `p_hwm->configureClocks(clocks)` via `QMetaObject::invokeMethod` with
+  `Qt::QueuedConnection`. Queue order (sync first, clocks second) is preserved
+  because both are posted to `p_hwm`'s event queue in sequence.
+- The FTMW Configuration dialog launch (`d_openFtmwConfigOnClose` flag) is deferred
+  to Phase D, when the dialog itself is implemented.
+- **First-run fix**: constructor now seeds the active loadout's `hardwareMap` from
+  `d_originalRuntimeConfig` if it is empty, ensuring that loading "Default" back via
+  the combo always restores a known hardware state.
+- **Manual verification:** all loadout combo/save/delete/default operations verified.
+  Clock push untested pending Phase C/D (no loadout yet carries an FtmwSnapshot).
 
 > **Orchestrator gate after Phase B:** build the GUI app, launch it, manually verify:
 >

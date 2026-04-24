@@ -63,6 +63,7 @@
 
 #include <hardware/core/hardwaremanager.h>
 #include <hardware/core/runtimehardwareconfig.h>
+#include <data/loadout/loadoutmanager.h>
 #include <hardware/core/clock/fixedclock.h>
 #include <gui/widget/pythonhardwarecontrolwidget.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
@@ -987,6 +988,18 @@ void MainWindow::launchRuntimeHardwareConfigDialog()
         QMetaObject::invokeMethod(p_hwm, &HardwareManager::syncWithRuntimeConfig, Qt::QueuedConnection);
     });
     
+    connect(d, &QDialog::finished, [this](int result) {
+        if (result != QDialog::Accepted)
+            return;
+        auto loadout = LoadoutManager::instance().currentLoadout();
+        if (!loadout.has_value() || !loadout->ftmw.has_value())
+            return;
+        const auto clocks = loadout->ftmw->rfConfig.clocks;
+        QMetaObject::invokeMethod(p_hwm, [this, clocks]() {
+            p_hwm->configureClocks(clocks);
+        }, Qt::QueuedConnection);
+    });
+
     connect(d, &QDialog::finished, d, &QDialog::deleteLater);
     connect(d, &QDialog::destroyed, [this](){
         auto it = d_openDialogs.find("RuntimeHardwareConfig");

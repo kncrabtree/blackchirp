@@ -48,6 +48,17 @@ RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
     // Track the active loadout (Save target and FTMW snapshot pointer; does not drive the preview)
     d_activeLoadoutName = LoadoutManager::instance().currentLoadoutName();
 
+    // Seed the active loadout's hardware map from the current runtime config if it is empty.
+    // This handles first-run and any loadout that was created before hardware was configured.
+    {
+        auto loadout = LoadoutManager::instance().getLoadout(d_activeLoadoutName);
+        if (loadout.has_value() && loadout->hardwareMap.empty() && !d_originalRuntimeConfig.empty()) {
+            loadout->hardwareMap = std::map<QString,QString>(
+                d_originalRuntimeConfig.begin(), d_originalRuntimeConfig.end());
+            LoadoutManager::instance().putLoadout(*loadout);
+        }
+    }
+
     // Initialize threaded overrides from stored values
     for (auto& [hwKey, impl] : d_originalRuntimeConfig) {
         auto override = RuntimeHardwareConfig::constInstance().getThreaded(hwKey);
