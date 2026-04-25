@@ -2,60 +2,41 @@
 
 ## Goal
 
-A **loadout** captures everything needed to bring an instrument into a known operating
-state for a given experimental configuration: the active hardware map plus the FTMW
-operating settings (clock frequencies, RF chain parameters, chirp waveform, and
-digitizer configuration). Users switch loadouts to swap between instrument
-configurations (e.g. "S-band", "X-band", "DR scan setup") without re-entering
-settings dialog by dialog.
+A **loadout** captures the active hardware map for a given experimental setup
+— which AWG, which digitizer, which clock implementations are bound to which
+profile slots. An **FTMW preset** is a named operating point — RF chain
+parameters, clock frequencies, chirp waveform, and digitizer configuration —
+that lives inside a single loadout. A loadout owns a list of FTMW presets;
+each preset belongs to exactly one loadout. Switching loadouts swaps the
+hardware map; switching FTMW presets within a loadout swaps the FTMW
+operating point. Users do both without re-entering settings dialog by dialog.
 
-## Current Status
+## Concepts
 
-**PROBLEM FOUND:** The design below embeds the Ftmw configuration inside the
-HardwareLoadout. While it makes sense that the configuration needs to change
-when the loadout changes, fundamentally these are separate concerns. This
-matters when the user is configuring Ftmw configurations: we have a "load from"
-feature that lets the user select settings from a different loadout with
-compatible hardware. But this means a user might create two loadouts with
-identical hardware but different ftmw configurations, which is confusing.
-Instead, a "loadout" should be defined by its hardware map only. Each loadout
-should support multiple ftmw configurations (and maybe later lif
-configurations), but each configuration should be limited to a single loadout.
-The loadout keeps track of all its configurations and its current (default)
-configuration. When a user changes the configuration, either via the
-FtmwConfigDialog or the ESD, they should be prompted about whether they wish
-to overwrite the current configuration, create a new one, or proceed without
-saving. When proceeding without saving, the config is saved to a sentinel
-`__LastUsed__` configuration in the loadout which is used to populate the UI on
-the next instance unless the user has changed the configuration. The UI for
-loading Rf config, chirp config, and digitizer config from loadouts changes
-since configs can only be loaded from other existing confgiurations within the
-same loadout, and now shoudl support config creation, editing, renaming,
-saving, etc. The `__LastUsed__` option is hidden in this context.
+The vocabulary below uses **FTMW preset** / **ftmwPreset** consistently
+(rather than bare "preset") so that a parallel **LIF preset** /
+**lifPreset** concept can be added later without ambiguity. Within this
+document "preset" by itself always means an FTMW preset.
 
-Considerations to address:
-
-- What to call these "configurations" from the user perspective to distinguish
-  them from "Loadouts". "Configuration" seems too vague-- "FTMW Preset"? that
-  term will be used here, but consider changing it.
-- Structure and ownership of "FTMW Preset" values in SettingsStorage.
-- Add menu-based selector for FTMW presets similar to that for Loadouts?
-- Add timestamps for last loadout and last preset change (including
-  `__LastUsed__`).
-- Integration with ESD becomes a bit cleaner: Look at Loadout and load settings
-  from the most recent preset associated with the loadout, only falling back
-  to widget persistence if no preset exists for the loadout.
-
-Todo items after addressing considerations above:
-
-1. Rewrite conceptual specification (second-level headers up until
-   `##Implementation Plan`).
-2. Evaluate each completed phase of the implementation plan for necessary
-   changes. This will begin with changes to the data models, then propagate up
-   through each phase of the plan. Write an updated implementation plan
-   for each step to incorporate this design change.
-
-**All of the following is the original plan before introduction of this preset concept**. Once the spec revision and planning are complete, remove this section.
+- **Loadout** — a hardware map (`Type.label` → implementation) plus the
+  FTMW presets it owns.
+- **FTMW Preset** — a named `FtmwPreset` (RF + chirp + digitizer) owned
+  by a loadout. A preset cannot exist outside a loadout.
+- **`__LastUsed__`** — a sentinel preset name reserved per loadout. It
+  captures whatever FTMW state was last accepted by `FtmwConfigDialog` or
+  by the Experiment Setup Dialog (= an experiment start), regardless of
+  whether the user explicitly saved into a named preset. It is hidden
+  from FTMW preset selectors, never user-deletable, and never cleared.
+  It is the fallback the UI uses to populate widgets when the loadout's
+  `currentFtmwPreset` is empty or itself points at `__LastUsed__`.
+- **`defaultFtmwPreset`** — per-loadout sticky pointer to the preset
+  auto-loaded when the loadout has no `currentFtmwPreset` (e.g. first
+  activation, or after the current selection was deleted). Set by the
+  user via "Set as Default".
+- **`currentFtmwPreset`** — per-loadout transient pointer to the preset
+  most recently selected, applied, or accepted into. May reference
+  `__LastUsed__` if the user accepted without saving. Drives initial
+  widget population whenever the loadout becomes active.
 
 ## Data Model
 
@@ -63,344 +44,357 @@ Todo items after addressing considerations above:
 
 ```cpp
 struct HardwareLoadout {
-    QString name;                              // unique, user-visible
-    std::map<QString, QString> hardwareMap;    // identical shape to RuntimeHardwareConfigDialog::d_previewRuntimeConfig
-    std::optional<FtmwSnapshot> ftmw;          // RF + chirp + digitizer; absent for non-FTMW loadouts
+    QString name;                                     // unique, user-visible
+    std::map<QString, QString> hardwareMap;           // Type.label -> implementation
+    std::map<QString, FtmwPreset> ftmwPresets;        // keyed by preset name; may include "__LastUsed__"
+    QString defaultFtmwPresetName;                    // empty if loadout has no real presets yet
+    QString currentFtmwPresetName;                    // empty, "__LastUsed__", or a real preset name
+    QDateTime lastModified;                           // bumped on any structural change
 };
 ```
 
-`hardwareMap` keys are `Type.label` (BC::Key::hwKey form), values are implementation
-class names — same convention used by `RuntimeHardwareConfig::getCurrentHardware()`. A
-hardware type is "disabled" by being absent from the map; we do **not** add a separate
-enable/disable flag.
+`hardwareMap` keys are `Type.label` (BC::Key::hwKey form), values are
+implementation class names — same convention used by
+`RuntimeHardwareConfig::getCurrentHardware()`. A hardware type is "disabled"
+by being absent from the map; we do **not** add a separate enable/disable
+flag. Hardware drift between the map and existing FTMW presets is prevented
+at write time by the Hardware Configuration dialog (see UI Changes).
 
-`ftmw` is a single optional: a loadout either has a complete FTMW snapshot or none.
-Partial states (e.g. RF set but chirp empty) are represented by the relevant fields
-inside `FtmwSnapshot` being default-constructed but the snapshot itself still
-present.
+### FtmwPreset
 
-### FtmwSnapshot
+The body of an FTMW preset. Field set unchanged from the prior spec; only
+the type name and the ownership semantics change. This struct was
+previously called `FtmwSnapshot`.
 
 ```cpp
-struct FtmwSnapshot {
+struct FtmwPreset {
     RfConfigSnapshot rfConfig;       // clock freqs + RF chain settings
     ChirpConfig chirpConfig;         // chirp segments, markers, timing (no sample rate)
     FtmwDigitizerConfig digitizer;   // analog/digital channels, trigger, record length, etc.
+    QString digiHwKey;               // digitizer hwKey for this preset (must match the loadout)
+    QDateTime lastModified;          // bumped on save
 };
 ```
-
-The three sub-configurations are bundled because they are tightly coupled —
-digitizer record length and sample rate depend on chirp duration, which depends on
-RF chain settings, which depend on clock frequencies. Editing them in lockstep
-matches how users actually think about an FTMW operating point.
 
 ### RfConfigSnapshot
 
-A pure data struct (no QObject, no SettingsStorage inheritance) holding the
-**set-only** parameters that define the RF operating state. Read-back values like
-`d_completedSweeps` and the clock-step list (used during scans) are deliberately
-excluded — they are experiment runtime state, not loadout state.
+Unchanged. A pure data struct holding the **set-only** RF operating
+parameters: five scalars (`commonUpDownLO`, `awgMult`, `upMixSideband`,
+`chirpMult`, `downMixSideband`) and a `QHash<RfConfig::ClockType,
+RfConfig::ClockFreq> clocks`. `fromRfConfig` / `applyTo` helpers convert
+to and from the runtime `RfConfig`.
 
-```cpp
-struct RfConfigSnapshot {
-    bool commonUpDownLO{false};
-    double awgMult{1.0};
-    RfConfig::Sideband upMixSideband{RfConfig::UpperSideband};
-    double chirpMult{1.0};
-    RfConfig::Sideband downMixSideband{RfConfig::UpperSideband};
+### ChirpConfig in FTMW Presets
 
-    // Clock template, keyed by ClockType.
-    // Each ClockFreq carries hwKey (= Clock.<label>) + output index + freq + factor + op.
-    QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks;
-};
-```
+Unchanged. Stores `numChirps`, `chirpInterval`, `chirpList`,
+`markerChannels`, `allChirpsIdentical`. AWG sample rate is **not** stored;
+the inverse builder takes it as a parameter so callers can pass the live
+hardware value.
 
-**Clock keying.** `ClockFreq::hwKey` already encodes the clock by *label*
-(`Clock.<label>`), not by implementation class. A loadout that targets the
-`awg-ref` clock will resolve to whatever implementation is currently bound to the
-`Clock.awg-ref` profile. No additional indirection is required.
+### FtmwDigitizerConfig in FTMW Presets
 
-### ChirpConfig in Loadouts
-
-Reuse the existing `ChirpConfig` class. The loadout stores the set-only fields:
-
-- `numChirps`, `chirpInterval`
-- `chirpList` (segments)
-- `markerChannels`
-- `allChirpsIdentical` (derivable from `chirpList`)
-
-The AWG sample rate is **not** stored; it is read from the active AWG's
-`SettingsStorage(BC::Key::AWG::key, Hardware)` block when the chirp is reconstructed
-or rendered. This is already how `ChirpConfigWidget` works today.
-
-`ChirpConfig`'s existing `writeChirpFile` / `readChirpFile` path operates on
-experiment directories and is unsuitable here. The loadout uses an **independent**
-serializer that writes the same fields into a SettingsStorage group.
-
-### FtmwDigitizerConfig in Loadouts
-
-Reuse the existing `FtmwDigitizerConfig` class (extends `DigitizerConfig`,
-`HeaderStorage`). The loadout stores all of its persistent fields:
-
-- Analog channel map (per-channel enabled, full scale, vertical offset)
-- Digital channel map (per-channel enabled, input flag, role)
-- Trigger channel, slope, delay, level
-- Sample rate, record length
-- Bytes per point, byte order
-- Block average enabled + count
-- Multi-record enabled + count
-- FID channel index (`d_fidChannel`)
-
-As with `ChirpConfig`, `HeaderStorage`'s `storeValues`/`retrieveValues` are aimed
-at the experiment header writer; the loadout adds a parallel SettingsStorage-based
-serializer in `src/data/loadout/`.
+Unchanged. Stores all persistent fields of the existing class: analog/
+digital channel maps, trigger, sample rate, record length, byte order,
+block-average and multi-record settings, FID channel index.
 
 ## Storage
 
-**Decision: QSettings under the top-level `Loadouts/` group**, mirroring the pattern
-used by `HardwareProfileManager` (`HardwareProfiles/<type>.<label>/...`). Rationale:
-
-- Reuses existing SettingsStorage infrastructure (group keys, arrays, atomic save).
-- Same lifecycle as hardware profiles, which are conceptually adjacent.
-- Simpler than maintaining a second on-disk format.
-
-Layout:
+QSettings layout under the top-level `Loadouts/` group:
 
 ```text
 Loadouts/
-  currentLoadout = "<name>"           # top-level pointer to active loadout
-  defaultLoadout = "Default"          # fallback loadout used when active is deleted
+  currentLoadout = "<name>"             # active loadout pointer
+  defaultLoadout = "Default"            # fallback loadout used when active is deleted
+  names/                                # array of {name}
   <name>/
-    hardwareMap/                      # array: each entry { hwKey, implementation }
-    ftmw/                             # absent if loadout has no FTMW snapshot
-      rfConfig/                       # group: scalar RF chain values + clocks array
-        commonUpDownLO, awgMult, ...
-        clocks/                       # array: { type, hwKey, output, op, factor, freqMHz }
-      chirpConfig/                    # group: numChirps, interval, allIdentical, ...
-        segments/                     # array: { chirpIndex, startFreq, endFreq, duration, alpha, empty }
-        markers/                      # array: { name, role, timingMode, start, end, enabled }
-      digitizer/                      # group: trigger/horizontal/averaging fields
-        analog/                       # array: { index, enabled, fullScale, offset }
-        digital/                      # array: { index, enabled, input, role }
-        fidChannel = <int>
+    name = "<name>"
+    hardwareMap/                        # array of {key, value}
+    defaultFtmwPreset = "<presetName>"  # empty string if none
+    currentFtmwPreset = "<presetName>"  # may be "__LastUsed__"
+    ftmwPresetNames/                    # array of {name}; may include "__LastUsed__"
+    lastModified = <ISO timestamp>
+    ftmwPresets/
+      <presetName>/
+        rfScalars/                      # group: commonUpDownLO, awgMult, ...
+        rfClocks/                       # array: { ClockType, hwKey, output, op, factor, freqMHz }
+        chirpScalars/                   # group: numChirps, interval, allIdentical, ...
+        chirpSegments/                  # array of segments
+        chirpMarkers/                   # array of markers
+        digiScalars/                    # group: trigger / horizontal / averaging
+        digiAnalog/                     # array
+        digiDigital/                    # array
+        digiHwKey = "<hwKey>"
+        lastModified = <ISO timestamp>
 ```
 
-Portability follow-up: `LoadoutManager` will gain explicit `.ini` import/export
-later (single-loadout share/backup). Not in the initial slice.
+The `__LastUsed__` literal lives in a public constant
+(`BC::Store::LM::lastUsedFtmwPresetName`) and is filtered out of every
+user-facing dropdown.
+
+Portability follow-up: `LoadoutManager` will gain explicit `.ini`
+import/export later (single-loadout share/backup, including its FTMW
+preset set). Not in the initial slice.
 
 ## UI Changes
 
-The user-facing model is now three pieces:
+The user-facing model is three pieces:
 
 1. **Hardware Configuration dialog** — hardware map + loadout management.
-2. **FTMW Configuration dialog** (replaces standalone "RF Configuration") — RF /
-   Chirp / Digitizer tabs. Edits target the active loadout.
-3. **Hardware menu Loadout submenu** — quick switch between loadouts.
+2. **FTMW Configuration dialog** — RF / Chirp / Digitizer tabs plus FTMW
+   preset management for the active loadout.
+3. **Hardware menu** — Loadout submenu (existing) and FTMW Preset submenu
+   (new).
 
 ### Hardware Configuration Dialog (`RuntimeHardwareConfigDialog`)
 
-Adds a **Loadout group** above the existing Hardware Configuration tab content:
+Adds a **Loadout group** above the Hardware Configuration tab content
+(unchanged from the prior spec):
 
-- `QComboBox` listing all loadout names; current selection = active loadout.
+- `QComboBox` listing all loadout names; selection = active loadout.
 - Buttons: **Save**, **Save As…**, **Delete**, **Set as Default**.
 
-It does **not** gain RF/Chirp/Digitizer tabs. Rationale: those settings belong to a
-distinct conceptual axis (FTMW operating point) and are managed in their own
-dialog. The Hardware Configuration dialog stays focused on hardware selection.
+Behavior changes vs. the prior spec are concentrated in **Save** and
+**Save As**:
 
-**Design principle — runtime config is authoritative for hardware.** The dialog
-always opens with `d_previewRuntimeConfig` initialised from
-`RuntimeHardwareConfig::getCurrentHardware()`, not from any loadout. The runtime
-hardware config already persists itself to QSettings independently; embedding it
-inside a loadout would create a redundant, competing source of truth. Loadouts
-are named presets that a user can explicitly apply or save to; they do not
-silently track live hardware state. `d_activeLoadoutName` serves as a pointer to
-the FTMW snapshot target and as the destination for the **Save** button — it is
-not a constraint on what appears in the preview.
+- **Combo selection change**: unchanged. Confirmation prompt; on confirm,
+  the chosen loadout's `hardwareMap` is copied into
+  `d_previewRuntimeConfig`; `d_activeLoadoutName` is updated.
 
-Behavior:
+- **Save** — compute the *hardware fingerprint* of `d_previewRuntimeConfig`
+  and of the loadout's stored hardware map. The fingerprint is the tuple
+  `(awgHwKey, ftmwDigitizerHwKey, sorted set of Clock.* hwKeys)`.
+  Implementation-class swaps for the same hwKey are **not** drift; FTMW
+  presets reference clocks by label, not by class.
+  - **No drift**: persist the new map; FTMW presets and pointers are
+    retained.
+  - **Drift detected, loadout has no named FTMW presets** (only
+    `__LastUsed__` or empty): persist; clear `__LastUsed__` defensively.
+  - **Drift detected, loadout has at least one named FTMW preset**:
+    present a modal with three options:
+    - **Discard FTMW presets and save** — overwrite the loadout with
+      the new map and an empty `ftmwPresets`; clear
+      `currentFtmwPresetName` and `defaultFtmwPresetName`.
+    - **Save As instead** — close the prompt; reroute to the Save As
+      flow (the dialog asks for a new name and creates a new loadout
+      with the new hardware).
+    - **Cancel** — close the prompt; dialog state unchanged.
 
-- On open: `d_previewRuntimeConfig` = current runtime config (unchanged from
-  pre-loadout behavior). Combo populated from `LoadoutManager::loadoutNames()`,
-  selection set to `currentLoadoutName()`. Editing the hardware map mutates
-  `d_previewRuntimeConfig` as today.
-- **Combo selection change**: selecting a different loadout is an explicit "load
-  this preset" action. A confirmation prompt ("Load loadout `<name>`? This will
-  replace your current hardware preview.") guards the destructive replacement of
-  `d_previewRuntimeConfig`. On confirm, the chosen loadout's `hardwareMap` is
-  copied into `d_previewRuntimeConfig` and the overview tree is refreshed;
-  `d_activeLoadoutName` is updated. On cancel, the combo reverts to the previous
-  selection without touching the preview.
-- **Save**: persist `d_previewRuntimeConfig` as the `hardwareMap` of the active
-  loadout (FTMW snapshot unchanged).
-- **Save As**: prompt for a name; validate it is non-empty and not a duplicate
-  (overwrite confirmation on conflict). Create the loadout with the current
-  `d_previewRuntimeConfig` as its `hardwareMap` and **no** `FtmwSnapshot`.
-  Update `d_activeLoadoutName` to the new name. Then prompt: *"Configure FTMW
-  settings for this loadout? [Yes] [No]"*. If **Yes**, set `d_openFtmwConfigOnClose`
-  so that `MainWindow` opens the FTMW Configuration dialog after this dialog
-  closes. If **No**, no further action.
-- **Delete**: confirm; remove. Does **not** alter `d_previewRuntimeConfig`.
-  `d_activeLoadoutName` is reassigned to `LoadoutManager::currentLoadoutName()`
-  after removal (the manager picks the default or first remaining). If all
-  loadouts were deleted, recreate a "Default" loadout from `d_originalRuntimeConfig`.
-- **Set as Default**: `LoadoutManager::setDefaultLoadoutName(currentSelection)`.
-  Button is disabled when the active loadout is already the default.
-- On dialog accept: apply hardware map (existing path). Call
-  `LoadoutManager::setCurrentLoadoutName(d_activeLoadoutName)`. Then, if the
-  active loadout has an `FtmwSnapshot`, push its clock frequencies via
-  `HardwareManager::configureClocks` (clocks whose `hwKey` is not in the new
-  hardware map are skipped with a warning).
+- **Save As** — prompt for a name; validate non-empty and not duplicate
+  (overwrite confirmation on conflict). Capture the previous active
+  loadout name before mutating. Create the new loadout with the current
+  preview hardware map and an empty `ftmwPresets`. Update
+  `d_activeLoadoutName` to the new name.
+  - If the previous active loadout exists and shares the new loadout's
+    hardware fingerprint and has at least one named FTMW preset, prompt
+    *"Copy FTMW presets from `<prev>`?"*. On confirm, copy each named
+    preset (excluding `__LastUsed__`) wholesale via
+    `LoadoutManager::putFtmwPreset`, and copy the source's
+    `defaultFtmwPresetName`.
+  - Then prompt the existing *"Configure FTMW settings for this loadout?
+    [Yes] [No]"*. **Yes** sets `d_openFtmwConfigOnClose`.
 
-### Prepopulation: per-component "Load from loadout"
+- **Delete** — confirm; remove. Nested storage means the loadout's FTMW
+  presets are deleted automatically. `d_activeLoadoutName` is reassigned.
+  If all loadouts were deleted, recreate "Default" from
+  `d_originalRuntimeConfig` with no FTMW presets.
 
-A new loadout starts with an empty `FtmwSnapshot` (or omitted entirely if the
-user declines the Save As FTMW prompt). Population is **per-component and
-explicit**, driven from inside the FTMW Configuration dialog rather than at
-creation time. Each of the dialog's three tabs exposes a **"Load from loadout:"**
-combobox at the top whose entries are filtered to loadouts whose hardware
-matches the relevant component:
+- **Set as Default** — unchanged.
 
-- **RF Config tab** — source filter: source loadout's `hardwareMap` shares the
-  same AWG `hwKey` as the active loadout's hardware map. On selection, copy
-  the source's RF chain scalars (`awgMult`, `chirpMult`, sidebands,
-  `commonUpDownLO`) wholesale, and copy each `clocks` entry whose `hwKey`
-  matches a clock present in the active loadout's hardware map (per-clock
-  match). Clocks without a matching hwKey are left at their existing values.
-- **Chirp Config tab** — source filter: source has matching AWG `hwKey`. On
-  selection, replace the chirp widget contents with the source's `ChirpConfig`.
-- **Digitizer Config tab** — source filter: source has matching `FtmwDigitizer`
-  `hwKey`. On selection, replace the digitizer widget contents with the
-  source's `FtmwDigitizerConfig`.
+- **On dialog accept**: apply hardware map (existing path); call
+  `LoadoutManager::setCurrentLoadoutName(d_activeLoadoutName)`. Then, if
+  the active loadout's `currentFtmwPreset` resolves to a preset (named
+  or `__LastUsed__`), push its clocks via
+  `HardwareManager::configureClocks`.
 
-Each combo's first entry is a sentinel (e.g. `"(no source — keep current)"`).
-Selecting the sentinel does not modify the widget. Selecting a real loadout
-overwrites only that tab's widget contents; other tabs are unaffected.
+### FTMW Configuration Dialog (`FtmwConfigDialog`)
 
-This mechanism is available whenever the dialog is open — both when editing an
-existing loadout and immediately after Save As. There is no implicit
-prepopulation at Save As time, so the user always sees the empty starting
-state and chooses sources deliberately.
+Layout: existing three-tab structure (`RfConfigWidget`, `ChirpConfigWidget`,
+`FtmwDigitizerConfigWidget`), plus a new **FTMW Preset group** above the
+tab widget:
 
-The `defaultLoadout` setting is retained as the **fallback target on delete**
-(see Hardware Configuration Dialog → Delete) but is no longer the prepopulation
-source.
+- `QComboBox p_ftmwPresetCombo` — lists all named FTMW presets of the
+  active loadout. `__LastUsed__` is hidden.
+- Buttons: **Apply**, **Save**, **Save As…**, **Rename…**, **Delete**,
+  **Set as Default**.
 
-### FTMW Configuration Dialog (new)
-
-Replaces the existing Hardware menu **RF Configuration** entry. The QAction is
-renamed to **FTMW Configuration**.
-
-Layout: a tabbed dialog with three tabs. Each tab has a **"Load from loadout:"**
-combobox at the top, followed by the editing widget:
-
-- **RF Config** — `RfConfigWidget` + load-source combo filtered to loadouts
-  whose hardware map shares the active loadout's AWG `hwKey`.
-- **Chirp Config** — `ChirpConfigWidget` + load-source combo filtered as RF.
-- **Digitizer Config** — `FtmwDigitizerConfigWidget` + load-source combo
-  filtered to loadouts whose hardware map shares the active loadout's
-  `FtmwDigitizer` `hwKey`.
-
-Each combo's first entry is `"(no source — keep current)"`. Selecting a real
-loadout overwrites only that tab's widget contents (per-component matching
-rule from "Prepopulation" above); the other tabs are unaffected. The combo
-returns to the sentinel after a load.
+Per-tab "Load from FTMW preset:" combos remain on each tab. Their entries
+are restricted to *other named FTMW presets within the active loadout*
+(cross-loadout sourcing is dropped — within a single loadout, all presets
+share hardware by construction). Selecting a real preset overwrites only
+that tab's widget contents; the sentinel "(no source — keep current)"
+does nothing.
 
 Behavior:
 
-- On open: read the active loadout. If it has an `FtmwSnapshot`, populate all
-  three widgets from it. If not, leave widgets in their default state and let
-  the user populate via the per-tab load-source combos (or by manual edit).
-- The standalone "Apply Clock Settings Now" button inside `RfConfigWidget` is
-  preserved and continues to push clocks to hardware immediately.
-- On **OK**: pull state from all three widgets into a fresh `FtmwSnapshot`,
-  write it to the active loadout via `LoadoutManager::put`, and push clocks via
-  `HardwareManager::configureClocks`. (No prompt — accept means save, in keeping
-  with the dialog's narrow purpose.)
-- On **Cancel**: discard.
+- **On open** — pick an FTMW preset to populate widgets in this order:
+  `currentFtmwPreset` (whether named or `__LastUsed__`) →
+  `defaultFtmwPreset` → fall back to widget last-used SettingsStorage.
+  The combo reflects the named selection, or shows no selection /
+  a "(unsaved)" sentinel when `currentFtmwPreset == __LastUsed__`.
+
+- **Dirty tracking** — connect every relevant change signal of the three
+  tab widgets (RF chain controls, clock entries, chirp model rows,
+  marker rows, digitizer fields) to a single `markDirty()` slot that
+  flips `d_dirty = true` and shows a visible indicator (asterisk in
+  title or a label). Cleared by **Apply** and by any persisting **Save**
+  path.
+
+- **Apply** — if `d_dirty`, prompt the user to confirm losing the
+  unsaved changes. Then `initializeFromFtmwPreset(getFtmwPreset(name))`,
+  `setCurrentFtmwPresetName(name)`, push clocks, clear dirty.
+
+- **Save** — only enabled when `currentFtmwPreset` is a real named
+  preset *and* `d_dirty`.
+  `putFtmwPreset(loadout, currentFtmwPreset, toFtmwPreset())` and write
+  `__LastUsed__` with the same body. Clear dirty.
+
+- **Save As…** — prompt for a name; reject `__LastUsed__` and any
+  duplicate (with overwrite confirmation). Save under the new name; set
+  `currentFtmwPreset = newName`; write `__LastUsed__` with the same body.
+  Clear dirty.
+
+- **Rename…** — prompt for a new name; reject `__LastUsed__` and
+  duplicates. `LoadoutManager::renameFtmwPreset` moves the preset and
+  rewrites `currentFtmwPreset` / `defaultFtmwPreset` if they referenced
+  the old name. Cannot rename `__LastUsed__`.
+
+- **Delete** — confirm. `removeFtmwPreset`. After delete, choose new
+  `currentFtmwPreset` per fallback chain (`defaultFtmwPreset` → first
+  remaining named preset → `__LastUsed__` → empty).
+
+- **Set as Default** — enabled only when `currentFtmwPreset` is a real
+  preset (not `__LastUsed__`, not empty). `setDefaultFtmwPresetName(
+  loadout, currentFtmwPreset)`.
+
+- **Apply Now** (existing button inside `RfConfigWidget`) — preserved;
+  pushes clocks immediately. Does **not** mark the preset dirty (the
+  setting being applied is already in the widget).
+
+- **On accept (OK)** — if `!d_dirty`, push clocks and accept. If
+  `d_dirty`, present the three-way prompt:
+  - **Overwrite `<currentFtmwPreset>`** — Save behavior. Disabled when
+    `currentFtmwPreset` is `__LastUsed__` or empty.
+  - **Save as new FTMW preset…** — Save As prompt. On cancel of that
+    prompt, return to the dialog without accepting.
+  - **Proceed without saving** — `putFtmwPreset(loadout, "__LastUsed__",
+    toFtmwPreset())`; `setCurrentFtmwPresetName(loadout, "__LastUsed__")`;
+    do not modify any named preset.
+  In all three branches, push clocks via the `applyClocks` signal.
+
+- **On Cancel** — discard. `__LastUsed__` is **not** updated.
 
 The dialog can be opened from:
 
 - Hardware menu → FTMW Configuration.
 - Hardware Configuration dialog → Save As → "Yes, configure FTMW".
-- (Optional, follow-up) right-click on the clock display box.
+- Right-click on the clock display box (existing).
 
 ### Hardware menu — Loadout submenu
 
-Add a submenu **Loadout** under the Hardware menu (positioned next to or just
-under the existing **Hardware Selection** entry). Contents:
+Unchanged from the prior spec. Exclusive `QActionGroup`, one action per
+loadout, repopulated on `LoadoutManager::loadoutAdded` /
+`loadoutRemoved` / `loadoutChanged` / `currentLoadoutChanged`.
+Confirmation on click, then activation sequence as before. Gated to
+`Disconnected` / `Idle`.
 
-- A `QActionGroup` (exclusive). One `QAction` per loadout, label = loadout name,
-  the active loadout's action checked.
-- Repopulated when `LoadoutManager` emits `loadoutAdded` /
-  `loadoutRemoved` / `loadoutChanged` / `currentLoadoutChanged`.
+### Hardware menu — FTMW Preset submenu (new)
+
+A new submenu **FTMW Preset**, sibling to **Loadout**, immediately under
+it in the Hardware menu. Contents:
+
+- A `QActionGroup` (exclusive). One `QAction` per *named* FTMW preset of
+  the *active* loadout (label = preset name). The action whose name
+  equals `currentFtmwPresetName` is checked. If `currentFtmwPresetName ==
+  __LastUsed__` or empty, no action is checked.
+- Repopulated on `LoadoutManager::currentLoadoutChanged`,
+  `ftmwPresetAdded`, `ftmwPresetRemoved`, `ftmwPresetChanged`,
+  `currentFtmwPresetChanged`.
 
 Behavior on click:
 
-1. Confirmation: *"Switch to loadout `<name>`? This will reconfigure all
-   hardware."* — `[Switch] [Cancel]`.
-2. On confirm, perform the same activation sequence as accepting the Hardware
-   Configuration dialog: apply the loadout's `hardwareMap`, then
-   `configureClocks` for the loadout's RF snapshot. UI rebuild via
-   `clearHardwareUI`/`buildHardwareUI` and `HardwareManager::syncWithRuntimeConfig`.
+1. Confirmation: *"Switch to FTMW preset `<name>` of `<loadout>`? This
+   will push new clock settings."* — `[Switch] [Cancel]`.
+2. On confirm, `LoadoutManager::setCurrentFtmwPresetName(activeLoadout,
+   name)` and push the preset's clocks via
+   `HardwareManager::configureClocks` (BlockingQueuedConnection).
 
-**Enable state:** mirror `actionRuntimeHardwareConfig`. The submenu (and all
-its loadout actions) is enabled exactly when "Hardware Selection" is enabled,
-i.e. only when the program state is `Disconnected` or `Idle`. Disable during
-`Acquiring` and `Paused` to avoid mid-experiment hardware swaps.
+**Enable state**: mirrors the Loadout submenu — only enabled in
+`Disconnected` / `Idle`. The FTMW Preset submenu is also disabled when
+the active loadout has no named FTMW presets.
 
 ## Experiment Setup Dialog
 
+The ESD's FTMW page (`ExperimentFtmwConfigPage`) embeds
+`FtmwConfigWidget` and gains the same FTMW preset controls as
+`FtmwConfigDialog`, **except the Delete button** (preset removal is
+reserved to the dedicated dialog). Buttons: Apply, Save, Save As…,
+Rename…, Set as Default. The previous **Reset to Loadout Defaults**
+button is replaced by **Apply default FTMW preset** (loads
+`defaultFtmwPreset` via `initializeFromFtmwPreset`; disabled when
+`defaultFtmwPresetName` is empty).
+
 Defaults flow:
 
-1. **Baseline** — active loadout's `FtmwSnapshot` if present.
-2. **Override** — `RfConfigWidget` / `ChirpConfigWidget` /
-   `FtmwDigitizerConfigWidget` retain their existing SettingsStorage-backed
-   last-used state. When constructed without explicit data, they pull from
-   settings as today, giving "repeat last experiment" behavior unchanged.
-3. **Reset to Loadout Defaults** button on the RF, Chirp, and Digitizer pages.
-   Restores the widget contents from the active loadout's snapshot (no-op if
-   loadout has no FTMW snapshot).
+1. **Repeat experiment** — when the wizard is launched from a saved
+   experiment, the widget seeds from the experiment's stored
+   `FtmwConfig` via `initializeFromExperiment`. Repeat means repeat;
+   the loadout's current FTMW preset is **not** consulted. Mark
+   not-dirty.
+2. **Fresh experiment** — same population order as `FtmwConfigDialog`:
+   `currentFtmwPreset` → `defaultFtmwPreset` → widget last-used
+   SettingsStorage.
+3. Dirty tracking is identical to `FtmwConfigDialog`.
+4. **On ESD accept (= experiment start)** — if `d_dirty`, the same
+   three-way prompt fires (overwrite / save as new / proceed without
+   saving). In all three branches, `__LastUsed__` is updated. The
+   "Proceed without saving" branch only updates `__LastUsed__` and does
+   not modify any named preset.
 
-Per-experiment edits in the wizard never write back to the loadout. They update
-last-used SettingsStorage and the experiment object, exactly as today.
+Per-experiment edits never silently bleed back into named FTMW presets;
+the user must explicitly choose Overwrite or Save As.
 
 ## Constraints
 
-- Do **not** embed RF/chirp/digitizer data in `d_previewRuntimeConfig`.
-- Do **not** change the type of `d_previewRuntimeConfig`.
-- Do **not** store enabled/disabled as a separate flag — map presence is the source
-  of truth.
-- Do **not** store AWG sample rate in the loadout; it is hardware-derived.
-- Loadout FTMW changes flow only through the FTMW Configuration dialog (or
-  programmatically via `LoadoutManager`), never the experiment wizard.
-- The Loadout submenu and quick-switch are gated to `Disconnected`/`Idle` states.
-- Existing experiments on disk are unaffected; loadouts are a settings-layer concept.
+- Loadouts hold hardware; FTMW presets hold FTMW operating-point data.
+  FTMW presets cannot exist outside a loadout.
+- AWG sample rate is hardware-derived (read from the AWG's
+  SettingsStorage); not stored in FTMW presets.
+- A loadout's hardware map cannot be silently mutated in a way that
+  invalidates its named FTMW presets; the Hardware Configuration dialog
+  forces the user to choose Discard / Save As / Cancel.
+- `__LastUsed__` is per-loadout, never deleted by user action, never
+  shown in dropdowns. Updated only on `FtmwConfigDialog::accept` and on
+  ESD experiment-start (not on Apply, not on Save without dirty changes,
+  not on Cancel).
+- Loadout switching and FTMW preset switching via the Hardware menu
+  submenus are gated to `Disconnected` / `Idle`.
+- Existing experiments on disk are unaffected; loadouts and FTMW presets
+  are a settings-layer concept.
+- Naming convention: identifiers and storage keys related to this
+  feature use the `ftmwPreset` prefix. A future LIF-preset feature is
+  expected to mirror the same shape with a `lifPreset` prefix; nothing
+  in this design precludes adding both to a single loadout.
 
 ## Migration
 
-On first launch after this feature lands:
-
-1. If `Loadouts/` group is empty, create a single loadout named **"Default"** from:
-   - `RuntimeHardwareConfig::getCurrentHardware()` → `hardwareMap`.
-   - Last-used `RfConfigWidget` settings + current clock state
-     (`HardwareManager::getClocks()`) → `RfConfigSnapshot`.
-   - Last-used `ChirpConfigWidget` settings → `ChirpConfig`.
-   - Last-used `FtmwDigitizerConfigWidget` settings (or current digitizer
-     settings via `SettingsStorage(FtmwScope hwKey)`) → `FtmwDigitizerConfig`.
-2. Set `Loadouts/currentLoadout = "Default"` and `Loadouts/defaultLoadout = "Default"`.
-3. Subsequent launches read the active loadout from `currentLoadout`.
+This is new development with no prior public release. No migration pathway
+is needed.
 
 ---
 
 ## Implementation Plan
 
-The plan is structured for an orchestrator that may dispatch Haiku/Sonnet agents per
-task as needed. Repetitive and/or token-heavy tasks should be delegated, otherwise
-can be executed by the orchestator. Each task lists target files, the contract to add
- or modify, and the acceptance check the orchestrator should run after completion.
+### Status
 
-The orchestrator (not any agents) runs builds and tests. Use:
+Phases A–E were completed against the original (single-`FtmwSnapshot`-
+per-loadout) spec. Each phase below preserves its **Original
+implementation** summary for context, followed by a **revision task list**
+that brings the work into alignment with the FTMW-preset-aware spec
+above. The revision should be carried out in phase order (A → B → C →
+D → E) because data-model changes propagate up through each UI layer.
+Phase F (cleanup) gains new items.
+
+The orchestrator (not any agents) runs builds and tests:
 
 ```bash
 cmake . -B build/Desktop-Debug/
@@ -410,290 +404,441 @@ make -C build/tests tests -j$(nproc)
 ctest --test-dir build/tests
 ```
 
-Phases A and B are largely sequential. C, D, and E depend on A+B.
+Each agent task lists files, signatures, and acceptance behavior. Tasks
+marked **‖** within a phase can run in parallel.
 
-## Dispatch Notes for the Orchestrator
+### Phase A — Data Model & Persistence
 
-- Tasks marked **‖** within a phase can run in parallel agent sessions.
-- Each agent task is self-contained: it lists files, signatures, and behavior.
-  Avoid passing the whole spec; pass only the relevant section plus any updated
-  context from prior phases.
-- After every agent task: run the appropriate build target (debug first, then
-  tests). Do not advance to the next phase until the current phase's gate is
-  green.
-- Phase A is well within Haiku's range (pure data + serialization). Phases B, C,
-  and D involve UI wiring and inter-dialog handoffs — start with Sonnet for
-  those, escalate from Haiku if needed.
+**Original implementation (DONE):** `src/data/loadout/` houses
+`rfconfigsnapshot.{h,cpp}`, `chirpconfigloadout.{h,cpp}`,
+`ftmwdigitizerloadout.{h,cpp}`, `hardwareloadout.{h,cpp}`, and
+`loadoutmanager.{h,cpp}`. `LoadoutManager` is a `QObject` +
+`SettingsStorage` singleton keyed under `"Loadouts"`, owning the
+in-memory loadout map, providing CRUD + current/default tracking +
+signals + a `loadoutsMatchingHwKey` filter, with a private testing
+constructor. Tests in `tests/tst_loadoutmanagertest.cpp`.
 
-### Phase A — Data Model & Persistence (no UI) — **DONE**
+#### Phase A revision tasks
 
-All source files live under `src/data/loadout/` and are wired into
-`cmake/BlackchirpData.cmake`. The test suite is in
-`tests/tst_loadoutmanagertest.cpp` (registered in the root `CMakeLists.txt`).
+##### A.R1 — `HardwareLoadout` shape change + `FtmwSnapshot` rename
 
-#### Design note: where SettingsStorage I/O lives
+- **Files:** `src/data/loadout/hardwareloadout.{h,cpp}` plus all call
+  sites.
+- Rename the type `FtmwSnapshot` → `FtmwPreset` everywhere it appears
+  (mechanical). Touched files include `data/loadout/hardwareloadout.*`,
+  `gui/widget/ftmwconfigwidget.*`, `gui/dialog/ftmwconfigdialog.*`,
+  `gui/expsetup/experimentftmwconfigpage.*`, and the test suite.
+- In `HardwareLoadout`:
+  - Drop `std::optional<FtmwSnapshot> ftmw`.
+  - Add `std::map<QString, FtmwPreset> ftmwPresets`,
+    `QString defaultFtmwPresetName`, `QString currentFtmwPresetName`,
+    `QDateTime lastModified`.
+- `FtmwPreset` gains `QDateTime lastModified`.
+- Add a public constant
+  `BC::Store::LM::lastUsedFtmwPresetName = u"__LastUsed__"_s` (place in
+  the existing `loadoutmanager.h` namespace block or a new
+  `loadoutkeys.h`).
+- Acceptance: type compiles. Existing call sites that read `ftmw` are
+  updated by A.R2.
 
-`setGroupValue`/`setArray` are protected on `SettingsStorage`. Rather than
-friending many free functions, all QSettings I/O is concentrated in
-`LoadoutManager`, which subclasses `SettingsStorage`. The sub-component helper
-files provide pure data-conversion functions (no storage dependency) that
-`LoadoutManager`'s private methods call when reading and writing.
+##### A.R2 — `LoadoutManager` API additions
 
-#### `RfConfigSnapshot` (`rfconfigsnapshot.{h,cpp}`)
+- **Files:** `src/data/loadout/loadoutmanager.{h,cpp}`.
+- FTMW preset CRUD on top of the existing methods:
+  - `std::optional<FtmwPreset> getFtmwPreset(loadoutName, presetName) const`
+  - `bool putFtmwPreset(loadoutName, presetName, FtmwPreset)`
+  - `bool removeFtmwPreset(loadoutName, presetName)`
+  - `bool renameFtmwPreset(loadoutName, oldName, newName)` —
+    rejects `__LastUsed__` and duplicates; rewrites
+    `currentFtmwPresetName` / `defaultFtmwPresetName` if they
+    referenced the old name.
+  - `bool ftmwPresetExists(loadoutName, presetName) const`
+  - `QStringList ftmwPresetNames(loadoutName, includeLastUsed=false) const`
+  - `bool clearFtmwPresets(loadoutName)` — used by Discard-on-drift.
+- Default/current FTMW preset accessors:
+  - `QString currentFtmwPresetName(loadoutName) const`
+  - `bool setCurrentFtmwPresetName(loadoutName, presetName)`
+  - `QString defaultFtmwPresetName(loadoutName) const`
+  - `bool setDefaultFtmwPresetName(loadoutName, presetName)`
+- Convenience: `std::optional<FtmwPreset> currentFtmwPreset(loadoutName)`
+  resolves the fallback chain (`currentFtmwPreset` →
+  `defaultFtmwPreset` → empty).
+- New signals (each carries `(loadoutName, presetName)`):
+  - `ftmwPresetAdded`, `ftmwPresetRemoved`, `ftmwPresetChanged`,
+    `currentFtmwPresetChanged`, `defaultFtmwPresetChanged`.
+- Hardware fingerprint helper:
+  - `struct HardwareFingerprint { QString awgHwKey; QString digiHwKey;
+    QSet<QString> clockHwKeys; bool operator==(...); }`
+  - `static HardwareFingerprint hardwareFingerprint(const std::map<QString,
+    QString> &hardwareMap);` — used by both Save drift detection and
+    Save-As copy-FTMW-presets eligibility.
+- Mutex pattern preserved.
+- Update `removeLoadout` to no longer clear the
+  `FtmwConfigWidget::lastFtmwLoadout` SettingsStorage key (that key is
+  retired in C.R2 / E.R4).
 
-A plain struct holding the set-only RF operating parameters: five scalars
-(`commonUpDownLO`, `awgMult`, `upMixSideband`, `chirpMult`,
-`downMixSideband`) and a `QHash<RfConfig::ClockType, RfConfig::ClockFreq>
-clocks`. Provides `fromRfConfig(const RfConfig&)` and `applyTo(RfConfig&)`
-for converting to/from the full runtime `RfConfig`.
+##### A.R3 — Storage layout migration
 
-#### ChirpConfig loadout helpers (`chirpconfigloadout.{h,cpp}`)
+- **Files:** `src/data/loadout/loadoutmanager.cpp` (`p_writeLoadout`,
+  `p_readLoadout`).
+- Rewrite write path to emit the nested `ftmwPresets/<name>/...` schema
+  documented in Storage. Each preset uses the same scalar/array helpers
+  the existing `ftmw/...` block uses (`rfConfigScalarsMap`,
+  `rfConfigClocksArray`, `chirpConfigToMaps`, `ftmwDigitizerToMaps`).
+- Rewrite read path to read `ftmwPresetNames` array, then read each preset's
+  subgroup.
+- The `ftmwPresetNames` array must include `__LastUsed__` when present.
 
-Free functions in `namespace BC::Loadout` that convert a `ChirpConfig` into
-the three `SettingsMap` / `vector<SettingsMap>` structures that
-`LoadoutManager` writes to QSettings, and reconstruct a `ChirpConfig` from
-them. AWG sample rate is not stored in the loadout; the inverse builder takes
-it as a parameter so callers can pass the live hardware value.
+##### A.R4 — Tests (‖ with A.R1–A.R3 once interfaces stabilize)
 
-#### FtmwDigitizerConfig loadout helpers (`ftmwdigitizerloadout.{h,cpp}`)
+- **File:** `tests/tst_loadoutmanagertest.cpp`.
+- Replace `testRoundTripFull` / `testRoundTripNoFtmw` with:
+  - `testRoundTripWithFtmwPresets` — loadout with two named presets +
+    `__LastUsed__`, all three round-tripped through QSettings.
+  - `testRoundTripNoFtmwPresets` — hardware-only loadout (empty
+    `ftmwPresets`).
+- Add:
+  - `testFtmwPresetCrud` — put/get/remove/rename round-trips and
+    signal emissions.
+  - `testCurrentDefaultFtmwPresetPointers` — set/get, deletion
+    semantics (deleting `currentFtmwPreset` re-resolves; deleting
+    `defaultFtmwPreset` clears it).
+  - `testRenameFtmwPresetRewritesPointers`.
+  - `testRemoveLoadoutCascadesFtmwPresets`.
+  - `testHardwareFingerprintEquality` — same map → equal; permuted
+    clock keys → equal; differing AWG/digi/clock-set → unequal;
+    implementation-class swap with same hwKey → equal.
+- Drop or recast `testCopyClocksMatching` / `testCopyRfScalars` — these
+  helpers are no longer central. Decide per F.R2.
 
-Same pattern as the chirp helpers, but for `FtmwDigitizerConfig`. Covers all
-trigger, horizontal, averaging, and channel fields. The inverse builder takes
-the digitizer `hwKey` so the returned object is correctly keyed.
+> **Phase A revision gate:** rebuild + `ctest --test-dir build/tests`
+> green.
 
-#### `FtmwSnapshot` and `HardwareLoadout` (`hardwareloadout.{h,cpp}`)
+### Phase B — Hardware Configuration Dialog
 
-`FtmwSnapshot` bundles `RfConfigSnapshot`, `ChirpConfig`, `FtmwDigitizerConfig`,
-and `digiHwKey`. `HardwareLoadout` adds a `name`, `std::map<QString,QString>
-hardwareMap`, and `std::optional<FtmwSnapshot> ftmw`.
+**Original implementation (DONE):** Loadout group with combo + four
+buttons (Save / Save As / Delete / Set as Default) above the existing
+hardware splitter. `d_previewRuntimeConfig` initialized from the runtime
+config (not from any loadout). Combo selection prompts before
+overwriting the preview. Save persists `d_previewRuntimeConfig` as the
+loadout's hardware map, preserving the existing FTMW snapshot. Save As
+prompts for a name and offers a follow-up "Configure FTMW now?". Accept
+calls `setCurrentLoadoutName`; `MainWindow`'s `finished` lambda pushes
+the loadout's clocks.
 
-`hardwareloadout.cpp` provides the remaining `BC::Loadout` free functions:
-`rfConfigScalarsMap`, `rfConfigClocksArray`, `rfConfigSnapshotFromMaps`,
-`hardwareMapArray`, `hardwareMapFromArray`, and the two per-component copy
-helpers used by `FtmwConfigDialog` tabs:
+#### Phase B revision tasks
 
-- `copyClocksMatching(source, dest, allowedHwKeys)` — copies only the clock
-  entries whose `ClockFreq::hwKey` is in `allowedHwKeys`; leaves other dest
-  clocks untouched.
-- `copyRfScalars(source, dest)` — copies the five RF scalar fields; does not
-  touch `clocks`.
+##### B.R1 — Save: hardware-drift detection
 
-#### `LoadoutManager` (`loadoutmanager.{h,cpp}`)
+- **Files:** `src/gui/dialog/runtimehardwareconfigdialog.cpp`.
+- In `onLoadoutSave`, compute the hardware fingerprint of
+  `d_previewRuntimeConfig` and of the existing stored loadout. Compare.
+- Branches:
+  - **No drift**: existing path — `putLoadout` preserving FTMW presets.
+  - **Drift, no named FTMW presets** (only `__LastUsed__` or empty):
+    proceed, but call `clearFtmwPresets` defensively first.
+  - **Drift with named FTMW presets**: open a `QMessageBox` (or custom
+    dialog) with three explicit buttons:
+    - *Discard FTMW presets and save* → `clearFtmwPresets(loadout)` →
+      `putLoadout`.
+    - *Save As instead* → invoke `onLoadoutSaveAs()` with the current
+      preview hardware (the existing function), and skip the regular
+      Save.
+    - *Cancel* → return without modifying anything.
+- The drift detection helper (`requiresHardwareDriftDecision`) lives on
+  `LoadoutManager` so both Save and Save As can share it.
 
-A `QObject` + `SettingsStorage` singleton (keyed under `"Loadouts"`) that owns
-the in-memory loadout map and is the single point of QSettings I/O. Key
-behaviors:
+##### B.R2 — Save As: FTMW-preset-copy offer
 
-- **CRUD** — `getLoadout`, `putLoadout`, `removeLoadout`, `loadoutExists`,
-  `loadoutNames`. Mutations write through to QSettings immediately.
-- **Current / default tracking** — `currentLoadoutName`,
-  `setCurrentLoadoutName`, `currentLoadout` (and matching default variants).
-  `removeLoadout` reassigns `current` away from the removed name automatically.
-- **Filtering** — `loadoutsMatchingHwKey(hwKey)` returns the names of all
-  loadouts whose `hardwareMap` contains `hwKey` as a key; used by the FTMW
-  Configuration dialog to populate its per-tab "Load from loadout" combos.
-- **Signals** — `loadoutAdded`, `loadoutRemoved`, `loadoutChanged`,
-  `currentLoadoutChanged`, `defaultLoadoutChanged`.
-- **First-run** — if the settings store is empty on construction, a default
-  loadout named `"Default"` (no FTMW snapshot) is created, persisted, and set
-  as both current and default.
-- **Thread safety** — `QMutex` guards all mutations (same pattern as
-  `HardwareProfileManager`).
-- **Test isolation** — a private constructor
-  `LoadoutManager(QAnyStringView org, QAnyStringView app)` bypasses the
-  singleton for unit tests; `LoadoutManagerTest` is declared a friend.
+- **Files:** `src/gui/dialog/runtimehardwareconfigdialog.cpp`.
+- In `onLoadoutSaveAs`, capture the previous active loadout name into a
+  local before mutating `d_activeLoadoutName`.
+- After `putLoadout` of the new loadout, compute fingerprints of the
+  new and the previous loadout's hardware maps. If equal *and* the
+  previous loadout has any named FTMW presets, prompt
+  *"Copy FTMW presets from `<prev>`?"*.
+- On confirm, iterate `ftmwPresetNames(prev, includeLastUsed=false)`
+  and `putFtmwPreset(newLoadout, name, getFtmwPreset(prev, name))`,
+  then `setDefaultFtmwPresetName(newLoadout,
+  defaultFtmwPresetName(prev))`. Do not copy `__LastUsed__`.
+- The existing FTMW prompt still follows.
 
-> **Orchestrator gate after Phase A:** full build + all tests green before starting Phase B.
+##### B.R3 — On accept — clock push
 
-### Phase B — Hardware Configuration Dialog (loadout selector only)
+- **Files:** `src/gui/mainwindow.cpp` (the `finished` lambda inside
+  `launchRuntimeHardwareConfigDialog`).
+- Replace the `loadout->ftmw` lookup with
+  `LoadoutManager::instance().currentFtmwPreset(activeLoadoutName)`.
+  Push `*->rfConfig.clocks` if the optional resolves; warn-and-skip
+  otherwise. Behavior is unchanged for end users; only the source of
+  the clocks changes.
 
-Read the current dialog before starting:
-
-- `src/gui/dialog/runtimehardwareconfigdialog.{h,cpp}`
-- `src/gui/dialog/runtimehardwareconfigdialog_ui.h`
-
-#### B1. Add Loadout group + Save / Save As / Delete / Set as Default — **DONE**
-
-**Implementation summary:**
-
-- `runtimehardwareconfigdialog_ui.h`: Added a `QGroupBox("Loadout")` above the
-  hardware splitter containing `QComboBox *p_loadoutCombo` (stretchy) and four
-  `QPushButton`s: `p_loadoutSave`, `p_loadoutSaveAs`, `p_loadoutDelete`,
-  `p_loadoutSetDefault`.
-- `runtimehardwareconfigdialog.h`: Added `QString d_activeLoadoutName`,
-  `bool d_openFtmwConfigOnClose`, public `openFtmwConfigOnClose()` getter, and
-  private methods: `populateLoadoutCombo`, `switchToLoadout`, `updateLoadoutButtonStates`,
-  `ensureRequiredTypes`, `onLoadoutComboChanged`, `onLoadoutSave`, `onLoadoutSaveAs`,
-  `onLoadoutDelete`, `onLoadoutSetDefault`.
-- `runtimehardwareconfigdialog.cpp`:
-  - Constructor: `d_previewRuntimeConfig` is still initialised from the current
-    runtime config (unchanged). `d_activeLoadoutName` is set to
-    `LoadoutManager::instance().currentLoadoutName()`. The auto-activate-required-types
-    block was extracted into `ensureRequiredTypes()`. Loadout combo is populated and
-    all five signals are wired after `populateHardwareBrowser()`.
-  - `onLoadoutComboChanged`: confirmation prompt on every selection change; on
-    confirm calls `switchToLoadout` which copies the loadout's `hardwareMap` into
-    `d_previewRuntimeConfig` and refreshes all panels. On cancel reverts the combo.
-  - `onLoadoutSave`: builds `HardwareLoadout` from `d_previewRuntimeConfig`,
-    preserving any existing FTMW snapshot; calls `putLoadout`.
-  - `onLoadoutSaveAs`: trims and validates name; prompts on duplicate; saves with no
-    FTMW snapshot; updates `d_activeLoadoutName`; prompts for FTMW configuration and
-    sets `d_openFtmwConfigOnClose` if yes.
-  - `onLoadoutDelete`: removes the loadout; reassigns `d_activeLoadoutName` from
-    `LoadoutManager::currentLoadoutName()`; recreates "Default" from
-    `d_originalRuntimeConfig` if all loadouts were deleted. Does not alter the preview.
-  - `onLoadoutSetDefault`: delegates to `LoadoutManager::setDefaultLoadoutName`.
-  - `onDialogAccepted`: calls `LoadoutManager::setCurrentLoadoutName(d_activeLoadoutName)`
-    before `accept()`. The `setCurrentLoadoutName` call in B2 is therefore already
-    implemented; what remains in B2 is the clock push in the `MainWindow` `finished`
-    lambda.
-
-#### B2. Apply-on-accept wiring for clocks — **DONE**
-
-**Implementation summary:**
-
-- `onDialogAccepted` already calls `LoadoutManager::setCurrentLoadoutName(d_activeLoadoutName)`
-  (delivered in B1).
-- `src/gui/mainwindow.cpp`: a second `finished` lambda (added after the existing
-  hardware-sync lambda) checks `result == QDialog::Accepted`, reads the current
-  loadout's `FtmwSnapshot` from `LoadoutManager::instance().currentLoadout()`, and
-  posts `p_hwm->configureClocks(clocks)` via `QMetaObject::invokeMethod` with
-  `Qt::QueuedConnection`. Queue order (sync first, clocks second) is preserved
-  because both are posted to `p_hwm`'s event queue in sequence.
-- The FTMW Configuration dialog launch (`d_openFtmwConfigOnClose` flag) is deferred
-  to Phase D, when the dialog itself is implemented.
-- **First-run fix**: constructor now seeds the active loadout's `hardwareMap` from
-  `d_originalRuntimeConfig` if it is empty, ensuring that loading "Default" back via
-  the combo always restores a known hardware state.
-- **Manual verification:** all loadout combo/save/delete/default operations verified.
-  Clock push untested pending Phase C/D (no loadout yet carries an FtmwSnapshot).
-
-> **Orchestrator gate after Phase B:** build the GUI app, launch it, manually verify:
+> **Phase B revision gate:** manual smoke test —
 >
-> - Hardware Configuration dialog has the loadout combo + 4 buttons.
-> - Switching loadouts updates the overview tree.
-> - Save / Save As / Delete / Set as Default behave correctly.
-> - Accepting the dialog applies clocks to hardware (visible in clock display box).
+> 1. Save with drifted hardware on a loadout that has named FTMW
+>    presets triggers the three-button modal; each branch behaves as
+>    specified.
+> 2. Save As into hardware that matches the previous active loadout
+>    offers FTMW preset copy.
+> 3. Accepting the dialog pushes the active loadout's current FTMW
+>    preset clocks (visible in the clock display box).
 
-### Phase C — FTMW Configuration Dialog (new) — **DONE**
+### Phase C — FTMW Configuration Dialog
 
-**Implementation summary:**
+**Original implementation (DONE):** `src/gui/dialog/ftmwconfigdialog.{h,
+cpp,_ui.h}` is a thin shell wrapping `FtmwConfigWidget`. The widget
+hosts three tabs and a "Load from loadout:" combo per tab. On accept,
+the dialog pulls a snapshot from the widget and writes it to the active
+loadout's `FtmwSnapshot`. `applyClocks` signal forwarded to `MainWindow`.
 
-- **New files:** `src/gui/dialog/ftmwconfigdialog.{h,cpp,_ui.h}` (registered
-  in `cmake/BlackchirpGui.cmake`). Three-tab dialog (`RfConfigWidget`,
-  `ChirpConfigWidget`, `FtmwDigitizerConfigWidget`), each tab with a
-  "Load from loadout:" combo filtered by AWG or digitizer hwKey.
-- On open: populates from the active loadout's `FtmwSnapshot` if present;
-  otherwise seeds widgets from `currentClocks`. On tab switch to Chirp,
-  re-initializes `ChirpConfigWidget` from the current RF widget state so
-  clock/sideband changes propagate without resetting chirp segments.
-- Per-tab source combos use `copyRfScalars` / `copyClocksMatching` (RF tab)
-  or direct widget setters (Chirp / Digitizer tabs); reset to sentinel after load.
-- `accept()` builds a fresh `FtmwSnapshot` and calls
-  `LoadoutManager::putLoadout`. Clocks are pushed to hardware by `MainWindow`
-  via the forwarded `applyClocks` signal (on "Apply Now") and an
-  `accepted`-connected lambda.
-- `BC::Key::Ftmw::ftmwDialogKey` (`"FtmwConfigDialog"`) is the `d_openDialogs`
-  re-entrancy key. `MainWindow::launchFtmwConfigDialog` replaces
-  `launchRfConfigDialog`; both `actionRfConfig` and `clockBox::configureRequested`
-  connect to it. Action display text changed to `"FTMW Configuration"`.
-- Save-As-then-FTMW handoff: the `finished` lambda in
-  `launchRuntimeHardwareConfigDialog` calls `launchFtmwConfigDialog()` when
-  `d->openFtmwConfigOnClose()` is true.
-- **Pre-existing bug fixed** (`clockmanager.cpp`): `configureClocks` now emits
-  `clockHardwareUpdate(type, QString(), -1)` for clock roles that are removed,
-  hiding their rows in `ClockDisplayBox`.
+#### Phase C revision tasks
 
-> **Orchestrator gate after Phase C:** build verified; all manual tests passed.
+##### C.R1 — FTMW Preset bar UI
 
-### Phase D — Hardware menu Loadout submenu — **DONE**
+- **Files:** new `src/gui/widget/ftmwpresetbar.{h,cpp}` (a re-usable
+  widget for both `FtmwConfigDialog` and `ExperimentFtmwConfigPage`),
+  or fold the controls directly into `FtmwConfigWidget`. Either way,
+  expose a `bool showDeleteButton` flag for ESD use.
+- Layout: `QGroupBox("FTMW Preset")` containing
+  `QComboBox p_ftmwPresetCombo` + buttons **Apply**, **Save**, **Save
+  As…**, **Rename…**, **Delete**, **Set as Default**. Plus a small
+  label that shows `(unsaved)` when `currentFtmwPreset == __LastUsed__`
+  and an asterisk when `d_dirty`.
+- Combo population: `LoadoutManager::ftmwPresetNames(activeLoadout,
+  includeLastUsed=false)`. Repopulate on `ftmwPresetAdded` /
+  `ftmwPresetRemoved` / `ftmwPresetChanged` / `currentFtmwPresetChanged`.
 
-**Implementation summary:**
+##### C.R2 — Initial population (replace `lastFtmwLoadout`)
 
-- `src/gui/mainwindow_ui.h`: added `QMenu *menuLoadout` inserted into
-  `menuHardware` just after `actionRuntimeHardwareConfig`. Also renamed
-  `actionRfConfig` → `actionFtmwConfig` for consistency.
-- `src/gui/mainwindow.h`: added `QActionGroup *p_loadoutActionGroup`,
-  `rebuildLoadoutMenu()`, and `onLoadoutActionTriggered(QAction*)`.
-- `src/gui/mainwindow.cpp`: constructor creates the exclusive `QActionGroup`,
-  connects all five `LoadoutManager` signals to `rebuildLoadoutMenu`, connects
-  `menuLoadout::triggered` to `onLoadoutActionTriggered`, and calls
-  `rebuildLoadoutMenu()` once. `rebuildLoadoutMenu` removes old actions from
-  the group, clears the menu, then repopulates from `LoadoutManager::loadoutNames()`
-  with checkable actions keyed by name. `onLoadoutActionTriggered` confirms the
-  switch, then calls `HardwareManager::applyHardwareMap` (see below) via
-  `BlockingQueuedConnection`, rebuilds the hardware UI, queues
-  `syncWithRuntimeConfig`, and pushes loadout clocks if an `FtmwSnapshot` is
-  present. `menuLoadout->menuAction()` is excluded from the dummy-acquiring
-  enable-all loop so the submenu stays disabled during acquisition.
-- `src/hardware/core/hardwaremanager.{h,cpp}`: added `applyHardwareMap(const
-  std::map<QString,QString>&)` slot. As a friend of `RuntimeHardwareConfig` it
-  calls `instance().applyConfiguration(...)`, avoiding the need for `MainWindow`
-  to be a friend.
+- **Files:** `src/gui/widget/ftmwconfigwidget.{h,cpp}`.
+- Drop the `BC::Key::FtmwConfigWidget::lastFtmwLoadout` SettingsStorage
+  key entirely (it is now redundant — `currentFtmwPreset` plays the
+  same role at loadout-scope).
+- Replace the constructor's seeding logic with: read
+  `LoadoutManager::currentFtmwPreset(activeLoadout)`; if present, call
+  `initializeFromFtmwPreset`. Otherwise read `defaultFtmwPreset`.
+  Otherwise fall back to widget last-used SettingsStorage (current
+  widgets' default behavior).
 
-> **Orchestrator gate after Phase D:** build verified; all manual tests passed.
+##### C.R3 — Per-tab "Load from FTMW preset" combos (rescope)
 
-### Phase E — Experiment Setup Dialog Integration — **DONE**
+- **Files:** `src/gui/widget/ftmwconfigwidget.cpp`.
+- Rename the combo labels to "Load from FTMW preset:".
+- Source list = `ftmwPresetNames(activeLoadout, false) \
+  {currentFtmwPresetName}`.
+- Within a single loadout, hardware is identical by construction.
+  Replace `copyClocksMatching` / `copyRfScalars` with wholesale
+  `applyTo` / direct widget setters. (Or retain the helpers and pass
+  the loadout's full clock-key set; engineer's choice. Keep the API in
+  case Save-As copy-FTMW-presets later wants partial copying.)
 
-The three separate FTMW ESD pages (`ExperimentRfConfigPage`,
-`ExperimentChirpConfigPage`, `ExperimentFtmwDigitizerConfigPage`) are replaced
-by a single `FtmwConfigWidget` used in both the standalone dialog and the ESD.
-This is the cleanest solution to loadout-aware seeding: `FtmwConfigWidget`
-inherits `SettingsStorage` and owns the `lastFtmwLoadout` key, so it can
-compare loadout names and seed itself without any external coordination.
+##### C.R4 — Dirty tracking
 
-**Implementation summary:**
+- **Files:** `src/gui/widget/ftmwconfigwidget.{h,cpp}` and the FTMW
+  preset bar.
+- Add `bool d_dirty = false`, `bool isDirty() const`, `markDirty()`
+  slot, `clearDirty()` slot, `dirtyChanged(bool)` signal.
+- Connect every relevant change signal of `RfConfigWidget`,
+  `ChirpConfigWidget`, and `FtmwDigitizerConfigWidget` to `markDirty`.
+  (Audit the three widgets; for each user-editable input, ensure
+  there's a signal we can connect to. Some `QSpinBox`/`QDoubleSpinBox`
+  / `QComboBox::currentIndexChanged` bindings may already exist; add
+  what's missing.)
+- `clearDirty` is called by Apply, Save, Save As, and the "Proceed
+  without saving" branch of the accept prompt.
 
-- **New files:** `src/gui/widget/ftmwconfigwidget.{h,cpp}` — three-tab widget
-  (RF Config, Chirp Config, Digitizer Config), each with a "Load from loadout:"
-  combo. Inherits `SettingsStorage` and tracks `lastFtmwLoadout`; seeds from
-  the active loadout snapshot when the loadout changes, otherwise preserves
-  last-used widget state. Provides `initializeFromSnapshot`, `toSnapshot`,
-  `initializeFromExperiment`, and `resetToLoadout`. `LoadoutManager::removeLoadout`
-  clears the stale `lastFtmwLoadout` key via a temporary `SettingsStorage`
-  instance when the removed name matches.
-- **`FtmwConfigDialog` refactored** to a thin shell: embeds `FtmwConfigWidget`,
-  forwards `applyClocks`, calls `widget->toSnapshot()` + `putLoadout` on accept.
-- **New `ExperimentFtmwConfigPage`** replaces the three former ESD pages
-  (`experimentrfconfigpage`, `experimentchirpconfigpage`,
-  `experimentftmwdigitizerconfigpage`). Embeds `FtmwConfigWidget`; for repeat
-  experiments seeds from the existing `FtmwConfig`. `validate()` consolidates
-  all FTMW checks and sets per-tab error indicators (colored text + icon) on the
-  offending tab. `apply()` writes the snapshot into `p_exp->ftmwConfig()`.
-  A **Reset to Loadout Defaults** button calls `resetToLoadout()` (disabled when
-  the active loadout has no `FtmwSnapshot`).
-- **Bugs fixed during testing:**
-  - `SettingsStorage::setArray` now erases any stale `d_groupValues` entry for
-    the same key before storing array data, preventing `save()` from letting an
-    empty-array-read-as-group entry overwrite correctly written array data.
-  - `ExperimentFtmwConfigPage` and `MainWindow::launchFtmwConfigDialog` now use
-    `RuntimeHardwareConfig::hardwareTypeOf<FtmwScope>()` to identify the
-    digitizer hardware key, replacing the stale `BC::Key::FtmwScope::ftmwScope`
-    constant (`"FtmwDigitizer"`) that never matched the runtime key prefix
-    (`"FtmwScope"`).
-  - `ChirpConfigWidget::getChirps()` now syncs the chirp list, marker channels,
-    and chirp interval from their respective models/widgets into
-    `d_rfConfig.d_chirpConfig` before returning, so the returned config is
-    correct whether or not the chirp tab was ever visited.
+##### C.R5 — Button slots (FTMW preset bar)
 
-> **Orchestrator gate after Phase E:** build verified; all manual tests passed.
+- **Apply**: prompt-if-dirty ("Discard unsaved changes and load FTMW
+  preset `<n>`?"). On confirm: `initializeFromFtmwPreset(getFtmwPreset(
+  ...))`, `setCurrentFtmwPresetName(...)`, push clocks via the widget's
+  `applyClocks` signal, `clearDirty`.
+- **Save**: enabled only when `currentFtmwPreset` is a real named
+  preset *and* `d_dirty`. `putFtmwPreset(loadout, currentFtmwPreset,
+  toFtmwPreset())` + `putFtmwPreset(loadout, "__LastUsed__",
+  toFtmwPreset())`. `clearDirty`.
+- **Save As…**: input dialog; reject empty, `__LastUsed__`, and
+  duplicates (with overwrite confirm). `putFtmwPreset(...)`,
+  `setCurrentFtmwPresetName(loadout, newName)`, also write
+  `__LastUsed__`. `clearDirty`.
+- **Rename…**: input dialog; reject empty, `__LastUsed__`, duplicates.
+  `renameFtmwPreset(loadout, oldName, newName)`.
+- **Delete**: confirm. `removeFtmwPreset`. `LoadoutManager` re-resolves
+  `currentFtmwPreset` per fallback chain; the widget reacts via
+  `currentFtmwPresetChanged`.
+- **Set as Default**: enabled when `currentFtmwPreset` is a real named
+  preset. `setDefaultFtmwPresetName(loadout, currentFtmwPreset)`.
+
+##### C.R6 — Three-way accept prompt
+
+- **Files:** `src/gui/dialog/ftmwconfigdialog.{h,cpp}`.
+- Override `accept()`. If `!widget->isDirty()` → push clocks, base
+  accept. If dirty:
+  - Build a modal `QDialog` (or `QMessageBox` with three custom
+    buttons) titled "Save FTMW changes?" with three actions:
+    - **Overwrite `<currentFtmwPreset>`** — call into the FTMW preset
+      bar's Save logic; then accept. Disabled when `currentFtmwPreset`
+      is `__LastUsed__` or empty.
+    - **Save as new FTMW preset…** — call into Save As. If Save As is
+      cancelled, return to the dialog without accepting. Otherwise
+      accept.
+    - **Proceed without saving** — `putFtmwPreset(loadout,
+      "__LastUsed__", toFtmwPreset())`,
+      `setCurrentFtmwPresetName(loadout, "__LastUsed__")`,
+      `clearDirty`. Accept.
+- Every accept path emits `applyClocks` (the existing
+  `MainWindow::launchFtmwConfigDialog` slot already calls
+  `configureClocks` on accept).
+
+##### C.R7 — Apply Now button
+
+- **Files:** `src/gui/widget/rfconfigwidget.cpp` (no change required if
+  the existing button only emits a clock-push signal). Verify that
+  pressing Apply Now does not call `markDirty` — the values being
+  pushed are already in the widget.
+
+> **Phase C revision gate:** manual coverage of every FTMW-preset-bar
+> button + dirty behavior; `__LastUsed__` is updated on accept and not
+> on cancel; the three-way prompt fires only when dirty.
+
+### Phase D — Hardware menu submenus
+
+**Original implementation (DONE):** Loadout submenu populated from
+`LoadoutManager::loadoutNames()`, exclusive `QActionGroup`, click
+confirms then applies hardware map + clocks. Excluded from the
+acquiring-state enable-all loop.
+
+#### Phase D revision tasks
+
+##### D.R1 — FTMW Preset submenu
+
+- **Files:** `src/gui/mainwindow_ui.h`, `src/gui/mainwindow.{h,cpp}`.
+- Add `QMenu *menuFtmwPreset` to `mainwindow_ui.h` immediately under
+  `menuLoadout` in `menuHardware`.
+- Add `QActionGroup *p_ftmwPresetActionGroup` (exclusive),
+  `void rebuildFtmwPresetMenu()`,
+  `void onFtmwPresetActionTriggered(QAction*)`.
+- `rebuildFtmwPresetMenu`:
+  - Read the active loadout. Build one checkable action per name in
+    `ftmwPresetNames(activeLoadout, false)`. Check the action whose
+    name matches `currentFtmwPresetName(activeLoadout)`. If no match
+    (current is `__LastUsed__` or empty), no action is checked.
+  - Disable `menuFtmwPreset->menuAction()` when the active loadout has
+    no named FTMW presets.
+- Connect `LoadoutManager::currentLoadoutChanged`, `ftmwPresetAdded`,
+  `ftmwPresetRemoved`, `ftmwPresetChanged`, `currentFtmwPresetChanged`
+  to `rebuildFtmwPresetMenu`. Also connect to `loadoutChanged`
+  (handles rename of the active loadout).
+- `onFtmwPresetActionTriggered`:
+  - Confirm switch with the user.
+  - `LoadoutManager::setCurrentFtmwPresetName(activeLoadout, name)`.
+  - `getFtmwPreset(activeLoadout, name)`; push clocks via
+    `HardwareManager::configureClocks` (BlockingQueuedConnection).
+- Exclude `menuFtmwPreset->menuAction()` from the dummy-acquiring
+  enable-all loop.
+
+> **Phase D revision gate:** manual switch via the new submenu pushes
+> clocks; submenu repopulates on every relevant LoadoutManager signal;
+> the submenu is disabled during acquisition and when the active
+> loadout has no named FTMW presets.
+
+### Phase E — Experiment Setup Dialog
+
+**Original implementation (DONE):** `ExperimentFtmwConfigPage` embeds
+`FtmwConfigWidget` and has a single **Reset to Loadout Defaults**
+button (disabled when the active loadout has no FTMW snapshot). Repeat
+experiments seed via `initializeFromExperiment`. `validate()`
+consolidates checks across the three tabs; `apply()` writes the
+snapshot to `p_exp->ftmwConfig()`.
+
+#### Phase E revision tasks
+
+##### E.R1 — FTMW preset bar in `ExperimentFtmwConfigPage`
+
+- **Files:** `src/gui/expsetup/experimentftmwconfigpage.{h,cpp}`.
+- Embed the same FTMW preset bar as `FtmwConfigDialog` with
+  `showDeleteButton=false`.
+- Replace the existing "Reset to Loadout Defaults" button with **Apply
+  default FTMW preset** (loads `defaultFtmwPreset` snapshot via
+  `initializeFromFtmwPreset`; disabled when `defaultFtmwPresetName` is
+  empty).
+
+##### E.R2 — Initial population
+
+- **Files:** `src/gui/expsetup/experimentftmwconfigpage.cpp`.
+- Repeat-experiment branch (`exp->ftmwEnabled()`): unchanged —
+  `initializeFromExperiment` from the saved `FtmwConfig`. After
+  seeding, `clearDirty`.
+- Fresh-experiment branch: same population order as
+  `FtmwConfigDialog` (`currentFtmwPreset` → `defaultFtmwPreset` →
+  widget last-used). After seeding, `clearDirty`.
+
+##### E.R3 — Dirty tracking + accept
+
+- **Files:** `src/gui/expsetup/experimentftmwconfigpage.{h,cpp}`.
+- The widget's `dirtyChanged` signal drives the page's local state.
+- The page's `validate()` runs first (existing behavior). If
+  validation passes and `widget->isDirty()`, fire the same three-way
+  prompt as `FtmwConfigDialog::accept`. All three branches update
+  `__LastUsed__`. The "Proceed without saving" branch only updates
+  `__LastUsed__`.
+- `apply()` then writes the snapshot into `p_exp->ftmwConfig()` as
+  before.
+
+##### E.R4 — `FtmwConfigWidget` shared changes (‖ with C.R*)
+
+- **Files:** `src/gui/widget/ftmwconfigwidget.{h,cpp}`.
+- Move the FTMW preset bar into `FtmwConfigWidget` (or compose it via
+  `FtmwPresetBar`) so both dialog and page reuse the same control.
+- Drop `lastFtmwLoadout` (per C.R2).
+- Audit `toFtmwPreset` (was `toSnapshot`) — the existing implementation
+  reads `d_fidChannel` from the active loadout; revise to read from
+  the active *preset* via `currentFtmwPreset`. If no current preset
+  exists, read from the widget directly.
+- Update `populateSourceCombos` per C.R3.
+
+> **Phase E revision gate:**
+>
+> 1. Repeat experiment seeds from the saved exp's `FtmwConfig` (no
+>    FTMW preset consultation).
+> 2. Fresh experiment seeds from the active FTMW preset.
+> 3. ESD accept fires the three-way prompt only if dirty; all three
+>    branches update `__LastUsed__`.
 
 ### Phase F — Cleanup & Documentation
 
-#### F1. Remove obsolete code paths
+#### F1 — Remove obsolete code paths (existing)
 
 - **Files:** `src/gui/mainwindow.{h,cpp}`.
-- **Behavior:**
-  - Delete the original `MainWindow::launchRfConfigDialog` (replaced by
-    `launchFtmwConfigDialog` in Phase C).
-  - Confirm no orphan references to the old function or to a "RfConfig" dialog
-    title (Grep).
+- Delete the original `MainWindow::launchRfConfigDialog` and any
+  remaining "RfConfig" dialog title strings.
 
-#### F2. Out of scope for the initial slice
+#### F.R1 — Audit retired helpers
 
-- Loadout `.ini` import/export.
-- Per-loadout dirty-state visual indicator beyond the prompt-on-switch.
-- Migrating non-FTMW settings (pulse channel templates, flow setpoints) into
-  loadouts.
+- `loadoutsMatchingHwKey`, `copyClocksMatching`, `copyRfScalars`: with
+  cross-loadout sourcing dropped, these helpers become candidates for
+  removal. Keep `copyClocksMatching` only if Save-As copy-FTMW-presets
+  ends up wanting partial-copy semantics; otherwise delete with their
+  tests.
 
----
+#### F.R2 — Documentation rewrite
+
+- `CLAUDE.md` (project root): no change needed unless the team wants
+  to document the loadout / FTMW preset terminology there.
+- This `dev-docs/loadout-system.md`: **do not delete on completion**.
+  Instead, rewrite it as a brief feature reference (concept summary
+  and pointers to the key code locations: `LoadoutManager`,
+  `HardwareLoadout` struct, `FtmwPreset` struct, `FtmwConfigWidget`,
+  `FtmwConfigDialog`, `ExperimentFtmwConfigPage`, hardware menu
+  submenus, storage layout). The implementation-plan body is dropped
+  in that rewrite. The artifact is intended to feed the upcoming
+  documentation revision project.
+
+#### F2 — Out of scope for the initial slice (unchanged)
+
+- Loadout `.ini` import/export (now would also serialize FTMW presets).
+- Per-loadout / per-FTMW-preset dirty-state visual indicators beyond
+  the prompt-on-switch.
+- Migrating non-FTMW settings (pulse channel templates, flow
+  setpoints) into loadouts or as parallel preset families
+  (e.g. LIF presets — see Constraints).
