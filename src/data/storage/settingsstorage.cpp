@@ -398,6 +398,10 @@ std::map<QString,bool,std::less<>> SettingsStorage::setMultiple(const std::map<Q
 
 void SettingsStorage::setArray(QAnyStringView key, const std::vector<std::map<QString, QVariant, std::less<>> > &array, bool write)
 {
+    // An empty array stored on disk is indistinguishable from a plain group by readAll(),
+    // so it may end up in d_groupValues. Remove that entry so save() doesn't overwrite
+    // the correct array data with stale group data.
+    d_groupValues.erase((key).toString());
     //passing an empty array will erase the value from the settings array and from QSettings
     d_arrayValues.insert_or_assign((key).toString(),array);
     d_edited = true;

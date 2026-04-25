@@ -156,6 +156,9 @@ void ChirpConfigWidget::setFromRfConfig(const RfConfig &rfc)
 
 ChirpConfig &ChirpConfigWidget::getChirps()
 {
+    d_rfConfig.d_chirpConfig.setChirpList(p_ctm->chirpList());
+    d_rfConfig.d_chirpConfig.setMarkerChannels(p_mtm->markerChannels());
+    d_rfConfig.d_chirpConfig.setChirpInterval(ui->chirpIntervalDoubleSpinBox->value());
     return d_rfConfig.d_chirpConfig;
 }
 

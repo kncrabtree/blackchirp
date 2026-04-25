@@ -9,6 +9,54 @@ digitizer configuration). Users switch loadouts to swap between instrument
 configurations (e.g. "S-band", "X-band", "DR scan setup") without re-entering
 settings dialog by dialog.
 
+## Current Status
+
+**PROBLEM FOUND:** The design below embeds the Ftmw configuration inside the
+HardwareLoadout. While it makes sense that the configuration needs to change
+when the loadout changes, fundamentally these are separate concerns. This
+matters when the user is configuring Ftmw configurations: we have a "load from"
+feature that lets the user select settings from a different loadout with
+compatible hardware. But this means a user might create two loadouts with
+identical hardware but different ftmw configurations, which is confusing.
+Instead, a "loadout" should be defined by its hardware map only. Each loadout
+should support multiple ftmw configurations (and maybe later lif
+configurations), but each configuration should be limited to a single loadout.
+The loadout keeps track of all its configurations and its current (default)
+configuration. When a user changes the configuration, either via the
+FtmwConfigDialog or the ESD, they should be prompted about whether they wish
+to overwrite the current configuration, create a new one, or proceed without
+saving. When proceeding without saving, the config is saved to a sentinel
+`__LastUsed__` configuration in the loadout which is used to populate the UI on
+the next instance unless the user has changed the configuration. The UI for
+loading Rf config, chirp config, and digitizer config from loadouts changes
+since configs can only be loaded from other existing confgiurations within the
+same loadout, and now shoudl support config creation, editing, renaming,
+saving, etc. The `__LastUsed__` option is hidden in this context.
+
+Considerations to address:
+
+- What to call these "configurations" from the user perspective to distinguish
+  them from "Loadouts". "Configuration" seems too vague-- "FTMW Preset"? that
+  term will be used here, but consider changing it.
+- Structure and ownership of "FTMW Preset" values in SettingsStorage.
+- Add menu-based selector for FTMW presets similar to that for Loadouts?
+- Add timestamps for last loadout and last preset change (including
+  `__LastUsed__`).
+- Integration with ESD becomes a bit cleaner: Look at Loadout and load settings
+  from the most recent preset associated with the loadout, only falling back
+  to widget persistence if no preset exists for the loadout.
+
+Todo items after addressing considerations above:
+
+1. Rewrite conceptual specification (second-level headers up until
+   `##Implementation Plan`).
+2. Evaluate each completed phase of the implementation plan for necessary
+   changes. This will begin with changes to the data models, then propagate up
+   through each phase of the plan. Write an updated implementation plan
+   for each step to incorporate this design change.
+
+**All of the following is the original plan before introduction of this preset concept**. Once the spec revision and planning are complete, remove this section.
+
 ## Data Model
 
 ### HardwareLoadout
@@ -585,7 +633,7 @@ Read the current dialog before starting:
 
 > **Orchestrator gate after Phase D:** build verified; all manual tests passed.
 
-### Phase E — Experiment Setup Dialog Integration
+### Phase E — Experiment Setup Dialog Integration — **DONE**
 
 The three separate FTMW ESD pages (`ExperimentRfConfigPage`,
 `ExperimentChirpConfigPage`, `ExperimentFtmwDigitizerConfigPage`) are replaced
@@ -594,68 +642,41 @@ This is the cleanest solution to loadout-aware seeding: `FtmwConfigWidget`
 inherits `SettingsStorage` and owns the `lastFtmwLoadout` key, so it can
 compare loadout names and seed itself without any external coordination.
 
-#### E1. Create `FtmwConfigWidget`
+**Implementation summary:**
 
-- **New files:** `src/gui/widget/ftmwconfigwidget.{h,cpp}` (register in
-  `cmake/BlackchirpGui.cmake`).
-- **Inherits:** `QWidget`, `SettingsStorage(BC::Key::FtmwConfigWidget::key)`.
-- **Contents:** RF/Chirp/Digi tabs + load-from-loadout combos (extracted from
-  `FtmwConfigDialog`). All cross-tab wiring (RF→Chirp propagation on tab
-  switch) lives here.
-- **Loadout-aware construction:** on construction, read `lastFtmwLoadout` from
-  own SettingsStorage. If it differs from `LoadoutManager::instance()
-  .currentLoadoutName()`, call `initializeFromSnapshot(loadout.ftmw)` and
-  update `lastFtmwLoadout`. If it matches, leave widgets in their last-used
-  state ("repeat last experiment").
-- **Key methods:** `initializeFromSnapshot(const FtmwSnapshot&)` (explicit
-  seed), `toSnapshot() -> FtmwSnapshot`, `initializeFromExperiment(const
-  FtmwConfig&)` (for repeat/re-run experiments), `resetToLoadout()` (explicit
-  user action).
-- **`LoadoutManager` friendship:** `LoadoutManager` is declared a `friend` of
-  `FtmwConfigWidget` so that `LoadoutManager::removeLoadout` can call
-  `clearValue(lastFtmwLoadoutKey)` on a temporary
-  `SettingsStorage(BC::Key::FtmwConfigWidget::key)` instance when the removed
-  loadout name matches the stored key. This prevents the stale-name
-  delete+recreate edge case.
+- **New files:** `src/gui/widget/ftmwconfigwidget.{h,cpp}` — three-tab widget
+  (RF Config, Chirp Config, Digitizer Config), each with a "Load from loadout:"
+  combo. Inherits `SettingsStorage` and tracks `lastFtmwLoadout`; seeds from
+  the active loadout snapshot when the loadout changes, otherwise preserves
+  last-used widget state. Provides `initializeFromSnapshot`, `toSnapshot`,
+  `initializeFromExperiment`, and `resetToLoadout`. `LoadoutManager::removeLoadout`
+  clears the stale `lastFtmwLoadout` key via a temporary `SettingsStorage`
+  instance when the removed name matches.
+- **`FtmwConfigDialog` refactored** to a thin shell: embeds `FtmwConfigWidget`,
+  forwards `applyClocks`, calls `widget->toSnapshot()` + `putLoadout` on accept.
+- **New `ExperimentFtmwConfigPage`** replaces the three former ESD pages
+  (`experimentrfconfigpage`, `experimentchirpconfigpage`,
+  `experimentftmwdigitizerconfigpage`). Embeds `FtmwConfigWidget`; for repeat
+  experiments seeds from the existing `FtmwConfig`. `validate()` consolidates
+  all FTMW checks and sets per-tab error indicators (colored text + icon) on the
+  offending tab. `apply()` writes the snapshot into `p_exp->ftmwConfig()`.
+  A **Reset to Loadout Defaults** button calls `resetToLoadout()` (disabled when
+  the active loadout has no `FtmwSnapshot`).
+- **Bugs fixed during testing:**
+  - `SettingsStorage::setArray` now erases any stale `d_groupValues` entry for
+    the same key before storing array data, preventing `save()` from letting an
+    empty-array-read-as-group entry overwrite correctly written array data.
+  - `ExperimentFtmwConfigPage` and `MainWindow::launchFtmwConfigDialog` now use
+    `RuntimeHardwareConfig::hardwareTypeOf<FtmwScope>()` to identify the
+    digitizer hardware key, replacing the stale `BC::Key::FtmwScope::ftmwScope`
+    constant (`"FtmwDigitizer"`) that never matched the runtime key prefix
+    (`"FtmwScope"`).
+  - `ChirpConfigWidget::getChirps()` now syncs the chirp list, marker channels,
+    and chirp interval from their respective models/widgets into
+    `d_rfConfig.d_chirpConfig` before returning, so the returned config is
+    correct whether or not the chirp tab was ever visited.
 
-#### E2. Refactor `FtmwConfigDialog` to wrap `FtmwConfigWidget`
-
-- **Files:** `src/gui/dialog/ftmwconfigdialog.{h,cpp,_ui.h}`.
-- Remove inline tab layout and cross-tab wiring; embed `FtmwConfigWidget`
-  instead. The dialog becomes a thin shell: `FtmwConfigWidget` + OK/Cancel
-  row + `applyClocks` signal forwarding. `accept()` calls `widget->toSnapshot()`
-  and `LoadoutManager::putLoadout`.
-
-#### E3. Add `ExperimentFtmwConfigPage`, remove three old pages
-
-- **New file:** `src/gui/expsetup/experimentftmwconfigpage.{h,cpp}`.
-- Embeds `FtmwConfigWidget`. For repeat experiments (`p_exp->d_number > 0`),
-  calls `widget->initializeFromExperiment(*p_exp->ftmwConfig())` instead of
-  the normal loadout-aware path.
-- `validate()` consolidates checks from the three old pages (chirp segments
-  present, at least one digi channel enabled, etc.). Because this single page
-  subsumes multiple former pages, validation failures must be easy to locate:
-  `validate()` should set a visual error indicator (e.g., colored tab text or
-  icon) on the specific `FtmwConfigWidget` tab that contains the offending
-  control, and clear all indicators on a clean pass. The page-level tree node
-  coloring from `ExperimentConfigPage::error()` remains but is not sufficient
-  on its own.
-- `apply()` calls `widget->toSnapshot()` and writes the result into
-  `p_exp->ftmwConfig()`.
-- **Delete:** `experimentrfconfigpage.{h,cpp}`,
-  `experimentchirpconfigpage.{h,cpp}`,
-  `experimentftmwdigitizerconfigpage.{h,cpp}`.
-- Update `ExperimentSetupDialog` to register `ExperimentFtmwConfigPage` in
-  place of the three removed pages.
-- Add a **Reset to Loadout Defaults** button on the page; on click calls
-  `widget->resetToLoadout()`. Disabled if current loadout has no FtmwSnapshot.
-
-> **Orchestrator gate after Phase E:** build, launch ESD, verify: (a)
-> switching loadouts then opening ESD shows new loadout FTMW settings; (b)
-> modifying and running an experiment preserves last-used on next open when
-> loadout is unchanged; (c) Reset button restores loadout values; (d) repeat
-> experiment populates from experiment config; (e) validation failure
-> highlights the correct tab.
+> **Orchestrator gate after Phase E:** build verified; all manual tests passed.
 
 ### Phase F — Cleanup & Documentation
 

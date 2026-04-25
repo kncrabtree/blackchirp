@@ -65,6 +65,7 @@
 
 #include <hardware/core/hardwaremanager.h>
 #include <hardware/core/runtimehardwareconfig.h>
+#include <hardware/core/ftmwdigitizer/ftmwscope.h>
 #include <data/loadout/loadoutmanager.h>
 #include <data/settings/hardwarekeys.h>
 #include <hardware/core/clock/fixedclock.h>
@@ -934,7 +935,7 @@ void MainWindow::launchFtmwConfigDialog()
         auto [type, label] = BC::Key::parseKey(k);
         if(type == BC::Key::AWG::key)
             awgHwKey = k;
-        else if(type == BC::Key::FtmwScope::ftmwScope)
+        else if(type == RuntimeHardwareConfig::hardwareTypeOf<FtmwScope>())
             digiHwKey = k;
     }
 

@@ -34,19 +34,18 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/peaklistexportdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/quickexptdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/ftmwconfigdialog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwconfigwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/runtimehardwareconfigdialog.cpp
 
     # Experiment setup pages
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentchirpconfigpage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentconfigpage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentdrscanconfigpage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentflowconfigpage.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentftmwdigitizerconfigpage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentftmwconfigpage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentioboardconfigpage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentloscanconfigpage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentpressurecontrollerconfigpage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentpulsegenconfigpage.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentrfconfigpage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentsetupdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimenttemperaturecontrollerconfigpage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimenttypepage.cpp
@@ -148,20 +147,17 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/hwdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/peaklistexportdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/ftmwconfigdialog.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/ftmwconfigdialog_ui.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/quickexptdialog.h
 
     # Experiment setup pages
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentchirpconfigpage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentconfigpage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentdrscanconfigpage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentflowconfigpage.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentftmwdigitizerconfigpage.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentftmwconfigpage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentioboardconfigpage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentloscanconfigpage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentpressurecontrollerconfigpage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentpulsegenconfigpage.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentrfconfigpage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentsetupdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimenttemperaturecontrollerconfigpage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimenttypepage.h
@@ -203,6 +199,7 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/enumcombobox.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/experimentsummarywidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/experimentviewwidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwconfigwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwdigitizerconfigwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwplottoolbar.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwprocessingtoolbar.h

@@ -3,11 +3,10 @@
 
 #include <QDialog>
 #include <QHash>
-#include <QString>
 
 #include <data/experiment/rfconfig.h>
 
-namespace Ui { class FtmwConfigDialog; }
+class FtmwConfigWidget;
 
 namespace BC::Key::Ftmw
 {
@@ -22,21 +21,14 @@ public:
     explicit FtmwConfigDialog(const QString &awgHwKey, const QString &digiHwKey,
                                const QHash<RfConfig::ClockType, RfConfig::ClockFreq> &currentClocks,
                                QWidget *parent = nullptr);
-    ~FtmwConfigDialog();
 
 signals:
     void applyClocks(QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks);
 
 private:
-    void populateSourceCombos();
-    void onRfSourceChanged(int index);
-    void onChirpSourceChanged(int index);
-    void onDigiSourceChanged(int index);
     void accept() override;
 
-    Ui::FtmwConfigDialog *ui;
-    QString d_awgHwKey;
-    QString d_digiHwKey;
+    FtmwConfigWidget *p_widget;
 };
 
 #endif // FTMWCONFIGDIALOG_H

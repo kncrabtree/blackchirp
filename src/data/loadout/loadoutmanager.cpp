@@ -2,6 +2,7 @@
 
 #include <data/loadout/chirpconfigloadout.h>
 #include <data/loadout/ftmwdigitizerloadout.h>
+#include <data/settings/guikeys.h>
 
 using namespace BC::Store::LM;
 using namespace BC::Loadout;
@@ -104,6 +105,14 @@ bool LoadoutManager::removeLoadout(const QString &name)
 
     p_removeFromSettings(name);
     p_syncIndex();
+
+    // If the removed loadout was the last one seeded into FtmwConfigWidget,
+    // clear the stored key so the widget re-seeds from the new current loadout.
+    {
+        LoadoutHelper ftmwHelper({BC::Key::FtmwConfigWidget::key.toString()});
+        if (ftmwHelper.get(BC::Key::FtmwConfigWidget::lastLoadout, QString()) == name)
+            ftmwHelper.clearValue(BC::Key::FtmwConfigWidget::lastLoadout);
+    }
 
     {
         QMutexLocker lk(&d_mutex);
