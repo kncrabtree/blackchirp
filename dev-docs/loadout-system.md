@@ -558,55 +558,32 @@ Read the current dialog before starting:
 
 > **Orchestrator gate after Phase C:** build verified; all manual tests passed.
 
-### Phase D — Hardware menu Loadout submenu
+### Phase D — Hardware menu Loadout submenu — **DONE**
 
-#### D1. Add submenu structure
+**Implementation summary:**
 
-- **Files:** `src/gui/mainwindow_ui.h`, `src/gui/mainwindow.{h,cpp}`.
-- **Add:**
-  - `QMenu *menuLoadout` under `menuHardware`, positioned just below
-    `actionRuntimeHardwareConfig`.
-  - `QActionGroup *p_loadoutActionGroup` (exclusive).
-  - `void rebuildLoadoutMenu();` — clears and repopulates from
-    `LoadoutManager::loadoutNames()`, marks the current one checked, attaches
-    each action to a `QString` data field for the loadout name.
-- **Wire:**
-  - Call `rebuildLoadoutMenu()` once after MainWindow construction.
-  - Connect `LoadoutManager::loadoutAdded/Removed/Changed/CurrentChanged/DefaultChanged`
-    signals to `rebuildLoadoutMenu`.
-  - Connect `menuLoadout->triggered(QAction*)` to a slot
-    `MainWindow::onLoadoutActionTriggered`.
+- `src/gui/mainwindow_ui.h`: added `QMenu *menuLoadout` inserted into
+  `menuHardware` just after `actionRuntimeHardwareConfig`. Also renamed
+  `actionRfConfig` → `actionFtmwConfig` for consistency.
+- `src/gui/mainwindow.h`: added `QActionGroup *p_loadoutActionGroup`,
+  `rebuildLoadoutMenu()`, and `onLoadoutActionTriggered(QAction*)`.
+- `src/gui/mainwindow.cpp`: constructor creates the exclusive `QActionGroup`,
+  connects all five `LoadoutManager` signals to `rebuildLoadoutMenu`, connects
+  `menuLoadout::triggered` to `onLoadoutActionTriggered`, and calls
+  `rebuildLoadoutMenu()` once. `rebuildLoadoutMenu` removes old actions from
+  the group, clears the menu, then repopulates from `LoadoutManager::loadoutNames()`
+  with checkable actions keyed by name. `onLoadoutActionTriggered` confirms the
+  switch, then calls `HardwareManager::applyHardwareMap` (see below) via
+  `BlockingQueuedConnection`, rebuilds the hardware UI, queues
+  `syncWithRuntimeConfig`, and pushes loadout clocks if an `FtmwSnapshot` is
+  present. `menuLoadout->menuAction()` is excluded from the dummy-acquiring
+  enable-all loop so the submenu stays disabled during acquisition.
+- `src/hardware/core/hardwaremanager.{h,cpp}`: added `applyHardwareMap(const
+  std::map<QString,QString>&)` slot. As a friend of `RuntimeHardwareConfig` it
+  calls `instance().applyConfiguration(...)`, avoiding the need for `MainWindow`
+  to be a friend.
 
-#### D2. Switch behavior with confirmation
-
-- **File:** `src/gui/mainwindow.cpp`.
-- **`onLoadoutActionTriggered(QAction *act)`:**
-  - Read target name from `act->data().toString()`.
-  - If target is already the current loadout, no-op.
-  - Confirm via `QMessageBox::question`: *"Switch to loadout `<name>`? This will
-    reconfigure all hardware."* — `[Switch] [Cancel]`. On cancel, restore the
-    checked state of the previously-current action and return.
-  - On confirm: load the loadout, apply its hardwareMap via
-    `RuntimeHardwareConfig::instance().applyConfiguration`, then
-    `clearHardwareUI()` / `buildHardwareUI()`, then
-    `QMetaObject::invokeMethod(p_hwm, &HardwareManager::syncWithRuntimeConfig)`,
-    then push clocks via `configureClocks` (if the loadout has an FtmwSnapshot).
-  - `LoadoutManager::setCurrentLoadoutName(target)`.
-
-#### D3. Enable-state gating
-
-- **File:** `src/gui/mainwindow.cpp` (the program-state switch around line 1300).
-- **Behavior:** wherever `actionRuntimeHardwareConfig->setEnabled(...)` is set,
-  set `menuLoadout->setEnabled(...)` to the same value. The submenu (and all its
-  child actions) inherits the enabled state.
-
-> **Orchestrator gate after Phase D:** build, manually verify:
->
-> - Hardware menu shows the Loadout submenu populated with all loadout names.
-> - Active loadout is checked.
-> - Clicking another shows the confirmation; cancel keeps original; confirm
->   switches hardware and updates the check mark.
-> - Submenu disabled during `Acquiring` / `Paused`.
+> **Orchestrator gate after Phase D:** build verified; all manual tests passed.
 
 ### Phase E — Experiment Setup Dialog Integration
 

@@ -20,6 +20,7 @@
 #include <QScreen>
 #include <QTimer>
 #include <QUrl>
+#include <QActionGroup>
 #include <functional>
 
 #include <gui/widget/digitizerconfigwidget.h>
@@ -222,7 +223,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pauseButton,&QToolButton::clicked,this,&MainWindow::pauseUi);
     connect(ui->resumeButton,&QToolButton::clicked,this,&MainWindow::resumeUi);
     connect(ui->actionCommunication,&QAction::triggered,this,&MainWindow::launchCommunicationDialog);
-    connect(ui->actionRfConfig,&QAction::triggered,this,&MainWindow::launchFtmwConfigDialog);
+    connect(ui->actionFtmwConfig,&QAction::triggered,this,&MainWindow::launchFtmwConfigDialog);
     connect(ui->actionAutoscale_Aux,&QAction::triggered,ui->auxDataViewWidget,&AuxDataViewWidget::autoScaleAll);
     connect(ui->actionAutoscale_Rolling,&QAction::triggered,ui->rollingDataViewWidget,&RollingDataWidget::autoScaleAll);
     connect(ui->sleepButton,&QToolButton::toggled,this,&MainWindow::sleep);
@@ -232,6 +233,17 @@ MainWindow::MainWindow(QWidget *parent) :
     if(ui->actionLifConfig)
         connect(ui->actionLifConfig,&QAction::triggered,this,&MainWindow::launchLifConfigDialog);
     connect(ui->actionRuntimeHardwareConfig,&QAction::triggered,this,&MainWindow::launchRuntimeHardwareConfigDialog);
+
+    p_loadoutActionGroup = new QActionGroup(this);
+    p_loadoutActionGroup->setExclusive(true);
+    connect(ui->menuLoadout, &QMenu::triggered, this, &MainWindow::onLoadoutActionTriggered);
+    auto &lm = LoadoutManager::instance();
+    connect(&lm, &LoadoutManager::loadoutAdded, this, &MainWindow::rebuildLoadoutMenu);
+    connect(&lm, &LoadoutManager::loadoutRemoved, this, &MainWindow::rebuildLoadoutMenu);
+    connect(&lm, &LoadoutManager::loadoutChanged, this, &MainWindow::rebuildLoadoutMenu);
+    connect(&lm, &LoadoutManager::currentLoadoutChanged, this, &MainWindow::rebuildLoadoutMenu);
+    connect(&lm, &LoadoutManager::defaultLoadoutChanged, this, &MainWindow::rebuildLoadoutMenu);
+    rebuildLoadoutMenu();
     if(ApplicationConfigManager::instance().isLifEnabled())
     {
         connect(p_hwm,&HardwareManager::lifSettingsComplete,p_am,&AcquisitionManager::lifHardwareReady);
@@ -954,6 +966,75 @@ void MainWindow::launchFtmwConfigDialog()
     d->show();
 }
 
+void MainWindow::rebuildLoadoutMenu()
+{
+    for(auto *act : p_loadoutActionGroup->actions())
+        p_loadoutActionGroup->removeAction(act);
+    ui->menuLoadout->clear();
+    const auto &lm = LoadoutManager::instance();
+    const QString current = lm.currentLoadoutName();
+
+    for(const auto &name : lm.loadoutNames())
+    {
+        auto *act = ui->menuLoadout->addAction(name);
+        act->setCheckable(true);
+        act->setChecked(name == current);
+        act->setData(name);
+        p_loadoutActionGroup->addAction(act);
+    }
+}
+
+void MainWindow::onLoadoutActionTriggered(QAction *act)
+{
+    using namespace Qt::StringLiterals;
+    const QString target = act->data().toString();
+    const QString current = LoadoutManager::instance().currentLoadoutName();
+
+    if(target == current)
+    {
+        act->setChecked(true);
+        return;
+    }
+
+    auto result = QMessageBox::question(this, u"Switch Loadout"_s,
+        u"Switch to loadout \"%1\"? This will reconfigure all hardware."_s.arg(target),
+        QMessageBox::Yes | QMessageBox::Cancel);
+
+    if(result != QMessageBox::Yes)
+    {
+        for(auto *a : p_loadoutActionGroup->actions())
+        {
+            if(a->data().toString() == current)
+            {
+                a->setChecked(true);
+                break;
+            }
+        }
+        return;
+    }
+
+    auto loadout = LoadoutManager::instance().getLoadout(target);
+    if(!loadout)
+        return;
+
+    const auto map = loadout->hardwareMap;
+    QMetaObject::invokeMethod(p_hwm, [this, map]{ p_hwm->applyHardwareMap(map); },
+                              Qt::BlockingQueuedConnection);
+    clearHardwareUI();
+    buildHardwareUI();
+    QMetaObject::invokeMethod(p_hwm, &HardwareManager::syncWithRuntimeConfig, Qt::QueuedConnection);
+
+    if(loadout->ftmw)
+    {
+        auto clocks = loadout->ftmw->rfConfig.clocks;
+        QMetaObject::invokeMethod(p_hwm, [this, clocks](){
+            p_hwm->configureClocks(clocks);
+        }, Qt::QueuedConnection);
+    }
+
+    LoadoutManager::instance().setCurrentLoadoutName(target);
+}
+
 void MainWindow::launchLifConfigDialog()
 {
     auto it = d_openDialogs.find("LifConfig");
@@ -1400,13 +1481,17 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         {
             for(auto act : hwl)
             {
-                if(act == ui->actionRfConfig)
+                if(act == ui->actionFtmwConfig)
+                    continue;
+                if(act == ui->actionLifConfig)
                     continue;
                 if(act == ui->actionCommunication)
                     continue;
                 if(act == ui->actionTest_All_Connections)
                     continue;
                 if(act == ui->actionRuntimeHardwareConfig)
+                    continue;
+                if(act == ui->menuLoadout->menuAction())
                     continue;
                 act->setEnabled(true);
             }
@@ -1568,7 +1653,7 @@ void MainWindow::setupThemeAwareIconStyling()
         ui->actionLifConfig->setIcon(ThemeColors::createThemedIcon(":/icons/lif.svg", ThemeColors::IconPrimary, this));
     ui->actionRuntimeHardwareConfig->setIcon(ThemeColors::createThemedIcon(":/icons/cpu-chip.svg", ThemeColors::IconPrimary, this));
 
-    ui->actionRfConfig->setIcon(ThemeColors::createThemedIcon(":/icons/rf.svg", ThemeColors::IconPrimary, this));
+    ui->actionFtmwConfig->setIcon(ThemeColors::createThemedIcon(":/icons/rf.svg", ThemeColors::IconPrimary, this));
     
     // Set button icons  
     ui->acquireButton->setIcon(ThemeColors::createThemedIcon(":/icons/play-circle.svg", ThemeColors::IconPrimary, this));

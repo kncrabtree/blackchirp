@@ -177,6 +177,7 @@ public slots:
     
     // Dynamic hardware synchronization
     void syncWithRuntimeConfig();
+    void applyHardwareMap(const std::map<QString, QString> &map);
     
     // Phase 3.5.3: Library configuration integration
     bool applyVendorLibraryChanges();

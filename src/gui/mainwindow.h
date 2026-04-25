@@ -14,6 +14,7 @@
 
 class QThread;
 class QCloseEvent;
+class QActionGroup;
 class LogHandler;
 class AcquisitionManager;
 class HardwareManager;
@@ -76,6 +77,8 @@ public slots:
     void launchCommunicationDialog(bool parent = true);
     void launchRfConfigDialog();
     void launchFtmwConfigDialog();
+    void rebuildLoadoutMenu();
+    void onLoadoutActionTriggered(QAction *act);
     void launchLifConfigDialog();
     void launchRuntimeHardwareConfigDialog();
     void configureLifWidget(LifControlWidget *w);
@@ -124,6 +127,7 @@ private:
     bool isCriticalHardwareConnected() const;
     QWidget *wrapWithPythonWidget(const QString &hwKey, QWidget *typeWidget);
 
+    QActionGroup *p_loadoutActionGroup{nullptr};
     ProgramState d_state{Idle};
     bool d_initialHardwareTestComplete{false};
     int d_logCount{0};

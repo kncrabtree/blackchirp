@@ -60,7 +60,7 @@ public:
     QAction *viewExperimentAction;
     QAction *actionQuick_Experiment;
     QAction *actionStart_Sequence;
-    QAction *actionRfConfig;
+    QAction *actionFtmwConfig;
     QToolButton *hardwareButton;
     QToolButton *viewExperimentButton;
     QToolButton *settingsButton;
@@ -92,6 +92,7 @@ public:
     QVBoxLayout *logTabLayout;
     QTextEdit *logTextEdit;
     QMenu *menuHardware;
+    QMenu *menuLoadout;
     QMenu *menuAcquisition;
     QMenu *menuRollingData;
     QMenu *menuAuxData;
@@ -156,8 +157,8 @@ public:
         actionAutoscale_Rolling = new QAction(MainWindow);
         actionAutoscale_Rolling->setObjectName(QString::fromUtf8("actionAutoscale_Rolling"));
         actionAutoscale_Rolling->setIcon(icon10);
-        actionRfConfig = new QAction("FTMW Configuration",MainWindow);
-        actionRfConfig->setObjectName("ActionRfConfig");
+        actionFtmwConfig = new QAction("FTMW Configuration",MainWindow);
+        actionFtmwConfig->setObjectName("ActionFtmwConfig");
         // Icon set programmatically in setupThemeAwareIconStyling()
         // Icons set programmatically in setupThemeAwareIconStyling()
         actionQuick_Experiment = new QAction(MainWindow);
@@ -434,6 +435,7 @@ public:
 //        menuBar->setGeometry(QRect(0, 0, 676, 23));
         menuHardware = new QMenu(hardwareButton);
         menuHardware->setObjectName(QString::fromUtf8("menuHardware"));
+        menuLoadout = new QMenu("Loadout"_L1, menuHardware);
         menuAcquisition = new QMenu(acquireButton);
         menuAcquisition->setObjectName(QString::fromUtf8("menuAcquisition"));
 
@@ -482,11 +484,12 @@ public:
         rollingGraphsBox->setRange(1,9);
 
         menuHardware->addAction(actionRuntimeHardwareConfig);
+        menuHardware->addMenu(menuLoadout);
         menuHardware->addSeparator();
         menuHardware->addAction(actionCommunication);
         menuHardware->addAction(actionTest_All_Connections);
         menuHardware->addSeparator();
-        menuHardware->addAction(actionRfConfig);
+        menuHardware->addAction(actionFtmwConfig);
         if(actionLifConfig)
             menuHardware->addAction(actionLifConfig);
         menuHardware->addSeparator();
