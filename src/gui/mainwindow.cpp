@@ -43,6 +43,7 @@
 #include <gui/dialog/hwdialog.h>
 #include <gui/dialog/quickexptdialog.h>
 #include <gui/dialog/batchsequencedialog.h>
+#include <gui/dialog/ftmwconfigdialog.h>
 #include <gui/dialog/runtimehardwareconfigdialog.h>
 
 // #include <gui/wizard/experimentwizard.h>
@@ -64,6 +65,7 @@
 #include <hardware/core/hardwaremanager.h>
 #include <hardware/core/runtimehardwareconfig.h>
 #include <data/loadout/loadoutmanager.h>
+#include <data/settings/hardwarekeys.h>
 #include <hardware/core/clock/fixedclock.h>
 #include <gui/widget/pythonhardwarecontrolwidget.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
@@ -151,7 +153,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(p_hwm,&HardwareManager::clockFrequencyUpdate,ui->clockBox,&ClockDisplayBox::updateFrequency);
     connect(p_hwm,&HardwareManager::clockHardwareUpdate,ui->clockBox,&ClockDisplayBox::setClockHardware);
-    connect(ui->clockBox,&ClockDisplayBox::configureRequested,this,&MainWindow::launchRfConfigDialog);
+    connect(ui->clockBox,&ClockDisplayBox::configureRequested,this,&MainWindow::launchFtmwConfigDialog);
     connect(ui->clockBox,&ClockDisplayBox::clockHardwareRequested,this,[this](const QString &hwKey){
         auto it = d_hardwareUI.find(hwKey);
         if(it != d_hardwareUI.end() && it->second.menuAction)
@@ -220,7 +222,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pauseButton,&QToolButton::clicked,this,&MainWindow::pauseUi);
     connect(ui->resumeButton,&QToolButton::clicked,this,&MainWindow::resumeUi);
     connect(ui->actionCommunication,&QAction::triggered,this,&MainWindow::launchCommunicationDialog);
-    connect(ui->actionRfConfig,&QAction::triggered,this,&MainWindow::launchRfConfigDialog);
+    connect(ui->actionRfConfig,&QAction::triggered,this,&MainWindow::launchFtmwConfigDialog);
     connect(ui->actionAutoscale_Aux,&QAction::triggered,ui->auxDataViewWidget,&AuxDataViewWidget::autoScaleAll);
     connect(ui->actionAutoscale_Rolling,&QAction::triggered,ui->rollingDataViewWidget,&RollingDataWidget::autoScaleAll);
     connect(ui->sleepButton,&QToolButton::toggled,this,&MainWindow::sleep);
@@ -902,6 +904,56 @@ void MainWindow::launchRfConfigDialog()
 
 }
 
+void MainWindow::launchFtmwConfigDialog()
+{
+    auto it = d_openDialogs.find(BC::Key::Ftmw::ftmwDialogKey);
+    if(it != d_openDialogs.end())
+    {
+        it->second->setWindowState(Qt::WindowActive);
+        it->second->raise();
+        it->second->show();
+        return;
+    }
+
+    QString awgHwKey, digiHwKey;
+    const auto hardware = RuntimeHardwareConfig::constInstance().getCurrentHardware();
+    for(const auto &[k, v] : hardware)
+    {
+        auto [type, label] = BC::Key::parseKey(k);
+        if(type == BC::Key::AWG::key)
+            awgHwKey = k;
+        else if(type == BC::Key::FtmwScope::ftmwScope)
+            digiHwKey = k;
+    }
+
+    QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks;
+    QMetaObject::invokeMethod(p_hwm, &HardwareManager::getClocks, Qt::BlockingQueuedConnection, &clocks);
+
+    auto d = new FtmwConfigDialog(awgHwKey, digiHwKey, clocks, this);
+
+    connect(d, &FtmwConfigDialog::applyClocks, [this](QHash<RfConfig::ClockType, RfConfig::ClockFreq> c){
+        QMetaObject::invokeMethod(p_hwm, [this, c](){ p_hwm->configureClocks(c); });
+    });
+
+    connect(d, &QDialog::accepted, [this](){
+        auto loadout = LoadoutManager::instance().currentLoadout();
+        if(!loadout.has_value() || !loadout->ftmw.has_value())
+            return;
+        const auto clocks = loadout->ftmw->rfConfig.clocks;
+        QMetaObject::invokeMethod(p_hwm, [this, clocks](){ p_hwm->configureClocks(clocks); }, Qt::QueuedConnection);
+    });
+
+    connect(d, &QDialog::finished, d, &QDialog::deleteLater);
+    connect(d, &QDialog::destroyed, [this](){
+        auto it = d_openDialogs.find(BC::Key::Ftmw::ftmwDialogKey);
+        if(it != d_openDialogs.end())
+            d_openDialogs.erase(it);
+    });
+
+    d_openDialogs.insert({BC::Key::Ftmw::ftmwDialogKey, d});
+    d->show();
+}
+
 void MainWindow::launchLifConfigDialog()
 {
     auto it = d_openDialogs.find("LifConfig");
@@ -998,6 +1050,11 @@ void MainWindow::launchRuntimeHardwareConfigDialog()
         QMetaObject::invokeMethod(p_hwm, [this, clocks]() {
             p_hwm->configureClocks(clocks);
         }, Qt::QueuedConnection);
+    });
+
+    connect(d, &QDialog::finished, [this, d](int result) {
+        if (result == QDialog::Accepted && d->openFtmwConfigOnClose())
+            launchFtmwConfigDialog();
     });
 
     connect(d, &QDialog::finished, d, &QDialog::deleteLater);

@@ -75,6 +75,7 @@ public slots:
     void resumeUi();
     void launchCommunicationDialog(bool parent = true);
     void launchRfConfigDialog();
+    void launchFtmwConfigDialog();
     void launchLifConfigDialog();
     void launchRuntimeHardwareConfigDialog();
     void configureLifWidget(LifControlWidget *w);

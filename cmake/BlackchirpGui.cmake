@@ -33,8 +33,9 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/hwdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/peaklistexportdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/quickexptdialog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/ftmwconfigdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/runtimehardwareconfigdialog.cpp
-    
+
     # Experiment setup pages
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentchirpconfigpage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentconfigpage.cpp
@@ -146,8 +147,10 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/hwarrayeditdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/hwdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/peaklistexportdialog.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/ftmwconfigdialog.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/ftmwconfigdialog_ui.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/quickexptdialog.h
-    
+
     # Experiment setup pages
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentchirpconfigpage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentconfigpage.h

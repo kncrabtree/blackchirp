@@ -156,7 +156,7 @@ public:
         actionAutoscale_Rolling = new QAction(MainWindow);
         actionAutoscale_Rolling->setObjectName(QString::fromUtf8("actionAutoscale_Rolling"));
         actionAutoscale_Rolling->setIcon(icon10);
-        actionRfConfig = new QAction("Rf Configuration",MainWindow);
+        actionRfConfig = new QAction("FTMW Configuration",MainWindow);
         actionRfConfig->setObjectName("ActionRfConfig");
         // Icon set programmatically in setupThemeAwareIconStyling()
         // Icons set programmatically in setupThemeAwareIconStyling()

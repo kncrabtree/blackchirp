@@ -527,87 +527,36 @@ Read the current dialog before starting:
 > - Save / Save As / Delete / Set as Default behave correctly.
 > - Accepting the dialog applies clocks to hardware (visible in clock display box).
 
-### Phase C — FTMW Configuration Dialog (new)
+### Phase C — FTMW Configuration Dialog (new) — **DONE**
 
-#### C1. Create `FtmwConfigDialog`
+**Implementation summary:**
 
-- **New files:** `src/gui/dialog/ftmwconfigdialog.{h,cpp}`,
-  `src/gui/dialog/ftmwconfigdialog_ui.h`.
-- **Layout:** `QTabWidget` with three tabs. Each tab's top row is a
-  `QLabel("Load from loadout:") + QComboBox` followed by the editing widget:
-  - **RF Config** — load-source combo (filtered by AWG hwKey match) +
-    `RfConfigWidget`.
-  - **Chirp Config** — load-source combo (filtered by AWG hwKey match) +
-    `ChirpConfigWidget`.
-  - **Digitizer Config** — load-source combo (filtered by FtmwDigitizer hwKey
-    match) + `FtmwDigitizerConfigWidget`.
-  - `QDialogButtonBox(Ok|Cancel)`.
-- **Constructor:** takes the active digitizer hwKey (passed by MainWindow) so
-  the digitizer widget can be constructed with the correct key, and the active
-  AWG hwKey for filtering the RF/Chirp tab combos.
-- **On open:**
-  - If `LoadoutManager::currentLoadout()->ftmw` has value, populate the three
-    widgets from it (build a temporary `RfConfig` for `RfConfigWidget`/
-    `ChirpConfigWidget`; pass `FtmwDigitizerConfig` to `FtmwDigitizerConfigWidget::setFromConfig`).
-  - Else: leave widgets in their default last-used state (their existing
-    SettingsStorage-backed init), with current clocks fetched from
-    `HardwareManager::getClocks()`.
-  - Populate each tab's load-source combo via
-    `LoadoutManager::loadoutsMatchingHwKey(<awg or digitizer hwKey>)`,
-    excluding the active loadout. Prepend the
-    `"(no source — keep current)"` sentinel; select it.
-- **Combo activation behavior:**
-  - **RF Config tab**: when the user picks a non-sentinel source, fetch that
-    loadout's `FtmwSnapshot.rfConfig`. Apply `copyRfScalars` and
-    `copyClocksMatching` (allowedHwKeys = the set of `Clock.<label>` hwKeys
-    in the active hardware map) into the RF widget's working `RfConfig`,
-    then call `RfConfigWidget::setFromRfConfig`. Reset combo to sentinel.
-  - **Chirp Config tab**: copy the source's `chirpConfig` into the chirp
-    widget via `ChirpConfigWidget::setFromRfConfig` (or equivalent
-    setter). Reset combo to sentinel.
-  - **Digitizer Config tab**: copy the source's `digitizer` into the
-    digitizer widget via `FtmwDigitizerConfigWidget::setFromConfig`.
-    Reset combo to sentinel.
-- **On OK:**
-  - Pull `RfConfig` from RfConfigWidget, `ChirpConfig` from ChirpConfigWidget,
-    `FtmwDigitizerConfig` from FtmwDigitizerConfigWidget.
-  - Convert RfConfig → RfConfigSnapshot.
-  - Build `FtmwSnapshot`, write into the active loadout via
-    `LoadoutManager::put`.
-  - Push clocks to hardware via `HardwareManager::configureClocks`.
-- **On Cancel:** discard.
+- **New files:** `src/gui/dialog/ftmwconfigdialog.{h,cpp,_ui.h}` (registered
+  in `cmake/BlackchirpGui.cmake`). Three-tab dialog (`RfConfigWidget`,
+  `ChirpConfigWidget`, `FtmwDigitizerConfigWidget`), each tab with a
+  "Load from loadout:" combo filtered by AWG or digitizer hwKey.
+- On open: populates from the active loadout's `FtmwSnapshot` if present;
+  otherwise seeds widgets from `currentClocks`. On tab switch to Chirp,
+  re-initializes `ChirpConfigWidget` from the current RF widget state so
+  clock/sideband changes propagate without resetting chirp segments.
+- Per-tab source combos use `copyRfScalars` / `copyClocksMatching` (RF tab)
+  or direct widget setters (Chirp / Digitizer tabs); reset to sentinel after load.
+- `accept()` builds a fresh `FtmwSnapshot` and calls
+  `LoadoutManager::putLoadout`. Clocks are pushed to hardware by `MainWindow`
+  via the forwarded `applyClocks` signal (on "Apply Now") and an
+  `accepted`-connected lambda.
+- `BC::Key::Ftmw::ftmwDialogKey` (`"FtmwConfigDialog"`) is the `d_openDialogs`
+  re-entrancy key. `MainWindow::launchFtmwConfigDialog` replaces
+  `launchRfConfigDialog`; both `actionRfConfig` and `clockBox::configureRequested`
+  connect to it. Action display text changed to `"FTMW Configuration"`.
+- Save-As-then-FTMW handoff: the `finished` lambda in
+  `launchRuntimeHardwareConfigDialog` calls `launchFtmwConfigDialog()` when
+  `d->openFtmwConfigOnClose()` is true.
+- **Pre-existing bug fixed** (`clockmanager.cpp`): `configureClocks` now emits
+  `clockHardwareUpdate(type, QString(), -1)` for clock roles that are removed,
+  hiding their rows in `ClockDisplayBox`.
 
-#### C2. Wire menu entry
-
-- **Files:** `src/gui/mainwindow_ui.h` (rename `actionRfConfig` → keep object
-  name but change the displayed text to "FTMW Configuration"; or rename the
-  variable for clarity — pick the smaller diff path),
-  `src/gui/mainwindow.{h,cpp}`.
-- **Behavior:**
-  - Replace `MainWindow::launchRfConfigDialog` with `launchFtmwConfigDialog`.
-  - Connect `ui->actionRfConfig->triggered` (or renamed action) to the new
-    launcher.
-  - Connect `clockBox::configureRequested` to the same launcher (so the clock
-    display box's "configure" button still has the right destination).
-  - Re-entrancy guard via `d_openDialogs` map, key `"FtmwConfig"` (matches the
-    pattern used by `launchRfConfigDialog`).
-
-#### C3. Save-As-then-FTMW handoff
-
-- **Files:** `src/gui/mainwindow.cpp` (the lambda after Hardware Configuration
-  dialog closes).
-- **Behavior:** if the dialog set its "configure FTMW after close" flag (from
-  B1's Save As prompt), call `launchFtmwConfigDialog` after
-  `syncWithRuntimeConfig`.
-
-> **Orchestrator gate after Phase C:** build, manually verify:
->
-> - Hardware menu shows "FTMW Configuration" instead of "RF Configuration".
-> - Dialog opens with three tabs; widgets populate from active loadout if FTMW
->   snapshot exists.
-> - OK persists to loadout, Cancel discards.
-> - Save As → Yes flow opens FTMW Configuration after Hardware Configuration
->   closes.
+> **Orchestrator gate after Phase C:** build verified; all manual tests passed.
 
 ### Phase D — Hardware menu Loadout submenu
 
@@ -706,4 +655,3 @@ Read the current dialog before starting:
   loadouts.
 
 ---
-

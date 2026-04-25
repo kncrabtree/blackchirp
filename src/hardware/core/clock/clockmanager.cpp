@@ -73,6 +73,7 @@ double ClockManager::readClockFrequency(RfConfig::ClockType t)
 
 bool ClockManager::configureClocks(QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks)
 {
+    const auto oldTypes = d_clockRoles.keys();
     d_clockRoles.clear();
     for(int i=0; i<d_clockList.size(); i++)
         d_clockList[i]->clearRoles();
@@ -138,6 +139,12 @@ bool ClockManager::configureClocks(QHash<RfConfig::ClockType, RfConfig::ClockFre
         }
 
         d.desiredFreqMHz = actualFreq;
+    }
+
+    for (auto type : oldTypes)
+    {
+        if (!d_clockRoles.contains(type))
+            emit clockHardwareUpdate(type, QString(), -1);
     }
 
     return true;
