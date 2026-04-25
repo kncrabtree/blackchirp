@@ -587,31 +587,75 @@ Read the current dialog before starting:
 
 ### Phase E — Experiment Setup Dialog Integration
 
-#### E1. Pass loadout snapshot into ESD ‖
+The three separate FTMW ESD pages (`ExperimentRfConfigPage`,
+`ExperimentChirpConfigPage`, `ExperimentFtmwDigitizerConfigPage`) are replaced
+by a single `FtmwConfigWidget` used in both the standalone dialog and the ESD.
+This is the cleanest solution to loadout-aware seeding: `FtmwConfigWidget`
+inherits `SettingsStorage` and owns the `lastFtmwLoadout` key, so it can
+compare loadout names and seed itself without any external coordination.
 
-- **Files:** `src/gui/expsetup/experimentrfconfigpage.{h,cpp}`,
-  `experimentchirpconfigpage.{h,cpp}`,
-  `experimentftmwdigitizerconfigpage.{h,cpp}`,
-  `experimentsetupdialog.{h,cpp}`,
-  `src/gui/mainwindow.cpp` (`runExperimentWizard`).
-- **Behavior:** for new experiments, if the active loadout has an FtmwSnapshot
-  and the corresponding widget setting block is empty, seed widgets from the
-  loadout. Existing last-used SettingsStorage values still take precedence
-  (preserves "repeat last experiment").
-- **Acceptance:** new experiment with cleared widget settings starts from
-  loadout defaults; existing widget settings still take precedence.
+#### E1. Create `FtmwConfigWidget`
 
-#### E2. "Reset to Loadout Defaults" buttons ‖
+- **New files:** `src/gui/widget/ftmwconfigwidget.{h,cpp}` (register in
+  `cmake/BlackchirpGui.cmake`).
+- **Inherits:** `QWidget`, `SettingsStorage(BC::Key::FtmwConfigWidget::key)`.
+- **Contents:** RF/Chirp/Digi tabs + load-from-loadout combos (extracted from
+  `FtmwConfigDialog`). All cross-tab wiring (RF→Chirp propagation on tab
+  switch) lives here.
+- **Loadout-aware construction:** on construction, read `lastFtmwLoadout` from
+  own SettingsStorage. If it differs from `LoadoutManager::instance()
+  .currentLoadoutName()`, call `initializeFromSnapshot(loadout.ftmw)` and
+  update `lastFtmwLoadout`. If it matches, leave widgets in their last-used
+  state ("repeat last experiment").
+- **Key methods:** `initializeFromSnapshot(const FtmwSnapshot&)` (explicit
+  seed), `toSnapshot() -> FtmwSnapshot`, `initializeFromExperiment(const
+  FtmwConfig&)` (for repeat/re-run experiments), `resetToLoadout()` (explicit
+  user action).
+- **`LoadoutManager` friendship:** `LoadoutManager` is declared a `friend` of
+  `FtmwConfigWidget` so that `LoadoutManager::removeLoadout` can call
+  `clearValue(lastFtmwLoadoutKey)` on a temporary
+  `SettingsStorage(BC::Key::FtmwConfigWidget::key)` instance when the removed
+  loadout name matches the stored key. This prevents the stale-name
+  delete+recreate edge case.
 
-- **Files:** `experimentrfconfigpage.{h,cpp}`,
+#### E2. Refactor `FtmwConfigDialog` to wrap `FtmwConfigWidget`
+
+- **Files:** `src/gui/dialog/ftmwconfigdialog.{h,cpp,_ui.h}`.
+- Remove inline tab layout and cross-tab wiring; embed `FtmwConfigWidget`
+  instead. The dialog becomes a thin shell: `FtmwConfigWidget` + OK/Cancel
+  row + `applyClocks` signal forwarding. `accept()` calls `widget->toSnapshot()`
+  and `LoadoutManager::putLoadout`.
+
+#### E3. Add `ExperimentFtmwConfigPage`, remove three old pages
+
+- **New file:** `src/gui/expsetup/experimentftmwconfigpage.{h,cpp}`.
+- Embeds `FtmwConfigWidget`. For repeat experiments (`p_exp->d_number > 0`),
+  calls `widget->initializeFromExperiment(*p_exp->ftmwConfig())` instead of
+  the normal loadout-aware path.
+- `validate()` consolidates checks from the three old pages (chirp segments
+  present, at least one digi channel enabled, etc.). Because this single page
+  subsumes multiple former pages, validation failures must be easy to locate:
+  `validate()` should set a visual error indicator (e.g., colored tab text or
+  icon) on the specific `FtmwConfigWidget` tab that contains the offending
+  control, and clear all indicators on a clean pass. The page-level tree node
+  coloring from `ExperimentConfigPage::error()` remains but is not sufficient
+  on its own.
+- `apply()` calls `widget->toSnapshot()` and writes the result into
+  `p_exp->ftmwConfig()`.
+- **Delete:** `experimentrfconfigpage.{h,cpp}`,
   `experimentchirpconfigpage.{h,cpp}`,
   `experimentftmwdigitizerconfigpage.{h,cpp}`.
-- **Behavior:** add a button on each page. On click, fetch
-  `LoadoutManager::instance().currentLoadout()->ftmw` and populate the
-  corresponding widget from it. Disable the button if no FTMW snapshot.
+- Update `ExperimentSetupDialog` to register `ExperimentFtmwConfigPage` in
+  place of the three removed pages.
+- Add a **Reset to Loadout Defaults** button on the page; on click calls
+  `widget->resetToLoadout()`. Disabled if current loadout has no FtmwSnapshot.
 
-> **Orchestrator gate after Phase E:** build, manually verify each reset button
-> restores its page's widget to loadout values without affecting other pages.
+> **Orchestrator gate after Phase E:** build, launch ESD, verify: (a)
+> switching loadouts then opening ESD shows new loadout FTMW settings; (b)
+> modifying and running an experiment preserves last-used on next open when
+> loadout is unchanged; (c) Reset button restores loadout values; (d) repeat
+> experiment populates from experiment config; (e) validation failure
+> highlights the correct tab.
 
 ### Phase F — Cleanup & Documentation
 
