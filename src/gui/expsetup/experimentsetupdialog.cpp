@@ -9,6 +9,7 @@
 #include <QDialogButtonBox>
 
 #include <gui/widget/experimentsummarywidget.h>
+#include <gui/style/themecolors.h>
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
@@ -225,7 +226,7 @@ void ExperimentSetupDialog::pageChanged(QTreeWidgetItem *newItem, QTreeWidgetIte
                 p_summaryWidget->setExperiment(p_exp);
             }
             else
-                prevItem->setBackground(0,QBrush(Qt::red));
+                prevItem->setBackground(0,QBrush(ThemeColors::getThemeAwareColor(ThemeColors::StatusError,this)));
         }
     }
 
@@ -272,7 +273,7 @@ bool ExperimentSetupDialog::validate(QTreeWidgetItem *item, bool apply)
             item->setBackground(0,QBrush());
         }
         else
-            item->setBackground(0,QBrush(Qt::red));
+            item->setBackground(0,QBrush(ThemeColors::getThemeAwareColor(ThemeColors::StatusError,this)));
     }
     if(out)
     {
@@ -308,12 +309,12 @@ void ExperimentSetupDialog::enableChildren(QTreeWidgetItem *item, bool enable)
 
 void ExperimentSetupDialog::warning(const QString text)
 {
-    p_statusTextEdit->append(text);
+    p_statusTextEdit->append(QString("<span style=\"font-weight:bold;color:%1\">%2</span>").arg(ThemeColors::getThemeAwareColor(ThemeColors::StatusWarning,this).name()).arg(text));
 }
 
 void ExperimentSetupDialog::error(const QString text)
 {
-    p_statusTextEdit->append(QString("<span style=\"font-weight:bold;color:red\">%1</span>").arg(text));
+    p_statusTextEdit->append(QString("<span style=\"font-weight:bold;color:%1\">%2</span>").arg(ThemeColors::getThemeAwareColor(ThemeColors::StatusError,this).name()).arg(text));
 
 }
 

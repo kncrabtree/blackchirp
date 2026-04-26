@@ -883,51 +883,6 @@ void MainWindow::launchCommunicationDialog(bool parent)
     d.exec();
 }
 
-void MainWindow::launchRfConfigDialog()
-{
-    auto it = d_openDialogs.find("RfConfig");
-    if(it != d_openDialogs.end())
-    {
-        it->second->setWindowState(Qt::WindowActive);
-        it->second->raise();
-        it->second->show();
-        return;
-    }
-
-    auto d = new QDialog;
-    d->setWindowTitle("Rf Configuration");
-    auto w = new RfConfigWidget(d);
-    QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks;
-    QMetaObject::invokeMethod(p_hwm,&HardwareManager::getClocks,Qt::BlockingQueuedConnection,&clocks);
-    w->setClocks(clocks);
-    connectRfConfigWidget(w);
-
-    auto vbl = new QVBoxLayout;
-    vbl->addWidget(w);
-
-    auto bb = new QDialogButtonBox(QDialogButtonBox::Ok|QDialogButtonBox::Cancel,d);
-    connect(bb->button(QDialogButtonBox::Ok),&QPushButton::clicked,d,&QDialog::accept);
-    connect(bb->button(QDialogButtonBox::Cancel),&QPushButton::clicked,d,&QDialog::reject);
-    vbl->addWidget(bb);
-    d->setLayout(vbl);
-
-    connect(d,&QDialog::accepted,[this,w](){
-        RfConfig rfc;
-        w->toRfConfig(rfc);
-        QMetaObject::invokeMethod(p_hwm,[rfc,this](){ p_hwm->configureClocks(rfc.getClocks());} );
-    });
-    connect(d,&QDialog::finished,d,&QDialog::deleteLater);
-    connect(d,&QDialog::destroyed,[this](){
-        auto it = d_openDialogs.find("RfConfig");
-        if(it != d_openDialogs.end())
-            d_openDialogs.erase(it);
-    });
-
-    d_openDialogs.insert({"RfConfig",d});
-    d->show();
-
-}
-
 void MainWindow::launchFtmwConfigDialog()
 {
     auto it = d_openDialogs.find(BC::Key::Ftmw::ftmwDialogKey);

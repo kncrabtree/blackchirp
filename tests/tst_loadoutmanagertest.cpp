@@ -34,7 +34,7 @@ private slots:
     void testCopyClocksMatching();
     void testCopyRfScalars();
     void testFtmwPresetCrud();
-    void testCurrentDefaultFtmwPresetPointers();
+    void testCurrentFtmwPresetPointers();
     void testRenameFtmwPresetRewritesPointers();
     void testRemoveLoadoutCascadesFtmwPresets();
 
@@ -188,7 +188,6 @@ HardwareLoadout LoadoutManagerTest::makeWithPresets()
     lo.ftmwPresets[u"Secondary"_s] = makeFtmwPreset(u"FtmwScope.main"_s);
     lo.ftmwPresets[lastUsedFtmwPresetName.toString()] = makeFtmwPreset(u"FtmwScope.main"_s);
 
-    lo.defaultFtmwPresetName = u"Primary"_s;
     lo.currentFtmwPresetName = u"Secondary"_s;
 
     return lo;
@@ -268,7 +267,6 @@ void LoadoutManagerTest::testRoundTripWithFtmwPresets()
     QVERIFY(got.has_value());
     QCOMPARE(got->name,        original.name);
     QCOMPARE(got->hardwareMap, original.hardwareMap);
-    QCOMPARE(got->defaultFtmwPresetName, original.defaultFtmwPresetName);
     QCOMPARE(got->currentFtmwPresetName, original.currentFtmwPresetName);
 
     // All three presets present
@@ -298,7 +296,6 @@ void LoadoutManagerTest::testRoundTripNoFtmwPresets()
     QCOMPARE(got->name,        original.name);
     QCOMPARE(got->hardwareMap, original.hardwareMap);
     QVERIFY(got->ftmwPresets.empty());
-    QVERIFY(got->defaultFtmwPresetName.isEmpty());
     QVERIFY(got->currentFtmwPresetName.isEmpty());
 }
 
@@ -575,7 +572,7 @@ void LoadoutManagerTest::testFtmwPresetCrud()
     verifyPresetEqual(*lm2->getFtmwPreset(u"CrudTest"_s, u"Beta"_s), p1);
 }
 
-void LoadoutManagerTest::testCurrentDefaultFtmwPresetPointers()
+void LoadoutManagerTest::testCurrentFtmwPresetPointers()
 {
     using namespace Qt::StringLiterals;
 
@@ -594,34 +591,30 @@ void LoadoutManagerTest::testCurrentDefaultFtmwPresetPointers()
     QVERIFY(lm->setCurrentFtmwPresetName(u"PointerTest"_s, u"A"_s));
     QCOMPARE(lm->currentFtmwPresetName(u"PointerTest"_s), u"A"_s);
 
-    // set and get default
-    QVERIFY(lm->setDefaultFtmwPresetName(u"PointerTest"_s, u"B"_s));
-    QCOMPARE(lm->defaultFtmwPresetName(u"PointerTest"_s), u"B"_s);
-
-    // currentFtmwPreset() resolves to currentFtmwPresetName first
+    // currentFtmwPreset() resolves to the current preset
     auto resolved = lm->currentFtmwPreset(u"PointerTest"_s);
     QVERIFY(resolved.has_value());
 
-    // deleting current falls back to default
-    lm->removeFtmwPreset(u"PointerTest"_s, u"A"_s);
-    QCOMPARE(lm->currentFtmwPresetName(u"PointerTest"_s), u"B"_s);
+    // active preset cannot be removed
+    QVERIFY(!lm->removeFtmwPreset(u"PointerTest"_s, u"A"_s));
+    QVERIFY(lm->ftmwPresetExists(u"PointerTest"_s, u"A"_s));
 
-    // deleting default clears it
-    lm->removeFtmwPreset(u"PointerTest"_s, u"B"_s);
-    QVERIFY(lm->defaultFtmwPresetName(u"PointerTest"_s).isEmpty());
+    // non-active preset can be removed
+    QVERIFY(lm->removeFtmwPreset(u"PointerTest"_s, u"B"_s));
+    QVERIFY(!lm->ftmwPresetExists(u"PointerTest"_s, u"B"_s));
+    QCOMPARE(lm->currentFtmwPresetName(u"PointerTest"_s), u"A"_s);
 
-    // currentFtmwPreset() returns nullopt when nothing remains
+    // currentFtmwPreset() returns nullopt when current is empty
+    lm->setCurrentFtmwPresetName(u"PointerTest"_s, {});
     QVERIFY(!lm->currentFtmwPreset(u"PointerTest"_s).has_value());
 
     // pointer persistence
     lm->putFtmwPreset(u"PointerTest"_s, u"C"_s, p);
     lm->setCurrentFtmwPresetName(u"PointerTest"_s, u"C"_s);
-    lm->setDefaultFtmwPresetName(u"PointerTest"_s, u"C"_s);
     lm.reset();
 
     std::unique_ptr<LoadoutManager> lm2(makeLm());
     QCOMPARE(lm2->currentFtmwPresetName(u"PointerTest"_s), u"C"_s);
-    QCOMPARE(lm2->defaultFtmwPresetName(u"PointerTest"_s), u"C"_s);
 }
 
 void LoadoutManagerTest::testRenameFtmwPresetRewritesPointers()
@@ -638,14 +631,12 @@ void LoadoutManagerTest::testRenameFtmwPresetRewritesPointers()
     const FtmwPreset p = makeFtmwPreset(u"FtmwScope.main"_s);
     lm->putFtmwPreset(u"RenameTest"_s, u"OldName"_s, p);
     lm->setCurrentFtmwPresetName(u"RenameTest"_s, u"OldName"_s);
-    lm->setDefaultFtmwPresetName(u"RenameTest"_s, u"OldName"_s);
 
     // successful rename
     QVERIFY(lm->renameFtmwPreset(u"RenameTest"_s, u"OldName"_s, u"NewName"_s));
     QVERIFY(!lm->ftmwPresetExists(u"RenameTest"_s, u"OldName"_s));
     QVERIFY(lm->ftmwPresetExists(u"RenameTest"_s, u"NewName"_s));
     QCOMPARE(lm->currentFtmwPresetName(u"RenameTest"_s), u"NewName"_s);
-    QCOMPARE(lm->defaultFtmwPresetName(u"RenameTest"_s), u"NewName"_s);
 
     // cannot rename __LastUsed__
     lm->putFtmwPreset(u"RenameTest"_s, lastUsedFtmwPresetName.toString(), p);

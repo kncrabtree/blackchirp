@@ -221,10 +221,6 @@ bool LoadoutManager::removeFtmwPreset(const QString &loadoutName, const QString 
     if (loadoutName.isEmpty() || presetName.isEmpty())
         return false;
 
-    bool currentChanged = false;
-    bool defaultChanged = false;
-    QString newCurrent, newDefault;
-
     {
         QMutexLocker lk(&d_mutex);
         auto it = d_loadouts.find(loadoutName);
@@ -232,34 +228,10 @@ bool LoadoutManager::removeFtmwPreset(const QString &loadoutName, const QString 
             return false;
         if (!it->ftmwPresets.count(presetName))
             return false;
+        if (it->currentFtmwPresetName == presetName)
+            return false;  // active preset cannot be removed
 
         it->ftmwPresets.erase(presetName);
-
-        if (it->currentFtmwPresetName == presetName) {
-            // Re-resolve per fallback chain: default → first named → __LastUsed__ → empty
-            it->currentFtmwPresetName.clear();
-            if (!it->defaultFtmwPresetName.isEmpty() &&
-                it->ftmwPresets.count(it->defaultFtmwPresetName)) {
-                it->currentFtmwPresetName = it->defaultFtmwPresetName;
-            } else {
-                for (const auto &[n, _] : it->ftmwPresets) {
-                    if (n != lastUsedFtmwPresetName) {
-                        it->currentFtmwPresetName = n;
-                        break;
-                    }
-                }
-                if (it->currentFtmwPresetName.isEmpty() &&
-                    it->ftmwPresets.count(lastUsedFtmwPresetName.toString()))
-                    it->currentFtmwPresetName = lastUsedFtmwPresetName.toString();
-            }
-            currentChanged = true;
-            newCurrent = it->currentFtmwPresetName;
-        }
-
-        if (it->defaultFtmwPresetName == presetName) {
-            it->defaultFtmwPresetName.clear();
-            defaultChanged = true;
-        }
     }
 
     p_removeFtmwPresetFromSettings(loadoutName, presetName);
@@ -267,11 +239,6 @@ bool LoadoutManager::removeFtmwPreset(const QString &loadoutName, const QString 
     p_syncFtmwPresetIndex(loadoutName);
 
     emit ftmwPresetRemoved(loadoutName, presetName);
-    if (currentChanged)
-        emit currentFtmwPresetChanged(loadoutName, newCurrent);
-    if (defaultChanged)
-        emit defaultFtmwPresetChanged(loadoutName, newDefault);
-
     return true;
 }
 
@@ -286,7 +253,6 @@ bool LoadoutManager::renameFtmwPreset(const QString &loadoutName, const QString 
 
     FtmwPreset movedPreset;
     bool currentChanged = false;
-    bool defaultChanged = false;
 
     {
         QMutexLocker lk(&d_mutex);
@@ -307,10 +273,6 @@ bool LoadoutManager::renameFtmwPreset(const QString &loadoutName, const QString 
             it->currentFtmwPresetName = newName;
             currentChanged = true;
         }
-        if (it->defaultFtmwPresetName == oldName) {
-            it->defaultFtmwPresetName = newName;
-            defaultChanged = true;
-        }
     }
 
     p_removeFtmwPresetFromSettings(loadoutName, oldName);
@@ -322,8 +284,6 @@ bool LoadoutManager::renameFtmwPreset(const QString &loadoutName, const QString 
     emit ftmwPresetAdded(loadoutName, newName);
     if (currentChanged)
         emit currentFtmwPresetChanged(loadoutName, newName);
-    if (defaultChanged)
-        emit defaultFtmwPresetChanged(loadoutName, newName);
 
     return true;
 }
@@ -362,7 +322,6 @@ bool LoadoutManager::clearFtmwPresets(const QString &loadoutName)
             return false;
         it->ftmwPresets.clear();
         it->currentFtmwPresetName.clear();
-        it->defaultFtmwPresetName.clear();
     }
 
     SettingsStorage::purgeGroup({key.toString(), loadoutName, ftmwPresetsKey.toString()});
@@ -409,38 +368,6 @@ bool LoadoutManager::setCurrentFtmwPresetName(const QString &loadoutName, const 
     return true;
 }
 
-QString LoadoutManager::defaultFtmwPresetName(const QString &loadoutName) const
-{
-    QMutexLocker lk(&d_mutex);
-    auto it = d_loadouts.find(loadoutName);
-    if (it == d_loadouts.end())
-        return {};
-    return it->defaultFtmwPresetName;
-}
-
-bool LoadoutManager::setDefaultFtmwPresetName(const QString &loadoutName, const QString &presetName)
-{
-    {
-        QMutexLocker lk(&d_mutex);
-        auto it = d_loadouts.find(loadoutName);
-        if (it == d_loadouts.end())
-            return false;
-
-        // Default must be a real named preset (not __LastUsed__, not empty unless clearing)
-        if (!presetName.isEmpty() &&
-            (presetName == lastUsedFtmwPresetName || !it->ftmwPresets.count(presetName)))
-            return false;
-
-        if (it->defaultFtmwPresetName == presetName)
-            return true;
-
-        it->defaultFtmwPresetName = presetName;
-    }
-
-    p_writeFtmwPresetPointers(loadoutName);
-    emit defaultFtmwPresetChanged(loadoutName, presetName);
-    return true;
-}
 
 std::optional<FtmwPreset> LoadoutManager::currentFtmwPreset(const QString &loadoutName) const
 {
@@ -451,12 +378,6 @@ std::optional<FtmwPreset> LoadoutManager::currentFtmwPreset(const QString &loado
 
     if (!it->currentFtmwPresetName.isEmpty()) {
         auto pit = it->ftmwPresets.find(it->currentFtmwPresetName);
-        if (pit != it->ftmwPresets.end())
-            return pit->second;
-    }
-
-    if (!it->defaultFtmwPresetName.isEmpty()) {
-        auto pit = it->ftmwPresets.find(it->defaultFtmwPresetName);
         if (pit != it->ftmwPresets.end())
             return pit->second;
     }
@@ -503,7 +424,6 @@ HardwareLoadout LoadoutManager::p_readLoadout(const QString &name) const
     HardwareLoadout loadout;
     loadout.name = name;
     loadout.hardwareMap = hardwareMapFromArray(sub.getArray(hwMapKey));
-    loadout.defaultFtmwPresetName = sub.get<QString>(defaultFtmwPresetKey);
     loadout.currentFtmwPresetName = sub.get<QString>(currentFtmwPresetKey);
 
     const auto lastModStr = sub.get<QString>(lastModifiedKey);
@@ -529,7 +449,6 @@ void LoadoutManager::p_writeLoadout(const HardwareLoadout &loadout)
     sub.discardChanges(true);
 
     sub.setArray(hwMapKey, hardwareMapArray(loadout.hardwareMap));
-    sub.set(defaultFtmwPresetKey, loadout.defaultFtmwPresetName);
     sub.set(currentFtmwPresetKey, loadout.currentFtmwPresetName);
     sub.set(lastModifiedKey, loadout.lastModified.isValid()
             ? loadout.lastModified.toString(Qt::ISODate)
@@ -652,20 +571,18 @@ void LoadoutManager::p_syncFtmwPresetIndex(const QString &loadoutName)
 
 void LoadoutManager::p_writeFtmwPresetPointers(const QString &loadoutName)
 {
-    QString cur, def;
+    QString cur;
     {
         QMutexLocker lk(&d_mutex);
         auto it = d_loadouts.find(loadoutName);
         if (it == d_loadouts.end())
             return;
         cur = it->currentFtmwPresetName;
-        def = it->defaultFtmwPresetName;
     }
 
     LoadoutHelper sub({key.toString(), loadoutName});
     sub.discardChanges(true);
     sub.set(currentFtmwPresetKey, cur);
-    sub.set(defaultFtmwPresetKey, def);
     sub.discardChanges(false);
     sub.save();
 }

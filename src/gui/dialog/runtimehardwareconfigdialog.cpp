@@ -1418,7 +1418,6 @@ void RuntimeHardwareConfigDialog::onLoadoutSave()
 
         if (!drift) {
             loadout.ftmwPresets = existing->ftmwPresets;
-            loadout.defaultFtmwPresetName = existing->defaultFtmwPresetName;
             loadout.currentFtmwPresetName = existing->currentFtmwPresetName;
         } else if (!lm.ftmwPresetNames(d_activeLoadoutName, false).isEmpty()) {
             QMessageBox msgBox(this);
@@ -1497,9 +1496,6 @@ void RuntimeHardwareConfigDialog::onLoadoutSaveAs()
                     if (preset.has_value())
                         lm.putFtmwPreset(name, pName, *preset);
                 }
-                const auto defPreset = lm.defaultFtmwPresetName(prevName);
-                if (!defPreset.isEmpty())
-                    lm.setDefaultFtmwPresetName(name, defPreset);
                 const auto curPreset = lm.currentFtmwPresetName(prevName);
                 if (!curPreset.isEmpty()
                     && curPreset != BC::Store::LM::lastUsedFtmwPresetName)
@@ -1553,9 +1549,6 @@ void RuntimeHardwareConfigDialog::onLoadoutCopy()
                 if (preset.has_value())
                     lm.putFtmwPreset(name, pName, *preset);
             }
-            const auto defPreset = lm.defaultFtmwPresetName(sourceName);
-            if (!defPreset.isEmpty())
-                lm.setDefaultFtmwPresetName(name, defPreset);
             const auto curPreset = lm.currentFtmwPresetName(sourceName);
             if (!curPreset.isEmpty() && curPreset != BC::Store::LM::lastUsedFtmwPresetName)
                 lm.setCurrentFtmwPresetName(name, curPreset);

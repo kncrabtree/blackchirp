@@ -2,6 +2,7 @@
 #define FTMWCONFIGWIDGET_H
 
 #include <QHash>
+#include <QIcon>
 #include <QWidget>
 
 #include <data/experiment/rfconfig.h>
@@ -59,7 +60,6 @@ private slots:
     void onSaveAsPreset();
     void onRenamePreset();
     void onDeletePreset();
-    void onSetDefaultPreset();
 
 private:
     void populateSourceCombos();
@@ -76,13 +76,14 @@ private:
     FtmwDigitizerConfigWidget *p_digiWidget;
 
     QComboBox *p_ftmwPresetCombo;
-    QLabel *p_presetStatusLabel;
     QPushButton *p_applyPresetButton;
     QPushButton *p_savePresetButton;
     QPushButton *p_saveAsPresetButton;
     QPushButton *p_renamePresetButton;
     QPushButton *p_deletePresetButton;
-    QPushButton *p_setDefaultPresetButton;
+
+    QIcon d_applyIcon;
+    QIcon d_resetIcon;
 
     QString d_awgHwKey;
     QString d_digiHwKey;

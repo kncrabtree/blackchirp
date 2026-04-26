@@ -36,7 +36,6 @@ struct HardwareLoadout {
     QString name;
     std::map<QString, QString, std::less<>> hardwareMap;
     std::map<QString, FtmwPreset, std::less<>> ftmwPresets;
-    QString defaultFtmwPresetName;
     QString currentFtmwPresetName;
     QDateTime lastModified;
 };

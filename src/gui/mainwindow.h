@@ -75,7 +75,6 @@ public slots:
     void pauseUi();
     void resumeUi();
     void launchCommunicationDialog(bool parent = true);
-    void launchRfConfigDialog();
     void launchFtmwConfigDialog();
     void rebuildLoadoutMenu();
     void onLoadoutActionTriggered(QAction *act);

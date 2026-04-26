@@ -42,22 +42,31 @@ FtmwConfigWidget::FtmwConfigWidget(const QString &awgHwKey, const QString &digiH
     p_ftmwPresetCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     presetRow->addWidget(p_ftmwPresetCombo, 1);
 
-    p_presetStatusLabel = new QLabel(presetGroup);
-    p_presetStatusLabel->setVisible(false);
-    presetRow->addWidget(p_presetStatusLabel);
-
-    p_applyPresetButton      = new QPushButton("Apply"_L1,        presetGroup);
-    p_savePresetButton       = new QPushButton("Save"_L1,         presetGroup);
-    p_saveAsPresetButton     = new QPushButton("Save As..."_L1,   presetGroup);
-    p_renamePresetButton     = new QPushButton("Rename..."_L1,    presetGroup);
-    p_deletePresetButton     = new QPushButton("Delete"_L1,       presetGroup);
-    p_setDefaultPresetButton = new QPushButton("Set Default"_L1,  presetGroup);
+    p_applyPresetButton  = new QPushButton("Apply"_L1,      presetGroup);
+    p_savePresetButton   = new QPushButton("Save"_L1,       presetGroup);
+    p_saveAsPresetButton = new QPushButton("Save As..."_L1, presetGroup);
+    p_renamePresetButton = new QPushButton("Rename..."_L1,  presetGroup);
+    p_deletePresetButton = new QPushButton("Delete"_L1,     presetGroup);
 
     for (auto *btn : {p_applyPresetButton, p_savePresetButton, p_saveAsPresetButton,
-                      p_renamePresetButton, p_deletePresetButton, p_setDefaultPresetButton})
+                      p_renamePresetButton, p_deletePresetButton})
         presetRow->addWidget(btn);
 
     p_deletePresetButton->setVisible(showDeleteButton);
+
+    d_applyIcon = ThemeColors::createThemedIconWithStates(
+        ":/icons/arrow-down-on-square.svg", ThemeColors::IconPrimary, ThemeColors::DisabledText, this);
+    d_resetIcon = ThemeColors::createThemedIconWithStates(
+        ":/icons/arrow-path.svg", ThemeColors::IconPrimary, ThemeColors::DisabledText, this);
+    p_applyPresetButton->setIcon(d_applyIcon);
+    p_savePresetButton->setIcon(ThemeColors::createThemedIconWithStates(
+        ":/icons/archive-box.svg", ThemeColors::IconPrimary, ThemeColors::DisabledText, this));
+    p_saveAsPresetButton->setIcon(ThemeColors::createThemedIconWithStates(
+        ":/icons/arrow-up-on-square.svg", ThemeColors::IconPrimary, ThemeColors::DisabledText, this));
+    p_renamePresetButton->setIcon(ThemeColors::createThemedIconWithStates(
+        ":/icons/pencil.svg", ThemeColors::IconPrimary, ThemeColors::DisabledText, this));
+    p_deletePresetButton->setIcon(ThemeColors::createThemedIconWithStates(
+        ":/icons/trash.svg", ThemeColors::StatusError, ThemeColors::DisabledText, this));
 
     mainLayout->addWidget(presetGroup);
 
@@ -112,18 +121,10 @@ FtmwConfigWidget::FtmwConfigWidget(const QString &awgHwKey, const QString &digiH
     if (currentPreset) {
         initializeFromFtmwPreset(*currentPreset);
     } else {
-        const auto defName = LoadoutManager::instance().defaultFtmwPresetName(currentName);
-        auto defaultPreset = defName.isEmpty()
-            ? std::optional<FtmwPreset>{}
-            : LoadoutManager::instance().getFtmwPreset(currentName, defName);
-        if (defaultPreset) {
-            initializeFromFtmwPreset(*defaultPreset);
-        } else {
-            RfConfig rfc;
-            rfc.setCurrentClocks(currentClocks);
-            p_rfWidget->setClocks(currentClocks);
-            p_chirpWidget->initialize(rfc);
-        }
+        RfConfig rfc;
+        rfc.setCurrentClocks(currentClocks);
+        p_rfWidget->setClocks(currentClocks);
+        p_chirpWidget->initialize(rfc);
     }
 
     // ── Connections ──────────────────────────────────────────────────────────
@@ -164,8 +165,7 @@ FtmwConfigWidget::FtmwConfigWidget(const QString &awgHwKey, const QString &digiH
     connect(p_savePresetButton,       &QPushButton::clicked, this, &FtmwConfigWidget::onSavePreset);
     connect(p_saveAsPresetButton,     &QPushButton::clicked, this, &FtmwConfigWidget::onSaveAsPreset);
     connect(p_renamePresetButton,     &QPushButton::clicked, this, &FtmwConfigWidget::onRenamePreset);
-    connect(p_deletePresetButton,     &QPushButton::clicked, this, &FtmwConfigWidget::onDeletePreset);
-    connect(p_setDefaultPresetButton, &QPushButton::clicked, this, &FtmwConfigWidget::onSetDefaultPreset);
+    connect(p_deletePresetButton, &QPushButton::clicked, this, &FtmwConfigWidget::onDeletePreset);
 
     // Repopulate preset combo on LoadoutManager state changes
     auto &lm = LoadoutManager::instance();
@@ -281,21 +281,21 @@ void FtmwConfigWidget::updatePresetBar()
     const bool comboHasSelection = p_ftmwPresetCombo->currentIndex() >= 0;
 
     const QString comboName = p_ftmwPresetCombo->currentText();
-    p_applyPresetButton->setEnabled(comboHasSelection
-        && (comboName != currentPresetName || d_dirty));
+    const bool comboMatchesCurrent = comboHasSelection && comboName == currentPresetName;
+    if (comboMatchesCurrent) {
+        p_applyPresetButton->setText("Reset"_L1);
+        p_applyPresetButton->setIcon(d_resetIcon);
+        p_applyPresetButton->setEnabled(d_dirty);
+    } else {
+        p_applyPresetButton->setText("Apply"_L1);
+        p_applyPresetButton->setIcon(d_applyIcon);
+        p_applyPresetButton->setEnabled(comboHasSelection);
+    }
     p_savePresetButton->setEnabled(isReal && d_dirty);
     p_saveAsPresetButton->setEnabled(true);
     p_renamePresetButton->setEnabled(isReal);
-    p_deletePresetButton->setEnabled(isReal);
-    p_setDefaultPresetButton->setEnabled(isReal);
+    p_deletePresetButton->setEnabled(comboHasSelection && comboName != currentPresetName);
 
-    QString status;
-    if (!isReal)
-        status = "(unsaved)"_L1;
-    if (d_dirty)
-        status += status.isEmpty() ? "*"_L1 : " *"_L1;
-    p_presetStatusLabel->setText(status);
-    p_presetStatusLabel->setVisible(!status.isEmpty());
 }
 
 void FtmwConfigWidget::onApplyPreset()
@@ -415,37 +415,22 @@ void FtmwConfigWidget::onRenamePreset()
 
 void FtmwConfigWidget::onDeletePreset()
 {
-    const auto activeName = LoadoutManager::instance().currentLoadoutName();
-    if (activeName.isEmpty())
+    const QString presetName = p_ftmwPresetCombo->currentText();
+    if (presetName.isEmpty())
         return;
 
-    const auto currentPresetName = LoadoutManager::instance().currentFtmwPresetName(activeName);
-    if (currentPresetName.isEmpty()
-        || currentPresetName == BC::Store::LM::lastUsedFtmwPresetName)
+    const auto activeName = LoadoutManager::instance().currentLoadoutName();
+    if (activeName.isEmpty())
         return;
 
     const auto r = QMessageBox::question(
         this, "Delete FTMW Preset"_L1,
-        QString("Delete FTMW preset \"%1\"?").arg(currentPresetName),
+        QString("Delete FTMW preset \"%1\"?").arg(presetName),
         QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
     if (r != QMessageBox::Yes)
         return;
 
-    LoadoutManager::instance().removeFtmwPreset(activeName, currentPresetName);
-}
-
-void FtmwConfigWidget::onSetDefaultPreset()
-{
-    const auto activeName = LoadoutManager::instance().currentLoadoutName();
-    if (activeName.isEmpty())
-        return;
-
-    const auto currentPresetName = LoadoutManager::instance().currentFtmwPresetName(activeName);
-    if (currentPresetName.isEmpty()
-        || currentPresetName == BC::Store::LM::lastUsedFtmwPresetName)
-        return;
-
-    LoadoutManager::instance().setDefaultFtmwPresetName(activeName, currentPresetName);
+    LoadoutManager::instance().removeFtmwPreset(activeName, presetName);
 }
 
 void FtmwConfigWidget::setTabError(int tabIndex, bool hasError)

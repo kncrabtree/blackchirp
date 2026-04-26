@@ -30,7 +30,6 @@ inline constexpr QLatin1StringView digiAnalogKey{"digiAnalog"};
 inline constexpr QLatin1StringView digiDigitalKey{"digiDigital"};
 inline constexpr QLatin1StringView ftmwPresetsKey{"ftmwPresets"};
 inline constexpr QLatin1StringView ftmwPresetNamesKey{"ftmwPresetNames"};
-inline constexpr QLatin1StringView defaultFtmwPresetKey{"defaultFtmwPreset"};
 inline constexpr QLatin1StringView currentFtmwPresetKey{"currentFtmwPreset"};
 inline constexpr QLatin1StringView lastModifiedKey{"lastModified"};
 inline constexpr QLatin1StringView lastUsedFtmwPresetName{"__LastUsed__"};
@@ -76,8 +75,6 @@ public:
     // Current/default FTMW preset
     QString currentFtmwPresetName(const QString &loadoutName) const;
     bool setCurrentFtmwPresetName(const QString &loadoutName, const QString &presetName);
-    QString defaultFtmwPresetName(const QString &loadoutName) const;
-    bool setDefaultFtmwPresetName(const QString &loadoutName, const QString &presetName);
     std::optional<FtmwPreset> currentFtmwPreset(const QString &loadoutName) const;
 
 signals:
@@ -91,7 +88,6 @@ signals:
     void ftmwPresetRemoved(QString loadoutName, QString presetName);
     void ftmwPresetChanged(QString loadoutName, QString presetName);
     void currentFtmwPresetChanged(QString loadoutName, QString presetName);
-    void defaultFtmwPresetChanged(QString loadoutName, QString presetName);
 
 private:
     LoadoutManager();
