@@ -185,6 +185,7 @@ FtmwConfigWidget::FtmwConfigWidget(const QString &awgHwKey, const QString &digiH
 
 void FtmwConfigWidget::initializeFromFtmwPreset(const FtmwPreset &preset)
 {
+    d_suppressDirty = true;
     RfConfig rfc;
     preset.rfConfig.applyTo(rfc);
     p_rfWidget->setFromRfConfig(rfc);
@@ -193,6 +194,7 @@ void FtmwConfigWidget::initializeFromFtmwPreset(const FtmwPreset &preset)
     p_chirpWidget->setFromRfConfig(rfc);
 
     p_digiWidget->setFromConfig(preset.digitizer);
+    d_suppressDirty = false;
 }
 
 FtmwPreset FtmwConfigWidget::toFtmwPreset() const
@@ -217,16 +219,11 @@ FtmwPreset FtmwConfigWidget::toFtmwPreset() const
 
 void FtmwConfigWidget::initializeFromExperiment(const FtmwConfig &cfg)
 {
+    d_suppressDirty = true;
     p_rfWidget->setFromRfConfig(cfg.d_rfConfig);
     p_chirpWidget->setFromRfConfig(cfg.d_rfConfig);
     p_digiWidget->setFromConfig(cfg.scopeConfig());
-}
-
-void FtmwConfigWidget::resetToLoadout()
-{
-    auto activeName = LoadoutManager::instance().currentLoadoutName();
-    if (auto preset = LoadoutManager::instance().currentFtmwPreset(activeName))
-        initializeFromFtmwPreset(*preset);
+    d_suppressDirty = false;
 }
 
 void FtmwConfigWidget::updateChirpFromRf()

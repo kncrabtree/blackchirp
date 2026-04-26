@@ -444,7 +444,7 @@ bool ExperimentTypePage::validate()
     }
 
     // Check if pulse generator is available for LIF delay stepping
-    if(ApplicationConfigManager::instance().isLifEnabled() && p_dNumStepsBox && p_dNumStepsBox->value() > 1)
+    if(ApplicationConfigManager::instance().isLifEnabled() && p_lif->isChecked() && p_dNumStepsBox && p_dNumStepsBox->value() > 1)
     {
         auto activeLabels = RuntimeHardwareConfig::constInstance().getActiveLabels<PulseGenerator>();
         if(activeLabels.isEmpty()) {

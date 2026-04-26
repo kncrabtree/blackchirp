@@ -1,5 +1,9 @@
 #include "experimentftmwconfigpage.h"
 
+#include <QAbstractButton>
+#include <QInputDialog>
+#include <QLineEdit>
+#include <QMessageBox>
 #include <QPushButton>
 #include <QVBoxLayout>
 
@@ -7,7 +11,6 @@
 #include <data/experiment/ftmwconfig.h>
 #include <data/loadout/loadoutmanager.h>
 #include <data/settings/hardwarekeys.h>
-#include <data/storage/settingsstorage.h>
 #include <hardware/core/runtimehardwareconfig.h>
 #include <hardware/core/ftmwdigitizer/ftmwscope.h>
 #include <hardware/optional/chirpsource/awg.h>
@@ -37,19 +40,15 @@ ExperimentFtmwConfigPage::ExperimentFtmwConfigPage(
 
     p_widget = new FtmwConfigWidget(awgHwKey, digiHwKey, clocks, false, this);
 
-    p_resetButton = new QPushButton("Reset to Loadout Defaults"_L1, this);
-    auto loadout = LoadoutManager::instance().currentLoadout();
-    p_resetButton->setEnabled(loadout && !LoadoutManager::instance().ftmwPresetNames(loadout->name).isEmpty());
-
     auto *layout = new QVBoxLayout(this);
     layout->addWidget(p_widget, 1);
-    layout->addWidget(p_resetButton, 0);
     setLayout(layout);
 
     if (exp->d_number > 0 && exp->ftmwEnabled())
+    {
         p_widget->initializeFromExperiment(*exp->ftmwConfig());
-
-    connect(p_resetButton, &QPushButton::clicked, p_widget, &FtmwConfigWidget::resetToLoadout);
+        p_widget->clearDirty();
+    }
 }
 
 RfConfigWidget *ExperimentFtmwConfigPage::rfConfigWidget() const
@@ -188,4 +187,93 @@ void ExperimentFtmwConfigPage::apply()
     p_widget->digiWidget()->toConfig(cfg->scopeConfig());
     if (!cfg->scopeConfig().d_analogChannels.empty())
         cfg->scopeConfig().d_fidChannel = cfg->scopeConfig().d_analogChannels.cbegin()->first;
+}
+
+void ExperimentFtmwConfigPage::commitFtmwPreset()
+{
+    using namespace Qt::StringLiterals;
+    if (!isEnabled() || !p_widget->isDirty())
+        return;
+
+    const auto activeName = LoadoutManager::instance().currentLoadoutName();
+    if (activeName.isEmpty())
+        return;
+
+    const auto currentPresetName = LoadoutManager::instance().currentFtmwPresetName(activeName);
+    const bool canOverwrite = !currentPresetName.isEmpty()
+        && currentPresetName != BC::Store::LM::lastUsedFtmwPresetName;
+
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle(u"Save FTMW changes?"_s);
+    msgBox.setText(u"The FTMW configuration has unsaved changes."_s);
+
+    const QString overwriteLabel = canOverwrite
+        ? QString(u"Overwrite \"%1\""_s).arg(currentPresetName)
+        : u"Overwrite current preset"_s;
+    QAbstractButton *overwriteBtn = static_cast<QAbstractButton*>(
+        msgBox.addButton(overwriteLabel, QMessageBox::AcceptRole));
+    overwriteBtn->setEnabled(canOverwrite);
+    QAbstractButton *saveAsBtn = static_cast<QAbstractButton*>(
+        msgBox.addButton(u"Save as new preset..."_s, QMessageBox::ActionRole));
+    msgBox.addButton(u"Proceed without saving"_s, QMessageBox::DestructiveRole);
+
+    msgBox.exec();
+    auto *clicked = msgBox.clickedButton();
+    const auto preset = p_widget->toFtmwPreset();
+
+    if (clicked == overwriteBtn)
+    {
+        LoadoutManager::instance().putFtmwPreset(activeName, currentPresetName, preset);
+        LoadoutManager::instance().putFtmwPreset(
+            activeName, BC::Store::LM::lastUsedFtmwPresetName, preset);
+        p_widget->clearDirty();
+    }
+    else if (clicked == saveAsBtn)
+    {
+        bool ok;
+        auto name = QInputDialog::getText(
+            this, u"Save FTMW Preset As"_s, u"Preset name:"_s,
+            QLineEdit::Normal, {}, &ok).trimmed();
+
+        bool saved = false;
+        if (ok && !name.isEmpty() && name != BC::Store::LM::lastUsedFtmwPresetName)
+        {
+            bool doSave = true;
+            if (LoadoutManager::instance().ftmwPresetExists(activeName, name))
+            {
+                const auto r = QMessageBox::question(
+                    this, u"Overwrite Preset"_s,
+                    QString(u"Preset \"%1\" already exists. Overwrite?"_s).arg(name),
+                    QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+                doSave = (r == QMessageBox::Yes);
+            }
+            if (doSave)
+            {
+                LoadoutManager::instance().putFtmwPreset(activeName, name, preset);
+                LoadoutManager::instance().putFtmwPreset(
+                    activeName, BC::Store::LM::lastUsedFtmwPresetName, preset);
+                LoadoutManager::instance().setCurrentFtmwPresetName(activeName, name);
+                saved = true;
+            }
+        }
+
+        if (!saved)
+        {
+            // Sub-dialog cancelled, invalid name, or overwrite declined — proceed without saving
+            LoadoutManager::instance().putFtmwPreset(
+                activeName, BC::Store::LM::lastUsedFtmwPresetName, preset);
+            LoadoutManager::instance().setCurrentFtmwPresetName(
+                activeName, BC::Store::LM::lastUsedFtmwPresetName);
+        }
+        p_widget->clearDirty();
+    }
+    else
+    {
+        // Proceed without saving
+        LoadoutManager::instance().putFtmwPreset(
+            activeName, BC::Store::LM::lastUsedFtmwPresetName, preset);
+        LoadoutManager::instance().setCurrentFtmwPresetName(
+            activeName, BC::Store::LM::lastUsedFtmwPresetName);
+        p_widget->clearDirty();
+    }
 }

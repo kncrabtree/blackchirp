@@ -111,7 +111,8 @@ void ClockTableModel::setClocks(const QHash<RfConfig::ClockType, RfConfig::Clock
         }
     }
 
-    emit dataChanged(index(0,0),index(d_clockConfigs.size(),5));
+    if (!d_clockTypes.isEmpty())
+        emit dataChanged(index(0, 0), index(d_clockTypes.size() - 1, 4));
 }
 
 void ClockTableModel::setFromConfig(const RfConfig &c)

@@ -528,59 +528,7 @@ experiments seed via `initializeFromExperiment`. `validate()`
 consolidates checks across the three tabs; `apply()` writes the
 snapshot to `p_exp->ftmwConfig()`.
 
-#### Phase E revision tasks
-
-##### E.R1 — FTMW preset bar in `ExperimentFtmwConfigPage`
-
-- **Files:** `src/gui/expsetup/experimentftmwconfigpage.{h,cpp}`.
-- Embed the same FTMW preset bar as `FtmwConfigDialog` with
-  `showDeleteButton=false`.
-- Replace the existing "Reset to Loadout Defaults" button with **Apply
-  default FTMW preset** (loads `defaultFtmwPreset` snapshot via
-  `initializeFromFtmwPreset`; disabled when `defaultFtmwPresetName` is
-  empty).
-
-##### E.R2 — Initial population
-
-- **Files:** `src/gui/expsetup/experimentftmwconfigpage.cpp`.
-- Repeat-experiment branch (`exp->ftmwEnabled()`): unchanged —
-  `initializeFromExperiment` from the saved `FtmwConfig`. After
-  seeding, `clearDirty`.
-- Fresh-experiment branch: same population order as
-  `FtmwConfigDialog` (`currentFtmwPreset` → `defaultFtmwPreset` →
-  widget last-used). After seeding, `clearDirty`.
-
-##### E.R3 — Dirty tracking + accept
-
-- **Files:** `src/gui/expsetup/experimentftmwconfigpage.{h,cpp}`.
-- The widget's `dirtyChanged` signal drives the page's local state.
-- The page's `validate()` runs first (existing behavior). If
-  validation passes and `widget->isDirty()`, fire the same three-way
-  prompt as `FtmwConfigDialog::accept`. All three branches update
-  `__LastUsed__`. The "Proceed without saving" branch only updates
-  `__LastUsed__`.
-- `apply()` then writes the snapshot into `p_exp->ftmwConfig()` as
-  before.
-
-##### E.R4 — `FtmwConfigWidget` shared changes (‖ with C.R*)
-
-- **Files:** `src/gui/widget/ftmwconfigwidget.{h,cpp}`.
-- Move the FTMW preset bar into `FtmwConfigWidget` (or compose it via
-  `FtmwPresetBar`) so both dialog and page reuse the same control.
-- Drop `lastFtmwLoadout` (per C.R2).
-- Audit `toFtmwPreset` (was `toSnapshot`) — the existing implementation
-  reads `d_fidChannel` from the active loadout; revise to read from
-  the active *preset* via `currentFtmwPreset`. If no current preset
-  exists, read from the widget directly.
-- Update `populateSourceCombos` per C.R3.
-
-> **Phase E revision gate:**
->
-> 1. Repeat experiment seeds from the saved exp's `FtmwConfig` (no
->    FTMW preset consultation).
-> 2. Fresh experiment seeds from the active FTMW preset.
-> 3. ESD accept fires the three-way prompt only if dirty; all three
->    branches update `__LastUsed__`.
+**Phase E revisions (DONE):** The reset functionality in `ExperimentFtmwConfigPage` is removed, as the functionality is subsumed by the `FtmwConfigWidget`. The `ExperimentSetupDialog`'s FTMW config page is seeded according to priority: Repeat experiment settngs (if applicable) -> current preset (which may be `__LastUsed__`) -> widget settings. If the FTMW config is changed in the `ExperimentSetupDialog` and not saved, user is prompted to either save, save as, or proceed without saving.
 
 ### Phase F — Cleanup & Documentation
 

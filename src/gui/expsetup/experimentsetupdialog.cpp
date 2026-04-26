@@ -342,6 +342,13 @@ void ExperimentSetupDialog::reject()
 
 void ExperimentSetupDialog::accept()
 {
+    auto it = d_pages.find(BC::Key::WizFtmw::key);
+    if (it != d_pages.end() && it->second.page->isEnabled())
+    {
+        if (auto *ftmwPage = dynamic_cast<ExperimentFtmwConfigPage*>(it->second.page))
+            ftmwPage->commitFtmwPreset();
+    }
+
     if(validateAll(true))
         QDialog::accept();
 }

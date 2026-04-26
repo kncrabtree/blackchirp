@@ -56,6 +56,8 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
         connect(chBox,&QGroupBox::toggled,voBox,&QDoubleSpinBox::setEnabled);
         connect(chBox,&QGroupBox::toggled,this,&DigitizerConfigWidget::configureAnalogBoxes);
         connect(chBox,&QGroupBox::toggled,this,&DigitizerConfigWidget::edited);
+        connect(fsBox,&QDoubleSpinBox::valueChanged,this,&DigitizerConfigWidget::edited);
+        connect(voBox,&QDoubleSpinBox::valueChanged,this,&DigitizerConfigWidget::edited);
         chBox->setChecked(s.getArrayValue(dwAnChannels,i,en,false));
 
         fl->addRow("Full Scale",fsBox);
@@ -107,6 +109,7 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
             dgl->addWidget(roleBox,i+1,2,1,1,Qt::AlignCenter);
 
             connect(readBox,&QCheckBox::toggled,roleBox,&QComboBox::setDisabled);
+            connect(readBox,&QCheckBox::toggled,this,&DigitizerConfigWidget::edited);
 
             d_digChannelWidgets.insert({i+1,{readBox,roleBox}});
         }
@@ -325,6 +328,19 @@ The actual number of records able to be acquired may be limited by the record le
         aBox->hide();
     vl->addSpacerItem(new QSpacerItem(1,1,QSizePolicy::Minimum,QSizePolicy::Expanding));
     hbl->addLayout(vl,1);
+
+    connect(p_recLengthBox,&QSpinBox::valueChanged,this,&DigitizerConfigWidget::edited);
+    connect(p_sampleRateBox,&QComboBox::currentIndexChanged,this,&DigitizerConfigWidget::edited);
+    connect(p_bytesPerPointBox,&QSpinBox::valueChanged,this,&DigitizerConfigWidget::edited);
+    connect(p_byteOrderBox,&QComboBox::currentIndexChanged,this,&DigitizerConfigWidget::edited);
+    connect(p_triggerSourceBox,&QSpinBox::valueChanged,this,&DigitizerConfigWidget::edited);
+    connect(p_triggerSlopeBox,&QComboBox::currentIndexChanged,this,&DigitizerConfigWidget::edited);
+    connect(p_triggerDelayBox,&QDoubleSpinBox::valueChanged,this,&DigitizerConfigWidget::edited);
+    connect(p_triggerLevelBox,&QDoubleSpinBox::valueChanged,this,&DigitizerConfigWidget::edited);
+    connect(p_blockAverageBox,&QCheckBox::toggled,this,&DigitizerConfigWidget::edited);
+    connect(p_numAveragesBox,&QSpinBox::valueChanged,this,&DigitizerConfigWidget::edited);
+    connect(p_multiRecordBox,&QCheckBox::toggled,this,&DigitizerConfigWidget::edited);
+    connect(p_numRecordsBox,&QSpinBox::valueChanged,this,&DigitizerConfigWidget::edited);
 
     setLayout(hbl);
     configureAnalogBoxes();

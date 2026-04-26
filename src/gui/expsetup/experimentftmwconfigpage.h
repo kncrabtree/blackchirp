@@ -5,7 +5,6 @@
 
 class FtmwConfigWidget;
 class RfConfigWidget;
-class QPushButton;
 
 namespace BC::Key::WizFtmw {
 inline constexpr QLatin1StringView key{"WizardFtmwConfigPage"};
@@ -26,10 +25,10 @@ public slots:
     void initialize() override;
     bool validate() override;
     void apply() override;
+    void commitFtmwPreset();
 
 private:
     FtmwConfigWidget *p_widget;
-    QPushButton *p_resetButton;
 };
 
 #endif // EXPERIMENTFTMWCONFIGPAGE_H

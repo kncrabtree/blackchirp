@@ -39,6 +39,10 @@ RfConfigWidget::RfConfigWidget(QWidget *parent) :
     ui->commonLoCheckBox->setChecked(savedComLO);
     connect(ui->commonLoCheckBox,&QCheckBox::toggled,this,&RfConfigWidget::edited);
     connect(p_ctm,&ClockTableModel::dataChanged,this,&RfConfigWidget::edited);
+    connect(ui->awgMultBox,&QSpinBox::valueChanged,this,&RfConfigWidget::edited);
+    connect(ui->chirpMultiplicationSpinBox,&QSpinBox::valueChanged,this,&RfConfigWidget::edited);
+    connect(ui->upconversionSidebandComboBox,&QComboBox::currentIndexChanged,this,&RfConfigWidget::edited);
+    connect(ui->downconversionSidebandComboBox,&QComboBox::currentIndexChanged,this,&RfConfigWidget::edited);
 
     auto applyButton = new QPushButton(tr("Apply Clock Settings Now"), this);
     applyButton->setToolTip(tr("Send current clock configuration to hardware immediately."));

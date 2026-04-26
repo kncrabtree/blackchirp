@@ -32,7 +32,6 @@ public:
     void initializeFromFtmwPreset(const FtmwPreset &preset);
     FtmwPreset toFtmwPreset() const;
     void initializeFromExperiment(const FtmwConfig &cfg);
-    void resetToLoadout();
     void updateChirpFromRf();
 
     bool isDirty() const { return d_dirty; }
