@@ -517,39 +517,7 @@ apply, Apply without saving, Save to new loadout…, or Cancel.
 confirms then applies hardware map + clocks. Excluded from the
 acquiring-state enable-all loop.
 
-#### Phase D revision tasks
-
-##### D.R1 — FTMW Preset submenu
-
-- **Files:** `src/gui/mainwindow_ui.h`, `src/gui/mainwindow.{h,cpp}`.
-- Add `QMenu *menuFtmwPreset` to `mainwindow_ui.h` immediately under
-  `menuLoadout` in `menuHardware`.
-- Add `QActionGroup *p_ftmwPresetActionGroup` (exclusive),
-  `void rebuildFtmwPresetMenu()`,
-  `void onFtmwPresetActionTriggered(QAction*)`.
-- `rebuildFtmwPresetMenu`:
-  - Read the active loadout. Build one checkable action per name in
-    `ftmwPresetNames(activeLoadout, false)`. Check the action whose
-    name matches `currentFtmwPresetName(activeLoadout)`. If no match
-    (current is `__LastUsed__` or empty), no action is checked.
-  - Disable `menuFtmwPreset->menuAction()` when the active loadout has
-    no named FTMW presets.
-- Connect `LoadoutManager::currentLoadoutChanged`, `ftmwPresetAdded`,
-  `ftmwPresetRemoved`, `ftmwPresetChanged`, `currentFtmwPresetChanged`
-  to `rebuildFtmwPresetMenu`. Also connect to `loadoutChanged`
-  (handles rename of the active loadout).
-- `onFtmwPresetActionTriggered`:
-  - Confirm switch with the user.
-  - `LoadoutManager::setCurrentFtmwPresetName(activeLoadout, name)`.
-  - `getFtmwPreset(activeLoadout, name)`; push clocks via
-    `HardwareManager::configureClocks` (BlockingQueuedConnection).
-- Exclude `menuFtmwPreset->menuAction()` from the dummy-acquiring
-  enable-all loop.
-
-> **Phase D revision gate:** manual switch via the new submenu pushes
-> clocks; submenu repopulates on every relevant LoadoutManager signal;
-> the submenu is disabled during acquisition and when the active
-> loadout has no named FTMW presets.
+**Phase D revisions (DONE):** A `menuFtmwPreset` submenu was added to `menuHardware` immediately below `menuLoadout` in `mainwindow_ui.h`. `MainWindow` gained `p_ftmwPresetActionGroup`, `rebuildFtmwPresetMenu`, and `onFtmwPresetActionTriggered`; the rebuild slot is connected to all relevant `LoadoutManager` signals (`currentLoadoutChanged`, `loadoutChanged`, `ftmwPresetAdded`, `ftmwPresetRemoved`, `ftmwPresetChanged`, `currentFtmwPresetChanged`) and re-checks the menu's empty state. Switching via the submenu confirms with the user, calls `setCurrentFtmwPresetName`, and pushes clocks via `HardwareManager::configureClocks` on a `BlockingQueuedConnection`; the submenu is excluded from the dummy-acquiring enable-all sweep and disabled whenever the menu is empty.
 
 ### Phase E — Experiment Setup Dialog
 

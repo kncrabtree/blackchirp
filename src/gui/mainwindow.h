@@ -79,6 +79,8 @@ public slots:
     void launchFtmwConfigDialog();
     void rebuildLoadoutMenu();
     void onLoadoutActionTriggered(QAction *act);
+    void rebuildFtmwPresetMenu();
+    void onFtmwPresetActionTriggered(QAction *act);
     void launchLifConfigDialog();
     void launchRuntimeHardwareConfigDialog();
     void configureLifWidget(LifControlWidget *w);
@@ -128,6 +130,7 @@ private:
     QWidget *wrapWithPythonWidget(const QString &hwKey, QWidget *typeWidget);
 
     QActionGroup *p_loadoutActionGroup{nullptr};
+    QActionGroup *p_ftmwPresetActionGroup{nullptr};
     ProgramState d_state{Idle};
     bool d_initialHardwareTestComplete{false};
     int d_logCount{0};

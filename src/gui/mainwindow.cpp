@@ -245,6 +245,17 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&lm, &LoadoutManager::currentLoadoutChanged, this, &MainWindow::rebuildLoadoutMenu);
     connect(&lm, &LoadoutManager::defaultLoadoutChanged, this, &MainWindow::rebuildLoadoutMenu);
     rebuildLoadoutMenu();
+
+    p_ftmwPresetActionGroup = new QActionGroup(this);
+    p_ftmwPresetActionGroup->setExclusive(true);
+    connect(ui->menuFtmwPreset, &QMenu::triggered, this, &MainWindow::onFtmwPresetActionTriggered);
+    connect(&lm, &LoadoutManager::currentLoadoutChanged, this, &MainWindow::rebuildFtmwPresetMenu);
+    connect(&lm, &LoadoutManager::loadoutChanged, this, &MainWindow::rebuildFtmwPresetMenu);
+    connect(&lm, &LoadoutManager::ftmwPresetAdded, this, &MainWindow::rebuildFtmwPresetMenu);
+    connect(&lm, &LoadoutManager::ftmwPresetRemoved, this, &MainWindow::rebuildFtmwPresetMenu);
+    connect(&lm, &LoadoutManager::ftmwPresetChanged, this, &MainWindow::rebuildFtmwPresetMenu);
+    connect(&lm, &LoadoutManager::currentFtmwPresetChanged, this, &MainWindow::rebuildFtmwPresetMenu);
+    rebuildFtmwPresetMenu();
     if(ApplicationConfigManager::instance().isLifEnabled())
     {
         connect(p_hwm,&HardwareManager::lifSettingsComplete,p_am,&AcquisitionManager::lifHardwareReady);
@@ -1038,6 +1049,73 @@ void MainWindow::onLoadoutActionTriggered(QAction *act)
     LoadoutManager::instance().setCurrentLoadoutName(target);
 }
 
+void MainWindow::rebuildFtmwPresetMenu()
+{
+    for(auto *act : p_ftmwPresetActionGroup->actions())
+        p_ftmwPresetActionGroup->removeAction(act);
+    ui->menuFtmwPreset->clear();
+
+    const auto &lm = LoadoutManager::instance();
+    const QString activeLoadout = lm.currentLoadoutName();
+    const QStringList names = lm.ftmwPresetNames(activeLoadout, false);
+    const QString current = lm.currentFtmwPresetName(activeLoadout);
+
+    for(const auto &name : names)
+    {
+        auto *act = ui->menuFtmwPreset->addAction(name);
+        act->setCheckable(true);
+        act->setChecked(name == current);
+        act->setData(name);
+        p_ftmwPresetActionGroup->addAction(act);
+    }
+
+    ui->menuFtmwPreset->menuAction()->setEnabled(!names.isEmpty());
+}
+
+void MainWindow::onFtmwPresetActionTriggered(QAction *act)
+{
+    using namespace Qt::StringLiterals;
+    const QString name = act->data().toString();
+    const auto &lm = LoadoutManager::instance();
+    const QString activeLoadout = lm.currentLoadoutName();
+    const QString current = lm.currentFtmwPresetName(activeLoadout);
+
+    if(name == current)
+    {
+        act->setChecked(true);
+        return;
+    }
+
+    auto result = QMessageBox::question(this, u"Switch FTMW Preset"_s,
+        u"Switch to FTMW preset \"%1\" of loadout \"%2\"? This will push new clock settings."_s
+            .arg(name, activeLoadout),
+        QMessageBox::Yes | QMessageBox::Cancel);
+
+    if(result != QMessageBox::Yes)
+    {
+        for(auto *a : p_ftmwPresetActionGroup->actions())
+        {
+            if(a->data().toString() == current)
+            {
+                a->setChecked(true);
+                break;
+            }
+        }
+        return;
+    }
+
+    auto preset = lm.getFtmwPreset(activeLoadout, name);
+    if(!preset.has_value())
+        return;
+
+    LoadoutManager::instance().setCurrentFtmwPresetName(activeLoadout, name);
+
+    auto clocks = preset->rfConfig.clocks;
+    QMetaObject::invokeMethod(p_hwm, [this, clocks](){
+        p_hwm->configureClocks(clocks);
+    }, Qt::BlockingQueuedConnection);
+}
+
 void MainWindow::launchLifConfigDialog()
 {
     auto it = d_openDialogs.find("LifConfig");
@@ -1492,6 +1570,8 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
                     continue;
                 if(act == ui->menuLoadout->menuAction())
                     continue;
+                if(act == ui->menuFtmwPreset->menuAction())
+                    continue;
                 act->setEnabled(true);
             }
         }
@@ -1500,6 +1580,8 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
     default:
         for(auto act : hwl)
             act->setEnabled(true);
+        if(ui->menuFtmwPreset->isEmpty())
+            ui->menuFtmwPreset->menuAction()->setEnabled(false);
         for(auto act : acq)
             act->setEnabled(true);
         ui->sleepButton->setEnabled(true);
