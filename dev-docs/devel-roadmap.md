@@ -38,8 +38,6 @@ Note: LJM library does NOT support U3 (T-series only).
 
 ### ESD Scan Page Consolidation
 
-**Prerequisite:** loadout system Phase E (creates `ExperimentFtmwConfigPage`).
-
 `ExperimentLOScanConfigPage` and `ExperimentDRScanConfigPage` are separate ESD
 navigation nodes today. The clock-range dependency (both pages call
 `rfConfig.clockRange()` to constrain spinbox ranges) is a soft dependency: the
@@ -47,42 +45,15 @@ controls can exist without live constraints, and out-of-range values are caught
 during validation. The range constraints could be applied lazily via
 `ExperimentSetupDialog::pageChanged` or simply left to validation.
 
-**Placement decision to resolve before implementation:**
+Controls will move to `ExperimentSetupPage`:** scan type (Single / LO Scan / DR   Scan / Target Shots / etc.) and all scan parameters live together on the  first page where the user already chooses the experiment type. Range constraints will need to be applied during validation and via `pageChanged` signaling from the FTMW page. Consider making a special `FtmwViewWidget::clockHwChanged` signal that can trigger validaton/constraint rechecking, as the dependency is based on the actual clock hardware which should rarely change from the ESD itself.
 
-- **Option A — on `ExperimentFtmwConfigPage`:** scan parameters sit adjacent
-  to the RF/Chirp/Digi settings they derive from. Range constraints are natural
-  to apply here. ESD tree loses two nodes but the FTMW page grows further.
-- **Option B — on `ExperimentSetupPage`:** scan type (Single / LO Scan / DR
-  Scan / Target Shots / etc.) and all scan parameters live together on the
-  first page where the user already chooses the experiment type. This is more
-  intuitive since the non-frequency scan settings (shots per step, target
-  sweeps) already sit there. Range constraints would need to be applied during
-  validation or via `pageChanged` signaling from the FTMW page.
+**Proposed shape**
 
-Option B is likely the better UX because the user selects experiment type and
-all associated settings in one place. The clock-range constraint is the only
-technical reason those pages are separate today, and that can be handled
-without co-location.
-
-**Proposed shape (Option B):**
-
-- Extract `LOScanConfigWidget` and `DRScanConfigWidget` from the existing page
-  classes (own `.{h,cpp}` files, inherit `QWidget` + `SettingsStorage`).
+- Extract `LOScanConfigWidget` and `DRScanConfigWidget` from the existing page classes (own `.{h,cpp}` files, inherit `QWidget` + `SettingsStorage`).
 - `ExperimentSetupPage` gains a `QStackedWidget` that shows the appropriate
-  scan widget when scan type changes. Shots/sweeps settings already on that
-  page merge into the scan widgets.
-- Range constraints: `ExperimentSetupDialog::pageChanged` applies
-  `initialize(rfConfig)` to the active scan widget when leaving the FTMW page,
-  or validation emits an error if values are out of range.
-- Delete `ExperimentLOScanConfigPage` and `ExperimentDRScanConfigPage`; remove
-  their tree nodes from `ExperimentSetupDialog`.
-
-### [Hardware Loadout System](loadout-system.md) **IN PROGRESS**
-
-Named loadouts bundling hardware map + RF config + chirp config. Loadouts are edited in
-the Hardware Configuration dialog (with new RF/Chirp tabs); experiment setup defaults to
-the active loadout with a "Reset to Loadout Defaults" button. Includes loadout selection
-UI, save prompts, and experiment initialization priority logic.
+  scan widget when scan type changes. The simpler Ftmw modes (Target shots, target time, forever, Peak Up), when selected, can surface a simpler wrapper widget (managed directly in `ExperimentSetupPage`) in the stacked widget with the necessary settings as needed (number of shots for Target shots and peak up, duration and Est. completion label for target time [which should be adjusted to use themecolors!], nothing for Forever). The `QStackedWidget` is placed between the type selection box and the Phase correction checkbox. Where necessary, the layouts should be reconsidered to be taller than they are wide.
+- Range constraints: trigger reapplication of constraints and validation on new `FtmwViewWidget::clockHwChanged`; not necessary to re-validate and apply constraints on any page change.
+- Delete `ExperimentLOScanConfigPage` and `ExperimentDRScanConfigPage`; remove their tree nodes from `ExperimentSetupDialog`.
 
 ## Pre-Release
 
