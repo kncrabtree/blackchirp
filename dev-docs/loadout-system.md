@@ -452,62 +452,22 @@ prompts for a name and offers a follow-up "Configure FTMW now?". Accept
 calls `setCurrentLoadoutName`; `MainWindow`'s `finished` lambda pushes
 the loadout's clocks.
 
-#### Phase B revision tasks
-
-##### B.R1 — Save: hardware-drift detection
-
-- **Files:** `src/gui/dialog/runtimehardwareconfigdialog.cpp`.
-- In `onLoadoutSave`, compute the hardware fingerprint of
-  `d_previewRuntimeConfig` and of the existing stored loadout. Compare.
-- Branches:
-  - **No drift**: existing path — `putLoadout` preserving FTMW presets.
-  - **Drift, no named FTMW presets** (only `__LastUsed__` or empty):
-    proceed, but call `clearFtmwPresets` defensively first.
-  - **Drift with named FTMW presets**: open a `QMessageBox` (or custom
-    dialog) with three explicit buttons:
-    - *Discard FTMW presets and save* → `clearFtmwPresets(loadout)` →
-      `putLoadout`.
-    - *Save As instead* → invoke `onLoadoutSaveAs()` with the current
-      preview hardware (the existing function), and skip the regular
-      Save.
-    - *Cancel* → return without modifying anything.
-- The drift detection helper (`requiresHardwareDriftDecision`) lives on
-  `LoadoutManager` so both Save and Save As can share it.
-
-##### B.R2 — Save As: FTMW-preset-copy offer
-
-- **Files:** `src/gui/dialog/runtimehardwareconfigdialog.cpp`.
-- In `onLoadoutSaveAs`, capture the previous active loadout name into a
-  local before mutating `d_activeLoadoutName`.
-- After `putLoadout` of the new loadout, compute fingerprints of the
-  new and the previous loadout's hardware maps. If equal *and* the
-  previous loadout has any named FTMW presets, prompt
-  *"Copy FTMW presets from `<prev>`?"*.
-- On confirm, iterate `ftmwPresetNames(prev, includeLastUsed=false)`
-  and `putFtmwPreset(newLoadout, name, getFtmwPreset(prev, name))`,
-  then `setDefaultFtmwPresetName(newLoadout,
-  defaultFtmwPresetName(prev))`. Do not copy `__LastUsed__`.
-- The existing FTMW prompt still follows.
-
-##### B.R3 — On accept — clock push
-
-- **Files:** `src/gui/mainwindow.cpp` (the `finished` lambda inside
-  `launchRuntimeHardwareConfigDialog`).
-- Replace the `loadout->ftmw` lookup with
-  `LoadoutManager::instance().currentFtmwPreset(activeLoadoutName)`.
-  Push `*->rfConfig.clocks` if the optional resolves; warn-and-skip
-  otherwise. Behavior is unchanged for end users; only the source of
-  the clocks changes.
-
-> **Phase B revision gate:** manual smoke test —
->
-> 1. Save with drifted hardware on a loadout that has named FTMW
->    presets triggers the three-button modal; each branch behaves as
->    specified.
-> 2. Save As into hardware that matches the previous active loadout
->    offers FTMW preset copy.
-> 3. Accepting the dialog pushes the active loadout's current FTMW
->    preset clocks (visible in the clock display box).
+**Phase B revisions (DONE):** `onLoadoutSave` gained hardware-drift
+detection: a static `ftmwRelevantHwKeys` helper extracts the set of AWG,
+FtmwScope, and Clock hwKeys (keys only, not implementations) from a
+hardware map. When the fingerprints differ and the loadout has named FTMW
+presets, a three-button modal offers *Discard FTMW presets and save*,
+*Save As instead*, or *Cancel*; drift with only `__LastUsed__` clears it
+defensively. `onLoadoutSaveAs` captures the previous active loadout name
+before mutating `d_activeLoadoutName`; after creating the new loadout it
+offers to copy named FTMW presets (excluding `__LastUsed__`) and the
+`defaultFtmwPresetName` when the hardware fingerprints match. The `finished`
+lambda in `MainWindow::launchRuntimeHardwareConfigDialog` already pushes
+clocks from `LoadoutManager::currentFtmwPreset` on accept. As a related
+cleanup, `HardwareLoadout::hardwareMap` and `ftmwPresets` were changed to
+`std::less<>` comparators throughout (`hardwareloadout.{h,cpp}`,
+`HardwareManager::applyHardwareMap`, all explicit map constructions in the
+dialog).
 
 ### Phase C — FTMW Configuration Dialog
 
@@ -626,6 +586,23 @@ loadout's `FtmwSnapshot`. `applyClocks` signal forwarded to `MainWindow`.
 > **Phase C revision gate:** manual coverage of every FTMW-preset-bar
 > button + dirty behavior; `__LastUsed__` is updated on accept and not
 > on cancel; the three-way prompt fires only when dirty.
+>
+> Also verify Phase B drift and copy behavior (requires named presets,
+> which are only creatable after Phase C):
+>
+> 1. Loadout with named presets → change AWG/digitizer/clock → **Save**
+>    → three-button modal appears; each branch (Discard, Save As, Cancel)
+>    behaves as specified.
+> 2. Loadout with named presets → change only an implementation (not the
+>    hwKey identity) → **Save** → saves silently, presets preserved.
+> 3. Loadout with only `__LastUsed__` → change hardware → **Save** →
+>    saves silently, no modal.
+> 4. **Save As** with unchanged hardware and named presets on the source
+>    → copy prompt appears; confirm → presets and default pointer copied
+>    to new loadout.
+> 5. **Save As** with changed hardware → no copy prompt.
+> 6. Accept Hardware Config dialog with a named `currentFtmwPreset` →
+>    clocks update in the clock display box.
 
 ### Phase D — Hardware menu submenus
 

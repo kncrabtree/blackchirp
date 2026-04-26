@@ -77,7 +77,7 @@ void copyRfScalars(const RfConfigSnapshot &source, RfConfigSnapshot &dest)
     dest.downMixSideband = source.downMixSideband;
 }
 
-Maps hardwareMapArray(const std::map<QString, QString> &hwMap)
+Maps hardwareMapArray(const std::map<QString, QString, std::less<>> &hwMap)
 {
     Maps array;
     array.reserve(hwMap.size());
@@ -90,9 +90,9 @@ Maps hardwareMapArray(const std::map<QString, QString> &hwMap)
     return array;
 }
 
-std::map<QString, QString> hardwareMapFromArray(const Maps &array)
+std::map<QString, QString, std::less<>> hardwareMapFromArray(const Maps &array)
 {
-    std::map<QString, QString> result;
+    std::map<QString, QString, std::less<>> result;
     for (const auto &m : array) {
         if (m.contains(hwKey) && m.contains(hwImpl))
             result[m.at(hwKey).value<QString>()] = m.at(hwImpl).value<QString>();

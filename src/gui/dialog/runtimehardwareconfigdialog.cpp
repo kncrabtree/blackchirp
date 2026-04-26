@@ -25,8 +25,27 @@
 #include <gui/widget/librarystatuswidget.h>
 
 #include <QInputDialog>
+#include <QSet>
 
 using namespace Qt::StringLiterals;
+
+// Returns the set of hwKeys that FTMW presets care about (AWG, FtmwScope, Clock).
+// Implementations are intentionally excluded; only the key identity matters for drift.
+static QSet<QString> ftmwRelevantHwKeys(const std::map<QString, QString, std::less<>> &hwMap)
+{
+    static const QSet<QString> relevantTypes {
+        FtmwScope::staticMetaObject.className(),
+        AWG::staticMetaObject.className(),
+        Clock::staticMetaObject.className()
+    };
+    QSet<QString> keys;
+    for (const auto &[hwKey, impl] : hwMap) {
+        auto [type, label] = BC::Key::parseKey(hwKey);
+        if (relevantTypes.contains(type))
+            keys.insert(hwKey);
+    }
+    return keys;
+}
 
 RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
     : QDialog(parent),
@@ -53,7 +72,7 @@ RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
     {
         auto loadout = LoadoutManager::instance().getLoadout(d_activeLoadoutName);
         if (loadout.has_value() && loadout->hardwareMap.empty() && !d_originalRuntimeConfig.empty()) {
-            loadout->hardwareMap = std::map<QString,QString>(
+            loadout->hardwareMap = std::map<QString,QString,std::less<>>(
                 d_originalRuntimeConfig.begin(), d_originalRuntimeConfig.end());
             LoadoutManager::instance().putLoadout(*loadout);
         }
@@ -1303,17 +1322,48 @@ void RuntimeHardwareConfigDialog::onLoadoutComboChanged(const QString &name)
 
 void RuntimeHardwareConfigDialog::onLoadoutSave()
 {
+    auto &lm = LoadoutManager::instance();
+
     HardwareLoadout loadout;
     loadout.name = d_activeLoadoutName;
-    loadout.hardwareMap = std::map<QString,QString>(d_previewRuntimeConfig.begin(), d_previewRuntimeConfig.end());
-    auto existing = LoadoutManager::instance().getLoadout(d_activeLoadoutName);
-    if (existing.has_value())
-    {
-        loadout.ftmwPresets = existing->ftmwPresets;
-        loadout.defaultFtmwPresetName = existing->defaultFtmwPresetName;
-        loadout.currentFtmwPresetName = existing->currentFtmwPresetName;
+    loadout.hardwareMap = std::map<QString,QString,std::less<>>(d_previewRuntimeConfig.begin(), d_previewRuntimeConfig.end());
+
+    const auto existing = lm.getLoadout(d_activeLoadoutName);
+    if (existing.has_value()) {
+        const bool drift = ftmwRelevantHwKeys(loadout.hardwareMap) != ftmwRelevantHwKeys(existing->hardwareMap);
+
+        if (!drift) {
+            loadout.ftmwPresets = existing->ftmwPresets;
+            loadout.defaultFtmwPresetName = existing->defaultFtmwPresetName;
+            loadout.currentFtmwPresetName = existing->currentFtmwPresetName;
+        } else if (!lm.ftmwPresetNames(d_activeLoadoutName, false).isEmpty()) {
+            QMessageBox msgBox(this);
+            msgBox.setWindowTitle(u"Hardware Configuration Changed"_s);
+            msgBox.setText(
+                u"The AWG, digitizer, or clock hardware has changed for loadout \"%1\". "
+                u"The existing FTMW presets may no longer be compatible."_s.arg(d_activeLoadoutName));
+            auto *discardBtn = msgBox.addButton(u"Discard FTMW presets and save"_s, QMessageBox::DestructiveRole);
+            auto *saveAsBtn  = msgBox.addButton(u"Save As instead"_s, QMessageBox::ResetRole);
+            msgBox.addButton(QMessageBox::Cancel);
+            msgBox.setDefaultButton(QMessageBox::Cancel);
+            msgBox.exec();
+
+            const auto *clicked = msgBox.clickedButton();
+            if (clicked == discardBtn) {
+                lm.clearFtmwPresets(d_activeLoadoutName);
+            } else if (clicked == saveAsBtn) {
+                onLoadoutSaveAs();
+                return;
+            } else {
+                return;
+            }
+        } else {
+            // Drift with no named presets: clear __LastUsed__ defensively
+            lm.clearFtmwPresets(d_activeLoadoutName);
+        }
     }
-    LoadoutManager::instance().putLoadout(loadout);
+
+    lm.putLoadout(loadout);
 }
 
 void RuntimeHardwareConfigDialog::onLoadoutSaveAs()
@@ -1335,14 +1385,40 @@ void RuntimeHardwareConfigDialog::onLoadoutSaveAs()
             return;
     }
 
+    const QString prevName = d_activeLoadoutName;
+
     HardwareLoadout loadout;
     loadout.name = name;
-    loadout.hardwareMap = std::map<QString,QString>(d_previewRuntimeConfig.begin(), d_previewRuntimeConfig.end());
+    loadout.hardwareMap = std::map<QString,QString,std::less<>>(d_previewRuntimeConfig.begin(), d_previewRuntimeConfig.end());
     LoadoutManager::instance().putLoadout(loadout);
 
     d_activeLoadoutName = name;
     populateLoadoutCombo();
     updateLoadoutButtonStates();
+
+    // Offer FTMW preset copy when the previous loadout shares hardware and has named presets
+    auto &lm = LoadoutManager::instance();
+    const auto prevLoadout = lm.getLoadout(prevName);
+    if (prevLoadout.has_value()) {
+        const auto namedPresets = lm.ftmwPresetNames(prevName, false);
+        if (!namedPresets.isEmpty() &&
+            ftmwRelevantHwKeys(loadout.hardwareMap) == ftmwRelevantHwKeys(prevLoadout->hardwareMap)) {
+            const auto copyReply = QMessageBox::question(
+                this, u"Copy FTMW Presets"_s,
+                u"Copy FTMW presets from \"%1\" to \"%2\"?"_s.arg(prevName, name),
+                QMessageBox::Yes | QMessageBox::No);
+            if (copyReply == QMessageBox::Yes) {
+                for (const auto &pName : namedPresets) {
+                    auto preset = lm.getFtmwPreset(prevName, pName);
+                    if (preset.has_value())
+                        lm.putFtmwPreset(name, pName, *preset);
+                }
+                const auto defPreset = lm.defaultFtmwPresetName(prevName);
+                if (!defPreset.isEmpty())
+                    lm.setDefaultFtmwPresetName(name, defPreset);
+            }
+        }
+    }
 
     const auto reply = QMessageBox::question(
         this, u"Configure FTMW Settings"_s,
@@ -1368,7 +1444,7 @@ void RuntimeHardwareConfigDialog::onLoadoutDelete()
     if (newName.isEmpty()) {
         HardwareLoadout def;
         def.name = u"Default"_s;
-        def.hardwareMap = std::map<QString,QString>(d_originalRuntimeConfig.begin(), d_originalRuntimeConfig.end());
+        def.hardwareMap = std::map<QString,QString,std::less<>>(d_originalRuntimeConfig.begin(), d_originalRuntimeConfig.end());
         LoadoutManager::instance().putLoadout(def);
         LoadoutManager::instance().setCurrentLoadoutName(def.name);
         LoadoutManager::instance().setDefaultLoadoutName(def.name);

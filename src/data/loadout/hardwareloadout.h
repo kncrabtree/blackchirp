@@ -34,8 +34,8 @@ struct FtmwPreset {
 
 struct HardwareLoadout {
     QString name;
-    std::map<QString, QString> hardwareMap;
-    std::map<QString, FtmwPreset> ftmwPresets;
+    std::map<QString, QString, std::less<>> hardwareMap;
+    std::map<QString, FtmwPreset, std::less<>> ftmwPresets;
     QString defaultFtmwPresetName;
     QString currentFtmwPresetName;
     QDateTime lastModified;
@@ -59,8 +59,8 @@ void copyClocksMatching(const RfConfigSnapshot &source,
 void copyRfScalars(const RfConfigSnapshot &source, RfConfigSnapshot &dest);
 
 // Hardware map ↔ array  (used by LoadoutManager for QSettings persistence)
-Maps hardwareMapArray(const std::map<QString, QString> &hwMap);
-std::map<QString, QString> hardwareMapFromArray(const Maps &array);
+Maps hardwareMapArray(const std::map<QString, QString, std::less<>> &hwMap);
+std::map<QString, QString, std::less<>> hardwareMapFromArray(const Maps &array);
 
 } // namespace BC::Loadout
 

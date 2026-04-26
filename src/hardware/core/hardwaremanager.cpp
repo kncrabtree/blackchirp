@@ -1267,10 +1267,9 @@ void HardwareManager::reloadPythonScript(const QString &hwKey)
     });
 }
 
-void HardwareManager::applyHardwareMap(const std::map<QString, QString> &map)
+void HardwareManager::applyHardwareMap(const std::map<QString, QString, std::less<>> &map)
 {
-    std::map<QString, QString, std::less<>> transparentMap(map.begin(), map.end());
-    RuntimeHardwareConfig::instance().applyConfiguration(transparentMap);
+    RuntimeHardwareConfig::instance().applyConfiguration(map);
 }
 
 void HardwareManager::syncWithRuntimeConfig()
