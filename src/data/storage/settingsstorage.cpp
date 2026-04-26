@@ -556,7 +556,11 @@ void SettingsStorage::readAll()
             for(auto k : groupKeys)
                 groupMap.insert_or_assign(k, d_settings.value(k));
             d_settings.endGroup();
-            d_groupValues.insert_or_assign(g, groupMap);
+            // Only track groups that have flat keys; groups containing only
+            // sub-subgroups (e.g. a preset container) must not be written back
+            // by save() or writeGroup()'s remove() call will wipe their children.
+            if (!groupMap.empty())
+                d_groupValues.insert_or_assign(g, groupMap);
         }
 
 

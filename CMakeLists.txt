@@ -420,6 +420,7 @@ if(BC_BUILD_TESTS)
     target_link_libraries(tst_experimentloading
         blackchirp-test-hardware
         blackchirp-data
+        blackchirp-hardware
         Qt6::Test
         Qt6::Core
     )

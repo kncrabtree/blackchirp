@@ -418,101 +418,27 @@ in-memory loadout map, providing CRUD + current/default tracking +
 signals + a `loadoutsMatchingHwKey` filter, with a private testing
 constructor. Tests in `tests/tst_loadoutmanagertest.cpp`.
 
-#### Phase A revision tasks
+**Phase A revisions (DONE):** `FtmwSnapshot` was renamed to `FtmwPreset`
+throughout. `HardwareLoadout` dropped its single `std::optional<FtmwSnapshot>`
+and gained `std::map<QString, FtmwPreset> ftmwPresets`,
+`defaultFtmwPresetName`, `currentFtmwPresetName`, and `lastModified`.
+`LoadoutManager` gained a full FTMW preset CRUD API (`getFtmwPreset`,
+`putFtmwPreset`, `removeFtmwPreset`, `renameFtmwPreset`, `ftmwPresetExists`,
+`ftmwPresetNames`, `clearFtmwPresets`), current/default preset accessors,
+and five new signals. Each preset is persisted in a private `LoadoutHelper`
+scoped to `Loadouts/<loadout>/ftmwPresets/<preset>/` using the existing
+scalar/array helpers. A bug in `SettingsStorage::readAll()` was fixed: groups
+with no flat keys (only sub-subgroups) are no longer stored in `d_groupValues`,
+which prevented a sibling `LoadoutHelper` from inadvertently wiping nested
+preset data via `writeGroup`. Tests were updated and extended with full CRUD,
+pointer, rename, cascade, and persistence coverage; all 17 test suites pass.
 
-##### A.R1 — `HardwareLoadout` shape change + `FtmwSnapshot` rename
-
-- **Files:** `src/data/loadout/hardwareloadout.{h,cpp}` plus all call
-  sites.
-- Rename the type `FtmwSnapshot` → `FtmwPreset` everywhere it appears
-  (mechanical). Touched files include `data/loadout/hardwareloadout.*`,
-  `gui/widget/ftmwconfigwidget.*`, `gui/dialog/ftmwconfigdialog.*`,
-  `gui/expsetup/experimentftmwconfigpage.*`, and the test suite.
-- In `HardwareLoadout`:
-  - Drop `std::optional<FtmwSnapshot> ftmw`.
-  - Add `std::map<QString, FtmwPreset> ftmwPresets`,
-    `QString defaultFtmwPresetName`, `QString currentFtmwPresetName`,
-    `QDateTime lastModified`.
-- `FtmwPreset` gains `QDateTime lastModified`.
-- Add a public constant
-  `BC::Store::LM::lastUsedFtmwPresetName = u"__LastUsed__"_s` (place in
-  the existing `loadoutmanager.h` namespace block or a new
-  `loadoutkeys.h`).
-- Acceptance: type compiles. Existing call sites that read `ftmw` are
-  updated by A.R2.
-
-##### A.R2 — `LoadoutManager` API additions
-
-- **Files:** `src/data/loadout/loadoutmanager.{h,cpp}`.
-- FTMW preset CRUD on top of the existing methods:
-  - `std::optional<FtmwPreset> getFtmwPreset(loadoutName, presetName) const`
-  - `bool putFtmwPreset(loadoutName, presetName, FtmwPreset)`
-  - `bool removeFtmwPreset(loadoutName, presetName)`
-  - `bool renameFtmwPreset(loadoutName, oldName, newName)` —
-    rejects `__LastUsed__` and duplicates; rewrites
-    `currentFtmwPresetName` / `defaultFtmwPresetName` if they
-    referenced the old name.
-  - `bool ftmwPresetExists(loadoutName, presetName) const`
-  - `QStringList ftmwPresetNames(loadoutName, includeLastUsed=false) const`
-  - `bool clearFtmwPresets(loadoutName)` — used by Discard-on-drift.
-- Default/current FTMW preset accessors:
-  - `QString currentFtmwPresetName(loadoutName) const`
-  - `bool setCurrentFtmwPresetName(loadoutName, presetName)`
-  - `QString defaultFtmwPresetName(loadoutName) const`
-  - `bool setDefaultFtmwPresetName(loadoutName, presetName)`
-- Convenience: `std::optional<FtmwPreset> currentFtmwPreset(loadoutName)`
-  resolves the fallback chain (`currentFtmwPreset` →
-  `defaultFtmwPreset` → empty).
-- New signals (each carries `(loadoutName, presetName)`):
-  - `ftmwPresetAdded`, `ftmwPresetRemoved`, `ftmwPresetChanged`,
-    `currentFtmwPresetChanged`, `defaultFtmwPresetChanged`.
-- Hardware fingerprint helper:
-  - `struct HardwareFingerprint { QString awgHwKey; QString digiHwKey;
-    QSet<QString> clockHwKeys; bool operator==(...); }`
-  - `static HardwareFingerprint hardwareFingerprint(const std::map<QString,
-    QString> &hardwareMap);` — used by both Save drift detection and
-    Save-As copy-FTMW-presets eligibility.
-- Mutex pattern preserved.
-- Update `removeLoadout` to no longer clear the
-  `FtmwConfigWidget::lastFtmwLoadout` SettingsStorage key (that key is
-  retired in C.R2 / E.R4).
-
-##### A.R3 — Storage layout migration
-
-- **Files:** `src/data/loadout/loadoutmanager.cpp` (`p_writeLoadout`,
-  `p_readLoadout`).
-- Rewrite write path to emit the nested `ftmwPresets/<name>/...` schema
-  documented in Storage. Each preset uses the same scalar/array helpers
-  the existing `ftmw/...` block uses (`rfConfigScalarsMap`,
-  `rfConfigClocksArray`, `chirpConfigToMaps`, `ftmwDigitizerToMaps`).
-- Rewrite read path to read `ftmwPresetNames` array, then read each preset's
-  subgroup.
-- The `ftmwPresetNames` array must include `__LastUsed__` when present.
-
-##### A.R4 — Tests (‖ with A.R1–A.R3 once interfaces stabilize)
-
-- **File:** `tests/tst_loadoutmanagertest.cpp`.
-- Replace `testRoundTripFull` / `testRoundTripNoFtmw` with:
-  - `testRoundTripWithFtmwPresets` — loadout with two named presets +
-    `__LastUsed__`, all three round-tripped through QSettings.
-  - `testRoundTripNoFtmwPresets` — hardware-only loadout (empty
-    `ftmwPresets`).
-- Add:
-  - `testFtmwPresetCrud` — put/get/remove/rename round-trips and
-    signal emissions.
-  - `testCurrentDefaultFtmwPresetPointers` — set/get, deletion
-    semantics (deleting `currentFtmwPreset` re-resolves; deleting
-    `defaultFtmwPreset` clears it).
-  - `testRenameFtmwPresetRewritesPointers`.
-  - `testRemoveLoadoutCascadesFtmwPresets`.
-  - `testHardwareFingerprintEquality` — same map → equal; permuted
-    clock keys → equal; differing AWG/digi/clock-set → unequal;
-    implementation-class swap with same hwKey → equal.
-- Drop or recast `testCopyClocksMatching` / `testCopyRfScalars` — these
-  helpers are no longer central. Decide per F.R2.
-
-> **Phase A revision gate:** rebuild + `ctest --test-dir build/tests`
-> green.
+> **Note:** preset serialization uses four levels of nested QSettings groups,
+> which stretches `SettingsStorage` beyond its original single-level design.
+> If the preset data grows further or new preset types are added (e.g. LIF
+> presets), it may be worth replacing this with a dedicated serialization
+> strategy (JSON per preset, or a separate settings scope) rather than pushing
+> the nesting deeper.
 
 ### Phase B — Hardware Configuration Dialog
 

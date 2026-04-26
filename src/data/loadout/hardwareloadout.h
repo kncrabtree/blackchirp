@@ -2,10 +2,10 @@
 #define BC_HARDWARELOADOUT_H
 
 #include <map>
-#include <optional>
 #include <set>
 #include <vector>
 
+#include <QDateTime>
 #include <QString>
 
 #include <data/experiment/rfconfig.h>
@@ -24,17 +24,21 @@ inline constexpr QLatin1StringView hwKey{"HwKey"};        // shared by clock and
 inline constexpr QLatin1StringView hwImpl{"Implementation"};
 }
 
-struct FtmwSnapshot {
+struct FtmwPreset {
     RfConfigSnapshot rfConfig;
     ChirpConfig chirpConfig;
     FtmwDigitizerConfig digitizer{""};
     QString digiHwKey;
+    QDateTime lastModified;
 };
 
 struct HardwareLoadout {
     QString name;
     std::map<QString, QString> hardwareMap;
-    std::optional<FtmwSnapshot> ftmw;
+    std::map<QString, FtmwPreset> ftmwPresets;
+    QString defaultFtmwPresetName;
+    QString currentFtmwPresetName;
+    QDateTime lastModified;
 };
 
 namespace BC::Loadout {

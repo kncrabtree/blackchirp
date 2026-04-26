@@ -25,8 +25,8 @@ public:
                               const QHash<RfConfig::ClockType, RfConfig::ClockFreq> &currentClocks,
                               QWidget *parent = nullptr);
 
-    void initializeFromSnapshot(const FtmwSnapshot &snap);
-    FtmwSnapshot toSnapshot() const;
+    void initializeFromFtmwPreset(const FtmwPreset &preset);
+    FtmwPreset toFtmwPreset() const;
     void initializeFromExperiment(const FtmwConfig &cfg);
     void resetToLoadout();
     void updateChirpFromRf();

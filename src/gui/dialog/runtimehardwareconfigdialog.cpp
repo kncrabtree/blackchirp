@@ -1308,7 +1308,11 @@ void RuntimeHardwareConfigDialog::onLoadoutSave()
     loadout.hardwareMap = std::map<QString,QString>(d_previewRuntimeConfig.begin(), d_previewRuntimeConfig.end());
     auto existing = LoadoutManager::instance().getLoadout(d_activeLoadoutName);
     if (existing.has_value())
-        loadout.ftmw = existing->ftmw;
+    {
+        loadout.ftmwPresets = existing->ftmwPresets;
+        loadout.defaultFtmwPresetName = existing->defaultFtmwPresetName;
+        loadout.currentFtmwPresetName = existing->currentFtmwPresetName;
+    }
     LoadoutManager::instance().putLoadout(loadout);
 }
 

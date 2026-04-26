@@ -79,8 +79,9 @@ FtmwConfigWidget::FtmwConfigWidget(const QString &awgHwKey, const QString &digiH
     auto loadout = LoadoutManager::instance().currentLoadout();
 
     if (storedLoadout != currentName) {
-        if (loadout && loadout->ftmw)
-            initializeFromSnapshot(*loadout->ftmw);
+        auto currentPreset = LoadoutManager::instance().currentFtmwPreset(currentName);
+        if (currentPreset)
+            initializeFromFtmwPreset(*currentPreset);
         else {
             RfConfig rfc;
             rfc.setCurrentClocks(currentClocks);
@@ -111,19 +112,19 @@ FtmwConfigWidget::FtmwConfigWidget(const QString &awgHwKey, const QString &digiH
     });
 }
 
-void FtmwConfigWidget::initializeFromSnapshot(const FtmwSnapshot &snap)
+void FtmwConfigWidget::initializeFromFtmwPreset(const FtmwPreset &preset)
 {
     RfConfig rfc;
-    snap.rfConfig.applyTo(rfc);
+    preset.rfConfig.applyTo(rfc);
     p_rfWidget->setFromRfConfig(rfc);
 
-    rfc.setChirpConfig(snap.chirpConfig);
+    rfc.setChirpConfig(preset.chirpConfig);
     p_chirpWidget->setFromRfConfig(rfc);
 
-    p_digiWidget->setFromConfig(snap.digitizer);
+    p_digiWidget->setFromConfig(preset.digitizer);
 }
 
-FtmwSnapshot FtmwConfigWidget::toSnapshot() const
+FtmwPreset FtmwConfigWidget::toFtmwPreset() const
 {
     RfConfig rfc;
     p_rfWidget->toRfConfig(rfc);
@@ -131,16 +132,16 @@ FtmwSnapshot FtmwConfigWidget::toSnapshot() const
     FtmwDigitizerConfig digiCfg(d_digiHwKey);
     p_digiWidget->toConfig(digiCfg);
 
-    auto active = LoadoutManager::instance().currentLoadout();
-    if (active && active->ftmw)
-        digiCfg.d_fidChannel = active->ftmw->digitizer.d_fidChannel;
+    auto activeName = LoadoutManager::instance().currentLoadoutName();
+    if (auto currentPreset = LoadoutManager::instance().currentFtmwPreset(activeName))
+        digiCfg.d_fidChannel = currentPreset->digitizer.d_fidChannel;
 
-    FtmwSnapshot snap;
-    snap.rfConfig = RfConfigSnapshot::fromRfConfig(rfc);
-    snap.chirpConfig = p_chirpWidget->getChirps();
-    snap.digitizer = digiCfg;
-    snap.digiHwKey = d_digiHwKey;
-    return snap;
+    FtmwPreset result;
+    result.rfConfig = RfConfigSnapshot::fromRfConfig(rfc);
+    result.chirpConfig = p_chirpWidget->getChirps();
+    result.digitizer = digiCfg;
+    result.digiHwKey = d_digiHwKey;
+    return result;
 }
 
 void FtmwConfigWidget::initializeFromExperiment(const FtmwConfig &cfg)
@@ -152,9 +153,9 @@ void FtmwConfigWidget::initializeFromExperiment(const FtmwConfig &cfg)
 
 void FtmwConfigWidget::resetToLoadout()
 {
-    auto loadout = LoadoutManager::instance().currentLoadout();
-    if (loadout && loadout->ftmw)
-        initializeFromSnapshot(*loadout->ftmw);
+    auto activeName = LoadoutManager::instance().currentLoadoutName();
+    if (auto preset = LoadoutManager::instance().currentFtmwPreset(activeName))
+        initializeFromFtmwPreset(*preset);
 }
 
 void FtmwConfigWidget::updateChirpFromRf()
@@ -225,11 +226,11 @@ void FtmwConfigWidget::onRfSourceChanged(int index)
     p_rfSourceCombo->setCurrentIndex(0);
     p_rfSourceCombo->blockSignals(false);
 
-    auto sourceLoadout = LoadoutManager::instance().getLoadout(sourceName);
-    if (!sourceLoadout || !sourceLoadout->ftmw)
+    auto sourcePreset = LoadoutManager::instance().currentFtmwPreset(sourceName);
+    if (!sourcePreset)
         return;
 
-    const auto &sourceSnap = sourceLoadout->ftmw->rfConfig;
+    const auto &sourceSnap = sourcePreset->rfConfig;
 
     RfConfig rfc;
     p_rfWidget->toRfConfig(rfc);
@@ -261,13 +262,13 @@ void FtmwConfigWidget::onChirpSourceChanged(int index)
     p_chirpSourceCombo->setCurrentIndex(0);
     p_chirpSourceCombo->blockSignals(false);
 
-    auto sourceLoadout = LoadoutManager::instance().getLoadout(sourceName);
-    if (!sourceLoadout || !sourceLoadout->ftmw)
+    auto sourcePreset = LoadoutManager::instance().currentFtmwPreset(sourceName);
+    if (!sourcePreset)
         return;
 
     RfConfig rfc;
-    sourceLoadout->ftmw->rfConfig.applyTo(rfc);
-    rfc.setChirpConfig(sourceLoadout->ftmw->chirpConfig);
+    sourcePreset->rfConfig.applyTo(rfc);
+    rfc.setChirpConfig(sourcePreset->chirpConfig);
     p_chirpWidget->setFromRfConfig(rfc);
 }
 
@@ -281,9 +282,9 @@ void FtmwConfigWidget::onDigiSourceChanged(int index)
     p_digiSourceCombo->setCurrentIndex(0);
     p_digiSourceCombo->blockSignals(false);
 
-    auto sourceLoadout = LoadoutManager::instance().getLoadout(sourceName);
-    if (!sourceLoadout || !sourceLoadout->ftmw)
+    auto sourcePreset = LoadoutManager::instance().currentFtmwPreset(sourceName);
+    if (!sourcePreset)
         return;
 
-    p_digiWidget->setFromConfig(sourceLoadout->ftmw->digitizer);
+    p_digiWidget->setFromConfig(sourcePreset->digitizer);
 }

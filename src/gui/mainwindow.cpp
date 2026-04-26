@@ -949,10 +949,11 @@ void MainWindow::launchFtmwConfigDialog()
     });
 
     connect(d, &QDialog::accepted, [this](){
-        auto loadout = LoadoutManager::instance().currentLoadout();
-        if(!loadout.has_value() || !loadout->ftmw.has_value())
+        auto activeName = LoadoutManager::instance().currentLoadoutName();
+        auto preset = LoadoutManager::instance().currentFtmwPreset(activeName);
+        if(!preset.has_value())
             return;
-        const auto clocks = loadout->ftmw->rfConfig.clocks;
+        const auto clocks = preset->rfConfig.clocks;
         QMetaObject::invokeMethod(p_hwm, [this, clocks](){ p_hwm->configureClocks(clocks); }, Qt::QueuedConnection);
     });
 
@@ -1025,9 +1026,10 @@ void MainWindow::onLoadoutActionTriggered(QAction *act)
     buildHardwareUI();
     QMetaObject::invokeMethod(p_hwm, &HardwareManager::syncWithRuntimeConfig, Qt::QueuedConnection);
 
-    if(loadout->ftmw)
+    auto preset = LoadoutManager::instance().currentFtmwPreset(target);
+    if(preset.has_value())
     {
-        auto clocks = loadout->ftmw->rfConfig.clocks;
+        auto clocks = preset->rfConfig.clocks;
         QMetaObject::invokeMethod(p_hwm, [this, clocks](){
             p_hwm->configureClocks(clocks);
         }, Qt::QueuedConnection);
@@ -1125,10 +1127,11 @@ void MainWindow::launchRuntimeHardwareConfigDialog()
     connect(d, &QDialog::finished, [this](int result) {
         if (result != QDialog::Accepted)
             return;
-        auto loadout = LoadoutManager::instance().currentLoadout();
-        if (!loadout.has_value() || !loadout->ftmw.has_value())
+        auto activeName = LoadoutManager::instance().currentLoadoutName();
+        auto preset = LoadoutManager::instance().currentFtmwPreset(activeName);
+        if (!preset.has_value())
             return;
-        const auto clocks = loadout->ftmw->rfConfig.clocks;
+        const auto clocks = preset->rfConfig.clocks;
         QMetaObject::invokeMethod(p_hwm, [this, clocks]() {
             p_hwm->configureClocks(clocks);
         }, Qt::QueuedConnection);

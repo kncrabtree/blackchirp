@@ -13,6 +13,7 @@
 #include <data/experiment/hardwaredatacontainer.h>
 
 // Include all hardware headers so template methods work properly
+#include <hardware/core/clock/clock.h>
 #include <hardware/core/ftmwdigitizer/ftmwscope.h>
 #include <hardware/optional/chirpsource/awg.h>
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>

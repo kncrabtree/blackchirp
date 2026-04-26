@@ -39,7 +39,7 @@ ExperimentFtmwConfigPage::ExperimentFtmwConfigPage(
 
     p_resetButton = new QPushButton("Reset to Loadout Defaults"_L1, this);
     auto loadout = LoadoutManager::instance().currentLoadout();
-    p_resetButton->setEnabled(loadout && loadout->ftmw.has_value());
+    p_resetButton->setEnabled(loadout && !LoadoutManager::instance().ftmwPresetNames(loadout->name).isEmpty());
 
     auto *layout = new QVBoxLayout(this);
     layout->addWidget(p_widget, 1);

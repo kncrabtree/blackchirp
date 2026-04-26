@@ -2,11 +2,13 @@
 #include <QCoreApplication>
 #include <QSettings>
 #include <QTemporaryDir>
+#include <QDebug>
 
 #include <src/data/loadout/loadoutmanager.h>
 #include <src/data/loadout/hardwareloadout.h>
 
 using namespace BC::Loadout;
+using namespace BC::Store::LM;
 
 // Matches the friend declaration in loadoutmanager.h
 class LoadoutManagerTest : public QObject
@@ -22,8 +24,8 @@ private slots:
     void cleanupTestCase();
     void init();
 
-    void testRoundTripFull();
-    void testRoundTripNoFtmw();
+    void testRoundTripWithFtmwPresets();
+    void testRoundTripNoFtmwPresets();
     void testRemoveLoadout();
     void testCurrentDefaultPersistence();
     void testClockArrayRoundTrip();
@@ -31,14 +33,20 @@ private slots:
     void testLoadoutsMatchingHwKey();
     void testCopyClocksMatching();
     void testCopyRfScalars();
+    void testFtmwPresetCrud();
+    void testCurrentDefaultFtmwPresetPointers();
+    void testRenameFtmwPresetRewritesPointers();
+    void testRemoveLoadoutCascadesFtmwPresets();
 
 private:
-    // Creates a fresh isolated LoadoutManager (bypasses the singleton).
     LoadoutManager *makeLm() const;
 
-    static HardwareLoadout makeFull();
+    static FtmwPreset makeFtmwPreset(const QString &digiHwKey);
+    static HardwareLoadout makeHardwareOnly();
+    static HardwareLoadout makeWithPresets();
     static void verifyClocksEqual(const QHash<RfConfig::ClockType, RfConfig::ClockFreq> &a,
                                   const QHash<RfConfig::ClockType, RfConfig::ClockFreq> &b);
+    static void verifyPresetEqual(const FtmwPreset &a, const FtmwPreset &b);
 
     QTemporaryDir *d_tempDir{nullptr};
     static constexpr auto s_org = "CrabtreeLab";
@@ -52,7 +60,10 @@ void LoadoutManagerTest::initTestCase()
 {
     d_tempDir = new QTemporaryDir();
     QVERIFY(d_tempDir->isValid());
-    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, d_tempDir->path());
+    qDebug() << d_tempDir->path();
+    QCoreApplication::setOrganizationName(s_org);
+    QCoreApplication::setApplicationName(s_app);
+    // QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, d_tempDir->path());
 }
 
 void LoadoutManagerTest::cleanupTestCase()
@@ -63,8 +74,7 @@ void LoadoutManagerTest::cleanupTestCase()
 
 void LoadoutManagerTest::init()
 {
-    // Wipe all settings between tests so each starts from a clean state.
-    QSettings s(QSettings::IniFormat, QSettings::UserScope, s_org, s_app);
+    QSettings s;
     s.clear();
     s.sync();
 }
@@ -74,29 +84,19 @@ LoadoutManager *LoadoutManagerTest::makeLm() const
     return new LoadoutManager(s_org, s_app);
 }
 
-HardwareLoadout LoadoutManagerTest::makeFull()
+FtmwPreset LoadoutManagerTest::makeFtmwPreset(const QString &digiHwKey)
 {
     using namespace Qt::StringLiterals;
 
-    HardwareLoadout lo;
-    lo.name = u"Alpha"_s;
-    lo.hardwareMap = {
-        {u"Clock.ref"_s,       u"VirtualClock"_s},
-        {u"AWG.main"_s,        u"VirtualAwg"_s},
-        {u"FtmwScope.main"_s,  u"VirtualScope"_s},
-    };
+    FtmwPreset preset;
+    preset.digiHwKey = digiHwKey;
 
-    FtmwSnapshot snap;
-    snap.digiHwKey = u"FtmwScope.main"_s;
+    preset.rfConfig.commonUpDownLO  = true;
+    preset.rfConfig.awgMult         = 2.5;
+    preset.rfConfig.upMixSideband   = RfConfig::LowerSideband;
+    preset.rfConfig.chirpMult       = 4.0;
+    preset.rfConfig.downMixSideband = RfConfig::UpperSideband;
 
-    // RF scalars
-    snap.rfConfig.commonUpDownLO  = true;
-    snap.rfConfig.awgMult         = 2.5;
-    snap.rfConfig.upMixSideband   = RfConfig::LowerSideband;
-    snap.rfConfig.chirpMult       = 4.0;
-    snap.rfConfig.downMixSideband = RfConfig::UpperSideband;
-
-    // Two clocks
     {
         RfConfig::ClockFreq cf;
         cf.hwKey          = u"Clock.ref"_s;
@@ -104,7 +104,7 @@ HardwareLoadout LoadoutManagerTest::makeFull()
         cf.op             = RfConfig::Multiply;
         cf.factor         = 10.0;
         cf.desiredFreqMHz = 100.0;
-        snap.rfConfig.clocks.insert(RfConfig::AwgRef, cf);
+        preset.rfConfig.clocks.insert(RfConfig::AwgRef, cf);
     }
     {
         RfConfig::ClockFreq cf;
@@ -113,56 +113,84 @@ HardwareLoadout LoadoutManagerTest::makeFull()
         cf.op             = RfConfig::Divide;
         cf.factor         = 2.0;
         cf.desiredFreqMHz = 8500.0;
-        snap.rfConfig.clocks.insert(RfConfig::UpLO, cf);
+        preset.rfConfig.clocks.insert(RfConfig::UpLO, cf);
     }
 
-    // ChirpConfig
-    snap.chirpConfig.setAwgSampleRate(4e9);
-    snap.chirpConfig.setNumChirps(2);
-    snap.chirpConfig.setChirpInterval(500.0);
-    snap.chirpConfig.addSegment(7000.0, 8000.0, 5.0, 0);
-    snap.chirpConfig.addSegment(7000.0, 8000.0, 5.0, 1);
+    preset.chirpConfig.setAwgSampleRate(4e9);
+    preset.chirpConfig.setNumChirps(2);
+    preset.chirpConfig.setChirpInterval(500.0);
+    preset.chirpConfig.addSegment(7000.0, 8000.0, 5.0, 0);
+    preset.chirpConfig.addSegment(7000.0, 8000.0, 5.0, 1);
 
     QVector<MarkerChannel> markers;
     MarkerChannel mc;
-    mc.name      = u"ProtectionGate"_s;
-    mc.role      = MarkerRole::Protection;
+    mc.name       = u"ProtectionGate"_s;
+    mc.role       = MarkerRole::Protection;
     mc.timingMode = MarkerChannel::ChirpRelative;
-    mc.startTime = -0.25;
-    mc.endTime   = 0.25;
-    mc.enabled   = true;
+    mc.startTime  = -0.25;
+    mc.endTime    = 0.25;
+    mc.enabled    = true;
     markers.push_back(mc);
-    snap.chirpConfig.setMarkerChannels(markers);
+    preset.chirpConfig.setMarkerChannels(markers);
 
-    // Digitizer
-    snap.digitizer = FtmwDigitizerConfig(snap.digiHwKey);
-    snap.digitizer.d_triggerChannel   = 2;
-    snap.digitizer.d_triggerSlope     = DigitizerConfig::FallingEdge;
-    snap.digitizer.d_triggerDelayUSec = 0.1;
-    snap.digitizer.d_triggerLevel     = 0.5;
-    snap.digitizer.d_sampleRate       = 4e9;
-    snap.digitizer.d_recordLength     = 1024;
-    snap.digitizer.d_bytesPerPoint    = 2;
-    snap.digitizer.d_byteOrder        = DigitizerConfig::LittleEndian;
-    snap.digitizer.d_blockAverage     = true;
-    snap.digitizer.d_numAverages      = 100;
-    snap.digitizer.d_multiRecord      = false;
-    snap.digitizer.d_numRecords       = 1;
-    snap.digitizer.d_fidChannel       = 3;
+    preset.digitizer = FtmwDigitizerConfig(digiHwKey);
+    preset.digitizer.d_triggerChannel   = 2;
+    preset.digitizer.d_triggerSlope     = DigitizerConfig::FallingEdge;
+    preset.digitizer.d_triggerDelayUSec = 0.1;
+    preset.digitizer.d_triggerLevel     = 0.5;
+    preset.digitizer.d_sampleRate       = 4e9;
+    preset.digitizer.d_recordLength     = 1024;
+    preset.digitizer.d_bytesPerPoint    = 2;
+    preset.digitizer.d_byteOrder        = DigitizerConfig::LittleEndian;
+    preset.digitizer.d_blockAverage     = true;
+    preset.digitizer.d_numAverages      = 100;
+    preset.digitizer.d_multiRecord      = false;
+    preset.digitizer.d_numRecords       = 1;
+    preset.digitizer.d_fidChannel       = 3;
 
     DigitizerConfig::AnalogChannel ach;
     ach.enabled   = true;
     ach.fullScale = 0.1;
     ach.offset    = 0.02;
-    snap.digitizer.d_analogChannels[1] = ach;
+    preset.digitizer.d_analogChannels[1] = ach;
 
     DigitizerConfig::DigitalChannel dch;
     dch.enabled = true;
     dch.input   = false;
     dch.role    = 5;
-    snap.digitizer.d_digitalChannels[0] = dch;
+    preset.digitizer.d_digitalChannels[0] = dch;
 
-    lo.ftmw = std::move(snap);
+    return preset;
+}
+
+HardwareLoadout LoadoutManagerTest::makeHardwareOnly()
+{
+    using namespace Qt::StringLiterals;
+    HardwareLoadout lo;
+    lo.name = u"NoPresets"_s;
+    lo.hardwareMap = {{u"AWG.main"_s, u"VirtualAwg"_s}};
+    return lo;
+}
+
+HardwareLoadout LoadoutManagerTest::makeWithPresets()
+{
+    using namespace Qt::StringLiterals;
+
+    HardwareLoadout lo;
+    lo.name = u"Alpha"_s;
+    lo.hardwareMap = {
+        {u"Clock.ref"_s,      u"VirtualClock"_s},
+        {u"AWG.main"_s,       u"VirtualAwg"_s},
+        {u"FtmwScope.main"_s, u"VirtualScope"_s},
+    };
+
+    lo.ftmwPresets[u"Primary"_s]   = makeFtmwPreset(u"FtmwScope.main"_s);
+    lo.ftmwPresets[u"Secondary"_s] = makeFtmwPreset(u"FtmwScope.main"_s);
+    lo.ftmwPresets[lastUsedFtmwPresetName.toString()] = makeFtmwPreset(u"FtmwScope.main"_s);
+
+    lo.defaultFtmwPresetName = u"Primary"_s;
+    lo.currentFtmwPresetName = u"Secondary"_s;
+
     return lo;
 }
 
@@ -183,11 +211,50 @@ void LoadoutManagerTest::verifyClocksEqual(
     }
 }
 
+void LoadoutManagerTest::verifyPresetEqual(const FtmwPreset &a, const FtmwPreset &b)
+{
+    QCOMPARE(a.digiHwKey, b.digiHwKey);
+
+    QCOMPARE(a.rfConfig.commonUpDownLO,  b.rfConfig.commonUpDownLO);
+    QCOMPARE(a.rfConfig.awgMult,         b.rfConfig.awgMult);
+    QCOMPARE(a.rfConfig.upMixSideband,   b.rfConfig.upMixSideband);
+    QCOMPARE(a.rfConfig.chirpMult,       b.rfConfig.chirpMult);
+    QCOMPARE(a.rfConfig.downMixSideband, b.rfConfig.downMixSideband);
+    verifyClocksEqual(a.rfConfig.clocks, b.rfConfig.clocks);
+
+    QCOMPARE(a.chirpConfig.numChirps(),     b.chirpConfig.numChirps());
+    QCOMPARE(a.chirpConfig.chirpInterval(), b.chirpConfig.chirpInterval());
+    const auto &acl = a.chirpConfig.chirpList();
+    const auto &bcl = b.chirpConfig.chirpList();
+    QCOMPARE(acl.size(), bcl.size());
+    for (int ci = 0; ci < acl.size(); ++ci) {
+        QCOMPARE(acl[ci].size(), bcl[ci].size());
+        for (int si = 0; si < acl[ci].size(); ++si) {
+            QCOMPARE(acl[ci][si].startFreqMHz, bcl[ci][si].startFreqMHz);
+            QCOMPARE(acl[ci][si].endFreqMHz,   bcl[ci][si].endFreqMHz);
+            QCOMPARE(acl[ci][si].durationUs,   bcl[ci][si].durationUs);
+        }
+    }
+
+    const auto &ad = a.digitizer;
+    const auto &bd = b.digitizer;
+    QCOMPARE(ad.d_triggerChannel,   bd.d_triggerChannel);
+    QCOMPARE(ad.d_triggerSlope,     bd.d_triggerSlope);
+    QCOMPARE(ad.d_sampleRate,       bd.d_sampleRate);
+    QCOMPARE(ad.d_recordLength,     bd.d_recordLength);
+    QCOMPARE(ad.d_blockAverage,     bd.d_blockAverage);
+    QCOMPARE(ad.d_numAverages,      bd.d_numAverages);
+    QCOMPARE(ad.d_fidChannel,       bd.d_fidChannel);
+    QCOMPARE(ad.d_analogChannels.size(),  bd.d_analogChannels.size());
+    QCOMPARE(ad.d_digitalChannels.size(), bd.d_digitalChannels.size());
+}
+
 // ── test cases ────────────────────────────────────────────────────────────────
 
-void LoadoutManagerTest::testRoundTripFull()
+void LoadoutManagerTest::testRoundTripWithFtmwPresets()
 {
-    const HardwareLoadout original = makeFull();
+    using namespace Qt::StringLiterals;
+    const HardwareLoadout original = makeWithPresets();
 
     {
         std::unique_ptr<LoadoutManager> lm(makeLm());
@@ -201,104 +268,38 @@ void LoadoutManagerTest::testRoundTripFull()
     QVERIFY(got.has_value());
     QCOMPARE(got->name,        original.name);
     QCOMPARE(got->hardwareMap, original.hardwareMap);
+    QCOMPARE(got->defaultFtmwPresetName, original.defaultFtmwPresetName);
+    QCOMPARE(got->currentFtmwPresetName, original.currentFtmwPresetName);
 
-    QVERIFY(got->ftmw.has_value());
-    const auto &os = *original.ftmw;
-    const auto &gs = *got->ftmw;
+    // All three presets present
+    QCOMPARE(got->ftmwPresets.size(), std::size_t(3));
+    QVERIFY(got->ftmwPresets.count(u"Primary"_s));
+    QVERIFY(got->ftmwPresets.count(u"Secondary"_s));
+    QVERIFY(got->ftmwPresets.count(lastUsedFtmwPresetName.toString()));
 
-    QCOMPARE(gs.digiHwKey, os.digiHwKey);
-
-    // RF scalars
-    QCOMPARE(gs.rfConfig.commonUpDownLO,  os.rfConfig.commonUpDownLO);
-    QCOMPARE(gs.rfConfig.awgMult,         os.rfConfig.awgMult);
-    QCOMPARE(gs.rfConfig.upMixSideband,   os.rfConfig.upMixSideband);
-    QCOMPARE(gs.rfConfig.chirpMult,       os.rfConfig.chirpMult);
-    QCOMPARE(gs.rfConfig.downMixSideband, os.rfConfig.downMixSideband);
-
-    // Clocks
-    verifyClocksEqual(gs.rfConfig.clocks, os.rfConfig.clocks);
-
-    // ChirpConfig
-    QCOMPARE(gs.chirpConfig.numChirps(),     os.chirpConfig.numChirps());
-    QCOMPARE(gs.chirpConfig.chirpInterval(), os.chirpConfig.chirpInterval());
-    const auto &gcl = gs.chirpConfig.chirpList();
-    const auto &ocl = os.chirpConfig.chirpList();
-    QCOMPARE(gcl.size(), ocl.size());
-    for (int ci = 0; ci < ocl.size(); ++ci) {
-        QCOMPARE(gcl[ci].size(), ocl[ci].size());
-        for (int si = 0; si < ocl[ci].size(); ++si) {
-            QCOMPARE(gcl[ci][si].startFreqMHz, ocl[ci][si].startFreqMHz);
-            QCOMPARE(gcl[ci][si].endFreqMHz,   ocl[ci][si].endFreqMHz);
-            QCOMPARE(gcl[ci][si].durationUs,   ocl[ci][si].durationUs);
-            QCOMPARE(gcl[ci][si].alphaUs,      ocl[ci][si].alphaUs);
-            QCOMPARE(gcl[ci][si].empty,        ocl[ci][si].empty);
-        }
-    }
-    QCOMPARE(gs.chirpConfig.markerChannels().size(),
-             os.chirpConfig.markerChannels().size());
-    const auto &gm = gs.chirpConfig.markerChannels().at(0);
-    const auto &om = os.chirpConfig.markerChannels().at(0);
-    QCOMPARE(gm.name,       om.name);
-    QCOMPARE(gm.role,       om.role);
-    QCOMPARE(gm.timingMode, om.timingMode);
-    QCOMPARE(gm.startTime,  om.startTime);
-    QCOMPARE(gm.endTime,    om.endTime);
-    QCOMPARE(gm.enabled,    om.enabled);
-
-    // Digitizer scalars
-    const auto &gd = gs.digitizer;
-    const auto &od = os.digitizer;
-    QCOMPARE(gd.d_triggerChannel,   od.d_triggerChannel);
-    QCOMPARE(gd.d_triggerSlope,     od.d_triggerSlope);
-    QCOMPARE(gd.d_triggerDelayUSec, od.d_triggerDelayUSec);
-    QCOMPARE(gd.d_triggerLevel,     od.d_triggerLevel);
-    QCOMPARE(gd.d_sampleRate,       od.d_sampleRate);
-    QCOMPARE(gd.d_recordLength,     od.d_recordLength);
-    QCOMPARE(gd.d_bytesPerPoint,    od.d_bytesPerPoint);
-    QCOMPARE(gd.d_byteOrder,        od.d_byteOrder);
-    QCOMPARE(gd.d_blockAverage,     od.d_blockAverage);
-    QCOMPARE(gd.d_numAverages,      od.d_numAverages);
-    QCOMPARE(gd.d_multiRecord,      od.d_multiRecord);
-    QCOMPARE(gd.d_numRecords,       od.d_numRecords);
-    QCOMPARE(gd.d_fidChannel,       od.d_fidChannel);
-
-    // Analog channel
-    QCOMPARE(gd.d_analogChannels.size(), od.d_analogChannels.size());
-    const auto &gach = gd.d_analogChannels.at(1);
-    const auto &oach = od.d_analogChannels.at(1);
-    QCOMPARE(gach.enabled,   oach.enabled);
-    QCOMPARE(gach.fullScale, oach.fullScale);
-    QCOMPARE(gach.offset,    oach.offset);
-
-    // Digital channel
-    QCOMPARE(gd.d_digitalChannels.size(), od.d_digitalChannels.size());
-    const auto &gdch = gd.d_digitalChannels.at(0);
-    const auto &odch = od.d_digitalChannels.at(0);
-    QCOMPARE(gdch.enabled, odch.enabled);
-    QCOMPARE(gdch.input,   odch.input);
-    QCOMPARE(gdch.role,    odch.role);
+    verifyPresetEqual(got->ftmwPresets.at(u"Primary"_s),
+                      original.ftmwPresets.at(u"Primary"_s));
+    verifyPresetEqual(got->ftmwPresets.at(u"Secondary"_s),
+                      original.ftmwPresets.at(u"Secondary"_s));
 }
 
-void LoadoutManagerTest::testRoundTripNoFtmw()
+void LoadoutManagerTest::testRoundTripNoFtmwPresets()
 {
-    using namespace Qt::StringLiterals;
-
-    HardwareLoadout lo;
-    lo.name = u"NoFtmw"_s;
-    lo.hardwareMap = {{u"AWG.main"_s, u"VirtualAwg"_s}};
-    // ftmw intentionally absent
+    const HardwareLoadout original = makeHardwareOnly();
 
     {
         std::unique_ptr<LoadoutManager> lm(makeLm());
-        QVERIFY(lm->putLoadout(lo));
+        QVERIFY(lm->putLoadout(original));
     }
 
     std::unique_ptr<LoadoutManager> lm2(makeLm());
-    const auto got = lm2->getLoadout(lo.name);
+    const auto got = lm2->getLoadout(original.name);
     QVERIFY(got.has_value());
-    QCOMPARE(got->name,        lo.name);
-    QCOMPARE(got->hardwareMap, lo.hardwareMap);
-    QVERIFY(!got->ftmw.has_value());
+    QCOMPARE(got->name,        original.name);
+    QCOMPARE(got->hardwareMap, original.hardwareMap);
+    QVERIFY(got->ftmwPresets.empty());
+    QVERIFY(got->defaultFtmwPresetName.isEmpty());
+    QVERIFY(got->currentFtmwPresetName.isEmpty());
 }
 
 void LoadoutManagerTest::testRemoveLoadout()
@@ -319,11 +320,9 @@ void LoadoutManagerTest::testRemoveLoadout()
 
         QVERIFY(lm->removeLoadout(u"Alpha"_s));
         QVERIFY(!lm->loadoutExists(u"Alpha"_s));
-        // current should have been reassigned away from the removed loadout
         QVERIFY(lm->currentLoadoutName() != u"Alpha"_s);
     }
 
-    // Verify the removal is persisted
     std::unique_ptr<LoadoutManager> lm2(makeLm());
     QVERIFY(!lm2->loadoutExists(u"Alpha"_s));
     QVERIFY(lm2->loadoutExists(u"Beta"_s));
@@ -362,7 +361,6 @@ void LoadoutManagerTest::testClockArrayRoundTrip()
     snap.chirpMult       = 1.0;
     snap.downMixSideband = RfConfig::UpperSideband;
 
-    // Three clocks, all six fields distinct
     {
         RfConfig::ClockFreq cf;
         cf.hwKey          = u"Clock.awg-ref"_s;
@@ -483,7 +481,6 @@ void LoadoutManagerTest::testCopyClocksMatching()
         source.clocks.insert(RfConfig::UpLO, cf);
     }
 
-    // dest starts with a pre-existing clock whose hwKey is not in allowedHwKeys
     RfConfigSnapshot dest;
     {
         RfConfig::ClockFreq cf;
@@ -495,14 +492,9 @@ void LoadoutManagerTest::testCopyClocksMatching()
     const std::set<QString> allowed = {u"Clock.awg-ref"_s};
     copyClocksMatching(source, dest, allowed);
 
-    // AwgRef was in allowed → copied
     QVERIFY(dest.clocks.contains(RfConfig::AwgRef));
     QCOMPARE(dest.clocks[RfConfig::AwgRef].hwKey, u"Clock.awg-ref"_s);
-
-    // UpLO was not in allowed → not copied
     QVERIFY(!dest.clocks.contains(RfConfig::UpLO));
-
-    // Pre-existing DigRef (hwKey="Clock.other") must be preserved
     QVERIFY(dest.clocks.contains(RfConfig::DigRef));
     QCOMPARE(dest.clocks[RfConfig::DigRef].hwKey, u"Clock.other"_s);
 }
@@ -524,9 +516,180 @@ void LoadoutManagerTest::testCopyRfScalars()
     QCOMPARE(dest.upMixSideband,   source.upMixSideband);
     QCOMPARE(dest.chirpMult,       source.chirpMult);
     QCOMPARE(dest.downMixSideband, source.downMixSideband);
-
-    // Clocks must not have been touched
     QVERIFY(dest.clocks.isEmpty());
+}
+
+void LoadoutManagerTest::testFtmwPresetCrud()
+{
+    using namespace Qt::StringLiterals;
+
+    HardwareLoadout lo;
+    lo.name = u"CrudTest"_s;
+    lo.hardwareMap = {{u"FtmwScope.main"_s, u"VirtualScope"_s}};
+
+    std::unique_ptr<LoadoutManager> lm(makeLm());
+    lm->putLoadout(lo);
+
+    // put and get
+    const FtmwPreset p1 = makeFtmwPreset(u"FtmwScope.main"_s);
+    QVERIFY(lm->putFtmwPreset(u"CrudTest"_s, u"Alpha"_s, p1));
+    QVERIFY(lm->ftmwPresetExists(u"CrudTest"_s, u"Alpha"_s));
+
+    auto got = lm->getFtmwPreset(u"CrudTest"_s, u"Alpha"_s);
+    QVERIFY(got.has_value());
+    verifyPresetEqual(*got, p1);
+
+    // put __LastUsed__
+    QVERIFY(lm->putFtmwPreset(u"CrudTest"_s, lastUsedFtmwPresetName.toString(), p1));
+    QVERIFY(lm->ftmwPresetExists(u"CrudTest"_s, lastUsedFtmwPresetName.toString()));
+
+    // ftmwPresetNames excludes __LastUsed__ by default
+    QStringList names = lm->ftmwPresetNames(u"CrudTest"_s);
+    QVERIFY(names.contains(u"Alpha"_s));
+    QVERIFY(!names.contains(lastUsedFtmwPresetName.toString()));
+
+    // includeLastUsed = true includes it
+    QStringList allNames = lm->ftmwPresetNames(u"CrudTest"_s, true);
+    QVERIFY(allNames.contains(lastUsedFtmwPresetName.toString()));
+
+    // second put emits changed, not added
+    QSignalSpy changedSpy(lm.get(), &LoadoutManager::ftmwPresetChanged);
+    QSignalSpy addedSpy(lm.get(),   &LoadoutManager::ftmwPresetAdded);
+    lm->putFtmwPreset(u"CrudTest"_s, u"Alpha"_s, p1);
+    QCOMPARE(changedSpy.count(), 1);
+    QCOMPARE(addedSpy.count(), 0);
+
+    // remove
+    QSignalSpy removedSpy(lm.get(), &LoadoutManager::ftmwPresetRemoved);
+    QVERIFY(lm->removeFtmwPreset(u"CrudTest"_s, u"Alpha"_s));
+    QVERIFY(!lm->ftmwPresetExists(u"CrudTest"_s, u"Alpha"_s));
+    QCOMPARE(removedSpy.count(), 1);
+
+    // persistence
+    lm->putFtmwPreset(u"CrudTest"_s, u"Beta"_s, p1);
+    lm.reset();
+
+    std::unique_ptr<LoadoutManager> lm2(makeLm());
+    QVERIFY(lm2->ftmwPresetExists(u"CrudTest"_s, u"Beta"_s));
+    QVERIFY(!lm2->ftmwPresetExists(u"CrudTest"_s, u"Alpha"_s));
+    verifyPresetEqual(*lm2->getFtmwPreset(u"CrudTest"_s, u"Beta"_s), p1);
+}
+
+void LoadoutManagerTest::testCurrentDefaultFtmwPresetPointers()
+{
+    using namespace Qt::StringLiterals;
+
+    HardwareLoadout lo;
+    lo.name = u"PointerTest"_s;
+    lo.hardwareMap = {{u"FtmwScope.main"_s, u"VirtualScope"_s}};
+
+    std::unique_ptr<LoadoutManager> lm(makeLm());
+    lm->putLoadout(lo);
+
+    const FtmwPreset p = makeFtmwPreset(u"FtmwScope.main"_s);
+    lm->putFtmwPreset(u"PointerTest"_s, u"A"_s, p);
+    lm->putFtmwPreset(u"PointerTest"_s, u"B"_s, p);
+
+    // set and get current
+    QVERIFY(lm->setCurrentFtmwPresetName(u"PointerTest"_s, u"A"_s));
+    QCOMPARE(lm->currentFtmwPresetName(u"PointerTest"_s), u"A"_s);
+
+    // set and get default
+    QVERIFY(lm->setDefaultFtmwPresetName(u"PointerTest"_s, u"B"_s));
+    QCOMPARE(lm->defaultFtmwPresetName(u"PointerTest"_s), u"B"_s);
+
+    // currentFtmwPreset() resolves to currentFtmwPresetName first
+    auto resolved = lm->currentFtmwPreset(u"PointerTest"_s);
+    QVERIFY(resolved.has_value());
+
+    // deleting current falls back to default
+    lm->removeFtmwPreset(u"PointerTest"_s, u"A"_s);
+    QCOMPARE(lm->currentFtmwPresetName(u"PointerTest"_s), u"B"_s);
+
+    // deleting default clears it
+    lm->removeFtmwPreset(u"PointerTest"_s, u"B"_s);
+    QVERIFY(lm->defaultFtmwPresetName(u"PointerTest"_s).isEmpty());
+
+    // currentFtmwPreset() returns nullopt when nothing remains
+    QVERIFY(!lm->currentFtmwPreset(u"PointerTest"_s).has_value());
+
+    // pointer persistence
+    lm->putFtmwPreset(u"PointerTest"_s, u"C"_s, p);
+    lm->setCurrentFtmwPresetName(u"PointerTest"_s, u"C"_s);
+    lm->setDefaultFtmwPresetName(u"PointerTest"_s, u"C"_s);
+    lm.reset();
+
+    std::unique_ptr<LoadoutManager> lm2(makeLm());
+    QCOMPARE(lm2->currentFtmwPresetName(u"PointerTest"_s), u"C"_s);
+    QCOMPARE(lm2->defaultFtmwPresetName(u"PointerTest"_s), u"C"_s);
+}
+
+void LoadoutManagerTest::testRenameFtmwPresetRewritesPointers()
+{
+    using namespace Qt::StringLiterals;
+
+    HardwareLoadout lo;
+    lo.name = u"RenameTest"_s;
+    lo.hardwareMap = {{u"FtmwScope.main"_s, u"VirtualScope"_s}};
+
+    std::unique_ptr<LoadoutManager> lm(makeLm());
+    lm->putLoadout(lo);
+
+    const FtmwPreset p = makeFtmwPreset(u"FtmwScope.main"_s);
+    lm->putFtmwPreset(u"RenameTest"_s, u"OldName"_s, p);
+    lm->setCurrentFtmwPresetName(u"RenameTest"_s, u"OldName"_s);
+    lm->setDefaultFtmwPresetName(u"RenameTest"_s, u"OldName"_s);
+
+    // successful rename
+    QVERIFY(lm->renameFtmwPreset(u"RenameTest"_s, u"OldName"_s, u"NewName"_s));
+    QVERIFY(!lm->ftmwPresetExists(u"RenameTest"_s, u"OldName"_s));
+    QVERIFY(lm->ftmwPresetExists(u"RenameTest"_s, u"NewName"_s));
+    QCOMPARE(lm->currentFtmwPresetName(u"RenameTest"_s), u"NewName"_s);
+    QCOMPARE(lm->defaultFtmwPresetName(u"RenameTest"_s), u"NewName"_s);
+
+    // cannot rename __LastUsed__
+    lm->putFtmwPreset(u"RenameTest"_s, lastUsedFtmwPresetName.toString(), p);
+    QVERIFY(!lm->renameFtmwPreset(u"RenameTest"_s,
+                                   lastUsedFtmwPresetName.toString(), u"SomeName"_s));
+
+    // cannot rename to __LastUsed__
+    QVERIFY(!lm->renameFtmwPreset(u"RenameTest"_s, u"NewName"_s,
+                                   lastUsedFtmwPresetName.toString()));
+
+    // cannot rename to a duplicate
+    lm->putFtmwPreset(u"RenameTest"_s, u"Other"_s, p);
+    QVERIFY(!lm->renameFtmwPreset(u"RenameTest"_s, u"NewName"_s, u"Other"_s));
+
+    // persistence
+    lm.reset();
+    std::unique_ptr<LoadoutManager> lm2(makeLm());
+    QVERIFY(lm2->ftmwPresetExists(u"RenameTest"_s, u"NewName"_s));
+    QVERIFY(!lm2->ftmwPresetExists(u"RenameTest"_s, u"OldName"_s));
+    QCOMPARE(lm2->currentFtmwPresetName(u"RenameTest"_s), u"NewName"_s);
+}
+
+void LoadoutManagerTest::testRemoveLoadoutCascadesFtmwPresets()
+{
+    using namespace Qt::StringLiterals;
+
+    HardwareLoadout lo;
+    lo.name = u"CascadeTest"_s;
+    lo.hardwareMap = {{u"FtmwScope.main"_s, u"VirtualScope"_s}};
+
+    std::unique_ptr<LoadoutManager> lm(makeLm());
+    lm->putLoadout(lo);
+    lm->putFtmwPreset(u"CascadeTest"_s, u"P1"_s, makeFtmwPreset(u"FtmwScope.main"_s));
+    lm->putFtmwPreset(u"CascadeTest"_s, u"P2"_s, makeFtmwPreset(u"FtmwScope.main"_s));
+    QCOMPARE(lm->ftmwPresetNames(u"CascadeTest"_s).size(), 2);
+
+    QVERIFY(lm->removeLoadout(u"CascadeTest"_s));
+    QVERIFY(!lm->loadoutExists(u"CascadeTest"_s));
+
+    // After reload the loadout and its presets are gone
+    lm.reset();
+    std::unique_ptr<LoadoutManager> lm2(makeLm());
+    QVERIFY(!lm2->loadoutExists(u"CascadeTest"_s));
+    QCOMPARE(lm2->ftmwPresetNames(u"CascadeTest"_s).size(), 0);
 }
 
 QTEST_GUILESS_MAIN(LoadoutManagerTest)

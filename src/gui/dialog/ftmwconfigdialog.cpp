@@ -31,12 +31,13 @@ FtmwConfigDialog::FtmwConfigDialog(const QString &awgHwKey, const QString &digiH
 
 void FtmwConfigDialog::accept()
 {
-    auto snap = p_widget->toSnapshot();
-    auto active = LoadoutManager::instance().currentLoadout();
-    if (active) {
-        HardwareLoadout updated = *active;
-        updated.ftmw = snap;
-        LoadoutManager::instance().putLoadout(updated);
+    auto preset = p_widget->toFtmwPreset();
+    auto activeName = LoadoutManager::instance().currentLoadoutName();
+    if (!activeName.isEmpty()) {
+        LoadoutManager::instance().putFtmwPreset(
+            activeName, BC::Store::LM::lastUsedFtmwPresetName, preset);
+        LoadoutManager::instance().setCurrentFtmwPresetName(
+            activeName, BC::Store::LM::lastUsedFtmwPresetName);
     }
     QDialog::accept();
 }
