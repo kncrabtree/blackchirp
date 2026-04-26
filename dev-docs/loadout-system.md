@@ -477,132 +477,38 @@ hosts three tabs and a "Load from loadout:" combo per tab. On accept,
 the dialog pulls a snapshot from the widget and writes it to the active
 loadout's `FtmwSnapshot`. `applyClocks` signal forwarded to `MainWindow`.
 
-#### Phase C revision tasks
-
-##### C.R1 — FTMW Preset bar UI
-
-- **Files:** new `src/gui/widget/ftmwpresetbar.{h,cpp}` (a re-usable
-  widget for both `FtmwConfigDialog` and `ExperimentFtmwConfigPage`),
-  or fold the controls directly into `FtmwConfigWidget`. Either way,
-  expose a `bool showDeleteButton` flag for ESD use.
-- Layout: `QGroupBox("FTMW Preset")` containing
-  `QComboBox p_ftmwPresetCombo` + buttons **Apply**, **Save**, **Save
-  As…**, **Rename…**, **Delete**, **Set as Default**. Plus a small
-  label that shows `(unsaved)` when `currentFtmwPreset == __LastUsed__`
-  and an asterisk when `d_dirty`.
-- Combo population: `LoadoutManager::ftmwPresetNames(activeLoadout,
-  includeLastUsed=false)`. Repopulate on `ftmwPresetAdded` /
-  `ftmwPresetRemoved` / `ftmwPresetChanged` / `currentFtmwPresetChanged`.
-
-##### C.R2 — Initial population (replace `lastFtmwLoadout`)
-
-- **Files:** `src/gui/widget/ftmwconfigwidget.{h,cpp}`.
-- Drop the `BC::Key::FtmwConfigWidget::lastFtmwLoadout` SettingsStorage
-  key entirely (it is now redundant — `currentFtmwPreset` plays the
-  same role at loadout-scope).
-- Replace the constructor's seeding logic with: read
-  `LoadoutManager::currentFtmwPreset(activeLoadout)`; if present, call
-  `initializeFromFtmwPreset`. Otherwise read `defaultFtmwPreset`.
-  Otherwise fall back to widget last-used SettingsStorage (current
-  widgets' default behavior).
-
-##### C.R3 — Per-tab "Load from FTMW preset" combos (rescope)
-
-- **Files:** `src/gui/widget/ftmwconfigwidget.cpp`.
-- Rename the combo labels to "Load from FTMW preset:".
-- Source list = `ftmwPresetNames(activeLoadout, false) \
-  {currentFtmwPresetName}`.
-- Within a single loadout, hardware is identical by construction.
-  Replace `copyClocksMatching` / `copyRfScalars` with wholesale
-  `applyTo` / direct widget setters. (Or retain the helpers and pass
-  the loadout's full clock-key set; engineer's choice. Keep the API in
-  case Save-As copy-FTMW-presets later wants partial copying.)
-
-##### C.R4 — Dirty tracking
-
-- **Files:** `src/gui/widget/ftmwconfigwidget.{h,cpp}` and the FTMW
-  preset bar.
-- Add `bool d_dirty = false`, `bool isDirty() const`, `markDirty()`
-  slot, `clearDirty()` slot, `dirtyChanged(bool)` signal.
-- Connect every relevant change signal of `RfConfigWidget`,
-  `ChirpConfigWidget`, and `FtmwDigitizerConfigWidget` to `markDirty`.
-  (Audit the three widgets; for each user-editable input, ensure
-  there's a signal we can connect to. Some `QSpinBox`/`QDoubleSpinBox`
-  / `QComboBox::currentIndexChanged` bindings may already exist; add
-  what's missing.)
-- `clearDirty` is called by Apply, Save, Save As, and the "Proceed
-  without saving" branch of the accept prompt.
-
-##### C.R5 — Button slots (FTMW preset bar)
-
-- **Apply**: prompt-if-dirty ("Discard unsaved changes and load FTMW
-  preset `<n>`?"). On confirm: `initializeFromFtmwPreset(getFtmwPreset(
-  ...))`, `setCurrentFtmwPresetName(...)`, push clocks via the widget's
-  `applyClocks` signal, `clearDirty`.
-- **Save**: enabled only when `currentFtmwPreset` is a real named
-  preset *and* `d_dirty`. `putFtmwPreset(loadout, currentFtmwPreset,
-  toFtmwPreset())` + `putFtmwPreset(loadout, "__LastUsed__",
-  toFtmwPreset())`. `clearDirty`.
-- **Save As…**: input dialog; reject empty, `__LastUsed__`, and
-  duplicates (with overwrite confirm). `putFtmwPreset(...)`,
-  `setCurrentFtmwPresetName(loadout, newName)`, also write
-  `__LastUsed__`. `clearDirty`.
-- **Rename…**: input dialog; reject empty, `__LastUsed__`, duplicates.
-  `renameFtmwPreset(loadout, oldName, newName)`.
-- **Delete**: confirm. `removeFtmwPreset`. `LoadoutManager` re-resolves
-  `currentFtmwPreset` per fallback chain; the widget reacts via
-  `currentFtmwPresetChanged`.
-- **Set as Default**: enabled when `currentFtmwPreset` is a real named
-  preset. `setDefaultFtmwPresetName(loadout, currentFtmwPreset)`.
-
-##### C.R6 — Three-way accept prompt
-
-- **Files:** `src/gui/dialog/ftmwconfigdialog.{h,cpp}`.
-- Override `accept()`. If `!widget->isDirty()` → push clocks, base
-  accept. If dirty:
-  - Build a modal `QDialog` (or `QMessageBox` with three custom
-    buttons) titled "Save FTMW changes?" with three actions:
-    - **Overwrite `<currentFtmwPreset>`** — call into the FTMW preset
-      bar's Save logic; then accept. Disabled when `currentFtmwPreset`
-      is `__LastUsed__` or empty.
-    - **Save as new FTMW preset…** — call into Save As. If Save As is
-      cancelled, return to the dialog without accepting. Otherwise
-      accept.
-    - **Proceed without saving** — `putFtmwPreset(loadout,
-      "__LastUsed__", toFtmwPreset())`,
-      `setCurrentFtmwPresetName(loadout, "__LastUsed__")`,
-      `clearDirty`. Accept.
-- Every accept path emits `applyClocks` (the existing
-  `MainWindow::launchFtmwConfigDialog` slot already calls
-  `configureClocks` on accept).
-
-##### C.R7 — Apply Now button
-
-- **Files:** `src/gui/widget/rfconfigwidget.cpp` (no change required if
-  the existing button only emits a clock-push signal). Verify that
-  pressing Apply Now does not call `markDirty` — the values being
-  pushed are already in the widget.
-
-> **Phase C revision gate:** manual coverage of every FTMW-preset-bar
-> button + dirty behavior; `__LastUsed__` is updated on accept and not
-> on cancel; the three-way prompt fires only when dirty.
->
-> Also verify Phase B drift and copy behavior (requires named presets,
-> which are only creatable after Phase C):
->
-> 1. Loadout with named presets → change AWG/digitizer/clock → **Save**
->    → three-button modal appears; each branch (Discard, Save As, Cancel)
->    behaves as specified.
-> 2. Loadout with named presets → change only an implementation (not the
->    hwKey identity) → **Save** → saves silently, presets preserved.
-> 3. Loadout with only `__LastUsed__` → change hardware → **Save** →
->    saves silently, no modal.
-> 4. **Save As** with unchanged hardware and named presets on the source
->    → copy prompt appears; confirm → presets and default pointer copied
->    to new loadout.
-> 5. **Save As** with changed hardware → no copy prompt.
-> 6. Accept Hardware Config dialog with a named `currentFtmwPreset` →
->    clocks update in the clock display box.
+**Phase C revisions (DONE):** The FTMW preset bar was folded directly into
+`FtmwConfigWidget` rather than extracted into a separate widget class. A
+`QComboBox p_ftmwPresetCombo` and six buttons (Apply, Save, Save As…,
+Rename…, Delete, Set as Default) were added above the tab widget, along with
+a status label that shows a dirty indicator and the current preset name.
+`bool d_dirty` and `bool d_suppressDirty` were added to the widget; every
+user-editable signal in `RfConfigWidget`, `ChirpConfigWidget`, and
+`FtmwDigitizerConfigWidget` routes through `markDirty()`, which is guarded
+by `d_suppressDirty` to prevent programmatic tab-switch population from
+triggering false positives. `clearDirty()` is called by every save path.
+The tab-switch handler wraps the `p_chirpWidget->initialize(rfc)` call in a
+`d_suppressDirty` guard to fix a chirp-tab false positive. The Apply button
+is enabled when the combo has a selection *and* either the selected name
+differs from `currentFtmwPresetName` or the widget is dirty. Per-tab "Copy
+from other FTMW Preset:" combos restrict their source list to named presets
+of the active loadout; selecting one calls `markDirty()` explicitly.
+`FtmwConfigDialog` is a thin shell that forwards `applyClocks`; its accept
+path pushes clocks unconditionally (the three-way accept prompt from the spec
+was deferred — the preset bar's Save / Save As buttons cover the common
+cases). The `d_openFtmwConfigOnClose` mechanism on
+`RuntimeHardwareConfigDialog` was removed: loadout management is now flexible
+enough that auto-launching `FtmwConfigDialog` on close adds complexity without
+meaningful gain. As a polish item, `onLoadoutSaveAs` was updated to copy
+`currentFtmwPresetName` metadata to the new loadout when the source has a
+named current preset. The Hardware Configuration dialog loadout panel was
+redesigned: the `QGroupBox` above the three-panel splitter was replaced by a
+dedicated leftmost splitter panel containing the `QListWidget` and a 2×3
+button grid (row 0: [blank, Activate]; row 1: [Save, Save As…]; row 2:
+[Copy, Delete]), giving a four-panel layout. Buttons carry themed SVG icons
+(`bolt`, `archive-box`, `arrow-up-on-square`, `document-duplicate`, `trash`).
+On dialog accept, if the active loadout is dirty a prompt offers Save and
+apply, Apply without saving, Save to new loadout…, or Cancel.
 
 ### Phase D — Hardware menu submenus
 

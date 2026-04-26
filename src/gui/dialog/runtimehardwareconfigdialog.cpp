@@ -94,19 +94,31 @@ RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
     // Populate hardware browser and connect selection handling
     populateHardwareBrowser();
 
-    // Initialize loadout combo and wire loadout buttons
-    populateLoadoutCombo();
-    connect(pu_ui->p_loadoutCombo, &QComboBox::currentTextChanged,
-            this, &RuntimeHardwareConfigDialog::onLoadoutComboChanged);
+    // Initialize loadout list and wire loadout buttons
+    connect(pu_ui->p_loadoutList, &QListWidget::currentItemChanged,
+            this, [this](QListWidgetItem*, QListWidgetItem*) { onLoadoutListSelectionChanged(); });
+    connect(pu_ui->p_loadoutActivate, &QPushButton::clicked,
+            this, &RuntimeHardwareConfigDialog::onLoadoutActivate);
     connect(pu_ui->p_loadoutSave, &QPushButton::clicked,
             this, &RuntimeHardwareConfigDialog::onLoadoutSave);
     connect(pu_ui->p_loadoutSaveAs, &QPushButton::clicked,
             this, &RuntimeHardwareConfigDialog::onLoadoutSaveAs);
+    connect(pu_ui->p_loadoutCopy, &QPushButton::clicked,
+            this, &RuntimeHardwareConfigDialog::onLoadoutCopy);
     connect(pu_ui->p_loadoutDelete, &QPushButton::clicked,
             this, &RuntimeHardwareConfigDialog::onLoadoutDelete);
-    connect(pu_ui->p_loadoutSetDefault, &QPushButton::clicked,
-            this, &RuntimeHardwareConfigDialog::onLoadoutSetDefault);
-    updateLoadoutButtonStates();
+    populateLoadoutList();
+
+    pu_ui->p_loadoutActivate->setIcon(ThemeColors::createThemedIconWithStates(
+        ":/icons/bolt.svg", ThemeColors::IconPrimary, ThemeColors::DisabledText, this));
+    pu_ui->p_loadoutSave->setIcon(ThemeColors::createThemedIconWithStates(
+        ":/icons/archive-box.svg", ThemeColors::IconPrimary, ThemeColors::DisabledText, this));
+    pu_ui->p_loadoutSaveAs->setIcon(ThemeColors::createThemedIconWithStates(
+        ":/icons/arrow-up-on-square.svg", ThemeColors::IconPrimary, ThemeColors::DisabledText, this));
+    pu_ui->p_loadoutCopy->setIcon(ThemeColors::createThemedIconWithStates(
+        ":/icons/document-duplicate.svg", ThemeColors::IconPrimary, ThemeColors::DisabledText, this));
+    pu_ui->p_loadoutDelete->setIcon(ThemeColors::createThemedIconWithStates(
+        ":/icons/trash.svg", ThemeColors::StatusError, ThemeColors::DisabledText, this));
 
     // Initialize Library Status tab
     p_libraryStatusWidget = new LibraryStatusWidget(pu_ui->libraryStatusTab);
@@ -927,14 +939,10 @@ void RuntimeHardwareConfigDialog::onProfileCheckboxClicked(const QString& hardwa
 
 void RuntimeHardwareConfigDialog::updatePreviewConfiguration()
 {
-    // Refresh the configuration overview (left panel) to show preview state
     populateConfigurationOverview();
-
-    // Refresh the hardware browser to show updated instance counts
     populateHardwareBrowser();
-
-    // Validate the configuration and update status
     validatePreviewConfiguration();
+    refreshLoadoutDirtyIndicator();
 }
 
 void RuntimeHardwareConfigDialog::onAddProfile(const QString& hardwareType)
@@ -1093,6 +1101,24 @@ void RuntimeHardwareConfigDialog::onRemoveProfile(const QString& hardwareType)
 
 void RuntimeHardwareConfigDialog::onDialogAccepted()
 {
+    if (isPreviewDirty()) {
+        QMessageBox msgBox(this);
+        msgBox.setWindowTitle(u"Unsaved Changes"_s);
+        msgBox.setText(u"The active loadout \"%1\" has unsaved changes."_s.arg(d_activeLoadoutName));
+        auto *saveBtn   = msgBox.addButton(u"Save and apply"_s,         QMessageBox::AcceptRole);
+        auto *applyBtn  = msgBox.addButton(u"Apply without saving"_s,   QMessageBox::DestructiveRole);
+        auto *saveAsBtn = msgBox.addButton(u"Save to new loadout..."_s, QMessageBox::ActionRole);
+        msgBox.addButton(QMessageBox::Cancel);
+        msgBox.exec();
+        const auto *clicked = msgBox.clickedButton();
+        if (clicked == saveBtn)
+            onLoadoutSave();
+        else if (clicked == saveAsBtn)
+            onLoadoutSaveAs();
+        else if (clicked != applyBtn)
+            return;
+    }
+
     // Apply the preview configuration to the runtime configuration
     auto& runtimeConfig = RuntimeHardwareConfig::instance();
 
@@ -1261,13 +1287,60 @@ void RuntimeHardwareConfigDialog::ensureRequiredTypes()
     }
 }
 
-void RuntimeHardwareConfigDialog::populateLoadoutCombo()
+QString RuntimeHardwareConfigDialog::selectedLoadoutName() const
 {
-    QSignalBlocker blocker(pu_ui->p_loadoutCombo);
-    pu_ui->p_loadoutCombo->clear();
-    pu_ui->p_loadoutCombo->addItems(LoadoutManager::instance().loadoutNames());
-    const int idx = pu_ui->p_loadoutCombo->findText(d_activeLoadoutName);
-    pu_ui->p_loadoutCombo->setCurrentIndex(idx >= 0 ? idx : 0);
+    const auto *item = pu_ui->p_loadoutList->currentItem();
+    return item ? item->data(Qt::UserRole).toString() : QString{};
+}
+
+bool RuntimeHardwareConfigDialog::isPreviewDirty() const
+{
+    const auto loadout = LoadoutManager::instance().getLoadout(d_activeLoadoutName);
+    if (!loadout.has_value())
+        return !d_previewRuntimeConfig.empty();
+    return d_previewRuntimeConfig != loadout->hardwareMap;
+}
+
+void RuntimeHardwareConfigDialog::populateLoadoutList()
+{
+    QSignalBlocker blocker(pu_ui->p_loadoutList);
+    const auto sel = selectedLoadoutName();
+    pu_ui->p_loadoutList->clear();
+    const bool dirty = isPreviewDirty();
+    for (const auto &n : LoadoutManager::instance().loadoutNames()) {
+        QString display = n;
+        if (n == d_activeLoadoutName) {
+            display += u" (active)"_s;
+            if (dirty)
+                display += u"*"_s;
+        }
+        auto *item = new QListWidgetItem(display, pu_ui->p_loadoutList);
+        item->setData(Qt::UserRole, n);
+    }
+    const QString toSelect = sel.isEmpty() ? d_activeLoadoutName : sel;
+    for (int i = 0; i < pu_ui->p_loadoutList->count(); ++i) {
+        if (pu_ui->p_loadoutList->item(i)->data(Qt::UserRole).toString() == toSelect) {
+            pu_ui->p_loadoutList->setCurrentRow(i);
+            break;
+        }
+    }
+    updateLoadoutButtonStates();
+}
+
+void RuntimeHardwareConfigDialog::refreshLoadoutDirtyIndicator()
+{
+    const bool dirty = isPreviewDirty();
+    for (int i = 0; i < pu_ui->p_loadoutList->count(); ++i) {
+        auto *item = pu_ui->p_loadoutList->item(i);
+        if (item->data(Qt::UserRole).toString() == d_activeLoadoutName) {
+            QString display = d_activeLoadoutName + u" (active)"_s;
+            if (dirty)
+                display += u"*"_s;
+            item->setText(display);
+            break;
+        }
+    }
+    updateLoadoutButtonStates();
 }
 
 void RuntimeHardwareConfigDialog::switchToLoadout(const QString &name)
@@ -1282,39 +1355,50 @@ void RuntimeHardwareConfigDialog::switchToLoadout(const QString &name)
 
     ensureRequiredTypes();
 
-    {
-        QSignalBlocker blocker(pu_ui->p_loadoutCombo);
-        pu_ui->p_loadoutCombo->setCurrentText(name);
-    }
-
     d_currentHardwareType.clear();
     populateConfigurationOverview();
     populateHardwareBrowser();
     updateSelectionDisplay(QString{});
     validatePreviewConfiguration();
-    updateLoadoutButtonStates();
+    populateLoadoutList();
 }
 
 void RuntimeHardwareConfigDialog::updateLoadoutButtonStates()
 {
-    const bool isDefault = (d_activeLoadoutName == LoadoutManager::instance().defaultLoadoutName());
-    pu_ui->p_loadoutSetDefault->setEnabled(!isDefault);
+    const QString sel = selectedLoadoutName();
+    const bool hasSel = !sel.isEmpty();
+    const bool selIsActive = (sel == d_activeLoadoutName);
+    pu_ui->p_loadoutActivate->setEnabled(hasSel && !selIsActive);
+    pu_ui->p_loadoutSave->setEnabled(isPreviewDirty());
+    pu_ui->p_loadoutSaveAs->setEnabled(true);
+    pu_ui->p_loadoutCopy->setEnabled(hasSel);
+    pu_ui->p_loadoutDelete->setEnabled(hasSel && !selIsActive);
 }
 
-void RuntimeHardwareConfigDialog::onLoadoutComboChanged(const QString &name)
+void RuntimeHardwareConfigDialog::onLoadoutListSelectionChanged()
 {
+    updateLoadoutButtonStates();
+}
+
+void RuntimeHardwareConfigDialog::onLoadoutActivate()
+{
+    const QString name = selectedLoadoutName();
     if (name.isEmpty() || name == d_activeLoadoutName)
         return;
 
-    const auto reply = QMessageBox::question(
-        this, u"Load Loadout"_s,
-        u"Load loadout '%1'? This will replace your current hardware preview."_s.arg(name),
-        QMessageBox::Yes | QMessageBox::No);
-
-    if (reply != QMessageBox::Yes) {
-        QSignalBlocker blocker(pu_ui->p_loadoutCombo);
-        pu_ui->p_loadoutCombo->setCurrentText(d_activeLoadoutName);
-        return;
+    if (isPreviewDirty()) {
+        QMessageBox msgBox(this);
+        msgBox.setWindowTitle(u"Unsaved Changes"_s);
+        msgBox.setText(u"The active loadout \"%1\" has unsaved changes."_s.arg(d_activeLoadoutName));
+        auto *saveBtn    = msgBox.addButton(u"Save and activate"_s,    QMessageBox::AcceptRole);
+        auto *discardBtn = msgBox.addButton(u"Discard and activate"_s, QMessageBox::DestructiveRole);
+        msgBox.addButton(QMessageBox::Cancel);
+        msgBox.exec();
+        const auto *clicked = msgBox.clickedButton();
+        if (clicked == saveBtn)
+            onLoadoutSave();
+        else if (clicked != discardBtn)
+            return;
     }
 
     switchToLoadout(name);
@@ -1364,6 +1448,7 @@ void RuntimeHardwareConfigDialog::onLoadoutSave()
     }
 
     lm.putLoadout(loadout);
+    refreshLoadoutDirtyIndicator();
 }
 
 void RuntimeHardwareConfigDialog::onLoadoutSaveAs()
@@ -1393,8 +1478,7 @@ void RuntimeHardwareConfigDialog::onLoadoutSaveAs()
     LoadoutManager::instance().putLoadout(loadout);
 
     d_activeLoadoutName = name;
-    populateLoadoutCombo();
-    updateLoadoutButtonStates();
+    populateLoadoutList();
 
     // Offer FTMW preset copy when the previous loadout shares hardware and has named presets
     auto &lm = LoadoutManager::instance();
@@ -1416,48 +1500,84 @@ void RuntimeHardwareConfigDialog::onLoadoutSaveAs()
                 const auto defPreset = lm.defaultFtmwPresetName(prevName);
                 if (!defPreset.isEmpty())
                     lm.setDefaultFtmwPresetName(name, defPreset);
+                const auto curPreset = lm.currentFtmwPresetName(prevName);
+                if (!curPreset.isEmpty()
+                    && curPreset != BC::Store::LM::lastUsedFtmwPresetName)
+                    lm.setCurrentFtmwPresetName(name, curPreset);
             }
         }
     }
+}
 
-    const auto reply = QMessageBox::question(
-        this, u"Configure FTMW Settings"_s,
-        u"Configure FTMW settings for loadout '%1'?"_s.arg(name),
-        QMessageBox::Yes | QMessageBox::No);
-    if (reply == QMessageBox::Yes)
-        d_openFtmwConfigOnClose = true;
+void RuntimeHardwareConfigDialog::onLoadoutCopy()
+{
+    const QString sourceName = selectedLoadoutName();
+    if (sourceName.isEmpty())
+        return;
+
+    const auto sourceLoadout = LoadoutManager::instance().getLoadout(sourceName);
+    if (!sourceLoadout.has_value())
+        return;
+
+    bool ok = false;
+    const QString name = QInputDialog::getText(
+        this, u"Copy Loadout"_s, u"New loadout name:"_s,
+        QLineEdit::Normal, {}, &ok).trimmed();
+    if (!ok || name.isEmpty())
+        return;
+
+    if (LoadoutManager::instance().loadoutExists(name)) {
+        const auto reply = QMessageBox::question(
+            this, u"Overwrite Loadout"_s,
+            u"A loadout named '%1' already exists. Overwrite it?"_s.arg(name),
+            QMessageBox::Yes | QMessageBox::No);
+        if (reply != QMessageBox::Yes)
+            return;
+    }
+
+    HardwareLoadout newLoadout;
+    newLoadout.name = name;
+    newLoadout.hardwareMap = sourceLoadout->hardwareMap;
+    LoadoutManager::instance().putLoadout(newLoadout);
+
+    auto &lm = LoadoutManager::instance();
+    const auto namedPresets = lm.ftmwPresetNames(sourceName, false);
+    if (!namedPresets.isEmpty()) {
+        const auto copyReply = QMessageBox::question(
+            this, u"Copy FTMW Presets"_s,
+            u"Copy FTMW presets from \"%1\" to \"%2\"?"_s.arg(sourceName, name),
+            QMessageBox::Yes | QMessageBox::No);
+        if (copyReply == QMessageBox::Yes) {
+            for (const auto &pName : namedPresets) {
+                auto preset = lm.getFtmwPreset(sourceName, pName);
+                if (preset.has_value())
+                    lm.putFtmwPreset(name, pName, *preset);
+            }
+            const auto defPreset = lm.defaultFtmwPresetName(sourceName);
+            if (!defPreset.isEmpty())
+                lm.setDefaultFtmwPresetName(name, defPreset);
+            const auto curPreset = lm.currentFtmwPresetName(sourceName);
+            if (!curPreset.isEmpty() && curPreset != BC::Store::LM::lastUsedFtmwPresetName)
+                lm.setCurrentFtmwPresetName(name, curPreset);
+        }
+    }
+
+    populateLoadoutList();
 }
 
 void RuntimeHardwareConfigDialog::onLoadoutDelete()
 {
+    const QString name = selectedLoadoutName();
+    if (name.isEmpty() || name == d_activeLoadoutName)
+        return;
+
     const auto reply = QMessageBox::question(
         this, u"Delete Loadout"_s,
-        u"Delete loadout '%1'? This cannot be undone."_s.arg(d_activeLoadoutName),
+        u"Delete loadout '%1'? This cannot be undone."_s.arg(name),
         QMessageBox::Yes | QMessageBox::No);
     if (reply != QMessageBox::Yes)
         return;
 
-    LoadoutManager::instance().removeLoadout(d_activeLoadoutName);
-
-    // Pick a new active loadout name (does not affect the preview hardware map)
-    QString newName = LoadoutManager::instance().currentLoadoutName();
-    if (newName.isEmpty()) {
-        HardwareLoadout def;
-        def.name = u"Default"_s;
-        def.hardwareMap = std::map<QString,QString,std::less<>>(d_originalRuntimeConfig.begin(), d_originalRuntimeConfig.end());
-        LoadoutManager::instance().putLoadout(def);
-        LoadoutManager::instance().setCurrentLoadoutName(def.name);
-        LoadoutManager::instance().setDefaultLoadoutName(def.name);
-        newName = def.name;
-    }
-
-    d_activeLoadoutName = newName;
-    populateLoadoutCombo();
-    updateLoadoutButtonStates();
-}
-
-void RuntimeHardwareConfigDialog::onLoadoutSetDefault()
-{
-    LoadoutManager::instance().setDefaultLoadoutName(d_activeLoadoutName);
-    updateLoadoutButtonStates();
+    LoadoutManager::instance().removeLoadout(name);
+    populateLoadoutList();
 }

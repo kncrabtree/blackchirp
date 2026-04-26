@@ -14,8 +14,7 @@
 #include <QtWidgets/QTreeWidget>
 #include <QtWidgets/QTreeWidgetItem>
 #include <QtWidgets/QVBoxLayout>
-#include <QtWidgets/QComboBox>
-#include <QtWidgets/QGroupBox>
+#include <QtWidgets/QGridLayout>
 #include <QtWidgets/QWidget>
 #include <gui/style/themecolors.h>
 
@@ -51,14 +50,16 @@ public:
     // Validation Status Bar
     QLabel *validationStatusLabel;
 
-    // Loadout Management Group
-    QGroupBox *loadoutGroupBox;
-    QLabel *loadoutLabel;
-    QComboBox *p_loadoutCombo;
+    // Loadout Panel (leftmost splitter panel)
+    QWidget *loadoutPanelWidget;
+    QVBoxLayout *loadoutPanelLayout;
+    QLabel *loadoutPanelLabel;
+    QListWidget *p_loadoutList;
+    QPushButton *p_loadoutActivate;
     QPushButton *p_loadoutSave;
     QPushButton *p_loadoutSaveAs;
+    QPushButton *p_loadoutCopy;
     QPushButton *p_loadoutDelete;
-    QPushButton *p_loadoutSetDefault;
 
     // Library Status Tab (content provided by LibraryStatusWidget)
     QWidget *libraryStatusTab;
@@ -167,38 +168,54 @@ public:
         hardwareConfigSplitter->addWidget(configurationWidget);
         
         // Set splitter sizes to 33% each
-        hardwareConfigSplitter->setSizes({300, 300, 300});
+        // Loadout Panel (leftmost splitter panel)
+        loadoutPanelWidget = new QWidget();
+        loadoutPanelWidget->setObjectName(QString::fromUtf8("loadoutPanelWidget"));
+        loadoutPanelLayout = new QVBoxLayout(loadoutPanelWidget);
+        loadoutPanelLayout->setSpacing(6);
+        loadoutPanelLayout->setContentsMargins(6, 6, 6, 6);
 
-        // Loadout Management Group
-        loadoutGroupBox = new QGroupBox("Loadout", hardwareConfigTab);
-        auto *loadoutRowLayout = new QHBoxLayout(loadoutGroupBox);
-        loadoutRowLayout->setSpacing(6);
+        loadoutPanelLabel = new QLabel(loadoutPanelWidget);
+        loadoutPanelLabel->setObjectName(QString::fromUtf8("loadoutPanelLabel"));
+        loadoutPanelLabel->setText("Loadout");
+        loadoutPanelLabel->setAlignment(Qt::AlignCenter);
+        loadoutPanelLabel->setStyleSheet(QString::fromUtf8("QLabel { font-weight: bold; }"));
+        loadoutPanelLayout->addWidget(loadoutPanelLabel);
 
-        loadoutLabel = new QLabel("Active:", loadoutGroupBox);
-        loadoutRowLayout->addWidget(loadoutLabel);
+        p_loadoutList = new QListWidget(loadoutPanelWidget);
+        p_loadoutList->setObjectName(QString::fromUtf8("p_loadoutList"));
+        p_loadoutList->setSelectionMode(QAbstractItemView::SingleSelection);
+        loadoutPanelLayout->addWidget(p_loadoutList, 1);
 
-        p_loadoutCombo = new QComboBox(loadoutGroupBox);
-        p_loadoutCombo->setObjectName(QString::fromUtf8("p_loadoutCombo"));
-        p_loadoutCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-        loadoutRowLayout->addWidget(p_loadoutCombo, 1);
+        auto *loadoutButtonGrid = new QGridLayout;
+        loadoutButtonGrid->setSpacing(4);
+        loadoutButtonGrid->setColumnStretch(0, 1);
+        loadoutButtonGrid->setColumnStretch(1, 1);
 
-        p_loadoutSave = new QPushButton("Save", loadoutGroupBox);
+        p_loadoutActivate = new QPushButton("Activate", loadoutPanelWidget);
+        p_loadoutActivate->setObjectName(QString::fromUtf8("p_loadoutActivate"));
+        loadoutButtonGrid->addWidget(p_loadoutActivate, 0, 1);
+
+        p_loadoutSave = new QPushButton("Save", loadoutPanelWidget);
         p_loadoutSave->setObjectName(QString::fromUtf8("p_loadoutSave"));
-        loadoutRowLayout->addWidget(p_loadoutSave);
+        loadoutButtonGrid->addWidget(p_loadoutSave, 1, 0);
 
-        p_loadoutSaveAs = new QPushButton("Save As...", loadoutGroupBox);
+        p_loadoutSaveAs = new QPushButton("Save As...", loadoutPanelWidget);
         p_loadoutSaveAs->setObjectName(QString::fromUtf8("p_loadoutSaveAs"));
-        loadoutRowLayout->addWidget(p_loadoutSaveAs);
+        loadoutButtonGrid->addWidget(p_loadoutSaveAs, 1, 1);
 
-        p_loadoutDelete = new QPushButton("Delete", loadoutGroupBox);
+        p_loadoutCopy = new QPushButton("Copy", loadoutPanelWidget);
+        p_loadoutCopy->setObjectName(QString::fromUtf8("p_loadoutCopy"));
+        loadoutButtonGrid->addWidget(p_loadoutCopy, 2, 0);
+
+        p_loadoutDelete = new QPushButton("Delete", loadoutPanelWidget);
         p_loadoutDelete->setObjectName(QString::fromUtf8("p_loadoutDelete"));
-        loadoutRowLayout->addWidget(p_loadoutDelete);
+        loadoutButtonGrid->addWidget(p_loadoutDelete, 2, 1);
 
-        p_loadoutSetDefault = new QPushButton("Set as Default", loadoutGroupBox);
-        p_loadoutSetDefault->setObjectName(QString::fromUtf8("p_loadoutSetDefault"));
-        loadoutRowLayout->addWidget(p_loadoutSetDefault);
+        loadoutPanelLayout->addLayout(loadoutButtonGrid);
 
-        hardwareConfigLayout->addWidget(loadoutGroupBox, 0);
+        hardwareConfigSplitter->insertWidget(0, loadoutPanelWidget);
+        hardwareConfigSplitter->setSizes({220, 260, 260, 340});
 
         hardwareConfigLayout->addWidget(hardwareConfigSplitter, 1);
         

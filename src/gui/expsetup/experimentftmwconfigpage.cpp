@@ -35,7 +35,7 @@ ExperimentFtmwConfigPage::ExperimentFtmwConfigPage(
             digiHwKey = k;
     }
 
-    p_widget = new FtmwConfigWidget(awgHwKey, digiHwKey, clocks, this);
+    p_widget = new FtmwConfigWidget(awgHwKey, digiHwKey, clocks, false, this);
 
     p_resetButton = new QPushButton("Reset to Loadout Defaults"_L1, this);
     auto loadout = LoadoutManager::instance().currentLoadout();

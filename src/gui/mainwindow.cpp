@@ -1137,11 +1137,6 @@ void MainWindow::launchRuntimeHardwareConfigDialog()
         }, Qt::QueuedConnection);
     });
 
-    connect(d, &QDialog::finished, [this, d](int result) {
-        if (result == QDialog::Accepted && d->openFtmwConfigOnClose())
-            launchFtmwConfigDialog();
-    });
-
     connect(d, &QDialog::finished, d, &QDialog::deleteLater);
     connect(d, &QDialog::destroyed, [this](){
         auto it = d_openDialogs.find("RuntimeHardwareConfig");

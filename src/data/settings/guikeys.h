@@ -9,7 +9,6 @@
 
 namespace BC::Key::FtmwConfigWidget {
 inline constexpr QLatin1StringView key{"FtmwConfigWidget"};
-inline constexpr QLatin1StringView lastLoadout{"lastFtmwLoadout"};
 }
 
 #endif // BC_GUIKEYS_H

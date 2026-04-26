@@ -34,8 +34,6 @@ public:
     explicit RuntimeHardwareConfigDialog(QWidget *parent = nullptr);
     ~RuntimeHardwareConfigDialog();
 
-    bool openFtmwConfigOnClose() const { return d_openFtmwConfigOnClose; }
-
 private slots:
     void onHardwareBrowserSelectionChanged(QListWidgetItem* current, QListWidgetItem* previous);
 
@@ -69,15 +67,20 @@ private:
     void onLibraryStagingStateChanged(bool hasChanges);
 
     // Loadout management
-    void populateLoadoutCombo();
+    void populateLoadoutList();
+    void refreshLoadoutDirtyIndicator();
     void switchToLoadout(const QString &name);
     void updateLoadoutButtonStates();
     void ensureRequiredTypes();
-    void onLoadoutComboChanged(const QString &name);
+    void onLoadoutListSelectionChanged();
+    void onLoadoutActivate();
     void onLoadoutSave();
     void onLoadoutSaveAs();
+    void onLoadoutCopy();
     void onLoadoutDelete();
-    void onLoadoutSetDefault();
+
+    QString selectedLoadoutName() const;
+    bool isPreviewDirty() const;
 
     struct ProfileOverrides {
         std::optional<bool> threaded;
@@ -96,7 +99,6 @@ private:
 
     // Loadout state
     QString d_activeLoadoutName;
-    bool d_openFtmwConfigOnClose{false};
 
     static bool getTypeDefaultThreaded(const QString& hardwareType);
 

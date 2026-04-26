@@ -31,7 +31,8 @@ RfConfigWidget::RfConfigWidget(QWidget *parent) :
 
     p_ctm = new ClockTableModel(this);
     ui->clockTableView->setModel(p_ctm);
-    ui->clockTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->clockTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    ui->clockTableView->horizontalHeader()->setStretchLastSection(true);
     ui->clockTableView->setItemDelegate(new ClockTableDelegate);
 
     connect(ui->commonLoCheckBox,&QCheckBox::toggled,p_ctm,&ClockTableModel::setCommonLo);
@@ -72,7 +73,6 @@ void RfConfigWidget::setFromRfConfig(const RfConfig &c)
     ui->commonLoCheckBox->blockSignals(false);
 
     setClocks(c.getClocks());
-    ui->clockTableView->resizeColumnsToContents();
 }
 
 void RfConfigWidget::setClocks(const QHash<RfConfig::ClockType, RfConfig::ClockFreq> c)
