@@ -24,13 +24,12 @@ runtime.
 **Phase 2 (future — Windows support):** The LabJack U3 uses the UD Library
 (`LabJackUD.dll`) on Windows instead of the exodriver. The UD library has a
 different API (e.g., `eAIN` has different parameters — no calibration struct, no
-ConfigIO flag — because UD manages state internally). Three approaches to evaluate:
-
-1. Use UD library's `RAW_IN`/`RAW_OUT` IOTypes to send raw USB packets, allowing
-   reuse of existing `u3.cpp` packet-building code
-2. Use `libusb-1.0` directly on all platforms (exodriver is a thin wrapper)
-3. Platform-conditional code paths calling UD easy functions on Windows
-Note: LJM library does NOT support U3 (T-series only).
+ConfigIO flag — because UD manages state internally). Implement platform-
+conditional code paths calling UD easy functions on Windows; evaluate whether
+to implement the abstraction layer in LabjackLibrary or other classes. Suggested
+approach: move u3.cpp code into LabjackLibrary for Linux/MacOS; implement higher-
+level function calls in labjacku3.cpp which resolve to platform-dependent vendor
+library calls in LabjackLibrary.
 
 ## Large
 
