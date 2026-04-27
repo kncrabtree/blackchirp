@@ -1446,6 +1446,7 @@ void RuntimeHardwareConfigDialog::onLoadoutSave()
         }
     }
 
+    loadout.lastModified = QDateTime::currentDateTimeUtc();
     lm.putLoadout(loadout);
     refreshLoadoutDirtyIndicator();
 }
@@ -1474,6 +1475,7 @@ void RuntimeHardwareConfigDialog::onLoadoutSaveAs()
     HardwareLoadout loadout;
     loadout.name = name;
     loadout.hardwareMap = std::map<QString,QString,std::less<>>(d_previewRuntimeConfig.begin(), d_previewRuntimeConfig.end());
+    loadout.lastModified = QDateTime::currentDateTimeUtc();
     LoadoutManager::instance().putLoadout(loadout);
 
     d_activeLoadoutName = name;

@@ -64,6 +64,7 @@
 #include <data/storage/applicationconfigmanager.h>
 
 #include <hardware/core/hardwaremanager.h>
+#include <hardware/core/hardwareprofilemanager.h>
 #include <hardware/core/runtimehardwareconfig.h>
 #include <hardware/core/ftmwdigitizer/ftmwscope.h>
 #include <data/loadout/loadoutmanager.h>
@@ -990,6 +991,9 @@ void MainWindow::onLoadoutActionTriggered(QAction *act)
                               Qt::BlockingQueuedConnection);
     clearHardwareUI();
     buildHardwareUI();
+
+    auto &pm = HardwareProfileManager::instance();
+    pm.saveProfiles();
     QMetaObject::invokeMethod(p_hwm, &HardwareManager::syncWithRuntimeConfig, Qt::QueuedConnection);
 
     auto preset = LoadoutManager::instance().currentFtmwPreset(target);
