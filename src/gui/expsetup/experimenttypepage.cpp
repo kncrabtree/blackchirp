@@ -16,6 +16,7 @@
 #include <QLabel>
 #include <QMetaEnum>
 #include <QMessageBox>
+#include <QStackedWidget>
 
 #include <hardware/core/ftmwdigitizer/ftmwscope.h>
 
@@ -30,7 +31,7 @@ using namespace BC::Key::WizStart;
 ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     ExperimentConfigPage(key,title,exp,parent)
 {
-    QFormLayout *fl = new QFormLayout(this);
+    auto *ftmwl = new QVBoxLayout;
 
     p_ftmw = new QGroupBox(QString("FTMW"),this);
     p_ftmw->setCheckable(true);
@@ -48,7 +49,17 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     p_ftmwTypeBox->setCurrentIndex(get(ftmwType,0));
     registerGetter(ftmwType,p_ftmwTypeBox,&QComboBox::currentIndex);
     connect(p_ftmwTypeBox,qOverload<int>(&QComboBox::currentIndexChanged),this,&ExperimentTypePage::typeChanged);
-    fl->addRow("Type",p_ftmwTypeBox);
+    auto *typeLayout = new QHBoxLayout;
+    typeLayout->setSpacing(6);
+    typeLayout->addWidget(new QLabel("Type",this),0,Qt::AlignRight);
+    typeLayout->addWidget(p_ftmwTypeBox,1);
+    ftmwl->addItem(typeLayout);
+
+    p_ftmwConfigStack = new QStackedWidget(this);
+    p_foreverWidget = new QWidget(this);
+    p_ftmwConfigStack->addWidget(p_foreverWidget);
+    ftmwl->addWidget(p_ftmwConfigStack);
+
 
     p_ftmwShotsBox = new QSpinBox(this);
     p_ftmwShotsBox->setRange(1,__INT_MAX__);
@@ -58,7 +69,21 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     p_ftmwShotsBox->setSingleStep(5000);
     p_ftmwShotsBox->setValue(get(ftmwShots,10000));
     registerGetter(ftmwShots,p_ftmwShotsBox,&QSpinBox::value);
-    fl->addRow("Shots",p_ftmwShotsBox);
+
+    p_ftmwShotsWidget = new QWidget(this);
+    auto *shotsouterl = new QVBoxLayout;
+    auto *shotsl = new QHBoxLayout;
+    shotsl->setSpacing(6);
+    shotsl->addWidget(new QLabel("Shots", this),0,Qt::AlignRight);
+    shotsl->addWidget(p_ftmwShotsBox,1);
+    shotsouterl->addItem(shotsl);
+    shotsouterl->addStretch(1);
+    p_ftmwShotsWidget->setLayout(shotsouterl);
+    p_ftmwConfigStack->addWidget(p_ftmwShotsWidget);
+
+    
+    auto durl = new QVBoxLayout;
+    durl->setSpacing(6);
 
     p_ftmwTargetDurationBox = new QSpinBox(this);
     p_ftmwTargetDurationBox->setRange(1,__INT_MAX__);
@@ -67,28 +92,54 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     p_ftmwTargetDurationBox->setToolTip(QString("Duration of experiment in Target Duration mode."));
     p_ftmwTargetDurationBox->setValue(get(ftmwDuration,60));
     registerGetter(ftmwDuration,p_ftmwTargetDurationBox,&QSpinBox::value);
-    fl->addRow("Duration",p_ftmwTargetDurationBox);
+    auto *durrow1 = new QHBoxLayout;
+    durrow1->addWidget(new QLabel("Duration", this),0,Qt::AlignRight);
+    durrow1->addWidget(p_ftmwTargetDurationBox,1);
+    durl->addLayout(durrow1);
 
     p_endTimeLabel = new QLabel;
-    p_endTimeLabel->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
-    // p_endTimeLabel->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    p_endTimeLabel->setAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
     auto dt = QDateTime::currentDateTime().addSecs(p_ftmwTargetDurationBox->value()*60);
     p_endTimeLabel->setText(d_endText.arg(dt.toString("yyyy-MM-dd h:mm AP")));
-    fl->addRow(p_endTimeLabel);
+    durl->addWidget(p_endTimeLabel);
+    durl->addStretch(1);
     connect(p_ftmwTargetDurationBox,qOverload<int>(&QSpinBox::valueChanged),this,&ExperimentTypePage::updateLabel);
+
+    p_ftmwTargetDurationWidget = new QWidget(this);
+    p_ftmwTargetDurationWidget->setLayout(durl);
+    p_ftmwConfigStack->addWidget(p_ftmwTargetDurationWidget);
+
+    p_loScanConfigWidget = new LOScanConfigWidget(exp,this);
+    connect(p_loScanConfigWidget,&LOScanConfigWidget::warning,this,&ExperimentTypePage::warning);
+    connect(p_loScanConfigWidget,&LOScanConfigWidget::error,this,&ExperimentTypePage::error);
+    p_ftmwConfigStack->addWidget(p_loScanConfigWidget);
+
+    p_drScanConfigWidget = new DRScanConfigWidget(exp,this);
+    connect(p_drScanConfigWidget,&DRScanConfigWidget::warning,this,&ExperimentTypePage::warning);
+    connect(p_drScanConfigWidget,&DRScanConfigWidget::error,this,&ExperimentTypePage::error);
+    p_ftmwConfigStack->addWidget(p_drScanConfigWidget);
+
+    ftmwl->addStretch(1);
+    ftmwl->setSpacing(6);
 
     p_phaseCorrectionBox = new QCheckBox(this);
     p_phaseCorrectionBox->setToolTip(QString("If checked, Blackchirp will optimize the autocorrelation of the chirp during the acquisition.\n\nFor this to work, the chirp must be part of the signal recorded by the digitizer and must not saturate the digitizer."));
     p_phaseCorrectionBox->setChecked(get(ftmwPhase,false));
     registerGetter<QAbstractButton>(ftmwPhase,p_phaseCorrectionBox,
                    &QCheckBox::isChecked);
-    fl->addRow("Phase Correction",p_phaseCorrectionBox);
 
     p_chirpScoringBox = new QCheckBox(this);
     p_chirpScoringBox->setToolTip(QString("If checked, Blackchirp will compare the RMS of the chirp in each new waveform with that of the current average chirp RMS.\nIf less than threshold*averageRMS, the FID will be rejected.\n\nFor this to work, the chirp must be part of the signal recorded by the digitizer and must not saturate the digitizer."));
     p_chirpScoringBox->setChecked(get(ftmwScoring,false));
     registerGetter<QAbstractButton>(ftmwScoring,p_chirpScoringBox,&QCheckBox::isChecked);
-    fl->addRow("Chirp Scoring",p_chirpScoringBox);
+
+    auto *coptl = new QHBoxLayout;
+    coptl->setSpacing(6);
+    coptl->addWidget(new QLabel("Phase Correction", this),0,Qt::AlignRight);
+    coptl->addWidget(p_phaseCorrectionBox);
+    coptl->addWidget(new QLabel("Chirp Scoring", this),0,Qt::AlignRight);
+    coptl->addWidget(p_chirpScoringBox);
+    ftmwl->addItem(coptl);
 
     p_thresholdBox = new QDoubleSpinBox(this);
     p_thresholdBox->setRange(0.0,1.0);
@@ -96,7 +147,6 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     p_thresholdBox->setDecimals(3);
     p_thresholdBox->setValue(get(ftmwThresh,0.9));
     registerGetter(ftmwThresh,p_thresholdBox,&QDoubleSpinBox::value);
-    fl->addRow("Chirp Threshold",p_thresholdBox);
 
     p_chirpOffsetBox = new QDoubleSpinBox(this);
     p_chirpOffsetBox->setRange(-0.00001,100.0);
@@ -107,22 +157,16 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     p_chirpOffsetBox->setToolTip(QString("The time at which the chirp starts (used for phase correction and chirp scoring).\n\nIf automatic, Blackchirp assumes the digitizer is triggered at the start of the protection pulse,\nand accounts for the digitizer trigger position."));
     p_chirpOffsetBox->setValue(get(ftmwOffset,p_chirpOffsetBox->minimum()));
     registerGetter(ftmwOffset,p_chirpOffsetBox,&QDoubleSpinBox::value);
-    fl->addRow("Chirp Start",p_chirpOffsetBox);
 
-    for(int i=0; i<fl->rowCount(); ++i)
-    {
-        auto w = fl->itemAt(i,QFormLayout::LabelRole);
-        if(w != nullptr)
-        {
-            auto lbl = dynamic_cast<QLabel*>(w->widget());
-            if(lbl != nullptr)
-            {
-                lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
-                // lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
-            }
-        }
-    }
-    p_ftmw->setLayout(fl);
+    auto *copt2l = new QHBoxLayout;
+    copt2l->setSpacing(6);
+    copt2l->addWidget(new QLabel("Chirp Start", this),0,Qt::AlignRight);
+    copt2l->addWidget(p_chirpOffsetBox);
+    copt2l->addWidget(new QLabel("Chirp Threshold", this),0,Qt::AlignRight);
+    copt2l->addWidget(p_thresholdBox);
+    ftmwl->addItem(copt2l);
+
+    p_ftmw->setLayout(ftmwl);
 
     auto *fl2 = new QFormLayout(this);
 
@@ -162,189 +206,194 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     auto *hbl = new QHBoxLayout();
     hbl->addWidget(p_ftmw);
 
-    if(!ApplicationConfigManager::instance().isLifEnabled()) {
+    if(!ApplicationConfigManager::instance().isLifEnabled())
+    {
         p_ftmw->setChecked(true);
         p_ftmw->setCheckable(false);
-    } else {
-    p_lif = new QGroupBox(QString("LIF"),this);
-    p_lif->setCheckable(true);
-    p_lif->setChecked(get(lif,false));
-    registerGetter(lif,p_lif,&QGroupBox::isChecked);
-    connect(p_lif,&QGroupBox::toggled,this,&ExperimentTypePage::typeChanged);
-
-    auto lvbl = new QVBoxLayout;
-    p_lif->setLayout(lvbl);
-
-    auto dlg = new QGroupBox("Delay",this);
-    auto dl = new QGridLayout;
-    dlg->setLayout(dl);
-
-    p_dStartBox = new QDoubleSpinBox(this);
-    p_dStartBox->setDecimals(3);
-    p_dStartBox->setKeyboardTracking(false);
-    p_dStartBox->setRange(0,100000.0);
-    p_dStartBox->setSuffix(QString(" ").append(BC::Unit::us));
-    p_dStartBox->setValue(get(lifDelayStart,p_dStartBox->minimum()));
-    registerGetter(lifDelayStart,p_dStartBox,&QDoubleSpinBox::value);
-    dl->addWidget(new QLabel("Start"),0,0,Qt::AlignRight);
-    dl->addWidget(p_dStartBox,0,1);
-
-    auto range = p_dStartBox->maximum() - p_dStartBox->minimum();
-
-    p_dStepBox = new QDoubleSpinBox(this);
-    p_dStepBox->setDecimals(3);
-    p_dStepBox->setKeyboardTracking(false);
-    p_dStepBox->setRange(-range,range);
-    p_dStepBox->setSuffix(QString(" ").append(BC::Unit::us));
-    p_dStepBox->setValue(get(lifDelayStep,0.0));
-    registerGetter(lifDelayStep,p_dStepBox,&QDoubleSpinBox::value);
-    dl->addWidget(new QLabel("Step"),0,2,Qt::AlignRight);
-    dl->addWidget(p_dStepBox,0,3);
-
-    p_dEndBox = new QDoubleSpinBox(this);
-    p_dEndBox->setDecimals(3);
-    p_dEndBox->setRange(0,100000.0);
-    p_dEndBox->setSuffix(QString(" ").append(BC::Unit::us));
-    p_dEndBox->setReadOnly(true);
-    p_dEndBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    dl->addWidget(new QLabel("End"),1,0,Qt::AlignRight);
-    dl->addWidget(p_dEndBox,1,1);
-
-    p_dNumStepsBox = new QSpinBox(this);
-    p_dNumStepsBox->setMinimum(1);
-    p_dNumStepsBox->setKeyboardTracking(false);
-    p_dNumStepsBox->setValue(get(lifDelayPoints,1));
-    registerGetter(lifDelayPoints,p_dNumStepsBox,&QSpinBox::value);
-    dl->addWidget(new QLabel("Points"),1,2,Qt::AlignRight);
-    dl->addWidget(p_dNumStepsBox,1,3);
-
-    dl->addItem(new QSpacerItem(1,1,QSizePolicy::Minimum,QSizePolicy::Expanding),2,0);
-
-    lvbl->addWidget(dlg);
-
-    auto llg = new QGroupBox("Laser",this);
-    auto ll = new QGridLayout;
-    llg->setLayout(ll);
-
-    // Initialize with default values
-    int decimals = 2;
-    double minPos = 250.0;
-    double maxPos = 2000.0;
-    QString units = "nm";
-    
-    // Find LifLaser hardware key from experiment's hardware data and update if found
-    for (auto it = p_exp->d_hardwareData.hardwareMap.cbegin(); it != p_exp->d_hardwareData.hardwareMap.cend(); ++it) {
-        if (it.value().type == BC::Data::HardwareType::LifLaser) {
-            SettingsStorage lset(it.key(), SettingsStorage::Hardware);
-            decimals = lset.get(BC::Key::LifLaser::decimals, decimals);
-            minPos = lset.get(BC::Key::LifLaser::minPos, minPos);
-            maxPos = lset.get(BC::Key::LifLaser::maxPos, maxPos);
-            units = lset.get(BC::Key::LifLaser::units, units);
-            break;
-        }
     }
+    else
+    {
+        p_lif = new QGroupBox(QString("LIF"),this);
+        p_lif->setCheckable(true);
+        p_lif->setChecked(get(lif,false));
+        registerGetter(lif,p_lif,&QGroupBox::isChecked);
+        connect(p_lif,&QGroupBox::toggled,this,&ExperimentTypePage::typeChanged);
 
-    p_lStartBox = new QDoubleSpinBox(this);
-    p_lStartBox->setDecimals(decimals);
-    p_lStartBox->setKeyboardTracking(false);
-    p_lStartBox->setRange(minPos, maxPos);
-    p_lStartBox->setSuffix(QString(" ").append(units));
-    p_lStartBox->setValue(get(lifLaserStart,p_lStartBox->minimum()));
-    registerGetter(lifLaserStart,p_lStartBox,&QDoubleSpinBox::value);
-    ll->addWidget(new QLabel("Start"),0,0,Qt::AlignRight);
-    ll->addWidget(p_lStartBox,0,1);
+        auto lvbl = new QVBoxLayout;
+        p_lif->setLayout(lvbl);
 
-    range = p_lStartBox->maximum() - p_lStartBox->minimum();
+        auto dlg = new QGroupBox("Delay",this);
+        auto dl = new QGridLayout;
+        dlg->setLayout(dl);
 
-    p_lStepBox = new QDoubleSpinBox(this);
-    p_lStepBox->setKeyboardTracking(false);
-    p_lStepBox->setDecimals(decimals);
-    p_lStepBox->setRange(-range,range);
-    p_lStepBox->setSuffix(QString(" ").append(units));
-    p_lStepBox->setValue(get(lifLaserStep,0.0));
-    registerGetter(lifLaserStep,p_lStepBox,&QDoubleSpinBox::value);
-    ll->addWidget(new QLabel("Step"),0,2,Qt::AlignRight);
-    ll->addWidget(p_lStepBox,0,3);
+        p_dStartBox = new QDoubleSpinBox(this);
+        p_dStartBox->setDecimals(3);
+        p_dStartBox->setKeyboardTracking(false);
+        p_dStartBox->setRange(0,100000.0);
+        p_dStartBox->setSuffix(QString(" ").append(BC::Unit::us));
+        p_dStartBox->setValue(get(lifDelayStart,p_dStartBox->minimum()));
+        registerGetter(lifDelayStart,p_dStartBox,&QDoubleSpinBox::value);
+        dl->addWidget(new QLabel("Start"),0,0,Qt::AlignRight);
+        dl->addWidget(p_dStartBox,0,1);
 
-    p_lEndBox = new QDoubleSpinBox(this);
-    p_lEndBox->setDecimals(3);
-    p_lEndBox->setRange(minPos, maxPos);
-    p_lEndBox->setSuffix(QString(" ").append(units));
-    p_lEndBox->setReadOnly(true);
-    p_lEndBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    ll->addWidget(new QLabel("End"),1,0,Qt::AlignRight);
-    ll->addWidget(p_lEndBox,1,1);
+        auto range = p_dStartBox->maximum() - p_dStartBox->minimum();
 
-    p_lNumStepsBox = new QSpinBox(this);
-    p_lNumStepsBox->setKeyboardTracking(false);
-    p_lNumStepsBox->setMinimum(1);
-    p_lNumStepsBox->setValue(get(lifLaserPoints,1));
-    registerGetter(lifLaserPoints,p_lNumStepsBox,&QSpinBox::value);
-    ll->addWidget(new QLabel("Points"),1,2,Qt::AlignRight);
-    ll->addWidget(p_lNumStepsBox,1,3);
+        p_dStepBox = new QDoubleSpinBox(this);
+        p_dStepBox->setDecimals(3);
+        p_dStepBox->setKeyboardTracking(false);
+        p_dStepBox->setRange(-range,range);
+        p_dStepBox->setSuffix(QString(" ").append(BC::Unit::us));
+        p_dStepBox->setValue(get(lifDelayStep,0.0));
+        registerGetter(lifDelayStep,p_dStepBox,&QDoubleSpinBox::value);
+        dl->addWidget(new QLabel("Step"),0,2,Qt::AlignRight);
+        dl->addWidget(p_dStepBox,0,3);
 
-    ll->addItem(new QSpacerItem(1,1,QSizePolicy::Minimum,QSizePolicy::Expanding),2,0);
+        p_dEndBox = new QDoubleSpinBox(this);
+        p_dEndBox->setDecimals(3);
+        p_dEndBox->setRange(0,100000.0);
+        p_dEndBox->setSuffix(QString(" ").append(BC::Unit::us));
+        p_dEndBox->setReadOnly(true);
+        p_dEndBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+        dl->addWidget(new QLabel("End"),1,0,Qt::AlignRight);
+        dl->addWidget(p_dEndBox,1,1);
 
-    lvbl->addWidget(llg);
+        p_dNumStepsBox = new QSpinBox(this);
+        p_dNumStepsBox->setMinimum(1);
+        p_dNumStepsBox->setKeyboardTracking(false);
+        p_dNumStepsBox->setValue(get(lifDelayPoints,1));
+        registerGetter(lifDelayPoints,p_dNumStepsBox,&QSpinBox::value);
+        dl->addWidget(new QLabel("Points"),1,2,Qt::AlignRight);
+        dl->addWidget(p_dNumStepsBox,1,3);
 
-    auto optvbl = new QGroupBox("Options");
-    auto ofl = new QFormLayout;
-    optvbl->setLayout(ofl);
+        dl->addItem(new QSpacerItem(1,1,QSizePolicy::Minimum,QSizePolicy::Expanding),2,0);
 
-    p_orderBox = new QComboBox(this);
-    auto t2 = QMetaEnum::fromType<LifConfig::LifScanOrder>();
-    num = t2.keyCount();
-    for(int i=0; i<num; ++i)
-        p_orderBox->addItem(QString(t2.key(i)),
-                            static_cast<LifConfig::LifScanOrder>(t2.value(i)));
-    p_orderBox->setCurrentIndex(p_orderBox->findData(get(lifOrder,LifConfig::DelayFirst)));
-    registerGetter(lifOrder,std::function<LifConfig::LifScanOrder()>([this](){
-        return p_orderBox->currentData().value<LifConfig::LifScanOrder>();}
-    ));
-    ofl->addRow(QString("Scan Order"),p_orderBox);
+        lvbl->addWidget(dlg);
 
-    p_completeModeBox = new QComboBox(this);
-    auto t3 = QMetaEnum::fromType<LifConfig::LifCompleteMode>();
-    num = t3.keyCount();
-    for(int i=0; i<num; i++)
-        p_completeModeBox->addItem(QString(t3.key(i)),static_cast<LifConfig::LifCompleteMode>(t3.value(i)));
-    p_completeModeBox->setCurrentIndex(p_completeModeBox->findData(get(lifCompleteMode,LifConfig::StopWhenComplete)));
-    registerGetter(lifCompleteMode,std::function<LifConfig::LifCompleteMode()>([this](){
-       return p_completeModeBox->currentData().value<LifConfig::LifCompleteMode>();
-    }));
-    ofl->addRow("Complete Mode",p_completeModeBox);
-    p_completeModeBox->setEnabled(p_ftmw->isChecked());
+        auto llg = new QGroupBox("Laser",this);
+        auto ll = new QGridLayout;
+        llg->setLayout(ll);
 
-    p_flBox = new QCheckBox(this);
-    p_flBox->setChecked(get(lifFlashlampDisable,true));
-    ofl->addRow("Auto Disable Flashlamp",p_flBox);
+        // Initialize with default values
+        int decimals = 2;
+        double minPos = 250.0;
+        double maxPos = 2000.0;
+        QString units = "nm";
+        
+        // Find LifLaser hardware key from experiment's hardware data and update if found
+        for (auto it = p_exp->d_hardwareData.hardwareMap.cbegin(); it != p_exp->d_hardwareData.hardwareMap.cend(); ++it) {
+            if (it.value().type == BC::Data::HardwareType::LifLaser) {
+                SettingsStorage lset(it.key(), SettingsStorage::Hardware);
+                decimals = lset.get(BC::Key::LifLaser::decimals, decimals);
+                minPos = lset.get(BC::Key::LifLaser::minPos, minPos);
+                maxPos = lset.get(BC::Key::LifLaser::maxPos, maxPos);
+                units = lset.get(BC::Key::LifLaser::units, units);
+                break;
+            }
+        }
 
-    p_delayRandomBox = new QCheckBox(this);
-    p_delayRandomBox->setChecked(get(lifDelayRandom,false));
-    p_delayRandomBox->setToolTip("Randomize the order of delay points within each sweep.");
-    registerGetter<QAbstractButton>(lifDelayRandom,p_delayRandomBox,&QCheckBox::isChecked);
-    ofl->addRow("Randomize Delay Order",p_delayRandomBox);
+        p_lStartBox = new QDoubleSpinBox(this);
+        p_lStartBox->setDecimals(decimals);
+        p_lStartBox->setKeyboardTracking(false);
+        p_lStartBox->setRange(minPos, maxPos);
+        p_lStartBox->setSuffix(QString(" ").append(units));
+        p_lStartBox->setValue(get(lifLaserStart,p_lStartBox->minimum()));
+        registerGetter(lifLaserStart,p_lStartBox,&QDoubleSpinBox::value);
+        ll->addWidget(new QLabel("Start"),0,0,Qt::AlignRight);
+        ll->addWidget(p_lStartBox,0,1);
 
-    lvbl->addWidget(optvbl);
-    lvbl->addSpacerItem(new QSpacerItem(1,1));
+        range = p_lStartBox->maximum() - p_lStartBox->minimum();
+
+        p_lStepBox = new QDoubleSpinBox(this);
+        p_lStepBox->setKeyboardTracking(false);
+        p_lStepBox->setDecimals(decimals);
+        p_lStepBox->setRange(-range,range);
+        p_lStepBox->setSuffix(QString(" ").append(units));
+        p_lStepBox->setValue(get(lifLaserStep,0.0));
+        registerGetter(lifLaserStep,p_lStepBox,&QDoubleSpinBox::value);
+        ll->addWidget(new QLabel("Step"),0,2,Qt::AlignRight);
+        ll->addWidget(p_lStepBox,0,3);
+
+        p_lEndBox = new QDoubleSpinBox(this);
+        p_lEndBox->setDecimals(3);
+        p_lEndBox->setRange(minPos, maxPos);
+        p_lEndBox->setSuffix(QString(" ").append(units));
+        p_lEndBox->setReadOnly(true);
+        p_lEndBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+        ll->addWidget(new QLabel("End"),1,0,Qt::AlignRight);
+        ll->addWidget(p_lEndBox,1,1);
+
+        p_lNumStepsBox = new QSpinBox(this);
+        p_lNumStepsBox->setKeyboardTracking(false);
+        p_lNumStepsBox->setMinimum(1);
+        p_lNumStepsBox->setValue(get(lifLaserPoints,1));
+        registerGetter(lifLaserPoints,p_lNumStepsBox,&QSpinBox::value);
+        ll->addWidget(new QLabel("Points"),1,2,Qt::AlignRight);
+        ll->addWidget(p_lNumStepsBox,1,3);
+
+        ll->addItem(new QSpacerItem(1,1,QSizePolicy::Minimum,QSizePolicy::Expanding),2,0);
+
+        lvbl->addWidget(llg);
+
+        auto optvbl = new QGroupBox("Options");
+        auto ofl = new QFormLayout;
+        optvbl->setLayout(ofl);
+
+        p_orderBox = new QComboBox(this);
+        auto t2 = QMetaEnum::fromType<LifConfig::LifScanOrder>();
+        num = t2.keyCount();
+        for(int i=0; i<num; ++i)
+            p_orderBox->addItem(QString(t2.key(i)),
+                                static_cast<LifConfig::LifScanOrder>(t2.value(i)));
+        p_orderBox->setCurrentIndex(p_orderBox->findData(get(lifOrder,LifConfig::DelayFirst)));
+        registerGetter(lifOrder,std::function<LifConfig::LifScanOrder()>([this](){
+            return p_orderBox->currentData().value<LifConfig::LifScanOrder>();}
+        ));
+        ofl->addRow(QString("Scan Order"),p_orderBox);
+
+        p_completeModeBox = new QComboBox(this);
+        auto t3 = QMetaEnum::fromType<LifConfig::LifCompleteMode>();
+        num = t3.keyCount();
+        for(int i=0; i<num; i++)
+            p_completeModeBox->addItem(QString(t3.key(i)),static_cast<LifConfig::LifCompleteMode>(t3.value(i)));
+        p_completeModeBox->setCurrentIndex(p_completeModeBox->findData(get(lifCompleteMode,LifConfig::StopWhenComplete)));
+        registerGetter(lifCompleteMode,std::function<LifConfig::LifCompleteMode()>([this](){
+        return p_completeModeBox->currentData().value<LifConfig::LifCompleteMode>();
+        }));
+        ofl->addRow("Complete Mode",p_completeModeBox);
+        p_completeModeBox->setEnabled(p_ftmw->isChecked());
+
+        p_flBox = new QCheckBox(this);
+        p_flBox->setChecked(get(lifFlashlampDisable,true));
+        ofl->addRow("Auto Disable Flashlamp",p_flBox);
+
+        p_delayRandomBox = new QCheckBox(this);
+        p_delayRandomBox->setChecked(get(lifDelayRandom,false));
+        p_delayRandomBox->setToolTip("Randomize the order of delay points within each sweep.");
+        registerGetter<QAbstractButton>(lifDelayRandom,p_delayRandomBox,&QCheckBox::isChecked);
+        ofl->addRow("Randomize Delay Order",p_delayRandomBox);
+
+        lvbl->addWidget(optvbl);
+        lvbl->addSpacerItem(new QSpacerItem(1,1));
 
 
-    updateLifRanges();
+        updateLifRanges();
 
-    connect(p_dStartBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&ExperimentTypePage::updateLifRanges);
-    connect(p_dStepBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&ExperimentTypePage::updateLifRanges);
-    connect(p_dNumStepsBox,qOverload<int>(&QSpinBox::valueChanged),this,&ExperimentTypePage::updateLifRanges);
-    connect(p_lStartBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&ExperimentTypePage::updateLifRanges);
-    connect(p_lStepBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&ExperimentTypePage::updateLifRanges);
-    connect(p_lNumStepsBox,qOverload<int>(&QSpinBox::valueChanged),this,&ExperimentTypePage::updateLifRanges);
+        connect(p_dStartBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&ExperimentTypePage::updateLifRanges);
+        connect(p_dStepBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&ExperimentTypePage::updateLifRanges);
+        connect(p_dNumStepsBox,qOverload<int>(&QSpinBox::valueChanged),this,&ExperimentTypePage::updateLifRanges);
+        connect(p_lStartBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&ExperimentTypePage::updateLifRanges);
+        connect(p_lStepBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&ExperimentTypePage::updateLifRanges);
+        connect(p_lNumStepsBox,qOverload<int>(&QSpinBox::valueChanged),this,&ExperimentTypePage::updateLifRanges);
 
-    hbl->addWidget(p_lif);
+        hbl->addWidget(p_lif);
     }
 
     auto *vbl = new QVBoxLayout();
+    vbl->addWidget(sgb,0);
     vbl->addLayout(hbl,1);
-    vbl->addWidget(sgb);
 
+
+    
     setLayout(vbl);
 
     if(p_exp->d_number > 0)
@@ -413,14 +462,33 @@ bool ExperimentTypePage::lifEnabled() const
 void ExperimentTypePage::initialize()
 {
     configureUI();
+    p_loScanConfigWidget->initialize();
+    p_drScanConfigWidget->initialize();
 }
 
 bool ExperimentTypePage::validate()
 {
-    if(!p_ftmw->isCheckable())
-        return true;
+    bool ftmwEnabled = p_ftmw->isChecked();    
 
-    bool out = p_ftmw->isChecked();
+    if(!p_ftmw->isCheckable())
+        ftmwEnabled = true;
+
+    bool out = ftmwEnabled;
+    
+    if(ftmwEnabled)
+    {
+        auto type = getFtmwType();
+        switch(type) {
+            case FtmwConfig::LO_Scan:
+                out = out && p_loScanConfigWidget->validate();
+                break;
+            case FtmwConfig::DR_Scan:
+                out = out && p_drScanConfigWidget->validate();
+                break;
+            default:
+                break;
+        }
+    }
     
     if(ApplicationConfigManager::instance().isLifEnabled()) {
         out = out || p_lif->isChecked();
@@ -519,6 +587,17 @@ void ExperimentTypePage::apply()
          }
          if(p_chirpOffsetBox->value() >= 0.0)
              ftmw->d_chirpOffsetUs = p_chirpOffsetBox->value();
+
+        switch(type) {
+            case FtmwConfig::LO_Scan:
+                p_loScanConfigWidget->apply();
+                break;
+            case FtmwConfig::DR_Scan:
+                p_drScanConfigWidget->apply();
+                break;
+            default:
+                break;  
+        }
      }
      else
          e->disableFtmw();
@@ -534,25 +613,19 @@ void ExperimentTypePage::configureUI()
     switch(type)
     {
     case FtmwConfig::Target_Duration:
-        p_ftmwShotsBox->setEnabled(false);
-        p_ftmwTargetDurationBox->setEnabled(true);
-        p_endTimeLabel->setEnabled(true);
+        p_ftmwConfigStack->setCurrentWidget(p_ftmwTargetDurationWidget);
         break;
     case FtmwConfig::Forever:
-        p_ftmwShotsBox->setEnabled(false);
-        p_ftmwTargetDurationBox->setEnabled(false);
-        p_endTimeLabel->setEnabled(false);
+        p_ftmwConfigStack->setCurrentWidget(p_foreverWidget);
         break;
     case FtmwConfig::LO_Scan:
+        p_ftmwConfigStack->setCurrentWidget(p_loScanConfigWidget);
+        break;
     case FtmwConfig::DR_Scan:
-        p_ftmwShotsBox->setEnabled(false);
-        p_ftmwTargetDurationBox->setEnabled(false);
-        p_endTimeLabel->setEnabled(false);
+        p_ftmwConfigStack->setCurrentWidget(p_drScanConfigWidget);
         break;
     default:
-        p_ftmwShotsBox->setEnabled(true);
-        p_ftmwTargetDurationBox->setEnabled(false);
-        p_endTimeLabel->setEnabled(false);
+        p_ftmwConfigStack->setCurrentWidget(p_ftmwShotsWidget);
         break;
     }
 

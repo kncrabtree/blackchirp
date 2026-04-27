@@ -39,6 +39,7 @@ ExperimentFtmwConfigPage::ExperimentFtmwConfigPage(
     }
 
     p_widget = new FtmwConfigWidget(awgHwKey, digiHwKey, clocks, false, this);
+    connect(p_widget, &FtmwConfigWidget::edited, this, &ExperimentFtmwConfigPage::presetChanged);
 
     auto *layout = new QVBoxLayout(this);
     layout->addWidget(p_widget, 1);

@@ -37,6 +37,7 @@ public:
 
 signals:
     void edited();
+    void clockHwChanged();
     void applyClocks(QHash<RfConfig::ClockType, RfConfig::ClockFreq>);
 
 private:

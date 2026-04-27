@@ -99,6 +99,9 @@ private:
 public slots:
     void reject() override;
     void accept() override;
+
+private slots:
+    void onClockHwChanged();
 };
 
 #endif // EXPERIMENTSETUPWIDGET_H

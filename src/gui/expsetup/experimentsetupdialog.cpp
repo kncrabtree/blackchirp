@@ -19,8 +19,6 @@
 #include "experimenttypepage.h"
 #include "experimentftmwconfigpage.h"
 #include <gui/widget/rfconfigwidget.h>
-#include "experimentloscanconfigpage.h"
-#include "experimentdrscanconfigpage.h"
 #include "experimentpulsegenconfigpage.h"
 #include "experimentflowconfigpage.h"
 #include "experimenttemperaturecontrollerconfigpage.h"
@@ -97,34 +95,26 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const QHash<RfConf
     p_navTree->addTopLevelItem(expTypeItem);
     sp->initialize();
     auto ften = sp->ftmwEnabled();
-    auto type = sp->getFtmwType();
 
-    auto ftmwItem = new QTreeWidgetItem(expTypeItem,{"FTMW"});
     auto en = ften;
-    ftmwItem->setDisabled(!en);
-    ftmwItem->setData(0,Qt::UserRole,QString(""));
-
     auto ftmwp = new ExperimentFtmwConfigPage(p_exp, clocks);
+    connect(ftmwp,&ExperimentFtmwConfigPage::presetChanged,[this](){validateAll();});
     en = ften;
     k = BC::Key::WizFtmw::key;
     i = p_configWidget->addWidget(ftmwp);
     d_pages.insert({k,{i,k,ftmwp,en}});
-    auto ftmwConfigItem = new QTreeWidgetItem(ftmwItem,{ftmwp->d_title});
+    auto ftmwConfigItem = new QTreeWidgetItem(expTypeItem,{ftmwp->d_title});
     ftmwp->setEnabled(en);
     ftmwConfigItem->setDisabled(!en);
     ftmwConfigItem->setData(0,Qt::UserRole,k);
 
-    auto [lop,loItem] = addConfigPage<ExperimentLOScanConfigPage>(BC::Key::WizLoScan::key,ftmwConfigItem,ften && (type == FtmwConfig::LO_Scan));
-
-    auto [drop,dropItem] = addConfigPage<ExperimentDRScanConfigPage>(BC::Key::WizDR::key,ftmwConfigItem,ften && (type == FtmwConfig::DR_Scan));
+    connect(ftmwp->rfConfigWidget(), &RfConfigWidget::clockHwChanged,
+            this, &ExperimentSetupDialog::onClockHwChanged);
 
     if(ApplicationConfigManager::instance().isLifEnabled()) {
-        auto lifItem = new QTreeWidgetItem(expTypeItem,{"LIF"});
         en = sp->lifEnabled();
-        lifItem->setDisabled(!en);
-        lifItem->setData(0,Qt::UserRole,QString(""));
 
-        auto [lifp,lifpItem] = addConfigPage<ExperimentLifConfigPage>(BC::Key::WizLif::key,lifItem,en);
+        auto [lifp,lifpItem] = addConfigPage<ExperimentLifConfigPage>(BC::Key::WizLif::key,expTypeItem,en);
         Q_UNUSED(lifp)
         Q_UNUSED(lifpItem)
     }
@@ -146,11 +136,11 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const QHash<RfConf
     connect(sp,&ExperimentTypePage::typeChanged,[=,this](){
         sp->apply();
         bool f = sp->ftmwEnabled();
-        auto t = sp->getFtmwType();
+        // auto t = sp->getFtmwType();
 
         d_pages[ftmwp->d_key].enabled = f;
-        d_pages[lop->d_key].enabled = f && (t == FtmwConfig::LO_Scan);
-        d_pages[drop->d_key].enabled = f && (t == FtmwConfig::DR_Scan);
+        // d_pages[lop->d_key].enabled = f && (t == FtmwConfig::LO_Scan);
+        // d_pages[drop->d_key].enabled = f && (t == FtmwConfig::DR_Scan);
 
         if(ApplicationConfigManager::instance().isLifEnabled()) {
             // Find LIF page in pages map and update its enabled state
@@ -339,6 +329,18 @@ void ExperimentSetupDialog::reject()
     }
 
     QDialog::reject();
+}
+
+void ExperimentSetupDialog::onClockHwChanged()
+{
+    auto it = d_pages.find(BC::Key::WizStart::key);
+    if(it != d_pages.end())
+    {
+        auto sp = dynamic_cast<ExperimentTypePage*>(it->second.page);
+        if(sp)
+            sp->initialize();
+    }
+    validateAll();
 }
 
 void ExperimentSetupDialog::accept()

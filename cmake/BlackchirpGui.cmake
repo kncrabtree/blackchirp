@@ -40,11 +40,9 @@ set(BLACKCHIRP_GUI_SOURCES
     # Experiment setup pages
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/drscanconfigwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentconfigpage.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentdrscanconfigpage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentflowconfigpage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentftmwconfigpage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentioboardconfigpage.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentloscanconfigpage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/loscanconfigwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentpressurecontrollerconfigpage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentpulsegenconfigpage.cpp
@@ -154,11 +152,9 @@ set(BLACKCHIRP_GUI_HEADERS
     # Experiment setup pages
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/drscanconfigwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentconfigpage.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentdrscanconfigpage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentflowconfigpage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentftmwconfigpage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentioboardconfigpage.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentloscanconfigpage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/loscanconfigwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentpressurecontrollerconfigpage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentpulsegenconfigpage.h

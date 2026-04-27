@@ -36,24 +36,7 @@ Note: LJM library does NOT support U3 (T-series only).
 
 ## Large
 
-### ESD Scan Page Consolidation
-
-`ExperimentLOScanConfigPage` and `ExperimentDRScanConfigPage` are separate ESD
-navigation nodes today. The clock-range dependency (both pages call
-`rfConfig.clockRange()` to constrain spinbox ranges) is a soft dependency: the
-controls can exist without live constraints, and out-of-range values are caught
-during validation. The range constraints could be applied lazily via
-`ExperimentSetupDialog::pageChanged` or simply left to validation.
-
-Controls will move to `ExperimentSetupPage`:** scan type (Single / LO Scan / DR   Scan / Target Shots / etc.) and all scan parameters live together on the  first page where the user already chooses the experiment type. Range constraints will need to be applied during validation and via `pageChanged` signaling from the FTMW page. Consider making a special `FtmwViewWidget::clockHwChanged` signal that can trigger validaton/constraint rechecking, as the dependency is based on the actual clock hardware which should rarely change from the ESD itself.
-
-**Proposed shape**
-
-- Extract `LOScanConfigWidget` and `DRScanConfigWidget` from the existing page classes (own `.{h,cpp}` files, inherit `QWidget` + `SettingsStorage`).
-- `ExperimentSetupPage` gains a `QStackedWidget` that shows the appropriate
-  scan widget when scan type changes. The simpler Ftmw modes (Target shots, target time, forever, Peak Up), when selected, can surface a simpler wrapper widget (managed directly in `ExperimentSetupPage`) in the stacked widget with the necessary settings as needed (number of shots for Target shots and peak up, duration and Est. completion label for target time [which should be adjusted to use themecolors!], nothing for Forever). The `QStackedWidget` is placed between the type selection box and the Phase correction checkbox. Where necessary, the layouts should be reconsidered to be taller than they are wide.
-- Range constraints: trigger reapplication of constraints and validation on new `FtmwViewWidget::clockHwChanged`; not necessary to re-validate and apply constraints on any page change.
-- Delete `ExperimentLOScanConfigPage` and `ExperimentDRScanConfigPage`; remove their tree nodes from `ExperimentSetupDialog`.
+None.
 
 ## Pre-Release
 

@@ -93,6 +93,9 @@ void ClockTableModel::setClocks(const QHash<RfConfig::ClockType, RfConfig::Clock
 {
     d_clockAssignments.clear();
 
+    for(auto it = d_clockConfigs.begin(); it != d_clockConfigs.end(); it++)
+        d_clockConfigs[it.key()] = RfConfig::ClockFreq();
+
     if(!c.isEmpty())
     {
         for(auto &hw : d_hwInfo)
@@ -111,8 +114,7 @@ void ClockTableModel::setClocks(const QHash<RfConfig::ClockType, RfConfig::Clock
         }
     }
 
-    if (!d_clockTypes.isEmpty())
-        emit dataChanged(index(0, 0), index(d_clockTypes.size() - 1, 4));
+    emit dataChanged(index(0, 0), index(d_clockTypes.size() - 1, 4));
 }
 
 void ClockTableModel::setFromConfig(const RfConfig &c)

@@ -38,7 +38,13 @@ RfConfigWidget::RfConfigWidget(QWidget *parent) :
     connect(ui->commonLoCheckBox,&QCheckBox::toggled,p_ctm,&ClockTableModel::setCommonLo);
     ui->commonLoCheckBox->setChecked(savedComLO);
     connect(ui->commonLoCheckBox,&QCheckBox::toggled,this,&RfConfigWidget::edited);
+    connect(ui->commonLoCheckBox,&QCheckBox::toggled,this,&RfConfigWidget::clockHwChanged);
     connect(p_ctm,&ClockTableModel::dataChanged,this,&RfConfigWidget::edited);
+    connect(p_ctm,&ClockTableModel::dataChanged,this,
+            [this](const QModelIndex &tl, const QModelIndex &br){
+        if(tl.column() <= 1 && br.column() >= 1)
+            emit clockHwChanged();
+    });
     connect(ui->awgMultBox,&QSpinBox::valueChanged,this,&RfConfigWidget::edited);
     connect(ui->chirpMultiplicationSpinBox,&QSpinBox::valueChanged,this,&RfConfigWidget::edited);
     connect(ui->upconversionSidebandComboBox,&QComboBox::currentIndexChanged,this,&RfConfigWidget::edited);

@@ -27,6 +27,9 @@ public slots:
     void apply() override;
     void commitFtmwPreset();
 
+signals:
+    void presetChanged();
+
 private:
     FtmwConfigWidget *p_widget;
 };

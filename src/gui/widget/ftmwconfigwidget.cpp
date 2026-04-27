@@ -188,11 +188,14 @@ void FtmwConfigWidget::initializeFromFtmwPreset(const FtmwPreset &preset)
     d_suppressDirty = true;
     RfConfig rfc;
     preset.rfConfig.applyTo(rfc);
+    QSignalBlocker b{p_rfWidget};
     p_rfWidget->setFromRfConfig(rfc);
 
     rfc.setChirpConfig(preset.chirpConfig);
+    QSignalBlocker b2{p_chirpWidget};
     p_chirpWidget->setFromRfConfig(rfc);
 
+    QSignalBlocker b3{p_digiWidget};
     p_digiWidget->setFromConfig(preset.digitizer);
     d_suppressDirty = false;
 }
@@ -247,6 +250,7 @@ void FtmwConfigWidget::markDirty()
 {
     if (d_suppressDirty)
         return;
+    emit edited();
     const bool changed = !d_dirty;
     d_dirty = true;
     if (changed)
@@ -324,6 +328,7 @@ void FtmwConfigWidget::onApplyPreset()
     RfConfig rfc;
     preset->rfConfig.applyTo(rfc);
     emit applyClocks(rfc.getClocks());
+    emit edited();
 
     clearDirty();
 }

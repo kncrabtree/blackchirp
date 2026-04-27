@@ -3,6 +3,8 @@
 
 #include "experimentconfigpage.h"
 #include <data/experiment/ftmwconfig.h>
+#include "loscanconfigwidget.h"
+#include "drscanconfigwidget.h"
 
 class QGroupBox;
 class QSpinBox;
@@ -10,6 +12,7 @@ class QCheckBox;
 class QComboBox;
 class QDoubleSpinBox;
 class QLabel;
+class QStackedWidget;
 
 namespace BC::Key::WizStart {
 inline constexpr QLatin1StringView key{"ExperimentTypePage"};
@@ -59,6 +62,8 @@ public slots:
 
 private:
     QGroupBox *p_ftmw;
+    QStackedWidget *p_ftmwConfigStack;
+
     QGroupBox *p_lif;
     QDoubleSpinBox *p_dStartBox, *p_dStepBox, *p_dEndBox, *p_lStartBox, *p_lStepBox, *p_lEndBox;
     QSpinBox *p_dNumStepsBox, *p_lNumStepsBox;
@@ -68,6 +73,9 @@ private:
     void updateLifRanges();
 
     QSpinBox *p_auxDataIntervalBox, *p_backupBox, *p_ftmwShotsBox, *p_ftmwTargetDurationBox;
+    QWidget *p_ftmwShotsWidget, *p_ftmwTargetDurationWidget, *p_foreverWidget;
+    LOScanConfigWidget *p_loScanConfigWidget;
+    DRScanConfigWidget *p_drScanConfigWidget;
     QComboBox *p_ftmwTypeBox;
     QCheckBox *p_phaseCorrectionBox, *p_chirpScoringBox;
     QDoubleSpinBox *p_thresholdBox, *p_chirpOffsetBox;

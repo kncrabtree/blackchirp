@@ -47,6 +47,7 @@ public:
 signals:
     void applyClocks(QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks);
     void dirtyChanged(bool dirty);
+    void edited();
 
 public slots:
     void clearDirty();

@@ -269,7 +269,7 @@ LOScanConfigWidget::LOScanConfigWidget(Experiment *exp, QWidget *parent)
         initialize();
         auto const &rfc = p_exp->ftmwConfig()->d_rfConfig;
         p_targetSweepsBox->setValue(rfc.d_targetSweeps);
-        p_shotsPerStepBox->setValue(p_exp->ftmwConfig()->d_objective);
+        p_shotsPerStepBox->setValue(rfc.d_shotsPerClockConfig);
         auto ftc = dynamic_cast<FtmwConfigLOScan*>(p_exp->ftmwConfig());
         if(ftc)
         {
