@@ -224,6 +224,19 @@ public:
     static bool isHardwareRequired(const QString& hardwareType);
 
     /*!
+     * \brief Check if hardware type is a direct control type
+     *
+     * Returns true for hardware types that are under direct user control
+     * between experiments, and whose settings may change from experiment
+     * to experiment. Used by the quick experiment dialog to determine
+     * which types to show as optional configuration choices.
+     *
+     * \param hardwareType Hardware type key
+     * \return True if hardware type is a direct control type
+     */
+    static bool isDirectControlType(const QString& hardwareType);
+
+    /*!
      * \brief Check if hardware type is a LIF hardware type
      *
      * Returns true for hardware types associated with LIF (LifScope, LifLaser).

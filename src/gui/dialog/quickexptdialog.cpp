@@ -103,21 +103,15 @@ QuickExptDialog::QuickExptDialog(QWidget *parent) :
 
     setLayout(vbl);
 
-    ///TODO: Move optional hardware concept to runtime config
-    std::set<QString> optHw{ QString(PressureController::staticMetaObject.className()), QString(FlowController::staticMetaObject.className()), QString(PulseGenerator::staticMetaObject.className()), QString(IOBoard::staticMetaObject.className()), QString(TemperatureController::staticMetaObject.className())};
-
     for(auto &[key,subKey] : d_hardware)
     {
         auto ki = BC::Key::parseKey(key);
         auto hwType = ki.first;
-
-        auto it = optHw.find(hwType);
-        if(it != optHw.end())
+        if(RuntimeHardwareConfig::isDirectControlType(hwType))
         {
-            SettingsStorage s(key,SettingsStorage::Hardware);
             auto cb = new QCheckBox;
             cb->setChecked(true);
-            auto lbl = new QLabel(s.get(BC::Key::HW::name,*it));
+            auto lbl = new QLabel(key);
 
             p_hwLayout->addRow(lbl,cb);
             d_hwBoxes.insert({key,cb});

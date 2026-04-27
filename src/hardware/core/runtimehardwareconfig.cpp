@@ -310,6 +310,21 @@ bool RuntimeHardwareConfig::isHardwareRequired(const QString& hardwareType)
     return false;
 }
 
+bool RuntimeHardwareConfig::isDirectControlType(const QString& hardwareType)
+{
+    // These are hardware types that can be configured for an experiment but are not strictly required for basic operation
+    // Used by the quick experiment dialog to determine which hardware types to show as optional checkboxes
+    static const QStringList optionalTypes = {
+        hardwareTypeOf<PulseGenerator>(),
+        hardwareTypeOf<FlowController>(),
+        hardwareTypeOf<IOBoard>(),
+        hardwareTypeOf<PressureController>(),
+        hardwareTypeOf<TemperatureController>()
+    };
+    
+    return optionalTypes.contains(hardwareType);
+}
+
 bool RuntimeHardwareConfig::isLifHardwareType(const QString& hardwareType)
 {
     static const QStringList lifTypes = {
