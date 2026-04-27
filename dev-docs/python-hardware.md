@@ -415,69 +415,6 @@ The following Python files are deployed alongside the application:
 Template scripts are offered to the user when creating a new Python hardware
 profile (see Template Script Workflow below).
 
-## HwConfigParam Registry
-
-Some hardware base classes require constructor parameters that must be known
-before the C++ object is constructed (e.g., `numChannels` for
-TemperatureController, `tunable` for Clock). Python trampolines cannot
-hard-code these since the values are user-defined.
-
-### Design
-
-A `HwConfigParam` struct in `hardwareregistry.h` declares a parameter:
-
-```cpp
-struct HwConfigParam {
-    QString key;           // SettingsStorage key
-    QString label;         // Display label for UI
-    QVariant defaultValue; // Type-aware default (determines widget type)
-    QVariant minimum;      // Optional min for numeric types
-    QVariant maximum;      // Optional max for numeric types
-};
-```
-
-Each trampoline that needs constructor params defines a static function:
-
-```cpp
-static QVector<HwConfigParam> configParams();
-```
-
-This is registered via the `REGISTER_HARDWARE_PARAMS(CLASS)` macro, which
-stores the params in `HardwareRegistry` alongside the factory and protocol
-registrations.
-
-### UI Integration
-
-When a user adds a hardware profile in `RuntimeHardwareConfigDialog`, the
-dialog queries `HardwareRegistry::getConfigParams()` for the selected
-implementation. If non-empty, a "Configuration Parameters" group box is
-shown with auto-generated widgets:
-
-| QVariant Type | Widget |
-|---|---|
-| `int` / `uint` | QSpinBox (with min/max) |
-| `double` | QDoubleSpinBox (with min/max) |
-| `bool` | QCheckBox |
-| `QString` | QLineEdit |
-
-Values are written to QSettings under the hardware's SettingsStorage key
-*before* the hardware object is constructed, so base class constructors
-(e.g., `FlowController`'s `getOrSetDefault(flowChannels, 4)`) find them.
-
-### Which Trampolines Need Config Params
-
-| Trampoline | Params | Status |
-|---|---|---|
-| PythonAwg | none | Done |
-| PythonClock | `numOutputs` (int), `tunable` (bool) | Done |
-| PythonFlowController | none (reads from settings) | Done |
-| PythonIOBoard | `numAnalogChannels` (int), `numDigitalChannels` (int) | Done |
-| PythonPressureController | `readOnly` (bool) | Done |
-| PythonTemperatureController | `numChannels` (uint) | Done |
-| PythonPulseGenerator | `numChannels` (int) | Done |
-| PythonFtmwScope | `numAnalogChannels` (int), `numDigitalChannels` (int) | Done |
-| PythonLifScope | `numAnalogChannels` (int), `numDigitalChannels` (int) | Done |
-
 ## Template Script Workflow
 
 ### Requirements
@@ -619,16 +556,9 @@ findHostScript, and forbiddenKeys.
   Dispatches `readHwTemperature` via IPC. Constructor reads `numChannels`
   from QSettings before construction.
 
-#### Phase 2: HwConfigParam Registry (complete)
+#### Phase 2: HwConfigParam Registry (complete, obsolete)
 
-Infrastructure for declaring constructor parameters that need UI input:
-
-- **`HwConfigParam` struct** in `hardwareregistry.h`
-- **`REGISTER_HARDWARE_PARAMS` macro** in `hardwareregistration.h`
-- **`addConfigParams()`/`getConfigParams()`** in `HardwareRegistry`
-- **Dynamic UI** in `RuntimeHardwareConfigDialog::onAddProfile()` that
-  auto-generates widgets from config params and writes values to QSettings
-  before hardware construction
+Replaced with more versatile Settings Registry
 
 #### Phase 3: Digitizer Trampolines & Push Model (complete)
 

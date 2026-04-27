@@ -135,25 +135,6 @@ inline QStringList buildInheritanceChain(const QMetaObject* metaObj) {
         );
 
 /*!
- * \brief Register configuration parameters for a hardware implementation
- *
- * This macro registers parameters that require UI input before the hardware
- * object can be constructed (e.g., numChannels, tunable). The CLASS must
- * define a static method: static QVector<HwConfigParam> configParams();
- *
- * Should be placed after REGISTER_HARDWARE_META in the .cpp file.
- *
- * \param CLASS Hardware class name (must already be registered and have configParams())
- */
-#define REGISTER_HARDWARE_PARAMS(CLASS) \
-    static bool config_params_registered_##CLASS = \
-        HardwareRegistry::instance().addConfigParams( \
-            findHardwareBaseType(&CLASS::staticMetaObject), \
-            QString(CLASS::staticMetaObject.className()), \
-            CLASS::configParams() \
-        );
-
-/*!
  * \brief Register scalar settings for a hardware class
  *
  * Registers setting definitions with metadata (labels, descriptions, priorities)

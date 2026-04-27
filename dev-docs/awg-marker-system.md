@@ -222,24 +222,6 @@ Marker data is stored exclusively in `markers.csv`. `storeValues` keeps only `in
   marker (dynamically, not hardcoded 2)
 - Safety validation: warn if Protection role is disabled while Gate or chirp is active
 
-## Python Hardware Impact
-
-When the generalized marker system is implemented, `PythonAwg` will need updates:
-
-- **`configParams()` (`src/hardware/python/pythonawg.cpp:22-24`)**: Add a `markerCount`
-  integer param (replacing the `prot`/`amp` booleans) so the user can declare how many
-  physical marker channels their AWG has.
-
-- **`prepareForExperiment()` IPC payload (`src/hardware/python/pythonawg.cpp:112-195`)**:
-  Serialize the marker channel definitions (name, role, timing mode, start/end times, enabled)
-  into `config['chirp']['markers']` as a compact list. Do **not** pre-compute sample arrays
-  in C++ -- follow the same design as the chirp waveform (send parameters, compute in Python).
-
-- **`python_awg_template.py` (`src/hardware/python/python_awg_template.py:88-162`)**:
-  The `_compute_markers()` helper currently implements the hardcoded 2-channel
-  (protection/gate) logic. It must be updated to iterate over `config['chirp']['markers']`
-  and compute one boolean array per channel from the timing definitions. The
-  `_compute_waveform()` helper is unaffected.
 
 ## Implementation Phases
 

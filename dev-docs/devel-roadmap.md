@@ -4,7 +4,6 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 
 ## Small
 
-- Remove dead configParams code from HardwareRegistry (and any callers)
 - Move most settings registrations to base classes; subclasses override base class defaults. See
   hardware json files removed in commit 67bd00442be2c41da79ad51a686439520453857d for
   a convenient summary of implementation values to decide on sensible defaults for base
@@ -58,4 +57,4 @@ autogeneration with breathe.
 
 Ensure that cmake packaging instructions (cmake/Packaging.cmake) are compatible with
 Github Actions runners for binary compilation for Windows, MacOS, and Linux (rpm and
-deb). Binaries should be generated only on tagged releases, not on every push.
+deb). Binaries should be generated only on demand, not on every push.

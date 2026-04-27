@@ -213,36 +213,6 @@ QVector<CommunicationProtocol::CommType> HardwareRegistry::getSupportedProtocols
     return it.value().supportedProtocols;
 }
 
-bool HardwareRegistry::addConfigParams(const QString& key, const QString& subKey,
-                                       const QVector<HwConfigParam>& params)
-{
-    QMutexLocker locker(&d_registryMutex);
-
-    QString registryKey = makeRegistryKey(key, subKey);
-    auto it = d_registrations.find(registryKey);
-
-    if (it == d_registrations.end()) {
-        qWarning() << "Cannot add config params - hardware not registered:" << key << subKey;
-        return false;
-    }
-
-    it.value().configParams = params;
-    return true;
-}
-
-QVector<HwConfigParam> HardwareRegistry::getConfigParams(const QString& key, const QString& subKey) const
-{
-    QMutexLocker locker(&d_registryMutex);
-
-    QString registryKey = makeRegistryKey(key, subKey);
-    auto it = d_registrations.find(registryKey);
-
-    if (it == d_registrations.end())
-        return {};
-
-    return it.value().configParams;
-}
-
 bool HardwareRegistry::addSettingDefs(const QString& key, const QString& subKey,
                                       const QVector<HwSettingDef>& settings)
 {

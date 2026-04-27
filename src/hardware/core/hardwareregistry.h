@@ -88,7 +88,6 @@ struct HardwareRegistration {
     QStringList inheritanceChain;                             /*!< Class names from direct base up to (not including) QObject */
     QStringList libraryDependencies;                          /*!< List of vendor libraries this hardware depends on */
     QVector<CommunicationProtocol::CommType> supportedProtocols; /*!< Communication protocols supported by this hardware */
-    QVector<HwConfigParam> configParams;                       /*!< Parameters requiring UI input before construction */
     QVector<HwSettingDef> settingDefs;                         /*!< Registered setting definitions with metadata */
     QMap<QString, HwArraySettingDef> arraySettingDefs;          /*!< Registered array setting definitions */
 
@@ -247,24 +246,6 @@ public:
      */
     QVector<CommunicationProtocol::CommType> getSupportedProtocols(
         const QString& key, const QString& subKey) const;
-
-    /*!
-     * \brief Add configuration parameters to an existing hardware registration
-     * \param key Hardware type key
-     * \param subKey Implementation key
-     * \param params List of configuration parameters requiring UI input before construction
-     * \return True if parameters were added successfully
-     */
-    bool addConfigParams(const QString& key, const QString& subKey,
-                         const QVector<HwConfigParam>& params);
-
-    /*!
-     * \brief Get configuration parameters for a hardware implementation
-     * \param key Hardware type key
-     * \param subKey Implementation key
-     * \return List of configuration parameters, or empty if none registered
-     */
-    QVector<HwConfigParam> getConfigParams(const QString& key, const QString& subKey) const;
 
     /*!
      * \brief Add setting definitions to an existing hardware registration
