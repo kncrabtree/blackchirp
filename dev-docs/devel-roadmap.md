@@ -31,8 +31,8 @@ these should be classes like SettingsStorage, HardwareObject, etc that are used
 throughout the code. These classes should have Doxygen-style annotations in headers for
 autogeneration with breathe.
 
-### Packaging and Binary Generation (Github Actions)
+### [Packaging and Binary Generation (Github Actions)](packaging-and-ci.md)
 
 Ensure that cmake packaging instructions (cmake/Packaging.cmake) are compatible with
-Github Actions runners for binary compilation for Windows, MacOS, and Linux (rpm and
-deb). Binaries should be generated only on demand, not on every push.
+Github Actions runners for binary compilation for Windows, MacOS, and Linux (rpm,
+deb, and AppImage). Binaries should be generated only on demand, not on every push.
