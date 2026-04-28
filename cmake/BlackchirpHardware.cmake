@@ -16,6 +16,7 @@ set(HARDWARE_SYSTEM_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/vendorlibrary.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/spectrumlibrary.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/labjacklibrary.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/labjackdriver_exo.cpp
 )
 
 # Communication protocol sources

@@ -2,8 +2,7 @@
 #define LABJACKU3_H
 
 #include <hardware/optional/ioboard/ioboard.h>
-
-#include "u3.h"
+#include <hardware/library/labjackdriver.h>
 
 namespace BC::Key::IOB {
 inline constexpr QLatin1StringView labjacku3{"labjacku3"};
@@ -18,9 +17,7 @@ public:
     explicit LabjackU3(const QString& label, QObject *parent = nullptr);
 
 private:
-    HANDLE d_handle;
-    u3CalibrationInfo d_calInfo;
-
+    BC::Labjack::HandlePtr d_handle;
     int d_serialNo;
 
     bool configureTimers();

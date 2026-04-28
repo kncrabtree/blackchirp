@@ -15,7 +15,7 @@ REGISTER_HARDWARE_ARRAY_ENTRY(LabjackU3, BC::Key::Digi::sampleRates,
 
 LabjackU3::LabjackU3(const QString& label, QObject *parent) :
     IOBoard(QString(LabjackU3::staticMetaObject.className()), label, parent),
-    d_handle(nullptr), d_serialNo(3)
+    d_handle(nullptr, nullptr), d_serialNo(3)
 {
     //For the U3, there are 16 FIO lines (FIO0-7 and EIO0-7)
     //These are indexed 0-15.
@@ -43,50 +43,43 @@ bool LabjackU3::configure(IOBoardConfig &config)
 
 bool LabjackU3::configureTimers()
 {
-    if(d_handle == nullptr)
+    if(!d_handle)
     {
         hwError("Handle is null."_L1);
         return false;
     }
 
-    long enableTimers[2] = {0,0}, enableCounters[2] = {0,0}, timerModes[2] = {0,0};
-    double timerValues[2] = {0.0,0.0};
-    long error = eTCConfig(d_handle,enableTimers,enableCounters,4,LJ_tc48MHZ,0,timerModes,timerValues,0,0);
-    if(error)
+    bool ok = BC::Labjack::configureTimers(d_handle.get(),
+                                           {0L, 0L}, {0L, 0L}, 4L,
+                                           BC::Labjack::Const::tc48MHZ, 0L,
+                                           {0L, 0L}, {0.0, 0.0});
+    if (!ok)
     {
-        hwError(u"eTCConfig function call returned error code %1."_s.arg(error));
+        hwError("eTCConfig call failed."_L1);
         return false;
     }
 
     return true;
-
 }
 
 void LabjackU3::closeConnection()
 {
-    closeUSBConnection(d_handle);
-    d_handle = nullptr;
+    d_handle.reset();
 }
 
 
 bool LabjackU3::testConnection()
 {
-    if(d_handle != nullptr)
+    if(d_handle)
         closeConnection();
 
     d_serialNo = getArrayValue(BC::Key::Custom::comm,0,BC::Key::IOB::serialNo,3);
-    d_handle = openUSBConnection(d_serialNo);
-    if(d_handle == nullptr)
+    d_handle = BC::Labjack::openU3(d_serialNo);
+    if(!d_handle)
     {
-        d_errorString = QString("Could not open USB connection.");
-        return false;
-    }
-
-    //get configuration info
-    if(getCalibrationInfo(d_handle,&d_calInfo)< 0)
-    {
-        closeConnection();
-        d_errorString = QString("Could not retrieve calibration info.");
+        d_errorString = BC::Labjack::errorString();
+        if (d_errorString.isEmpty())
+            d_errorString = QString("Could not open USB connection.");
         return false;
     }
 
@@ -97,9 +90,7 @@ bool LabjackU3::testConnection()
         return false;
     }
 
-    hwDebug(u"ID response: %1"_s.arg(d_calInfo.prodID));
     return true;
-
 }
 
 void LabjackU3::initialize()
@@ -114,9 +105,9 @@ std::map<int, double> LabjackU3::readAnalogChannels()
     {
         if(ch.enabled)
         {
-            double d;
-            eAIN(d_handle,&d_calInfo,1,NULL,k,31,&d,0,0,0,0,0,0);
-            out.insert({k,d});
+            double v = 0.0;
+            BC::Labjack::readAnalog(d_handle.get(), k, v);
+            out.insert({k, v});
         }
     }
 
@@ -130,9 +121,9 @@ std::map<int, bool> LabjackU3::readDigitalChannels()
     {
         if(ch.enabled)
         {
-            long d;
-            eDI(d_handle,1,k,&d);
-            out.insert({k,d});
+            bool b = false;
+            BC::Labjack::readDigital(d_handle.get(), k, b);
+            out.insert({k, b});
         }
     }
 
