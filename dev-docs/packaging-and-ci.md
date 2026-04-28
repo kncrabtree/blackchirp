@@ -1,146 +1,108 @@
 # Packaging and Binary Generation
 
 Set up cross-platform binary packaging for Blackchirp via CPack and GitHub
-Actions. Binaries are built on demand (manual dispatch or release tag), not on
-every push.
-
-## Synopsis
-
-`cmake/Packaging.cmake` already drafts CPack generators for every target
-platform, but several pieces are missing or incorrect for a working release
-pipeline:
-
-- The Eigen3 dependency is not declared in CMake; the build only succeeds on
-  Linux because `/usr/include/eigen3` is on gcc's implicit search path.
-- Several packaging asset files referenced by the CMake scripts do not exist
-  (macOS `Info.plist`, Linux Debian maintainer scripts, application icons,
-  `.desktop` template).
-- No Qt deployment step (`windeployqt`/`macdeployqt`) is invoked, so packaged
-  Windows/macOS binaries would not run on a clean machine.
-- The macOS DragNDrop generator is misconfigured (uses `CPACK_BUNDLE_*`, which
-  applies to a different generator).
-- Component names are case-mismatched between `CPACK_COMPONENTS_ALL` and the
-  per-target `install(... COMPONENT ...)` calls.
-- RPM dependencies are hard-coded with Fedora package names that do not match
-  openSUSE; auto-derivation should be used instead.
-- No `.github/workflows/` directory exists.
-
-The Eigen3 dependency itself is small (~25 LOC across `analysis.{h,cpp}` and
-`peakfinder.{h,cpp}` plus one call site in `liftrace.cpp`) and could be
-replaced with GSL, but Eigen is header-only and trivial to install on every
-CI runner. Refactoring carries numerical risk on signal-processing code; the
-plan keeps Eigen and adds it as a proper CMake dependency. A future refactor
-to drop it remains straightforward if desired.
+Actions. Binaries are built on demand (manual dispatch or release tag), not
+on every push.
 
 ## Linux Packaging Strategy
-
-The matrix produced by the release pipeline:
 
 | Format    | Target Audience                                  |
 | --------- | ------------------------------------------------ |
 | `.rpm`    | openSUSE (primary), Fedora, RHEL — auto-deps     |
 | `.deb`    | Debian, Ubuntu, Mint — `shlibdeps` auto-derived  |
 | AppImage  | Universal fallback (Arch, NixOS, anything else)  |
-| `.tar.gz` | Source-style binary tarball                      |
+| `.tar.gz` | Generic binary tarball                           |
 
 Snap and Flatpak are intentionally excluded: their sandboxing models conflict
 with serial-port and USB hardware access, which is core to Blackchirp's
 purpose.
 
-## Implementation Plan
+## Status
 
-### 1. Fix Eigen3 dependency declaration
+### Done
 
-- Add `find_package(Eigen3 3.3 REQUIRED NO_MODULE)` to the top-level
-  `CMakeLists.txt`.
-- Link `Eigen3::Eigen` `PUBLIC` on the `blackchirp-data` target, since
-  `analysis.h` exposes `Eigen::MatrixXd` in its public API.
-- Existing `#include <eigen3/Eigen/...>` lines may stay; the imported target
-  sets the correct include root either way.
+- **CMake dependency declared for Eigen3.** `find_package(Eigen3)` plus
+  `Eigen3::Eigen` linked PUBLIC on `blackchirp-data`. Eigen kept as-is
+  (header-only, trivial to install per-platform); refactor to GSL deferred.
+- **`cmake/Packaging.cmake` repaired.** Hard-coded distro package names
+  removed in favour of `dpkg-shlibdeps` / RPM `AUTOREQ`. RPM marked
+  relocatable. Component-name casing aligned (`Applications`, `Libraries`,
+  `Development`). Misapplied `CPACK_BUNDLE_*` removed; macOS metadata moved
+  to per-target `MACOSX_BUNDLE_*` properties on both apps.
+- **Packaging assets created.** `packaging/macos/{Info,ViewerInfo}.plist`,
+  `packaging/linux/{postinst,prerm}` (executable bit set),
+  `packaging/blackchirp.desktop.in`, and `icons/blackchirp.icns` (multi-res,
+  generated via `icnsutil` from `bc_logo_large.png`). The `.icns` is wired
+  into both bundles via `MACOSX_PACKAGE_LOCATION = "Resources"`.
+- **Pre-existing CPack-blocking bug fixed.** `include(GNUInstallDirs)` moved
+  early in the top-level `CMakeLists.txt` so subdirectory `install()` rules
+  see `CMAKE_INSTALL_DATADIR` at registration time. Without this, the Python
+  hardware templates were registered with an absolute `/blackchirp`
+  destination, breaking every CPack generator.
+- **Versions bumped** to 2.0.0-alpha for both apps; package vendor and macOS
+  bundle copyright set to "Kyle N. Crabtree".
+- **Verified locally on openSUSE:** TGZ, RPM, and DEB generators all produce
+  installable packages. RPM auto-derived requirements look correct
+  (`libQt6*.so.6`, `libgsl.so.28`, `libgslcblas.so.0`, etc.). DEB
+  auto-derivation cannot be validated on openSUSE because `dpkg-shlibdeps`
+  needs Debian's `*.shlibs` database; this will populate correctly on an
+  Ubuntu CI runner.
 
-### 2. Repair `cmake/Packaging.cmake`
+### Remaining work (handoff)
 
-- Remove the explicit `CPACK_RPM_PACKAGE_REQUIRES` block; rely on
-  `CPACK_RPM_PACKAGE_AUTOREQ ON` (already set) so the RPM works on both
-  openSUSE and Fedora-family distros without naming drift.
-- Optionally set `CPACK_RPM_PACKAGE_RELOCATABLE ON`.
-- Resolve the `CPACK_COMPONENTS_ALL applications libraries development`
-  (lowercase) vs. `install(... COMPONENT Applications/Libraries/Development)`
-  (TitleCase) mismatch — choose one casing and apply consistently.
-- Remove the `CPACK_BUNDLE_*` variables (they apply to the `Bundle` generator,
-  not `DragNDrop`) and instead set `MACOSX_BUNDLE` properties on the main
-  `blackchirp` target (the viewer target already has this at
-  `BlackchirpViewerApplication.cmake:104-109`).
-- Trim `CPACK_DEBIAN_PACKAGE_DEPENDS` to bare essentials and lean on
-  `CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON` (already set).
+1. **Qt deployment for Windows and macOS.** `windeployqt` and `macdeployqt`
+   are not invoked anywhere. Without them, packaged Windows/macOS binaries
+   cannot launch on a clean machine. Wire these into `install()` rules or
+   into the CI workflow as a post-build step. Verify with a clean VM.
+2. **GitHub Actions release workflow.** No `.github/workflows/` directory
+   exists. Create `release.yml` triggered by `workflow_dispatch` and
+   `release: published`. Job matrix:
 
-### 3. Create missing packaging assets
+   | Runner                                         | Output                                                                  |
+   | ---------------------------------------------- | ----------------------------------------------------------------------- |
+   | `ubuntu-22.04`                                 | `.deb` (oldest LTS for glibc compatibility)                             |
+   | `ubuntu-22.04`                                 | `.AppImage` (separate job, `linuxdeploy` + `linuxdeploy-plugin-qt`)     |
+   | `opensuse/leap` (container on `ubuntu-latest`) | `.rpm`                                                                  |
+   | `macos-latest`                                 | `.dmg`, `.tar.gz`                                                       |
+   | `windows-latest`                               | NSIS installer, `.zip`                                                  |
 
-Add a `packaging/` directory at the repo root with:
+   Per-platform installs: Qt6 via `jurplel/install-qt-action`, GSL/Eigen3
+   via the system package manager. **Qwt is the schedule risk** — no
+   reliable Homebrew formula or vcpkg port for Qt6; build from source per
+   platform and cache the artifact between runs.
 
-- `packaging/macos/Info.plist` — main application bundle plist
-- `packaging/macos/ViewerInfo.plist` — viewer bundle plist (referenced at
-  `cmake/BlackchirpViewerApplication.cmake:105`)
-- `packaging/linux/postinst` — Debian post-install (refresh icon/desktop cache)
-- `packaging/linux/prerm` — Debian pre-remove (cleanup)
-- `packaging/blackchirp.desktop.in` — Linux desktop entry template
+   Each job: `cmake → cmake --build → ctest → cpack`, upload the package(s)
+   as workflow artifacts; on `release: published`, attach to the release.
 
-Add an `icons/` directory at the repo root with:
+3. **Package size sanity check.** The Debug-build RPM/DEB came in at ~190 MB
+   because the `Development` component ships static libs and headers
+   (~150 MB executables alone in Debug). Worth checking with a Release build
+   whether splitting the runtime and development components into separate
+   packages (e.g. `blackchirp` vs `blackchirp-devel`) makes sense before the
+   first public release.
 
-- `icons/blackchirp.icns` — generated from `src/resources/icons/bc_logo_large.png`
+4. **Verification once CI is up.**
+   - `.rpm` installs cleanly on openSUSE Tumbleweed; `rpm -qpR` shows
+     reasonable auto-derived requirements.
+   - `.deb` installs cleanly on Ubuntu LTS; `dpkg -I` shows non-empty
+     `Depends:`.
+   - AppImage launches on a Linux distro without Blackchirp's deps
+     installed (test in a minimal container).
+   - Windows/macOS packages launch on a clean VM with no developer tooling.
+   - `workflow_dispatch` produces all artifacts in a single run.
 
-### 4. Add Qt deployment for Windows and macOS
+## Notes for the next session
 
-- Invoke `windeployqt` on Windows and `macdeployqt` on macOS as a post-install
-  step or via CPack's `_deploy_runtime_dependencies` mechanism, so that all Qt
-  libraries, plugins, and Qwt are bundled into the package.
-- Verify packaged binaries launch on a clean (non-developer) machine.
-
-### 5. Stand up GitHub Actions release workflow
-
-Create `.github/workflows/release.yml` triggered by `workflow_dispatch` and
-`release: published` events (per the roadmap requirement: "on demand, not on
-every push").
-
-Job matrix:
-
-| Runner                                         | Output                                                                  |
-| ---------------------------------------------- | ----------------------------------------------------------------------- |
-| `ubuntu-22.04`                                 | `.deb` (oldest LTS for glibc compatibility)                             |
-| `ubuntu-22.04`                                 | `.AppImage` (separate job, uses `linuxdeploy` + `linuxdeploy-plugin-qt`)|
-| `opensuse/leap` (container on `ubuntu-latest`) | `.rpm`                                                                  |
-| `macos-latest`                                 | `.dmg`, `.tar.gz`                                                       |
-| `windows-latest`                               | NSIS installer, `.zip`                                                  |
-
-Per-platform install steps:
-
-- Qt6 via `jurplel/install-qt-action` (or `aqtinstall` directly).
-- GSL via system package manager (`apt`, `brew`, vcpkg).
-- Eigen3 via system package manager.
-- **Qwt is the schedule risk**: no reliable Homebrew formula or vcpkg port for
-  Qt6. Build from source per platform; cache the build artifact between runs.
-
-Each job runs `cmake → make → ctest → cpack` and uploads the resulting
-package(s) as workflow artifacts. On `release: published` events, attach
-artifacts to the GitHub release.
-
-### 6. Documentation cleanup
-
-`CLAUDE.md` still references `cmake/HardwareConfig.cmake` as an auto-created
-config file; that file was removed in commit `4d27ca0a`. Update the
-"Configuration files" subsection accordingly.
-
-## Verification
-
-- `cmake . -B build/Desktop-Release/ -DCMAKE_BUILD_TYPE=Release` succeeds with
-  a fresh build directory and Eigen3 properly discovered.
-- `cpack` from the build directory produces the expected file types per
-  platform.
-- Generated `.rpm` installs cleanly on openSUSE Tumbleweed; `rpm -qpR` shows
-  reasonable auto-derived requirements.
-- Generated `.deb` installs cleanly on Ubuntu LTS.
-- AppImage launches on a Linux distro without Blackchirp's deps installed
-  (verify by running it inside a minimal container).
-- Windows/macOS packages launch on a clean VM with no developer tooling.
-- GitHub Actions `workflow_dispatch` produces all artifacts in a single run
-  without manual intervention.
+- The packaging-blocking bugs are all fixed; CPack works end-to-end on
+  Linux. The remaining work is **CI wiring and Qt redistributable
+  bundling**, not cmake repair.
+- Recent commits on this branch: `f3ab9b15` (Eigen3 wiring) and `55257617`
+  (CPack overhaul + asset creation + version bump).
+- `icnsutil` was used locally to generate `icons/blackchirp.icns` from the
+  existing `src/resources/icons/bc_logo_large.png`. The `.icns` is checked
+  in; no regeneration needed unless the source logo changes.
+- Eigen3 is currently pinned with no version requirement. The system Eigen
+  on this dev box is 5.0.1, and the `find_package` call had to drop the
+  `3.3` minimum because Eigen 5's CMake config rejects lower-version
+  requests. If a CI runner ships Eigen 3.x and we want to enforce it, the
+  pin can be reintroduced with `find_package(Eigen3 3.3...<6 REQUIRED)`.
