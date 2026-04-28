@@ -12,8 +12,8 @@ endif()
 # ============================================================================
 
 set(CPACK_PACKAGE_NAME "Blackchirp")
-set(CPACK_PACKAGE_VENDOR "CrabtreeLab")
-set(CPACK_PACKAGE_CONTACT "Kyle Crabtree <kncrabtree@ucdavis.edu>")
+set(CPACK_PACKAGE_VENDOR "Kyle N. Crabtree")
+set(CPACK_PACKAGE_CONTACT "Kyle N. Crabtree <kncrabtree@ucdavis.edu>")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "CP-FTMW Spectroscopy Software")
 set(CPACK_PACKAGE_DESCRIPTION 
     "Blackchirp is open-source data acquisition software for CP-FTMW "
@@ -78,21 +78,21 @@ elseif(APPLE)
     # ========================================================================
     # macOS Packaging (DragNDrop DMG)
     # ========================================================================
-    
+
     list(APPEND CPACK_GENERATOR "DragNDrop" "TGZ")
-    
+
     # DMG settings
     set(CPACK_DMG_VOLUME_NAME "Blackchirp")
     set(CPACK_DMG_FORMAT "UDZO")
-    
-    # Bundle settings
-    set(CPACK_BUNDLE_NAME "Blackchirp")
-    set(CPACK_BUNDLE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/icons/blackchirp.icns")
-    set(CPACK_BUNDLE_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/packaging/macos/Info.plist")
-    
+
+    # Bundle metadata is set on the executable targets via MACOSX_BUNDLE_*
+    # properties (see BlackchirpApplication.cmake / BlackchirpViewerApplication.cmake).
+    # The DragNDrop generator picks those up automatically; no CPACK_BUNDLE_*
+    # variables are needed (those apply to the separate Bundle generator).
+
     # macOS specific installation
     set(CPACK_SET_DESTDIR TRUE)
-    
+
 else()
     # ========================================================================
     # Linux Packaging (DEB, RPM, TGZ)
@@ -105,31 +105,27 @@ else()
     set(CPACK_DEBIAN_PACKAGE_SECTION "science")
     set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
     set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/kncrabtree/blackchirp")
-    
-    # Debian dependencies
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS 
-        "libqt6core6 (>= 6.0.0), libqt6gui6 (>= 6.0.0), libqt6widgets6 (>= 6.0.0), "
-        "libqt6network6 (>= 6.0.0), libqt6serialport6 (>= 6.0.0), "
-        "libqwt-qt6-6 (>= 6.1.0), libgsl27 (>= 2.7)"
-    )
-    
+
+    # Debian dependencies are derived from linked .so files via SHLIBDEPS
+    # (see CPACK_DEBIAN_PACKAGE_SHLIBDEPS below). Avoid hard-coding distro-
+    # specific package names, which drift across Ubuntu/Debian releases.
+
     # Desktop integration
-    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA 
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
         "${CMAKE_CURRENT_SOURCE_DIR}/packaging/linux/postinst"
         "${CMAKE_CURRENT_SOURCE_DIR}/packaging/linux/prerm"
     )
-    
+
     # RPM package settings
     set(CPACK_RPM_PACKAGE_SUMMARY "CP-FTMW Spectroscopy Software")
     set(CPACK_RPM_PACKAGE_GROUP "Applications/Science")
     set(CPACK_RPM_PACKAGE_LICENSE "GPLv3+")
     set(CPACK_RPM_PACKAGE_URL "https://github.com/kncrabtree/blackchirp")
-    
-    # RPM dependencies
-    set(CPACK_RPM_PACKAGE_REQUIRES 
-        "qt6-qtbase >= 6.0.0, qt6-qtserialport >= 6.0.0, "
-        "qwt-qt6 >= 6.1.0, gsl >= 2.7"
-    )
+    set(CPACK_RPM_PACKAGE_RELOCATABLE ON)
+
+    # RPM dependencies are derived from linked .so files via AUTOREQ (set
+    # below). This keeps the package working across openSUSE, Fedora, and
+    # RHEL without naming drift between their qt6/gsl/qwt packages.
     
     # Architecture detection
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
@@ -149,27 +145,28 @@ endif()
 # Component-based packaging
 # ============================================================================
 
-# Define components
-set(CPACK_COMPONENTS_ALL applications libraries development)
+# Define components (names match install(... COMPONENT ...) calls in the
+# per-target cmake modules)
+set(CPACK_COMPONENTS_ALL Applications Libraries Development)
 
 # Application component
 set(CPACK_COMPONENT_APPLICATIONS_DISPLAY_NAME "Applications")
-set(CPACK_COMPONENT_APPLICATIONS_DESCRIPTION 
+set(CPACK_COMPONENT_APPLICATIONS_DESCRIPTION
     "Blackchirp main application and viewer")
 set(CPACK_COMPONENT_APPLICATIONS_REQUIRED TRUE)
 
 # Libraries component (for development)
 set(CPACK_COMPONENT_LIBRARIES_DISPLAY_NAME "Runtime Libraries")
-set(CPACK_COMPONENT_LIBRARIES_DESCRIPTION 
+set(CPACK_COMPONENT_LIBRARIES_DESCRIPTION
     "Shared libraries required for Blackchirp")
-set(CPACK_COMPONENT_LIBRARIES_DEPENDS applications)
+set(CPACK_COMPONENT_LIBRARIES_DEPENDS Applications)
 
 # Development component
 set(CPACK_COMPONENT_DEVELOPMENT_DISPLAY_NAME "Development Files")
-set(CPACK_COMPONENT_DEVELOPMENT_DESCRIPTION 
+set(CPACK_COMPONENT_DEVELOPMENT_DESCRIPTION
     "Header files and development libraries")
 set(CPACK_COMPONENT_DEVELOPMENT_OPTIONAL TRUE)
-set(CPACK_COMPONENT_DEVELOPMENT_DEPENDS libraries)
+set(CPACK_COMPONENT_DEVELOPMENT_DEPENDS Libraries)
 
 # ============================================================================
 # Source packaging

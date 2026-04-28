@@ -3,14 +3,14 @@ cmake_minimum_required(VERSION 3.16)
 # ============================================================================
 # Project Configuration
 # ============================================================================
-project(Blackchirp 
-    VERSION 1.1.0
+project(Blackchirp
+    VERSION 2.0.0
     DESCRIPTION "CP-FTMW Spectroscopy Software"
     LANGUAGES CXX
 )
 
 # Set release version
-set(BC_RELEASE_VERSION "devel" CACHE STRING "Release version string")
+set(BC_RELEASE_VERSION "alpha" CACHE STRING "Release version string")
 
 # Get git build version
 execute_process(
@@ -31,7 +31,7 @@ set(BC_MINOR_VERSION ${PROJECT_VERSION_MINOR})
 set(BC_PATCH_VERSION ${PROJECT_VERSION_PATCH})
 
 # Viewer-specific versioning
-set(BCV_MAJOR_VERSION 1)
+set(BCV_MAJOR_VERSION 2)
 set(BCV_MINOR_VERSION 0)
 set(BCV_PATCH_VERSION 0)
 set(BCV_RELEASE_VERSION "alpha")
@@ -110,6 +110,10 @@ find_package(GSL REQUIRED)
 
 # Eigen3 - Header-only linear algebra (used by Analysis/PeakFinder)
 find_package(Eigen3 REQUIRED NO_MODULE)
+
+# Standard install-directory variables (CMAKE_INSTALL_BINDIR, _DATADIR, etc.)
+# Must be available before any subdirectory install() rules use them.
+include(GNUInstallDirs)
 
 # CUDA - Optional for GPU acceleration
 if(BC_ENABLE_CUDA)
@@ -578,8 +582,9 @@ endif()
 # Installation and Packaging
 # ============================================================================
 
-# Install configuration
-include(GNUInstallDirs)
+# Install configuration (GNUInstallDirs is included earlier, near the
+# top of the dependency block, so subdirectory install() rules can use
+# CMAKE_INSTALL_BINDIR/_DATADIR/etc. at registration time).
 
 # CPack configuration
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)

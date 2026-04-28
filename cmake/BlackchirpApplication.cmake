@@ -114,7 +114,28 @@ set_target_properties(blackchirp PROPERTIES
     VERSION ${PROJECT_VERSION}
     OUTPUT_NAME "blackchirp"
     EXPORT_NAME "Application"
+    WIN32_EXECUTABLE TRUE
+    MACOSX_BUNDLE TRUE
 )
+
+# macOS bundle metadata (consumed by the DragNDrop CPack generator)
+if(APPLE)
+    set(_bc_icns "${CMAKE_CURRENT_SOURCE_DIR}/icons/blackchirp.icns")
+    set_target_properties(blackchirp PROPERTIES
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/packaging/macos/Info.plist"
+        MACOSX_BUNDLE_BUNDLE_NAME "Blackchirp"
+        MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
+        MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
+        MACOSX_BUNDLE_COPYRIGHT "Copyright © Kyle N. Crabtree"
+        MACOSX_BUNDLE_ICON_FILE "blackchirp.icns"
+    )
+    if(EXISTS ${_bc_icns})
+        target_sources(blackchirp PRIVATE ${_bc_icns})
+        set_source_files_properties(${_bc_icns} PROPERTIES
+            MACOSX_PACKAGE_LOCATION "Resources"
+        )
+    endif()
+endif()
 
 # Include directories
 target_include_directories(blackchirp

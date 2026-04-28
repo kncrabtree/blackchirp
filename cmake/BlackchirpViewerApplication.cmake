@@ -100,14 +100,22 @@ if(WIN32)
     
 elseif(APPLE)
     # macOS bundle configuration
+    set(_bcv_icns "${CMAKE_CURRENT_SOURCE_DIR}/icons/blackchirp.icns")
     set_target_properties(blackchirp-viewer PROPERTIES
         MACOSX_BUNDLE TRUE
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/packaging/macos/ViewerInfo.plist"
         MACOSX_BUNDLE_BUNDLE_NAME "Blackchirp Viewer"
         MACOSX_BUNDLE_BUNDLE_VERSION ${BCV_MAJOR_VERSION}.${BCV_MINOR_VERSION}.${BCV_PATCH_VERSION}
         MACOSX_BUNDLE_SHORT_VERSION_STRING ${BCV_MAJOR_VERSION}.${BCV_MINOR_VERSION}.${BCV_PATCH_VERSION}
-        MACOSX_BUNDLE_COPYRIGHT "Copyright © 2023 CrabtreeLab"
+        MACOSX_BUNDLE_COPYRIGHT "Copyright © Kyle N. Crabtree"
+        MACOSX_BUNDLE_ICON_FILE "blackchirp.icns"
     )
+    if(EXISTS ${_bcv_icns})
+        target_sources(blackchirp-viewer PRIVATE ${_bcv_icns})
+        set_source_files_properties(${_bcv_icns} PROPERTIES
+            MACOSX_PACKAGE_LOCATION "Resources"
+        )
+    endif()
     
 else()
     # Linux desktop integration

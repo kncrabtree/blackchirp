@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Blackchirp
+GenericName=CP-FTMW Spectroscopy
+Comment=Data acquisition for chirped-pulse Fourier transform microwave spectroscopy
+Exec=blackchirp
+Icon=blackchirp
+Terminal=false
+Categories=Science;Education;DataVisualization;
+StartupNotify=true
+Keywords=spectroscopy;FTMW;microwave;acquisition;
