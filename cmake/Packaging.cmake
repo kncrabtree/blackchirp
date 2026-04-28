@@ -146,8 +146,11 @@ endif()
 # ============================================================================
 
 # Define components (names match install(... COMPONENT ...) calls in the
-# per-target cmake modules)
-set(CPACK_COMPONENTS_ALL Applications Libraries Development)
+# per-target cmake modules). Only Applications ships in release packages;
+# all blackchirp-* libraries are STATIC and linked into the executables, so
+# the Libraries/Development install rules exist only for `cmake --install`
+# in source-tree workflows and add nothing useful to a binary package.
+set(CPACK_COMPONENTS_ALL Applications)
 
 # Application component
 set(CPACK_COMPONENT_APPLICATIONS_DISPLAY_NAME "Applications")

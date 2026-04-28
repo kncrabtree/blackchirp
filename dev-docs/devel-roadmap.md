@@ -33,6 +33,13 @@ autogeneration with breathe.
 
 ### [Packaging and Binary Generation (Github Actions)](packaging-and-ci.md)
 
-Ensure that cmake packaging instructions (cmake/Packaging.cmake) are compatible with
-Github Actions runners for binary compilation for Windows, MacOS, and Linux (rpm,
-deb, and AppImage). Binaries should be generated only on demand, not on every push.
+CMake-side work is complete: `cmake/Packaging.cmake` produces release-only DEB,
+RPM, DMG, NSIS, and TGZ/ZIP packages via CPack; `cmake/QtDeployment.cmake` wires
+`windeployqt`/`macdeployqt` as install hooks; and `.github/workflows/release.yml`
+defines five jobs (linux-deb, linux-rpm, linux-appimage, macos-dmg, windows-nsis)
+triggered by `workflow_dispatch` and `release: published`. **Remaining work is
+testing and verification**: dispatch the workflow per-platform, iterate on
+first-run issues (likely candidates: linuxdeploy library paths, macdeployqt's
+Qwt resolution, windeployqt's runtime DLLs), and confirm the resulting packages
+launch on clean VMs. See `packaging-and-ci.md` for the full strategy reference,
+file map, and acceptance criteria.
