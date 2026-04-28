@@ -33,7 +33,6 @@ private:
     void updateLibraryDetails(VendorLibrary &library);
     void updateLibraryConfiguration(VendorLibrary &library);
     QString getLibraryStatusText(VendorLibrary &library) const;
-    QString getLibraryDisplayName(VendorLibrary &library) const;
     QString getLibraryVersion(VendorLibrary &library) const;
     void updateStagingIndicators();
     void updateControlStagingIndicator(QWidget *control, bool isModified);
@@ -51,7 +50,7 @@ private:
     QLabel *p_libraryConfigPanelLabel;
     QTextEdit *p_installationGuidanceText;
 
-    QString d_currentLibraryKey;
+    QList<VendorLibrary*> d_libraries;
     VendorLibrary *p_currentLibrary;
 };
 

@@ -24,6 +24,9 @@
 LibraryStatusWidget::LibraryStatusWidget(QWidget *parent)
     : QWidget{parent}, p_currentLibrary{nullptr}
 {
+    d_libraries.append(&SpectrumLibrary::instance());
+    d_libraries.append(&LabjackLibrary::instance());
+
     // Create widgets
     p_libraryOverviewTable = new QTableWidget(this);
     p_libraryOverviewTable->setColumnCount(4);
@@ -117,20 +120,18 @@ LibraryStatusWidget::LibraryStatusWidget(QWidget *parent)
 
 bool LibraryStatusWidget::hasUnstagedChanges() const
 {
-    return SpectrumLibrary::instance().hasUnstagedChanges() ||
-           LabjackLibrary::instance().hasUnstagedChanges();
+    for (auto *lib : d_libraries)
+        if (lib->hasUnstagedChanges()) return true;
+    return false;
 }
 
 void LibraryStatusWidget::revertAllChanges()
 {
-    // Revert staged changes for all vendor libraries
-    SpectrumLibrary::instance().revertChanges();
-    LabjackLibrary::instance().revertChanges();
+    for (auto *lib : d_libraries)
+        lib->revertChanges();
 
-    // Update UI to reflect reverted state if library is currently selected
-    if (p_currentLibrary != nullptr) {
+    if (p_currentLibrary != nullptr)
         updateLibraryConfiguration(*p_currentLibrary);
-    }
 }
 
 void LibraryStatusWidget::refreshLibraryStatus()
@@ -139,17 +140,12 @@ void LibraryStatusWidget::refreshLibraryStatus()
     QTableWidgetItem *currentSelection = p_libraryOverviewTable->currentItem();
     QString selectedLibraryName;
     if (currentSelection != nullptr) {
-        // Get the library name from the first column of the current row
         QTableWidgetItem *nameItem = p_libraryOverviewTable->item(currentSelection->row(), 0);
-        if (nameItem != nullptr) {
-            selectedLibraryName = nameItem->data(Qt::UserRole).toString();
-        }
+        if (nameItem != nullptr)
+            selectedLibraryName = nameItem->text();
     }
 
-    // Get references to all vendor libraries
-    QList<QPair<QString, VendorLibrary *>> libraries;
-    libraries.append({"Spectrum M4i", &SpectrumLibrary::instance()});
-    libraries.append({"LabJack U3 Driver", &LabjackLibrary::instance()});
+    const QList<VendorLibrary *> &libraries = d_libraries;
 
     // Initialize table structure if it's empty (first run)
     if (p_libraryOverviewTable->rowCount() == 0) {
@@ -157,12 +153,12 @@ void LibraryStatusWidget::refreshLibraryStatus()
 
         // Create table items once and set up basic properties
         for (int row = 0; row < libraries.size(); ++row) {
-            const QString &displayName = libraries[row].first;
+            VendorLibrary *lib = libraries[row];
 
-            // Library name (column 0)
-            auto *nameItem = new QTableWidgetItem(displayName);
+            // Library name (column 0) — pointer stored for selection lookup
+            auto *nameItem = new QTableWidgetItem(lib->libraryName());
             nameItem->setFlags(nameItem->flags() & ~Qt::ItemIsEditable);
-            nameItem->setData(Qt::UserRole, displayName);
+            nameItem->setData(Qt::UserRole, QVariant::fromValue<VendorLibrary*>(lib));
             p_libraryOverviewTable->setItem(row, 0, nameItem);
 
             // Status (column 1)
@@ -189,8 +185,7 @@ void LibraryStatusWidget::refreshLibraryStatus()
     QTableWidgetItem *itemToReselect = nullptr;
 
     for (int row = 0; row < libraries.size() && row < p_libraryOverviewTable->rowCount(); ++row) {
-        const QString &displayName = libraries[row].first;
-        VendorLibrary *library = libraries[row].second;
+        VendorLibrary *library = libraries[row];
 
         // Update status (column 1)
         QString statusText = getLibraryStatusText(*library);
@@ -224,7 +219,7 @@ void LibraryStatusWidget::refreshLibraryStatus()
         }
 
         // Check if this row should be reselected
-        if (displayName == selectedLibraryName) {
+        if (library->libraryName() == selectedLibraryName) {
             itemToReselect = p_libraryOverviewTable->item(row, 0); // Select first column
         }
     }
@@ -252,36 +247,19 @@ void LibraryStatusWidget::onLibrarySelectionChanged(QTableWidgetItem *current, Q
 
     if (current == nullptr) {
         p_currentLibrary = nullptr;
-        d_currentLibraryKey.clear();
-        // Clear details and configuration panels
         p_libraryDetailsText->clear();
         p_userLibraryPathEdit->clear();
         p_additionalPathsEdit->clear();
         p_autoDiscoveryCheckBox->setChecked(true);
-        // Restore generic installation guidance
         p_installationGuidanceText->setHtml(getGenericInstallationGuidance());
         return;
     }
 
-    // Get selected library
     int row = current->row();
-    QString libraryDisplayName = p_libraryOverviewTable->item(row, 0)->data(Qt::UserRole).toString();
-
-    VendorLibrary *library = nullptr;
-    QString libraryKey;
-
-    if (libraryDisplayName == "Spectrum M4i") {
-        library = &SpectrumLibrary::instance();
-        libraryKey = BC::Key::Spectrum::spectrumM4i;
-    } else if (libraryDisplayName == "LabJack U3 Driver") {
-        library = &LabjackLibrary::instance();
-        libraryKey = BC::Key::LabJack::labjackU3;
-    }
+    auto *library = p_libraryOverviewTable->item(row, 0)->data(Qt::UserRole).value<VendorLibrary*>();
 
     if (library != nullptr) {
         p_currentLibrary = library;
-        d_currentLibraryKey = libraryKey;
-
         updateLibraryDetails(*library);
         updateLibraryConfiguration(*library);
     }
@@ -289,7 +267,7 @@ void LibraryStatusWidget::onLibrarySelectionChanged(QTableWidgetItem *current, Q
 
 void LibraryStatusWidget::onLibraryPathChanged()
 {
-    if (d_currentLibraryKey.isEmpty() || p_currentLibrary == nullptr) {
+    if (p_currentLibrary == nullptr) {
         return;
     }
 
@@ -329,7 +307,7 @@ void LibraryStatusWidget::onBrowseLibraryPath()
 
     QString selectedPath = QFileDialog::getExistingDirectory(
         this,
-        QString("Select Directory Containing %1 Library").arg(getLibraryDisplayName(*p_currentLibrary)),
+        QString("Select Directory Containing %1 Library").arg(p_currentLibrary->libraryName()),
         startDir
     );
 
@@ -349,7 +327,7 @@ void LibraryStatusWidget::onTestLoadLibrary()
         // No staged changes - test with current active settings
         bool success = p_currentLibrary->reloadLibrary();
 
-        QString title = QString("Test Load - %1").arg(getLibraryDisplayName(*p_currentLibrary));
+        QString title = QString("Test Load - %1").arg(p_currentLibrary->libraryName());
         if (success) {
             QMessageBox::information(this, title, "Library loaded successfully with current active settings!");
         } else {
@@ -363,7 +341,7 @@ void LibraryStatusWidget::onTestLoadLibrary()
     }
 
     // We have staged changes - warn user and test with temporary application
-    QString title = QString("Test Load - %1").arg(getLibraryDisplayName(*p_currentLibrary));
+    QString title = QString("Test Load - %1").arg(p_currentLibrary->libraryName());
     int result = QMessageBox::question(this, title,
         "This will temporarily apply your staged changes to test the library loading.\n\n"
         "The changes will be reverted after testing. Continue?",
@@ -410,8 +388,7 @@ void LibraryStatusWidget::updateLibraryDetails(VendorLibrary &library)
     QString details;
 
     // Library name and description
-    details += QString("<h3>%1</h3>").arg(getLibraryDisplayName(library));
-    details += QString("<p><b>Library Name:</b> %1</p>").arg(library.libraryName());
+    details += QString("<h3>%1</h3>").arg(library.libraryName());
 
     // Status information
     details += QString("<p><b>Status:</b> %1</p>").arg(getLibraryStatusText(library));
@@ -517,18 +494,6 @@ QString LibraryStatusWidget::getLibraryStatusText(VendorLibrary &library) const
     }
 }
 
-QString LibraryStatusWidget::getLibraryDisplayName(VendorLibrary &library) const
-{
-    // Map library instances to display names
-    if (&library == &SpectrumLibrary::instance()) {
-        return "Spectrum M4i";
-    } else if (&library == &LabjackLibrary::instance()) {
-        return "LabJack U3 Driver";
-    } else {
-        return library.libraryName();
-    }
-}
-
 QString LibraryStatusWidget::getLibraryVersion(VendorLibrary &library) const
 {
     if (!library.isAvailable()) {
@@ -607,8 +572,7 @@ void LibraryStatusWidget::updateControlStagingIndicator(QWidget *control, bool i
 void LibraryStatusWidget::updateAllStagingIndicators()
 {
     // Update staging indicators for all libraries
-    bool hasAnyChanges = SpectrumLibrary::instance().hasUnstagedChanges() ||
-                         LabjackLibrary::instance().hasUnstagedChanges();
+    bool hasAnyChanges = hasUnstagedChanges();
 
     // Notify parent that staging state has changed
     emit stagingStateChanged(hasAnyChanges);
