@@ -8,22 +8,7 @@ None
 
 ## Medium
 
-### [Labjack Cross-Platform Support](labjack-cross-platform-support.md)
-
-Linux and macOS already work via dynamic loading of the LabJack exodriver
-(`liblabjackusb`). Windows uses a different vendor library — the UD library
-(`LabJackUD.dll`) — with a different API shape (calibration is internal,
-handle type and calling convention differ, easy-function parameters differ).
-
-The plan adds Windows support by introducing a thin `BC::Labjack` operational
-facade with per-device factories (`openU3`, with `openU6` slot ready for
-future use) and an opaque `DeviceHandle`. Two backend translation units
-implement the facade — one wrapping the existing exodriver helpers on
-Linux/macOS, one wrapping UD easy functions on Windows. `LabjackLibrary`
-remains the loader, with its symbol set conditionally selected per platform.
-The full facade surface (eAIN/eDI/eDO/eDAC/eTCConfig/eTCValues) is exposed
-up front so future ioboard features have everything they need, and the U6
-can be added later as a strictly additive change.
+None.
 
 ## Large
 
