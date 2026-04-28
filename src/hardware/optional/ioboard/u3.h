@@ -24,6 +24,9 @@
 #include <hardware/library/labjackconstants.h>
 #include <QtGlobal>
 
+// Opaque device handle type for the exodriver path (Linux/macOS only)
+typedef void* HANDLE;
+
 
 //Structure for storing calibration constants
 struct U3_CALIBRATION_INFORMATION {

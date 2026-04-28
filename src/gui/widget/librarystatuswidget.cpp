@@ -149,7 +149,7 @@ void LibraryStatusWidget::refreshLibraryStatus()
     // Get references to all vendor libraries
     QList<QPair<QString, VendorLibrary *>> libraries;
     libraries.append({"Spectrum M4i", &SpectrumLibrary::instance()});
-    libraries.append({"LabJack USB", &LabjackLibrary::instance()});
+    libraries.append({"LabJack U3 Driver", &LabjackLibrary::instance()});
 
     // Initialize table structure if it's empty (first run)
     if (p_libraryOverviewTable->rowCount() == 0) {
@@ -273,7 +273,7 @@ void LibraryStatusWidget::onLibrarySelectionChanged(QTableWidgetItem *current, Q
     if (libraryDisplayName == "Spectrum M4i") {
         library = &SpectrumLibrary::instance();
         libraryKey = BC::Key::Spectrum::spectrumM4i;
-    } else if (libraryDisplayName == "LabJack USB") {
+    } else if (libraryDisplayName == "LabJack U3 Driver") {
         library = &LabjackLibrary::instance();
         libraryKey = BC::Key::LabJack::labjackU3;
     }
@@ -523,7 +523,7 @@ QString LibraryStatusWidget::getLibraryDisplayName(VendorLibrary &library) const
     if (&library == &SpectrumLibrary::instance()) {
         return "Spectrum M4i";
     } else if (&library == &LabjackLibrary::instance()) {
-        return "LabJack USB";
+        return "LabJack U3 Driver";
     } else {
         return library.libraryName();
     }
@@ -535,25 +535,9 @@ QString LibraryStatusWidget::getLibraryVersion(VendorLibrary &library) const
         return "Unknown";
     }
 
-    // Use the generic getVersionInfo() method first
     QString versionInfo = library.getVersionInfo();
-    if (!versionInfo.isEmpty()) {
+    if (!versionInfo.isEmpty())
         return versionInfo;
-    }
-
-    // Fallback to specific library implementations for backward compatibility
-    if (&library == &LabjackLibrary::instance()) {
-        LabjackLibrary &ljLib = static_cast<LabjackLibrary &>(library);
-        if (ljLib.LJUSB_GetLibraryVersion != nullptr) {
-            try {
-                float version = ljLib.LJUSB_GetLibraryVersion();
-                return QString::number(version, 'f', 2);
-            } catch (...) {
-                // If version call fails, just return "Available"
-                return "Available";
-            }
-        }
-    }
 
     return "Available";
 }
