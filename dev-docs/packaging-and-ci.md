@@ -55,28 +55,40 @@ purpose.
   `install(TARGETS)` rule, and macOS `BUNDLE DESTINATION` is normalized to
   `.` so the `.app` lands at the install-prefix root for DragNDrop. No-op on
   Linux. Still needs clean-VM verification once CI is up.
+- **Release workflow drafted.** `.github/workflows/release.yml` with five
+  jobs: `linux-deb` (`ubuntu-latest`), `linux-rpm`
+  (`opensuse/leap:16.0` container), `linux-appimage` (`ubuntu-latest`,
+  `linuxdeploy` + `linuxdeploy-plugin-qt`), `macos-dmg` (`macos-latest`),
+  and `windows-nsis` (`windows-latest`, MSVC, NSIS via Chocolatey). Qt
+  6.9.1 via `jurplel/install-qt-action`; Qwt 6.3.0 built from the
+  SourceForge tarball with a per-OS `actions/cache` keyed on Qt and Qwt
+  version. Triggers: `workflow_dispatch` (with per-platform boolean
+  inputs) and `release: published`. On release events each job uses
+  `gh release upload --clobber` to attach its artifacts.
 
 ### Remaining work (handoff)
 
-1. **GitHub Actions release workflow.** No `.github/workflows/` directory
-   exists. Create `release.yml` triggered by `workflow_dispatch` and
-   `release: published`. Job matrix:
-
-   | Runner                                         | Output                                                                  |
-   | ---------------------------------------------- | ----------------------------------------------------------------------- |
-   | `ubuntu-latest`                                | `.deb` (oldest LTS for glibc compatibility)                             |
-   | `ubuntu-latest`                                | `.AppImage` (separate job, `linuxdeploy` + `linuxdeploy-plugin-qt`)     |
-   | `opensuse/leap` (container on `ubuntu-latest`) | `.rpm`                                                                  |
-   | `macos-latest`                                 | `.dmg`, `.tar.gz`                                                       |
-   | `windows-latest`                               | NSIS installer, `.zip`                                                  |
-
-   Per-platform installs: Qt6 via `jurplel/install-qt-action`, GSL/Eigen3
-   via the system package manager. **Qwt is the schedule risk** — no
-   reliable Homebrew formula or vcpkg port for Qt6; build from source per
-   platform and cache the artifact between runs.
-
-   Each job: `cmake → cmake --build → ctest → cpack`, upload the package(s)
-   as workflow artifacts; on `release: published`, attach to the release.
+1. **First-run dispatch verification.** The workflow is unverified end-to-end;
+   trigger jobs one platform at a time via `workflow_dispatch` (the boolean
+   inputs let you run one platform per dispatch). Likely first-run friction
+   points:
+   - **AppImage**: `linuxdeploy-plugin-qt` requires `qmake` on PATH and may
+     trip on Qwt's libdir; pass `EXTRA_PLATFORM_PLUGINS` / `LD_LIBRARY_PATH`
+     adjustments if it can't resolve `libqwt`. The `staged AppDir` step
+     currently installs only the `Applications` and `Libraries` components
+     — desktop-file path may need a tweak if the cmake install rule changes.
+   - **macOS**: `cpack -G DragNDrop` invokes `macdeployqt` via the
+     `install(CODE)` hook from `QtDeployment.cmake`; if Qwt's `.dylib`
+     lives outside the bundle's framework search paths, macdeployqt's
+     library-resolution may fail. May need to add `-libpath=` or copy the
+     Qwt `.dylib` into the bundle pre-deploy.
+   - **Windows**: NSIS comes from Chocolatey; vcpkg supplies GSL and Eigen.
+     `windeployqt` runs through `install(CODE)`. If the resulting
+     installer is missing OpenSSL or platform plugins, revisit
+     `windeployqt`'s flag set in `QtDeployment.cmake`.
+   - **openSUSE container**: Leap 16.0's Qt6 packages should suffice for
+     building Qwt; `gh` CLI is not preinstalled, so the release-upload
+     step has a fallback to `curl` against the GitHub uploads API.
 
 2. **Package size sanity check.** The Debug-build RPM/DEB came in at ~190 MB
    because the `Development` component ships static libs and headers
@@ -98,13 +110,18 @@ purpose.
 ## Notes for the next session
 
 - The packaging-blocking bugs are all fixed; CPack works end-to-end on
-  Linux, and Qt redistributable bundling is wired into the install rules
-  for Windows/macOS. The remaining work is **CI wiring**, not cmake repair.
+  Linux, Qt redistributable bundling is wired into the install rules for
+  Windows/macOS, and a five-job CI release workflow is drafted. The
+  remaining work is **dispatching the workflow per-platform and fixing
+  first-run issues**, not cmake repair.
+- Use `workflow_dispatch` with one platform's boolean input enabled at a
+  time to iterate without burning all five runners on every push.
 - The Qt deploy hook runs at `cmake --install` / `cpack` time and depends
   on `windeployqt` / `macdeployqt` being on PATH (or in the Qt6 bin dir
   resolved from `Qt6::qmake`'s `IMPORTED_LOCATION`). On Linux it is a no-op.
-- Recent commits on this branch: `f3ab9b15` (Eigen3 wiring) and `55257617`
-  (CPack overhaul + asset creation + version bump).
+- Recent commits on this branch: `f3ab9b15` (Eigen3 wiring), `55257617`
+  (CPack overhaul + asset creation + version bump), `ac7928b4` (Qt deploy
+  install hooks).
 - `icnsutil` was used locally to generate `icons/blackchirp.icns` from the
   existing `src/resources/icons/bc_logo_large.png`. The `.icns` is checked
   in; no regeneration needed unless the source logo changes.

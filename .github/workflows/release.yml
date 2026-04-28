@@ -1,0 +1,502 @@
+name: Release Build
+
+# Builds Blackchirp packages for Linux (DEB, RPM, AppImage), macOS (DMG, TGZ),
+# and Windows (NSIS, ZIP). Triggered manually via workflow_dispatch (with
+# per-platform toggles) or automatically when a GitHub Release is published.
+#
+# On release: published, each job attaches its artifacts to the release.
+# On workflow_dispatch, artifacts are uploaded to the workflow run only.
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_linux_deb:
+        description: 'Build Linux .deb package'
+        type: boolean
+        default: true
+      run_linux_rpm:
+        description: 'Build Linux .rpm package'
+        type: boolean
+        default: true
+      run_linux_appimage:
+        description: 'Build Linux AppImage'
+        type: boolean
+        default: true
+      run_macos:
+        description: 'Build macOS .dmg / .tar.gz'
+        type: boolean
+        default: true
+      run_windows:
+        description: 'Build Windows NSIS installer / .zip'
+        type: boolean
+        default: true
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+env:
+  QT_VERSION: '6.9.1'
+  QWT_VERSION: '6.3.0'
+  CMAKE_BUILD_TYPE: Release
+
+jobs:
+  # ============================================================================
+  # Linux .deb (Ubuntu)
+  # ============================================================================
+  linux-deb:
+    name: Linux DEB
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' || inputs.run_linux_deb
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build pkg-config \
+            libgsl-dev libeigen3-dev \
+            libudev-dev \
+            file dpkg-dev fakeroot
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          modules: 'qtserialport'
+          cache: true
+
+      - name: Restore Qwt cache
+        id: qwt-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/qwt-install
+          key: qwt-${{ env.QWT_VERSION }}-linux-qt${{ env.QT_VERSION }}
+
+      - name: Build Qwt from source
+        if: steps.qwt-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euxo pipefail
+          curl -L -o qwt.tar.bz2 \
+            "https://sourceforge.net/projects/qwt/files/qwt/${QWT_VERSION}/qwt-${QWT_VERSION}.tar.bz2/download"
+          tar xf qwt.tar.bz2
+          cd "qwt-${QWT_VERSION}"
+          sed -i "s|^QWT_INSTALL_PREFIX.*=.*|QWT_INSTALL_PREFIX=${{ github.workspace }}/qwt-install|" qwtconfig.pri
+          qmake6 qwt.pro
+          make -j"$(nproc)"
+          make install
+
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=${{ env.CMAKE_BUILD_TYPE }} \
+            -DQWT_ROOT="${{ github.workspace }}/qwt-install" \
+            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/qwt-install"
+
+      - name: Build
+        run: cmake --build build -j"$(nproc)"
+
+      - name: Test
+        env:
+          QT_QPA_PLATFORM: offscreen
+          LD_LIBRARY_PATH: ${{ github.workspace }}/qwt-install/lib
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Package
+        working-directory: build
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/qwt-install/lib
+        run: cpack -G DEB
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: blackchirp-deb
+          path: build/Blackchirp-*.deb
+
+      - name: Attach to release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ github.event.release.tag_name }}" build/Blackchirp-*.deb --clobber
+
+  # ============================================================================
+  # Linux .rpm (openSUSE Leap container)
+  # ============================================================================
+  linux-rpm:
+    name: Linux RPM
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' || inputs.run_linux_rpm
+    container:
+      image: opensuse/leap:16.0
+    steps:
+      - name: Install container build dependencies
+        run: |
+          set -eux
+          zypper -n refresh
+          zypper -n install -y \
+            git tar gzip bzip2 curl gawk sed grep \
+            gcc-c++ cmake ninja make pkgconf-pkg-config \
+            qt6-base-devel qt6-serialport-devel qt6-tools-devel \
+            qt6-base-private-devel \
+            gsl-devel eigen3-devel \
+            libudev-devel \
+            rpm-build
+
+      - uses: actions/checkout@v4
+
+      - name: Restore Qwt cache
+        id: qwt-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/qwt-install
+          key: qwt-${{ env.QWT_VERSION }}-leap16-qt6
+
+      - name: Build Qwt from source
+        if: steps.qwt-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euxo pipefail
+          curl -L -o qwt.tar.bz2 \
+            "https://sourceforge.net/projects/qwt/files/qwt/${QWT_VERSION}/qwt-${QWT_VERSION}.tar.bz2/download"
+          tar xf qwt.tar.bz2
+          cd "qwt-${QWT_VERSION}"
+          sed -i "s|^QWT_INSTALL_PREFIX.*=.*|QWT_INSTALL_PREFIX=${{ github.workspace }}/qwt-install|" qwtconfig.pri
+          qmake6 qwt.pro
+          make -j"$(nproc)"
+          make install
+
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=${{ env.CMAKE_BUILD_TYPE }} \
+            -DQWT_ROOT="${{ github.workspace }}/qwt-install" \
+            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/qwt-install"
+
+      - name: Build
+        run: cmake --build build -j"$(nproc)"
+
+      - name: Test
+        env:
+          QT_QPA_PLATFORM: offscreen
+          LD_LIBRARY_PATH: ${{ github.workspace }}/qwt-install/lib
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Package
+        working-directory: build
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/qwt-install/lib
+        run: cpack -G RPM
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: blackchirp-rpm
+          path: build/Blackchirp-*.rpm
+
+      - name: Attach to release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # gh CLI may not be present in opensuse container; fall back to API
+          if command -v gh >/dev/null 2>&1; then
+            gh release upload "${{ github.event.release.tag_name }}" build/Blackchirp-*.rpm --clobber
+          else
+            zypper -n install -y gh || true
+            if command -v gh >/dev/null 2>&1; then
+              gh release upload "${{ github.event.release.tag_name }}" build/Blackchirp-*.rpm --clobber
+            else
+              for f in build/Blackchirp-*.rpm; do
+                curl -fsSL -X POST \
+                  -H "Authorization: token $GH_TOKEN" \
+                  -H "Content-Type: application/x-rpm" \
+                  --data-binary "@${f}" \
+                  "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ github.event.release.id }}/assets?name=$(basename "$f")"
+              done
+            fi
+          fi
+
+  # ============================================================================
+  # Linux AppImage
+  # ============================================================================
+  linux-appimage:
+    name: Linux AppImage
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' || inputs.run_linux_appimage
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build pkg-config \
+            libgsl-dev libeigen3-dev libudev-dev \
+            file fuse libfuse2 wget desktop-file-utils
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          modules: 'qtserialport'
+          cache: true
+
+      - name: Restore Qwt cache
+        id: qwt-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/qwt-install
+          key: qwt-${{ env.QWT_VERSION }}-linux-qt${{ env.QT_VERSION }}
+
+      - name: Build Qwt from source
+        if: steps.qwt-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euxo pipefail
+          curl -L -o qwt.tar.bz2 \
+            "https://sourceforge.net/projects/qwt/files/qwt/${QWT_VERSION}/qwt-${QWT_VERSION}.tar.bz2/download"
+          tar xf qwt.tar.bz2
+          cd "qwt-${QWT_VERSION}"
+          sed -i "s|^QWT_INSTALL_PREFIX.*=.*|QWT_INSTALL_PREFIX=${{ github.workspace }}/qwt-install|" qwtconfig.pri
+          qmake6 qwt.pro
+          make -j"$(nproc)"
+          make install
+
+      - name: Configure & build
+        run: |
+          cmake -S . -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=${{ env.CMAKE_BUILD_TYPE }} \
+            -DCMAKE_INSTALL_PREFIX=/usr \
+            -DQWT_ROOT="${{ github.workspace }}/qwt-install" \
+            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/qwt-install"
+          cmake --build build -j"$(nproc)"
+
+      - name: Test
+        env:
+          QT_QPA_PLATFORM: offscreen
+          LD_LIBRARY_PATH: ${{ github.workspace }}/qwt-install/lib
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Stage AppDir
+        run: |
+          DESTDIR="${{ github.workspace }}/AppDir" cmake --install build --component Applications
+          DESTDIR="${{ github.workspace }}/AppDir" cmake --install build --component Libraries || true
+
+      - name: Fetch linuxdeploy
+        run: |
+          set -euxo pipefail
+          mkdir -p tools
+          cd tools
+          wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          wget -q https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+          chmod +x linuxdeploy-*.AppImage
+
+      - name: Build AppImage
+        env:
+          QML_SOURCES_PATHS: ${{ github.workspace }}/src
+          LD_LIBRARY_PATH: ${{ github.workspace }}/qwt-install/lib
+        run: |
+          set -euxo pipefail
+          ./tools/linuxdeploy-x86_64.AppImage \
+            --appdir AppDir \
+            --plugin qt \
+            --desktop-file AppDir/usr/share/applications/blackchirp.desktop \
+            --icon-file AppDir/usr/share/pixmaps/blackchirp.png \
+            --output appimage
+          mkdir -p dist
+          mv Blackchirp*.AppImage dist/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: blackchirp-appimage
+          path: dist/Blackchirp*.AppImage
+
+      - name: Attach to release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ github.event.release.tag_name }}" dist/Blackchirp*.AppImage --clobber
+
+  # ============================================================================
+  # macOS DMG / TGZ
+  # ============================================================================
+  macos-dmg:
+    name: macOS DMG
+    runs-on: macos-latest
+    if: github.event_name == 'release' || inputs.run_macos
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          brew update
+          brew install gsl eigen ninja
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          modules: 'qtserialport'
+          cache: true
+
+      - name: Restore Qwt cache
+        id: qwt-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/qwt-install
+          key: qwt-${{ env.QWT_VERSION }}-macos-qt${{ env.QT_VERSION }}
+
+      - name: Build Qwt from source
+        if: steps.qwt-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euxo pipefail
+          curl -L -o qwt.tar.bz2 \
+            "https://sourceforge.net/projects/qwt/files/qwt/${QWT_VERSION}/qwt-${QWT_VERSION}.tar.bz2/download"
+          tar xf qwt.tar.bz2
+          cd "qwt-${QWT_VERSION}"
+          # Use BSD sed in-place form
+          sed -i '' "s|^QWT_INSTALL_PREFIX.*=.*|QWT_INSTALL_PREFIX=${{ github.workspace }}/qwt-install|" qwtconfig.pri
+          qmake qwt.pro
+          make -j"$(sysctl -n hw.ncpu)"
+          make install
+
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=${{ env.CMAKE_BUILD_TYPE }} \
+            -DQWT_ROOT="${{ github.workspace }}/qwt-install" \
+            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/qwt-install"
+
+      - name: Build
+        run: cmake --build build -j"$(sysctl -n hw.ncpu)"
+
+      - name: Test
+        env:
+          QT_QPA_PLATFORM: offscreen
+          DYLD_FRAMEWORK_PATH: ${{ github.workspace }}/qwt-install/lib
+          DYLD_LIBRARY_PATH: ${{ github.workspace }}/qwt-install/lib
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Package (DMG + TGZ)
+        working-directory: build
+        run: cpack -G "DragNDrop;TGZ"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: blackchirp-macos
+          path: |
+            build/Blackchirp-*.dmg
+            build/Blackchirp-*.tar.gz
+
+      - name: Attach to release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" \
+            build/Blackchirp-*.dmg build/Blackchirp-*.tar.gz --clobber
+
+  # ============================================================================
+  # Windows NSIS / ZIP
+  # ============================================================================
+  windows-nsis:
+    name: Windows NSIS
+    runs-on: windows-latest
+    if: github.event_name == 'release' || inputs.run_windows
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install GSL and Eigen via vcpkg
+        shell: pwsh
+        run: |
+          vcpkg install gsl:x64-windows eigen3:x64-windows
+          "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          modules: 'qtserialport'
+          arch: 'win64_msvc2022_64'
+          cache: true
+
+      - name: Install NSIS
+        shell: pwsh
+        run: choco install -y nsis
+
+      - name: Restore Qwt cache
+        id: qwt-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/qwt-install
+          key: qwt-${{ env.QWT_VERSION }}-windows-qt${{ env.QT_VERSION }}-msvc
+
+      - name: Build Qwt from source
+        if: steps.qwt-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Invoke-WebRequest -Uri "https://sourceforge.net/projects/qwt/files/qwt/$env:QWT_VERSION/qwt-$env:QWT_VERSION.tar.bz2/download" -OutFile qwt.tar.bz2
+          tar xf qwt.tar.bz2
+          cd "qwt-$env:QWT_VERSION"
+          $prefix = "${{ github.workspace }}/qwt-install".Replace('\','/')
+          (Get-Content qwtconfig.pri) -replace '^QWT_INSTALL_PREFIX.*=.*', "QWT_INSTALL_PREFIX=$prefix" | Set-Content qwtconfig.pri
+          qmake qwt.pro
+          nmake
+          nmake install
+
+      - name: Configure
+        shell: pwsh
+        run: |
+          cmake -S . -B build `
+            -G Ninja `
+            -DCMAKE_BUILD_TYPE=${{ env.CMAKE_BUILD_TYPE }} `
+            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET=x64-windows `
+            -DQWT_ROOT="${{ github.workspace }}/qwt-install" `
+            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/qwt-install"
+
+      - name: Build
+        shell: pwsh
+        run: cmake --build build
+
+      - name: Test
+        shell: pwsh
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          $env:PATH = "${{ github.workspace }}/qwt-install/lib;$env:PATH"
+          ctest --test-dir build --output-on-failure
+
+      - name: Package (NSIS + ZIP)
+        shell: pwsh
+        working-directory: build
+        run: cpack -G "NSIS;ZIP"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: blackchirp-windows
+          path: |
+            build/Blackchirp-*.exe
+            build/Blackchirp-*.zip
+
+      - name: Attach to release
+        if: github.event_name == 'release'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" `
+            (Get-ChildItem build/Blackchirp-*.exe).FullName `
+            (Get-ChildItem build/Blackchirp-*.zip).FullName --clobber
