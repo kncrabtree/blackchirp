@@ -108,6 +108,9 @@ find_package(QWT REQUIRED)
 # GSL - GNU Scientific Library
 find_package(GSL REQUIRED)
 
+# Eigen3 - Header-only linear algebra (used by Analysis/PeakFinder)
+find_package(Eigen3 REQUIRED NO_MODULE)
+
 # CUDA - Optional for GPU acceleration
 if(BC_ENABLE_CUDA)
     enable_language(CUDA)

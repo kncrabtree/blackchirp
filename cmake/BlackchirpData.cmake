@@ -229,6 +229,7 @@ target_link_libraries(blackchirp-data
         Qt6::Gui
         Qt6::Network
         Qt6::Concurrent
+        Eigen3::Eigen
     PRIVATE
         GSL::gsl
         GSL::gslcblas

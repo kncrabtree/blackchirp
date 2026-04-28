@@ -104,13 +104,13 @@ every push").
 
 Job matrix:
 
-| Runner            | Output                  |
-| ----------------- | ----------------------- |
-| `ubuntu-22.04`    | `.deb` (oldest LTS for glibc compatibility) |
-| `ubuntu-22.04`    | `.AppImage` (separate job, uses `linuxdeploy` + `linuxdeploy-plugin-qt`) |
-| `opensuse/leap` (container on `ubuntu-latest`) | `.rpm` |
-| `macos-latest`    | `.dmg`, `.tar.gz`       |
-| `windows-latest`  | NSIS installer, `.zip`  |
+| Runner                                         | Output                                                                  |
+| ---------------------------------------------- | ----------------------------------------------------------------------- |
+| `ubuntu-22.04`                                 | `.deb` (oldest LTS for glibc compatibility)                             |
+| `ubuntu-22.04`                                 | `.AppImage` (separate job, uses `linuxdeploy` + `linuxdeploy-plugin-qt`)|
+| `opensuse/leap` (container on `ubuntu-latest`) | `.rpm`                                                                  |
+| `macos-latest`                                 | `.dmg`, `.tar.gz`                                                       |
+| `windows-latest`                               | NSIS installer, `.zip`                                                  |
 
 Per-platform install steps:
 
