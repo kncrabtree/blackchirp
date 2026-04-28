@@ -11,12 +11,6 @@
 // ============================================================================
 REGISTER_HARDWARE_META(PythonPulseGenerator, "Python Pulse Generator (user-defined Python script)")
 REGISTER_HARDWARE_PROTOCOLS(PythonPulseGenerator, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
-REGISTER_HARDWARE_SETTINGS(PythonPulseGenerator,
-    {BC::Key::PGen::numChannels, "Number of Channels",
-     "Number of pulse output channels",
-     8, 1, 64, HwSettingPriority::Required}
-)
-
 // ============================================================================
 // Constructor
 // ============================================================================

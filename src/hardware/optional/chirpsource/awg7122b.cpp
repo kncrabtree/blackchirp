@@ -9,16 +9,12 @@ REGISTER_HARDWARE_PROTOCOLS(AWG7122B, CommunicationProtocol::Tcp)
 REGISTER_HARDWARE_SETTINGS(AWG7122B,
     {BC::Key::AWG::rate, "Sample Rate (Hz)", "DAC output sample rate",
      24e9, 1e6, 1000e9, HwSettingPriority::Important},
-    {BC::Key::AWG::samples, "Max Samples", "Maximum waveform sample count",
-     2e9, 0, QVariant{}, HwSettingPriority::Important},
     {BC::Key::AWG::min, "Min Freq (MHz)", "Minimum chirp frequency in MHz",
      50.0, 0.0, QVariant{}, HwSettingPriority::Important},
     {BC::Key::AWG::max, "Max Freq (MHz)", "Maximum chirp frequency in MHz",
      12000.0, 0.0, QVariant{}, HwSettingPriority::Important},
     {BC::Key::AWG::markerCount, "Marker Count", "Number of physical marker output channels",
      2, 0, QVariant{}, HwSettingPriority::Required},
-    {BC::Key::AWG::rampOnly, "Ramp Only", "Restrict to linear frequency ramp chirps (no arbitrary waveforms)",
-     false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
     {BC::Key::AWG::triggered, "Triggered", "AWG waits for an external trigger before outputting",
      false, QVariant{}, QVariant{}, HwSettingPriority::Optional}
 )

@@ -10,22 +10,7 @@ REGISTER_HARDWARE_PROTOCOLS(IntellisysIQPlus, CommunicationProtocol::Rs232)
 REGISTER_HARDWARE_SETTINGS(IntellisysIQPlus,
     {BC::Key::PController::min, "Min Pressure",
      "Minimum pressure reading (display range lower bound).",
-     0.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::PController::max, "Max Pressure",
-     "Maximum pressure reading (display range upper bound).",
-     20.0, 0.0, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::PController::decimals, "Display Decimals",
-     "Number of decimal places in pressure display.",
-     4, 0, 8, HwSettingPriority::Optional},
-    {BC::Key::PController::units, "Pressure Units",
-     "Pressure units for display.",
-     QString("Torr"), QVariant{}, QVariant{}, HwSettingPriority::Important},
-    {BC::Key::PController::readInterval, "Read Interval (ms)",
-     "Polling interval for pressure readings in milliseconds.",
-     200, 1, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::PController::hasValve, "Has Valve",
-     "Device includes a controlled valve output.",
-     true, QVariant{}, QVariant{}, HwSettingPriority::Optional}
+     0.0, QVariant{}, QVariant{}, HwSettingPriority::Optional}
 )
 
 IntellisysIQPlus::IntellisysIQPlus(const QString& label, QObject *parent) :

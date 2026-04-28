@@ -7,23 +7,11 @@
 REGISTER_HARDWARE_META(RigolDS2302A, "Rigol DS2302A LIF Scope")
 REGISTER_HARDWARE_PROTOCOLS(RigolDS2302A, CommunicationProtocol::Tcp)
 REGISTER_HARDWARE_SETTINGS(RigolDS2302A,
-    {BC::Key::Digi::numAnalogChannels, "Analog Channels", "Number of analog input channels", 2, 1, 128, HwSettingPriority::Required},
-    {BC::Key::Digi::numDigitalChannels, "Digital Channels", "Number of digital input channels", 0, 0, 128, HwSettingPriority::Required},
-    {BC::Key::Digi::hasAuxTriggerChannel, "Aux Trigger Channel", "Has auxiliary trigger input", true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::minFullScale, "Min Full Scale (V)", "Minimum full-scale voltage range", 0.05, QVariant{}, QVariant{}, HwSettingPriority::Important},
-    {BC::Key::Digi::maxFullScale, "Max Full Scale (V)", "Maximum full-scale voltage range", 2.5, QVariant{}, QVariant{}, HwSettingPriority::Important},
-    {BC::Key::Digi::minVOffset, "Min V Offset (V)", "Minimum vertical offset", -2.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::maxVOffset, "Max V Offset (V)", "Maximum vertical offset", 2.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::isTriggered, "Externally Triggered", "Digitizer uses external trigger signal", true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::minTrigDelay, "Min Trig Delay (us)", "Minimum trigger delay in microseconds", -10.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::maxTrigDelay, "Max Trig Delay (us)", "Maximum trigger delay in microseconds", 10.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::minTrigLevel, "Min Trig Level (V)", "Minimum trigger threshold voltage", -5.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::maxTrigLevel, "Max Trig Level (V)", "Maximum trigger threshold voltage", 5.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::canBlockAverage, "Block Average", "Supports block averaging mode", false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::maxBytes, "Max Bytes/Point", "Maximum bytes per sample", 1, 1, 4, HwSettingPriority::Optional},
-    {BC::Key::Digi::maxRecordLength, "Max Record Length", "Maximum record length in samples", 1400000, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::maxAverages, "Max Averages", "Maximum number of block averages", 1, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::LifDigi::queryIntervalMs, "Query Interval (ms)", "Polling interval between scope queries during acquisition", 101, 1, QVariant{}, HwSettingPriority::Optional}
+    {BC::Key::Digi::maxFullScale,       "Max Full Scale (V)",  "Maximum full-scale voltage range",                          2.5,     QVariant{}, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::Digi::maxBytes,           "Max Bytes/Point",     "Maximum bytes per sample",                                  1,       1,          4,          HwSettingPriority::Optional},
+    {BC::Key::Digi::maxRecordLength,    "Max Record Length",   "Maximum record length in samples",                          1400000, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::Digi::maxAverages,        "Max Averages",        "Maximum number of block averages",                          1,       QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {BC::Key::LifDigi::queryIntervalMs, "Query Interval (ms)", "Polling interval between scope queries during acquisition", 101,     1,          QVariant{}, HwSettingPriority::Optional}
 )
 REGISTER_HARDWARE_ARRAY(RigolDS2302A, BC::Key::Digi::sampleRates,
     "Sample Rates", "Available digitizer sample rates", HwSettingPriority::Important)

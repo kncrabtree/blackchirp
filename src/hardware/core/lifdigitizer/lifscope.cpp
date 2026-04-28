@@ -1,6 +1,30 @@
 #include <hardware/core/lifdigitizer/lifscope.h>
 
 #include <data/bcglobals.h>
+#include <hardware/core/hardwareregistration.h>
+
+using namespace BC::Key::Digi;
+
+REGISTER_HARDWARE_BASE(LifScope,
+    {numAnalogChannels,    "Analog Channels",        "Number of analog input channels",           2,      1,         128,       HwSettingPriority::Required},
+    {numDigitalChannels,   "Digital Channels",       "Number of digital input channels",          0,      0,         128,       HwSettingPriority::Required},
+    {hasAuxTriggerChannel, "Aux Trigger Channel",    "Has auxiliary trigger input",               true,   QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {minFullScale,         "Min Full Scale (V)",     "Minimum full-scale voltage range",          0.05,   QVariant{}, QVariant{}, HwSettingPriority::Important},
+    {maxFullScale,         "Max Full Scale (V)",     "Maximum full-scale voltage range",          2.0,    QVariant{}, QVariant{}, HwSettingPriority::Important},
+    {minVOffset,           "Min V Offset (V)",       "Minimum vertical offset",                   -2.0,   QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxVOffset,           "Max V Offset (V)",       "Maximum vertical offset",                   2.0,    QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {isTriggered,          "Externally Triggered",   "Digitizer uses external trigger signal",    true,   QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {minTrigDelay,         "Min Trig Delay (us)",    "Minimum trigger delay in microseconds",     -10.0,  QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxTrigDelay,         "Max Trig Delay (us)",    "Maximum trigger delay in microseconds",     10.0,   QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {minTrigLevel,         "Min Trig Level (V)",     "Minimum trigger threshold voltage",         -5.0,   QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxTrigLevel,         "Max Trig Level (V)",     "Maximum trigger threshold voltage",         5.0,    QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {canBlockAverage,      "Block Average",          "Supports block averaging mode",             false,  QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxBytes,             "Max Bytes/Point",        "Maximum bytes per sample",                  2,      1,         4,         HwSettingPriority::Optional},
+    {maxRecordLength,      "Max Record Length",      "Maximum record length in samples",          100000000, QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {maxAverages,          "Max Averages",           "Maximum number of block averages",          10000,  QVariant{}, QVariant{}, HwSettingPriority::Optional}
+)
+REGISTER_HARDWARE_BASE_ARRAY(LifScope, sampleRates,
+    "Sample Rates", "Available digitizer sample rates", HwSettingPriority::Important)
 
 LifScope::LifScope(const QString& impl, const QString& label, QObject *parent) :
     HardwareObject(QString(LifScope::staticMetaObject.className()), impl, label, parent),

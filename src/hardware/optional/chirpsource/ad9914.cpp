@@ -21,8 +21,6 @@ REGISTER_HARDWARE_SETTINGS(AD9914,
     {BC::Key::AWG::markerCount, "Marker Count", "Number of physical marker output channels",
      0, 0, QVariant{}, HwSettingPriority::Required},
     {BC::Key::AWG::rampOnly, "Ramp Only", "Restrict to linear frequency ramp chirps (no arbitrary waveforms)",
-     true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::AWG::triggered, "Triggered", "AWG waits for an external trigger before outputting",
      true, QVariant{}, QVariant{}, HwSettingPriority::Optional}
 )
 

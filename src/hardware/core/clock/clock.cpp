@@ -4,6 +4,9 @@
 #include <hardware/core/hardwareregistration.h>
 
 REGISTER_HARDWARE_BASE(Clock,
+    {BC::Key::Clock::minFreq, "Min Frequency (MHz)", "Minimum output frequency in MHz", 0.0, 0.0, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::Clock::maxFreq, "Max Frequency (MHz)", "Maximum output frequency in MHz", 1e7, 0.0, QVariant{}, HwSettingPriority::Important},
+    {BC::Key::Clock::lock, "Requires External Lock", "Clock references an external 10 MHz lock signal.", false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
     {BC::Key::Clock::manualTune, "Manual Tune", "Allow manual frequency adjustment of this clock from the main window.", false, QVariant{}, QVariant{}, HwSettingPriority::Optional}
 )
 

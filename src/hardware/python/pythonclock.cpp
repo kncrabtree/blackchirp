@@ -11,10 +11,7 @@ REGISTER_HARDWARE_META(PythonClock, "Python Clock (user-defined Python script)")
 REGISTER_HARDWARE_PROTOCOLS(PythonClock, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
 REGISTER_HARDWARE_SETTINGS(PythonClock,
     {BC::Key::PythonClock::numOutputs, "Number of Outputs", "Number of independent frequency outputs on this clock.", 1, 1, 8, HwSettingPriority::Required},
-    {BC::Key::Clock::tunable, "Tunable", "Clock frequency can be changed at runtime.", true, QVariant{}, QVariant{}, HwSettingPriority::Required},
-    {BC::Key::Clock::minFreq, "Min Frequency (MHz)", "Minimum output frequency in MHz", 0.0, 0.0, QVariant{}, HwSettingPriority::Important},
-    {BC::Key::Clock::maxFreq, "Max Frequency (MHz)", "Maximum output frequency in MHz", 1e7, 0.0, QVariant{}, HwSettingPriority::Important},
-    {BC::Key::Clock::lock, "Requires External Lock", "Clock references an external 10 MHz lock signal.", false, QVariant{}, QVariant{}, HwSettingPriority::Optional}
+    {BC::Key::Clock::tunable, "Tunable", "Clock frequency can be changed at runtime.", true, QVariant{}, QVariant{}, HwSettingPriority::Required}
 )
 
 // ============================================================================

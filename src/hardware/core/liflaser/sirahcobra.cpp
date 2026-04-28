@@ -16,11 +16,10 @@ REGISTER_HARDWARE_META(SirahCobra, "Sirah Cobra LIF Laser")
 REGISTER_HARDWARE_PROTOCOLS(SirahCobra, CommunicationProtocol::Rs232)
 
 REGISTER_HARDWARE_SETTINGS(SirahCobra,
-    {minPos, "Min Position", "Minimum laser wavelength/position", 450.0, QVariant{}, QVariant{}, HwSettingPriority::Important},
-    {maxPos, "Max Position", "Maximum laser wavelength/position", 700.0, QVariant{}, QVariant{}, HwSettingPriority::Important},
-    {units, "Position Units", "Units for position display (e.g. nm, cm-1)", QString("nm"), QVariant{}, QVariant{}, HwSettingPriority::Important},
-    {decimals, "Display Decimals", "Number of decimal places for position display", 4, 0, 8, HwSettingPriority::Optional},
-    {hasFl, "Has Flashlamp", "Laser has a software-controlled flashlamp", false, QVariant{}, QVariant{}, HwSettingPriority::Optional}
+    {minPos,   "Min Position",     "Minimum laser wavelength/position",             450.0, QVariant{}, QVariant{}, HwSettingPriority::Important},
+    {maxPos,   "Max Position",     "Maximum laser wavelength/position",             700.0, QVariant{}, QVariant{}, HwSettingPriority::Important},
+    {decimals, "Display Decimals", "Number of decimal places for position display", 4,     0,          8,          HwSettingPriority::Optional},
+    {hasFl,    "Has Flashlamp",    "Laser has a software-controlled flashlamp",     false, QVariant{}, QVariant{}, HwSettingPriority::Optional}
 )
 
 SirahCobra::SirahCobra(const QString& label, QObject *parent)

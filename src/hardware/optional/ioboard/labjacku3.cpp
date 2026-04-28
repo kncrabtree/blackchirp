@@ -6,40 +6,7 @@
 REGISTER_HARDWARE_META(LabjackU3, "Labjack U3 IOBoard")
 REGISTER_HARDWARE_PROTOCOLS(LabjackU3, CommunicationProtocol::Custom)
 REGISTER_LIBRARY(LabjackU3, LabjackLibrary)
-REGISTER_HARDWARE_SETTINGS(LabjackU3,
-    {BC::Key::Digi::numAnalogChannels, "Analog Channels", "Number of analog input channels",
-     8, 0, 128, HwSettingPriority::Required},
-    {BC::Key::Digi::numDigitalChannels, "Digital Channels", "Number of digital input channels",
-     8, 0, 128, HwSettingPriority::Required},
-    {BC::Key::Digi::hasAuxTriggerChannel, "Aux Trigger Channel", "Has auxiliary trigger input",
-     false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::minFullScale, "Min Full Scale (V)", "Minimum full-scale voltage range",
-     2.44, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::maxFullScale, "Max Full Scale (V)", "Maximum full-scale voltage range",
-     2.44, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::minVOffset, "Min V Offset (V)", "Minimum vertical offset",
-     0.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::maxVOffset, "Max V Offset (V)", "Maximum vertical offset",
-     0.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::minTrigDelay, "Min Trig Delay (us)", "Minimum trigger delay in microseconds",
-     0.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::maxTrigDelay, "Max Trig Delay (us)", "Maximum trigger delay in microseconds",
-     0.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::minTrigLevel, "Min Trig Level (V)", "Minimum trigger threshold voltage",
-     0.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::maxTrigLevel, "Max Trig Level (V)", "Maximum trigger threshold voltage",
-     0.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::maxRecordLength, "Max Record Length", "Maximum record length in samples",
-     1, 1, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::canBlockAverage, "Block Average", "Supports block averaging",
-     false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::canMultiRecord, "Multi Record", "Supports multi-record acquisition",
-     false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::multiBlock, "Multi Block", "Can simultaneously block average and multi-record",
-     false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::maxBytes, "Max Bytes/Point", "Maximum bytes per sample",
-     2, 1, 8, HwSettingPriority::Optional}
-)
+
 REGISTER_HARDWARE_ARRAY(LabjackU3, BC::Key::Digi::sampleRates,
     "Sample Rates", "Available sample rates (for IO boards typically 'N/A')",
     HwSettingPriority::Optional)

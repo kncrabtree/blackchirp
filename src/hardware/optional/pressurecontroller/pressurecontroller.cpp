@@ -2,8 +2,18 @@
 
 #include <QTimer>
 #include <data/settings/hardwarekeys.h>
+#include <hardware/core/hardwareregistration.h>
 
 using namespace BC::Key::PController;
+
+REGISTER_HARDWARE_BASE(PressureController,
+    {min,          "Min Pressure",       "Minimum pressure reading (display range lower bound).",    -1.0,           QVariant{}, QVariant{}, HwSettingPriority::Optional},
+    {max,          "Max Pressure",       "Maximum pressure reading (display range upper bound).",    20.0,           0.0,        QVariant{}, HwSettingPriority::Optional},
+    {decimals,     "Display Decimals",   "Number of decimal places in pressure display.",            4,              0,          8,          HwSettingPriority::Optional},
+    {units,        "Pressure Units",     "Pressure units for display.",                              QString("Torr"), QVariant{}, QVariant{}, HwSettingPriority::Important},
+    {readInterval, "Read Interval (ms)", "Polling interval for pressure readings in milliseconds.", 200,            1,          QVariant{}, HwSettingPriority::Optional},
+    {hasValve,     "Has Valve",          "Device includes a controlled valve output.",               true,           QVariant{}, QVariant{}, HwSettingPriority::Optional}
+)
 
 PressureController::PressureController(const QString& impl, const QString& label, bool ro, QObject *parent) :
     HardwareObject(QString(PressureController::staticMetaObject.className()), impl, label, parent), d_readOnly(ro), d_config{BC::Key::hwKey(QString(PressureController::staticMetaObject.className()), label)}

@@ -11,14 +11,6 @@
 REGISTER_HARDWARE_META(PythonLifLaser, "Python LIF Laser (user-defined Python script)")
 REGISTER_HARDWARE_PROTOCOLS(PythonLifLaser, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
 
-REGISTER_HARDWARE_SETTINGS(PythonLifLaser,
-    {BC::Key::LifLaser::minPos, "Min Position", "Minimum laser wavelength/position", 250.0, QVariant{}, QVariant{}, HwSettingPriority::Important},
-    {BC::Key::LifLaser::maxPos, "Max Position", "Maximum laser wavelength/position", 2000.0, QVariant{}, QVariant{}, HwSettingPriority::Important},
-    {BC::Key::LifLaser::units, "Position Units", "Units for position display (e.g. nm, cm-1)", QString("nm"), QVariant{}, QVariant{}, HwSettingPriority::Important},
-    {BC::Key::LifLaser::decimals, "Display Decimals", "Number of decimal places for position display", 2, 0, 8, HwSettingPriority::Optional},
-    {BC::Key::LifLaser::hasFl, "Has Flashlamp", "Laser has a software-controlled flashlamp", true, QVariant{}, QVariant{}, HwSettingPriority::Optional}
-)
-
 // ============================================================================
 // Constructor
 // ============================================================================

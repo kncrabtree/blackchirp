@@ -22,7 +22,7 @@ Hardware classes register their settings in their `.cpp` file using static macro
 Registration happens at program startup before any objects are constructed.
 
 ```cpp
-// Scalar settings
+// Implementation scalar settings
 REGISTER_HARDWARE_SETTINGS(MyClass,
     {BC::Key::MyHw::rate,    "Sample Rate (Hz)", "DAC output sample rate",
      16e9, 1e6, 100e9, HwSettingPriority::Important},
@@ -30,11 +30,24 @@ REGISTER_HARDWARE_SETTINGS(MyClass,
      true, {}, {}, HwSettingPriority::Optional},
 )
 
-// Array setting (metadata + one entry per REGISTER_HARDWARE_ARRAY_ENTRY call)
+// Implementation array setting (metadata + one entry per REGISTER_HARDWARE_ARRAY_ENTRY call)
 REGISTER_HARDWARE_ARRAY(MyClass, BC::Key::MyHw::sampleRates,
     "Sample Rates", "Available sample rates", HwSettingPriority::Important)
 REGISTER_HARDWARE_ARRAY_ENTRY(MyClass, BC::Key::MyHw::sampleRates,
     {{BC::Key::MyHw::srText, "2 GSa/s"}, {BC::Key::MyHw::srValue, 2e9}})
+
+// Base-class scalar settings (inherited by all implementations)
+REGISTER_HARDWARE_BASE(MyBaseClass,
+    {BC::Key::MyHw::channels, "Channels", "Number of input channels",
+     4, 1, 32, HwSettingPriority::Required},
+)
+
+// Base-class array placeholder (empty; implementations override with their entries)
+REGISTER_HARDWARE_BASE_ARRAY(MyBaseClass, BC::Key::MyHw::sampleRates,
+    "Sample Rates", "Available sample rates", HwSettingPriority::Important)
+// Optional: supply default entries when a useful fallback exists
+REGISTER_HARDWARE_BASE_ARRAY_ENTRY(MyBaseClass, BC::Key::MyHw::sampleRates,
+    {{BC::Key::MyHw::srText, "1 GSa/s"}, {BC::Key::MyHw::srValue, 1e9}})
 ```
 
 The `HwSettingDef` fields are:
@@ -87,6 +100,15 @@ The same pattern applies to array settings: an implementation that registers
 its own `REGISTER_HARDWARE_ARRAY` for a key defined by `REGISTER_HARDWARE_BASE_ARRAY`
 will have its entries used in place of the base-class entries.
 
+**Empty base-array declaration.** Calling `REGISTER_HARDWARE_BASE_ARRAY` with no
+`REGISTER_HARDWARE_BASE_ARRAY_ENTRY` calls registers the array key with an empty
+default. This guarantees the array always appears in the settings dialog (so the
+user can add entries) even for implementations that do not supply their own
+`REGISTER_HARDWARE_ARRAY`. Implementations that do supply entries override the
+empty base completely. Use this for arrays like `sampleRates` where every
+implementation defines its own entries but a user-facing Python or virtual
+implementation might otherwise omit the key entirely.
+
 ### UI Integration
 
 **Profile creation (`AddProfileDialog`):** When the user selects a hardware
@@ -106,7 +128,7 @@ control widget (e.g., pulse generator channel table). Changes are written to
 
 | File | Purpose |
 |---|---|
-| `src/hardware/core/hardwareregistration.h` | `REGISTER_HARDWARE_SETTINGS`, `REGISTER_HARDWARE_ARRAY`, `REGISTER_HARDWARE_ARRAY_ENTRY` macros; `HwSettingDef` and `HwArraySettingDef` structs |
+| `src/hardware/core/hardwareregistration.h` | All registration macros: `REGISTER_HARDWARE_SETTINGS/ARRAY/ARRAY_ENTRY` (implementation), `REGISTER_HARDWARE_BASE/BASE_ARRAY/BASE_ARRAY_ENTRY` (base class); `HwSettingDef` and `HwArraySettingDef` structs |
 | `src/hardware/core/hardwareregistry.h/.cpp` | `HardwareRegistry` singleton; stores and retrieves all registrations |
 | `src/gui/widget/hwsettingswidget.h/.cpp` | `HwSettingsWidget` — shared embeddable widget used by both `AddProfileDialog` and `HWDialog` |
 | `src/gui/dialog/hwarrayeditdialog.h/.cpp` | Sub-dialog for editing array setting entries |
@@ -115,12 +137,31 @@ control widget (e.g., pulse generator channel table). Changes are written to
 
 ## Adding Settings to a New Hardware Class
 
+**For a concrete implementation:**
+
 1. Declare key constants in the appropriate `BC::Key::` namespace in
    `src/data/settings/hardwarekeys.h`.
-2. Add `REGISTER_HARDWARE_SETTINGS(...)` in the class `.cpp` file at file scope
-   (outside any function), after the existing `REGISTER_HARDWARE_META` and
-   `REGISTER_HARDWARE_PROTOCOLS` macros.
+2. Add `REGISTER_HARDWARE_SETTINGS(...)` in the class `.cpp` file at file scope,
+   after the existing `REGISTER_HARDWARE_META` and `REGISTER_HARDWARE_PROTOCOLS`
+   macros. Omit any setting whose value matches the base-class default — it is
+   inherited automatically.
 3. For array settings, add `REGISTER_HARDWARE_ARRAY(...)` followed by one
-   `REGISTER_HARDWARE_ARRAY_ENTRY(...)` per default entry.
+   `REGISTER_HARDWARE_ARRAY_ENTRY(...)` per entry. Omit the whole block if the
+   base-class array default is sufficient.
 4. Remove any `setDefault` / `setArray` calls in the constructor for settings
    that are now registered — the base constructor handles them automatically.
+
+**For an abstract base class:**
+
+1. Declare key constants in `hardwarekeys.h`.
+2. Add `REGISTER_HARDWARE_BASE(...)` in the base class `.cpp` file with the
+   common settings and their sensible defaults. Include every setting shared by
+   all implementations, even if the default value differs per implementation.
+3. For array settings that every implementation defines (e.g. `sampleRates`),
+   add `REGISTER_HARDWARE_BASE_ARRAY(...)` with no entries. This ensures the
+   key always appears in the settings dialog even for implementations (such as
+   Python-backed ones) that do not supply their own `REGISTER_HARDWARE_ARRAY`.
+   If a useful default set of entries exists, add `REGISTER_HARDWARE_BASE_ARRAY_ENTRY`
+   calls (see `FlowController` for an example).
+4. Each implementation then registers only the settings that differ from the
+   base defaults, or settings unique to that implementation.
