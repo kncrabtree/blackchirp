@@ -75,8 +75,6 @@ set(BLACKCHIRP_QRC_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/resources/resources.qrc
 )
 
-# Virtual FTMW digitizer no longer requires resource files
-
 # Manually process Qt resources to ensure they are compiled
 qt6_add_resources(BLACKCHIRP_COMPILED_RESOURCES ${BLACKCHIRP_QRC_FILES})
 
@@ -148,8 +146,7 @@ if(UNIX)
     target_link_libraries(blackchirp PRIVATE m)
 endif()
 
-# Hardware-specific library linking (only link to final executable)
-# LabJack: Now uses dynamic loading via LabjackLibrary wrapper - no compile-time linking needed
+# All vendor hardware libraries use dynamic loading at runtime; no compile-time linking needed
 
 # CUDA libraries (if enabled)
 if(BC_CUDA AND CUDA_FOUND)

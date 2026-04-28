@@ -25,7 +25,7 @@ if(NOT BC_BUILD_VERSION)
     set(BC_BUILD_VERSION "unknown")
 endif()
 
-# Version definitions for compatibility with qmake system
+# Version definitions
 set(BC_MAJOR_VERSION ${PROJECT_VERSION_MAJOR})
 set(BC_MINOR_VERSION ${PROJECT_VERSION_MINOR})
 set(BC_PATCH_VERSION ${PROJECT_VERSION_PATCH})
@@ -49,9 +49,6 @@ endif()
 option(BC_BUILD_VIEWER_ONLY "Build only the viewer application" OFF)
 option(BC_BUILD_TESTS "Build test executables" ON)
 option(BC_BUILD_DOCUMENTATION "Build documentation" OFF)
-
-# Build configuration is now handled by dedicated config files
-# Hardware configuration eliminated - all hardware always compiled in
 
 # ============================================================================
 # Compiler Configuration
@@ -152,7 +149,7 @@ endif()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # ============================================================================
-# Hardware Configuration Processing
+# Build Configuration
 # ============================================================================
 
 # Check for user build configuration file
@@ -195,11 +192,7 @@ function(add_blackchirp_definitions target_name)
         BC_BUILD_VERSION="${BC_BUILD_VERSION}"
     )
     
-    # Hardware-specific definitions ELIMINATED
-    # All hardware configuration is now runtime-only via RuntimeHardwareConfig
-    # No more BC_NUM_* or BC_* hardware flags
-    
-    # CUDA definitions (remains compile-time for now as specified)
+    # CUDA is compile-time; all hardware selection is runtime-only
     if(BC_ENABLE_CUDA)
         target_compile_definitions(${target_name} PRIVATE BC_CUDA)
     endif()
@@ -531,10 +524,8 @@ if(BC_BUILD_TESTS)
     add_test(NAME LoadoutManagerTest COMMAND tst_loadoutmanagertest)
 
     # Hardware Communication Test
-    # TODO: Temporarily disabled due to HardwareManager dependencies in HardwareObject
-    # This test will be re-enabled once Phase 2 runtime hardware migration is complete
-    # and HardwareManager is updated to work with the new runtime configuration system.
-    # The test itself is valuable for validating GPIB modernization improvements.
+    # Disabled: HardwareObject carries HardwareManager dependencies that conflict
+    # with the test hardware library; re-enable once that coupling is resolved.
     #
     # add_executable(tst_hardwarecommunication tests/tst_hardwarecommunication.cpp)
     # target_link_libraries(tst_hardwarecommunication 
@@ -565,14 +556,12 @@ if(BC_BUILD_TESTS)
         tst_scientificspinboxtest
         tst_waveformbuffertest
         tst_loadoutmanagertest
-        # tst_hardwarecommunication  # Disabled until HardwareManager migration complete
+        # tst_hardwarecommunication  # Disabled (see comment above)
     )
     
 endif()
 
 # Build main application unless viewer-only build
-# Note: Main application is now built via BlackchirpApplication.cmake module
-# The src/CMakeLists.txt is kept for reference but not used
 
 # Build viewer application
 include(cmake/BlackchirpViewerApplication.cmake)

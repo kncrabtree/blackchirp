@@ -23,7 +23,6 @@ CMakeFiles/
 Makefile
 
 # User configuration files (user-specific, not tracked)
-cmake/HardwareConfig.cmake
 cmake/BuildConfig.cmake
 
 # Claude Code assistant directory
