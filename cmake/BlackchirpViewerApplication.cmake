@@ -126,13 +126,17 @@ endif()
 # Installation
 # ============================================================================
 
-# Install viewer executable
+# Install viewer executable. BUNDLE DESTINATION `.` places the .app at the
+# install-prefix root for DragNDrop DMG layout and for blackchirp_deploy_qt().
 install(TARGETS blackchirp-viewer
     BUNDLE DESTINATION .
         COMPONENT Applications
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         COMPONENT Applications
 )
+
+# Bundle Qt redistributables on Windows/macOS (no-op on Linux).
+blackchirp_deploy_qt(blackchirp-viewer)
 
 # ============================================================================
 # Status Information

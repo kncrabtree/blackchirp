@@ -47,21 +47,25 @@ purpose.
   auto-derivation cannot be validated on openSUSE because `dpkg-shlibdeps`
   needs Debian's `*.shlibs` database; this will populate correctly on an
   Ubuntu CI runner.
+- **Qt deployment wired for Windows and macOS.** New `cmake/QtDeployment.cmake`
+  exposes `blackchirp_deploy_qt(<target>)`, which locates `windeployqt` /
+  `macdeployqt` from the resolved `Qt6::qmake` and registers an
+  `install(CODE)` hook that runs the right tool against the staged binary.
+  Both `blackchirp` and `blackchirp-viewer` call it after their
+  `install(TARGETS)` rule, and macOS `BUNDLE DESTINATION` is normalized to
+  `.` so the `.app` lands at the install-prefix root for DragNDrop. No-op on
+  Linux. Still needs clean-VM verification once CI is up.
 
 ### Remaining work (handoff)
 
-1. **Qt deployment for Windows and macOS.** `windeployqt` and `macdeployqt`
-   are not invoked anywhere. Without them, packaged Windows/macOS binaries
-   cannot launch on a clean machine. Wire these into `install()` rules or
-   into the CI workflow as a post-build step. Verify with a clean VM.
-2. **GitHub Actions release workflow.** No `.github/workflows/` directory
+1. **GitHub Actions release workflow.** No `.github/workflows/` directory
    exists. Create `release.yml` triggered by `workflow_dispatch` and
    `release: published`. Job matrix:
 
    | Runner                                         | Output                                                                  |
    | ---------------------------------------------- | ----------------------------------------------------------------------- |
-   | `ubuntu-22.04`                                 | `.deb` (oldest LTS for glibc compatibility)                             |
-   | `ubuntu-22.04`                                 | `.AppImage` (separate job, `linuxdeploy` + `linuxdeploy-plugin-qt`)     |
+   | `ubuntu-latest`                                | `.deb` (oldest LTS for glibc compatibility)                             |
+   | `ubuntu-latest`                                | `.AppImage` (separate job, `linuxdeploy` + `linuxdeploy-plugin-qt`)     |
    | `opensuse/leap` (container on `ubuntu-latest`) | `.rpm`                                                                  |
    | `macos-latest`                                 | `.dmg`, `.tar.gz`                                                       |
    | `windows-latest`                               | NSIS installer, `.zip`                                                  |
@@ -74,14 +78,14 @@ purpose.
    Each job: `cmake → cmake --build → ctest → cpack`, upload the package(s)
    as workflow artifacts; on `release: published`, attach to the release.
 
-3. **Package size sanity check.** The Debug-build RPM/DEB came in at ~190 MB
+2. **Package size sanity check.** The Debug-build RPM/DEB came in at ~190 MB
    because the `Development` component ships static libs and headers
    (~150 MB executables alone in Debug). Worth checking with a Release build
    whether splitting the runtime and development components into separate
    packages (e.g. `blackchirp` vs `blackchirp-devel`) makes sense before the
    first public release.
 
-4. **Verification once CI is up.**
+3. **Verification once CI is up.**
    - `.rpm` installs cleanly on openSUSE Tumbleweed; `rpm -qpR` shows
      reasonable auto-derived requirements.
    - `.deb` installs cleanly on Ubuntu LTS; `dpkg -I` shows non-empty
@@ -94,8 +98,11 @@ purpose.
 ## Notes for the next session
 
 - The packaging-blocking bugs are all fixed; CPack works end-to-end on
-  Linux. The remaining work is **CI wiring and Qt redistributable
-  bundling**, not cmake repair.
+  Linux, and Qt redistributable bundling is wired into the install rules
+  for Windows/macOS. The remaining work is **CI wiring**, not cmake repair.
+- The Qt deploy hook runs at `cmake --install` / `cpack` time and depends
+  on `windeployqt` / `macdeployqt` being on PATH (or in the Qt6 bin dir
+  resolved from `Qt6::qmake`'s `IMPORTED_LOCATION`). On Linux it is a no-op.
 - Recent commits on this branch: `f3ab9b15` (Eigen3 wiring) and `55257617`
   (CPack overhaul + asset creation + version bump).
 - `icnsutil` was used locally to generate `icons/blackchirp.icns` from the

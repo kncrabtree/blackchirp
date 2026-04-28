@@ -201,14 +201,19 @@ endif()
 # Installation Configuration
 # ============================================================================
 
-# Install the main application
+# Install the main application. BUNDLE DESTINATION `.` places the .app at
+# the install-prefix root, matching DragNDrop DMG layout and the path
+# expected by blackchirp_deploy_qt() below.
 install(TARGETS blackchirp
     EXPORT BlackchirpApplicationTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         COMPONENT Applications
-    BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR}
+    BUNDLE DESTINATION .
         COMPONENT Applications
 )
+
+# Bundle Qt redistributables on Windows/macOS (no-op on Linux).
+blackchirp_deploy_qt(blackchirp)
 
 # Export targets
 install(EXPORT BlackchirpApplicationTargets

@@ -115,6 +115,10 @@ find_package(Eigen3 REQUIRED NO_MODULE)
 # Must be available before any subdirectory install() rules use them.
 include(GNUInstallDirs)
 
+# Qt redistributable bundling for Windows/macOS (no-op on Linux). Provides
+# blackchirp_deploy_qt(<target>) used by the app cmake modules.
+include(cmake/QtDeployment.cmake)
+
 # CUDA - Optional for GPU acceleration
 if(BC_ENABLE_CUDA)
     enable_language(CUDA)
