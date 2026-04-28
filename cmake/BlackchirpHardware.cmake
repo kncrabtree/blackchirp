@@ -16,8 +16,15 @@ set(HARDWARE_SYSTEM_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/vendorlibrary.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/spectrumlibrary.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/labjacklibrary.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/labjackdriver_exo.cpp
 )
+
+if(WIN32)
+    list(APPEND HARDWARE_SYSTEM_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/labjackdriver_ud.cpp)
+else()
+    list(APPEND HARDWARE_SYSTEM_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/labjackdriver_exo.cpp)
+endif()
 
 # Communication protocol sources
 file(GLOB COMMUNICATION_SOURCES
@@ -77,6 +84,12 @@ file(GLOB HARDWARE_IMPLEMENTATIONS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/opolette.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/sirah*.cpp
 )
+
+# u3.cpp is the exodriver-only vendored helper; not compiled on Windows
+if(WIN32)
+    list(REMOVE_ITEM HARDWARE_IMPLEMENTATIONS_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/ioboard/u3.cpp)
+endif()
 
 # Python hardware sources (QProcess-based, no Python build dependencies)
 file(GLOB PYTHON_HARDWARE_SOURCES
