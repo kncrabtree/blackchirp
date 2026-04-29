@@ -21,7 +21,9 @@ None.
 The sphinx/breathe documentation is outdated and needs to be updated for the
 `cmakemigration` branch. The goals are:
 
-- Improve the readme and program summary for the landing page and Github
+- Improve the readme and program summary for the documentation landing page and Github README.
+- Update the changelog with major feature developments; establish best practices for keeping it updated
+- Prepare a feature summary/migration guide for version 1.x -> 2.0.0.
 - Update the user guide to provide a walkthrough of major program features and use-cases
 - Maintain a hardware catalog of C++ drivers/capabilities
 - Create a developer's guide to explain the overall code structure, conventions, major
