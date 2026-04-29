@@ -27,7 +27,7 @@ requirements, and acceptance criteria.
 | ID | Title | Effort | Depends on | Status |
 |----|-------|--------|------------|--------|
 | 00 | Doc infrastructure, landing page, README | S | — | complete |
-| 01 | Installation: binary packages and CMake source build | M | 00 | not started |
+| 01 | Installation: binary packages and CMake source build | M | 00 | drafted |
 | 02 | First Run, Application Configuration, Hardware Onboarding | M | 00 | not started |
 | 03 | Hardware Configuration: profiles, loadouts, FTMW presets | L | 02 | not started |
 | 04 | Hardware Menu, Communication, Status Panel | M | 03 | not started |

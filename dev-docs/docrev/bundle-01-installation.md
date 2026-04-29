@@ -1,10 +1,23 @@
 # Bundle 01 — Installation
 
-**Status:** not started
+**Status:** drafted
 
 <!--
 Status log:
 - (entries appended in reverse chronological order; most recent first)
+- 2026-04-29: in progress → drafted. Drafter (Sonnet, worktree)
+  produced full rewrite of `doc/source/user_guide/installation.rst`.
+  Verifier (fresh-context Sonnet) found zero load-bearing issues; one
+  minor cosmetic issue (trailing slash on `build/` in the docs build
+  command) fixed directly by orchestrator. Two screenshot TODO
+  markers in place with exact filenames. All acceptance criteria met.
+  Worktree auto-merged into main checkout; awaiting user review and
+  commit.
+- 2026-04-29: not started → in progress. Drafter dispatched (Sonnet,
+  isolated worktree). Bundle file corrected before dispatch:
+  `BC_ENABLE_LIF` does not exist; LIF is runtime-only. Build-options
+  bullet rewritten to list the five flags actually present in
+  `cmake/BuildConfig.cmake.template`.
 -->
 
 Replace the qmake-era installation page with binary-package coverage
@@ -25,9 +38,10 @@ first and a CMake source-build section second.
   source-build section is for users who need to enable a hardware
   implementation that the binary distribution does not include.
 - Add a short "Optional modules and build options" subsection covering
-  `BC_BUILD_DOCUMENTATION`, `BC_ENABLE_LIF`, `BC_ENABLE_CUDA`, plus a
-  note on hardware enable flags and that LIF is now a runtime toggle
-  in addition to a build option.
+  `BC_BUILD_DOCUMENTATION`, `BC_ENABLE_CUDA`, `BC_BUILD_VIEWER_ONLY`,
+  `BC_BUILD_TESTS`, and `BC_ALLHARDWARE`, plus a note that LIF is a
+  runtime toggle (no build flag) and a forward link to the
+  hardware-configuration pages for selecting hardware implementations.
 - Replace the "Hardware Implementations" subsection with a brief
   pointer to the runtime hardware configuration system (forward link
   to bundle 03's pages); installation no longer selects hardware
