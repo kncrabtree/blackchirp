@@ -24,6 +24,7 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/mainwindow.cpp
     
     # Dialogs
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/aboutdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/addprofiledialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/applicationconfigdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/batchsequencedialog.cpp
@@ -138,6 +139,7 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/mainwindow_ui.h
     
     # Dialogs
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/aboutdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/addprofiledialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/applicationconfigdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/batchsequencedialog.h

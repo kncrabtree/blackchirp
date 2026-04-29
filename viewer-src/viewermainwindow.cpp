@@ -1,12 +1,16 @@
 #include "viewermainwindow.h"
 #include <QApplication>
-#include <QFormLayout>
+#include <QDesktopServices>
 #include <QDialogButtonBox>
-#include <QPushButton>
 #include <QDir>
+#include <QFormLayout>
 #include <QListWidgetItem>
-#include <QToolBar>
 #include <QMenu>
+#include <QPushButton>
+#include <QToolBar>
+#include <QUrl>
+
+#include <gui/dialog/aboutdialog.h>
 
 #define _STR(x) #x
 #define STRINGIFY(x) _STR(x)
@@ -118,16 +122,31 @@ void ViewerMainWindow::setupMenuBar()
     
     // Help menu
     QMenu *helpMenu = menuBar->addMenu("&Help");
-    QAction *aboutAction = helpMenu->addAction("&About");
+
+    auto addUrl = [helpMenu, this](const QString &text, const char *url) {
+        helpMenu->addAction(text, this, [url]() {
+            QDesktopServices::openUrl(QUrl(QLatin1StringView(url)));
+        });
+    };
+    addUrl(QString("&Documentation"),   "https://blackchirp.readthedocs.io/en/latest/index.html");
+    addUrl(QString("&GitHub Repository"), "https://github.com/kncrabtree/blackchirp");
+    addUrl(QString("Di&scord Server"),  "https://discord.gg/88CkbAKUZY");
+    helpMenu->addSeparator();
+
+    auto *aboutAction = helpMenu->addAction("&About Blackchirp Viewer");
     connect(aboutAction, &QAction::triggered, this, [this]() {
-        QMessageBox::about(this, "About Blackchirp Viewer", 
-            QString("Blackchirp Viewer v%1.%2.%3-%4\n\n"
-                   "A lightweight data visualization application for Blackchirp experiments.\n\n"
-                   "Based on Blackchirp by Kyle Crabtree\n"
-                   "University of California, Davis")
+        AboutDialog::AppInfo info;
+        info.name = QString("Blackchirp Viewer");
+        info.version = QString("%1.%2.%3-%4")
             .arg(BCV_MAJOR_VERSION).arg(BCV_MINOR_VERSION)
-            .arg(BCV_PATCH_VERSION).arg(STRINGIFY(BCV_RELEASE_VERSION)));
+            .arg(BCV_PATCH_VERSION).arg(STRINGIFY(BCV_RELEASE_VERSION));
+        info.build = QLatin1StringView(BCV_BUILD_VERSION);
+        info.description = QString("Data visualization application for Blackchirp experiments.");
+        AboutDialog dlg(info, this);
+        dlg.exec();
     });
+
+    helpMenu->addAction(QString("About &Qt"), qApp, &QApplication::aboutQt);
 }
 
 void ViewerMainWindow::openExperiment()

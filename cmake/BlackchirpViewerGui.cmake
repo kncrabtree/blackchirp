@@ -52,6 +52,7 @@ set(BLACKCHIRP_VIEWER_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/overlay/overlaycheckboxdelegate.cpp
     
     # Dialogs (viewer-safe)
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/aboutdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/peaklistexportdialog.cpp
     
     # Basic widgets (no hardware dependencies)
@@ -115,6 +116,7 @@ set(BLACKCHIRP_VIEWER_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/overlay/overlaycheckboxdelegate.h
     
     # Dialogs (viewer-safe)
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/aboutdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/peaklistexportdialog.h
     
     # Basic widgets (no hardware dependencies)

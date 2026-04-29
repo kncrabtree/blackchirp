@@ -64,6 +64,7 @@ public:
     QToolButton *hardwareButton;
     QToolButton *viewExperimentButton;
     QToolButton *settingsButton;
+    QToolButton *helpButton;
     QAction *appConfigAction;
     QWidget *centralWidget;
     QHBoxLayout *mainLayout;
@@ -98,6 +99,7 @@ public:
     QMenu *menuRollingData;
     QMenu *menuAuxData;
     QMenu *settingsMenu;
+    QMenu *helpMenu;
     QMenu *viewExperimentMenu;
     QToolBar *mainToolBar;
     QStatusBar *statusBar;
@@ -235,6 +237,13 @@ public:
         settingsButton->setToolTip("Configure application and miscellaneous settings");
         settingsButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
         settingsButton->setPopupMode(QToolButton::InstantPopup);
+
+        helpButton = new QToolButton(MainWindow);
+        // Icon set programmatically in setupThemeAwareIconStyling()
+        helpButton->setText("Help");
+        helpButton->setToolTip("Help and application information");
+        helpButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+        helpButton->setPopupMode(QToolButton::InstantPopup);
 
         appConfigAction = new QAction("Application Settings");
         // Icon set programmatically in setupThemeAwareIconStyling()
@@ -451,6 +460,8 @@ public:
 
         settingsMenu = new QMenu(settingsButton);
         settingsMenu->addAction(appConfigAction);
+
+        helpMenu = new QMenu(helpButton);
         
         viewExperimentMenu = new QMenu(MainWindow);
         viewExperimentMenu->setObjectName(QString::fromUtf8("viewExperimentMenu"));
@@ -523,6 +534,9 @@ public:
 
         mainToolBar->addWidget(settingsButton);
         settingsButton->setMenu(settingsMenu);
+
+        mainToolBar->addWidget(helpButton);
+        helpButton->setMenu(helpMenu);
 
         auto w = new QWidget(MainWindow);
         w->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);

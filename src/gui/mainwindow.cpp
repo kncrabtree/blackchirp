@@ -39,6 +39,7 @@
 #include <gui/widget/pressurecontrolwidget.h>
 #include <gui/style/themecolors.h>
 
+#include <gui/dialog/aboutdialog.h>
 #include <gui/dialog/applicationconfigdialog.h>
 #include <gui/dialog/communicationdialog.h>
 #include <gui/dialog/hwdialog.h>
@@ -75,6 +76,9 @@
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
+
+#define _BC_STR(x) #x
+#define BC_STRINGIFY(x) _BC_STR(x)
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -269,7 +273,44 @@ MainWindow::MainWindow(QWidget *parent) :
     SettingsStorage bc;
     ui->exptValueLabel->setText(QString::number(bc.get<int>(BC::Key::exptNum,0)));
     updateSavePathLabel();
-    
+
+    {
+        using namespace Qt::Literals::StringLiterals;
+        auto addUrl = [this](const QString &text, const char *url) {
+            ui->helpMenu->addAction(text, this, [url]() {
+                QDesktopServices::openUrl(QUrl(QLatin1StringView(url)));
+            });
+        };
+        addUrl("&Documentation"_L1, "https://blackchirp.readthedocs.io/en/latest/index.html");
+        addUrl("&GitHub Repository"_L1, "https://github.com/kncrabtree/blackchirp");
+        addUrl("Di&scord Server"_L1, "https://discord.gg/88CkbAKUZY");
+        ui->helpMenu->addSeparator();
+        ui->helpMenu->addAction("&About Blackchirp"_L1, this, [this]() {
+            using namespace Qt::Literals::StringLiterals;
+            AboutDialog::AppInfo info;
+            info.name = "Blackchirp"_L1;
+            info.version = u"%1.%2.%3-%4"_s
+                .arg(BC_MAJOR_VERSION).arg(BC_MINOR_VERSION)
+                .arg(BC_PATCH_VERSION).arg(BC_STRINGIFY(BC_RELEASE_VERSION));
+            info.build = QLatin1StringView(BC_BUILD_VERSION);
+            info.description = "CP-FTMW spectroscopy data acquisition and visualization software."_L1;
+            info.features = {
+                {"CUDA"_L1,
+#ifdef BC_CUDA
+                 "Enabled"_L1
+#else
+                 "Disabled"_L1
+#endif
+                },
+                {"LIF module"_L1, ApplicationConfigManager::instance().isLifEnabled()
+                     ? QString("Enabled"_L1) : QString("Disabled"_L1)},
+            };
+            AboutDialog dlg(info, this);
+            dlg.exec();
+        });
+        ui->helpMenu->addAction("About &Qt"_L1, qApp, &QApplication::aboutQt);
+    }
+
     // Defer UI configuration until after the widget is fully rendered
     // This prevents LIF widgets from briefly appearing on wrong tabs during initialization
     QTimer::singleShot(0, this, [this]() { configureUi(Idle); });
@@ -1699,6 +1740,7 @@ void MainWindow::setupThemeAwareIconStyling()
     ui->acquireButton->setIcon(ThemeColors::createThemedIcon(":/icons/play-circle.svg", ThemeColors::IconPrimary, this));
     ui->hardwareButton->setIcon(ThemeColors::createThemedIcon(":/icons/wrench-screwdriver.svg", ThemeColors::IconPrimary, this));
     ui->settingsButton->setIcon(ThemeColors::createThemedIcon(":/icons/cog-6-tooth.svg", ThemeColors::IconSecondary, this));
+    ui->helpButton->setIcon(ThemeColors::createThemedIcon(":/icons/question-mark-circle.svg", ThemeColors::IconSecondary, this));
     ui->auxPlotButton->setIcon(ThemeColors::createThemedIcon(":/icons/chart-bar.svg", ThemeColors::IconSecondary, this));
     ui->rollingPlotButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-path-rounded-square.svg", ThemeColors::IconSecondary, this));
     ui->viewExperimentButton->setIcon(ThemeColors::createThemedIcon(":/icons/viewold.svg", ThemeColors::IconSecondary, this));

@@ -14,7 +14,7 @@ set(BC_RELEASE_VERSION "alpha" CACHE STRING "Release version string")
 
 # Get git build version
 execute_process(
-    COMMAND git describe --always
+    COMMAND git rev-parse HEAD
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     OUTPUT_VARIABLE BC_BUILD_VERSION
     OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -201,6 +201,9 @@ function(add_blackchirp_definitions target_name)
         BC_PATCH_VERSION=${BC_PATCH_VERSION}
         BC_RELEASE_VERSION=${BC_RELEASE_VERSION}
         BC_BUILD_VERSION="${BC_BUILD_VERSION}"
+        BC_QWT_VERSION="${QWT_VERSION}"
+        BC_GSL_VERSION="${GSL_VERSION}"
+        BC_EIGEN3_VERSION="${Eigen3_VERSION}"
     )
     
     # CUDA is compile-time; all hardware selection is runtime-only
