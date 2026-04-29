@@ -1,10 +1,15 @@
 # Bundle 00 — Doc Infrastructure, Landing Page, README
 
-**Status:** drafted
+**Status:** complete
 
 <!--
 Status log:
 - (entries appended in reverse chronological order; most recent first)
+- 2026-04-28: drafted → complete. Landed as commit fb16aeb9
+  ("Refresh documentation scaffolding for 2.0.0 docs revision").
+  Bundle also redirected the CMake Doxygen warning log into the build
+  tree via @DOXYGEN_WARN_LOGFILE@ in Doxyfile.in so it no longer
+  pollutes the repository root.
 - 2026-04-28: in progress → drafted. All acceptance criteria met:
   docs target builds with zero non-pre-existing warnings; nav order is
   User Guide → Migration → Changelog → Developer Guide → API Reference
