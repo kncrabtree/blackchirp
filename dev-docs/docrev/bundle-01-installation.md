@@ -1,10 +1,17 @@
 # Bundle 01 — Installation
 
-**Status:** drafted
+**Status:** complete
 
 <!--
 Status log:
 - (entries appended in reverse chronological order; most recent first)
+- 2026-04-29: drafted → complete. Landed as commit f1174679
+  ("Rewrite installation guide for binary packages and CMake source
+  build"). User revised the docs-build subsection during review to
+  list Python packages from `doc/source/requirements.txt` and to
+  show both venv and Conda setup paths instead of hard-coding a
+  specific environment name; Doxygen now called out as a separate
+  system prerequisite.
 - 2026-04-29: in progress → drafted. Drafter (Sonnet, worktree)
   produced full rewrite of `doc/source/user_guide/installation.rst`.
   Verifier (fresh-context Sonnet) found zero load-bearing issues; one
