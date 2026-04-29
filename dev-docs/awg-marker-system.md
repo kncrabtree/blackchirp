@@ -89,13 +89,14 @@ Replace the `prot` and `amp` boolean settings keys with a single `markerCount` i
 Each AWG implementation reports how many physical marker outputs it supports:
 
 For Tektronix AWGxxxx models, the last digit of the model number equals the marker channel
-count (e.g., AWG70002A → 2, AWG7122B → 2, AWG5204 → 4). These instruments use
-MSB-first encoding: physical output 1 is the most significant used bit.
+count (e.g., AWG70002A → 2, AWG7122B → 2, AWG5204 → 4). The bit encoding differs by
+model: AWG70002A and AWG7122B place physical output 1 in bit 6 and output 2 in bit 7;
+AWG5204 uses MSB-first ordering (bit 7 = output 1, bit 6 = output 2, etc.).
 
 | Implementation | markerCount | Notes |
 |----------------|-------------|-------|
-| AWG70002A | 2 | Markers on physical outputs 1,2 → data bits 7,6 |
-| AWG7122B | 2 | Markers on physical outputs 1,2 → data bits 7,6 |
+| AWG70002A | 2 | Markers on physical outputs 1,2 → data bits 6,7 |
+| AWG7122B | 2 | Markers on physical outputs 1,2 → data bits 6,7 |
 | AWG5204 | 4 | Markers on physical outputs 1,2,3,4 → data bits 7,6,5,4 |
 | M8195A | 2 | Markers on physical outputs 1,2 → data bits 0,1 |
 | M8190 | 2 | Currently unused but hardware supports them |
@@ -117,24 +118,24 @@ format.
 
 ### AWG70002A (`src/hardware/optional/chirpsource/awg70002a.cpp:201-330`)
 
-Waveform and marker data sent as separate commands. MSB-first encoding: bit 7 = physical
-output 1 (channel 0), bit 6 = physical output 2 (channel 1). Unused bits are zero.
+Waveform and marker data sent as separate commands. Bit 6 = physical output 1 (channel 0),
+bit 7 = physical output 2 (channel 1). Unused bits are zero.
 
 Remapping from packed data:
 ```cpp
-quint8 byte = ((packed >> 0) & 1) << 7   // channel 0 → bit 7
-            | ((packed >> 1) & 1) << 6;  // channel 1 → bit 6
+quint8 byte = ((packed >> 0) & 1) << 6   // channel 0 → bit 6
+            | ((packed >> 1) & 1) << 7;  // channel 1 → bit 7
 ```
 
 ### AWG7122B (`src/hardware/optional/chirpsource/awg7122b.cpp:214-373`)
 
-Waveform and marker interleaved as 5 bytes per sample (4-byte float + 1-byte marker). MSB-first
-encoding: bit 7 = physical output 1 (channel 0), bit 6 = physical output 2 (channel 1).
+Waveform and marker interleaved as 5 bytes per sample (4-byte float + 1-byte marker). Bit 6 =
+physical output 1 (channel 0), bit 7 = physical output 2 (channel 1).
 
 Remapping from packed data (same as AWG70002A):
 ```cpp
-quint8 byte = ((packed >> 0) & 1) << 7   // channel 0 → bit 7
-            | ((packed >> 1) & 1) << 6;  // channel 1 → bit 6
+quint8 byte = ((packed >> 0) & 1) << 6   // channel 0 → bit 6
+            | ((packed >> 1) & 1) << 7;  // channel 1 → bit 7
 ```
 
 ### AWG5204 (`src/hardware/optional/chirpsource/awg5204.cpp:204-335`)

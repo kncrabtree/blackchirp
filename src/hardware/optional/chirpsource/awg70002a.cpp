@@ -279,8 +279,8 @@ QString AWG70002a::writeWaveform(const ChirpConfig cc)
         {
             quint32 packed = (startIndex+i < packedMarkers.size()) ? packedMarkers.at(startIndex+i) : 0u;
             quint8 byte = static_cast<quint8>(
-                ((packed >> 0) & 1) << 7 |   // channel 0 → bit 7
-                ((packed >> 1) & 1) << 6);   // channel 1 → bit 6
+                ((packed >> 0) & 1) << 6 |   // channel 0 → bit 6
+                ((packed >> 1) & 1) << 7);   // channel 1 → bit 7
             markerChunkData.append(byte);
         }
 
