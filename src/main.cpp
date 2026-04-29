@@ -29,6 +29,9 @@
 #include <signal.h>
 #endif
 
+#define _BC_STR(x) #x
+#define BC_STRINGIFY(x) _BC_STR(x)
+
 int main(int argc, char *argv[])
 {
 #ifdef Q_OS_UNIX
@@ -40,16 +43,29 @@ int main(int argc, char *argv[])
     QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
 #endif
 
-    const QString appName = QString("Blackchirp");
+    const QString settingsName = QString("Blackchirp%1").arg(BC_MAJOR_VERSION);
+    const QString displayName = QString("Blackchirp");
 
-    //QSettings information
-    QApplication::setApplicationName(appName);
+    QApplication::setApplicationName(settingsName);
+    QApplication::setApplicationDisplayName(displayName);
     QApplication::setOrganizationDomain(QString("crabtreelab.ucdavis.edu"));
     QApplication::setOrganizationName(QString("CrabtreeLab"));
 
     SettingsStorage s;
     auto f = ApplicationConfigManager::instance().getOptionValue(BC::Key::AppConfig::appFont).value<QFont>();
     a.setFont(f);
+
+    {
+        QSettings vset{QCoreApplication::organizationName(), QCoreApplication::applicationName()};
+        vset.setFallbacksEnabled(false);
+        vset.beginGroup(BC::Key::BC);
+        vset.setValue(BC::Key::versionMajor, BC_MAJOR_VERSION);
+        vset.setValue(BC::Key::versionMinor, BC_MINOR_VERSION);
+        vset.setValue(BC::Key::versionPatch, BC_PATCH_VERSION);
+        vset.setValue(BC::Key::versionRelease, QLatin1StringView(BC_STRINGIFY(BC_RELEASE_VERSION)));
+        vset.endGroup();
+        vset.sync();
+    }
 
     std::unique_ptr<QSharedMemory> m;
     std::unique_ptr<QLocalServer> ls;
@@ -59,11 +75,11 @@ int main(int argc, char *argv[])
 
 #ifdef Q_OS_UNIX
     //This will delete the shared memory if Blackchirp crashed last time
-    m = std::make_unique<QSharedMemory>(appName);
+    m = std::make_unique<QSharedMemory>(displayName);
     m->attach();
     m.reset();
 #endif
-    m = std::make_unique<QSharedMemory>(appName);
+    m = std::make_unique<QSharedMemory>(displayName);
     if(m->create(sizeof(Mem)))
     {
         if(!m->lock())
@@ -72,10 +88,10 @@ int main(int argc, char *argv[])
         auto mem = static_cast<Mem*>(m->data());
         sprintf(mem->name,"Blackchirp");
 
-        QLocalServer::removeServer(appName);
+        QLocalServer::removeServer(displayName);
         ls = std::make_unique<QLocalServer>();
         ls->setSocketOptions(QLocalServer::WorldAccessOption);
-        ls->listen(appName);
+        ls->listen(displayName);
         m->unlock();
     }
     else
@@ -83,7 +99,7 @@ int main(int argc, char *argv[])
         if(m->error() == QSharedMemory::AlreadyExists)
         {
             auto socket = std::make_unique<QLocalSocket>();
-            socket->connectToServer(appName);
+            socket->connectToServer(displayName);
             socket->waitForConnected(1000);
             return 0;
         }

@@ -23,6 +23,9 @@
 #include <signal.h>
 #endif
 
+#define _BC_STR(x) #x
+#define BC_STRINGIFY(x) _BC_STR(x)
+
 int main(int argc, char *argv[])
 {
 #ifdef Q_OS_UNIX
@@ -44,6 +47,18 @@ int main(int argc, char *argv[])
     SettingsStorage s;
     auto f = s.get(BC::Key::appFont,QFont(QString("sans-serif"),8));
     a.setFont(f);
+
+    {
+        QSettings vset{QCoreApplication::organizationName(), QCoreApplication::applicationName()};
+        vset.setFallbacksEnabled(false);
+        vset.beginGroup(BC::Key::BC);
+        vset.setValue(BC::Key::versionMajor, BCV_MAJOR_VERSION);
+        vset.setValue(BC::Key::versionMinor, BCV_MINOR_VERSION);
+        vset.setValue(BC::Key::versionPatch, BCV_PATCH_VERSION);
+        vset.setValue(BC::Key::versionRelease, QLatin1StringView(BC_STRINGIFY(BCV_RELEASE_VERSION)));
+        vset.endGroup();
+        vset.sync();
+    }
 
     // Register meta types for Qt signal/slot system
     qRegisterMetaType<std::shared_ptr<Experiment>>();
