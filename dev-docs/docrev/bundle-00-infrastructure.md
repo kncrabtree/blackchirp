@@ -1,10 +1,20 @@
 # Bundle 00 — Doc Infrastructure, Landing Page, README
 
-**Status:** not started
+**Status:** drafted
 
 <!--
 Status log:
 - (entries appended in reverse chronological order; most recent first)
+- 2026-04-28: in progress → drafted. All acceptance criteria met:
+  docs target builds with zero non-pre-existing warnings; nav order is
+  User Guide → Migration → Changelog → Developer Guide → API Reference
+  (plus preserved Python Module); README purged of v1.1.0 / qmake /
+  config.pri; Sphinx version "2.0.0-alpha" pulled from CMakeLists.txt.
+  Also renamed classes.rst H1 from "Developer Guide" to "API Reference"
+  to disambiguate the new top-level Developer Guide chapter. Awaiting
+  user review and commit.
+- 2026-04-28: not started → in progress. Direct (orchestrator)
+  handling per master plan; work done in main worktree.
 -->
 
 Establishes the Sphinx skeleton, navigation, and project-wide entry
