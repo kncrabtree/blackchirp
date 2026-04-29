@@ -24,31 +24,51 @@ requirements, and acceptance criteria.
 
 ## Bundles at a glance
 
-| ID | Title | Estimated Effort | Depends on |
-|----|-------|------------------|------------|
-| 00 | Doc infrastructure, landing page, README | S | — |
-| 01 | Installation: binary packages and CMake source build | M | 00 |
-| 02 | First Run, Application Configuration, Hardware Onboarding | M | 00 |
-| 03 | Hardware Configuration: profiles, loadouts, FTMW presets | L | 02 |
-| 04 | Hardware Menu, Communication, Status Panel | M | 03 |
-| 05 | Per-device hardware page refresh | M | 04 |
-| 06 | Python hardware (user guide) | L | 03 |
-| 07 | RF configuration, chirp setup, FTMW digitizer | M | 03, 04 |
-| 08 | Experiment workflow refresh | M | 07 |
-| 09 | FTMW data viewing, overlays, data storage refresh | M | 08 |
-| 10 | LIF, Rolling/Aux, Log tab, Blackchirp-viewer | M | 08 |
-| 11 | Migration guide v1.x → 2.0.0 + Changelog | S | most user-guide bundles |
-| 12 | Developer Guide | L | — (independent) |
-| 13a | API ref: refresh existing 5 (HardwareObject etc.) | S | — |
-| 13b | API ref: hardware-management classes | S | 13a |
-| 13c | API ref: Python hardware classes | S | 13a |
-| 13d | API ref: loadout/preset classes | S | 13a |
-| 13e | API ref: data/experiment classes | M | 13a |
-| 13f | API ref: storage classes | M | 13a |
-| 13g | API ref: GUI helper classes | M | 13a |
-| 13h | API ref: file parsers | S | 13a |
+| ID | Title | Effort | Depends on | Status |
+|----|-------|--------|------------|--------|
+| 00 | Doc infrastructure, landing page, README | S | — | not started |
+| 01 | Installation: binary packages and CMake source build | M | 00 | not started |
+| 02 | First Run, Application Configuration, Hardware Onboarding | M | 00 | not started |
+| 03 | Hardware Configuration: profiles, loadouts, FTMW presets | L | 02 | not started |
+| 04 | Hardware Menu, Communication, Status Panel | M | 03 | not started |
+| 05 | Per-device hardware page refresh | M | 04 | not started |
+| 06 | Python hardware (user guide) | L | 03 | not started |
+| 07 | RF configuration, chirp setup, FTMW digitizer | M | 03, 04 | not started |
+| 08 | Experiment workflow refresh | M | 07 | not started |
+| 09 | FTMW data viewing, overlays, data storage refresh | M | 08 | not started |
+| 10 | LIF, Rolling/Aux, Log tab, Blackchirp-viewer | M | 08 | not started |
+| 11 | Migration guide v1.x → 2.0.0 + Changelog | S | most user-guide bundles | not started |
+| 12 | Developer Guide | L | — (independent) | not started |
+| 13a | API ref: refresh existing 5 (HardwareObject etc.) | S | — | not started |
+| 13b | API ref: hardware-management classes | S | 13a | not started |
+| 13c | API ref: Python hardware classes | S | 13a | not started |
+| 13d | API ref: loadout/preset classes | S | 13a | not started |
+| 13e | API ref: data/experiment classes | M | 13a | not started |
+| 13f | API ref: storage classes | M | 13a | not started |
+| 13g | API ref: GUI helper classes | M | 13a | not started |
+| 13h | API ref: file parsers | S | 13a | not started |
 
 Effort key: S ≈ 1 session, M ≈ 2 sessions, L ≈ 3+ sessions.
+
+Status values:
+
+- **not started** — no work has been done on this bundle.
+- **in progress** — drafter has been dispatched but the bundle is not
+  yet accepted. The bundle's own header (see "Bundle status header"
+  below) carries the detail (worktree path, revision pass, open punch
+  list).
+- **drafted** — drafter output has been merged into the main worktree
+  but the user has not yet committed. Awaiting user review.
+- **complete** — user has committed the bundle's changes. The commit
+  hash is recorded in the bundle's own status header for traceability.
+- **blocked** — work has been attempted but cannot proceed without a
+  human decision (scope drift, dependency on un-merged work, source
+  ambiguity). The blocker is described in the bundle's header.
+
+This table is the **single source of truth for progress.** The
+orchestrator updates it (via `Edit`) when a bundle's status
+transitions. The user is encouraged to confirm the table is correct
+before each new orchestrator session.
 
 ## Recommended order
 
@@ -148,3 +168,153 @@ in each bundle file.
 - The Python module (`python/blackchirp/`) and the example notebook
   documentation under `doc/source/python/` are out of scope for this
   revision unless a bundle explicitly touches them.
+
+## Orchestrator instructions
+
+This plan is designed to be driven by an **orchestrator** (Opus,
+fresh context) that dispatches **drafter** subagents (Sonnet) to
+implement individual bundles, then dispatches separate **verifier**
+subagents to grade the output against acceptance criteria. The
+orchestrator's own context stays clean — it reads bundle files,
+briefs subagents, judges results, and merges.
+
+### When to delegate vs. do yourself
+
+| Bundle | Mode | Reason |
+|--------|------|--------|
+| 00 (infrastructure) | Direct | Small, fiddly Sphinx wiring; delegation overhead exceeds drafting time |
+| 01–10 (user guide) | Delegate | Bulk RST writing; well-scoped; Sonnet handles cleanly |
+| 11 (changelog/migration) | Direct | Synthesis-heavy; cross-references every other bundle's output |
+| 12 (developer guide) | Delegate per sub-page | Each sub-page is independently scoped; large total volume |
+| 13a (existing API refresh) | Direct | Establishes the API style convention 13b–13h follow |
+| 13b–13h (API reference) | Delegate, parallelize | Independent of each other once 13a is locked; ideal for parallel dispatch |
+
+### Per-bundle workflow (delegated bundles)
+
+1. **Read the bundle file and verify scope is current.** The
+   codebase keeps moving; a bundle authored weeks ago may reference
+   files or behaviour that has shifted. Skim the cited sources
+   (dev-docs and source headers). If scope has drifted, revise the
+   bundle file *before* dispatching — drafters cannot be expected
+   to detect plan staleness.
+2. **Dispatch drafter (Sonnet, isolation: "worktree").** Brief with:
+   the bundle file path, the codebase-memory project name
+   (`home-kncrabtree-github-blackchirp-src`), the explicit
+   instruction to use codebase-memory tools first per `CLAUDE.md`,
+   and a hard scope: "produce only the Sphinx files the bundle
+   lists; leave screenshot TODO markers with the bundle's specified
+   filenames; do not edit `MEMORY.md` or the bundle file itself."
+   Run in a worktree so the orchestrator can diff cleanly.
+3. **Dispatch verifier (Sonnet, fresh context, no worktree).** Brief
+   with: the diff from the drafter's worktree, the bundle file, and
+   the instruction "grade against each acceptance criterion; check
+   that any cited file paths and class names exist; report a punch
+   list under 300 words." Fresh context matters — the drafter has
+   motivated reasoning the verifier lacks.
+4. **Orchestrator judges the punch list.** Decide which items are
+   load-bearing. For load-bearing issues, dispatch a revision pass
+   to the drafter (same worktree, focused prompt: "address items
+   N, M, P from this punch list"). For minor prose issues, fix
+   directly via Edit. Do not loop through more than two revision
+   passes; if a third is needed, the bundle scope is wrong and
+   needs human input.
+5. **Merge the worktree** once acceptance is reached. Do not
+   commit — leave staged changes for the user to review and
+   commit. Report a one-paragraph summary of what landed and what
+   was left as TODO (typically: screenshots).
+
+### Parallelization rules
+
+- Bundles 05, 06, 12, and 13b–13h are independent of the
+  user-guide critical path and of each other. They can be
+  dispatched concurrently — multiple drafter agents in a single
+  message, each in its own worktree.
+- Do not parallelize bundles on the critical path (00 → 01 → 02
+  → 03 → 04 → 07 → 08 → 09 → 10 → 11). Each cross-references
+  the prior one and benefits from sequential context.
+- Maximum recommended concurrent drafters: four. Beyond that the
+  orchestrator's merge bookkeeping becomes the bottleneck.
+
+### Orchestrator hygiene
+
+- **One bundle per orchestrator session for sequential bundles.**
+  Running the orchestrator across many sequential bundles in a
+  single context defeats the chunking — context grows linearly
+  and prompt-cache benefit is lost by the third or fourth
+  bundle. Start a fresh Opus session per bundle (or per
+  parallel group).
+- **Stay out of file-by-file writing.** If the orchestrator finds
+  itself using `Edit`/`Write` for routine prose, push the work
+  back to a drafter. The orchestrator's job is briefing,
+  judging, and merging.
+- **Pin codebase-memory in every subagent prompt.** Sonnet
+  without that hint falls back to grep and misses indexed
+  structural relationships.
+- **Subagents do not touch this plan or MEMORY.md.** Drafters
+  edit `doc/source/`, plus the header refreshes that bundles
+  13a–13h explicitly authorize. Plan revisions, memory updates,
+  and commits are the orchestrator's (and ultimately the user's)
+  responsibility.
+- **Screenshots are deferred.** Drafters leave TODO markers with
+  the filenames specified in the bundle's Screenshots section.
+  Screenshot capture is a separate human pass after a bundle is
+  otherwise accepted.
+
+### Dispatch checklist
+
+Before each drafter dispatch, the orchestrator confirms:
+
+- [ ] Bundle file scope is still accurate (cited paths exist;
+      cited behaviour matches code).
+- [ ] All bundle dependencies (per the table at the top of this
+      plan) have status `complete`.
+- [ ] A worktree has been created for the drafter.
+- [ ] The drafter prompt includes: bundle file path,
+      codebase-memory project name, explicit scope limits, and a
+      reminder to follow `CLAUDE.md` conventions (string
+      literals, timeless prose, no emojis unless requested).
+- [ ] The verifier dispatch is queued to follow drafter
+      completion.
+
+### Bundle status header
+
+Each bundle file (`dev-docs/docrev/bundle-NN-*.md`) carries a status
+block at the top, immediately under the H1, in the form:
+
+```markdown
+**Status:** not started
+
+<!--
+Status log:
+- (entries appended in reverse chronological order; most recent first)
+-->
+```
+
+The orchestrator updates this block in lockstep with the master-plan
+table whenever a status transition occurs. Each transition appends
+one entry to the status log with: timestamp, transition (e.g.
+`not started → in progress`), and a one-line note (worktree path,
+verifier outcome, blocker, commit hash, etc.). When a bundle reaches
+`complete`, record the commit hash that landed it.
+
+The status log gives a fresh orchestrator session enough context to
+resume mid-bundle: it tells the orchestrator whether a worktree
+already exists, whether a verifier punch list is outstanding, and
+whether the previous attempt was abandoned for a known reason.
+
+### Resuming work in a fresh orchestrator session
+
+On startup the orchestrator's first action (after reading the master
+plan and `CLAUDE.md`) is:
+
+1. Read the status column in the bundle table above.
+2. For any bundle marked `in progress` or `blocked`, read that
+   bundle file's status header for context.
+3. Surface the current state to the user in the form: "Bundle X is
+   in progress in worktree Y, awaiting Z. Bundle W is blocked on
+   V. Recommended next action: …" — and wait for user direction.
+
+Do not assume that work marked `not started` actually has not been
+attempted: glance at the latest few git log entries on the working
+branch as a sanity check. If the table and git history disagree,
+the user resolves it.

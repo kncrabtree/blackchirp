@@ -1,5 +1,12 @@
 # Bundle 05 — Per-Device Hardware Pages
 
+**Status:** not started
+
+<!--
+Status log:
+- (entries appended in reverse chronological order; most recent first)
+-->
+
 Light refresh of the eleven `doc/source/user_guide/hw/*.rst` pages.
 
 ## Scope

@@ -1,5 +1,12 @@
 # Bundle 01 — Installation
 
+**Status:** not started
+
+<!--
+Status log:
+- (entries appended in reverse chronological order; most recent first)
+-->
+
 Replace the qmake-era installation page with binary-package coverage
 first and a CMake source-build section second.
 

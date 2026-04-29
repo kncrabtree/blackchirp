@@ -1,5 +1,12 @@
 # Bundle 13f — API Reference: Storage Classes
 
+**Status:** not started
+
+<!--
+Status log:
+- (entries appended in reverse chronological order; most recent first)
+-->
+
 Adds API reference pages for the storage subsystem.
 
 ## Scope

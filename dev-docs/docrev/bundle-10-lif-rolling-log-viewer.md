@@ -1,5 +1,12 @@
 # Bundle 10 — LIF, Rolling/Aux, Log Tab, Blackchirp-Viewer
 
+**Status:** not started
+
+<!--
+Status log:
+- (entries appended in reverse chronological order; most recent first)
+-->
+
 Replaces the LIF stub with a full chapter, refreshes the
 rolling/aux-data page, adds a new Log tab page, and adds a chapter
 for the standalone Blackchirp-viewer application.

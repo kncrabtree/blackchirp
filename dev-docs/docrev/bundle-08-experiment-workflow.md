@@ -1,5 +1,12 @@
 # Bundle 08 — Experiment Workflow Refresh
 
+**Status:** not started
+
+<!--
+Status log:
+- (entries appended in reverse chronological order; most recent first)
+-->
+
 Refreshes the experiment-wizard pages to match the consolidated
 LO/DR scan widgets, updated optional-hardware initialization,
 and the current quick-experiment / batch-sequence flows.

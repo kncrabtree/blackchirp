@@ -1,5 +1,12 @@
 # Bundle 00 — Doc Infrastructure, Landing Page, README
 
+**Status:** not started
+
+<!--
+Status log:
+- (entries appended in reverse chronological order; most recent first)
+-->
+
 Establishes the Sphinx skeleton, navigation, and project-wide entry
 points that every later bundle plugs into.
 

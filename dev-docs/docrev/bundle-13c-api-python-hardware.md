@@ -1,5 +1,12 @@
 # Bundle 13c — API Reference: Python Hardware Classes
 
+**Status:** not started
+
+<!--
+Status log:
+- (entries appended in reverse chronological order; most recent first)
+-->
+
 Adds API reference pages for the Python hardware C++ side.
 
 ## Scope

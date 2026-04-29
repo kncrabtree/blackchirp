@@ -1,5 +1,12 @@
 # Bundle 06 — Python Hardware (User Guide)
 
+**Status:** not started
+
+<!--
+Status log:
+- (entries appended in reverse chronological order; most recent first)
+-->
+
 A new chapter introducing user-written hardware drivers in Python.
 
 ## Scope

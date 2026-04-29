@@ -1,5 +1,12 @@
 # Bundle 09 — FTMW Data Viewing, Overlays, Data Storage Refresh
 
+**Status:** not started
+
+<!--
+Status log:
+- (entries appended in reverse chronological order; most recent first)
+-->
+
 Refreshes the FTMW tab page, syncs the overlays content, and updates
 the data storage page for new files (markers.csv) and 2.0 metadata.
 

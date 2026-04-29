@@ -1,5 +1,12 @@
 # Bundle 07 — RF Configuration, Chirp Setup, FTMW Digitizer
 
+**Status:** not started
+
+<!--
+Status log:
+- (entries appended in reverse chronological order; most recent first)
+-->
+
 Updates the FTMW configuration pages to reflect the new
 `FtmwConfigDialog`/preset-bar entry point and rewrites the chirp
 setup page for the generalised marker system.

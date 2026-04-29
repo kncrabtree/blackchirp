@@ -1,5 +1,12 @@
 # Bundle 03 — Hardware Configuration: Profiles, Loadouts, FTMW Presets
 
+**Status:** not started
+
+<!--
+Status log:
+- (entries appended in reverse chronological order; most recent first)
+-->
+
 Introduces the runtime hardware configuration system: profiles
 (label-based hardware identification), loadouts (named hardware maps),
 and FTMW presets (named operating points within a loadout). This is

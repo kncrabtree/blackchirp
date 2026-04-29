@@ -1,5 +1,12 @@
 # Bundle 12 — Developer Guide
 
+**Status:** not started
+
+<!--
+Status log:
+- (entries appended in reverse chronological order; most recent first)
+-->
+
 Builds the Developer Guide chapter from scratch in the
 `doc/source/developer_guide/` folder created by bundle 00. This
 bundle is independent of the user-guide track and can be worked in

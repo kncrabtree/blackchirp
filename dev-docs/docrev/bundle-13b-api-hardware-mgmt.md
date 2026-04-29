@@ -1,5 +1,12 @@
 # Bundle 13b — API Reference: Hardware-Management Classes
 
+**Status:** not started
+
+<!--
+Status log:
+- (entries appended in reverse chronological order; most recent first)
+-->
+
 Adds API reference pages for the runtime hardware configuration and
 vendor-library subsystems.
 

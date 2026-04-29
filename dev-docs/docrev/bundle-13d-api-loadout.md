@@ -1,5 +1,12 @@
 # Bundle 13d — API Reference: Loadout / Preset Classes
 
+**Status:** not started
+
+<!--
+Status log:
+- (entries appended in reverse chronological order; most recent first)
+-->
+
 Adds API reference pages for the loadout and FTMW preset data
 model.
 

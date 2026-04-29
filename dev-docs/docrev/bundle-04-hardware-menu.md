@@ -1,5 +1,12 @@
 # Bundle 04 — Hardware Menu, Communication, Status Panel
 
+**Status:** not started
+
+<!--
+Status log:
+- (entries appended in reverse chronological order; most recent first)
+-->
+
 Rewrites the Hardware menu page and the day-to-day instrument-control
 UI surfaces (Communication dialog, HwDialog Settings/Control tabs,
 status-box family).

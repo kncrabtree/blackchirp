@@ -1,5 +1,12 @@
 # Bundle 13g — API Reference: GUI Helper Classes
 
+**Status:** not started
+
+<!--
+Status log:
+- (entries appended in reverse chronological order; most recent first)
+-->
+
 Adds API reference pages for the GUI helper classes that
 contributors are most likely to reuse.
 

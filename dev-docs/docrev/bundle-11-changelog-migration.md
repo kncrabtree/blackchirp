@@ -1,5 +1,12 @@
 # Bundle 11 — Migration Guide v1.x → 2.0.0 + Changelog
 
+**Status:** not started
+
+<!--
+Status log:
+- (entries appended in reverse chronological order; most recent first)
+-->
+
 Populates the changelog and migration-guide scaffolds created by
 bundle 00. The changelog is a forward-looking document that will be
 maintained for every release; the migration guide is a one-shot

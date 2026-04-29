@@ -1,5 +1,12 @@
 # Bundle 13h — API Reference: File Parsers
 
+**Status:** not started
+
+<!--
+Status log:
+- (entries appended in reverse chronological order; most recent first)
+-->
+
 Adds API reference pages for the catalog and generic-XY file
 parsers used by the overlay feature and by experiment loading.
 

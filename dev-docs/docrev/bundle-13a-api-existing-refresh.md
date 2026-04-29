@@ -1,5 +1,12 @@
 # Bundle 13a — API Reference: Refresh Existing Five
 
+**Status:** not started
+
+<!--
+Status log:
+- (entries appended in reverse chronological order; most recent first)
+-->
+
 Audits and refreshes the five existing API reference pages so they
 match the current code, and establishes the conventions that
 13b–13h follow.

@@ -1,5 +1,12 @@
 # Bundle 02 — First Run, Application Configuration, Hardware Onboarding
 
+**Status:** not started
+
+<!--
+Status log:
+- (entries appended in reverse chronological order; most recent first)
+-->
+
 Rewrites the first-run flow and introduces the user to the
 runtime application-configuration and hardware-onboarding dialogs
 that are new in 2.0.
