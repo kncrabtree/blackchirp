@@ -9,53 +9,152 @@
    single: Multiple Records
    single: Segmented Memory
    single: FastFrame
+   single: FTMW Preset; digitizer settings
 
 Digitizer Setup
 ===============
 
-.. image:: /_static/user_guide/experiment/digitizer_config.png
-   :align: center
-   :width: 800
-   :alt: FTMW Digitizer setup
+The **Digitizer Config** tab of the :doc:`/user_guide/ftmw_configuration`
+dialog contains the settings sent to the FTMW digitizer at the start of a
+CP-FTMW acquisition. These settings are stored as part of the active
+:doc:`FTMW preset </user_guide/hardware_config/ftmw_presets>` and are
+loaded and saved together with the RF and chirp parameters whenever a
+preset is applied, saved, or accepted.
 
-The Digitizer Setup page contains the settings that will be sent to the FTMW digitizer which records FID data in a CP-FTMW acquisition.
+The tab is also accessible in the Experiment Setup dialog, where the same
+settings are reviewed and validated before an experiment starts.
+
+.. figure:: /_static/user_guide/ftmw_configuration/digitizer.png
+   :alt: Digitizer Config tab of the FTMW Configuration dialog showing
+         the analog channel list on the left, data-transfer settings,
+         the trigger group, and the acquisition-mode selector.
+
+   The **Digitizer Config** tab. Analog channels are listed on the left;
+   the data-transfer, trigger, and acquisition-mode controls are grouped
+   on the right.
 
 Analog Channels
 ...............
 
-Each analog channel on the scope is displayed on the left side of the dialog. Use the checkboxes to select which channel contains the FID data. Only one channel may be selected. For that channel, you can configure the full vertical scale (minimum to maximum, not per division) and the offset. If DC coupled, the range of the signal is offset +/- full scale.
+Each analog channel on the digitizer is listed on the left side of the
+tab. Use the checkboxes to select which channel carries the FID signal.
+Exactly one channel must be selected; the Experiment Setup validator
+reports an error if zero or more than one channel is checked. For the
+selected channel, configure the full vertical scale (the range from
+minimum to maximum, not the per-division scale) and the vertical offset.
+For a DC-coupled input the signal range is offset ± full scale.
 
 .. note::
-   In general, the oscilloscope coupling should be set to AC, if supported. The vertical offset should therefore always be 0. However, if there is a need, Blackchirp could add a feature which controls the coupling for each vertical channel.
+   In most CP-FTMW setups the digitizer should be AC-coupled, which
+   makes the vertical offset effectively zero. Some digitizer
+   implementations may not expose a coupling control through Blackchirp;
+   in those cases the coupling must be set on the instrument directly.
 
 Data Transfer
 .............
 
-These settings control how the waveform is configured and encoded as it is transferred from the digitizer to Blackchirp. The record length is the number of samples in the FID and the sampling rate sets the time interval between samples and the digital bandwidth of the Fourier transform. Dividing the record length by the sample rate yields the total time spanned by the FID waveform, which dictates the resolution of the Fourier transform. Blackchirp should have sensible default sample rates for each FTMW digitizer, but the options can be customized by configuring the settings in the FtmwDigitizer `hardware menu <../hardware_menu.html>`_ (see also the `FTMW Digitizer options <../hw/ftmwdigitizer.html>`_.
+These settings control how the waveform is encoded during transfer from
+the digitizer to Blackchirp.
 
-Bytes per point and byte order control the encoding of data sent from the digitizer to Blackchirp. Where possible, Blackchirp requests that data be transferred in binary as the raw digitizer reading. Bytes per point dictates the number of bytes per sample which may be dictated by the raw ADCs (1 byte for 8-bit records, 2 byte for 12 or 16-bit records) or by the bit width of segmented memory for acquisitions that involve on-board averaging prior to data transfer. For multi-byte records, the byte order determines whether the most significant byte comes first (Little Endian) or last (Big Endian). A digitizer implementation may override these settings with more appropriate values as needed.
+**Record Length**
+    Number of samples per FID. Dividing the record length by the sample
+    rate gives the total time spanned by the FID, which determines the
+    frequency resolution of the Fourier transform.
+
+**Sample Rate**
+    The digitizer's sampling rate in samples per second. Blackchirp sets
+    a sensible default for each supported digitizer; the available rates
+    can be changed in the per-device settings opened from the Hardware
+    menu (see :doc:`/user_guide/hwdialog`).
+
+**Bytes per Point**
+    Number of bytes encoding each digitizer sample. Determined by the
+    ADC bit depth (1 byte for 8-bit records, 2 bytes for 12- or 16-bit
+    records) or by the accumulator width for on-board averaging. A
+    digitizer implementation may override this value automatically.
+
+**Byte Order**
+    Whether multi-byte samples are transmitted most-significant byte
+    first (Big Endian) or least-significant byte first (Little Endian).
+    A digitizer implementation may override this value automatically.
 
 Trigger
 .......
 
-Blackchirp assumes that the digitizer is triggered with an edge signal. The trigger channel, slope, delay, and level can be set here. It is important to ensure that these settings are appropriate for your configurations.
+Blackchirp assumes the digitizer is triggered by an edge signal. Set the
+trigger channel, slope (rising or falling edge), delay, and level to
+match the signal available in your experimental setup.
 
 .. note::
-   When using digital marker outputs from many AWGs to trigger Tektronix oscilloscopes, we have empirically found that a trigger level of 0.35 V seems to markedly improve stability and phase coherence for reasons that are not fully understood.
+   When a TTL-level marker output from an AWG is used to trigger a
+   Tektronix oscilloscope, a trigger level of 0.35 V has been found to
+   improve stability and phase coherence empirically. The origin of this
+   improvement is not fully understood, but it is worth trying if
+   coherence problems are observed.
 
 Acquisition Setup
 .................
 
-This menu controls how the digitizer encodes one or more FIDs into a single record that is received by Blackchirp. The Block Average option should be selected if a single FID that Blackchirp receives has been pre-averaged by the digitizer. For Tektronix scopes, this usually means that the scope uses FastFrame acquisition and transfers the summary frame, while Agilent and other digitizers use segmented memory to accomplish a similar purpose. The number of averages controls how many FIDs are averaged on the digitizer between transfers to Blackchirp.
+This section controls how the digitizer encodes one or more FIDs into a
+single transfer to Blackchirp.
 
-The Multiple Records option should be selected if a single waveform consists of multiple independent FIDs; each with the length set by the Record Length in the data transfer section. A single transfer event consists of a number of FIDs determined by the number of records in the "# Records" field, and the total length of the transsfer is N*Record Length. This option is often useful in conjunction with an AWG that generates sequence of chirps separated in time. The user can then scroll through the individual records to observe the signal as a function of time. Blackchirp can also coaverage the records in post-processing.
+**Block Average**
+    Select this mode when the digitizer pre-averages multiple FIDs
+    internally before transferring a single record to Blackchirp. For
+    Tektronix oscilloscopes this typically corresponds to FastFrame
+    acquisition with summary-frame transfer; for Agilent and similar
+    instruments it corresponds to segmented memory averaging. The
+    **# Averages** field sets how many FIDs are averaged per transfer.
+    When multiple chirps are configured, the number of averages should
+    match the number of chirps per AWG record.
 
-Most digitizers support only one of these two options at a time, making block averaging and multple records mutually exclusive. In cases where both are possible together, care should be taken to ensure that the device has enough memory to store the number of records needed; Blackchirp does not currently test to ensure this is possible and it will result in an initialization error.
+    When Block Average is active, the digitizer accumulates the
+    configured number of shots before generating a transfer event.
+    Blackchirp treats each transfer as one independent record and
+    co-averages it with all previous records.
+
+**Multiple Records**
+    Select this mode when a single transfer consists of several
+    independent FIDs concatenated end-to-end. The **# Records** field
+    sets how many FIDs are in each transfer; the total transfer length
+    is N × Record Length samples. This mode is commonly used with an
+    AWG configured for a sequence of chirps, letting each digitizer
+    record hold the response to one chirp. Individual records can be
+    scrolled through in the CP-FTMW tab, and Blackchirp can co-average
+    them in post-processing. When multiple chirps are configured, the
+    number of records should match the number of chirps per AWG record.
+
+Most digitizers support only one of these two modes at a time, making
+Block Average and Multiple Records mutually exclusive. In hardware that
+supports both simultaneously, ensure the device has sufficient onboard
+memory for the total data volume; Blackchirp does not verify memory
+capacity at configuration time.
 
 Maximizing Transfer Efficiency
 ..............................
 
-Each digitizer operates in a slightly different manner, and it is important to undertand how Blackchirp interacts with your particular device in order to maximize the data transfer speed. At its core, Blackchirp is designed to acquire independent records from the digitizer: that is, each record that Blackchirp receives is considered to be new data that will be coaverages with the data collected so far. It does not (at present) support periodically polling from data that are being accumulated on the digitizer. For example, if an oscilloscope is set up with a math channel that averages a large number of shots, Blackchirp cannot read that record in real time as the scope accumulates data; it would need to wait until all averages are accumulated. This can be made to work by setting the scope to record a smaller number of averages in a math waveform, and then transferring that math waveform once complete and resetting the accumulator. Doing so often incurs significant overhead, so there is a balance to be struck between maximizing the acquisition rate and transferring data so that it can be viewed in real time. However, one should first ensure that real-time transfers of single FIDs are truly rate-limiting before pursuing such a scheme.
+Each digitizer operates differently, and understanding how Blackchirp
+interacts with your device is important for maximising throughput.
+Blackchirp is designed to receive independent records: each transfer is
+treated as new data to be co-averaged with the data collected so far.
+Polling from a continuously-accumulating math waveform (as some
+oscilloscopes support) is not the primary intended mode of operation,
+though it can be made to work by configuring a short accumulation window
+and accepting the associated overhead.
 
-The second factor to consider is the transfer time to move the data from onboard memory to Blackchirp. This is dictated by the speed of the connection and any overhead associated with the device firmware. Most oscilloscopes are configured in Blackchirp to communicate over LAN, which has a typical speed of 1 Gbps. During a transfer, triggers are ignored, so for very long records and fast repetition rates, trigger events can be missed. In these situations, it is more ideal to enable some kind of block averaging. At UC Davis, our Tektronix DSA71604C has a maximum transfer rate of ~100 FIDs/sec (20 FIDs of 750k points per gas pulse, Block Averaged with FastFrame, 5 Hz rep rate). The rate-limiting step is the proceesing time for generating the internal average, not the data transfer time. FPGA-based devices with segmented memory can be much faster, as they employ hardware-based accumulators that do not slow down the triggering rate, and the only overhead is the transfer time which can be minimized by increasing the number of averages per transfer. The Spectrum Instrumentation M4i.2211x8 Digitizer has achieved transfer rates of 50k FIDs/sec in this manner.
+The two rate-limiting factors are:
 
+1. **Processing time on the digitizer.** If the instrument spends time
+   generating an internal average (e.g., a math waveform on a Tektronix
+   scope), triggers are not accepted during that computation, which caps
+   the effective FID rate regardless of transfer speed. FPGA-based
+   instruments with hardware accumulators avoid this bottleneck entirely
+   and can sustain much higher acquisition rates.
+
+2. **Transfer time over the connection.** Blackchirp communicates with
+   most digitizers over a 1 Gbps LAN interface. During a transfer,
+   triggers arriving at the digitizer are ignored. For short records or
+   moderate repetition rates this is rarely a bottleneck, but for very
+   long records at high repetition rates increasing the number of
+   averages per transfer reduces the fraction of time spent transferring
+   and can significantly improve the overall FID rate.

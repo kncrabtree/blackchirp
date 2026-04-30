@@ -15,6 +15,7 @@ a spectrometer for the first time.
    user_guide/application_config
    user_guide/library_status
    user_guide/hardware_config
+   user_guide/ftmw_configuration
    user_guide/ui_overview
    user_guide/hardware_menu
    user_guide/hwdialog

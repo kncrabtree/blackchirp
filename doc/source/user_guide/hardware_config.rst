@@ -62,9 +62,9 @@ the FTMW configuration widgets.
    hardware changes would invalidate existing FTMW presets.
 
 :doc:`hardware_config/ftmw_presets`
-   What an FTMW preset captures, the ``__LastUsed__`` sentinel, and how
-   to create, apply, save, rename, and delete presets from the preset
-   bar in the FTMW Configuration dialog and from the Hardware menu.
+   What an FTMW preset captures and how to create, apply, save, rename,
+   and delete presets from the preset bar in the FTMW Configuration
+   dialog and from the Hardware menu.
 
 .. rubric:: Opening the Hardware Configuration dialog
 

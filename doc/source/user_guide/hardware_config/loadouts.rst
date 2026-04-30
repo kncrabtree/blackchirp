@@ -182,8 +182,8 @@ shows a warning dialog with three choices:
     before saving.
 
 If the loadout has no named presets when drift is detected, Blackchirp
-clears the internal ``__LastUsed__`` state silently and saves without
-prompting.
+saves without prompting and resets the remembered FTMW configuration for
+that loadout.
 
 .. seealso::
 
