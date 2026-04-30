@@ -33,7 +33,7 @@ requirements, and acceptance criteria.
 | 04 | Hardware Menu, Communication, Status Panel | M | 03 | complete |
 | 05 | Per-device hardware page refresh | M | 04 | not started |
 | 06 | Python hardware (user guide) | L | 03 | not started |
-| 07 | RF configuration, chirp setup, FTMW digitizer | M | 03, 04 | not started |
+| 07 | RF configuration, chirp setup, FTMW digitizer | M | 03, 04 | complete |
 | 08 | Experiment workflow refresh | M | 07 | not started |
 | 09 | FTMW data viewing, overlays, data storage refresh | M | 08 | not started |
 | 10 | LIF, Rolling/Aux, Log tab, Blackchirp-viewer | M | 08 | not started |

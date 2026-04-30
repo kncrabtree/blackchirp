@@ -5,6 +5,32 @@
 <!--
 Status log:
 - (entries appended in reverse chronological order; most recent first)
+- 2026-04-30: cross-bundle edit during bundle 07. The FTMW Presets
+  page (`doc/source/user_guide/hardware_config/ftmw_presets.rst`)
+  duplicated dialog-mechanics content that now lives on the new
+  `ftmw_configuration.rst` parent page. With user approval, bundle 07
+  collapsed "The Preset Bar" body to a one-paragraph cross-reference
+  plus the dialog screenshot, removed the "Accepting the FTMW
+  Configuration Dialog" section entirely, and condensed "Deleting a
+  Preset" to the conceptual constraint with a `:doc:` link. The page
+  now focuses on preset concepts (what is captured, sample-rate is
+  not stored, restoring last configuration, Hardware-menu preset
+  switching). Internal sentinel name `__LastUsed__` and class names
+  `currentFtmwPreset`/`FtmwConfigDialog` were removed from the
+  user-facing prose and the page index block; their meaning is
+  preserved in user-facing language ("Blackchirp remembers your
+  configuration so the dialog reopens with it"). Same `__LastUsed__`
+  reframe applied to `hardware_config.rst` and
+  `hardware_config/loadouts.rst`. The
+  `_hardware-config-ftmw-presets-current` anchor was preserved under
+  a renamed "Restoring Your Last Configuration" heading; the
+  `_hardware-config-ftmw-presets-accept` anchor was removed alongside
+  its section (no external references). Image
+  `_static/user_guide/hardware_config/preset_bar.png` was
+  `git mv`-ed into `_static/user_guide/ftmw_configuration/` and
+  renamed `ftmw_configuration.png` so it is shared between the new
+  parent page and the FTMW Presets page. Landed in commit 6fbcc60d
+  alongside the rest of bundle 07.
 - 2026-04-29: drafted → complete. Landed as commit c67f84f9
   ("Add hardware configuration chapter: profiles, loadouts, FTMW
   presets"). All six screenshots captured by the user prior to
