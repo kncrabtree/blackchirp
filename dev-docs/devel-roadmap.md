@@ -4,7 +4,7 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 
 ## Small
 
-- Fix bug in Chirp Config widget: num chirps spinbox always disabled.
+None.
 
 ## Medium
 

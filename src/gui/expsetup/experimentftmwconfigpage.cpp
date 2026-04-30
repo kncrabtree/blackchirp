@@ -156,6 +156,12 @@ bool ExperimentFtmwConfigPage::validate()
     bool mr = digiWidget->multiRecordChecked();
 
     if (numChirps > 1) {
+        auto scopeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<FtmwScope>();
+        if (!scopeKeys.isEmpty()) {
+            SettingsStorage scopeSettings(scopeKeys.constFirst(), SettingsStorage::Hardware);
+            if (!scopeSettings.get(BC::Key::Digi::canMultiRecord, false))
+                emit warning("Digitizer does not support multi-record mode. Proceeding with multiple chirps may not work correctly."_L1);
+        }
         if (!ba && !mr)
             emit warning("Number of chirps is >1, but digitizer is not configured for multiple records or block averaging."_L1);
         if (ba && digiWidget->numAverages() != numChirps)

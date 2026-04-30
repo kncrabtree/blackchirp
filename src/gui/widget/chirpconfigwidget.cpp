@@ -40,15 +40,6 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     if(p_mtm->markerCount() == 0)
         ui->configTabWidget->setTabVisible(1, false);
 
-    SettingsStorage s(BC::Key::FtmwScope::ftmwScope,SettingsStorage::Hardware);
-    bool ff = s.get(BC::Key::Digi::canMultiRecord,false);
-
-    if(!ff)
-    {
-        ui->chirpsSpinBox->setValue(1);
-        ui->chirpsSpinBox->setEnabled(false);
-    }
-
     SettingsStorage awg(BC::Key::AWG::key,SettingsStorage::Hardware);
     d_awgSampleRate = awg.get(BC::Key::AWG::rate,16e9);
 
