@@ -1,10 +1,46 @@
 # Bundle 02 — First Run, Application Configuration, Hardware Onboarding
 
-**Status:** not started
+**Status:** drafted
 
 <!--
 Status log:
 - (entries appended in reverse chronological order; most recent first)
+- 2026-04-29: drafted (revision 2). User flagged factual errors in the
+  first_run hardware-onboarding section: the Hardware Configuration
+  dialog is a *four-panel* horizontal layout (Loadouts | Configuration
+  Overview | Hardware Browser | Configuration), not three panels with
+  a separate Loadout-management strip. The Hardware Browser lists
+  every hardware type Blackchirp *supports*, not "required by".
+  Single-instance types (FtmwScope, AWG, LifLaser, LifScope per
+  `HardwareRegistry::isMultiInstanceType`) need to be called out
+  alongside multi-instance behaviour. Orchestrator rewrote the panel
+  description, corrected the wording, added a Single-instance vs
+  multi-instance paragraph, mentioned the validation status bar, and
+  left a TODO marker pointing bundle 03 at the prose so it can wire
+  in `:doc:` cross-references to `hardware_config.rst` once it
+  exists. Sphinx build still clean against pre-existing baseline.
+- 2026-04-29: in progress → drafted. Verifier (fresh-context Sonnet)
+  graded all four acceptance criteria as PASS and flagged one
+  load-bearing factual error: the drafter cited "Settings → Library
+  Status" and "Settings → Hardware Configuration" as menu paths, but
+  Library Status is only reachable as a tab inside the Hardware
+  Selection dialog (opened via Hardware → Hardware Selection). The
+  Application Settings dialog action is labelled "Application
+  Settings" (not "Application Configuration"), and lives under the
+  Settings toolbar button. Orchestrator corrected all three menu
+  references directly via Edit (library_status.rst, first_run.rst,
+  application_config.rst). Also fixed: forward-reference prose to a
+  not-yet-existing hardware_config chapter (rewritten to cite only
+  hardware_menu); ambiguous "left side of the configuration panel"
+  in the Troubleshooting section. Three screenshot TODOs in place;
+  Sphinx build clean (no new warnings beyond the three expected
+  image-not-readable notices for those screenshots). All four
+  acceptance criteria met. Awaiting user review and commit.
+- 2026-04-29: not started → in progress. Drafter dispatched (Sonnet,
+  isolated worktree). Bundle file scope verified: all five cited
+  source classes (ApplicationConfigManager, ApplicationConfigDialog,
+  LibraryStatusWidget, VendorLibrary, RuntimeHardwareConfigDialog)
+  exist at the paths the bundle gives.
 -->
 
 Rewrites the first-run flow and introduces the user to the
