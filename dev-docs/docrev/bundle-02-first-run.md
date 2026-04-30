@@ -1,10 +1,13 @@
 # Bundle 02 — First Run, Application Configuration, Hardware Onboarding
 
-**Status:** drafted
+**Status:** complete
 
 <!--
 Status log:
 - (entries appended in reverse chronological order; most recent first)
+- 2026-04-29: drafted → complete. Landed as commit 3d5da2cb
+  ("Refresh first-run guide; document application config and library
+  status"). User captured all four screenshots prior to commit.
 - 2026-04-29: drafted (revision 2). User flagged factual errors in the
   first_run hardware-onboarding section: the Hardware Configuration
   dialog is a *four-panel* horizontal layout (Loadouts | Configuration
