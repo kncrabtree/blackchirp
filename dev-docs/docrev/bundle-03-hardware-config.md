@@ -1,10 +1,16 @@
 # Bundle 03 — Hardware Configuration: Profiles, Loadouts, FTMW Presets
 
-**Status:** drafted
+**Status:** complete
 
 <!--
 Status log:
 - (entries appended in reverse chronological order; most recent first)
+- 2026-04-29: drafted → complete. Landed as commit c67f84f9
+  ("Add hardware configuration chapter: profiles, loadouts, FTMW
+  presets"). All six screenshots captured by the user prior to
+  commit. Bundle 02's first_run.rst leftmost-panel label updated to
+  "Loadout" (singular) for consistency with bundle 03 prose and the
+  actual UI.
 - 2026-04-29: drafted (screenshot + label pass). User captured all six
   screenshots into doc/source/_static/user_guide/hardware_config/.
   Inspecting the screenshots surfaced label discrepancies between the
