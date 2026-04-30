@@ -30,7 +30,7 @@ requirements, and acceptance criteria.
 | 01 | Installation: binary packages and CMake source build | M | 00 | complete |
 | 02 | First Run, Application Configuration, Hardware Onboarding | M | 00 | complete |
 | 03 | Hardware Configuration: profiles, loadouts, FTMW presets | L | 02 | complete |
-| 04 | Hardware Menu, Communication, Status Panel | M | 03 | not started |
+| 04 | Hardware Menu, Communication, Status Panel | M | 03 | complete |
 | 05 | Per-device hardware page refresh | M | 04 | not started |
 | 06 | Python hardware (user guide) | L | 03 | not started |
 | 07 | RF configuration, chirp setup, FTMW digitizer | M | 03, 04 | not started |

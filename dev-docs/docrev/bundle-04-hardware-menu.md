@@ -1,10 +1,81 @@
 # Bundle 04 — Hardware Menu, Communication, Status Panel
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
 - (entries appended in reverse chronological order; most recent first)
+- 2026-04-29: drafted → complete. Landed as commit dc921003 ("Refresh
+  Hardware menu and document Hardware Dialog and status panel"). All
+  four screenshots captured by the user prior to commit; HWDialog
+  setWindowIcon fix included in the same commit.
+- 2026-04-29: drafted (screenshot validation pass). User captured the
+  remaining four screenshots: hardware_menu/menu.png,
+  hardware_menu/communication.png, hwdialog/settings_tab.png,
+  hwdialog/control_tab.png. Validating images against drafted prose
+  surfaced four corrections, all applied: (a) hardware_menu.rst index
+  block carried a stale "Application Configuration; Hardware menu"
+  entry — removed (the action is in the Settings menu and is no longer
+  referenced from this page); (b) the Communication and Test All
+  Connections menu entries display Ctrl+H and Ctrl+T shortcuts, which
+  the prose now surfaces; (c) the Settings-tab section in hwdialog.rst
+  described Required/Important/Advanced as inline groups with Advanced
+  being a collapsible section. The actual UI (hwsettingswidget.cpp:52,
+  56, 80, 229, 235) is a nested QTabWidget with a "Settings" sub-tab
+  containing Required + Important QGroupBoxes and a separate
+  "Advanced" sub-tab that is added only when advanced settings exist.
+  Rewrote the Settings-tab section to match, and added a sentence
+  noting which sub-tab the screenshot shows. (d) Pulse Generator
+  Control-tab entry under-described the actual UI; expanded to cover
+  the System Settings group, per-channel configuration table (Sync,
+  Mode, Cfg cog), and the timing-diagram preview pane. Replaced the
+  TODO :alt:/caption strings on all four .. figure:: directives with
+  descriptive alt text and informative captions. "Ok" → "OK" in two
+  places to match the actual button label. Side fix outside the
+  doc tree: hwdialog.cpp did not call setWindowIcon, so the dialog
+  rendered without the Blackchirp logo unlike its siblings — added
+  ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg", ...)
+  alongside the existing setAttribute calls. Verified by rebuilding
+  the blackchirp target (clean compile).
+- 2026-04-29: drafted (screenshot pass — partial). User refreshed
+  ui.png and decided it subsumes the status_panel screenshot
+  requirement; help_menu and about_dialog screenshots deemed
+  unnecessary. Removed three .. figure:: blocks from
+  ui_overview.rst: status_panel.png (Instrument Status section now
+  refers the reader to the left panel of the page-top ui.png),
+  help_menu.png (Help Menu section), and about_dialog.png (About
+  Blackchirp section). User also opportunistically softened the
+  status-box variant prose to drop class-name parentheticals; the
+  page-top index entries were trimmed to match (Clock Display Box,
+  Gas Flow Display Box, etc., as user-facing terms rather than C++
+  class names). Remaining screenshots awaiting capture:
+  hardware_menu/menu.png, hardware_menu/communication.png,
+  hwdialog/settings_tab.png, hwdialog/control_tab.png.
+- 2026-04-29: in progress → drafted. Drafter delivered hardware_menu.rst
+  rewrite, ui_overview.rst Status/Help refresh, and new hwdialog.rst;
+  toctree updated. Verifier flagged one load-bearing factual error: the
+  ClockDisplayBox title-bar configure button opens the RF Configuration
+  dialog (clockdisplaybox.cpp:58 sets tooltip "Open Rf Configuration
+  Dialog"), not a per-device HwDialog; the per-row cog icons emit
+  clockHardwareRequested and open the individual clock hardware dialog
+  (clockdisplaybox.cpp:91). Fixed via Edit: distinguished the two
+  configure controls in the ClockDisplayBox entry and softened the
+  general status-box description in ui_overview.rst to note variant
+  overrides. Two scope drift items confirmed against source and noted
+  for the master plan: (a) appConfigAction lives in settingsMenu, not
+  menuHardware (mainwindow_ui.h:462) — the bundle's Scope listing of
+  "Application Configuration" as a Hardware-menu entry was wrong; the
+  drafter correctly omitted it. (b) the Hardware menu entry that opens
+  RuntimeHardwareConfigDialog is labelled "Hardware Selection" in the
+  current UI; bundle text said "Hardware Configuration". Drafted prose
+  uses the actual UI label. All seven screenshot TODO markers in place
+  with the bundle's specified filenames. Awaiting user review.
+- 2026-04-29: not started → in progress. Drafter dispatched in worktree
+  (Sonnet, isolation: "worktree"). Scope verified against current source:
+  rebuildLoadoutMenu, rebuildFtmwPresetMenu, CommunicationDialog, HWDialog,
+  HwSettingsWidget, HardwareStatusBox, and AboutDialog all present in the
+  indexed graph; cited dev-docs (settings-registry.md, loadout-system.md)
+  exist.
 -->
 
 Rewrites the Hardware menu page and the day-to-day instrument-control
