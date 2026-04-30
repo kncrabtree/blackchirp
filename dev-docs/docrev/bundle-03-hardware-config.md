@@ -1,10 +1,58 @@
 # Bundle 03 — Hardware Configuration: Profiles, Loadouts, FTMW Presets
 
-**Status:** not started
+**Status:** drafted
 
 <!--
 Status log:
 - (entries appended in reverse chronological order; most recent first)
+- 2026-04-29: drafted (screenshot + label pass). User captured all six
+  screenshots into doc/source/_static/user_guide/hardware_config/.
+  Inspecting the screenshots surfaced label discrepancies between the
+  drafted prose and the actual UI. Verified labels in source: the
+  Hardware menu item that opens the runtime dialog is **Hardware
+  Selection** (mainwindow_ui.h:181, not "Hardware Configuration"); the
+  Hardware submenu is **Loadout** singular (mainwindow_ui.h:448, not
+  "Loadouts"); the dialog's accept button is **Apply Configuration**
+  (runtimehardwareconfigdialog_ui.h:248, not "Save"). Reading
+  onDialogAccepted (runtimehardwareconfigdialog.cpp:1102-1120) showed
+  a four-button unsaved-changes prompt that was not previously
+  documented. Edits: replaced all six "Screenshot:" TODO markers with
+  .. figure:: directives + captions; corrected the three menu/panel
+  labels in hardware_config.rst, profiles.rst, and loadouts.rst;
+  rewrote loadouts.rst Preview-State section to describe Apply
+  Configuration / Cancel as the dialog accept and to document the
+  four-button unsaved-changes prompt (Save and apply / Apply without
+  saving / Save to new loadout... / Cancel). Bundle 02's first_run.rst
+  uses "Loadouts" plural for the panel; left as-is since it was
+  committed under that wording — flag for a follow-up consistency pass
+  if desired.
+- 2026-04-29: in progress → drafted. Verifier graded A/D PASS, B
+  PARTIAL (AWG sample-rate wording slightly imprecise but acceptable),
+  C FAIL (lead-in said "three choices" but listed four; corrected).
+  Drafter verified the four source-of-truth claims (active preset
+  cannot be deleted; __LastUsed__ hidden from dropdowns; AWG sample
+  rate not stored in presets; preset cannot exist outside a loadout)
+  against codebase-memory and noted the loadout/preset menu gating
+  is Idle-only (not Idle/Disconnected as one dev-doc suggested) —
+  prose matches the source. Orchestrator made four inline fixes:
+  (1) ftmw_presets.rst lead-in "three choices" → "the following
+  options"; (2) removed duplicate preset_bar.png screenshot TODO at
+  the top of ftmw_presets.rst, retaining the one inside the Preset
+  Bar section; (3) loadouts.rst preview-state button label
+  "Apply / Save" → "Save" (verified actual QPushButton label in
+  runtimehardwareconfigdialog_ui.h:199); (4) loadouts.rst Save As
+  description now mentions the user-prompted copy of FTMW presets
+  when the FTMW-relevant hardware is unchanged (verified in
+  onLoadoutSaveAs at runtimehardwareconfigdialog.cpp:1454-1507).
+  Bundle 02's first_run.rst forward-reference TODO was resolved.
+  Six screenshot TODOs (one per bundle-spec filename) remain for a
+  later screenshot pass. Awaiting user review and commit.
+- 2026-04-29: not started → in progress. Drafter dispatched (Sonnet,
+  isolated worktree). Bundle file scope verified against current
+  source: all six cited headers and both dev-docs exist at the paths
+  the bundle gives. Bundle 02 (commit 3d5da2cb) corrected the runtime
+  config dialog to a four-panel layout; bundle 03 prose should match
+  that vocabulary.
 -->
 
 Introduces the runtime hardware configuration system: profiles

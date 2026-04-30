@@ -105,7 +105,7 @@ Hardware Onboarding
 
 .. TODO: capture screenshot — onboarding-runtimeconfig.png: the
    RuntimeHardwareConfigDialog as it appears on first run. The four-panel
-   horizontal splitter should be fully visible: Loadouts on the far left,
+   horizontal splitter should be fully visible: Loadout on the far left,
    then Configuration Overview, then Hardware Browser, then the rightmost
    Configuration panel. Select a hardware type in the Hardware Browser so
    the rightmost panel is populated. The Library Status tab should be
@@ -123,7 +123,7 @@ The Hardware Configuration dialog is where you tell Blackchirp which
 physical or virtual instruments are connected and how they should be
 configured. The dialog uses a four-panel horizontal layout:
 
-**Loadouts** (leftmost panel)
+**Loadout** (leftmost panel)
     Lists all saved loadouts. A *loadout* is a named collection of hardware
     assignments — one or more profiles per hardware type. Use the buttons
     below the list to **Activate**, **Save**, **Save As**, **Copy**, or
@@ -162,13 +162,11 @@ requires a complete and valid loadout before an experiment can be started.
 .. note::
 
    Detailed walkthroughs of profile creation, the Add Profile flow, loadout
-   management, and FTMW presets are covered in the Hardware Configuration
-   chapter (:doc:`/user_guide/hardware_menu` covers the day-to-day Hardware
-   menu navigation that lives on the main toolbar).
+   management, and FTMW presets are covered in
+   :doc:`/user_guide/hardware_config`. The day-to-day Hardware menu
+   navigation is covered in :doc:`/user_guide/hardware_menu`.
 
-.. TODO: bundle 03 — once ``user_guide/hardware_config.rst`` exists, replace
-   the prose above with ``:doc:`/user_guide/hardware_config``` and link the
-   profile / loadout / FTMW-preset sub-pages from this section.
+   .. todo:: Cross-reference target ``/user_guide/hardware_menu`` is pending bundle 04.
 
 The **Library Status** tab within this dialog provides a quick view of
 vendor-library availability. See :ref:`first-run-library-status` below and
