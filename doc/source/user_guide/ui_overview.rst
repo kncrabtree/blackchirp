@@ -1,10 +1,16 @@
 .. index::
-   single: FixedClock
-   single: Clock
-   single: TemperatureController
-   single: PulseGenerator
-   single: FlowController
-   single: Sleep
+   single: User Interface
+   single: Instrument Status
+   single: Status Panel
+   single: Status Box
+   single: Clock Display Box
+   single: Gas Flow Display Box
+   single: Pressure Status Box
+   single: Pulse Status Box
+   single: Temperature Status Box
+   single: LIF Laser Status Box
+   single: Help Menu
+   single: About Dialog
 
 User Interface Overview
 =======================
@@ -24,10 +30,11 @@ At the top of the window, the main toolbar contains most of the program controls
   - ``Quick Experiment`` (hotkey: F3) allows repeating a previous experiment or initializing the "Start Experiment" wizard with settings from a previous experiment.
   - ``Start Sequence`` performs a series of identical experiments with a time delay in between.
 
-- ``Hardware`` opens a menu that provides access to hardware object controls and settings, as well as the instrument's Rf/MW configuration. These are discussed in greater detail on the `Hardware Menu`_ page.
-- ``Rolling Data`` and ``Aux Data`` are menus with settings pertaining to the `Rolling/Aux Data <rolling-aux-data.html>`_ tabs. Here you can control the number of plots on each tab and, for rolling data, the minimum amount of retained history.
+- ``Hardware`` opens a menu that provides access to hardware controls, communication settings, loadout and preset switching, and per-device dialogs. These are discussed in detail on the :doc:`Hardware Menu <hardware_menu>` page.
+- ``Rolling Data`` and ``Aux Data`` are menus with settings pertaining to the :doc:`Rolling/Aux Data <rolling-aux-data>` tabs. Here you can control the number of plots on each tab and, for rolling data, the minimum amount of retained history.
 - ``View Experiment`` loads and displays any previously-completed experiment in a new window.
-- ``Settings`` contains miscellaneous program settings, including the program `Data Storage Location <first_run.html#data-storage-location>`_.
+- ``Settings`` contains miscellaneous program settings, including the program :ref:`Data Storage Location <first-run-data-path>`.
+- ``Help`` opens a menu with links to online resources and the About dialog (see :ref:`ui-help-menu` below).
 
 On the far right are additional controls that are most relevant during an acquisition:
 
@@ -37,19 +44,84 @@ On the far right are additional controls that are most relevant during an acquis
 - ``Sleep`` places Blackchirp and its hardware into a standby state. If this button is pressed during an acquisition, Blackchirp will enter sleep mode when the experiment completes. Each piece of hardware can interpret sleep mode in its own way. At present, a PulseGenerator will stop generating pulses, and a FlowController will shut off all gas flows (but the actual flow rates will continue to be monitored). Other hardware objects do nothing.
 
 
+.. _ui-instrument-status:
+
 Instrument Status
 .................
 
-The left side of the user interface shows the current instrument status, including the most recent readings from hardware that is periodically polled.
-Depending on your hardware configuration, some of these boxes may not be present.
+The left panel of the user interface (visible in the screenshot at the top of
+this page) is the instrument status panel. Each item in the panel is a
+collapsible **status box** with a title row and a body region. The title row
+contains:
 
-- ``Expt`` displays the last experiment number in the current save directory, or 0 if no experiments have been performed. The number increments upon successful initialization of an experiment.
-- ``Clocks`` shows the current frequencies of the oscillators that have been configured. Upon program startup, all physical clocks that are assigned to clock roles are read and the frequencies updated. For FixedClocks, the frequency will be recalled from the previous Blackchirp instance. See the `Hardware Menu`_ page for more details on the clock roles.
-- ``Hardware Status`` boxes show the most recent reading(s) for the respective hardware, and/or LEDs that indicate whether a particular channel is active. For instance, if a TemperatureController is enabled, the Temperature Status box will show the readings of all enabled channels, while if a PulseGenerator is enabled, then the Pulse Status box shows which channels are currently enabled. A FlowController, on the other hand, always shows the readings of all channels, and LEDs are used to indicate whether a channel is enabled.
-- ``FTMW Progress`` shows the completion percentage of an ongoing FTMW acquisition.
-- ``LIF Progress`` shows the completion percentage of an ongoing LIF acquisition (if the LIF module is enabled).
+- A **collapse/expand** toggle button (chevron icon). Clicking it hides or
+  reveals the body of the box, allowing you to reclaim screen space for boxes
+  you rarely need to monitor.
+- A **bold title label** showing the hardware key (``Type.Label``) of the
+  associated device, or a fixed label for non-device boxes.
+- A **configure** button (cog icon). For most status boxes, clicking it opens
+  the :doc:`Hardware Dialog <hwdialog>` for the associated device, equivalent
+  to selecting that device from the Hardware menu. The configure button is
+  present on every hardware-backed status box; a few variants (notably the
+  Clock Display Box) override its target — see the variant entries below.
 
-.. _Hardware Menu: hardware_menu.html#rf-configuration
+Status boxes are added and removed dynamically when the active hardware map
+changes (see :doc:`hardware_config/loadouts`). Only devices in the active
+loadout have status boxes; devices not in the current loadout do not appear.
+Status boxes are disabled (greyed out) when the corresponding device is
+offline.
+
+**Experiment info panel**
+
+- ``Expt`` displays the last experiment number in the current save directory,
+  or 0 if no experiments have been performed. The number increments upon
+  successful initialisation of an experiment.
+- ``FTMW Progress`` shows the completion percentage of an ongoing FTMW
+  acquisition.
+- ``LIF Progress`` shows the completion percentage of an ongoing LIF
+  acquisition (visible only when the LIF module is enabled).
+
+**Status box variants**
+
+The following status box types ship with Blackchirp. Which boxes appear in a
+given session depends on the hardware types present in the active loadout.
+
+*Clock Display Box*
+   Shows the current logical clock frequencies (UpLO, DownLO, AwgRef,
+   DRClock, DigRef, ComRef) configured in the RF chain. Each row names the
+   clock role, its physical hardware assignment, and the most recent
+   frequency reading. The title-bar configure button opens the
+   **FTMW Configuration** dialog rather than a single
+   device dialog, since clock roles are mapped to hardware there. A separate
+   cog icon next to each row opens the Hardware Dialog for that row's
+   physical clock device.
+
+*Gas Flow Display Box* for flow controllers
+   Displays the measured flow rate and setpoint for each gas channel, the
+   channel enable state (LED), and the inlet pressure reading and pressure
+   control mode. Present when a FlowController is in the active loadout.
+
+*Pressure Status Box* for pressure controllers
+   Shows the most recent chamber pressure reading and an LED indicating
+   whether pressure control is active. Present when a PressureController is
+   in the active loadout.
+
+*Pulse Status Box* for pulse generators
+   Shows one LED per pulse channel indicating the channel's current enabled
+   state, plus the global pulse generator enable LED and repetition rate.
+   Channel labels and tooltips reflect the channel names and timing parameters
+   stored in settings. Present when a PulseGenerator is in the active loadout.
+
+*Temperature Status Box* for temperature controllers
+   Shows the most recent temperature reading for each enabled channel, labelled
+   by channel name. Channels that are disabled in settings are hidden; a
+   placeholder message appears when no channels are enabled. Present when a
+   TemperatureController is in the active loadout.
+
+*LIF Laser Status Box* for the LIF laser
+   Shows the current laser position (wavelength or delay, depending on the
+   implementation) and a flashlamp enable LED. Present when the LIF module is
+   enabled and a LifLaser is in the active loadout.
 
 
 Display Tabs
@@ -57,16 +129,46 @@ Display Tabs
 
 The majority of important information is displayed in a tabbed interface in the center of the UI.
 
-- ``CP-FTMW`` shows free-induction decay and Fourier transform data from an ongoing or just-completed experiment. More information about the plots and controls on this tab is available on the `CP-FTMW Tab`_ page.
-- ``LIF`` shows data from an ongoing or just-completed LIF experiment. More details can be found on the `LIF module <user_guide/lif.html>`_ page.
-- ``Rolling Data`` and ``Aux Data`` both show signals from hardware items recorded as a function of time. "Rolling" data is acquired continuously while Blackchirp is open, while "Aux" data is recorded only during an experiment. More details are provided on the `Rolling/Aux Data <rolling-aux-data.html>`_ page.
+- ``CP-FTMW`` shows free-induction decay and Fourier transform data from an ongoing or just-completed experiment. More information about the plots and controls on this tab is available on the :doc:`cp-ftmw` page.
+- ``LIF`` shows data from an ongoing or just-completed LIF experiment. More details can be found on the :doc:`lif` page.
+- ``Rolling Data`` and ``Aux Data`` both show signals from hardware items recorded as a function of time. "Rolling" data is acquired continuously while Blackchirp is open, while "Aux" data is recorded only during an experiment. More details are provided on the :doc:`rolling-aux-data` page.
 - ``Log`` shows program-related messages, including warnings and errors. The number of new messages shown since the last time the tab was viewed is displayed in parentheses. Any warnings are indicated with a yellow triangle icon on the tab, and errors are indicated with a red and white "X" icon. When an error occurs, additional information about the cause can be found here. All log messages are recorded to disk in a semicolon-delimited file format under the "log" folder in the current save path. A single log file contains all messages during a given month of program execution. Additionally, any log messages received during an experiment are stored in the same format as ``log.csv`` in the experiment's data folder.
 
-.. _CP-FTMW Tab: cp-ftmw.html
 
+.. _ui-help-menu:
 
+Help Menu
+.........
 
+The **Help** toolbar button opens a menu with online resource links and
+application information.
 
+Online Resources
+~~~~~~~~~~~~~~~~
 
+Three links open the corresponding page in the system web browser:
 
+- **Documentation** — the Blackchirp online user guide at
+  ``https://blackchirp.readthedocs.io``.
+- **GitHub Repository** — the Blackchirp source repository at
+  ``https://github.com/kncrabtree/blackchirp``.
+- **Discord Server** — the Blackchirp community Discord server.
 
+About Blackchirp
+~~~~~~~~~~~~~~~~
+
+**About Blackchirp** opens the About dialog. The dialog header shows the
+application name, version string, and build commit hash. The body is a
+tabbed view with three tabs:
+
+- **Overview** — a short description of Blackchirp, copyright and license
+  notice (MIT License), and an *Online Resources* group containing buttons
+  for the Documentation, GitHub, and Discord links.
+- **Third-Party Libraries** — a table listing the bundled open-source
+  libraries (Qt, Qwt, GNU Scientific Library, Eigen3) with their versions
+  and licenses.
+- **Build Info** — Qt version, operating system, CPU architecture, and
+  the enabled optional modules (CUDA, LIF).
+
+**About Qt** opens Qt's standard About Qt dialog, which summarises the Qt
+version and license in use.

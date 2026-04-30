@@ -9,6 +9,7 @@
 #include <QTabWidget>
 
 #include <gui/widget/hwsettingswidget.h>
+#include <gui/style/themecolors.h>
 #include <data/storage/settingsstorage.h>
 #include <data/bcglobals.h>
 
@@ -17,6 +18,7 @@ HWDialog::HWDialog(const QString &key, QWidget *controlWidget, QWidget *parent)
 {
     setAttribute(Qt::WA_DeleteOnClose);
     setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+    setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg", ThemeColors::IconPrimary, this));
 
     auto vbl = new QVBoxLayout;
 
