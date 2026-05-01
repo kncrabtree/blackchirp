@@ -17,7 +17,9 @@ PeakFindWidget::PeakFindWidget(Ft ft, int number, QWidget *parent):
     ui(new Ui::PeakFindWidget), d_number(number), d_busy(false), d_waiting(false)
 {
     ui->setupUi(this);
-    
+
+    setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg", ThemeColors::IconPrimary, this));
+
     // Override icons with theme-aware versions
     ui->removeButton->setIcon(ThemeColors::createThemedIcon(":/icons/minus.svg", ThemeColors::IconPrimary, this));
 
