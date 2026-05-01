@@ -43,12 +43,15 @@ ViewerMainWindow::ViewerMainWindow(QWidget *parent)
 
 ViewerMainWindow::~ViewerMainWindow()
 {
-    // Close all open experiment windows
+    // Disconnect widgetClosing first so unique_ptr destruction does not
+    // re-enter onExperimentWidgetClosing and mutate d_openExperiments mid-clear.
     for (auto& [displayText, widget] : d_openExperiments) {
         if (widget) {
-            widget->close();
+            disconnect(widget.get(), &ExperimentViewWidget::widgetClosing,
+                       this, &ViewerMainWindow::onExperimentWidgetClosing);
         }
     }
+    d_openExperiments.clear();
 }
 
 void ViewerMainWindow::setupUI()
@@ -443,12 +446,16 @@ void ViewerMainWindow::updateRecentMenu()
 
 void ViewerMainWindow::closeEvent(QCloseEvent *event)
 {
-    // Close all open experiment windows
+    // Disconnect widgetClosing first so closing each widget does not re-enter
+    // onExperimentWidgetClosing and erase from the map being iterated.
     for (auto& [displayText, widget] : d_openExperiments) {
         if (widget) {
+            disconnect(widget.get(), &ExperimentViewWidget::widgetClosing,
+                       this, &ViewerMainWindow::onExperimentWidgetClosing);
             widget->close();
         }
     }
-    
+    d_openExperiments.clear();
+
     QMainWindow::closeEvent(event);
 }
