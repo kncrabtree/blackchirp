@@ -1,9 +1,12 @@
 # Bundle 08 — Experiment Workflow Refresh
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
+- 2026-04-30: drafted → complete. Landed in commit 75b36a8c. Scope expanded mid-bundle to include hand-edits on acquisition_types.rst (stacked-widget UI corrections, Common Settings group documentation, label fixes) after fresh screenshots revealed factual errors in the original draft, plus Qt layout fixes to ExperimentSetupDialog/HwSettingsWidget/PulseConfigWidget/RfConfigWidget so the dialog can be resized below its previously enforced 1500×1050 floor (needed in order to capture the screenshots). Optional Hardware Pages content reorganized to defer device-specific UI detail to the Hardware Details pages. Overlay-copying paragraph removed from quick_experiment in favour of coverage by the future Overlays page (bundle 09). Five screenshot TODOs replaced with fresh captures.
+- 2026-04-30: in progress → drafted. Verifier punch list: 2 load-bearing items (overlay copying described as automatic vs. user-prompted dialog; object-key format described as label-only vs. ``HardwareType.label`` composite). Both fixed via direct Edit by orchestrator (small factual touch-ups, not worth a drafter revision pass). Worktree auto-merged into main working tree; changes unstaged for user review. Five screenshot TODOs left as expected.
+- 2026-04-30: not started → in progress. Drafter dispatched in worktree (Sonnet, isolation: worktree). Scope-freshness check passed: all cited source files present, ExperimentTypePage embeds LO/DR widgets inline, b682122d confirmed.
 - (entries appended in reverse chronological order; most recent first)
 -->
 

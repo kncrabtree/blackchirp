@@ -34,7 +34,7 @@ requirements, and acceptance criteria.
 | 05 | Per-device hardware page refresh | M | 04 | not started |
 | 06 | Python hardware (user guide) | L | 03 | not started |
 | 07 | RF configuration, chirp setup, FTMW digitizer | M | 03, 04 | complete |
-| 08 | Experiment workflow refresh | M | 07 | not started |
+| 08 | Experiment workflow refresh | M | 07 | complete |
 | 09 | FTMW data viewing, overlays, data storage refresh | M | 08 | not started |
 | 10 | LIF, Rolling/Aux, Log tab, Blackchirp-viewer | M | 08 | not started |
 | 11 | Migration guide v1.x → 2.0.0 + Changelog | S | most user-guide bundles | not started |
@@ -47,6 +47,7 @@ requirements, and acceptance criteria.
 | 13f | API ref: storage classes | M | 13a | not started |
 | 13g | API ref: GUI helper classes | M | 13a | not started |
 | 13h | API ref: file parsers | S | 13a | not started |
+| 14 | Final pass: screenshot sizing & navigation review | S | most user-guide bundles | not started |
 
 Effort key: S ≈ 1 session, M ≈ 2 sessions, L ≈ 3+ sessions.
 
@@ -318,3 +319,38 @@ Do not assume that work marked `not started` actually has not been
 attempted: glance at the latest few git log entries on the working
 branch as a sanity check. If the table and git history disagree,
 the user resolves it.
+
+## Bundle 14 — Final pass: screenshot sizing & navigation review
+
+A short cleanup bundle to be run after the bulk of the user-guide work
+has landed. Two scopes:
+
+1. **Screenshot sizing.** Walk every `.. image::` and `.. figure::`
+   directive under `doc/source/user_guide/`. For each referenced PNG,
+   inspect the native pixel width:
+   - **Native width ≤ 800 px:** drop any explicit `:width:` option (or
+     set it to the native width) so the image renders at 1:1.
+   - **Native width > 800 px:** cap the rendered width at 800 px and
+     wrap the directive so the figure links to the full-resolution
+     image (e.g. via `:target:` pointing at the same `_static` path,
+     or a `figure` with a click-through). Pick one approach and apply
+     it consistently.
+
+2. **File organization & menu layout.** Reassess whether the
+   `doc/source/user_guide/` directory layout still matches the final
+   shape of the documentation. Candidates to reconsider:
+   - Whether the `experiment/` subdirectory should remain (or its
+     contents promoted) given that several pages there are now
+     subpages of `ftmw_configuration` rather than `experiment_setup`.
+   - Whether the `hw/` subdirectory should sit under
+     `hardware_details` as a logical sub-tree or stay flat.
+   - Toctree ordering and `:caption:` choices in the top-level
+     `index.rst` and any `:hidden:` toctrees.
+
+   The goal is a consistent navigation tree that matches how a reader
+   would actually browse the manual; do not rearrange files unless a
+   concrete improvement is identified.
+
+Drafter mode: direct (orchestrator-driven). Both scopes are mechanical
+enough that delegation overhead exceeds the work, and a single
+reviewer pass keeps the cross-page consistency tight.
