@@ -26,4 +26,6 @@ a spectrometer for the first time.
    user_guide/overlays
    user_guide/plot_controls
    user_guide/rolling-aux-data
+   user_guide/log_tab
+   user_guide/viewer
    user_guide/lif
