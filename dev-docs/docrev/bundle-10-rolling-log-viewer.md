@@ -1,10 +1,18 @@
 # Bundle 10 — Rolling/Aux, Log Tab, Blackchirp-Viewer
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
-- (entries appended in reverse chronological order; most recent first)
+- 2026-04-30: not started → complete. Drafter (Sonnet) produced log_tab.rst,
+  viewer.rst, refreshed rolling-aux-data.rst (Implementation → Label slot,
+  modern examples, :doc:/:ref: cross-references, index block), and updated
+  the user_guide.rst toctree. Verifier (Sonnet, fresh context) returned
+  ACCEPT against all 23 checklist items. User-supplied corrections folded
+  in: rolling-aux screenshot caption rewrite, viewer overlay/processing-save
+  and XY-export capabilities moved into "What You Can Do", caption/alt
+  alignment with the on-screen "Application Settings" dialog title and
+  with the viewer's two-window layout. Content commit: a453ab3b.
 -->
 
 Refreshes the rolling/aux-data page, adds a new Log tab page, and

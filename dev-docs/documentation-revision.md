@@ -36,7 +36,7 @@ requirements, and acceptance criteria.
 | 07 | RF configuration, chirp setup, FTMW digitizer | M | 03, 04 | complete |
 | 08 | Experiment workflow refresh | M | 07 | complete |
 | 09 | FTMW data viewing, overlays, data storage refresh | M | 08 | complete |
-| 10 | Rolling/Aux, Log tab, Blackchirp-viewer | M | 08 | not started |
+| 10 | Rolling/Aux, Log tab, Blackchirp-viewer | M | 08 | complete |
 | 11 | Migration guide v1.x → 2.0.0 + Changelog | S | most user-guide bundles | not started |
 | 12 | Developer Guide | L | — (independent) | not started |
 | 13a | API ref: refresh existing 5 (HardwareObject etc.) | S | — | not started |
