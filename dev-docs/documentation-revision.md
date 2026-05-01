@@ -219,10 +219,19 @@ briefs subagents, judges results, and merges.
    directly via Edit. Do not loop through more than two revision
    passes; if a third is needed, the bundle scope is wrong and
    needs human input.
-5. **Merge the worktree** once acceptance is reached. Do not
-   commit — leave staged changes for the user to review and
-   commit. Report a one-paragraph summary of what landed and what
-   was left as TODO (typically: screenshots).
+5. **Merge the worktree and stage the content commit** once
+   acceptance is reached. Stage only files inside `doc/source/`
+   (the bundle's declared scope). Do not stage anything under
+   `dev-docs/`. Report a one-paragraph summary of what landed and
+   what was left as TODO (typically: screenshots), then wait for
+   the user to commit (the **content commit**, stage 1).
+6. **After stage 1 lands**, record the content commit hash: update
+   the master-plan table (this file, status → `complete`) and the
+   bundle's own status header (status → `complete`, append a
+   status-log entry with the stage-1 hash). Stage those two
+   `dev-docs/` files and prepare the **tracking commit** with the
+   subject `Update documentation revision tracking status`. Wait
+   for the user to commit (stage 2).
 
 ### Parallelization rules
 
@@ -276,6 +285,9 @@ Before each drafter dispatch, the orchestrator confirms:
       literals, timeless prose, no emojis unless requested).
 - [ ] The verifier dispatch is queued to follow drafter
       completion.
+- [ ] Stage 1 (content commit) and stage 2 (tracking commit) are
+      treated as separate user commits; the orchestrator does not
+      combine them.
 
 ### Bundle status header
 
@@ -296,7 +308,10 @@ table whenever a status transition occurs. Each transition appends
 one entry to the status log with: timestamp, transition (e.g.
 `not started → in progress`), and a one-line note (worktree path,
 verifier outcome, blocker, commit hash, etc.). When a bundle reaches
-`complete`, record the commit hash that landed it.
+`complete`, record the **content commit** hash (stage 1 of the
+two-stage commit pattern). The tracking commit (stage 2) is the one
+that physically writes the `complete` status into this block and into
+the master-plan table; its hash is not separately recorded.
 
 The status log gives a fresh orchestrator session enough context to
 resume mid-bundle: it tells the orchestrator whether a worktree
