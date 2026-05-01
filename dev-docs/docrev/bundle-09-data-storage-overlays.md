@@ -1,10 +1,13 @@
 # Bundle 09 — FTMW Data Viewing, Overlays, Data Storage Refresh
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
 - (entries appended in reverse chronological order; most recent first)
+- 2026-04-30: drafted → complete. User reviewed, requested overlays.rst voice/style alignment with the rest of the user guide (orchestrator rewrote it to match cp-ftmw.rst/data_storage.rst conventions: terse prose, ``setting``-format bullet lists, no marketing language) and three corrections (overlay type is user-selected not auto-detected; "sample backings" → "sample backing pressures"; removed a note about a non-existent Preview button). Content committed in 444babf7.
+- 2026-04-30: in progress → drafted. Drafter (Sonnet) produced edits to all three target RSTs; verifier flagged 2 load-bearing items (markers.csv cross-reference pointed at cp-ftmw.rst which has no marker prose; clocks.csv LO-scan excerpt still used indexed Clock.0 keys) and 2 minor (auxdata.csv paragraph still had HTML cross-refs after a typo edit; orphan Markers index entry on cp-ftmw.rst). Orchestrator fixed all four directly. Awaiting user commit.
+- 2026-04-30: not started → in progress. Drafter dispatch pending; orchestrator confirmed scope-currency against experiment data/experiments/0/0/49 (hardware.csv now has a third hardwareType column — drafter brief includes that addition).
 -->
 
 Refreshes the FTMW tab page, syncs the overlays content, and updates

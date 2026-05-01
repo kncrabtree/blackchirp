@@ -35,7 +35,7 @@ requirements, and acceptance criteria.
 | 06 | Python hardware (user guide) | L | 03 | not started |
 | 07 | RF configuration, chirp setup, FTMW digitizer | M | 03, 04 | complete |
 | 08 | Experiment workflow refresh | M | 07 | complete |
-| 09 | FTMW data viewing, overlays, data storage refresh | M | 08 | not started |
+| 09 | FTMW data viewing, overlays, data storage refresh | M | 08 | complete |
 | 10 | LIF, Rolling/Aux, Log tab, Blackchirp-viewer | M | 08 | not started |
 | 11 | Migration guide v1.x → 2.0.0 + Changelog | S | most user-guide bundles | not started |
 | 12 | Developer Guide | L | — (independent) | not started |
