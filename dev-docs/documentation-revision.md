@@ -56,10 +56,9 @@ Status values:
 - **not started** — no work has been done on this bundle.
 - **in progress** — drafter has been dispatched but the bundle is not
   yet accepted. The bundle's own header (see "Bundle status header"
-  below) carries the detail (worktree path, revision pass, open punch
-  list).
-- **drafted** — drafter output has been merged into the main worktree
-  but the user has not yet committed. Awaiting user review.
+  below) carries the detail (revision pass, open punch list).
+- **drafted** — drafter output has landed in the working tree but the
+  user has not yet committed. Awaiting user review.
 - **complete** — user has committed the bundle's changes. The commit
   hash is recorded in the bundle's own status header for traceability.
 - **blocked** — work has been attempted but cannot proceed without a
@@ -73,9 +72,10 @@ before each new orchestrator session.
 
 ## Recommended order
 
-The user-guide track (00 → 11) is mostly linear, with the API-reference
-track (13a → 13h) and the developer guide (12) running independently in
-parallel.
+Bundles are tackled one at a time. The user-guide track (00 → 11) is
+mostly linear; the API-reference track (13a → 13h) and the developer
+guide (12) are independent of it and can be slotted in between
+user-guide bundles in whatever order suits.
 
 ### Sequential critical path (user guide)
 
@@ -103,26 +103,21 @@ parallel.
 10. **11 — Migration guide and changelog.** Best done last so it can
     cross-reference the new pages.
 
-### Independent / parallelizable bundles
+### Independent bundles
 
-These can be tackled at any time, in any order, without blocking the
+These can be tackled at any point in the schedule without blocking the
 critical path:
 
-- **05 — Per-device hardware pages.** Light refresh; can run in parallel
-  with 03–10. Only depends on 04 for terminology.
+- **05 — Per-device hardware pages.** Light refresh; depends on 04 only
+  for terminology.
 - **06 — Python hardware user guide.** Depends conceptually on 03
-  (profiles) but can be drafted in parallel; cross-link at the end.
+  (profiles); cross-link to the relevant user-guide pages once both
+  have landed.
 - **12 — Developer Guide.** Sources are dev-docs and source code; no
   dependency on the user-guide bundles.
 - **13a–13h — API reference bundles.** Each is independent of the others
   except that 13a establishes the Doxygen-comment style guide that
-  13b–13h follow. After 13a, the remaining seven are fully parallel.
-
-### Suggested parallel teams (if multiple bundles run concurrently)
-
-- **Team A (user guide critical path):** 00 → 01 → 02 → 03 → 04 → 07 → 08 → 09 → 10 → 11
-- **Team B (per-device + python):** 05, 06
-- **Team C (developer + API):** 12, 13a, then 13b–13h fanned out
+  13b–13h follow.
 
 ## Common conventions for bundle authors
 
@@ -188,7 +183,7 @@ briefs subagents, judges results, and merges.
 | 11 (changelog/migration) | Direct | Synthesis-heavy; cross-references every other bundle's output |
 | 12 (developer guide) | Delegate per sub-page | Each sub-page is independently scoped; large total volume |
 | 13a (existing API refresh) | Direct | Establishes the API style convention 13b–13h follow |
-| 13b–13h (API reference) | Delegate, parallelize | Independent of each other once 13a is locked; ideal for parallel dispatch |
+| 13b–13h (API reference) | Delegate | Independent of each other once 13a is locked |
 
 ### Per-bundle workflow (delegated bundles)
 
@@ -198,33 +193,33 @@ briefs subagents, judges results, and merges.
    (dev-docs and source headers). If scope has drifted, revise the
    bundle file *before* dispatching — drafters cannot be expected
    to detect plan staleness.
-2. **Dispatch drafter (Sonnet, isolation: "worktree").** Brief with:
-   the bundle file path, the codebase-memory project name
+2. **Dispatch drafter (Sonnet).** Brief with: the bundle file path,
+   the codebase-memory project name
    (`home-kncrabtree-github-blackchirp-src`), the explicit
    instruction to use codebase-memory tools first per `CLAUDE.md`,
    and a hard scope: "produce only the Sphinx files the bundle
    lists; leave screenshot TODO markers with the bundle's specified
    filenames; do not edit `MEMORY.md` or the bundle file itself."
-   Run in a worktree so the orchestrator can diff cleanly.
-3. **Dispatch verifier (Sonnet, fresh context, no worktree).** Brief
-   with: the diff from the drafter's worktree, the bundle file, and
-   the instruction "grade against each acceptance criterion; check
-   that any cited file paths and class names exist; report a punch
-   list under 300 words." Fresh context matters — the drafter has
-   motivated reasoning the verifier lacks.
+   The drafter edits the working tree directly.
+3. **Dispatch verifier (Sonnet, fresh context).** Brief with: the
+   working-tree diff, the bundle file, and the instruction "grade
+   against each acceptance criterion; check that any cited file
+   paths and class names exist; report a punch list under 300
+   words." Fresh context matters — the drafter has motivated
+   reasoning the verifier lacks.
 4. **Orchestrator judges the punch list.** Decide which items are
    load-bearing. For load-bearing issues, dispatch a revision pass
-   to the drafter (same worktree, focused prompt: "address items
-   N, M, P from this punch list"). For minor prose issues, fix
-   directly via Edit. Do not loop through more than two revision
-   passes; if a third is needed, the bundle scope is wrong and
-   needs human input.
-5. **Merge the worktree and stage the content commit** once
-   acceptance is reached. Stage only files inside `doc/source/`
-   (the bundle's declared scope). Do not stage anything under
-   `dev-docs/`. Report a one-paragraph summary of what landed and
-   what was left as TODO (typically: screenshots), then wait for
-   the user to commit (the **content commit**, stage 1).
+   to the drafter with a focused prompt: "address items N, M, P
+   from this punch list". For minor prose issues, fix directly via
+   Edit. Do not loop through more than two revision passes; if a
+   third is needed, the bundle scope is wrong and needs human
+   input.
+5. **Stage the content commit** once acceptance is reached. Stage
+   only files inside `doc/source/` (the bundle's declared scope).
+   Do not stage anything under `dev-docs/`. Report a one-paragraph
+   summary of what landed and what was left as TODO (typically:
+   screenshots), then wait for the user to commit (the **content
+   commit**, stage 1).
 6. **After stage 1 lands**, record the content commit hash: update
    the master-plan table (this file, status → `complete`) and the
    bundle's own status header (status → `complete`, append a
@@ -233,26 +228,13 @@ briefs subagents, judges results, and merges.
    subject `Update documentation revision tracking status`. Wait
    for the user to commit (stage 2).
 
-### Parallelization rules
-
-- Bundles 05, 06, 12, and 13b–13h are independent of the
-  user-guide critical path and of each other. They can be
-  dispatched concurrently — multiple drafter agents in a single
-  message, each in its own worktree.
-- Do not parallelize bundles on the critical path (00 → 01 → 02
-  → 03 → 04 → 07 → 08 → 09 → 10 → 11). Each cross-references
-  the prior one and benefits from sequential context.
-- Maximum recommended concurrent drafters: four. Beyond that the
-  orchestrator's merge bookkeeping becomes the bottleneck.
-
 ### Orchestrator hygiene
 
-- **One bundle per orchestrator session for sequential bundles.**
-  Running the orchestrator across many sequential bundles in a
-  single context defeats the chunking — context grows linearly
-  and prompt-cache benefit is lost by the third or fourth
-  bundle. Start a fresh Opus session per bundle (or per
-  parallel group).
+- **One bundle per orchestrator session.** Running the
+  orchestrator across many bundles in a single context defeats the
+  chunking — context grows linearly and prompt-cache benefit is
+  lost by the third or fourth bundle. Start a fresh Opus session
+  per bundle.
 - **Stay out of file-by-file writing.** If the orchestrator finds
   itself using `Edit`/`Write` for routine prose, push the work
   back to a drafter. The orchestrator's job is briefing,
@@ -278,7 +260,6 @@ Before each drafter dispatch, the orchestrator confirms:
       cited behaviour matches code).
 - [ ] All bundle dependencies (per the table at the top of this
       plan) have status `complete`.
-- [ ] A worktree has been created for the drafter.
 - [ ] The drafter prompt includes: bundle file path,
       codebase-memory project name, explicit scope limits, and a
       reminder to follow `CLAUDE.md` conventions (string
@@ -306,17 +287,17 @@ Status log:
 The orchestrator updates this block in lockstep with the master-plan
 table whenever a status transition occurs. Each transition appends
 one entry to the status log with: timestamp, transition (e.g.
-`not started → in progress`), and a one-line note (worktree path,
-verifier outcome, blocker, commit hash, etc.). When a bundle reaches
+`not started → in progress`), and a one-line note (verifier
+outcome, blocker, commit hash, etc.). When a bundle reaches
 `complete`, record the **content commit** hash (stage 1 of the
 two-stage commit pattern). The tracking commit (stage 2) is the one
 that physically writes the `complete` status into this block and into
 the master-plan table; its hash is not separately recorded.
 
 The status log gives a fresh orchestrator session enough context to
-resume mid-bundle: it tells the orchestrator whether a worktree
-already exists, whether a verifier punch list is outstanding, and
-whether the previous attempt was abandoned for a known reason.
+resume mid-bundle: it tells the orchestrator whether a verifier
+punch list is outstanding and whether the previous attempt was
+abandoned for a known reason.
 
 ### Resuming work in a fresh orchestrator session
 
@@ -327,8 +308,8 @@ plan and `CLAUDE.md`) is:
 2. For any bundle marked `in progress` or `blocked`, read that
    bundle file's status header for context.
 3. Surface the current state to the user in the form: "Bundle X is
-   in progress in worktree Y, awaiting Z. Bundle W is blocked on
-   V. Recommended next action: …" — and wait for user direction.
+   in progress, awaiting Y. Bundle W is blocked on V. Recommended
+   next action: …" — and wait for user direction.
 
 Do not assume that work marked `not started` actually has not been
 attempted: glance at the latest few git log entries on the working
