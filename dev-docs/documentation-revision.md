@@ -36,7 +36,7 @@ requirements, and acceptance criteria.
 | 07 | RF configuration, chirp setup, FTMW digitizer | M | 03, 04 | complete |
 | 08 | Experiment workflow refresh | M | 07 | complete |
 | 09 | FTMW data viewing, overlays, data storage refresh | M | 08 | complete |
-| 10 | LIF, Rolling/Aux, Log tab, Blackchirp-viewer | M | 08 | not started |
+| 10 | Rolling/Aux, Log tab, Blackchirp-viewer | M | 08 | not started |
 | 11 | Migration guide v1.x → 2.0.0 + Changelog | S | most user-guide bundles | not started |
 | 12 | Developer Guide | L | — (independent) | not started |
 | 13a | API ref: refresh existing 5 (HardwareObject etc.) | S | — | not started |
@@ -48,6 +48,7 @@ requirements, and acceptance criteria.
 | 13g | API ref: GUI helper classes | M | 13a | not started |
 | 13h | API ref: file parsers | S | 13a | not started |
 | 14 | Final pass: screenshot sizing & navigation review | S | most user-guide bundles | not started |
+| 15 | LIF module (experiment setup, configuration, tab, storage) | M | 08 | not started |
 
 Effort key: S ≈ 1 session, M ≈ 2 sessions, L ≈ 3+ sessions.
 
@@ -98,9 +99,12 @@ user-guide bundles in whatever order suits.
    pages are linked from the wizard walkthrough).
 8. **09 — FTMW data viewing, overlays, data storage refresh.** Depends
    on 08 (data storage describes what the experiment writes).
-9. **10 — LIF, Rolling/Aux, Log tab, Blackchirp-viewer.** Depends on 08
-   (LIF acquisition setup is part of the experiment wizard).
-10. **11 — Migration guide and changelog.** Best done last so it can
+9. **10 — Rolling/Aux, Log tab, Blackchirp-viewer.** Depends on 08
+   (the data-storage page describes what each tab consumes).
+10. **15 — LIF module.** Depends on 08 (LIF acquisition setup is
+    part of the experiment wizard). Peer of bundle 10; either can
+    land first.
+11. **11 — Migration guide and changelog.** Best done last so it can
     cross-reference the new pages.
 
 ### Independent bundles
