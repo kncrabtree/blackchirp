@@ -1,10 +1,22 @@
 # Bundle 15 — LIF Module User Guide
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
 - (entries appended in reverse chronological order; most recent first)
+- 2026-05-01: in progress → complete. Content commit 6f470752. After
+  initial verifier acceptance, user manual-verification pass corrected
+  factual errors on every sub-page (wizard framing, end-box read-only,
+  flashlamp purpose, dialog layout, slice/2D linkage via crosshairs and
+  context menu, Save semantics, accumulated-sums data convention,
+  header.csv LifConfig/LifScope sections). Three screenshots already on
+  disk; no additional screenshots required.
+- 2026-05-01: not started → in progress. Drafter dispatched (Sonnet,
+  general-purpose). Three screenshots already provided in
+  doc/source/_static/user_guide/lif/ (lif_exp_setup.png, lif_config.png,
+  lif_tab.png); drafter instructed to inspect and embed those rather than
+  leaving TODOs.
 -->
 
 Replaces the one-paragraph LIF stub with a full chapter covering

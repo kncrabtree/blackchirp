@@ -48,7 +48,7 @@ requirements, and acceptance criteria.
 | 13g | API ref: GUI helper classes | M | 13a | not started |
 | 13h | API ref: file parsers | S | 13a | not started |
 | 14 | Final pass: screenshot sizing & navigation review | S | most user-guide bundles | not started |
-| 15 | LIF module (experiment setup, configuration, tab, storage) | M | 08 | not started |
+| 15 | LIF module (experiment setup, configuration, tab, storage) | M | 08 | complete |
 
 Effort key: S ≈ 1 session, M ≈ 2 sessions, L ≈ 3+ sessions.
 
@@ -132,6 +132,12 @@ in each bundle file.
   Avoid temporal markers ("now", "currently", "recently") and version
   labels in prose ("Phase 2", "v1.1.0 introduced"). Permanent
   version-keyed information lives in the changelog or migration guide.
+- **American English spelling.** All documentation prose uses American
+  English: `normalize`/`normalization`, `behavior`, `color`,
+  `visualization`, `randomize`, `initialize`, `analyze`, `co-averaging`,
+  etc. Match UI labels exactly when quoting them; if a UI label uses an
+  American spelling (e.g. "Randomize Delay Order"), do not "correct" it
+  to British English in prose.
 - **Cross-references.** Use Sphinx `:doc:` and `:ref:` directives, not
   raw HTML links. Replace any existing `<page.html>`-style anchors when
   editing a page.
@@ -267,9 +273,13 @@ Before each drafter dispatch, the orchestrator confirms:
 - [ ] The drafter prompt includes: bundle file path,
       codebase-memory project name, explicit scope limits, and a
       reminder to follow `CLAUDE.md` conventions (string
-      literals, timeless prose, no emojis unless requested).
+      literals, timeless prose, American English spelling, no
+      emojis unless requested).
 - [ ] The verifier dispatch is queued to follow drafter
-      completion.
+      completion, and the verifier prompt explicitly instructs it
+      to flag any British English spellings as part of the punch
+      list (per the "Common conventions for bundle authors"
+      American-English rule).
 - [ ] Stage 1 (content commit) and stage 2 (tracking commit) are
       treated as separate user commits; the orchestrator does not
       combine them.
@@ -323,7 +333,7 @@ the user resolves it.
 ## Bundle 14 — Final pass: screenshot sizing & navigation review
 
 A short cleanup bundle to be run after the bulk of the user-guide work
-has landed. Two scopes:
+has landed. Three scopes:
 
 1. **Screenshot sizing.** Walk every `.. image::` and `.. figure::`
    directive under `doc/source/user_guide/`. For each referenced PNG,
@@ -351,6 +361,21 @@ has landed. Two scopes:
    would actually browse the manual; do not rearrange files unless a
    concrete improvement is identified.
 
-Drafter mode: direct (orchestrator-driven). Both scopes are mechanical
+3. **American English sweep.** Run a final pass for any British
+   English spellings that slipped past per-bundle verifiers. Walk
+   every `.rst` file under `doc/source/user_guide/` (and
+   `doc/source/api/` if API-reference bundles have landed) and
+   convert: `-ise/-isation` → `-ize/-ization` (normalize, organize,
+   visualize, optimize, randomize, initialize, summarize,
+   categorize, customize, etc.); `-yse` → `-yze` (analyze,
+   catalyze); `colour` → `color`; `behaviour` → `behavior`;
+   `centre` → `center`; `fibre` → `fiber`; `metre` → `meter`;
+   `dialogue` → `dialog` only when referring to a UI dialog box
+   (leave the literary sense alone); `programme` → `program`;
+   `coaveraging` → `co-averaging`; plus any others surfaced by a
+   regex sweep. Skip code blocks and source-identifier names; only
+   change prose. Match UI labels exactly when quoting them.
+
+Drafter mode: direct (orchestrator-driven). All scopes are mechanical
 enough that delegation overhead exceeds the work, and a single
 reviewer pass keeps the cross-page consistency tight.
