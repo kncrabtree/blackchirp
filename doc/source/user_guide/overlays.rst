@@ -4,22 +4,14 @@
    single: SPCAT
    single: XIAM
    single: Spectral comparison
-   single: Data visualization
    single: Theoretical spectra
-   single: Experimental comparison
 
 Overlays
 ========
 
-Overview and Purpose
-....................
+An overlay is an additional curve that is drawn on top of an FT plot for comparison with the experimental spectrum. Overlays are used to compare two experiments side-by-side, to display predicted line lists from spectroscopic fitting programs, and to import arbitrary XY data from other sources. Overlays are saved with the experiment and are restored automatically the next time the experiment is opened. The on-disk format is described on the :doc:`data_storage` page.
 
-The overlays feature in Blackchirp allows you to superimpose additional data onto your Fourier Transform Microwave (FTMW) spectrum plots for comparison and analysis. This powerful tool enables you to:
-
-- Compare experimental spectra from different measurement conditions
-- Overlay catalog data from programs like SPCAT and XIAM
-- Import and display arbitrary XY data from external sources
-- Analyze spectral differences and identify molecular transitions
+The Overlay Manager is opened from the squares-plus icon on the CP-FTMW toolbar. See :doc:`cp-ftmw` for the toolbar context.
 
 .. image:: /_static/user_guide/overlays/overlay_types_comparison.png
    :width: 800
@@ -27,321 +19,101 @@ The overlays feature in Blackchirp allows you to superimpose additional data ont
    :alt: Example showing different types of overlays on an FTMW spectrum
 
 
-The main overlay management interface is accessed through the ``Overlays`` button in the FTMW toolbar, identified by the squares-plus icon.
+Overlay Types
+.............
 
+Blackchirp supports three overlay types, each backed by a different file format. The type is selected by the user when the overlay is created; the settings panel in the creation dialog adapts to the chosen type.
 
-Types of Overlays
-.................
+Blackchirp Experiment
+---------------------
 
-Blackchirp supports three distinct types of overlays, each optimized for different data sources and use cases:
+Loads the FT data from another Blackchirp experiment. The experiment metadata (LO frequency, shot counts, FT processing settings) is preserved, and the FT can be reprocessed using the standard processing controls. This is the most direct way to compare two experiments acquired under different conditions (e.g., discharge on vs. off, or different sample backing pressures).
 
-Blackchirp Experiment Overlays
--------------------------------
+Catalog
+-------
 
-**Purpose**: Overlay data from other Blackchirp experiments for direct experimental comparison.
+Displays a stick spectrum or convolved lineshape from a spectroscopic fitting program. SPCAT and XIAM output formats are supported. Each transition retains its quantum numbers and source-program metadata, which are shown in the curve tooltip.
 
-**Use Cases**:
-- Comparing spectra under different experimental conditions (e.g., discharge on vs. off)
-- Overlaying reference measurements or background spectra
-- Analyzing spectral changes over time or experimental parameters
-
-**Key Features**:
-- Direct integration with Blackchirp's native data format
-- Automatic preservation of experimental metadata (frequency settings, shot counts, LO frequency)
-- Seamless scaling and offset capabilities
-- Fast loading and processing of experiment files
-
-Catalog Overlays
-----------------
-
-**Purpose**: Display theoretical spectroscopic predictions from fitting softwave.
-
-**Supported Programs**:
-- **SPCAT**: Standard spectroscopic catalog program
-- **XIAM**: Internal rotation analysis program
-- Other catalog formats may be added in the future
-
-**Key Features**:
-
-*Convolution Capabilities*
-  Transform stick spectra into realistic lineshapes using:
-  
-  - **Lorentzian lineshapes**: Approximation for non-windowed spectra
-  - **Gaussian lineshapes**: Suitable for simulating specrtra with applied window functions
-  - **Configurable linewidth**: User-defined FWHM values in kHz
-  - **Frequency range control**: Specify convolution range and number of points
-  - **Background processing**: Progress tracking for large datasets with cancellation support
-
-*Data Management*
-  - **Frequency filtering**: Retain only transitions within specified frequency ranges
-  - **Metadata preservation**: Retain source program information, molecule names, and quantum numbers
-  - **Intelligent caching**: Optimized performance for repeated convolution operations
-  - **Format flexibility**: Automatic parsing of various catalog file formats
+For comparison with experimental data, the stick spectrum can be convolved with a Lorentzian or Gaussian lineshape of user-defined FWHM. Convolution runs in a background thread; for large catalogs it may take a minute or more, and progress is reported in a cancellable dialog. Convolution results are cached so that repeating the same parameters returns immediately.
 
 .. image:: /_static/user_guide/overlays/catalog_convolution_settings.png
    :width: 700
    :align: center
    :alt: Catalog overlay convolution settings dialog
 
-Generic XY Data Overlays
-------------------------
+The overlay's frequency range can be limited to a subset of the catalog. Restricting the range before convolution reduces both processing time and memory usage. For very large catalogs (>100,000 transitions), pre-filtering the file to the relevant frequency range is recommended.
 
-**Purpose**: Import arbitrary XY data from text files for flexible data visualization.
+Generic XY
+----------
 
-**Supported File Formats**:
-- Comma-separated values (CSV)
-- Tab-separated values (TSV)  
-- Space-delimited text files
-- Semicolon-delimited files
-- Custom delimiter formats
-
-**Key Features**:
-
-*Intelligent File Parsing*
-  - **Automatic format detection**: Blackchirp automatically detects delimiter types and file structure
-  - **Flexible column mapping**: Choose which columns represent X and Y data
-  - **Header handling**: Configure number of header lines to skip
-  - **Data validation**: Real-time validation with error reporting
-
-*Data Preview and Validation*
-  - **Live preview table**: See parsed data before applying the overlay
-  - **Statistical information**: View data point counts, ranges, and basic statistics
-  - **X-range filtering**: Limit display to specific frequency or time ranges
-  - **Error detection**: Identify and handle parsing issues gracefully
+Loads arbitrary XY data from a delimited text file. Comma-, semicolon-, tab-, and space-separated formats are recognized, and a custom delimiter may be specified manually. The dialog displays the parsed file in a preview table so the column mapping can be verified before the overlay is created.
 
 .. image:: /_static/user_guide/overlays/generic_xy_preview.png
    :width: 700
    :align: center
    :alt: Generic XY data preview showing parsed file contents
 
-Creating Overlays
-.................
+The X and Y columns are selected explicitly, the number of header lines to skip is configurable, and the X range can be filtered to a subset of the file. Numeric values must use the period as the decimal separator.
 
-Creating overlays in Blackchirp is straightforward:
 
-Step 1: Launch Creation Dialog
-------------------------------
+Creating an Overlay
+...................
 
-1. Click the ``Overlays`` button in the FTMW toolbar
-2. In the Overlay Manager, click the ``Add`` button (plus icon)
-3. The unified overlay creation dialog will open
+To create an overlay:
+
+1. Click the ``Overlays`` button on the CP-FTMW toolbar.
+2. In the Overlay Manager, click the ``Add`` button (plus icon). The unified overlay creation dialog opens.
+3. Choose the overlay type. The settings panel updates to match the selection.
+4. Click ``Browse`` and select a data file.
+5. For Catalog overlays, configure the lineshape, linewidth, and frequency range. For Generic XY overlays, choose the X and Y columns, the number of header lines, and the X range. For Blackchirp Experiment overlays, the standard FT processing controls are available.
+6. The plot updates with a live preview as settings change.
+7. Click ``OK`` to create the overlay, or ``Cancel`` to discard it.
 
 .. image:: /_static/user_guide/overlays/overlay_creation_dialog.png
    :width: 800
    :align: center
-   :alt: Unified overlay creation dialog showing the three-tier interface
+   :alt: Unified overlay creation dialog
 
-Step 2: Configure Source File
------------------------------
 
-**File Selection**
-  - Click ``Browse`` to select your data file
-  - Blackchirp automatically detects the file type and displays the overlay type
-  - The interface adapts to show relevant configuration options
+Overlay Manager
+...............
 
-**Format Detection**
-  - For catalog files: Program type (SPCAT, XIAM) is automatically identified
-  - For generic files: Delimiter type and structure are detected
-  - For Blackchirp files: Experiment metadata is loaded and displayed
-
-Step 3: Configure Overlay Settings
-----------------------------------
-
-The settings panel changes based on your overlay type:
-
-**For Catalog Overlays:**
-  - **Convolution Settings**: Choose lineshape (Lorentzian/Gaussian) and linewidth
-  - **Frequency Range**: Set minimum and maximum frequency limits
-  - **Processing Options**: Configure resolution and background processing preferences
-
-**For Generic XY Overlays:**
-  - **Column Mapping**: Select which columns contain X and Y data
-  - **Header Options**: Specify number of header lines to skip
-  - **Data Range**: Set filtering limits for the X-axis data
-
-**For Blackchirp Experiment Overlays:**
-  - **Processing Settings**: Configure FT processing settings using normal Blackchirp interface
-
-Step 4: Preview and Apply
--------------------------
-
-- **Auto-Preview Mode**: See changes in real-time as you adjust settings
-- **Validation**: Blackchirp validates all settings and reports any issues
-- **Apply**: Click ``OK`` to create the overlay, or ``Cancel`` to discard changes
-
-.. note::
-   Large catalog files with convolution may take up to a minute to process. Blackchirp displays progress information and allows cancellation of long operations.
-
-Managing Overlays
-.................
-
-Once created, overlays are managed through the Overlay Manager interface:
+Once created, overlays appear in a table in the Overlay Manager. Each row corresponds to one overlay.
 
 .. image:: /_static/user_guide/overlays/overlay_manager_main.png
    :width: 800
    :align: center
-   :alt: Main overlay manager interface showing the table view and controls
+   :alt: Overlay Manager interface
 
-Overlay Table Interface
------------------------
+The columns are:
 
-The overlay table provides complete control over your overlays with the following columns:
+* ``Configure``: Gear icon. Opens the same dialog used during creation; changes apply on close.
+* ``Enabled``: Checkbox. Toggles the overlay's visibility on the plot without deleting it.
+* ``Label``: User-editable name for the overlay. Must be unique within the experiment. Edited via the Configure dialog. Special characters (including semicolons) are replaced with underscores when the label is written to disk.
+* ``Plot``: Identifies which plot the overlay is drawn on. The same source can be added multiple times to display on different plots.
+* ``Type``: Catalog, Generic XY, or Blackchirp Experiment.
+* ``Comment``: Free-form notes. May not contain semicolons.
 
-**Configure Column (Gear Icon)**
-  - Click to modify overlay settings
-  - Opens the same configuration dialog used during creation
-  - Changes are applied immediately with preview support
+Right-clicking on a row provides additional actions:
 
-**Enabled Checkbox**
-  - Toggle overlay visibility without deleting the overlay
-  - Disabled overlays remain in the table but are hidden from plots
-  - Useful for comparing subsets of overlays
+* ``Copy Settings``: Copies the overlay's data and processing settings (Y scale, offset, frequency filtering) to the clipboard.
+* ``Paste Settings``: Applies copied data settings to the selected overlay.
+* ``Copy Appearance``: Copies the curve appearance (color, line style, thickness).
+* ``Paste Appearance``: Applies copied appearance settings to the selected overlay.
+* ``Remove``: Deletes the selected overlay(s).
 
-**Label Column**
-  - User-editable names for easy identification
-  - Must be edited through Configure dialog
-  - Overlay labels must be unique within an experiment
-  - Special characters (including semicolons) are automatically replaced with underscores
+Keyboard shortcuts are available for the copy/paste actions:
 
-**Plot Assignment**
-  - Shows which plot displays the overlay
-  - Can create mutliple copies of an overlay to display on different plots
+* ``Ctrl+Shift+C`` / ``Ctrl+Shift+V``: Copy/paste data settings.
+* ``Ctrl+C`` / ``Ctrl+V``: Copy/paste appearance.
+* ``Ctrl+Z``: Undo the most recent paste.
 
-**Type Column**
-  - Displays overlay type (Catalog, Generic XY, Blackchirp Experiment)
-  - Provides quick identification of data sources
-
-**Comment Field**
-  - Optional notes and descriptions
-  - Useful for documenting overlay purposes or data sources
-  - Note: may not contain semicolons
-
-Table Management Features
--------------------------
-**Context Menu Actions**
-  Right-click on any overlay for additional options:
-  
-  - **Copy Settings**: Copy overlay configuration for reuse
-  - **Paste Settings**: Apply copied settings (y scale, offset, etc) to selected overlay
-  - **Copy Appearance**: Copy curve styling (color, line style, thickness)
-  - **Paste Appearance**: Apply appearance settings to selected overlay
-  - **Remove**: Delete selected overlay(s) from the table
-
-Keyboard Shortcuts
-------------------
-
-Power users can utilize keyboard shortcuts for efficient overlay management:
-
-- **Ctrl+Shift+C**: Copy overlay settings
-- **Ctrl+Shift+V**: Paste overlay settings  
-- **Ctrl+C**: Copy appearance settings
-- **Ctrl+V**: Paste appearance settings
-- **Ctrl+Z**: Undo last paste operation
 
 Troubleshooting
 ...............
 
-Common File Format Issues
--------------------------
+If a catalog file is not recognized, verify that it is the unmodified output of a supported program (SPCAT or XIAM) and that the file is complete and UTF-8 encoded. To request support for an additional catalog format, file an issue on `GitHub <https://github.com/kncrabtree/blackchirp/issues>`_.
 
-**Catalog File Problems**
+If a Generic XY file fails to parse or its columns are misaligned, set the delimiter manually rather than relying on auto-detection, verify that the column mapping in the preview table is correct, and confirm that the numeric values use periods as the decimal separator. Comment lines or partial header rows embedded within the data can cause silent column misalignment; they should be removed or the header line count should be increased.
 
-*Issue*: Catalog file not recognized or parsing fails
-  
-*Solutions*:
-  - Verify the file contains valid catalog data from supported programs (SPCAT, XIAM)
-  - Check for corrupted or truncated files
-  - Ensure proper file encoding (UTF-8 recommended)
-  - File a Github issue to request support for other catalog types
-
-*Issue*: Missing or incorrect quantum numbers in catalog display
-
-*Solutions*:
-  - Some catalog formats may not include complete quantum number information
-  - Verify the source program generated complete output
-  - Check catalog file header for format specification
-
-**Generic XY File Problems**
-
-*Issue*: File parsing fails or shows incorrect data
-
-*Solutions*:
-  - Verify delimiter detection by manually specifying the separator
-  - Check for inconsistent formatting within the file
-  - Ensure numeric data uses proper decimal notation (periods, not commas)
-  - Remove or skip non-numeric header information
-
-*Issue*: Data appears scrambled or in wrong columns
-
-*Solutions*:
-  - Verify column mapping in the preview dialog
-  - Check for embedded headers or comment lines within data
-  - Ensure consistent column count throughout the file
-
-**Blackchirp Experiment File Problems**
-
-*Issue*: Experiment file won't load or displays errors
-
-*Solutions*:
-  - Verify the file is a complete Blackchirp experiment
-  - Check file permissions and accessibility
-  - Ensure the experiment contains FT data suitable for overlays
-  - Try loading the experiment directly in Blackchirp first
-
-Performance Considerations
---------------------------
-
-**Large Dataset Handling**
-
-For files containing thousands of data points or extensive catalog information:
-
-- **Enable background processing**: Allow convolution and loading operations to run in background
-- **Use frequency filtering**: Limit data to relevant frequency ranges before processing
-- **Consider file preprocessing**: Pre-filter large catalog files to contain only relevant transitions
-- **Monitor memory usage**: Very large datasets may require additional system memory
-
-**Convolution Performance**
-
-Catalog convolution can be computationally intensive:
-
-- **Choose appropriate resolution**: Higher resolution increases processing time exponentially
-- **Optimize frequency range**: Convolve only the frequency range of interest
-- **Use caching effectively**: Identical convolution parameters reuse cached results
-- **Consider batch processing**: For multiple similar overlays, process them sequentially
-
-**Interface Responsiveness**
-
-To maintain interface responsiveness during heavy overlay usage:
-
-- **Disable auto-preview for large files**: Turn off real-time preview updates
-- **Limit simultaneous operations**: Process overlays one at a time for complex operations
-- **Use preview mode judiciously**: Preview operations consume processing resources
-
-Error Message Explanations
----------------------------
-
-**"File format not recognized"**
-  - The selected file doesn't match any supported overlay format
-  - Try specifying the file type manually or converting to a supported format
-
-**"Insufficient memory for convolution"**
-  - The convolution operation requires more memory than available
-  - Reduce frequency range, lower resolution, or close other applications
-
-**"Background operation failed"**
-  - A background processing task encountered an error
-  - Check the log for detailed error information and retry the operation
-
-**"Invalid frequency range"**
-  - The specified frequency limits are invalid or outside the data range
-  - Verify frequency values and ensure minimum < maximum
-
-**"Column mapping error"**
-  - The selected columns don't contain valid numeric data
-  - Check column assignments and verify data format in the preview
-
-.. warning::
-   Very large catalog files (>100,000 transitions) with convolution may require significant processing time and memory. Consider filtering the catalog file to relevant frequency ranges before import to improve performance.
-
-.. note::
-   Overlay settings are automatically saved with your Blackchirp session. When you reopen Blackchirp, previously configured overlays will be restored and available for use.
+If a Blackchirp Experiment overlay fails to load, confirm that the experiment directory contains a complete set of FID files and that the experiment number is reachable from the configured data storage location. Loading the experiment directly via :menuselection:`File --> View Experiment` first is a useful way to verify that the data is intact.

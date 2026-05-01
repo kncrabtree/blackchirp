@@ -6,6 +6,7 @@
    single: Frame
    single: Backup
    single: Window Function
+   single: Markers
 
 Data Storage
 ============
@@ -23,7 +24,7 @@ At this location, Blackchirp creates 4 subfolders:
   * ``rollingdata``: CSV files containing monitoring data (see `Rolling and Aux Data <rolling-aux-data.html>`_)
   * ``textexports``: Default location for XY export files for graph data.
 
-All of Blackchirp's data files are written in plain-text CSV format using a the separator character ``;``.
+All of Blackchirp's data files are written in plain-text CSV format using the separator character ``;``.
 
 Experiments
 -----------
@@ -41,46 +42,30 @@ Each experiment is associated with several CSV files that contain information ab
 auxdata.csv
 ...........
 
-This file contains all auxiliary data collected during the experiment, which is plotted on the `Aux Data <rolling-aux-data.html>`_ tab. Aux data is collected at fixed time intervals throughout the experiment as determined by the "Aux Data Interval" option on the `Experiment Setup <experiment/acquisition_types.html>`_ page. Example::
+This file contains all auxiliary data collected during the experiment, which is plotted on the :doc:`Aux Data <rolling-aux-data>` tab. Aux data is collected at fixed time intervals throughout the experiment as determined by the "Aux Data Interval" option on the :doc:`Experiment Setup <experiment/acquisition_types>` page. Example::
 
-  timestamp;epochtime;elapsedsecs;Ftmw.ChirpPhaseScore;Ftmw.ChirpShift;Ftmw.Shots
-  Tue Dec 13 17:48:08 2022;1670982488;0;0;0;0
-  Tue Dec 13 17:48:13 2022;1670982493;5;0;0;8
-  Tue Dec 13 17:48:18 2022;1670982498;10;0;0;18
-  Tue Dec 13 17:48:23 2022;1670982503;15;456170656;-1;28
-  Tue Dec 13 17:48:28 2022;1670982508;20;483896352;-1;36
-  Tue Dec 13 17:48:33 2022;1670982513;25;462966016;-1;46
+  timestamp;epochtime;elapsedsecs;FlowController.Main.Pressure;Ftmw.Shots;TemperatureController.default.Temperature Ch2.Temperature2
+  Thu Apr 30 19:50:51 2026;1777603851;0;0;0;4.932009643731726
 
-The format is similar to the Rolling Data format, with two exceptions: first, there is an additional ``elapsedsecs`` column that tells the number of seconds since the start of the experimment, and second, there may be many columns of data.
+The format is similar to the Rolling Data format, with two exceptions: first, there is an additional ``elapsedsecs`` column that tells the number of seconds since the start of the experiment, and second, there may be many columns of data.
 
 chirps.csv
 ..........
 
-This file contains information about the CP-FTMW chirps. A single chirp may be built from multiple segments (any of which may be empty), and each segment has a starting frequency, and ending frequency, and a duration. An entire experiment may consist of many differnt chirps. The example below shows an experiment in which a gas pulse was probed by a series of 20 identical chirps::
+This file contains information about the CP-FTMW chirps. A single chirp may be built from multiple segments (any of which may be empty), and each segment has a starting frequency, an ending frequency, and a duration. Example::
+
+  Chirp;Segment;StartMHz;EndMHz;DurationUs;Alpha;Empty
+  0;0;4895;1520;2;-1687.5;false
+
+The first column (``Chirp``) is an index identifying the chirp, and the second (``Segment``) identifies which segment of the chirp is being described. In this experiment, a single chirp consists of one segment starting at 4895 MHz and ending at 1520 MHz, with a duration of 2 microseconds. The ``Alpha`` column is the sweep rate in MHz/μs. If the ``Empty`` column is true, then the start and end values are ignored, and the segment contains just 0 over the indicated duration.
+
+An entire experiment may consist of many different chirps. The example below shows an LO scan in which each of 20 identical chirps is recorded at each LO tuning::
 
   Chirp;Segment;StartMHz;EndMHz;DurationUs;Alpha;Empty
   0;0;4895;1520;1;-3375;false
   1;0;4895;1520;1;-3375;false
-  2;0;4895;1520;1;-3375;false
-  3;0;4895;1520;1;-3375;false
-  4;0;4895;1520;1;-3375;false
-  5;0;4895;1520;1;-3375;false
-  6;0;4895;1520;1;-3375;false
-  7;0;4895;1520;1;-3375;false
-  8;0;4895;1520;1;-3375;false
-  9;0;4895;1520;1;-3375;false
-  10;0;4895;1520;1;-3375;false
-  11;0;4895;1520;1;-3375;false
-  12;0;4895;1520;1;-3375;false
-  13;0;4895;1520;1;-3375;false
-  14;0;4895;1520;1;-3375;false
-  15;0;4895;1520;1;-3375;false
-  16;0;4895;1520;1;-3375;false
-  17;0;4895;1520;1;-3375;false
-  18;0;4895;1520;1;-3375;false
+  ...
   19;0;4895;1520;1;-3375;false
-
-The first column (``Chirp``) is an index identifying the chirp, and the second (``Segment``) identifies which segment of the chirp is being described. In this experiment, each of the 20 chirps consists of only a single segment starting at 4895 MHz and ending at 1520 MHz, with a duration of 1 microsecond. The ``Alpha`` column is the sweep rate in MHz/μs. If the ``Empty`` column is true, then the start end end values are ignored, and the segment contains just 0 over the indicated duration.
 
 .. note::
    The frequencies and sweep rate contained in the chirps.csv file refer to AWG frequencies. The actual chirp range depends on the `Rf Configuration <hardware_menu.html#rf-configuration>`_.
@@ -88,40 +73,43 @@ The first column (``Chirp``) is an index identifying the chirp, and the second (
 clocks.csv
 ..........
 
-This file contains the configuration of the clocks (upceonversion LO, downconversion LO, etc) as discussed on the `Rf Configuration <hardware_menu.html#rf-configuration>`_ page. In a typical CP-FTMW experiment, each clock is set to a single value, but in some cases (e.g., an `LO Scan <experiment/acquisition_types.html#lo-scan>`_ or a `DR Scan <experiment/acquisition_types.html#dr-scan>`_), one or more of the clocks may be tuned to different values throughout the experiment. For example, the following is an excerpt from an LO scan in which the upconversion and downconversion LOs were each stepped by 250 MHz::
+This file contains the configuration of the clocks (upconversion LO, downconversion LO, etc) as discussed on the `Rf Configuration <hardware_menu.html#rf-configuration>`_ page. In a typical CP-FTMW experiment, each clock is set to a single value. Example::
 
   Index;ClockType;FreqMHz;Operation;Factor;HwKey;OutputNum
-  0;DownLO;40960;Multiply;8;Clock.0;1
-  0;UpLO;11520;Multiply;2;Clock.0;0
-  0;DRClock;7000;Multiply;1;Clock.0;2
-  1;DownLO;41210;Multiply;8;Clock.0;1
-  1;UpLO;11770;Multiply;2;Clock.0;0
-  1;DRClock;7000;Multiply;1;Clock.0;2
-  2;DownLO;41460;Multiply;8;Clock.0;1
-  2;UpLO;12020;Multiply;2;Clock.0;0
-  2;DRClock;7000;Multiply;1;Clock.0;2
-  3;DownLO;41710;Multiply;8;Clock.0;1
-  3;UpLO;12270;Multiply;2;Clock.0;0
-  3;DRClock;7000;Multiply;1;Clock.0;2
-  4;DownLO;41960;Multiply;8;Clock.0;1
-  4;UpLO;12520;Multiply;2;Clock.0;0
-  4;DRClock;7000;Multiply;1;Clock.0;2
+  0;UpLO;11520;Multiply;2;Clock.virtual;0
+  0;DownLO;40960;Multiply;8;Clock.virtual;1
 
-The ``Index`` column refers to each step of the experiment. ``ClockType`` identifies the particular clock role (UpLO, DownLO, AwgRef, DRClock, DigRef, or ComRef). ``FreqMHz`` is the logical clock frequency in MHz. ``Operation`` (Multiply or Divide) and ``Factor`` account for any frequncy divider or multiplier on the clock output, and these values are used by Blackchirp to determine how to convert the logical frequencies into hardware frequency. ``HwKey`` and ``OutputNum`` tell which piece of hardware was used and which output (in the event that the clock has multiple outputs).
+In some cases (e.g., an `LO Scan <experiment/acquisition_types.html#lo-scan>`_ or a `DR Scan <experiment/acquisition_types.html#dr-scan>`_), one or more of the clocks may be tuned to different values throughout the experiment. The following is an excerpt from an LO scan in which the upconversion and downconversion LOs were each stepped by 250 MHz::
+
+  Index;ClockType;FreqMHz;Operation;Factor;HwKey;OutputNum
+  0;DownLO;40960;Multiply;8;Clock.virtual;1
+  0;UpLO;11520;Multiply;2;Clock.virtual;0
+  0;DRClock;7000;Multiply;1;Clock.virtual;2
+  1;DownLO;41210;Multiply;8;Clock.virtual;1
+  1;UpLO;11770;Multiply;2;Clock.virtual;0
+  1;DRClock;7000;Multiply;1;Clock.virtual;2
+  2;DownLO;41460;Multiply;8;Clock.virtual;1
+  2;UpLO;12020;Multiply;2;Clock.virtual;0
+  2;DRClock;7000;Multiply;1;Clock.virtual;2
+
+The ``Index`` column refers to each step of the experiment. ``ClockType`` identifies the particular clock role (UpLO, DownLO, AwgRef, DRClock, DigRef, or ComRef). ``FreqMHz`` is the logical clock frequency in MHz. ``Operation`` (Multiply or Divide) and ``Factor`` account for any frequency divider or multiplier on the clock output, and these values are used by Blackchirp to determine how to convert the logical frequencies into hardware frequency. ``HwKey`` and ``OutputNum`` tell which piece of hardware was used and which output (in the event that the clock has multiple outputs).
 
 hardware.csv
 ............
 
 This file contains the list of hardware compiled into Blackchirp when the experiment was performed. It is used in the program to determine whether it is possible to perform a Quick Experiment, which can be done only if the same hardware configuration is available. Example::
 
-  key;subKey
-  AWG.0;awg70002a
-  Clock.0;valon5009
-  Clock.1;fixed
-  FtmwDigitizer.0;dsa71604c
-  PulseGenerator.0;qc9528
+  key;subKey;hardwareType
+  LifScope.Default;PythonLifScope;10
+  PulseGenerator.Default;VirtualPulseGenerator;2
+  LifLaser.virtual;VirtualLifLaser;11
+  TemperatureController.default;VirtualTemperatureController;5
+  FlowController.Main;VirtualFlowController;3
+  Clock.virtual;FixedClock;7
+  AWG.Ka;VirtualAwg;8
+  FtmwScope.virtual;VirtualFtmwScope;6
 
-The ``key`` and ``subKey`` fields together record which specific hardware implementation was used for each piece of hardware. The number of items in this list may be variable depending on your configuration.
+The ``key`` field uses the format ``HardwareClass.Label``, where the label is the user-assigned name configured at setup time (for example, ``FtmwScope.virtual``, ``PulseGenerator.Default``, ``FlowController.Main``). The ``subKey`` field records which specific hardware implementation was used. The ``hardwareType`` column is a programmatic integer from the internal ``HardwareType`` enum; it is used by the dialog and menu wiring to route settings and does not need to be interpreted manually. The number of items in this list may vary depending on your configuration.
 
 header.csv
 ..........
@@ -129,51 +117,42 @@ header.csv
 This file contains the vast majority of the program, acquisition, and hardware settings for the experiment. Essentially, any setting in effect at the beginning of the experiment that cannot change during the experiment is stored here. Example::
 
   ObjKey;ArrayKey;ArrayIndex;ValueKey;Value;Units
-  ChirpConfig;;;ChirpInterval;30;μs
-  ChirpConfig;;;PostGate;-0.17;μs
-  ChirpConfig;;;PostProtection;0.15;μs
-  ChirpConfig;;;PreGate;0.5;μs
-  ChirpConfig;;;PreProtection;0.1;μs
+  ChirpConfig;;;ChirpInterval;20;μs
   ChirpConfig;;;SampleInterval;6.25e-05;μs
   ChirpConfig;;;SampleRate;16000;MHz
-  Experiment;;;BCBuildVersion;v0.1-337-g4748747;
-  Experiment;;;BCMajorVersion;1;
+  Experiment;;;BCBuildVersion;"508a6973c274ae9fcf24f0949ba70970b7c51d39";
+  Experiment;;;BCMajorVersion;2;
   Experiment;;;BCMinorVersion;0;
   Experiment;;;BCPatchVersion;0;
-  Experiment;;;BCReleaseVersion;alpha;
-  Experiment;;;BackupInterval;0;hr
-  Experiment;;;Number;270;
+  Experiment;;;BCReleaseVersion;devel;
+  Experiment;;;BackupInterval;0;min
+  Experiment;;;Number;49;
   Experiment;;;TimeDataInterval;5;s
-  FtmwConfig;;;ChirpOffset;-1;μs
   FtmwConfig;;;ChirpScoringEnabled;false;
-  FtmwConfig;;;Objective;10000;
-  FtmwConfig;;;PhaseCorrectionEnabled;true;
-  FtmwConfig;;;TargetShots;10000;
+  FtmwConfig;;;Objective;100;
+  FtmwConfig;;;PhaseCorrectionEnabled;false;
+  FtmwConfig;;;TargetShots;100;
   FtmwConfig;;;Type;Target_Shots;
+  FtmwScope.virtual;;;RecordLength;750000;
+  FtmwScope.virtual;;;SampleRate;5e+10;Hz
 
-There are 6 columns in total. ``ObjKey`` identifies the "object" associated with an entry. This is a concept internal to Blackchirp, but the object names are usually sufficiently descriptive. In the example above, the ``FtmwConfig`` entries are associated with the settings pertaining to the CP-FTMW acquisition. ``ValueKey``, ``Value``, and ``Units`` together record the value and any associated units for the particular entry being made.
+There are 6 columns in total. ``ObjKey`` identifies the "object" associated with an entry. This is a concept internal to Blackchirp, but the object names are usually sufficiently descriptive. Hardware objects use the label-based key format (e.g. ``FtmwScope.virtual``, ``PulseGenerator.Default``, ``FlowController.Main``). In the example above, the ``FtmwConfig`` entries are associated with the settings pertaining to the CP-FTMW acquisition. ``ValueKey``, ``Value``, and ``Units`` together record the value and any associated units for the particular entry being made.
 
 ``ArrayKey`` and ``ArrayIndex`` are used when there are multiple instances of data that would otherwise have the same ``ValueKey``. For example, a PulseGenerator object may have several channels, each one of which has an associated delay, width, etc. An example of such a situation is::
 
-  PulseGenerator.0;;;RepRate;2;Hz
-  PulseGenerator.0;Channel;0;ActiveLevel;ActiveHigh;
-  PulseGenerator.0;Channel;0;Delay;50;μs
-  PulseGenerator.0;Channel;0;Enabled;true;
-  PulseGenerator.0;Channel;0;Name;Gas;
-  PulseGenerator.0;Channel;0;Role;Gas;
-  PulseGenerator.0;Channel;0;Width;170;μs
-  PulseGenerator.0;Channel;1;ActiveLevel;ActiveHigh;
-  PulseGenerator.0;Channel;1;Delay;0;μs
-  PulseGenerator.0;Channel;1;Enabled;false;
-  PulseGenerator.0;Channel;1;Name;DC;
-  PulseGenerator.0;Channel;1;Role;DC;
-  PulseGenerator.0;Channel;1;Width;160;μs
-  PulseGenerator.0;Channel;2;ActiveLevel;ActiveHigh;
-  PulseGenerator.0;Channel;2;Delay;660;μs
-  PulseGenerator.0;Channel;2;Enabled;true;
-  PulseGenerator.0;Channel;2;Name;AWG;
-  PulseGenerator.0;Channel;2;Role;AWG;
-  PulseGenerator.0;Channel;2;Width;20;μs
+  PulseGenerator.Default;;;RepRate;1;Hz
+  PulseGenerator.Default;Channel;0;ActiveLevel;ActiveHigh;
+  PulseGenerator.Default;Channel;0;Delay;0;μs
+  PulseGenerator.Default;Channel;0;Enabled;false;
+  PulseGenerator.Default;Channel;0;Name;Gas;
+  PulseGenerator.Default;Channel;0;Role;Gas;
+  PulseGenerator.Default;Channel;0;Width;1;μs
+  PulseGenerator.Default;Channel;1;ActiveLevel;ActiveHigh;
+  PulseGenerator.Default;Channel;1;Delay;0;μs
+  PulseGenerator.Default;Channel;1;Enabled;false;
+  PulseGenerator.Default;Channel;1;Name;AWG;
+  PulseGenerator.Default;Channel;1;Role;AWG;
+  PulseGenerator.Default;Channel;1;Width;1;μs
 
 Here there is an ``ArrayKey`` named "Channel" and the ``ArrayIndex`` identifies which particular channel is referred to. That channel is associated with multiple different ``ValueKey`` entries, so the ``ArrayKey``, ``ArrayIndex``, and ``ValueKey`` would be used together to identify any desired value.
 
@@ -188,6 +167,33 @@ This file contains a record of all messages sent to the Log tab during the exper
 
 The ``Timestamp`` and ``Message`` columns are self-explanatory. ``Epoch_msecs`` is the `number of milliseconds since the Unix epoch <https://currentmillis.com/>`_. ``Code`` contains the level of the message: Normal, Highlight, Warning, Error, or Debug.
 
+markers.csv
+...........
+
+.. index::
+   single: Markers
+   single: AWG markers
+
+This file contains the AWG marker channel definitions for the experiment. Marker channels are output signals generated by the AWG in synchrony with the chirp waveform, used for purposes such as protecting the receiver amplifier (Protection role), enabling an amplifier gate (Gate role), triggering other instruments (Trigger role), or arbitrary user-defined purposes (Custom role). The number of available marker channels depends on the AWG model. For details on configuring marker channels in the user interface, see :ref:`chirp-setup-markers`.
+
+The columns are:
+
+* ``Channel``: Zero-based marker channel index.
+* ``Name``: User-defined label for the channel.
+* ``Role``: One of ``Protection``, ``Gate``, ``Trigger``, or ``Custom``.
+* ``TimingMode``: ``ChirpRelative`` (timing is repeated relative to each chirp start/end) or ``Absolute`` (timing is relative to the first chirp start and fires once per waveform).
+* ``StartUs``: Start time in microseconds. For ``ChirpRelative`` mode, this is relative to the chirp start (negative values begin before the chirp starts). For ``Absolute`` mode, this is relative to the first chirp start.
+* ``EndUs``: End time in microseconds. For ``ChirpRelative`` mode, this is relative to the chirp end (positive values extend past the chirp end).
+* ``Enabled``: Whether the marker channel is active.
+
+Example for a two-channel AWG with a protection pulse on channel 0 and an amplifier gate on channel 1::
+
+  Channel;Name;Role;TimingMode;StartUs;EndUs;Enabled
+  0;Protection;Protection;ChirpRelative;-0.5;0.5;true
+  1;Gate;Gate;ChirpRelative;-0.5;0.5;true
+
+If no AWG is configured with marker support (``markerCount == 0``), this file is not written.
+
 objectives.csv
 ..............
 
@@ -199,17 +205,17 @@ This file is used internally by Blackchirp to configure data structures when the
 version.csv
 ...........
 
-This file stores information about the Blackchirp version used with the experiment. The purpose is to enable the possibility of future backward compatability. An example::
+This file stores information about the Blackchirp version used with the experiment. The purpose is to enable the possibility of future backward compatibility. An example::
 
   ;
   key;value
-  BCMajorVersion;1
+  BCMajorVersion;2
   BCMinorVersion;0
   BCPatchVersion;0
-  BCReleaseVersion;alpha
-  BCBuildVersion;v0.1-355-gcfb2832
+  BCReleaseVersion;devel
+  BCBuildVersion;"508a6973c274ae9fcf24f0949ba70970b7c51d39"
 
-The first line contains the separator character used for all of the CSV files associated with this experiment. The second line tells the titles of the columns (``key`` and ``value``, respectively). The subsequent lines contain the detailed Blackchirp version information.
+The first line contains the separator character used for all of the CSV files associated with this experiment. The second line tells the titles of the columns (``key`` and ``value``, respectively). The subsequent lines contain the detailed Blackchirp version information. The ``BCBuildVersion`` field contains the full git commit hash, quoted because it is a bare hex string.
 
 FIDs
 ----
@@ -219,18 +225,14 @@ Like other files, FIDs are stored in plain-text CSV format. The FIDs for an expe
 fidparams.csv
 .............
 
-This file contains information needed to convert raw FID data into numerical values, as well as the information needed to determine the appropriate frequency values following a Fourier transform. Here is an example ``fidparams.csv`` file that corresponds to the ``clocks.csv`` file shown above for an LO scan::
+This file contains information needed to convert raw FID data into numerical values, as well as the information needed to determine the appropriate frequency values following a Fourier transform. Here is an example ``fidparams.csv`` file::
 
   index;spacing;probefreq;vmult;shots;sideband;size
-  0;2e-11;40960;0.0009765625;200;LowerSideband;500000
-  1;2e-11;41210;0.0009765625;174;LowerSideband;500000
-  2;2e-11;41460;0.0009765625;100;LowerSideband;500000
-  3;2e-11;41710;0.0009765625;100;LowerSideband;500000
-  4;2e-11;41960;0.0009765625;100;LowerSideband;500000
+  0;2e-11;40960;0.000390625;100;LowerSideband;750000
 
-In this example, there were 5 unique clock configurations, and 100 shots were recorded at each position. Following one complete sweep, the program returned to the first configuration and acquired 100 additional shots. The acquisition was aborted after 74 shots on the second step of the second sweep.
+In this example, 100 shots were recorded at a single clock configuration. For LO scan experiments with multiple clock configurations, there will be one row per configuration, and the ``index`` column identifies the corresponding FID CSV file.
 
-The ``index`` column identifies a particular FID and the number of its corresponding CSV file. In this example, there are 5 FIDs: the first is ``0.csv``, the next is ``1.csv``, and so on. The ``size`` column tells the number of points in the FID.
+The ``index`` column identifies a particular FID and the number of its corresponding CSV file (e.g. ``0.csv``, ``1.csv``, etc.). The ``size`` column tells the number of points in the FID.
 
 In its FID files, Blackchirp does not store the averaged digitizer voltage. Instead, Blackchirp stores *the sum of the raw digitizer readings*. To convert the FID values to average voltage, the numbers in the FID file need to be multiplied by ``vmult`` and divided by ``shots``. The ``vmult`` column contains the conversion between digitization levels and voltage, while ``shots`` contains the number of digitizer readings that have been summed.
 
@@ -239,7 +241,7 @@ Finally, for calculating the frequency axis of the FT, the ``spacing`` tells the
 FID CSV Files
 .............
 
-In an effort to balance plaintext readability, ease of integration with other analysys software, and file size, the summed digitizer values are written as **base-36 signed integers**. A simple example may begin with::
+In an effort to balance plaintext readability, ease of integration with other analysis software, and file size, the summed digitizer values are written as **base-36 signed integers**. A simple example may begin with::
 
   fid0
   -7n
@@ -275,11 +277,11 @@ processing.csv
 This file contains the default `processing settings <cp-ftmw.html#fid-processing-settings>`_ associated with the FID data. An example is shown below.::
 
   ObjKey;Value
-  AutoscaleIgnoreMHz;250
-  FidEndUs;10
+  AutoscaleIgnoreMHz;0
+  FidEndUs;15
   FidExpfUs;0
-  FidRemoveDC;true
-  FidStartUs;5
+  FidRemoveDC;false
+  FidStartUs;0
   FidWindowFunction;None
   FidZeroPadFactor;0
   FtUnits;6
@@ -324,19 +326,17 @@ The ``FtUnits`` value refers to a scaling factor of 10\ :sup:`N` (i.e., a settin
 Overlays
 --------
 
-When `overlays <overlays.html>`_ are created for an experiment, their data and settings are automatically saved in an ``overlays`` subfolder within the experiment directory. This allows overlays to be restored when the experiment is reopened. The overlay storage system uses a combination of CSV files to preserve both the overlay data and all configuration settings.
+When :doc:`overlays` are created for an experiment, their data and settings are automatically saved in an ``overlays`` subfolder within the experiment directory. This allows overlays to be restored when the experiment is reopened. The overlay storage system uses a combination of CSV files to preserve both the overlay data and all configuration settings.
 
 overlays.csv
 ............
 
-This master file contains the list of all overlays associated with the experiment and tracks which overlays are currently active. Each overlay is identified by its label, and the value indicates the overlay type: 0 = Blackchirp Experiment, 1 = Catalog, 2 = Generic XY Data. The file also stores version information for compatibility tracking. Example::
+This master file contains the list of all overlays associated with the experiment. Each overlay is identified by its label, and the value indicates the overlay type: 0 = Blackchirp Experiment, 1 = Catalog, 2 = Generic XY Data. The file also stores version information for compatibility tracking. Example::
 
   ObjKey;Value
-  1012;2
-  2638;0
-  BCBuildVersion;v1.0.0-release-134-g0d7631d
-  BCMajorVersion;1
-  BCMinorVersion;1
+  BCBuildVersion;"508a6973c274ae9fcf24f0949ba70970b7c51d39"
+  BCMajorVersion;2
+  BCMinorVersion;0
   BCPatchVersion;0
   BCReleaseVersion;devel
   Exp17;0
@@ -349,7 +349,7 @@ For each overlay listed in ``overlays.csv``, two additional files are created:
 
 **[label].settings.csv**
   Contains all configuration parameters for the overlay, including:
-  
+
   - Source file path and overlay type-specific settings
   - Curve appearance properties (color, line style, thickness, visibility)
   - Data processing parameters (scaling, offsets, frequency filtering)
@@ -357,7 +357,7 @@ For each overlay listed in ``overlays.csv``, two additional files are created:
   - Version information for compatibility
 
   Example for a catalog overlay::
-  
+
     ObjKey;Value
     catalogConvolutionEnabled;false
     catalogLineshapeType;1
@@ -372,22 +372,9 @@ For each overlay listed in ``overlays.csv``, two additional files are created:
 
 **[label].data.csv**
   Contains the processed overlay data ready for display, with columns for frequency (X) and intensity (Y) values. The data format varies by overlay type:
-  
+
   - **Catalog overlays**: Contains frequencies and intensities of peaks, along with other transition metadata (quantum numbers, etc).
-  - **Generic XY overlays**: Contains the parsed and filtered XY data from the source file  
+  - **Generic XY overlays**: Contains the parsed and filtered XY data from the source file
   - **Blackchirp Experiment overlays**: Contains the Fourier transform data from the referenced experiment
 
   The data files use standard CSV format with semicolon separators, maintaining consistency with other Blackchirp data files.
-
-Storage Benefits
-................
-
-This overlay storage system provides several advantages:
-
-- **Session Persistence**: Overlays are automatically restored when reopening experiments
-- **Reproducibility**: All settings and source file references are preserved
-- **Portability**: Overlays are bundled with the experiment and can be loaded on other computers
-- **Version Compatibility**: Version tracking enables future backward compatibility
-- **Performance**: Cached data files enable fast overlay loading without reprocessing
-
-The overlay storage follows Blackchirp's standard CSV format conventions, ensuring the data remains accessible and human-readable while maintaining compatibility with external analysis tools.
