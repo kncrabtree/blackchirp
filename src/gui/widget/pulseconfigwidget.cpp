@@ -548,7 +548,3 @@ void PulseConfigWidget::updateFromSettings()
 
 }
 
-QSize PulseConfigWidget::sizeHint() const
-{
-    return {800,600};
-}

@@ -11,6 +11,19 @@ Validation Settings
    :width: 800
    :alt: Experiment validation settings
 
-The Validation Settings page of the Experiment configuration menu allows the user to set up a series of conditions that can be used to automatically terminate an experiment. Every time Auxiliary Data is read (see `Acquisition Types <acquisition_types.html>`_), any value which falls outside the user-selected range will cause the experiment to immediately abort. This can prevent averaging in poor-quality data or, in conjunction with sleep mode, prevent unnecessary sample consumption if an operating parameter changes too substantially.
+The Validation Settings page of the experiment wizard allows conditions to be defined that automatically terminate an experiment.
+Every time Auxiliary Data is read (see :doc:`acquisition_types`), any value that falls outside the specified range causes the experiment to abort immediately.
+This prevents poor-quality data from being averaged in and, when used together with sleep mode, avoids unnecessary sample consumption if an operating parameter changes substantially.
 
-A validation condition is associated with an object key (usually referring to a piece of hardware) and a value key (usually a particular reading from that item). To add a validation condition, press the plus icon at the bottom of the page. Clicking on the object key cell will display a dropdown list with the possible options to choose from. After selecting an object, clicking the value key cell will display a dropdown with the available readings to choose from. Once these are selected, enter the minimum and maximum allowed values as floating point numbers. The scan will be automatically aborted if the value read is less than the minimum or greater than the maximum. To remove a validation condition, select the row and press the red minus button.
+A validation condition is associated with an **object key** (identifying a piece of hardware in the hardware map) and a **value key** (a particular reading reported by that device).
+Object keys take the form ``HardwareType.label`` — for example, ``PulseGenerator.myPGen`` or ``FlowController.mks946`` — combining the hardware type with the user-assigned label from the loadout.
+Clicking the object key cell shows a dropdown listing every hardware object that exposes validation readings; clicking the value key cell then shows the readings available for that object.
+Once the keys are selected, enter the minimum and maximum allowed values as floating-point numbers.
+The experiment aborts if the measured value is less than the minimum or greater than the maximum.
+
+To add a condition, press the ``+`` button at the bottom of the page.
+To remove a condition, select the row and press the ``-`` button.
+
+.. note::
+   Only hardware objects that override ``validationKeys()`` appear in the object-key dropdown.
+   If a device is not listed, it does not expose any readings to the validation system.

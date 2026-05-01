@@ -111,7 +111,3 @@ bool RfConfigWidget::commonLO() const
     return ui->commonLoCheckBox->isChecked();
 }
 
-QSize RfConfigWidget::sizeHint() const
-{
-    return {750,500};
-}

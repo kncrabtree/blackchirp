@@ -10,16 +10,32 @@ Quick Experiment
    :width: 400
    :alt: Quick Experiment Dialog
 
-The Quick Experiment action initializes an experiment using some or all of the settings from a previous experiment. Select the desired experiment to repeat using the number field.
+.. todo:: Capture screenshot at ``doc/source/_static/user_guide/experiment/quickexpt_1.png``.
+
+The Quick Experiment action initializes an experiment using some or all of the settings from a previous experiment.
+Select the desired experiment to repeat using the number field; the details of the selected experiment are shown in the lower panel.
 
 .. note::
-   At present, Blackchirp only supports repeating experiments that are in the current Data Storage Location. In the future, support will be added for loading experiments from other locations as well.
+   Blackchirp only supports repeating experiments stored in the current Data Storage Location.
 
-On the right, the "Use Current Settings" box allows the user to override settings for certain devices with the currently enabled settings instead of those saved with the experiment. For example, the width of gas and/or discharge pulses may be optimized day-to-day, and it would be preferred to use today's optimized values instead of whatever values were used the previous day. Checking the box corresponding to the pulse generator would ensure that the current settings are used. By default, all "optional" hardware (i.e., Pulse Generators, Flow Controllers, Pressure Controllers, IO Boards, and Temperature Controllers) will use current settings rather than saved values.
+**Hardware compatibility check.** Blackchirp compares the hardware map (loadout) of the selected experiment against the runtime hardware map of the running instance.
+Each entry in the map records the hardware key and the specific implementation that was active at the time the experiment was saved.
+If the two maps differ in any way — a device missing, added, or replaced with a different implementation — the ``Configure Experiment`` and ``Start Experiment`` buttons are disabled and an error message is shown.
+This check is loadout-based: it uses the runtime profile saved with the experiment, not a compile-time hardware list.
 
-The details of the experiment can be viewed in the lower menu. If only a couple of settings need to be changed, then the "Configure Experiment" button will launch a new experiment setup dialog whose values are all initialized to the selected experiment (including any "current settings" boxes which are checked). The "New Experiment" button discards any settings from the selected experiment and launches the same dialog that would have been launched with the "Start Experiment" button on the main user interface. Finally, the "Start Experiment" button will immediately begin the selected experiment.
+A major-version mismatch also blocks repeating an experiment.
+A minor-version mismatch produces a warning and strongly recommends configuring the experiment manually before starting.
 
-Blackchirp will only allow a quick experiment to be launched if the current hardware configuration is identical to the configuration used in the previous experiment and the major version of Blackchirp is the same. Otherwise, an error will be displayed as shown in the image below.
+**Use Current Settings.** The panel on the right side of the dialog lists each optional hardware device (Pulse Generators, Flow Controllers, Pressure Controllers, IO Boards, and Temperature Controllers) with a checkbox labelled ``Use Current Settings``.
+When a box is checked, the experiment uses the live settings for that device rather than the values saved with the original experiment.
+By default all optional hardware boxes are checked, so pulse timings, flow setpoints, and similar day-to-day parameters are taken from the current hardware state.
+Unchecking a box causes the saved values to be restored instead.
+
+**Action buttons.**
+
+- ``New Experiment`` — discards all settings from the selected experiment and opens the standard experiment wizard.
+- ``Configure Experiment`` — opens the experiment wizard with all values pre-populated from the selected experiment (respecting the ``Use Current Settings`` choices). Available only when hardware is compatible.
+- ``Start Experiment`` — immediately starts the experiment without opening the wizard. Available only when hardware is compatible.
 
 .. image:: /_static/user_guide/experiment/quickexpt_2.png
    :align: center

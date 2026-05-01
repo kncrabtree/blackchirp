@@ -78,6 +78,8 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const QHash<RfConf
     connect(bb,&QDialogButtonBox::accepted,this,&ExperimentSetupDialog::accept);
 
     setLayout(mainLayout);
+    mainLayout->setSizeConstraint(QLayout::SetNoConstraint);
+    setMinimumSize(1000, 600);
 
     p_exp = exp;
 

@@ -76,11 +76,6 @@ private:
     EnumComboBox<PulseGenConfig::PGenMode> *p_sysModeBox;
 
     std::shared_ptr<PulseGenConfig> ps_config;
-
-
-    // QWidget interface
-public:
-    QSize sizeHint() const override;
 };
 
 #endif // PULSECONFIGWIDGET_H
