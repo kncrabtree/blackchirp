@@ -17,7 +17,11 @@
 class HardwareProfileManagerTest;
 
 /*!
- * \brief Hardware profile data structure for import/export operations
+ * \brief Portable snapshot of one hardware profile for import and export operations
+ *
+ * Carries the type, label, implementation, active state, timestamps, and
+ * description that together identify and describe a single hardware profile.
+ * Used by HardwareProfileManager::exportProfiles() and importProfiles().
  */
 struct HardwareProfileData {
     QString type;           /*!< Hardware type (e.g., "FlowController") */
@@ -36,11 +40,12 @@ struct HardwareProfileData {
 
 /*!
  * \brief Complete lifecycle management of hardware configurations with user-controlled labels
- * 
- * The HardwareProfileManager replaces the current auto-incrementing index system
- * ("FlowController.0", "FlowController.1") with user-meaningful labels 
- * ("FlowController.frontPanel", "FlowController.backup").
- * 
+ *
+ * Profiles bind a user-chosen label to a (hardware type, implementation) pair
+ * to form keys of the form "FlowController.frontPanel" or
+ * "FlowController.backup". Labels survive hardware reconfiguration and are
+ * the canonical identifier for a hardware object's settings group.
+ *
  * This class provides:
  * - User-controlled hardware identification through meaningful labels
  * - Multiple profiles per hardware type with independent configurations
@@ -204,13 +209,11 @@ public:
     
     /*!
      * \brief Generate a default label for a hardware type
-     * 
-     * Generates meaningful default labels based on existing labels:
-     * - "default" (if available)
-     * - "secondary" (if "default" exists)
-     * - "backup" (if "default" and "secondary" exist)
-     * - "{type}1", "{type}2", etc. for additional profiles
-     * 
+     *
+     * Picks the first available label from a fixed candidate list:
+     * "Default", "Main", "Primary", "Secondary", "Backup". If all of those
+     * are taken, falls back to "{type}1", "{type}2", etc.
+     *
      * \param type Hardware type
      * \return Generated default label that is available
      */

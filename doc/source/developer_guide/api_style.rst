@@ -16,9 +16,13 @@ comments **in the header file**. The corresponding ``.rst`` page under
 * a 1–3 paragraph orientation intro that situates the class in the
   larger system, names the most relevant collaborators, and links
   outward to the user-guide and developer-guide chapters that cover
-  the feature it supports, and
-* the ``.. doxygenclass::`` directive that surfaces the header's
-  Doxygen comments.
+  the feature it supports,
+* optional named subsections (H2, ``-`` underline) that group prose
+  by topic when the orientation runs longer than three paragraphs
+  (e.g. *Validation*, *System profiles*, *Registration macros*), and
+* a final ``API Reference`` section (also H2, ``-`` underline) that
+  contains every ``.. doxygenclass::``, ``.. doxygenstruct::``, and
+  ``.. doxygenenum::`` directive on the page.
 
 The header is the single source of truth. If the same sentence appears
 in both the header and the ``.rst`` page, delete it from the ``.rst``.
@@ -51,6 +55,13 @@ Sphinx directives
 * Prefer ``.. doxygenclass::`` over ``.. doxygenfile::`` — one focused
   page per class, members grouped by member rather than by source
   position.
+* Match the directive to the entity kind: ``.. doxygenstruct::`` for
+  ``struct`` declarations and ``.. doxygenenum::`` for enums (free or
+  scoped). Using ``.. doxygenclass::`` for a struct silently produces
+  empty output because Breathe looks up by exact compound kind.
+* Place every Doxygen directive under the page's final ``API Reference``
+  section. Without this wrapper, sibling directives appear visually
+  nested under whatever prose subsection precedes them in the page TOC.
 * Default options:
 
   .. code-block:: rst

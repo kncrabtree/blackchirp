@@ -25,6 +25,9 @@ are described in :doc:`/user_guide/hardware_config`; the runtime
 
 .. highlight:: cpp
 
+API Reference
+-------------
+
 .. doxygenclass:: HardwareObject
    :members:
    :protected-members:

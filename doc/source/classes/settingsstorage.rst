@@ -32,6 +32,9 @@ hierarchy (see ``data/bcglobals.h`` and ``data/settings/hardwarekeys.h``).
 
 .. highlight:: cpp
 
+API Reference
+-------------
+
 .. doxygenclass:: SettingsStorage
    :members:
    :protected-members:

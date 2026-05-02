@@ -44,7 +44,15 @@ class VendorLibrary : public QObject, public SettingsStorage
     Q_OBJECT
 
 public:
+    /*!
+     * \brief Construct a VendorLibrary with the given settings key
+     * \param libraryKey SettingsStorage key used to persist this library's configuration
+     */
     explicit VendorLibrary(const QString& libraryKey, QObject *parent = nullptr);
+
+    /*!
+     * \brief Destroy the VendorLibrary and release any loaded library resources
+     */
     virtual ~VendorLibrary() = default;
 
     /*!

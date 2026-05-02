@@ -114,8 +114,16 @@ struct HardwareRegistration {
     QMap<QString, HwArraySettingDef> arraySettingDefs;          /*!< Registered array setting definitions */
     QVector<CustomCommDef> customCommDefs;                      /*!< Registered custom communication parameter definitions */
 
-    // Constructor
+    /*! \brief Construct an empty registration with all fields at their default values */
     HardwareRegistration() = default;
+    /*!
+     * \brief Construct a registration with the core metadata fields
+     * \param k Hardware type key (e.g., "ftmwDigitizer")
+     * \param sk Implementation key (e.g., "m4i2220x8")
+     * \param desc Human-readable description of the hardware
+     * \param fact Factory function that constructs an instance given a label string
+     * \param chain Class names from the implementation's direct base up to (not including) QObject
+     */
     HardwareRegistration(const QString& k, const QString& sk, const QString& desc,
                         std::function<HardwareObject*(const QString&)> fact,
                         const QStringList& chain = {})

@@ -12,18 +12,49 @@ class LabjackLibrary : public VendorLibrary
     Q_OBJECT
 
 public:
+    /*!
+     * \brief Get singleton instance of LabjackLibrary
+     * \return Reference to the single LabjackLibrary instance
+     */
     static LabjackLibrary& instance();
 
-    // VendorLibrary interface
+    /*!
+     * \brief Check if the LabJack driver library is loaded and ready
+     * \return true if library symbols were resolved successfully
+     */
     bool isAvailable() const override { return d_libraryLoaded; }
+    /*!
+     * \brief Get error message if library loading failed
+     * \return Error string describing why the library is not available
+     */
     QString errorString() const override { return d_errorString; }
+    /*!
+     * \brief Get library version string
+     * \return Version string from the loaded driver, or empty string if unavailable
+     */
     QString getVersionInfo() const override;
+    /*!
+     * \brief Get platform-specific installation instructions for the LabJack driver
+     * \return HTML-formatted instructions for installing the LabJack driver on the current platform
+     */
     QString getInstallationInstructions() const override;
 
 #ifndef Q_OS_WIN
     // Linux/macOS: LJUSB transport symbols (liblabjackusb.so / .dylib)
+    /*!
+     * \brief Get the base name of the LabJack driver library
+     * \return Base library name string
+     */
     QString libraryName() const override { return "LabJack U3 Driver"; }
+    /*!
+     * \brief Get platform-specific library file names to try when loading
+     * \return List of library names with platform-specific variations
+     */
     QStringList platformLibraryNames() const override;
+    /*!
+     * \brief Get default search paths for automatic LabJack driver discovery
+     * \return List of default directories to search for the library
+     */
     QStringList defaultSearchPaths() const override;
 
     typedef float         (*LJUSB_GetLibraryVersion_t)(void);
@@ -46,8 +77,20 @@ public:
 
 #else // Q_OS_WIN
     // Windows: UD library symbols (LabJackUD.dll, 64-bit only)
+    /*!
+     * \brief Get the base name of the LabJack driver library
+     * \return Base library name string
+     */
     QString libraryName() const override { return "LabJack U3 Driver"; }
+    /*!
+     * \brief Get platform-specific library file names to try when loading
+     * \return List of library names with platform-specific variations
+     */
     QStringList platformLibraryNames() const override;
+    /*!
+     * \brief Get default search paths for automatic LabJack driver discovery
+     * \return List of default directories to search for the library
+     */
     QStringList defaultSearchPaths() const override;
 
     // LJ_HANDLE is long; LJ_ERROR is long.
@@ -77,6 +120,9 @@ public:
 #endif // Q_OS_WIN
 
 protected:
+    /*!
+     * \brief Resolve LabJack driver function symbols after the library has loaded
+     */
     void loadFunctions() override;
 
 private:

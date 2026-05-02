@@ -33,7 +33,11 @@ class RuntimeHardwareConfigSimpleTest;
 class RuntimeHardwareConfigDialog;
 
 /*!
- * \brief Runtime hardware configuration validation result
+ * \brief Result of validating one hardware selection against the registry
+ *
+ * Returned by RuntimeHardwareConfig::validateConfiguration() for each
+ * hardware type. Contains a validity flag, the resolved implementation key,
+ * and any non-fatal warnings or fatal errors produced during validation.
  */
 struct HardwareValidationResult {
     bool isValid = false;                    /*!< Whether configuration is valid */

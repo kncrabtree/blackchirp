@@ -23,6 +23,9 @@ in :doc:`/user_guide/hwdialog`.
 
 .. highlight:: cpp
 
+API Reference
+-------------
+
 .. doxygenclass:: CommunicationProtocol
    :members:
    :protected-members:

@@ -30,6 +30,9 @@ hardware configuration parameters.
 
 .. highlight:: cpp
 
+API Reference
+-------------
+
 .. doxygenclass:: CustomInstrument
    :members:
    :undoc-members:

@@ -26,6 +26,9 @@ choosing an object key.
 
 .. highlight:: cpp
 
+API Reference
+-------------
+
 .. doxygenclass:: HeaderStorage
    :members:
    :protected-members:

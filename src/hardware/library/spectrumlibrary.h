@@ -45,12 +45,40 @@ public:
     static SpectrumLibrary& instance();
 
     // VendorLibrary interface
+    /*!
+     * \brief Check if the Spectrum driver library is loaded and ready
+     * \return true if library symbols were resolved successfully
+     */
     bool isAvailable() const override { return d_libraryLoaded; }
+    /*!
+     * \brief Get error message if library loading failed
+     * \return Error string describing why the library is not available
+     */
     QString errorString() const override { return d_errorString; }
+    /*!
+     * \brief Get the base name of the Spectrum driver library
+     * \return Base library name string ("spcm")
+     */
     QString libraryName() const override { return "spcm"; }
+    /*!
+     * \brief Get platform-specific library file names to try when loading
+     * \return List of library names with platform-specific variations
+     */
     QStringList platformLibraryNames() const override;
+    /*!
+     * \brief Get default search paths for automatic Spectrum driver discovery
+     * \return List of default directories to search for the library
+     */
     QStringList defaultSearchPaths() const override;
+    /*!
+     * \brief Get Spectrum driver version string
+     * \return Version string from the loaded driver, or empty string if unavailable
+     */
     QString getVersionInfo() const override;
+    /*!
+     * \brief Get platform-specific installation instructions for the Spectrum driver
+     * \return HTML-formatted instructions for installing the Spectrum driver on the current platform
+     */
     QString getInstallationInstructions() const override;
 
     // Spectrum API function pointers
@@ -124,6 +152,9 @@ public:
     spcm_dwGetErrorInfo_i32_t spcm_dwGetErrorInfo_i32 = nullptr;
 
 protected:
+    /*!
+     * \brief Resolve Spectrum driver function symbols after the library has loaded
+     */
     void loadFunctions() override;
 
 private:

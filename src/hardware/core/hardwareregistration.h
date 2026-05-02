@@ -25,6 +25,14 @@ class HardwareObject;
 class HardwareAutoRegistration
 {
 public:
+    /*!
+     * \brief Register hardware with the HardwareRegistry at construction time
+     * \param key Hardware type key (e.g., "FtmwScope")
+     * \param subKey Implementation key (e.g., "m4i2220x8")
+     * \param description Human-readable description of the hardware
+     * \param factory Factory function that creates an instance given a label
+     * \param inheritanceChain Class names from the implementation's direct base up to (not including) QObject
+     */
     HardwareAutoRegistration(const QString& key, const QString& subKey,
                            const QString& description,
                            std::function<HardwareObject*(const QString&)> factory,
