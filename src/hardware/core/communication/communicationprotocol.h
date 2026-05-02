@@ -109,12 +109,12 @@ public:
      * settings used in the read portion of this function should be set using
      * setReadOptions(). By default, a hardwareFailure() signal is emitted if
      * there is a problem reading or writing data. This signal can be blocked
-     * by setting `suppressError` to true. This may be useful if intermiitent
+     * by setting `suppressError` to true. This may be useful if intermittent
      * failures are expected and are handled by the caller.
-     * 
-     * \param cmd
-     * \param suppressError
-     * \return Repsonse from device
+     *
+     * \param cmd Command to send to the device
+     * \param suppressError If true, suppress the hardwareFailure() signal on read/write error
+     * \return Response from device
      */
     virtual QByteArray queryCmd(const QString &cmd, bool suppressError = false);
 
@@ -126,7 +126,7 @@ public:
      */
     virtual QByteArray readBytes(qint64 n, bool suppressError = false);
 
-    const QString d_key; /*!< Key used to identify communication protocol. Not currently used. */
+    const QString d_key; /*!< Key used to identify the communication protocol instance. */
 
     /*!
      * \brief Returns a pointer to the underlying device.
@@ -144,7 +144,7 @@ public:
     
     /*!
      * \brief Sets contents of error string
-     * \param Error message
+     * \param str Error message
      */
     void setErrorString(const QString str);
     

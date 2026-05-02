@@ -38,213 +38,213 @@ inline constexpr QLatin1StringView trackingDir{"rollingdata"};
 }
 
 /*!
- * \brief The SettingsStorage class manages persistent settings (through
- * <a href="https://doc.qt.io/qt-5/qsettings.html">QSettings</a>)
+ * \brief Owning, write-protected wrapper around a
+ * <a href="https://doc.qt.io/qt-6/qsettings.html">QSettings</a> group.
  *
- * The SettingsStorage class proides a unified interface for classes that need
- * to read from or write to persistent storage through ``QSettings``. For read-only
- * access to ``QSettings``, a SettingsStorage object can be created at any point in
- * the code and initialized with the appropriate keys that refer to the group
- * that needs to be read from. All functions that modify values in ``QSettings``
- * are protected. Classes that wish to use SettingsStorage to write to
- * persistent storage need to inherit SettingsStorage and initialize it in
- * their constructors. If any of the set/register functions are called, values
- * will be written to storage during the function call (if the optional write
- * argument is true) or when the object is deleted. To prevent automatic
- * saving, see discardChanges(). This will not affect previously-written values
- * though! Note that if any getters have been registered, the objects they
- * refer to must still exist or the code will crash! A common scenario is to
- * register a getter on an object in the user interface. If the ui pointer is
- * deleted in the derived class's destructor, then any getter registered on a
- * UI element will crash! Call clearGetters() in the derived class destructor
- * to avoid this.
+ * SettingsStorage maintains an in-memory copy of every key, array,
+ * group, and registered getter under a single QSettings group, and
+ * splits its API across two trust levels:
  *
- * SettingsStorage does not inherit any other classes, and it is suitable for
- * use in multiple inheritance with ``QObject``-derived classes. **However:**
- * classes that inherit from SettingsStorage will have their assignment and
- * copy constructors deleted! Do not inherit from SettingsStorage in a class
- * that needs to be passed around by value (such as data storage classes like
- * Experiment). This class is intended for use with objects that only passed by
- * pointer (e.g., HardwareObject, UI classes, etc).
+ * - **public, read-only**: get(), getArray(), getGroupValue(), the
+ *   contains/keys helpers. Anywhere in the program may construct a
+ *   transient SettingsStorage over a group and read from it.
+ * - **protected, mutating**: set(), setArray(), setGroupValue(),
+ *   setDefault(), registerGetter(), purge(), and the rest. Only a
+ *   subclass that *owns* the group may call these.
  *
- * A SettingsStorage object reads and maintains an internal copy of the
- * ``QSettings`` keys and values associated with the group/subgroup that it is
- * initialized with. Internally, this is done through the use of four
- * associative containers (key-value containers): one which represents single
- * key-value pairs, another that contains array values as structured by
- * QSettings, a third that contains getter functions for dynamic values,
- * and a fourth that contains group-based key-value pairs for hierarchical
- * organization. An array value is a list whose items each contain a map 
- * consisting of one or more key-value pairs. Group values provide nested
- * key-value storage useful for protocol-specific settings and device configurations.
+ * The split is what lets, for example, any UI code look up a hardware
+ * driver's persisted value while still guaranteeing that only the
+ * owning HardwareObject (or a friend declared by it) can change it.
  *
- * When initializing SettingsStorage, the standard constructor is
+ * # Containers
  *
- *     SettingsStorage::SettingsStorage(const QStringList keys, Type type)
+ * Settings under a group may take any of four shapes; SettingsStorage
+ * keeps each in its own in-memory map:
  *
- * ``QSettings::beginGroup`` will be called for each key in the keys list. If
- * the list is empty, then the group is set to "Blackchirp". If ``type`` is set
- * to SettingsStorage::Hardware and the length of the keys list is 1, then the
- * program assumes the key in the list corresponds to a HardwareObject, and the
- * current subKey will be added to the keys list upon opening ``QSettings``.
+ * - **Values** — single key/QVariant pairs. The default shape.
+ * - **Arrays** — vectors of SettingsMap; map directly to QSettings
+ *   `beginWriteArray` / `beginReadArray`. Useful for repeated records
+ *   like pulse-generator channels or AWG sample-rate tables.
+ * - **Groups** — nested SettingsMap values. Each group is a flat
+ *   key/value table under its own subgroup name; useful for
+ *   protocol-specific or per-driver configuration blocks.
+ * - **Getters** — `std::function<QVariant()>` callbacks bound to a
+ *   key. When the key is read, the getter is called; when save()
+ *   runs, the getter's return value is what gets written. Owners use
+ *   getters to keep a key in sync with a member variable or UI
+ *   widget without having to call set() on every change. Getters
+ *   apply to single-value keys only, never to arrays or groups.
  *
- * To create a read-only SettingsStorage object that reads the global Blackchirp
- * settings:
+ * # Constructing
  *
- *     SettingsStorage s;
+ * SettingsStorage opens its group by calling
+ * `QSettings::beginGroup` once for each entry in the constructor's
+ * \a keys list. An empty list defaults to the top-level
+ * \c "Blackchirp" group. Read-only access from anywhere:
  *
- * If instead you need read-only access to the "AWG.0/virtual" group:
+ *     SettingsStorage s;                          // top-level Blackchirp group
+ *     SettingsStorage hw({"AWG.main"});           // hardware instance group
+ *     SettingsStorage sub({"AWG.main","virtual"}); // nested subgroup
  *
- *     SettingsStorage s({"AWG.0","virtual"});
+ * Whenever possible, pass key constants from \c BC::Key::* (declared
+ * in `bcglobals.h` and `hardwarekeys.h`) rather than literal strings
+ * so the compiler catches typos.
  *
- * In general, it is recommended that you use keys that are statically defined
- * in header files for accessing items. When accessing hardware items, use the
- * ``BC::Key::hwKey()`` function to construct the key. For read-only access to
- * the settings associated with the current AWG implementation:
+ * The \c Type enum and the \c type constructor parameter are
+ * currently ignored — they are accepted for source compatibility but
+ * have no effect on the opened group. Always pass the full keys
+ * list; there is no longer any per-type subkey lookup.
  *
- *     SettingsStorage s(BC::Key::hwKey(BC::Key::AWG::key,"default"),SettingsStorage::Hardware);
+ * # Owning a group
  *
- * The value associated with a key can be obtained with one of the get()
- * functions. If there is an integer associacted with the key ``myInt``, it can
- * be accessed as:
+ * To gain write access, a class inherits from SettingsStorage and
+ * initializes it with the keys that define its group. Multiple
+ * inheritance with QObject is supported:
  *
- *     // returns a QVariant containing "myInt", or QVariant() if "myKey" is not found.
- *     QVariant v = get("myInt");
- *
- *     // attempts to convert to an integer using QVariant::value.
- *     // Returns default-constructed value if unsuccessful
- *     int v2 = get<int>("myInt");
- *
- *     // in either case. a default argument can be supplied, which will be
- *     // returned if the key is not found.
- *     QVariant defaultInt = get("myInt",10);
- *     int defaultInt2 = get<int>("myInt",10);
- *
- *
- * There is also the function getMultiple() that returns a
- * ``std::map<QString,QVariant,std::less<>>`` containing all keys that match the indicated
- * values.
- *
- * Array values can be accessed with the getArray() function, which returns a
- * const reference to the array as a
- * ``std::vector<SettingsStorage::SettingsMap>``. The vector will be empty if
- * the key is not found. Alternatively, a reference to a particular
- * SettingsStorage::SettingsMap within the array can be accesed by index with
- * getArrayMap(). The returned map will be empty if the index is out of bounds
- * or if the key is not found. Finally, getArrayValue() may be used to access
- * one individual element in an array value map by its key, using an interface
- * similar to get().
- *
- *     // Access "arrayKey" map at index 1, return value associated with "mapKey"
- *     // If "arrayKey" is not present, 1 is out of bounds, or "mapKey" is
- *     // not present, v contains defaultValue
- *     QVariant v = getArrayValue("arrayKey",1,"mapKey",defaultValue);
- *
- *     // alternative form using template function
- *     // d will contain 1.5 if lookup fails.
- *     double d = getArrayValue("arrayKey",1,"mapKey",1.5)
- *
- * The containsValue() and containsArray() functions can be used to check
- * whether a given key exists for a standard value or an array value,
- * respectively.
- *
- * To obtain write access to persistent storage thogh the SettingsStorage
- * interface, an object must inherit from SettingsStorage: e.g., ``class
- * MyClass : public QObject, public SettingsStorage``, and the constructor must
- * initialise SettingsStorage with an initializer; e.g.,
- *
- *     MyClass::MyClass(QObject *parent) : QObject(parent),
- *         SettingsStorage({"MyClassKey","MyClassSubkey"})
+ *     class MyClass : public QObject, public SettingsStorage
  *     {
- *         //other initialization
- *     }
+ *     public:
+ *         MyClass(QObject *parent = nullptr) :
+ *             QObject(parent),
+ *             SettingsStorage({BC::Key::MyClass::group})
+ *         { ... }
+ *     };
  *
- * Again, it is preferred to define static keys in the header file of your
- * class instead of manually writing them. When working with a subclass of
- * SettingsStorage, the object has access to the set(), setMultiple(), and
- * setArray() functions. Each of these takes an optional bool argument (default
- * false) that controls whther the new value is immedately written to settings.
- * If false, the value is just stored in memory until a call to save() is made.
- * If the key in a call to one of the set functions does not exist, a new
- * key-value pair is added.
+ * Inheriting from SettingsStorage deletes the copy and assignment
+ * operators, so SettingsStorage owners must always be passed by
+ * pointer or reference — never by value. Data classes that need
+ * value semantics (e.g. Experiment, FtmwConfig) read from
+ * SettingsStorage rather than inheriting from it.
  *
- * In addition, a subclass may call readAll() at any point to reread all values
- * from settings. However, any keys associated with a getter will not be read!
- * See below for more information about getters. If this behavior is undesired,
- * first unregister any getters before calling readAll(), ensuring that the
- * optional write parameter is set to false.
+ * The destructor calls save(), so any pending changes land in
+ * QSettings when the owner goes away. Owners that bind getters to
+ * UI widgets must call clearGetters() in their destructor *before*
+ * the widgets are torn down, or save() will dereference deleted
+ * objects.
  *
- * Subclasses may also use the setDefault() or getOrSetDefault() functions to
- * add a new key to the settings. In either case, if the key already exists,
- * the value remains unmodified. If it does not exist, a new entry in the
- * ``QSettings`` file is immediately created with the provided default value.
- * The getOrSetDefault() function will return the value in the settings, while
- * the setDefault() function can be used if the value is not needed
- * immediately. For example:
+ * # Setting and saving
  *
+ * The mutating API revolves around set() (single value), setArray()
+ * (array), setGroupValue() / setGroupValues() (group), and
+ * registerGetter() (callback). Each set/setArray takes an optional
+ * \c write flag: when true, the value is pushed to QSettings
+ * immediately; when false (the default), it stays in memory until
+ * save() runs.
  *
- *     QVariant out = getOrSetDefault("existingKey",10);
- *     // out contains value of "existingKey", which may not be 10
+ * # Defaults
  *
- *     QVariant out2 = getOrSetDefault("newKey",10);
- *     // out contains 10; "newKey" added to QSettings
+ * Two helpers seed values that should exist on first launch:
  *
- *     setDefault("newKey2",20);
- *     // get<int>("newKey2") returns 20
+ * - setDefault() — write \a value if the key does not yet exist.
+ * - getOrSetDefault() — same, but return the resulting value
+ *   (existing or newly written) so the caller can use it inline.
  *
- *     setDefault("newKey",20);
- *     // get<int>("newKey") returns 10, as this key was already added above.
+ * For HardwareObject subclasses, the hardware-settings registry
+ * (see `hardwareregistration.h`,
+ * `dev-docs/settings-registry.md`) is the preferred way to declare
+ * defaults: settings registered with `REGISTER_HARDWARE_SETTINGS`
+ * etc. are applied automatically by
+ * HardwareObject::applyRegisteredSettings(). Reach for setDefault()
+ * directly only for non-hardware classes.
  *
+ * # Reading and rereading
  *
- * Finally, subclasses may call registerGetter() to associate a function with a
- * key. Any subsequent references to that key will call the associated function
- * to retrieve the value. A call to save() will retrieve the value from the
- * stored function to save. In this way, the subclass does not have to call
- * set() every time a value changes. This mechanism only works for single
- * key-value settings, not for array values. Getters may be cleared
- * individually with unRegisterGetter() or all at once with clearGetters().
- * When unregistered or cleared, the getter function is called and the value
- * stored in memory for later use/saving. Optionally, the value can be
- * immediately written to ``QSettings``.
+ * The constructor reads the entire group up front. readAll() rereads
+ * everything; useful when QSettings has been changed by another
+ * actor (a hardware-settings dialog, a settings editor, an external
+ * helper). Registered getters are skipped on reread, since reading
+ * them would require interrogating the live source object —
+ * unregister or clearGetters() first if you really do want every
+ * key reloaded.
  *
- * A getter function must be a const member function that takes no arguments
- * and returns a type known to <a
- * href="https://doc.qt.io/qt-5/qvariant.html">QVariant</a>. New types can be
- * made known to ``QVariant`` using the <a
- * href="https://doc.qt.io/qt-5/qmetatype.html#Q_DECLARE_METATYPE">Q_DECLARE_METATYPE</a>
- * macro; see the ``QVariant`` documentation for details. An example:
+ * # Discarding
  *
+ * discardChanges(true) tells the destructor (and the periodic save()
+ * paths) to skip writes. It is most useful when batching writes
+ * inside a transient helper: discard, mutate, undiscard, save()
+ * exactly once. discardChanges() does not roll back values that
+ * have already been written via the immediate-\c write flag.
  *
- *     class MyClass : public SettingsStorage()
+ * # Removing
+ *
+ * - clearValue() removes a single key (across all containers) from
+ *   memory and QSettings.
+ * - purge() wipes this object's entire group from QSettings, clears
+ *   the in-memory caches, and sets the discard flag so the
+ *   destructor does not re-write anything. Used when permanently
+ *   deleting a hardware profile.
+ * - purgeGroup() and purgeGroupsBySuffix() are static helpers for
+ *   removing groups when no live instance over that group exists
+ *   (e.g. cleaning up widget-state groups after deleting a profile).
+ *
+ * # Friend-class write helper
+ *
+ * The set/setArray family is protected, so a class that does not own
+ * a group cannot write to it directly. The recommended escape hatch
+ * is a tiny private friend subclass that exposes the protected API
+ * to the trusted parent. LoadoutManager uses exactly this pattern:
+ *
+ *     class LoadoutManager
+ *     {
+ *     private:
+ *         class LoadoutHelper : public SettingsStorage
+ *         {
+ *             friend class LoadoutManager;
+ *         public:
+ *             LoadoutHelper(const QStringList &keys) : SettingsStorage(keys) {}
+ *         };
+ *
+ *         void p_writeLoadout(const HardwareLoadout &loadout)
+ *         {
+ *             LoadoutHelper sub({key.toString(), loadout.name});
+ *             sub.discardChanges(true);
+ *             sub.setArray(hwMapKey, ...);
+ *             sub.set(currentFtmwPresetKey, ...);
+ *             sub.discardChanges(false);
+ *             sub.save();        // batched write to QSettings
+ *         }
+ *     };
+ *
+ * **Use this pattern with care.** The read-public / write-protected
+ * split is the main guardrail against cross-class corruption of
+ * persisted state, and a friend helper that routinely writes to
+ * groups owned by other classes erodes that guarantee silently. The
+ * justified use cases are short — manager classes that compose
+ * persistent state across many owners (loadouts, presets, profile
+ * registries) and tests. If a helper starts being reused from many
+ * places or for many groups, that is a sign the data should move to
+ * a class that owns it directly.
+ *
+ * # Getter example
+ *
+ * Getters allow the owner to expose a member variable as if it were
+ * a stored key. The getter must be a const member function (or a
+ * `std::function<T()>` lambda) returning a QVariant-compatible type:
+ *
+ *     class MyClass : public SettingsStorage
  *     {
  *     public:
  *         MyClass();
- *
  *         int getInt() const { return d_int; }
- *
  *     private:
  *         int d_int = 1;
  *     };
  *
- *     MyClass::MyClass() : SettingsStorage({},false)
+ *     MyClass::MyClass() : SettingsStorage()
  *     {
- *         registerGetter("myInt",this,&MyClass::getInt);
- *         int i = get<int>("myInt");
- *         // i == 1
- *
+ *         registerGetter("myInt", this, &MyClass::getInt);
+ *         int i = get<int>("myInt");      // 1
  *         d_int = 10;
- *         int j = get<int>("myInt");
- *         // j == 10
+ *         int j = get<int>("myInt");      // 10
  *
- *         QVariant k = unRegisterGetter("myInt",false);
- *         //k == 10; do not write 10 to QSettings
- *
+ *         QVariant k = unRegisterGetter("myInt", false);
+ *         // k == 10; key is now stored as a value, not a getter
  *         d_int = 20;
- *         int l = get<int>("myInt");
- *         //l == 10
+ *         int l = get<int>("myInt");      // still 10
  *     }
  *
- *
+ * Custom return types must be registered with QVariant via
+ * <a href="https://doc.qt.io/qt-6/qmetatype.html#Q_DECLARE_METATYPE">Q_DECLARE_METATYPE</a>.
  */
 class SettingsStorage
 {
@@ -256,52 +256,56 @@ public:
     using SettingsMap = std::map<QString,QVariant,std::less<>>; /*!< Alias for a map of strings and variants */
 
     /*!
-     * \brief Used in constructor to indicate whether a hardware subkey is read from settings
+     * \brief Reserved type tag.
+     *
+     * Currently a no-op kept for source compatibility with older
+     * call sites. The constructor accepts a \c Type argument but
+     * does not use it.
      */
     enum Type {
-        General, /*!< Use keys list explicitly */
-        Hardware /*!< If keys list has 1 entry, look up subKey for this hardware. */
+        General,  /*!< Use the keys list as given. */
+        Hardware  /*!< Identical to General; retained for compatibility only. */
     };
 
     /*!
-     * \brief Constructor
+     * \brief Open a QSettings group and read it into memory.
      *
-     * Create a `QSettings` object initialized to the group (and any subgroups)
-     * in the keys list with the indicated scope, and reads all values and
-     * arrays associated with that (sub)group. If keys is empty, the group is
-     * set to "Blackchirp".
+     * Calls `QSettings::beginGroup` once per entry in \a keys. An
+     * empty list opens the top-level \c "Blackchirp" group. All
+     * values, arrays, and groups under the resulting (sub)group are
+     * read into the in-memory caches.
      *
-     * \param keys The list of group/subgroup keys, passed to
-     * `QSettings::beginGroup` in order
-     * \param type If set to SettingsStorage::Hardware and the length of keys is 1,
-     * the subKey for the current hardware will be read from settings and selected.
+     * \param keys Group path, applied as nested `beginGroup` calls.
+     * \param type Reserved; ignored (see Type).
      */
     SettingsStorage(const QStringList keys = QStringList(), Type type = General);
 
     /*!
-     * \brief Constructor that explicitly sets organization name and application
-     * name (used for unit tests and reading settings from other applications).
+     * \brief Constructor with explicit organization and application names.
      *
-     * \param orgName Organization name passed to `QSettings` constructor
-     * \param appName Application name passed to `QSettings` construstor
-     * \param keys The list of group/subgroup keys, passed to
-     * <a href="https://doc.qt.io/qt-5/qsettings.html#beginGroup">QSettings::beginGroup</a>
-     * in order
-     * \param type If set to SettingsStorage::Hardware and the length of keys is 1,
-     * the subKey for the current hardware will be read from settings and selected.
+     * Used by unit tests and by code that needs to read settings written
+     * by another QCoreApplication identity.
+     *
+     * \param orgName Organization name passed to QSettings.
+     * \param appName Application name passed to QSettings.
+     * \param keys Group path, applied as nested `beginGroup` calls.
+     * \param type Reserved; ignored (see Type).
      */
     SettingsStorage(QAnyStringView orgName, QAnyStringView appName, const QStringList keys = QStringList(), Type type = General);
 
     /*!
-     * \brief Convenience constructor for a single key
+     * \brief Convenience constructor for a single-element group path.
      *
-     * \param key The key for the group in `QSettings`. If empty, will be set to "Blackchirp"
-     * \param type If set to Hardware, a subKey will be added (default: "virtual")
+     * Equivalent to passing \c {{key}} to the QStringList constructor.
+     *
+     * \param key Group key. If empty, opens the top-level
+     * \c "Blackchirp" group.
+     * \param type Reserved; ignored (see Type).
      */
     SettingsStorage(QAnyStringView key, Type type = General);
 
     /*!
-     * \brief Destructor. Saves all values to settings
+     * \brief Destructor. Calls save() unless discardChanges(true) was set.
      */
     virtual ~SettingsStorage();
 
@@ -341,7 +345,7 @@ public:
      * \brief Gets the value of a settting. Overloaded function.
      *
      * Attempts to convert the value to type T using <a
-     * href="https://doc.qt.io/qt-5/qvariant.html#value">QVariant::value</a>.
+     * href="https://doc.qt.io/qt-6/qvariant.html#value">QVariant::value</a>.
      * The optional `defaultValue` argument is returned if the key is not
      * found. If left blank, a default-constructed value is returned for any
      * missing keys.
@@ -479,7 +483,7 @@ public:
     SettingsMap getGroup(QAnyStringView groupKey) const;
 
     /*!
-     * \brief Controls whether changes are wrtten to `QSettings`
+     * \brief Controls whether changes are written to `QSettings`
      * \param discard If true, settings are not saved.
      */
     void discardChanges(bool discard = true) { d_discard = discard; }
@@ -628,7 +632,7 @@ protected:
      * \param defaultValue The desired default value written to settings if
      * the key does not exist
      * \return Value associated with the key. If the key did not previously
-     * exist, this will equal defaltValue
+     * exist, this will equal defaultValue
      */
     QVariant getOrSetDefault(QAnyStringView key, const QVariant defaultValue);
 
@@ -641,7 +645,7 @@ protected:
      * \param defaultValue The desired default value written to settings if the
      * key does not exist
      * \return Value associated with the key. If the key did not previously exist,
-     * this will equal defaltValue
+     * this will equal defaultValue
      *
      */
     template<typename T>
@@ -726,7 +730,7 @@ protected:
      * \brief Sets (or unsets) an array value
      *
      * Stores a vector of maps that will be written using <a
-     * href="https://doc.qt.io/qt-5/qsettings.html#beginWriteArray">QSettings::beginWriteArray</a>.
+     * href="https://doc.qt.io/qt-6/qsettings.html#beginWriteArray">QSettings::beginWriteArray</a>.
      * Passing an empty array argument will remove the value from `QSettings`.
      * Changes to `QSettings` are made immediately if write is true, and upon
      * the next call to save() otherwise.
@@ -738,7 +742,7 @@ protected:
     void setArray(QAnyStringView key, const std::vector<SettingsMap> &array, bool write = false);
 
     /*!
-     * \brief Sets a single value within a map assocuated with an array value
+     * \brief Sets a single value within a map associated with an array value
      *
      * Attempts to set one key-value pair for the array value specified by
      * `arrayKey` at position `i`. The write will fail if the array does not
@@ -755,7 +759,7 @@ protected:
     bool setArrayValue(QAnyStringView arrayKey, std::size_t i, QAnyStringView key, const QVariant &value, bool write = false);
 
     /*!
-     * \brief Sets a single value within a map assocuated with an array value.
+     * \brief Sets a single value within a map associated with an array value.
      * Overloaded function
      *
      * See setArrayValue(const QString arrayKey, std::size_t i, const QString
@@ -783,7 +787,7 @@ protected:
      *
      * \param key The key of the array value
      * \param map The new map to append
-     * \param Whether to update `QSettings` immediately
+     * \param write Whether to update `QSettings` immediately
      */
     void appendArrayMap(QAnyStringView key, const SettingsMap &map, bool write = false);
 

@@ -42,14 +42,28 @@
 class CustomInstrument : public CommunicationProtocol
 {
 public:
+    /// Constructs a CustomInstrument with the given identifier.
+    /// \param key Identifier passed to the CommunicationProtocol base class.
+    /// \param parent QObject parent.
     explicit CustomInstrument(QString key, QObject *parent = nullptr);
 
 public slots:
+    /// No-op initialization. CustomInstrument has no QIODevice to create;
+    /// the owning HardwareObject reads BC::Key::Custom values directly from
+    /// SettingsStorage.
     void initialize() override;
+
+    /// Always reports a successful connection. Real verification of a
+    /// custom-protocol device happens inside the owning HardwareObject's
+    /// own testConnection() override, which inspects the user-supplied
+    /// values and attempts whatever vendor-specific handshake is required.
+    /// \return Always true.
     bool testConnection() override;
-    
+
     // CommunicationProtocol interface
 public:
+    /// Returns nullptr because CustomInstrument has no underlying QIODevice.
+    /// \return nullptr.
     QIODevice *_device() override;
 };
 

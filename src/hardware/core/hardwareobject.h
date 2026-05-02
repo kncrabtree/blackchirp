@@ -24,149 +24,162 @@
 /*!
  * \brief Abstract base class for all hardware connected to the instrument.
  *
- * This class establishes a common interface for all hardware. Adding a new
- * piece of hardware to the code involves creating a subclass of
- * HardwareObject. Each hardware object has a key (::d_key) and model
- * (::d_model) that are used to refer to the object in the settings file.
- * The ::d_key specifies a particular type.label combination (e.g.,
- * "PulseGenerator.Default"), and the ::d_model specifies the implementation
- * of that hardware type. Subclasses must assign strings to
- * these variables in their constructors and must also set the
- * CommunicationProtocol in the class constructor. Other options, including
- * whether the HardwareObject is pushed to its own thread of execution or
- * whether the hardware is critical to program operation may be optionally set
- * as well. Each HardwareObject uses a user-provided label for identification,
- * eliminating the need for creation-order indices. Example:
- * 
- *     class NewHwType : public HardwareObject
- *     {
- *     public:
- *         NewHwType(const QString& label, QObject *parent = nullptr) :
- *           HardwareObject(QString(NewHwType::staticMetaObject.className()), 
- *                         "implementation_key", label, parent) {}
- *     }
- * 
- * For instruments that do not communicate by GPIB, RS232, or TCP (i.e., a
- * CustomInstrument), a general interface is available to allow the user to
- * specify any information needed to connect to the device (file handles, ID
- * numbers, etc). In the constructor of the implementation, create a
- * SettingsStorage array with the key BC::Key::Custom::comm. Each entry must
- * define the following parameters:
- * 
- * - BC::Key::Custom::label: A QString that will be displayed to the user to
- * indicate what information is sought (e.g., Device name, ID number, etc)
- * - BC::Key::Custom::key: A QString that the implementation will use to
- * retrieve the entered value type.
- * - BC::Key::Custom::type: Type of data entry to expose on UI. Possible values:
- *     - BC::Key::Custom::stringKey: Creates a text box for string.
- *     - BC::Key::Custom::intKey: Creates a numeric integer spinbox.
- * 
- * In addition, the following optional settings may be made:
- * 
- * - BC::Key::Custom::maxLen: Maximum length of string input.
- * - BC::Key::Custom::intMin: Lower limit on numeric entries (defaut: -2^31)
- * - BC::Key::Custom::intMax: Upper limit on numeric entries (default: 2^31-1)
+ * Every device Blackchirp talks to inherits from HardwareObject. The class
+ * provides the common identity, communication, settings, and lifecycle
+ * machinery that the rest of the program relies on; concrete drivers add
+ * the per-vendor command translation and any device-specific behavior.
  *
+ * # Identity
  *
- * A HardwareObject will be moved to its own thread if the ::d_threaded varialbe
- * is set to true in the constructor. If so, the object must not be assigned a
- * parent, and any QObjects that will be created in the child class should NOT
- * be initialized in the constructor (see initialize()).
- * 
- * The ::d_critical variable (also set in the constructor) determines whether the
- * hardware is deemed essential for instrument operation. When a critical piece
- * of hardware experiences a failure and emits the hardwareFailure() signal,
- * any ongoing acquisition is terminated and no new acquisitions can be
- * initiated until communication is re-established. If a non-critical object
- * has a failure, it is disconnected and subsequent operations are ignored
- * until communication is re-established, and any ongoing acquisitions are
- * allowed to proceed.
- * 
- * Implementations of HardwareObject must implement two functions: initialize()
- * and testConnection(). The initialize() function is called after a
- * HardwareObject is created (and pushed into its own thread, if appropriate).
- * Any necessary QObject children should be created within the initialize()
- * function, and any other one-time initialization tasks may be performed here
- * as well. The only time initialize() is called is upon program startup, so
- * any tasks that need to be done per-connection should be implemented in
- * testConnection().
- * 
- * In the testConnection() implementation, the derived class should attempt to
- * establish communication with the physical device and perform some sort of
- * test to make sure that the connection works and that the correct device is
- * targeted. Usually, this takes the form of an ID query of some type (e.g.,
- * `*IDN?`). If unsuccessful, a message should be stored in d_errorString, but
- * messages may also be stored in d_errorString. The
- * testConnection() function must return a bool indicating whether the
- * connection was successful. Note: testConnection() is called from the
- * bcTestConnection() wrapper function which reloads settings from
- * SettingsStorage prior to making the testConnection() call. Inside
- * testConnection() therefore, all settings have already been updated and may
- * be read from.
- * 
- * The HardwareObject base class provides several additional virtual functions
- * that may be reimplemented in derived classes to perform various operations:
- * 
- * - validationKeys()
- * - sleep()
- * - beginAcquisition()
- * - endAcquisition()
- * - prepareForExperiment()
- * - readAuxData()
- * - readValidationData()
- * - readSettings()
- * 
- * Any functions that need to be called from outside the class (e.g., from the
- * HardwareManager during a scan) should be declared as slots so that they
- * can be invoked using Qt's queued connection mechanism.
- * 
- * When creating a new HardwareObject type to add to the program, the derived
- * class should define a new ::d_key and establish an interface for more
- * specific implementations (i.e., different manufactuers/models). The main
- * functionality which interoperates with the rest of the program should be
- * defined using signals and slots so that the device may work in its own
- * thread of execution if desired. For each setting or group of settings (as
- * appropriate), the interface class should define a wrapper function that can
- * be called from other Blackchirp code and a pure virtual function that the
- * implementation classes define to perform the actual communication. For
- * example, if a new hardware type Analyzer is to be added, and its property
- * `d_foo` needs to be settable and readable, a skeleton implementation may
- * look like this:
- * 
+ * Each instance has a *hardware type* (e.g., \c "AWG",
+ * \c "FtmwScope", \c "PulseGenerator") naming the abstract role and
+ * a *label* — a free-form, user-supplied string distinguishing
+ * multiple instances of the same type (e.g., \c "main",
+ * \c "secondary"). The hardware type matches the interface class's
+ * metaobject name by convention.
+ *
+ * Type and label combine to form d_key (e.g.,
+ * \c "PulseGenerator.main"), which uniquely identifies the instance.
+ * d_key is also the SettingsStorage group that holds this instance's
+ * persistent settings, which is why the same key cannot be reused
+ * for two different drivers: an instance's driver is fixed at
+ * profile creation, and changing it requires deleting the profile
+ * and rebuilding it under the same (or a new) label.
+ *
+ * d_model is a separate string carrying just the driver class name
+ * (e.g., \c "AWG70002a", \c "PythonAwg"); it is recorded inside the
+ * settings group and used for display purposes — for example, to
+ * show the user which driver backs a profile in the hardware
+ * settings dialog. d_model is not part of d_key and is not used as
+ * a dispatch identifier.
+ *
+ * # Constructing a driver
+ *
+ * Two-layer inheritance is the convention: an *interface* class
+ * (\c AWG, \c FtmwDigitizer, \c PulseGenerator, ...) declares the slot
+ * and signal API the rest of Blackchirp consumes, and one or more
+ * *driver* classes (\c AWG70002a, \c VirtualAwg, ...) translate that
+ * API into vendor commands. A typical pair:
+ *
  *     class Analyzer : public HardwareObject
  *     {
- *         //other functions, etc...
- *         
+ *         Q_OBJECT
+ *     public:
+ *         Analyzer(const QString& impl, const QString& label, QObject *parent = nullptr)
+ *             : HardwareObject(QString(Analyzer::staticMetaObject.className()),
+ *                              impl, label, parent) {}
+ *
  *     public slots:
  *         bool setFoo(double f) {
- *             auto out = hwSetFoo(f);
- *             if(!out)
- *                 emit hardwareFailure();
- *             else
- *                 readFoo();
- *             return out;
+ *             auto ok = hwSetFoo(f);
+ *             if(!ok) emit hardwareFailure();
+ *             else    readFoo();
+ *             return ok;
  *         }
- *         
  *         double readFoo() {
  *             d_foo = hwReadFoo();
- *             emit fooUpdated(d_foo,QPrivateSignal());
+ *             emit fooUpdated(d_foo, QPrivateSignal());
  *             return d_foo;
  *         }
- *         
+ *
  *     signals:
- *         void fooUpdated(double,QPrivateSignal);
- *         
+ *         void fooUpdated(double, QPrivateSignal);
+ *
  *     private:
  *         double d_foo;
- *         
- *         // These functions would need to be implemented in a class that
- *         // inherits Analyzer
- *         virtual bool hwSetFoo() =0;
- *         virtual double hwReadFoo() =0;
- *     }
- * 
- * It is recommended to look at the patterns used in current HardwareObject
- * types to see how to create new types.
+ *         virtual bool   hwSetFoo(double f) = 0;
+ *         virtual double hwReadFoo()        = 0;
+ *     };
+ *
+ *     class VendorAnalyzer : public Analyzer
+ *     {
+ *     public:
+ *         VendorAnalyzer(const QString& label, QObject *parent = nullptr)
+ *             : Analyzer(QString(VendorAnalyzer::staticMetaObject.className()),
+ *                        label, parent) {}
+ *     private:
+ *         bool   hwSetFoo(double f) override;
+ *         double hwReadFoo()        override;
+ *     };
+ *
+ * Each driver is also registered at static initialization with
+ * \c REGISTER_HARDWARE_META, \c REGISTER_HARDWARE_PROTOCOLS, and
+ * (where the driver introduces settings) \c REGISTER_HARDWARE_SETTINGS;
+ * see hardwareregistration.h.
+ *
+ * # Configuration flags
+ *
+ * Drivers may set the following flags in their constructors:
+ *
+ * - \c d_threaded — if true, the HardwareManager moves the object to a
+ *   dedicated QThread. Threaded objects must not have a QObject parent
+ *   and must not create child QObjects in their constructors;
+ *   construct children inside initialize() instead.
+ * - \c d_critical — if true (the default), a hardwareFailure() emission
+ *   aborts any active experiment and blocks new ones until
+ *   bcTestConnection() succeeds again. If false, the object is simply
+ *   marked disconnected and the experiment continues. The flag is also
+ *   user-editable through the hardware settings dialog.
+ * - \c d_commType — the active CommunicationProtocol type. The set of
+ *   protocols a driver supports is declared via
+ *   \c REGISTER_HARDWARE_PROTOCOLS; the user picks one at profile
+ *   creation time and the persisted value is loaded by the base
+ *   constructor.
+ *
+ * Drivers whose CommunicationProtocol type is
+ * CommunicationProtocol::Custom additionally declare any user-supplied
+ * connection parameters (device path, serial number, etc.) following
+ * the convention documented in CustomInstrument.
+ *
+ * # Lifecycle
+ *
+ * HardwareObject instances are not bound to program lifetime. The
+ * HardwareManager creates and destroys them in response to loadout
+ * activation, profile edits, and protocol changes. After construction
+ * the manager calls bcInitInstrument(), which builds the
+ * CommunicationProtocol object, calls initialize(), and wires up
+ * hardwareFailure routing. Drivers must implement initialize(): it is
+ * the place to construct child QObjects (the constructor cannot, for
+ * threaded drivers) and perform any one-shot setup. Per-connection
+ * work belongs in testConnection() instead, since connection attempts
+ * happen many times over the lifetime of an instance.
+ *
+ * # Connection testing
+ *
+ * Drivers must implement testConnection(): it should attempt some
+ * cheap interaction with the device (typically an \c *IDN? query) to
+ * confirm both that something is responding and that it is the
+ * expected hardware. On failure, store a descriptive message in
+ * \c d_errorString and return false. testConnection() is called from
+ * the bcTestConnection() wrapper, which first reloads settings from
+ * SettingsStorage; the override therefore sees up-to-date settings
+ * and may read them freely.
+ *
+ * # Optional virtual hooks
+ *
+ * Drivers may override these hooks to participate in the experiment
+ * lifecycle and the auxiliary-data system:
+ *
+ * - validationKeys() — keys whose values appear on the experiment
+ *   setup dialog's Validation page.
+ * - sleep() — switch the device to/from a low-power state.
+ * - beginAcquisition() / endAcquisition() — start- and end-of-experiment
+ *   hooks.
+ * - prepareForExperiment() — validate and stage per-experiment
+ *   settings; called via the hwPrepareForExperiment() wrapper.
+ * - readAuxData() — values to plot on the Aux/Rolling tabs and to
+ *   persist as auxiliary data.
+ * - readValidationData() — values to verify post-acquisition, separate
+ *   from the plotted aux data.
+ * - readSettings() — refresh cached state when the user accepts the
+ *   hardware settings dialog.
+ *
+ * # Threading
+ *
+ * Functions intended to be invoked from outside the object — for
+ * example by HardwareManager during an acquisition — must be declared
+ * as Qt slots so they reach the object via queued connection when the
+ * driver is threaded.
  */
 class HardwareObject : public QObject, public SettingsStorage
 {
@@ -175,21 +188,28 @@ class HardwareObject : public QObject, public SettingsStorage
 public:
 
     /*!
-     * \brief Constructor using Qt metaobject system
+     * \brief Constructor.
      *
-     * This constructor takes hardware type and implementation derived from the
-     * derived class's metaobject system. All other parameters are loaded from settings.
+     * Combines \a hwType and \a label into d_key (the unique
+     * identifier and SettingsStorage group for this instance), stores
+     * \a hwImpl in d_model for display, loads the persisted
+     * critical/protocol values, and applies registry-supplied setting
+     * defaults.
      *
-     * \param hwType Hardware type (e.g., "FtmwScope") from base class
-     * \param hwImpl Implementation (e.g., "VirtualFtmwScope") from concrete class  
-     * \param label User-provided label for hardware instance identification
-     * \param parent Pointer to parent QObject. Should be 0 if it will be in its own thread.
+     * \param hwType Hardware type, by convention the interface class's
+     * metaobject name (e.g., \c "FtmwScope").
+     * \param hwImpl Driver class name, stored in d_model for display
+     * (e.g., \c "VirtualFtmwScope").
+     * \param label User-supplied label distinguishing instances of the
+     * same type.
+     * \param parent QObject parent. Must be \c nullptr if the driver
+     * sets d_threaded to true in its constructor.
      */
     explicit HardwareObject(const QString& hwType, const QString& hwImpl, const QString& label, QObject *parent = nullptr);
     virtual ~HardwareObject();
 
-    const QString d_key; /*!< Settings group key: "hwType.label" */
-    const QString d_model; /*!< Implementation/model name (e.g., "AWG70002a") */
+    const QString d_key;   /*!< Unique identifier and SettingsStorage group: "hwType.label". Fixed at profile creation. */
+    const QString d_model; /*!< Driver class name, used for display only (e.g., "AWG70002a"). */
 
     bool d_critical; /*!< Whether a communication error should abort an experiment. */
     bool d_threaded; /*!< Whether the object should have its own thread of execution. */
@@ -202,16 +222,15 @@ public:
     QString errorString();
 
     /*!
-     * \brief Returns if the instrument is connected.
-     * 
-     * This function does not attempt to communicate with the device; it simply
-     * returns the value of ::d_isConnected. That variable is set to true when
-     * testConnection() returns true, and is set to false when
-     * hardwareFailure() is emitted.
-     * 
+     * \brief Returns whether the instrument is currently connected.
+     *
+     * Does not attempt to communicate with the device; returns the cached
+     * d_isConnected value, which is set to true when testConnection()
+     * returns true and reset to false when hardwareFailure() is emitted.
+     *
      * \sa bcTestConnection
-     * 
-     * \return 
+     *
+     * \return Whether the device is connected.
      */
     bool isConnected() const { return d_isConnected; }
 
@@ -226,7 +245,7 @@ public:
      * 
      * \sa readValidationData
      * 
-     * \return List of valdidation key strings.
+     * \return List of validation key strings.
      */
     virtual QStringList validationKeys() const { return {}; }
 
@@ -255,102 +274,107 @@ public:
 signals:
     /*!
      * \brief Indicates whether a connection is successful
-     * \param bool True if connection is successful
+     * \param success True if connection is successful
      * \param msg If unsuccessful, an optional message to display on the log tab along with the failure message.
      */
     void connected(bool success,QString msg,QPrivateSignal);
 
     /*!
-     * \brief Signal emitted if communication to hardware fails.
-     * 
-     * When this signal is emitted, ::d_isConnected is set to false. If
-     * ::d_critical is true, then any ongoing experiment is aborted and new
-     * experiments cannot be started until a successful call to
-     * testConnection() is made.
-     * 
+     * \brief Signal emitted when communication with the device fails.
+     *
+     * Emitting this signal sets d_isConnected to false. If d_critical
+     * is true the active experiment is aborted and new experiments are
+     * blocked until bcTestConnection() succeeds.
      */
     void hardwareFailure();
 
     /*!
-     * \brief Signal containing data for Aux Data plots
-     * \param AuxDataStorage::AuxDataMap Keys and values for Aux Data
-     * 
+     * \brief Signal containing data for Aux Data plots.
+     *
+     * The AuxDataStorage::AuxDataMap payload holds the key/value pairs for
+     * Aux Data.
+     *
      * \sa readAuxData
      */
     void auxDataRead(AuxDataStorage::AuxDataMap,QPrivateSignal);
-    
+
     /*!
-     * \brief Signal containing data for experiment validation
-     * \param AuxDataStorage::AuxDataMap Keys and values for experiment validation
-     * 
+     * \brief Signal containing data for experiment validation.
+     *
+     * The AuxDataStorage::AuxDataMap payload holds the key/value pairs for
+     * experiment validation.
+     *
      * \sa readAuxData, validationKeys
      */
     void validationDataRead(AuxDataStorage::AuxDataMap,QPrivateSignal);
-    
+
     /*!
-     * \brief Signal containing data for Rolling Data plots
-     * 
+     * \brief Signal containing data for Rolling Data plots.
+     *
      * This signal is emitted on a timer whose timeout interval is controlled
      * by the user. When the timer fires, readAuxData() is called and the
-     * results are emitted in this signal.
-     * 
+     * results are emitted in this signal as an AuxDataStorage::AuxDataMap of
+     * key/value pairs.
+     *
      * \sa timerEvent, readAuxData
-     * 
-     * \param AuxDataStorage::AuxDataMap Keys and values for Rolling Data
      */
     void rollingDataRead(AuxDataStorage::AuxDataMap,QPrivateSignal);
 	
 public slots:
     /*!
-     * \brief Wrapper for initializtion at program startup
-     * 
-     * This function is called after the object is moved to its thread and the
-     * thread is started (if appropriate). It does the following:
-     * 
-     * -# Initializes the `CommunicationProtocol`.
-     * -# Calls the initialize() virtual function.
-     * -# Calls bcTestConnection().
-     * -# Causes the hardwareFailure() signal to set ::d_isConnected to false.
-     * 
+     * \brief Wrapper for one-shot initialization after construction.
+     *
+     * Called by the HardwareManager after the object has been moved to
+     * its thread (if d_threaded is true) and the thread has started.
+     * It:
+     *
+     * -# builds the CommunicationProtocol via buildCommunication() and
+     *    calls its initialize();
+     * -# calls the driver's initialize() override;
+     * -# wires the hardwareFailure() signal to clear d_isConnected.
+     *
+     * Connection testing is dispatched separately via bcTestConnection().
+     *
      * \sa initialize
      */
     void bcInitInstrument();
     
     /*!
-     * \brief Wrapper for testing hardware communication
-     * 
-     * This function is called first from bcInitInstrument() and then
-     * subsequently when the user requests a connection test from the UI. First
-     * the settings are read from disk, then the `CommunicationProtocol` and
-     * instrument connections are tested. The result of testConnection() is
-     * stored, and the connected() signal is emitted with the status message.
-     * 
+     * \brief Wrapper for testing hardware communication.
+     *
+     * Called from the HardwareManager when the user requests a
+     * connection test from the UI, and from the connection-testing
+     * pass that follows hardware creation. Reloads settings from disk
+     * via bcReadSettings(), tests the CommunicationProtocol's
+     * underlying QIODevice, then calls the driver's testConnection()
+     * override. The result is stored in d_isConnected and reported via
+     * the connected() signal.
+     *
      * \sa testConnection
      */
     void bcTestConnection();
     
     /*!
-     * \brief Wrapper function for reading aux data.
-     * 
-     * Calls both readAuxData() and readValidationData(), and emits the
-     * auxDataRead() and validationDataRead() signals with the received data.
-     * 
+     * \brief Wrapper for reading aux and validation data.
+     *
+     * Calls readAuxData() and readValidationData(), emitting auxDataRead()
+     * and validationDataRead() with whatever each returns. No-op if the
+     * device is not connected.
+     *
      * \sa readAuxData, readValidationData
-     * 
      */
     void bcReadAuxData();
 
     /*!
-     * \brief Wrapper function for reading from SettingsStorage
-     * 
-     * This function forces a reload of all settings from disk. It is called
-     * whenever the user closes the Hardware Settings dialog box corresponding
-     * to this object. It updates ::d_critical and restarts the rolling data
-     * timer. It then calls readSettings() so that derived classes can refresh
-     * any necessary settings.
-     * 
+     * \brief Wrapper for reloading settings from disk.
+     *
+     * Called whenever the user closes the hardware settings dialog or
+     * a connection test is initiated. Refreshes the in-memory
+     * SettingsStorage cache, updates d_critical and d_commType,
+     * restarts the rolling-data timer, and then calls readSettings()
+     * so the driver can refresh its own cached state.
+     *
      * \sa readSettings
-     * 
      */
     void bcReadSettings();
 
@@ -364,42 +388,42 @@ public slots:
 	virtual void sleep(bool b);
     
     /*!
-     * \brief Wrapper function for initialization.
-     * 
-     * Attempts to reconnect if an instrument is disconnected, then calls
-     * prepareForExperiment(). May be overridden in an interface class if
-     * actions need to be taken upon successful initialization (registering
-     * keys, writing settings, etc).
-     * 
-     * \todo Should create another virtual function for this; the logic of
-     * overriding both this function and prepareForExperiment() is not good.
-     * 
+     * \brief Per-experiment preparation wrapper.
+     *
+     * If the device is currently disconnected, reattempts the
+     * connection; if that still fails and d_critical is true, marks
+     * the experiment with an error and returns false. Otherwise
+     * delegates to prepareForExperiment(). Interface classes override
+     * this when they need to perform setup that runs even for
+     * non-critical disconnected devices (registering keys, writing
+     * derived settings, etc.).
+     *
+     * \todo Split into two virtuals so interface classes do not have
+     * to override both this and prepareForExperiment().
+     *
      * \sa prepareForExperiment
-     * 
-     * \param exp `Experiment` object containing hardware settings, etc
-     * \return Whether initialization was successful
+     *
+     * \param exp Experiment carrying the requested per-device settings;
+     * may be mutated to record actual settings or an error string.
+     * \return Whether preparation succeeded.
      */
     virtual bool hwPrepareForExperiment(Experiment &exp);
     
     /*!
-     * \brief Function called when experiment begins.
-     * 
-     * Derived classes may override this function to perform any actions to
-     * initiate the data acquisition process after the experiment has been
-     * fully initialized. For example, an `AWG` may begin playing waveforms,
-     * and an `FtmwDigitizer` may begin querying for trigger events.
-     * 
-     * The default implementation does nothing.
+     * \brief Hook called when an experiment begins.
+     *
+     * Drivers may override to start acquisition (for example, an AWG
+     * starts playing waveforms; an FtmwDigitizer arms for trigger
+     * events). The default implementation does nothing.
      */
     virtual void beginAcquisition(){}
     
     /*!
-     * \brief Function called when experiment ends.
-     * 
-     * Derived classes may override this function to perform any actions at the
-     * end of an experiment, whether it is aborted or completed normalls. For
-     * example, an `AWG` may stop its waveform playback.
-     * 
+     * \brief Hook called when an experiment ends.
+     *
+     * Called whether the experiment completed normally or was aborted.
+     * Drivers may override to stop acquisition (for example, halting
+     * AWG playback). The default implementation does nothing.
      */
     virtual void endAcquisition(){}
 
@@ -417,67 +441,76 @@ public slots:
     bool setCommProtocol(CommunicationProtocol::CommType commType, QObject *gc = nullptr);
 
     /*!
-     * \brief Creates `CommunicationProtocol` object
-     * 
-     * Uses the `d_comm` parameter passed in the constructor to create the
-     * appropriate `CommunicationProtocol` subclass (::p_comm), and ties together the
-     * hardwareFailure() signal from each.
-     * 
-     * \param gc Pointer to the `GpibController` object for GPIB devices.
-     * If the device is not GPIB, this variable is unused.
-     * \param commType Communication protocol type. If None, uses d_commType.
+     * \brief (Re)build the CommunicationProtocol object.
+     *
+     * Constructs the CommunicationProtocol subclass that matches
+     * \a commType (or d_commType if \a commType is
+     * CommunicationProtocol::None) into p_comm, replacing any prior
+     * instance, and forwards p_comm's hardwareFailure() to this
+     * object's hardwareFailure().
+     *
+     * \param gc Pointer to the GpibController, used only when the
+     * selected protocol is GPIB.
+     * \param commType New protocol type, or
+     * CommunicationProtocol::None to use the persisted d_commType.
      */
     void buildCommunication(QObject *gc = nullptr, CommunicationProtocol::CommType commType = CommunicationProtocol::None);
 
 protected:
-    QString d_errorString; /*!< Last error. */
-    bool d_enabledForExperiment; /*!< Whether the device is active in the current experiment. */
-    CommunicationProtocol *p_comm; /*!< `QIODevice` subclass used for communication */
+    QString d_errorString;         /*!< Last error message; consumed by errorString(). */
+    bool d_enabledForExperiment;   /*!< Whether the device is active in the current experiment. */
+    CommunicationProtocol *p_comm; /*!< Active communication protocol; built by buildCommunication(). */
 
+    /// Log a message to the global LogHandler with this device's d_key prepended.
     void hwLog(QAnyStringView text)   { bcLog(u"%1: %2"_s.arg(d_key, text));   }
+    /// Log a warning to the global LogHandler with this device's d_key prepended.
     void hwWarn(QAnyStringView text)  { bcWarn(u"%1: %2"_s.arg(d_key, text));  }
+    /// Log an error to the global LogHandler with this device's d_key prepended.
     void hwError(QAnyStringView text) { bcError(u"%1: %2"_s.arg(d_key, text)); }
+    /// Log a debug message to the global LogHandler with this device's d_key prepended.
     void hwDebug(QAnyStringView text) { bcDebug(u"%1: %2"_s.arg(d_key, text)); }
 
     /*!
-     * \brief Initializes hardware before experiment.
-     * 
-     * This function should validate the settings stored in the experiment for
-     * the hardware object and ensure the hardware is configured appropriately
-     * as the user has requested. The `exp` object is mutable, and should be
-     * updated with any actual settings of the hardware which may differ from
-     * what the user requested. If initialization is unsuccessful, then store
-     * an error message in `exp.d_errorString` and return false.
-     * 
-     * The default implementation returns true.
-     * 
+     * \brief Validate and stage per-experiment settings.
+     *
+     * Drivers override this to read the requested per-device settings
+     * out of \a exp, push them to the device, and write back the
+     * settings actually applied (which may differ from what was
+     * requested). On failure, store a descriptive message in
+     * \c exp.d_errorString and return false. The default implementation
+     * returns true.
+     *
      * \sa hwPrepareForExperiment
-     * 
-     * \param exp
-     * \return 
+     *
+     * \param exp Mutable Experiment carrying per-device settings.
+     * \return Whether preparation succeeded.
      */
     virtual bool prepareForExperiment(Experiment &exp) { Q_UNUSED(exp) return true; }
+
     /*!
-     * \brief Do any needed initialization prior to connecting to hardware.
-     * 
-     * Derived classes must override this function, even if no action is performed.
-     * 
-     * \sa bcInitialize
+     * \brief One-shot initialization run after construction.
      *
+     * Drivers must implement this even if there is nothing to do.
+     * It is the place to construct child QObjects (the constructor
+     * cannot, for threaded drivers) and perform any setup that should
+     * run once per instance lifetime. Per-connection work belongs in
+     * testConnection() instead.
+     *
+     * \sa bcInitInstrument
      */
     virtual void initialize() =0;
 
     /*!
-     * \brief Attempt to communicate with hardware.
-     * 
-     * Derived classes must implement this function. An attempt should be made
-     * to send a test command (e.g., `*IDN?`) to the device to ensure that the
-     * correct device is connected and responsive. In the event of an error, a
-     * message should be stored in ::d_errorString.
-     * 
+     * \brief Attempt to communicate with the device.
+     *
+     * Drivers must implement this. Send a cheap test interaction
+     * (typically an \c *IDN? query) to confirm the device is responsive
+     * and is the expected hardware. On failure, store a descriptive
+     * message in d_errorString.
+     *
      * \sa bcTestConnection
-     * 
-     * \return Whether attempt was successful
+     *
+     * \return Whether the connection attempt succeeded.
      */
     virtual bool testConnection() =0;
 
@@ -512,7 +545,7 @@ private:
      * Derived classes may override this function to return any additional data
      * that can be used for experiment validation which is **not** already
      * returned in readAuxData(). This may, for example, consist of digital
-     * data that is not appropriate for graphical presentaiton.
+     * data that is not appropriate for graphical presentation.
      * 
      * \return AuxDataStorage::AuxDataMap (an alias for `std::map<QString,QVariant,std::less<>>`)
      * containing key-value pairs.
@@ -537,9 +570,13 @@ private:
 protected:
     
     /*!
-     * \brief Calls readAuxData() and emits auxDataRead()
-     * 
-     * \param event Timer event that caused the trigger.
+     * \brief Rolling-data timer handler.
+     *
+     * On each tick of the rolling-data timer (configured by the user
+     * via BC::Key::HW::rInterval), calls readAuxData() and emits
+     * rollingDataRead() with the result.
+     *
+     * \param event Timer event that triggered the call.
      */
     void timerEvent(QTimerEvent *event) override;
 };
