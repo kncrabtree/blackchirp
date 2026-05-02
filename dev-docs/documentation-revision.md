@@ -42,7 +42,7 @@ requirements, and acceptance criteria.
 | 13a | API ref: refresh existing 5 (HardwareObject etc.) | S | — | complete |
 | 13b | API ref: hardware-management classes | S | 13a | complete |
 | 13c | API ref: Python hardware classes | S | 13a | complete |
-| 13d | API ref: loadout/preset classes | S | 13a | not started |
+| 13d | API ref: loadout/preset classes | S | 13a | complete |
 | 13e | API ref: data/experiment classes | M | 13a | not started |
 | 13f | API ref: storage classes | M | 13a | not started |
 | 13g | API ref: GUI helper classes | M | 13a | not started |

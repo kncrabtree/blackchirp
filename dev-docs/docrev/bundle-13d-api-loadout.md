@@ -1,10 +1,13 @@
 # Bundle 13d — API Reference: Loadout / Preset Classes
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
 - (entries appended in reverse chronological order; most recent first)
+- 2026-05-02: drafted → complete. Stage 1 content commit: 5925ba9f. User reviewed the rendered docs and approved without revisions.
+- 2026-05-02: in progress → drafted. Verifier passed cleanly (no blockers). Three new RST pages landed under doc/source/classes/ (hardwareloadout, loadoutmanager, rfconfigsnapshot); three loadout headers refreshed with \brief on every public/protected member. Optional loadout_helpers.rst page omitted — chirpconfigloadout/ftmwdigitizerloadout are pure free-function persistence plumbing with no class state, already cross-referenced from the hardwareloadout page. Two should-fix items applied directly by orchestrator: single-backtick → :cpp:class: for two RfConfig references in rfconfigsnapshot.rst, and added :doc: cross-link to the user-guide ftmw_presets chapter from hardwareloadout.rst. Awaiting user review of rendered docs.
+- 2026-05-02: not started → in progress. Drafter dispatched (Sonnet, delegated mode). Scope sanity-checked: HardwareLoadout and FtmwPreset are structs in hardwareloadout.h (→ doxygenstruct on a single page); LoadoutManager has the __LastUsed__ sentinel at loadoutmanager.h:35 and a BC::Store::LM key namespace; RfConfigSnapshot has its own header. Auxiliary loadout helpers (ChirpConfigLoadout, FtmwDigitizerLoadout) deferred to drafter judgment per bundle spec.
 -->
 
 Adds API reference pages for the loadout and FTMW preset data
