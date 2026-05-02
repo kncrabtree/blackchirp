@@ -1,10 +1,12 @@
 # Bundle 06 — Python Hardware (User Guide)
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
-- (entries appended in reverse chronological order; most recent first)
+- 2026-05-01: drafted → complete. Stage-1 content commit 976de0e7. User-driven revisions during review: defaults table converted to line-block cells with narrower widths, per-type table sorted by pattern then alphabetical, pattern-detail sections reordered A → B → C, hardware_menu.rst updated to describe new always-reachable per-device entries (committed separately as 4e954a33 alongside the supporting code fixes for HwDialog gating, Python error reporting, and status-label theming). All four screenshots captured and embedded; figure captions updated to match what was actually shot (notably the rich three-pane error_state composite).
+- 2026-05-01: in progress → drafted. Both drafters returned clean punch lists. Group A: two factual fixes applied directly by orchestrator (hot_reload menu reference and selecting section names). Group B: one factual fix applied directly (comm-proxy protocol list reduced to RS-232/TCP/Virtual). Chapter index `python_hardware.rst` and toctree delta in `user_guide.rst` written by orchestrator. Screenshots remain as TODO markers per bundle convention.
+- 2026-05-01: not started → in progress. Dispatching two parallel drafters: Group A (overview, selecting, hot_reload) and Group B (writing_a_driver, per_type_capabilities). Orchestrator will write the chapter index and toctree delta directly.
 -->
 
 A new chapter introducing user-written hardware drivers in Python.

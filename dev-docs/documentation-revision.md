@@ -32,7 +32,7 @@ requirements, and acceptance criteria.
 | 03 | Hardware Configuration: profiles, loadouts, FTMW presets | L | 02 | complete |
 | 04 | Hardware Menu, Communication, Status Panel | M | 03 | complete |
 | 05 | Per-device hardware page refresh | M | 04 | complete |
-| 06 | Python hardware (user guide) | L | 03 | not started |
+| 06 | Python hardware (user guide) | L | 03 | complete |
 | 07 | RF configuration, chirp setup, FTMW digitizer | M | 03, 04 | complete |
 | 08 | Experiment workflow refresh | M | 07 | complete |
 | 09 | FTMW data viewing, overlays, data storage refresh | M | 08 | complete |
