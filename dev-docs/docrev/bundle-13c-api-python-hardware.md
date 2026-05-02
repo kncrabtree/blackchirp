@@ -1,10 +1,29 @@
 # Bundle 13c — API Reference: Python Hardware Classes
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
 - (entries appended in reverse chronological order; most recent first)
+- 2026-05-02: not started → complete. Stage 1 content commit 6b8938a5.
+  Two new pages under doc/source/classes/ (pythonprocess.rst,
+  pythonhardwarebase.rst); class-level and member-level Doxygen
+  refreshed on pythonprocess.h and pythonhardwarebase.h.
+  Drafter (Sonnet) returned a clean punch list except for two
+  load-bearing items the verifier caught: a phantom logMessage signal
+  on PythonProcess (the actual log path is bcLog() invoked inline
+  inside PythonProcess::onReadyRead — no logMessage signal exists)
+  and a live :doc: cross-reference to the not-yet-drafted
+  developer_guide/python_hardware page (would have broken the Sphinx
+  build). Drafter fixed both in one revision pass; orchestrator then
+  tightened the orientation prose on both RSTs (and the class-level
+  Doxygen on pythonhardwarebase.h) at user request to drop
+  design-defense framing and detail that duplicated the header's own
+  class-level block.
+  Stale acceptance criterion: the bundle file lists pythonForbiddenKeys
+  as required surface, but no such function exists in
+  pythonhardwarebase.h/.cpp or any trampoline (likely removed during
+  the settings-registry migration). Drafter correctly omitted it.
 -->
 
 Adds API reference pages for the Python hardware C++ side.

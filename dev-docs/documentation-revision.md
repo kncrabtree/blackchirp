@@ -41,7 +41,7 @@ requirements, and acceptance criteria.
 | 12 | Developer Guide | L | — (independent) | not started |
 | 13a | API ref: refresh existing 5 (HardwareObject etc.) | S | — | complete |
 | 13b | API ref: hardware-management classes | S | 13a | complete |
-| 13c | API ref: Python hardware classes | S | 13a | not started |
+| 13c | API ref: Python hardware classes | S | 13a | complete |
 | 13d | API ref: loadout/preset classes | S | 13a | not started |
 | 13e | API ref: data/experiment classes | M | 13a | not started |
 | 13f | API ref: storage classes | M | 13a | not started |
