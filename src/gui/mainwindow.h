@@ -89,7 +89,8 @@ public slots:
     void viewExperiment();
 
     bool isDialogOpen(const QString key);
-    HWDialog *createHWDialog(const QString key, QWidget *controlWidget = nullptr);
+    HWDialog *createHWDialog(const QString key, QWidget *controlWidget = nullptr,
+                             QWidget *managedWidget = nullptr);
 
 private:
     Ui::MainWindow *ui;

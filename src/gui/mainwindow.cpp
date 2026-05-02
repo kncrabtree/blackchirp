@@ -363,7 +363,7 @@ void MainWindow::buildHardwareUI()
                 connect(gcw,&GasControlWidget::nameUpdate,p_hwm,&HardwareManager::setFlowChannelName);
 
                 QWidget *cw = implName.contains(QStringLiteral("Python")) ? wrapWithPythonWidget(key, gcw) : gcw;
-                auto d = createHWDialog(key,cw);
+                auto d = createHWDialog(key, cw, gcw);
                 connect(d,&QDialog::accepted,w,&GasFlowDisplayBox::rebuild);
 
             }));
@@ -394,7 +394,7 @@ void MainWindow::buildHardwareUI()
                 connect(pcw,&PressureControlWidget::valveClose,p_hwm,&HardwareManager::closeGateValve);
 
                 QWidget *cw = implName.contains(QStringLiteral("Python")) ? wrapWithPythonWidget(key, pcw) : pcw;
-                auto d = createHWDialog(key,cw);
+                auto d = createHWDialog(key, cw, pcw);
                 connect(d,&QDialog::accepted,psb,&PressureStatusBox::updateFromSettings);
             }));
         }
@@ -421,7 +421,7 @@ void MainWindow::buildHardwareUI()
                connect(p_hwm,&HardwareManager::pGenSettingUpdate,pcw,&PulseConfigWidget::newSetting);
                connect(pcw,&PulseConfigWidget::changeSetting,p_hwm,&HardwareManager::setPGenSetting);
                QWidget *cw = implName.contains(QStringLiteral("Python")) ? wrapWithPythonWidget(key, pcw) : pcw;
-               auto d = createHWDialog(key,cw);
+               auto d = createHWDialog(key, cw, pcw);
                connect(d, &QDialog::accepted, psb, &PulseStatusBox::rebuild);
             }));
 
@@ -451,7 +451,7 @@ void MainWindow::buildHardwareUI()
                connect(tcw,&TemperatureControlWidget::channelNameChanged,tsb,&TemperatureStatusBox::setChannelName);
 
                QWidget *cw = implName.contains(QStringLiteral("Python")) ? wrapWithPythonWidget(key, tcw) : tcw;
-               auto d = createHWDialog(key,cw);
+               auto d = createHWDialog(key, cw, tcw);
                connect(d,&QDialog::accepted,tsb,&TemperatureStatusBox::loadFromSettings);
             }));
         }
@@ -526,17 +526,17 @@ void MainWindow::clearHardwareUI()
 void MainWindow::updateHardwareConnectionState(const QString& hwKey, bool connected)
 {
     d_hardwareConnectionState[hwKey] = connected;
-    
-    // Update individual UI element state
-    if(d_hardwareUI.contains(hwKey)) {
-        auto& elements = d_hardwareUI[hwKey];
-        if(elements.menuAction)
-            elements.menuAction->setEnabled(connected);
-        if(elements.statusWidget)
-            elements.statusWidget->setEnabled(connected);
-        // Could add visual feedback (grayed out, different styling, etc.)
+
+    // Menu actions and status widgets remain enabled regardless of connection
+    // state so the user can always open HwDialog — to inspect cached values,
+    // adjust settings, or reload a Python script after a failure. The control
+    // widget inside the dialog is what reflects the connection state.
+    auto it = d_openDialogs.find(hwKey);
+    if (it != d_openDialogs.end()) {
+        if (auto dlg = qobject_cast<HWDialog*>(it->second))
+            dlg->setControlWidgetEnabled(connected);
     }
-    
+
     // Update overall UI state
     configureUiForHardwareState();
 }
@@ -1493,9 +1493,11 @@ QWidget *MainWindow::wrapWithPythonWidget(const QString &hwKey, QWidget *typeWid
     return composite;
 }
 
-HWDialog *MainWindow::createHWDialog(const QString key, QWidget *controlWidget)
+HWDialog *MainWindow::createHWDialog(const QString key, QWidget *controlWidget, QWidget *managedWidget)
 {
-    auto out = new HWDialog(key,controlWidget);
+    auto out = new HWDialog(key, controlWidget, managedWidget);
+    auto cs = d_hardwareConnectionState.find(key);
+    out->setControlWidgetEnabled(cs != d_hardwareConnectionState.end() ? cs->second : true);
     d_openDialogs.insert({key,out});
     connect(out,&HWDialog::accepted,[this,key](){
         QMetaObject::invokeMethod(p_hwm,[this,key](){ p_hwm->updateObjectSettings(key); });
@@ -1541,9 +1543,15 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->appConfigAction->setEnabled(true);
         break;
     case Disconnected:
-        ui->actionCommunication->setEnabled(true);
-        ui->actionTest_All_Connections->setEnabled(true);
-        ui->actionRuntimeHardwareConfig->setEnabled(true);
+        // Hardware menu entries stay reachable so the user can open HwDialog
+        // for any device — to inspect cached settings or reload a Python
+        // script — while critical hardware is in a failed state. Acquisition
+        // remains locked out via the acq menu and via isCriticalHardwareConnected
+        // checks elsewhere.
+        for(auto act : hwl)
+            act->setEnabled(true);
+        if(ui->menuFtmwPreset->isEmpty())
+            ui->menuFtmwPreset->menuAction()->setEnabled(false);
         ui->appConfigAction->setEnabled(true);
         break;
     case Paused:

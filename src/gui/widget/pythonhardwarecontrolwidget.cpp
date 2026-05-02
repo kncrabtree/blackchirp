@@ -11,6 +11,7 @@
 #include <hardware/core/hardwaremanager.h>
 #include <hardware/core/hardwareprofilemanager.h>
 #include <data/bcglobals.h>
+#include <gui/style/themecolors.h>
 
 PythonHardwareControlWidget::PythonHardwareControlWidget(const QString &hwKey, HardwareManager *hwm, QWidget *parent)
     : QWidget(parent), d_hwKey(hwKey), p_hwm(hwm)
@@ -50,6 +51,8 @@ PythonHardwareControlWidget::PythonHardwareControlWidget(const QString &hwKey, H
     gbLayout->addLayout(buttonLayout);
 
     p_statusLabel = new QLabel(QStringLiteral("Running"));
+    p_statusLabel->setWordWrap(true);
+    p_statusLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
     gbLayout->addWidget(p_statusLabel);
 
     vbl->addWidget(gb);
@@ -63,8 +66,18 @@ void PythonHardwareControlWidget::onReloadResult(const QString &hwKey, bool succ
     if (hwKey != d_hwKey)
         return;
 
-    if (success)
+    if (success) {
         p_statusLabel->setText(QStringLiteral("Running"));
-    else
-        p_statusLabel->setText(QStringLiteral("Error: ") + msg);
+        p_statusLabel->setStyleSheet(QString());
+        p_statusLabel->setToolTip(QString());
+    } else {
+        const QString detail = msg.isEmpty()
+            ? QStringLiteral("Reload failed (no error detail provided).")
+            : msg;
+        p_statusLabel->setText(QStringLiteral("Error: ") + detail);
+        p_statusLabel->setStyleSheet(
+            QString("QLabel { color: %1; font-weight: bold; }")
+                .arg(ThemeColors::getCSSColor(ThemeColors::StatusError, this)));
+        p_statusLabel->setToolTip(detail);
+    }
 }

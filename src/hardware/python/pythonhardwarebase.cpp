@@ -34,10 +34,15 @@ void PythonHardwareBase::initPythonProcess(CommunicationProtocol *comm,
     pu_process->setComm(comm);
     pu_process->setHardwareInfo(d_pyKey, d_pyModel);
     pu_process->setSettingsCallbacks(std::move(getter), std::move(setter));
+
+    QObject::connect(pu_process.get(), &PythonProcess::processError,
+                     [this](const QString &msg){ d_pythonErrorString = msg; });
 }
 
 bool PythonHardwareBase::testPythonConnection(CommunicationProtocol *comm)
 {
+    d_pythonErrorString.clear();
+
     if (!pu_process->isRunning()) {
         if (!startPythonProcess())
             return false;

@@ -13,8 +13,9 @@
 #include <data/storage/settingsstorage.h>
 #include <data/bcglobals.h>
 
-HWDialog::HWDialog(const QString &key, QWidget *controlWidget, QWidget *parent)
-    : QDialog(parent), d_hwKey(key), p_controlWidget(controlWidget)
+HWDialog::HWDialog(const QString &key, QWidget *controlWidget, QWidget *managedWidget, QWidget *parent)
+    : QDialog(parent), d_hwKey(key), p_controlWidget(controlWidget),
+      p_managedWidget(managedWidget ? managedWidget : controlWidget)
 {
     setAttribute(Qt::WA_DeleteOnClose);
     setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
@@ -87,4 +88,10 @@ void HWDialog::accept()
 QSize HWDialog::sizeHint() const
 {
     return {600, 550};
+}
+
+void HWDialog::setControlWidgetEnabled(bool enabled)
+{
+    if (p_managedWidget)
+        p_managedWidget->setEnabled(enabled);
 }

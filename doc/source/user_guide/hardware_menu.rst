@@ -44,8 +44,10 @@ appear in the following order:
 #. **Per-device entries** — one entry per device in the active hardware map,
    labelled by the device's hardware key (``Type.Label``). Selecting an entry
    opens the :doc:`Hardware Dialog <hwdialog>` for that device. These entries
-   are enabled only while the device is connected; they are disabled while the
-   device is disconnected.
+   stay reachable regardless of connection state so that cached settings can be
+   inspected and Python scripts can be reloaded after a failure; the dialog's
+   **Control** tab is disabled while the device is offline and re-enabled
+   automatically when the device reconnects.
 
 .. _hardware-menu-communication:
 
@@ -172,9 +174,16 @@ Per-Device Entries
 Below the FTMW Configuration entry, one menu action appears for each device in
 the active hardware map, labelled by the device's hardware key
 (``Type.Label``). Selecting an entry opens the :doc:`Hardware Dialog
-<hwdialog>` for that device. These entries are enabled only while Blackchirp
-is connected to the device; they are disabled when the device is offline.
+<hwdialog>` for that device. These entries stay reachable regardless of
+connection state — including while Blackchirp is in the **Disconnected** state
+following a critical hardware failure — so that the user can inspect or edit
+cached settings, fix a bad communication parameter, or reload a Python script
+without restarting the application.
 
 The Hardware Dialog provides a **Settings** tab for persistent device settings
-and, for devices that support live control, a **Control** tab. See
-:doc:`hwdialog` for a full description of both tabs.
+and, for devices that support live control, a **Control** tab. The **Control**
+tab is disabled while the device is offline and re-enabled automatically when
+the device reconnects; the **Settings** tab is always editable. For Python
+hardware, the script-reload controls remain active even while the rest of the
+**Control** tab is disabled, so a broken script can be edited and reloaded
+in place. See :doc:`hwdialog` for a full description of both tabs.
