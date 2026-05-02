@@ -8,7 +8,7 @@
 // Registration
 // ============================================================================
 REGISTER_HARDWARE_META(PythonFlowController, "Python Flow Controller (user-defined Python script)")
-REGISTER_HARDWARE_PROTOCOLS(PythonFlowController, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
+REGISTER_HARDWARE_PROTOCOLS(PythonFlowController, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Gpib, CommunicationProtocol::Custom, CommunicationProtocol::Virtual)
 REGISTER_HARDWARE_SETTINGS(PythonFlowController,
     {BC::Key::Flow::pUnits, "Pressure Units",
      "Units for pressure reading display.",

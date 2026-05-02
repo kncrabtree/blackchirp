@@ -9,7 +9,7 @@
 // Registration
 // ============================================================================
 REGISTER_HARDWARE_META(PythonAwg, "Python AWG (user-defined Python script)")
-REGISTER_HARDWARE_PROTOCOLS(PythonAwg, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
+REGISTER_HARDWARE_PROTOCOLS(PythonAwg, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Gpib, CommunicationProtocol::Custom, CommunicationProtocol::Virtual)
 REGISTER_HARDWARE_SETTINGS(PythonAwg,
     {BC::Key::AWG::markerCount, "Marker Count", "Number of physical marker output channels",
      0, 0, QVariant{}, HwSettingPriority::Required}

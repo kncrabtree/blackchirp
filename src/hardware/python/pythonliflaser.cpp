@@ -9,7 +9,7 @@
 // Registration
 // ============================================================================
 REGISTER_HARDWARE_META(PythonLifLaser, "Python LIF Laser (user-defined Python script)")
-REGISTER_HARDWARE_PROTOCOLS(PythonLifLaser, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
+REGISTER_HARDWARE_PROTOCOLS(PythonLifLaser, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Gpib, CommunicationProtocol::Custom, CommunicationProtocol::Virtual)
 
 // ============================================================================
 // Constructor

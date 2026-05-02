@@ -8,7 +8,7 @@
 // Registration
 // ============================================================================
 REGISTER_HARDWARE_META(PythonClock, "Python Clock (user-defined Python script)")
-REGISTER_HARDWARE_PROTOCOLS(PythonClock, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
+REGISTER_HARDWARE_PROTOCOLS(PythonClock, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Gpib, CommunicationProtocol::Custom, CommunicationProtocol::Virtual)
 REGISTER_HARDWARE_SETTINGS(PythonClock,
     {BC::Key::PythonClock::numOutputs, "Number of Outputs", "Number of independent frequency outputs on this clock.", 1, 1, 8, HwSettingPriority::Required},
     {BC::Key::Clock::tunable, "Tunable", "Clock frequency can be changed at runtime.", true, QVariant{}, QVariant{}, HwSettingPriority::Required}

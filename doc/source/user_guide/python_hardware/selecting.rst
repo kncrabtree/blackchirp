@@ -72,6 +72,15 @@ template that matches the chosen implementation is copied to the
 location you pick, and the saved path is filled in on the new
 profile automatically.
 
+When you switch a Python profile to a real protocol after creating
+it, the **Communication Settings** dialog (Hardware → Communication)
+exposes the same RS-232 / TCP / GPIB / Custom / Virtual options the
+implementation registered. Picking **Custom** is appropriate when the
+driver bypasses ``self.comm`` entirely and talks to its hardware
+through a vendor Python package; the panel shows a note pointing the
+user back to the script in that case (see
+:ref:`python-hardware-custom-protocol`).
+
 The starter templates ship with working Virtual-protocol behavior
 and inline docstrings for every method, so a freshly copied script
 runs end-to-end before you change anything. Each template uses the

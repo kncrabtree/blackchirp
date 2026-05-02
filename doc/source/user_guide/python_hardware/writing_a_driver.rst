@@ -60,8 +60,8 @@ all relayed across the IPC pipe.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Routes through the C++ communication protocol that the user selected
-for this profile (RS-232, TCP, or Virtual). The driver does not need
-to know which protocol is in use.
+for this profile (RS-232, TCP, GPIB, or Virtual). The driver does not
+need to know which protocol is in use.
 
 .. code-block:: python
 
@@ -76,6 +76,22 @@ returns ``n`` raw bytes from the device. ``write_binary`` sends a raw
 byte sequence (for AWG waveform uploads, digitizer block transfers,
 etc.). All four raise ``ConnectionError`` if the underlying transport
 fails.
+
+.. _python-hardware-custom-protocol:
+
+The **Custom** protocol option is also available. Selecting it tells
+Blackchirp that the driver does not use the C++ ``self.comm`` transport
+at all — for example, when the script talks to its hardware through a
+vendor-supplied Python package, a USB-HID library, or a memory-mapped
+device. Connection parameters in this case are the **responsibility of
+the .py script**: declare them as constants near the top of the file
+or accept them as constructor arguments. The
+``REGISTER_CUSTOM_COMM`` mechanism that lets C++ Custom-protocol
+drivers expose typed fields in the Communication Settings dialog is
+intentionally C++-only; for a Python driver, editing the script is
+the simpler and only authoritative input. When the user picks the
+Custom protocol on a Python profile, the Communication Settings panel
+shows a note to that effect rather than a set of input fields.
 
 .. _python-hardware-settings-proxy:
 

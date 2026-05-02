@@ -136,6 +136,26 @@ The Python script path and class name are managed entirely by
 `HardwareProfileManager` (per-profile). There are no per-class settings
 keys for these values.
 
+### Supported communication protocols
+
+Each Python trampoline class registers `Rs232`, `Tcp`, `Gpib`,
+`Custom`, and `Virtual` via `REGISTER_HARDWARE_PROTOCOLS` (the
+`PythonGpibController` trampoline omits `Gpib`, since it *is* the
+GPIB controller). The `Custom` option is exposed deliberately, even
+though no `REGISTER_CUSTOM_COMM` defs are registered for any
+`Python*` class: it acts as the explicit "comm is handled by the
+.py script" indicator (vendor SDK, USB-HID, memory-mapped, etc.).
+`CustomProtocolWidget` detects the impl-name `Python` prefix in the
+zero-defs branch and shows a note to that effect rather than the
+generic "no custom settings" message. Connection parameters in this
+case are the responsibility of the script — there is intentionally
+no C++-side mechanism for a Python driver to declare custom-comm
+fields, since the user already owns the `.py` file and a constant at
+the top of the script (`SPCM_DEVICE = "/dev/spcm0"`, etc.) is the
+simpler and only authoritative input. See
+`doc/source/user_guide/python_hardware/writing_a_driver.rst` for the
+user-facing convention.
+
 ### File Layout
 
 ```

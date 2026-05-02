@@ -36,15 +36,15 @@ CustomProtocolWidget::CustomProtocolWidget(const QString& hardwareKey, QWidget *
     auto [hwType, label] = BC::Key::parseKey(hardwareKey);
     Q_UNUSED(label)
     SettingsStorage hwSettings(hardwareKey, SettingsStorage::Hardware);
-    QString hwImpl = hwSettings.get(BC::Key::HW::model, QString());
+    d_hwImpl = hwSettings.get(BC::Key::HW::model, QString());
 
-    generateDynamicUI(loadDefs(hwType, hwImpl));
+    generateDynamicUI(loadDefs(hwType, d_hwImpl));
     loadProtocolSettings();
 }
 
 CustomProtocolWidget::CustomProtocolWidget(const QString& hwType, const QString& hwImpl,
                                            QWidget *parent)
-    : ProtocolWidget(QString(), parent)
+    : ProtocolWidget(QString(), parent), d_hwImpl(hwImpl)
 {
     setupUI();
     generateDynamicUI(loadDefs(hwType, hwImpl));
@@ -73,7 +73,12 @@ void CustomProtocolWidget::generateDynamicUI(const QVector<CustomCommDef>& defs)
     clearDynamicUI();
 
     if (defs.isEmpty()) {
-        auto *noSettingsLabel = new QLabel("No custom settings defined for this hardware.", this);
+        QString text = d_hwImpl.startsWith("Python"_L1)
+            ? "Communication for this Python driver is handled by the .py script. "
+              "Edit the script to configure connection parameters."_L1
+            : "No custom settings defined for this hardware."_L1;
+        auto *noSettingsLabel = new QLabel(text, this);
+        noSettingsLabel->setWordWrap(true);
         noSettingsLabel->setStyleSheet("color: gray; font-style: italic;");
         p_formLayout->addRow(noSettingsLabel);
         d_dynamicWidgets.append(noSettingsLabel);

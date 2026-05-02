@@ -58,10 +58,15 @@ conda layouts (see :doc:`selecting`).
 Within the subprocess, an injected ``self.comm`` proxy relays
 communication-protocol calls back to Blackchirp's C++ side, so a
 Python driver uses the same RS-232, TCP, GPIB, or Virtual protocol
-that the rest of the application uses. Settings reads and writes go
-through ``self.settings``, and log messages routed through
-``self.log`` appear in the hardware log panel alongside messages
-from C++ drivers.
+that the rest of the application uses. The **Custom** protocol is
+also exposed: selecting it tells Blackchirp that the driver does not
+use the C++ ``self.comm`` transport at all (typical when the script
+talks to its hardware through a vendor-supplied Python package or
+USB-HID library), and that any connection parameters live inside the
+``.py`` script itself. See :ref:`python-hardware-custom-protocol` for
+the convention. Settings reads and writes go through
+``self.settings``, and log messages routed through ``self.log``
+appear in the hardware log panel alongside messages from C++ drivers.
 
 .. _python-hardware-security:
 

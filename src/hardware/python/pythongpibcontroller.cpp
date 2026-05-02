@@ -8,7 +8,7 @@
 // Registration
 // ============================================================================
 REGISTER_HARDWARE_META(PythonGpibController, "Python GPIB Controller (user-defined Python script)")
-REGISTER_HARDWARE_PROTOCOLS(PythonGpibController, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
+REGISTER_HARDWARE_PROTOCOLS(PythonGpibController, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Custom, CommunicationProtocol::Virtual)
 REGISTER_HARDWARE_SETTINGS(PythonGpibController)
 
 // ============================================================================

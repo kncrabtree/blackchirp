@@ -10,7 +10,7 @@
 // Registration
 // ============================================================================
 REGISTER_HARDWARE_META(PythonLifScope, "Python LIF Digitizer (user-defined Python script)")
-REGISTER_HARDWARE_PROTOCOLS(PythonLifScope, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
+REGISTER_HARDWARE_PROTOCOLS(PythonLifScope, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Gpib, CommunicationProtocol::Custom, CommunicationProtocol::Virtual)
 REGISTER_HARDWARE_SETTINGS(PythonLifScope,
     {BC::Key::Digi::canBlockAverage, "Block Average", "Supports block averaging mode", true,  QVariant{}, QVariant{}, HwSettingPriority::Optional},
     {BC::Key::Digi::maxAverages,     "Max Averages",  "Maximum number of block averages", 100, QVariant{}, QVariant{}, HwSettingPriority::Optional}

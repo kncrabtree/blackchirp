@@ -10,7 +10,7 @@
 // Registration
 // ============================================================================
 REGISTER_HARDWARE_META(PythonPulseGenerator, "Python Pulse Generator (user-defined Python script)")
-REGISTER_HARDWARE_PROTOCOLS(PythonPulseGenerator, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
+REGISTER_HARDWARE_PROTOCOLS(PythonPulseGenerator, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Gpib, CommunicationProtocol::Custom, CommunicationProtocol::Virtual)
 // ============================================================================
 // Constructor
 // ============================================================================

@@ -65,6 +65,26 @@ import threading
 import time
 
 
+# ---------------------------------------------------------------------------
+# Connection settings
+# ---------------------------------------------------------------------------
+# When this profile uses the **Custom** communication protocol in Blackchirp,
+# self.comm is not connected to anything — the driver is expected to talk to
+# its hardware on its own (vendor SDK, USB-HID library, memory-mapped device,
+# etc.). Declare any required parameters here so they live in one obvious
+# place at the top of the file. Edit these values for your installation.
+#
+# The example below targets the Spectrum Instrumentation `spcm` Python
+# package (https://github.com/SpectrumInstrumentation/spcm),
+# which addresses cards by a string identifier such as "/dev/spcm0" on Linux
+# or "TCPIP::192.168.1.10::INSTR" on a remote networked card. Replace the
+# value with whatever your acquisition card needs.
+SPCM_DEVICE = "/dev/spcm0"
+
+# Optional: timeout (ms) applied to vendor-library calls.
+SPCM_TIMEOUT_MS = 5000
+
+
 class FtmwScopeDriver:
     """Python FTMW Digitizer hardware driver.
 
@@ -113,9 +133,20 @@ class FtmwScopeDriver:
             bool: True if communication is working, False otherwise.
 
         Examples:
-            # Query device identity:
+            # Query device identity over the C++ comm transport:
             # response = self.comm.query("*IDN?\\n")
             # return "ACQIRIS" in response or "KEYSIGHT" in response
+
+            # Or, when the Custom protocol is selected and the driver owns
+            # the connection (e.g., Spectrum spcm Python package):
+            # import spcm
+            # try:
+            #     self._card = spcm.Card(SPCM_DEVICE)
+            #     self._card.timeout(SPCM_TIMEOUT_MS)
+            #     return True
+            # except spcm.SpcmException as exc:
+            #     self.log.error(f"Spectrum card open failed: {exc}")
+            #     return False
         """
         self.log.log("Testing FTMW Scope connection")
         return True

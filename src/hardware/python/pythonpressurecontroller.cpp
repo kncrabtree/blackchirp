@@ -11,7 +11,7 @@
 // Registration
 // ============================================================================
 REGISTER_HARDWARE_META(PythonPressureController, "Python Pressure Controller (user-defined Python script)")
-REGISTER_HARDWARE_PROTOCOLS(PythonPressureController, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
+REGISTER_HARDWARE_PROTOCOLS(PythonPressureController, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Gpib, CommunicationProtocol::Custom, CommunicationProtocol::Virtual)
 REGISTER_HARDWARE_SETTINGS(PythonPressureController,
     {BC::Key::PController::readOnly, "Read Only",
      "Device is a read-only pressure gauge (no valve control).",

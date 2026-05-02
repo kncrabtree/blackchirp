@@ -14,7 +14,7 @@ using namespace BC::Key::Digi;
 // Registration
 // ============================================================================
 REGISTER_HARDWARE_META(PythonFtmwScope, "Python FTMW Digitizer (user-defined Python script)")
-REGISTER_HARDWARE_PROTOCOLS(PythonFtmwScope, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
+REGISTER_HARDWARE_PROTOCOLS(PythonFtmwScope, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Gpib, CommunicationProtocol::Custom, CommunicationProtocol::Virtual)
 
 REGISTER_HARDWARE_ARRAY(PythonFtmwScope, sampleRates,
     "Sample Rates", "Available digitizer sample rates",

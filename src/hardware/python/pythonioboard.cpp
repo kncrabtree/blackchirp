@@ -9,7 +9,7 @@
 // Registration
 // ============================================================================
 REGISTER_HARDWARE_META(PythonIOBoard, "Python IO Board (user-defined Python script)")
-REGISTER_HARDWARE_PROTOCOLS(PythonIOBoard, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Virtual)
+REGISTER_HARDWARE_PROTOCOLS(PythonIOBoard, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Gpib, CommunicationProtocol::Custom, CommunicationProtocol::Virtual)
 REGISTER_HARDWARE_SETTINGS(PythonIOBoard,
     {BC::Key::Digi::numAnalogChannels, "Analog Channels", "Number of analog input channels",
      0, 0, 128, HwSettingPriority::Required},

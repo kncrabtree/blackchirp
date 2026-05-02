@@ -62,6 +62,8 @@ private:
     void generateDynamicUI(const QVector<CustomCommDef>& defs);
     void clearDynamicUI();
 
+    QString d_hwImpl;
+
     QVBoxLayout *p_layout;
     QFormLayout *p_formLayout;
 
