@@ -49,19 +49,6 @@ M4i2211x8::M4i2211x8(const QString& label, QObject *parent) :
     LifScope(QString(M4i2211x8::staticMetaObject.className()), label, parent),
     p_handle(nullptr)
 {
-    using namespace BC::Key::Digi;
-    setDefault(canMultiRecord,false);
-    setDefault(multiBlock,false);
-
-    if(!containsArray(sampleRates))
-        setArray(sampleRates,{
-                     {{srText,"78.125 MSa/s"},{srValue,2.5e9/32}},
-                     {{srText,"156.25 MSa/s"},{srValue,2.5e9/16}},
-                     {{srText,"312.5 MSa/s"},{srValue,2.5e9/8}},
-                     {{srText,"625 MSa/s"},{srValue,2.5e9/4}},
-                     {{srText,"1250 MSa/s"},{srValue,2.5e9/2}},
-                 });
-
 }
 
 M4i2211x8::~M4i2211x8()
