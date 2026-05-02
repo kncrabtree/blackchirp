@@ -1,18 +1,25 @@
 Plot Controls
 =============
 
-All of the plots in Blackchirp share a common set of zoom/pan controls and customization options.
-Each plot can be configured individually, and the most recently-used settings should be recalled each time the program is started.
-You can configure the appearance of each curve, change which vertical axis a curve is plotted against, control the appearance of a plot grid, and more.
+All plots in Blackchirp share a common set of zoom/pan controls and
+customization options.
+Each plot is configured individually, and the most recent settings are
+recalled when the program starts.
+You can configure the appearance of each curve, change which vertical
+axis a curve is plotted against, control the appearance of the plot
+grid, and apply or save reusable curve presets.
 
 Zooming and Panning
 -------------------
 
-Zooming is accomplished by using the mouse wheel or by left-clicking and dragging a rectangle on the plot.
+Zooming is performed with the mouse wheel or by left-clicking and
+dragging a rectangle on the plot.
 While dragging a rectangle, press the ``z`` key to cancel.
-With the mouse wheel, scrolling up zooms in, and scrolling down zooms out.
-It is currently not possible to zoom out using the rectangle dragging method.
-By default, zooming will affect the X axis and both Y axes at the same time.
+With the mouse wheel, scrolling up zooms in and scrolling down zooms
+out.
+Rectangle dragging only zooms in; use the mouse wheel or keyboard to
+zoom out.
+By default, zooming affects the X axis and both Y axes simultaneously.
 This behavior can be changed using modifier keys:
 
 - ``Ctrl``: Zoom X axis only; Y axes are fixed.
@@ -20,12 +27,15 @@ This behavior can be changed using modifier keys:
 - ``Meta`` (Windows key): Zoom left axis only (only for scroll zooming).
 - ``Alt``: Zoom right axis only (only for scroll zooming).
 
-To zoom out immediately to the full range of the data, double-click the plot or press the ``Home`` key.
-Alternatively, you can right-click the plot and choose the ``Autoscale`` option.
+To zoom out immediately to the full range of the data, double-click the
+plot or press the ``Home`` key.
+Alternatively, right-click the plot and choose ``Autoscale``.
 The zoom limits are determined by the X and Y range spanned by the data.
 
-Panning the plot is accomplished by middle-clicking anywhere on the plot and dragging.
-Like with zooming, the panning range is limited to the range of the data displayed on the plot, so panning is not possible when the plot is at full scale.
+Panning is performed by middle-clicking anywhere on the plot and
+dragging.
+As with zooming, panning is limited to the range of the data displayed
+on the plot, so it has no effect when the plot is at full scale.
 
 Keyboard controls are also available for zooming and panning:
 
@@ -41,38 +51,116 @@ Plot Configuration Options
 --------------------------
 
 .. image:: /_static/user_guide/plot_controls/contextmenu.png
-   :width: 400
+   :width: 800
    :align: center
    :alt: Plot context menu
 
-The right-click context menu contains a variety of customization options to control the appearance and behavior of the plot as a whole.
+The right-click context menu contains options that control the
+appearance and behavior of the plot as a whole:
 
-- ``Autoscale``: resets the X and Y axes to show the full range of the data on the plot.
+- ``Autoscale``: Reset both axes to show the full range of the data.
 - ``Zoom Settings``:
-   - ``Y Center?``: Toggles whether zooming with the ``Up/Down`` arrows is symmetric about the plot center (checked) or about 0.0 (unchecked).
-   - ``Wheel Zoom Factors``: Sets the zooming speed while scrolling the mouse wheel for a given axis. Larger numbers will zoom by a greater factor per mouse wheel step. The default value for each axis is 0.1.
-- ``Tracker``: Enable the tracker to display the coordinates of the mouse cursor on the plot. For each axis, you can configure the number of decimals displayed and, optionally, switch to scientific notation if desired.
-- ``Grid``: Configure the appearance of major and minor gridlines. It is possible to control the line style and color for each type of gridline.
-- ``Curves``: Options for configuring the appearance of curves on the plot. More details are below.
 
-Additionally, on the Rolling and Aux Data plots, two additional options are available.
+  - ``Y Center?``: Toggles whether zooming with the ``Up/Down`` arrows is symmetric about the plot center (checked) or about 0.0 (unchecked).
+  - ``Wheel Zoom Factors``: Sets the zoom speed for each axis when scrolling the mouse wheel. Larger numbers zoom by a greater factor per wheel step. The default value for each axis is 0.1.
 
-- ``Push X Axis``: Set the X scale of all plots to match the selected plot.
+- ``Tracker``: Enable the tracker to display the coordinates of the mouse cursor on the plot. For each axis, you can configure the number of decimals displayed and, optionally, switch to scientific notation.
+- ``Grid``: Configure the appearance of major and minor gridlines. The line style and color are configurable independently for each type of gridline.
+- ``Curves``: Per-curve appearance and preset controls; see :ref:`curve-configuration-options` below.
+
+On the Rolling and Aux Data plots, two extra entries appear at the
+bottom of the menu:
+
+- ``Push X Axis``: Set the X scale of all other plots to match the selected plot.
 - ``Autoscale All``: Apply the autoscale action to all plots.
+
+
+.. _curve-configuration-options:
 
 Curve Configuration Options
 ---------------------------
 
-As shown in the image above, each curve that is displayed on the plot can be individually configured. Under the ``Curves`` context menu entry, a submenu is available for each curve with the following options:
+The ``Curves`` entry in the context menu opens a submenu listing every
+curve on the plot.
+Selecting a curve opens its configuration submenu, which contains an
+``Export XY`` action at the top, a ``Presets`` group, and an
+``Appearance`` group.
+On the Rolling and Aux Data plots, an additional ``Change plot``
+submenu appears at the bottom for moving the curve between plots.
+Changes made through the appearance controls are applied to the curve
+immediately.
 
-- ``Export XY``: Generate a csv file containing the currently displayed data.
-- ``Color...``: Change the color of the curve.
-- ``Line Width``: Change the thickness of the line drawn for the curve.
-- ``Line Style``: Change the style (solid, dashed, etc) of the line. Set to "None" if no line is desired.
-- ``Marker``: Change the plot marker used for each data point. Set to "None" if no marker is desired.
-- ``Marker Size``: Change the size of the marker.
-- ``Visible``: Control whether the curve is displayed. If a curve is not visible, it is not included in the autoscale calculation.
-- ``Y Axis``: Change which Y axis the curve is plotted on.
-- ``Change Plot``: Rolling/Aux Data only. Move the curve to a different plot. The plots are numbered from left to right, then top to bottom.
+- ``Export XY``: Generate a CSV file containing the data currently displayed for this curve.
+
+The ``Appearance`` group exposes the following controls:
+
+- ``Color``: Open a color picker to set the curve color.
+- ``Type``: Select how the curve is rendered: ``Line Plot``, ``Stick Plot``, ``Step Plot``, ``Scatter Dots``, or ``No Curve``.
+- ``Width``: Set the line thickness.
+- ``Style``: Set the line style (solid, dashed, dotted, etc.). Choose ``None`` to suppress the line.
+- ``Marker``: Set the plot marker drawn at each data point. Choose ``None`` to suppress markers.
+- ``Size``: Set the marker size.
+- ``Visible``: Toggle whether the curve is drawn.
+- ``Autoscale``: Toggle whether the curve is included when the axis limits are computed during an autoscale operation.
+- ``Y Axis``: Choose which Y axis the curve is plotted against (``Left`` or ``Right``).
+
+On the Rolling and Aux Data plots, the ``Change plot`` submenu moves
+the curve to a different plot in the grid.
+The plots are numbered from left to right, then top to bottom.
 
 
+Curve Presets
+-------------
+
+The ``Presets`` group at the top of each curve's submenu saves a full
+set of appearance settings — color, type, width, line style, marker,
+marker size, visibility, autoscale flag, and Y axis assignment — under
+a name and applies that combination to any curve in any plot.
+Presets are stored globally; they are shared across plots and persist
+across program runs.
+
+Default Presets
+^^^^^^^^^^^^^^^
+
+Blackchirp ships with nine default presets that are created the first
+time the program is run:
+
+- ``Curve - Primary``, ``Curve - Secondary``, ``Curve - Tertiary`` — solid line plots in three palette-derived colors.
+- ``Stem - Primary``, ``Stem - Secondary``, ``Stem - Tertiary`` — stick (stem) plots in the same three colors.
+- ``Scatter - Circles``, ``Scatter - Squares``, ``Scatter - Diamonds`` — marker-only scatter plots with circular, square, and diamond markers.
+
+Default presets cannot be deleted or renamed, but their contents can be
+overwritten (see :ref:`saving-a-preset` below).
+When a default preset is selected in the ``Preset`` drop-down, the
+``Delete`` button is disabled.
+
+Applying a Preset
+^^^^^^^^^^^^^^^^^
+
+To apply a preset to the current curve, choose its name from the
+``Preset`` drop-down.
+The curve updates immediately, and the controls in the ``Appearance``
+group below reflect the preset's values.
+
+.. _saving-a-preset:
+
+Saving a Preset
+^^^^^^^^^^^^^^^
+
+Click ``Save`` to open the **Save Curve Appearance Preset** dialog,
+which offers two modes:
+
+- **Create new preset**: Enter a name for a new preset. A suggestion derived from the current appearance settings is pre-filled and may be edited. If the chosen name matches an existing preset, a confirmation prompt appears before the existing preset is overwritten.
+- **Overwrite existing preset**: Choose an existing preset from the drop-down (default presets are tagged ``(default)``) and replace its contents with the current appearance. This is the only way to modify a default preset.
+
+After saving, the new or updated preset is selected in the ``Preset``
+drop-down.
+
+Deleting a Preset
+^^^^^^^^^^^^^^^^^
+
+To delete a custom preset, select it in the drop-down and click
+``Delete``.
+A confirmation dialog appears before the preset is removed.
+The ``Delete`` button is disabled when no preset is selected or when
+the selected preset is a default.

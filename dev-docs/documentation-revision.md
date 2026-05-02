@@ -175,6 +175,18 @@ in each bundle file.
   documentation under `doc/source/python/` are out of scope for this
   revision unless a bundle explicitly touches them.
 
+## Out-of-band page refreshes
+
+Pages outside any bundle's declared scope may be refreshed directly
+when a small gap is discovered. These edits do not require an
+orchestrator/drafter/verifier cycle.
+
+- `doc/source/user_guide/plot_controls.rst` — refreshed context-menu
+  description, added the per-curve `Type` and `Autoscale` controls,
+  and added a new **Curve Presets** section covering the nine default
+  presets, the **Save Curve Appearance Preset** dialog, and the
+  apply/save/delete workflows.
+
 ## Orchestrator instructions
 
 This plan is designed to be driven by an **orchestrator** (Opus,
