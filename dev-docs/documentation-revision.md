@@ -40,7 +40,7 @@ requirements, and acceptance criteria.
 | 11 | Migration guide v1.x → 2.0.0 + Changelog | S | most user-guide bundles | not started |
 | 12 | Developer Guide | L | — (independent) | not started |
 | 13a | API ref: refresh existing 5 (HardwareObject etc.) | S | — | complete |
-| 13b | API ref: hardware-management classes | S | 13a | not started |
+| 13b | API ref: hardware-management classes | S | 13a | complete |
 | 13c | API ref: Python hardware classes | S | 13a | not started |
 | 13d | API ref: loadout/preset classes | S | 13a | not started |
 | 13e | API ref: data/experiment classes | M | 13a | not started |
@@ -58,10 +58,13 @@ Status values:
 - **in progress** — drafter has been dispatched but the bundle is not
   yet accepted. The bundle's own header (see "Bundle status header"
   below) carries the detail (revision pass, open punch list).
-- **drafted** — drafter output has landed in the working tree but the
-  user has not yet committed. Awaiting user review.
-- **complete** — user has committed the bundle's changes. The commit
-  hash is recorded in the bundle's own status header for traceability.
+- **drafted** — drafter output has landed in the working tree, the
+  verifier punch list is resolved, and the orchestrator has handed
+  off to the user for review of the rendered docs. The bundle stays
+  in `drafted` through any user-directed revision rounds.
+- **complete** — the bundle's content commit (stage 1 of the
+  two-stage commit pattern) has landed. The commit hash is recorded
+  in the bundle's own status header for traceability.
 - **blocked** — work has been attempted but cannot proceed without a
   human decision (scope drift, dependency on un-merged work, source
   ambiguity). The blocker is described in the bundle's header.
@@ -236,19 +239,38 @@ briefs subagents, judges results, and merges.
    Edit. Do not loop through more than two revision passes; if a
    third is needed, the bundle scope is wrong and needs human
    input.
-5. **Stage the content commit** once acceptance is reached. Stage
-   only files inside `doc/source/` (the bundle's declared scope).
-   Do not stage anything under `dev-docs/`. Report a one-paragraph
-   summary of what landed and what was left as TODO (typically:
-   screenshots), then wait for the user to commit (the **content
-   commit**, stage 1).
-6. **After stage 1 lands**, record the content commit hash: update
-   the master-plan table (this file, status → `complete`) and the
-   bundle's own status header (status → `complete`, append a
-   status-log entry with the stage-1 hash). Stage those two
-   `dev-docs/` files and prepare the **tracking commit** with the
-   subject `Update documentation revision tracking status`. Wait
-   for the user to commit (stage 2).
+5. **Sanity-check and hand off to the user for review.** Once the
+   verifier's punch list is resolved, do a quick orchestrator-level
+   sanity check on the working-tree diff (file count plausible,
+   nothing landed outside scope, headers and RSTs touched the
+   classes the bundle declares). Then report to the user with
+   anything that explicitly needs their attention: screenshots
+   that need to be captured, design decisions the drafter made
+   that they should sign off on, unexpected output, scope
+   adjustments made mid-flight, or any acceptance criterion the
+   drafter could not satisfy. Keep the report short — the user
+   builds the docs locally (`cmake --build build --target docs`),
+   reads the rendered output, and replies with revisions or
+   approval. Loop on user-directed revisions (drafter or direct
+   Edit, whichever is cheaper) until the user signals they are
+   satisfied. Do not stage anything during this phase — the
+   working tree stays unstaged so the user can experiment freely.
+6. **Stage and run the two-stage commit** once the user has
+   approved the bundle. Stage 1 is the **content commit**: every
+   file the bundle declared as in scope (typically the new/edited
+   files under `doc/source/`, plus any header refreshes the bundle
+   authorized in `src/`). Stage only those files; do not stage
+   anything under `dev-docs/` for stage 1. Commit with a subject
+   that names the bundle's deliverable (not "Bundle 13b"; the
+   reader of `git log` does not care which bundle it was).
+7. **Stage 2 is the tracking commit.** Record the stage-1 commit
+   hash in the bundle's status header (status → `complete`,
+   append a status-log entry with the hash) and update the
+   master-plan table (status → `complete`). Stage those two
+   `dev-docs/` files and commit with the subject
+   `Update documentation revision tracking status`. The
+   orchestrator may run both commits itself, or wait for the user
+   to commit, per the user's preference for the session.
 
 ### Orchestrator hygiene
 
@@ -293,8 +315,9 @@ Before each drafter dispatch, the orchestrator confirms:
       list (per the "Common conventions for bundle authors"
       American-English rule).
 - [ ] Stage 1 (content commit) and stage 2 (tracking commit) are
-      treated as separate user commits; the orchestrator does not
-      combine them.
+      treated as separate commits — never combined. Both are run
+      only after the user has reviewed the rendered docs and
+      signed off on the bundle.
 
 ### Bundle status header
 
