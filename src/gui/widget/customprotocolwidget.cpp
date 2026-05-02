@@ -1,143 +1,191 @@
 #include <gui/widget/customprotocolwidget.h>
-#include <hardware/core/communication/custominstrument.h>
+#include <data/bcglobals.h>
 #include <data/settings/hardwarekeys.h>
+#include <hardware/core/hardwareregistry.h>
 
 #include <QVBoxLayout>
 #include <QFormLayout>
+#include <QHBoxLayout>
 #include <QLineEdit>
 #include <QSpinBox>
+#include <QPushButton>
 #include <QLabel>
+#include <QFileDialog>
+#include <QSettings>
+#include <QCoreApplication>
 
-CustomProtocolWidget::CustomProtocolWidget(const QString& hardwareKey, QWidget *parent) :
-    ProtocolWidget(hardwareKey, parent)
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+static QVector<CustomCommDef> loadDefs(const QString& hwType, const QString& hwImpl)
+{
+    return HardwareRegistry::instance().getCustomCommDefs(hwType, hwImpl);
+}
+
+// ---------------------------------------------------------------------------
+// Constructors
+// ---------------------------------------------------------------------------
+
+CustomProtocolWidget::CustomProtocolWidget(const QString& hardwareKey, QWidget *parent)
+    : ProtocolWidget(hardwareKey, parent)
 {
     setupUI();
-    generateDynamicUI();
+
+    // Derive hwType and implementation from the per-profile storage key.
+    auto [hwType, label] = BC::Key::parseKey(hardwareKey);
+    Q_UNUSED(label)
+    SettingsStorage hwSettings(hardwareKey, SettingsStorage::Hardware);
+    QString hwImpl = hwSettings.get(BC::Key::HW::model, QString());
+
+    generateDynamicUI(loadDefs(hwType, hwImpl));
+    loadProtocolSettings();
 }
+
+CustomProtocolWidget::CustomProtocolWidget(const QString& hwType, const QString& hwImpl,
+                                           QWidget *parent)
+    : ProtocolWidget(QString(), parent)
+{
+    setupUI();
+    generateDynamicUI(loadDefs(hwType, hwImpl));
+    // No values to load — fields remain at their type-appropriate defaults.
+}
+
+// ---------------------------------------------------------------------------
+// UI setup
+// ---------------------------------------------------------------------------
 
 void CustomProtocolWidget::setupUI()
 {
     p_layout = new QVBoxLayout(this);
-    
-    // Header label
-    auto headerLabel = new QLabel("<b>Custom Protocol Configuration</b>", this);
+
+    auto *headerLabel = new QLabel("<b>Custom Protocol Configuration</b>", this);
     p_layout->addWidget(headerLabel);
-    
-    // Form layout for dynamic fields
+
     p_formLayout = new QFormLayout();
     p_layout->addLayout(p_formLayout);
-    
+
     p_layout->addStretch();
 }
 
-void CustomProtocolWidget::generateDynamicUI()
+void CustomProtocolWidget::generateDynamicUI(const QVector<CustomCommDef>& defs)
 {
-    // Clear any existing dynamic UI
     clearDynamicUI();
-    
-    // Check if the hardware has custom communication settings defined
-    if (!containsArray(BC::Key::Custom::comm)) {
-        auto noSettingsLabel = new QLabel("No custom settings defined for this hardware.", this);
+
+    if (defs.isEmpty()) {
+        auto *noSettingsLabel = new QLabel("No custom settings defined for this hardware.", this);
         noSettingsLabel->setStyleSheet("color: gray; font-style: italic;");
         p_formLayout->addRow(noSettingsLabel);
         d_dynamicWidgets.append(noSettingsLabel);
         return;
     }
-    
-    // Get the communication settings array
-    auto commArraySize = getArraySize(BC::Key::Custom::comm);
-    
-    for (std::size_t i = 0; i < commArraySize; ++i) {
-        // Get field definition
-        QString key = getArrayValue<QString>(BC::Key::Custom::comm, i, BC::Key::Custom::key, QString());
-        QString type = getArrayValue<QString>(BC::Key::Custom::comm, i, BC::Key::Custom::type, QString());
-        QString label = getArrayValue<QString>(BC::Key::Custom::comm, i, BC::Key::Custom::label, key);
-        
-        if (key.isEmpty() || type.isEmpty()) {
-            continue;
-        }
-        
-        if (type == BC::Key::Custom::stringKey) {
-            // Create string input field
-            auto lineEdit = new QLineEdit(this);
-            
-            // Check for maximum length constraint
-            int maxLen = getArrayValue<int>(BC::Key::Custom::comm, i, BC::Key::Custom::maxLen, 100);
+
+    for (const auto& def : defs) {
+        switch (def.type) {
+        case CustomCommType::String: {
+            auto *lineEdit = new QLineEdit(this);
+            int maxLen = def.bound.isValid() ? def.bound.toInt() : 100;
             lineEdit->setMaxLength(maxLen);
-            
-            // Add to form
-            p_formLayout->addRow(label + ":", lineEdit);
-            
-            // Track for later access
-            d_stringFields.append(qMakePair(key, lineEdit));
+            if (!def.description.isEmpty())
+                lineEdit->setToolTip(def.description);
+            p_formLayout->addRow(def.label + ":", lineEdit);
+            d_stringFields.append(qMakePair(def.key, lineEdit));
             d_dynamicWidgets.append(lineEdit);
-            
-        } else if (type == BC::Key::Custom::intKey) {
-            // Create integer input field
-            auto spinBox = new QSpinBox(this);
-            
-            // Set range constraints
-            int minVal = getArrayValue<int>(BC::Key::Custom::comm, i, BC::Key::Custom::intMin, 0);
-            int maxVal = getArrayValue<int>(BC::Key::Custom::comm, i, BC::Key::Custom::intMax, 100000);
+            break;
+        }
+        case CustomCommType::Int: {
+            auto *spinBox = new QSpinBox(this);
+            int minVal = def.bound.isValid()  ? def.bound.toInt()  : 0;
+            int maxVal = def.bound2.isValid() ? def.bound2.toInt() : 100000;
             spinBox->setRange(minVal, maxVal);
-            
-            // Add to form
-            p_formLayout->addRow(label + ":", spinBox);
-            
-            // Track for later access
-            d_intFields.append(qMakePair(key, spinBox));
+            spinBox->setValue(minVal);
+            if (!def.description.isEmpty())
+                spinBox->setToolTip(def.description);
+            p_formLayout->addRow(def.label + ":", spinBox);
+            d_intFields.append(qMakePair(def.key, spinBox));
             d_dynamicWidgets.append(spinBox);
+            break;
+        }
+        case CustomCommType::FilePath: {
+            auto *rowWidget = new QWidget(this);
+            auto *rowLayout = new QHBoxLayout(rowWidget);
+            rowLayout->setContentsMargins(0, 0, 0, 0);
+            auto *lineEdit = new QLineEdit(rowWidget);
+            if (!def.description.isEmpty())
+                lineEdit->setToolTip(def.description);
+            auto *browseBtn = new QPushButton("Browse…", rowWidget);
+            rowLayout->addWidget(lineEdit);
+            rowLayout->addWidget(browseBtn);
+            connect(browseBtn, &QPushButton::clicked, this, [lineEdit, this]() {
+                QString path = QFileDialog::getOpenFileName(this, tr("Select File"), lineEdit->text());
+                if (!path.isEmpty())
+                    lineEdit->setText(path);
+            });
+            p_formLayout->addRow(def.label + ":", rowWidget);
+            d_filePathFields.append(qMakePair(def.key, lineEdit));
+            d_dynamicWidgets.append(rowWidget);
+            break;
+        }
         }
     }
 }
 
 void CustomProtocolWidget::clearDynamicUI()
 {
-    // Remove and delete all dynamic widgets
-    for (auto widget : d_dynamicWidgets) {
+    for (auto *widget : d_dynamicWidgets) {
         p_formLayout->removeWidget(widget);
         widget->deleteLater();
     }
-    
     d_dynamicWidgets.clear();
     d_stringFields.clear();
     d_intFields.clear();
+    d_filePathFields.clear();
 }
+
+// ---------------------------------------------------------------------------
+// Load / save
+// ---------------------------------------------------------------------------
 
 void CustomProtocolWidget::loadProtocolSettings()
 {
-    // Load values from group storage into UI controls
-    for (const auto& field : d_stringFields) {
-        const QString& key = field.first;
-        QLineEdit* lineEdit = field.second;
-        
-        QString value = getGroupValue<QString>(BC::Key::Comm::custom, key, QString());
-        lineEdit->setText(value);
-    }
-    
-    for (const auto& field : d_intFields) {
-        const QString& key = field.first;
-        QSpinBox* spinBox = field.second;
-        
-        int value = getGroupValue<int>(BC::Key::Comm::custom, key, spinBox->minimum());
-        spinBox->setValue(value);
-    }
+    for (const auto& [key, lineEdit] : d_stringFields)
+        lineEdit->setText(getGroupValue<QString>(BC::Key::Comm::custom, key, QString()));
+
+    for (const auto& [key, spinBox] : d_intFields)
+        spinBox->setValue(getGroupValue<int>(BC::Key::Comm::custom, key, spinBox->minimum()));
+
+    for (const auto& [key, lineEdit] : d_filePathFields)
+        lineEdit->setText(getGroupValue<QString>(BC::Key::Comm::custom, key, QString()));
 }
 
 void CustomProtocolWidget::saveProtocolSpecificSettings()
 {
-    // Save values from UI controls to group storage
-    for (const auto& field : d_stringFields) {
-        const QString& key = field.first;
-        QLineEdit* lineEdit = field.second;
-        
+    for (const auto& [key, lineEdit] : d_stringFields)
         setGroupValue(BC::Key::Comm::custom, key, lineEdit->text());
-    }
-    
-    for (const auto& field : d_intFields) {
-        const QString& key = field.first;
-        QSpinBox* spinBox = field.second;
-        
+
+    for (const auto& [key, spinBox] : d_intFields)
         setGroupValue(BC::Key::Comm::custom, key, spinBox->value());
-    }
+
+    for (const auto& [key, lineEdit] : d_filePathFields)
+        setGroupValue(BC::Key::Comm::custom, key, lineEdit->text());
+}
+
+void CustomProtocolWidget::saveToStorage(const QString& storageKey) const
+{
+    QSettings s(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    s.beginGroup(storageKey);
+    s.beginGroup(BC::Key::Comm::custom);
+
+    for (const auto& [key, lineEdit] : d_stringFields)
+        s.setValue(key, lineEdit->text());
+
+    for (const auto& [key, spinBox] : d_intFields)
+        s.setValue(key, spinBox->value());
+
+    for (const auto& [key, lineEdit] : d_filePathFields)
+        s.setValue(key, lineEdit->text());
+
+    s.endGroup();
+    s.endGroup();
+    s.sync();
 }

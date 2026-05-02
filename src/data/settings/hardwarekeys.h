@@ -59,19 +59,6 @@ namespace GPIB {
     inline constexpr QLatin1StringView gpibController{"controller"}; // Future support for multiple controllers
 }
 
-// Custom protocol specific keys (from CustomInstrument)
-namespace Custom {
-    inline constexpr QLatin1StringView comm{"comm"}; /*!< Key for communication array. */
-    inline constexpr QLatin1StringView type{"type"}; /*!< Type of data entry field (stringKey or intKey). */
-    inline constexpr QLatin1StringView key{"key"}; /*!< Identifier key for this data field. */
-    inline constexpr QLatin1StringView intKey{"int"}; /*!< Key for integer data entry type. */
-    inline constexpr QLatin1StringView intMin{"min"}; /*!< Minimum allowed integer value. */
-    inline constexpr QLatin1StringView intMax{"max"}; /*!< Maximum allowed integer value. */
-    inline constexpr QLatin1StringView stringKey{"string"}; /*!< Key for string data entry type. */
-    inline constexpr QLatin1StringView maxLen{"length"}; /*!< Maximum allowed length of string. */
-    inline constexpr QLatin1StringView label{"name"}; /*!< Label displayed to user for this data field. */
-}
-
 // FTMW digitizer keys (from FtmwScope)
 namespace FtmwScope {
     inline constexpr QLatin1StringView ftmwScope{"FtmwDigitizer"}; /*!< FTMW digitizer hardware type key */

@@ -372,6 +372,62 @@ bool HardwareRegistry::addBaseArraySettingEntry(const QString& className, const 
     return true;
 }
 
+bool HardwareRegistry::addCustomCommDefs(const QString& key, const QString& subKey,
+                                         const QVector<CustomCommDef>& defs)
+{
+    QMutexLocker locker(&d_registryMutex);
+
+    QString registryKey = makeRegistryKey(key, subKey);
+    auto it = d_registrations.find(registryKey);
+
+    if (it == d_registrations.end()) {
+        qWarning() << "Cannot add custom comm defs - hardware not registered:" << key << subKey;
+        return false;
+    }
+
+    it.value().customCommDefs.append(defs);
+    return true;
+}
+
+QVector<CustomCommDef> HardwareRegistry::getCustomCommDefs(const QString& key, const QString& subKey) const
+{
+    QMutexLocker locker(&d_registryMutex);
+
+    QString registryKey = makeRegistryKey(key, subKey);
+    auto it = d_registrations.find(registryKey);
+
+    if (it == d_registrations.end())
+        return {};
+
+    QVector<CustomCommDef> result = it.value().customCommDefs;
+
+    QSet<QString> presentKeys;
+    for (const auto& def : result)
+        presentKeys.insert(def.key);
+
+    for (const QString& baseClass : it.value().inheritanceChain) {
+        auto baseIt = d_baseCustomCommDefs.find(baseClass);
+        if (baseIt != d_baseCustomCommDefs.end()) {
+            for (const auto& def : *baseIt) {
+                if (!presentKeys.contains(def.key)) {
+                    result.append(def);
+                    presentKeys.insert(def.key);
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
+bool HardwareRegistry::addBaseCustomCommDefs(const QString& className,
+                                             const QVector<CustomCommDef>& defs)
+{
+    QMutexLocker locker(&d_registryMutex);
+    d_baseCustomCommDefs[className].append(defs);
+    return true;
+}
+
 bool HardwareRegistry::addLibraryDependency(const QString& key, const QString& subKey, const QString& libraryName,
                                            std::function<VendorLibrary*()> libraryGetter)
 {

@@ -1,5 +1,6 @@
 #include "m4i2211x8.h"
 #include <hardware/core/hardwareregistration.h>
+#include <data/settings/hardwarekeys.h>
 
 #include <QTimer>
 
@@ -26,6 +27,9 @@ REGISTER_HARDWARE_ARRAY_ENTRY(M4i2211x8, BC::Key::Digi::sampleRates,
     {{BC::Key::Digi::srText, "625 MSa/s"}, {BC::Key::Digi::srValue, 2.5e9/4}})
 REGISTER_HARDWARE_ARRAY_ENTRY(M4i2211x8, BC::Key::Digi::sampleRates,
     {{BC::Key::Digi::srText, "1250 MSa/s"}, {BC::Key::Digi::srValue, 2.5e9/2}})
+REGISTER_CUSTOM_COMM(M4i2211x8,
+    {"devPath"_L1, "Device Path", "Spectrum card device node (e.g. /dev/spcm0)",
+     CustomCommType::String, 260, QVariant{}})
 
 /*!
  * \brief Helper function to get SpectrumLibrary instance with availability check
@@ -58,14 +62,6 @@ M4i2211x8::M4i2211x8(const QString& label, QObject *parent) :
                      {{srText,"1250 MSa/s"},{srValue,2.5e9/2}},
                  });
 
-    if(!containsArray(BC::Key::Custom::comm))
-        setArray(BC::Key::Custom::comm, {
-                    {{BC::Key::Custom::key,"devPath"},
-                     {BC::Key::Custom::type,BC::Key::Custom::stringKey},
-                     {BC::Key::Custom::label,"Device Path"}}
-                 });
-
-    save();
 }
 
 M4i2211x8::~M4i2211x8()
@@ -106,7 +102,7 @@ bool M4i2211x8::testConnection()
         p_handle = nullptr;
     }
 
-    auto path = getArrayValue(BC::Key::Custom::comm,0,"devPath",QString("/dev/spcm0"));
+    auto path = getGroupValue<QString>(BC::Key::Comm::custom, "devPath"_L1, QString("/dev/spcm0"));
     p_handle = spcmLib->spcm_hOpen(path.toLatin1().data());
     spcmLib->spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_RESET);
 

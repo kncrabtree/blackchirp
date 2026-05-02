@@ -11,17 +11,22 @@ hardware — file paths, device handles, serial numbers, USB IDs — from
 the user.
 
 A :cpp:class:`HardwareObject` whose communication type is
-``CommunicationProtocol::Custom`` declares its parameters by writing
-a ``BC::Key::Custom::comm`` array into its :cpp:class:`SettingsStorage`
-on first construction. Each entry in that array describes one input
-field (label, settings key, value type, optional bounds), and the
-hardware connection dialog described in :doc:`/user_guide/hwdialog`
-renders the appropriate widget for each. The implementation reads the
-user-supplied values back from ``SettingsStorage`` inside its own
-``testConnection()`` override, where the actual handshake with the
-device occurs. Python-backed hardware (see
-:doc:`/user_guide/python_hardware`) uses this mechanism for any
-parameter the Python driver requires.
+``CommunicationProtocol::Custom`` declares its connection parameters
+at static initialization time using the ``REGISTER_CUSTOM_COMM`` macro
+from ``hardwareregistration.h``. Each ``CustomCommDef`` descriptor
+specifies the settings key, user-facing label, description, type
+(``String``, ``Int``, or ``FilePath``), and optional bounds. The
+HardwareRegistry makes these descriptors available to the UI before
+any hardware object is constructed, so both the AddProfileDialog
+(new profiles) and the CommunicationDialog (existing profiles) can
+render the appropriate input widgets without instantiating the
+driver. The driver reads user-supplied values back from the
+``BC::Key::Comm::custom`` group of its SettingsStorage inside
+``testConnection()``.
+
+See also :doc:`/classes/settingsstorage` for the ``REGISTER_HARDWARE_SETTINGS``
+macro family, which follows the same registration pattern for
+hardware configuration parameters.
 
 .. highlight:: cpp
 

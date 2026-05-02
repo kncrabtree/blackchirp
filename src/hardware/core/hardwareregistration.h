@@ -238,6 +238,54 @@ inline QStringList buildInheritanceChain(const QMetaObject* metaObj) {
             SettingsStorage::SettingsMap{__VA_ARGS__} \
         );
 
+/*!
+ * \brief Register custom communication parameter definitions for a hardware implementation
+ *
+ * Registers one or more CustomCommDef descriptors in the HardwareRegistry so that
+ * CustomProtocolWidget can render the appropriate input fields without needing
+ * to construct a hardware object first.
+ *
+ * Each entry is a brace-initialised CustomCommDef. For String fields, supply
+ * {key, "Label", "Description", CustomCommType::String, maxLen}.
+ * For Int fields, supply {key, "Label", "Description", CustomCommType::Int, min, max}.
+ * For FilePath fields, supply {key, "Label", "Description", CustomCommType::FilePath}.
+ *
+ * Example:
+ * \code
+ *   REGISTER_CUSTOM_COMM(M4i2220x8,
+ *       {"devPath"_L1, "Device Path", "Spectrum card device node (e.g. /dev/spcm0)",
+ *        CustomCommType::String, 64})
+ * \endcode
+ *
+ * \param CLASS Hardware class name (must already be registered via REGISTER_HARDWARE_META)
+ * \param ... One or more CustomCommDef initializer lists
+ */
+#define REGISTER_CUSTOM_COMM(CLASS, ...) \
+    static bool customcomm_registered_##CLASS = \
+        HardwareRegistry::instance().addCustomCommDefs( \
+            findHardwareBaseType(&CLASS::staticMetaObject), \
+            QString(CLASS::staticMetaObject.className()), \
+            QVector<CustomCommDef>{__VA_ARGS__} \
+        );
+
+/*!
+ * \brief Register custom communication parameter definitions for a non-instantiable base class
+ *
+ * Stores CustomCommDef descriptors in the base-class map rather than the main hardware
+ * registry, so no prior registerHardware call is required. These definitions are
+ * automatically merged into getCustomCommDefs results for any implementation whose
+ * inheritanceChain includes CLASS.
+ *
+ * \param CLASS Base hardware class name
+ * \param ... One or more CustomCommDef initializer lists
+ */
+#define REGISTER_CUSTOM_COMM_BASE(CLASS, ...) \
+    static bool customcommbase_registered_##CLASS = \
+        HardwareRegistry::instance().addBaseCustomCommDefs( \
+            QString(CLASS::staticMetaObject.className()), \
+            QVector<CustomCommDef>{__VA_ARGS__} \
+        );
+
 // Helpers for unique static variable names in array macros
 #define BC_ARRDEF_CONCAT(a, b) a##b
 #define BC_ARRDEF_VAR(CLASS, KEY) BC_ARRDEF_CONCAT(arraydef_##CLASS##_, __LINE__)

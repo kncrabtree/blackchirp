@@ -1,6 +1,8 @@
 #include "labjacku3.h"
+#include <climits>
 #include <hardware/core/hardwareregistration.h>
 #include <hardware/library/labjacklibrary.h>
+#include <data/settings/hardwarekeys.h>
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(LabjackU3, "Labjack U3 IOBoard")
@@ -12,6 +14,9 @@ REGISTER_HARDWARE_ARRAY(LabjackU3, BC::Key::Digi::sampleRates,
     HwSettingPriority::Optional)
 REGISTER_HARDWARE_ARRAY_ENTRY(LabjackU3, BC::Key::Digi::sampleRates,
     {{BC::Key::Digi::srText, "50 kSa/s"}, {BC::Key::Digi::srValue, 50e3}})
+REGISTER_CUSTOM_COMM(LabjackU3,
+    {BC::Key::IOB::serialNo, "Serial Number", "USB serial number",
+     CustomCommType::Int, 0, INT_MAX})
 
 LabjackU3::LabjackU3(const QString& label, QObject *parent) :
     IOBoard(QString(LabjackU3::staticMetaObject.className()), label, parent),
@@ -25,14 +30,6 @@ LabjackU3::LabjackU3(const QString& label, QObject *parent) :
     //Be wary of changing the number of analog and digital channels
     using namespace BC::Key::Digi;
 
-    if(!containsArray(BC::Key::Custom::comm))
-        setArray(BC::Key::Custom::comm, {
-                    {{BC::Key::Custom::key,BC::Key::IOB::serialNo},
-                     {BC::Key::Custom::type,BC::Key::Custom::intKey},
-                     {BC::Key::Custom::label,"Serial Number"}}
-                 });
-
-    save();
 }
 
 bool LabjackU3::configure(IOBoardConfig &config)
@@ -73,7 +70,7 @@ bool LabjackU3::testConnection()
     if(d_handle)
         closeConnection();
 
-    d_serialNo = getArrayValue(BC::Key::Custom::comm,0,BC::Key::IOB::serialNo,3);
+    d_serialNo = getGroupValue<int>(BC::Key::Comm::custom, BC::Key::IOB::serialNo, 3);
     d_handle = BC::Labjack::openU3(d_serialNo);
     if(!d_handle)
     {

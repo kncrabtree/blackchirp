@@ -9,6 +9,7 @@ class QLabel;
 class QWidget;
 class QDialogButtonBox;
 class HwSettingsWidget;
+class CustomProtocolWidget;
 
 class AddProfileDialog : public QDialog
 {
@@ -23,6 +24,7 @@ public:
 private:
     void updateProtocolCombo(const QString &impl);
     void updateSettingsDefs(const QString &impl);
+    void updateCustomCommWidget(const QString &impl);
     void validateLabel(const QString &text);
     void offerPythonTemplate();
 
@@ -38,6 +40,8 @@ private:
     QLabel *p_validationLabel;
     QWidget *p_settingsContainer;
     HwSettingsWidget *p_settingsWidget{nullptr};
+    CustomProtocolWidget *p_customCommWidget{nullptr};
+    QWidget *p_customCommContainer{nullptr};
     QDialogButtonBox *p_buttonBox;
 };
 

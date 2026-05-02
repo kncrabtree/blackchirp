@@ -9,7 +9,6 @@
 #include <QMap>
 #include <QMutex>
 #include <functional>
-#include <memory>
 
 #include <data/storage/settingsstorage.h>
 #include <hardware/core/communication/communicationprotocol.h>
@@ -45,6 +44,29 @@ struct HwConfigParam {
  *   "Advanced Settings" section.
  */
 enum class HwSettingPriority { Required, Important, Optional };
+
+/*!
+ * \brief Input type for a custom communication parameter
+ */
+enum class CustomCommType { String, Int, FilePath };
+
+/*!
+ * \brief Descriptor for one user-visible field in a Custom-protocol device
+ *
+ * Registered statically at program startup via REGISTER_CUSTOM_COMM.
+ * For String fields, \c bound holds the maximum length (int).
+ * For Int fields, \c bound holds the minimum value (int) and \c bound2 holds the
+ * maximum value (int).
+ * For FilePath fields, the bound fields are unused.
+ */
+struct CustomCommDef {
+    QString key;              ///< SettingsStorage key (written to BC::Key::Comm::custom group)
+    QString label;            ///< User-facing display label
+    QString description;      ///< Explanatory tooltip/help text
+    CustomCommType type;      ///< Widget type to render
+    QVariant bound;           ///< Type-dependent lower bound / max string length
+    QVariant bound2;          ///< Type-dependent upper bound (Int only)
+};
 
 /*!
  * \brief Scalar setting definition with metadata
@@ -90,6 +112,7 @@ struct HardwareRegistration {
     QVector<CommunicationProtocol::CommType> supportedProtocols; /*!< Communication protocols supported by this hardware */
     QVector<HwSettingDef> settingDefs;                         /*!< Registered setting definitions with metadata */
     QMap<QString, HwArraySettingDef> arraySettingDefs;          /*!< Registered array setting definitions */
+    QVector<CustomCommDef> customCommDefs;                      /*!< Registered custom communication parameter definitions */
 
     // Constructor
     HardwareRegistration() = default;
@@ -336,6 +359,37 @@ public:
                                   const SettingsStorage::SettingsMap& entry);
 
     /*!
+     * \brief Add custom communication parameter definitions to an existing hardware registration
+     * \param key Hardware type key
+     * \param subKey Implementation key
+     * \param defs List of custom communication field definitions
+     * \return True if definitions were added successfully
+     */
+    bool addCustomCommDefs(const QString& key, const QString& subKey,
+                           const QVector<CustomCommDef>& defs);
+
+    /*!
+     * \brief Get custom communication parameter definitions for a hardware implementation
+     *
+     * Returns the implementation's own definitions merged with any definitions registered
+     * for base classes in its inheritanceChain (base-class defs appended after the
+     * implementation's own, innermost ancestor first).
+     *
+     * \param key Hardware type key
+     * \param subKey Implementation key
+     * \return List of custom communication field definitions, or empty if none registered
+     */
+    QVector<CustomCommDef> getCustomCommDefs(const QString& key, const QString& subKey) const;
+
+    /*!
+     * \brief Register custom communication parameter definitions for a base hardware class
+     * \param className The class name (e.g., "HardwareObject", "CustomInstrument")
+     * \param defs List of custom communication field definitions
+     * \return True if successfully stored
+     */
+    bool addBaseCustomCommDefs(const QString& className, const QVector<CustomCommDef>& defs);
+
+    /*!
      * \brief Add library dependency to existing hardware registration
      * \param key Hardware type key
      * \param subKey Implementation key
@@ -386,6 +440,7 @@ private:
     QHash<QString, HardwareRegistration> d_registrations;              /*!< All registered hardware implementations */
     QHash<QString, QVector<HwSettingDef>> d_baseSettingDefs;           /*!< Base class scalar settings, keyed by class name */
     QHash<QString, QMap<QString, HwArraySettingDef>> d_baseArrayDefs;  /*!< Base class array settings, keyed by class name */
+    QHash<QString, QVector<CustomCommDef>> d_baseCustomCommDefs;       /*!< Base class custom comm defs, keyed by class name */
     QHash<QString, std::function<VendorLibrary*()>> d_libraryGetters;  /*!< Library instance getters by name */
     mutable QMutex d_registryMutex;                                    /*!< Thread safety for registry access */
 };

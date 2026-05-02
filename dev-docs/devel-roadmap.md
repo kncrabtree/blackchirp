@@ -4,19 +4,7 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 
 ## Small
 
-### [Custom Communication Parameter Registry](custom-comm-registry.md)
-
-Move the `CustomInstrument` per-driver `BC::Key::Custom::comm` array
-declaration onto the hardware-settings registry via a new
-`REGISTER_CUSTOM_COMM` macro family. Eliminates the only
-hardware-declaration mechanism still done via runtime `setArray` calls
-in constructors, fixes the `AddProfileDialog` blind spot for
-custom-protocol hardware, and removes hand-typed string subkeys from
-three existing drivers plus the python hardware base. Includes a
-follow-up doc revision (`custominstrument.h` Doxygen block,
-`classes/custominstrument.rst` orientation intro,
-`python_hardware.rst`, `python-hardware.md`) that bundle 13a
-documents in its current form.
+None.
 
 ## Medium
 

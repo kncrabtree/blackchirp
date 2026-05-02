@@ -22,6 +22,7 @@
 #include <hardware/core/communication/communicationprotocol.h>
 #include <gui/style/themecolors.h>
 #include <gui/widget/hwsettingswidget.h>
+#include <gui/widget/customprotocolwidget.h>
 
 AddProfileDialog::AddProfileDialog(const QString &hardwareType, QWidget *parent)
     : QDialog(parent), d_hardwareType(hardwareType)
@@ -79,6 +80,13 @@ AddProfileDialog::AddProfileDialog(const QString &hardwareType, QWidget *parent)
     containerLayout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(p_settingsContainer);
 
+    // Container that holds the CustomProtocolWidget (swapped on impl change, shown only for Custom protocol)
+    p_customCommContainer = new QWidget(this);
+    auto *customCommLayout = new QVBoxLayout(p_customCommContainer);
+    customCommLayout->setContentsMargins(0, 0, 0, 0);
+    p_customCommContainer->hide();
+    layout->addWidget(p_customCommContainer);
+
     // Validation label
     p_validationLabel = new QLabel();
     p_validationLabel->setStyleSheet(QString("QLabel { color: %1; }")
@@ -98,6 +106,13 @@ AddProfileDialog::AddProfileDialog(const QString &hardwareType, QWidget *parent)
             this, &AddProfileDialog::updateProtocolCombo);
     connect(p_implementationCombo, &QComboBox::currentTextChanged,
             this, &AddProfileDialog::updateSettingsDefs);
+    connect(p_implementationCombo, &QComboBox::currentTextChanged,
+            this, &AddProfileDialog::updateCustomCommWidget);
+
+    // Show/hide custom comm widget when the protocol selection changes
+    connect(p_protocolCombo, &QComboBox::currentIndexChanged, this, [this](int) {
+        updateCustomCommWidget(p_implementationCombo->currentText());
+    });
 
     // Connect label validation
     connect(p_labelEdit, &QLineEdit::textChanged,
@@ -106,6 +121,7 @@ AddProfileDialog::AddProfileDialog(const QString &hardwareType, QWidget *parent)
     // Initialize with current selection
     updateProtocolCombo(p_implementationCombo->currentText());
     updateSettingsDefs(p_implementationCombo->currentText());
+    updateCustomCommWidget(p_implementationCombo->currentText());
 
     // Trigger initial validation
     p_labelEdit->textChanged(p_labelEdit->text());
@@ -149,6 +165,26 @@ void AddProfileDialog::updateSettingsDefs(const QString &impl)
                                             HwSettingsMode::Create,
                                             /*storageKey=*/{}, this);
     p_settingsContainer->layout()->addWidget(p_settingsWidget);
+}
+
+void AddProfileDialog::updateCustomCommWidget(const QString &impl)
+{
+    delete p_customCommWidget;
+    p_customCommWidget = nullptr;
+
+    auto selectedProtocol = static_cast<CommunicationProtocol::CommType>(
+        p_protocolCombo->currentData().toInt());
+
+    auto protocols = HardwareRegistry::instance().getSupportedProtocols(d_hardwareType, impl);
+    bool supportsCustom = protocols.contains(CommunicationProtocol::Custom);
+
+    if (supportsCustom && selectedProtocol == CommunicationProtocol::Custom) {
+        p_customCommWidget = new CustomProtocolWidget(d_hardwareType, impl, this);
+        p_customCommContainer->layout()->addWidget(p_customCommWidget);
+        p_customCommContainer->show();
+    } else {
+        p_customCommContainer->hide();
+    }
 }
 
 void AddProfileDialog::validateLabel(const QString &text)
@@ -199,11 +235,12 @@ void AddProfileDialog::accept()
     QString label = p_labelEdit->text().trimmed();
     QString settingsKey = BC::Key::hwKey(d_hardwareType, label);
 
+    auto selectedProtocol = static_cast<CommunicationProtocol::CommType>(
+        p_protocolCombo->currentData().toInt());
+
     // Write the selected communication protocol to settings before hardware
     // object construction so the constructor finds the correct value.
     {
-        auto selectedProtocol = static_cast<CommunicationProtocol::CommType>(
-            p_protocolCombo->currentData().toInt());
         QSettings s(QCoreApplication::organizationName(), QCoreApplication::applicationName());
         s.beginGroup(settingsKey);
         s.setValue(BC::Key::HW::commType, static_cast<int>(selectedProtocol));
@@ -214,6 +251,10 @@ void AddProfileDialog::accept()
     // Write all hardware settings (scalars + arrays) from the widget
     if (p_settingsWidget)
         p_settingsWidget->saveToStorage(settingsKey);
+
+    // Write custom communication parameters if a Custom protocol widget is present
+    if (p_customCommWidget && selectedProtocol == CommunicationProtocol::Custom)
+        p_customCommWidget->saveToStorage(settingsKey);
 
     // Create the profile
     auto &profileManager = HardwareProfileManager::instance();

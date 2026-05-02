@@ -2,42 +2,21 @@
 #define CUSTOMINSTRUMENT_H
 
 #include <hardware/core/communication/communicationprotocol.h>
-#include <data/settings/hardwarekeys.h>
 
 
 
 /*!
  * \brief An instrument which has a non-QIODevice communication method
- * 
- * Similar to VirtualInstrument, this class leaves the device pointer null. Its
- * purpose is to provide keys that are used in the CommunicationDialog to
- * present the user with widgets for entering and information needed to
- * configure the device's communication. For example, the user may need to
- * specify a device path or serial number in order to initialize the object. By
- * assigning values to the keys defined in the BC::Key::Custom namespace in the
- * final HardwareObject implementation's constructor, the CommunicationDialog
- * will construct the UI and obtain values from the user.
- * 
- * This is done by first creating a SettingsStorage array with the key
- * BC::Key::Custom::comm. For each quantity that is needed from the user, add a
- * SettingsStorage::SettingsMap with, at minimum, definitions for
- * BC::Key::Custom::label, BC::Key::Custom::key, and BC::Key::Custom::type. As
- * an example, the followng code would add entries for a device path (string)
- * and serial number (integer >0). It is important to check for the existence
- * of the BC::Key::Custom::comm key first so that existing settings are not
- * overwritten.
- * 
- *     if(!containsArray(BC::Key::Custom::comm))
- *         setArray(BC::Key::Custom::comm, {
- *                   {{BC::Key::Custom::key,"devPath"},
- *                    {BC::Key::Custom::type,BC::Key::Custom::stringKey},
- *                    {BC::Key::Custom::label,"Device Path"}},
- *                   {{BC::Key::Custom::key,"serialNo"},
- *                    {BC::Key::Custom::type,BC::Key::Custom::intKey},
- *                    {BC::Key::Custom::label,"Serial Number"},
- *                    {BC::Key::Custom::intMin,0}}
- *                });
- * 
+ *
+ * Similar to VirtualInstrument, this class leaves the device pointer null.
+ * Implementations declare the connection parameters they need from the user
+ * (device path, serial number, file handle, etc.) via the
+ * \c REGISTER_CUSTOM_COMM macro family in \c hardwareregistration.h. The
+ * CommunicationDialog and AddProfileDialog read those descriptors from
+ * HardwareRegistry at startup — before any hardware object is constructed —
+ * and render the appropriate input widgets. The driver reads the user-supplied
+ * values back from the \c BC::Key::Comm::custom group of its SettingsStorage
+ * inside \c testConnection().
  */
 class CustomInstrument : public CommunicationProtocol
 {
@@ -48,9 +27,7 @@ public:
     explicit CustomInstrument(QString key, QObject *parent = nullptr);
 
 public slots:
-    /// No-op initialization. CustomInstrument has no QIODevice to create;
-    /// the owning HardwareObject reads BC::Key::Custom values directly from
-    /// SettingsStorage.
+    /// No-op initialization. CustomInstrument has no QIODevice to create.
     void initialize() override;
 
     /// Always reports a successful connection. Real verification of a

@@ -38,6 +38,9 @@ REGISTER_HARDWARE_ARRAY_ENTRY(M4i2220x8, sampleRates,
     {{srText, "1250 MSa/s"}, {srValue, 2.5e9/2}})
 REGISTER_HARDWARE_ARRAY_ENTRY(M4i2220x8, sampleRates,
     {{srText, "2500 MSa/s"}, {srValue, 2.5e9}})
+REGISTER_CUSTOM_COMM(M4i2220x8,
+    {"devPath"_L1, "Device Path", "Spectrum card device node (e.g. /dev/spcm0)",
+     CustomCommType::String, 260, QVariant{}})
 
 /*!
  * \brief Helper function to get SpectrumLibrary instance with availability check
@@ -56,14 +59,6 @@ static SpectrumLibrary* getSpectrumLibrary()
 M4i2220x8::M4i2220x8(const QString& label, QObject *parent) :
     FtmwScope(QString(M4i2220x8::staticMetaObject.className()), label, parent), p_handle(nullptr)
 {
-    if(!containsArray(BC::Key::Custom::comm))
-        setArray(BC::Key::Custom::comm, {
-                    {{BC::Key::Custom::key,"devPath"},
-                     {BC::Key::Custom::type,BC::Key::Custom::stringKey},
-                     {BC::Key::Custom::label,"Device Path"}}
-                 });
-
-    save();
 }
 
 M4i2220x8::~M4i2220x8()
@@ -86,7 +81,7 @@ bool M4i2220x8::testConnection()
         return false;
     }
     
-    auto path = getArrayValue(BC::Key::Custom::comm,0,"devPath",QString("/dev/spcm0"));
+    auto path = getGroupValue<QString>(BC::Key::Comm::custom, "devPath"_L1, QString("/dev/spcm0"));
 
     if(p_handle != nullptr)
     {
