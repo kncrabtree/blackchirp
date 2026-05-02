@@ -1,10 +1,12 @@
 # Bundle 13a — API Reference: Refresh Existing Five
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
 - (entries appended in reverse chronological order; most recent first)
+- 2026-05-02: in progress → complete. Stage 1 content commit: 0bcfb768. Five API pages refreshed; class-level Doxygen blocks rewritten in five headers (HardwareObject identity model corrected, SettingsStorage restructured with friend-helper section + inline admonitions, HeaderStorage walks two-virtual + tree-composition workflow); api_style.rst stub added under developer_guide/ for bundle 12 to absorb; doxygen warnings on the five headers cleared to zero. Bundle 14 picked up an implementation→driver terminology-sweep scope; `dev-docs/custom-comm-registry.md` captures a follow-up refactor that will revise CustomInstrument prose when it lands.
+- 2026-05-02: not started → in progress. Direct mode (orchestrator-driven). API reference style decision: member-level prose lives in headers (Doxygen `///` blocks); RST pages carry only a 1-3 paragraph orientation intro plus the `.. doxygenclass::` directive. Style guide stub will land at `doc/source/dev/api_style.rst` for bundle 12 to absorb.
 -->
 
 Audits and refreshes the five existing API reference pages so they

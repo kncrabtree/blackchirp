@@ -39,7 +39,7 @@ requirements, and acceptance criteria.
 | 10 | Rolling/Aux, Log tab, Blackchirp-viewer | M | 08 | complete |
 | 11 | Migration guide v1.x → 2.0.0 + Changelog | S | most user-guide bundles | not started |
 | 12 | Developer Guide | L | — (independent) | not started |
-| 13a | API ref: refresh existing 5 (HardwareObject etc.) | S | — | not started |
+| 13a | API ref: refresh existing 5 (HardwareObject etc.) | S | — | complete |
 | 13b | API ref: hardware-management classes | S | 13a | not started |
 | 13c | API ref: Python hardware classes | S | 13a | not started |
 | 13d | API ref: loadout/preset classes | S | 13a | not started |
@@ -387,6 +387,23 @@ has landed. Three scopes:
    `coaveraging` → `co-averaging`; plus any others surfaced by a
    regex sweep. Skip code blocks and source-identifier names; only
    change prose. Match UI labels exactly when quoting them.
+
+4. **Implementation → driver terminology sweep.** Replace
+   user-facing uses of "implementation" with "driver" where the term
+   refers to a concrete hardware backend for a hardware type
+   (e.g. `AWG70002a`, `VirtualAwg`, `PythonAwg`). The mental model
+   the manual should reinforce is *Hardware Object → Hardware Type
+   → one of several drivers*: "implementation" reads as a
+   programming abstraction, "driver" matches how users think about
+   choosing a backend for a device. Walk every `.rst` file under
+   `doc/source/user_guide/` and the API pages under
+   `doc/source/classes/` and `doc/source/developer_guide/`. Skip
+   code blocks, identifier names, and documentation comments that
+   quote a Doxygen tag or registry macro literally
+   (`REGISTER_HARDWARE_*` etc.). Headers and source files are out
+   of scope; the C++ comments use whichever term reads naturally for
+   each call site. After the sweep, update any glossary, index, or
+   cross-reference that uses the old term.
 
 Drafter mode: direct (orchestrator-driven). All scopes are mechanical
 enough that delegation overhead exceeds the work, and a single
