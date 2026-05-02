@@ -1,10 +1,12 @@
 # Bundle 13e — API Reference: Data / Experiment Classes
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
 - (entries appended in reverse chronological order; most recent first)
+- 2026-05-02: drafted → complete. Content commit 96e6bb9f.
+- 2026-05-02: not started → drafted. Three parallel Sonnet drafter/verifier pairs split the nine pages into Group A (experiment/chirpconfig/rfconfig), Group B (ftmwconfig/lifconfig/overlaybase), Group C (fid/ft/ftworker). Per-group verifiers and a final coherence reviewer surfaced punch-list items (British spellings, "currently"/"previously" markers, RST↔header content duplication, missing `.. doxygenenum::` directives, dead `\sa \ref` Doxygen tags pointing at Sphinx paths, asymmetric cross-references); all resolved. User review surfaced six more (legacy-trigger references in MarkerRole prose, an unrenderable `\c (int, QString, bool)` marker in the Experiment class doc, missing operator spacing in `Fid::maxFreq`/`minFreq` math expressions, an incorrect `bitShift()` purpose comment in `FtmwConfigPeakUp`, RST↔header duplication and an apparent linear/cubic-spline contradiction in the FtWorker page); all resolved. OverlayBase page also covers the three concrete subclasses (`BCExpOverlay`, `CatalogOverlay`, `GenericXYOverlay`) — included on the same page given their tight coupling to the discriminator and small surface area. The `:doc:`/developer_guide/adding_experiment_objective`` cross-reference from `chirpconfig.rst` points at a page bundle 12 will create; intentionally dangling. The `WaveformBuffer` class is named in prose without a `:cpp:class:` link since bundle 13f has not yet created its API page.
 -->
 
 Adds API reference pages for the experiment data model and analysis
