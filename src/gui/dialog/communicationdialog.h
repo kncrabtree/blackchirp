@@ -44,6 +44,9 @@ private slots:
 
     // HardwareManager response handlers
     void onConnectionResult(const QString& hwKey, bool success, const QString& msg);
+
+public slots:
+    void selectDevice(const QString &hwKey);
     
 private:
     struct DeviceInfo {
@@ -65,9 +68,7 @@ private:
     void loadDeviceInfo();
     void updateDeviceListItem(const QString& hwKey);
     void updateRightPanel();
-    void loadDeviceSettings();
     void saveDeviceSettings();
-    void saveCommonSettings();
     void loadReadOptions(CommunicationProtocol::CommType protocolType);
     
     QString getDeviceDisplayText(const DeviceInfo& info);

@@ -6,17 +6,11 @@
    single: Required settings
    single: Important settings
    single: Advanced settings
+   single: Test Connection; Hardware Dialog
+   single: Communication Settings; Hardware Dialog link
 
 Hardware Dialog
 ===============
-
-.. figure:: /_static/user_guide/hwdialog/settings_tab.png
-   :alt: Hardware Dialog showing the Advanced sub-tab of a Pulse Generator's
-         Settings tab.
-
-   The Hardware Dialog open on the Pulse Generator's Settings tab. Inner
-   sub-tabs separate the Settings group (Required + Important settings)
-   from the Advanced group; the Advanced sub-tab is shown here.
 
 Selecting any per-device entry from the :ref:`Hardware menu
 <hardware-menu-device-entries>` opens the **Hardware Dialog** for that device.
@@ -26,6 +20,21 @@ The dialog is a tabbed window. The title bar shows the hardware key
 The dialog provides two tabs: **Control** (when available) and **Settings**.
 The tabs serve different purposes and have different save semantics — reading
 both sections carefully before making changes is recommended.
+
+Below the tabs, a row of convenience controls is always visible:
+
+- **Test Connection** — runs the same connection check as the Communication
+  Dialog's per-device test, against the currently active communication
+  settings. An inline status label to the right of the button reports the
+  outcome (a green *Connected* indicator on success, a red *Connection failed*
+  indicator on failure with the error message available as a tooltip). The
+  button is disabled while a test is in flight.
+- **Communication Settings…** — opens the :doc:`communicationdialog` with this
+  device pre-selected. The Communication Dialog is non-modal, so it can stay
+  open alongside the Hardware Dialog while you adjust protocol or read-option
+  settings; if it is already open, clicking the link raises it and switches
+  the selection to this device. The Communication Dialog closes automatically
+  when a real (non peak-up) experiment starts.
 
 .. _hwdialog-control:
 
@@ -72,6 +81,14 @@ will be applied immediately."*
 
 Settings Tab
 ------------
+
+.. figure:: /_static/user_guide/hwdialog/settings_tab.png
+   :alt: Hardware Dialog showing the Advanced sub-tab of a Pulse Generator's
+         Settings tab.
+
+   The Hardware Dialog open on the Pulse Generator's Settings tab. Inner
+   sub-tabs separate the Settings group (Required + Important settings)
+   from the Advanced group; the Advanced sub-tab is shown here.
 
 A label at the top of the Settings tab reads: *"Changes made in this section
 will only be applied when this dialog is closed with the Ok button. Editing

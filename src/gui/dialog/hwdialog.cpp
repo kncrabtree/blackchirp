@@ -12,6 +12,7 @@
 #include <gui/style/themecolors.h>
 #include <data/storage/settingsstorage.h>
 #include <data/bcglobals.h>
+#include <QToolTip>
 
 HWDialog::HWDialog(const QString &key, QWidget *controlWidget, QWidget *managedWidget, QWidget *parent)
     : QDialog(parent), d_hwKey(key), p_controlWidget(controlWidget),
@@ -62,6 +63,32 @@ HWDialog::HWDialog(const QString &key, QWidget *controlWidget, QWidget *managedW
 
     vbl->addWidget(tabWidget, 1);
 
+    auto extraRow = new QHBoxLayout;
+
+    p_testButton = new QPushButton("Test Connection"_L1, this);
+    p_testButton->setIcon(ThemeColors::createThemedIcon(":/icons/check-circle.svg"_L1, ThemeColors::IconPrimary, this));
+    connect(p_testButton, &QPushButton::clicked, this, [this](){
+        d_testInFlight = true;
+        p_testButton->setEnabled(false);
+        p_testButton->setToolTip("Test already in progress"_L1);
+        p_statusLabel->setText("Testing..."_L1);
+        p_statusLabel->setStyleSheet(QString("QLabel { color: %1; }")
+            .arg(ThemeColors::getCSSColor(ThemeColors::StatusWarning, this)));
+        emit requestTestConnection(d_hwKey);
+    });
+    extraRow->addWidget(p_testButton);
+
+    p_statusLabel = new QLabel(this);
+    extraRow->addWidget(p_statusLabel, 1);
+
+    auto commButton = new QPushButton("Communication Settings..."_L1, this);
+    connect(commButton, &QPushButton::clicked, this, [this](){
+        emit requestCommunicationDialog(d_hwKey);
+    });
+    extraRow->addWidget(commButton);
+
+    vbl->addLayout(extraRow, 0);
+
     auto bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Close);
     connect(bb->button(QDialogButtonBox::Ok), &QPushButton::clicked, this, &HWDialog::accept);
     connect(bb->button(QDialogButtonBox::Close), &QPushButton::clicked, this, &HWDialog::reject);
@@ -94,4 +121,43 @@ void HWDialog::setControlWidgetEnabled(bool enabled)
 {
     if (p_managedWidget)
         p_managedWidget->setEnabled(enabled);
+}
+
+void HWDialog::setConnectionStatus(bool connected)
+{
+    if (d_testInFlight)
+        return;
+
+    if (connected) {
+        p_statusLabel->setText("Connected"_L1);
+        p_statusLabel->setStyleSheet(QString("QLabel { color: %1; }")
+            .arg(ThemeColors::getCSSColor(ThemeColors::StatusSuccess, this)));
+    } else {
+        p_statusLabel->setText("Disconnected"_L1);
+        p_statusLabel->setStyleSheet(QString("QLabel { color: %1; }")
+            .arg(ThemeColors::getCSSColor(ThemeColors::StatusError, this)));
+    }
+    p_statusLabel->setToolTip(""_L1);
+}
+
+void HWDialog::onConnectionResult(const QString &hwKey, bool success, const QString &msg)
+{
+    if (hwKey != d_hwKey)
+        return;
+
+    d_testInFlight = false;
+    p_testButton->setEnabled(true);
+    p_testButton->setToolTip(""_L1);
+
+    if (success) {
+        p_statusLabel->setText("Connected"_L1);
+        p_statusLabel->setStyleSheet(QString("QLabel { color: %1; }")
+            .arg(ThemeColors::getCSSColor(ThemeColors::StatusSuccess, this)));
+        p_statusLabel->setToolTip(""_L1);
+    } else {
+        p_statusLabel->setText("Connection failed"_L1);
+        p_statusLabel->setStyleSheet(QString("QLabel { color: %1; }")
+            .arg(ThemeColors::getCSSColor(ThemeColors::StatusError, this)));
+        p_statusLabel->setToolTip(msg);
+    }
 }

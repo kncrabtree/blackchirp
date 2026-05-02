@@ -21,7 +21,6 @@
 #include <QTimer>
 #include <QUrl>
 #include <QActionGroup>
-#include <functional>
 
 #include <gui/widget/digitizerconfigwidget.h>
 #include <gui/widget/rfconfigwidget.h>
@@ -228,7 +227,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionStart_Sequence,&QAction::triggered,this,&MainWindow::startSequence);
     connect(ui->pauseButton,&QToolButton::clicked,this,&MainWindow::pauseUi);
     connect(ui->resumeButton,&QToolButton::clicked,this,&MainWindow::resumeUi);
-    connect(ui->actionCommunication,&QAction::triggered,this,&MainWindow::launchCommunicationDialog);
+    connect(ui->actionCommunication,&QAction::triggered,this,qOverload<bool>(&MainWindow::launchCommunicationDialog));
     connect(ui->actionFtmwConfig,&QAction::triggered,this,&MainWindow::launchFtmwConfigDialog);
     connect(ui->actionAutoscale_Aux,&QAction::triggered,ui->auxDataViewWidget,&AuxDataViewWidget::autoScaleAll);
     connect(ui->actionAutoscale_Rolling,&QAction::triggered,ui->rollingDataViewWidget,&RollingDataWidget::autoScaleAll);
@@ -819,9 +818,11 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
         }
     }
 
-    if(!exp->isDummy())
+    if(!exp->isDummy()) {
         p_lh->beginExperimentLog(exp->d_number,exp->d_startLogMessage);
-    else
+        if (p_communicationDialog)
+            p_communicationDialog->close();
+    } else
         p_lh->logMessage(exp->d_startLogMessage,LogHandler::Highlight);
 
     //this is needed to reconfigure UI in case experiment is dummy
@@ -913,16 +914,25 @@ void MainWindow::resumeUi()
     configureUi(Acquiring);
 }
 
-void MainWindow::launchCommunicationDialog(bool parent)
+void MainWindow::launchCommunicationDialog(bool /*parent*/)
 {
-    QWidget *p = nullptr;
-    if(parent)
-        p = this;
+    launchCommunicationDialog(QString{});
+}
 
-    CommunicationDialog d(p);
-    connect(&d,&CommunicationDialog::testConnection,p_hwm,&HardwareManager::testObjectConnection);
+void MainWindow::launchCommunicationDialog(const QString &preselectKey)
+{
+    if (p_communicationDialog) {
+        p_communicationDialog->raise();
+        p_communicationDialog->activateWindow();
+    } else {
+        p_communicationDialog = new CommunicationDialog(this);
+        p_communicationDialog->setAttribute(Qt::WA_DeleteOnClose);
+        p_communicationDialog->setWindowFlags(p_communicationDialog->windowFlags() | Qt::Window);
+        p_communicationDialog->show();
+    }
 
-    d.exec();
+    if (!preselectKey.isEmpty())
+        p_communicationDialog->selectDevice(preselectKey);
 }
 
 void MainWindow::launchFtmwConfigDialog()
@@ -1497,7 +1507,9 @@ HWDialog *MainWindow::createHWDialog(const QString key, QWidget *controlWidget, 
 {
     auto out = new HWDialog(key, controlWidget, managedWidget);
     auto cs = d_hardwareConnectionState.find(key);
-    out->setControlWidgetEnabled(cs != d_hardwareConnectionState.end() ? cs->second : true);
+    bool connected = cs != d_hardwareConnectionState.end() ? cs->second : true;
+    out->setControlWidgetEnabled(connected);
+    out->setConnectionStatus(connected);
     d_openDialogs.insert({key,out});
     connect(out,&HWDialog::accepted,[this,key](){
         QMetaObject::invokeMethod(p_hwm,[this,key](){ p_hwm->updateObjectSettings(key); });
@@ -1508,6 +1520,10 @@ HWDialog *MainWindow::createHWDialog(const QString key, QWidget *controlWidget, 
         if(it != d_openDialogs.end())
             d_openDialogs.erase(it);
     });
+    connect(out,&HWDialog::requestTestConnection,p_hwm,&HardwareManager::testObjectConnection);
+    connect(p_hwm,&HardwareManager::connectionResult,out,&HWDialog::onConnectionResult);
+    connect(out,&HWDialog::requestCommunicationDialog,this,
+            qOverload<const QString&>(&MainWindow::launchCommunicationDialog));
 
     out->show();
     return out;
@@ -1701,8 +1717,8 @@ void MainWindow::updateViewExperimentMenu()
             QString experimentTitle = widget->windowTitle();
             QAction* experimentAction = new QAction(experimentTitle, this);
             experimentAction->setData(path); // Store path in data for identification
-            connect(experimentAction, &QAction::triggered, this, [this, path]() {
-                showExistingExperiment(path);
+            connect(experimentAction, &QAction::triggered, this, [this, p = path]() {
+                showExistingExperiment(p);
             });
             ui->viewExperimentMenu->addAction(experimentAction);
         }

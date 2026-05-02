@@ -492,6 +492,19 @@ void CommunicationDialog::updateDeviceListItem(const QString& hwKey)
     }
 }
 
+void CommunicationDialog::selectDevice(const QString &hwKey)
+{
+    if (hwKey.isEmpty())
+        return;
+    for (int i = 0; i < p_deviceList->count(); ++i) {
+        auto item = p_deviceList->item(i);
+        if (item->data(Qt::UserRole).toString() == hwKey) {
+            p_deviceList->setCurrentItem(item);
+            return;
+        }
+    }
+}
+
 void CommunicationDialog::onConnectionResult(const QString& hwKey, bool success, const QString& msg)
 {
     // Find device by hwKey and update status

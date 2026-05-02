@@ -6,6 +6,7 @@
 #include <QPair>
 #include <QVector>
 #include <QMetaObject>
+#include <QPointer>
 #include <memory>
 #include <map>
 
@@ -30,6 +31,7 @@ class QuickExptDialog;
 class LifControlWidget;
 class RfConfigWidget;
 class ExperimentViewWidget;
+class CommunicationDialog;
 
 namespace Ui {
 class MainWindow;
@@ -75,6 +77,7 @@ public slots:
     void pauseUi();
     void resumeUi();
     void launchCommunicationDialog(bool parent = true);
+    void launchCommunicationDialog(const QString &preselectKey);
     void launchFtmwConfigDialog();
     void rebuildLoadoutMenu();
     void onLoadoutActionTriggered(QAction *act);
@@ -129,6 +132,7 @@ private:
     bool isCriticalHardwareConnected() const;
     QWidget *wrapWithPythonWidget(const QString &hwKey, QWidget *typeWidget);
 
+    QPointer<CommunicationDialog> p_communicationDialog;
     QActionGroup *p_loadoutActionGroup{nullptr};
     QActionGroup *p_ftmwPresetActionGroup{nullptr};
     ProgramState d_state{Idle};
@@ -143,7 +147,7 @@ private:
 
 
 protected:
-    void closeEvent(QCloseEvent *ev);
+    void closeEvent(QCloseEvent *ev) override;
     bool eventFilter(QObject *watched, QEvent *event) override;
 
 private:
