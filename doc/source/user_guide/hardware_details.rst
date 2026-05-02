@@ -1,18 +1,17 @@
 Hardware Details
 ================
 
-Blackchirp is capable of interfacing with a variety of different pieces of hardware; see the `installation page <installation.html#hardware-implementations>`_ for details on how to select which hardware are in use for your instrument. The only pieces of hardware that are strictly required to run Blackchirp are a `clock <hw/clock/html>`_ and an `FTMW digitizer <hw/ftmwdigitizer.rst>`_; all other pieces of hardware are optional and may be omitted from the program entirely by commenting them out in ``config.pri``.
+Blackchirp interfaces with a variety of different pieces of hardware. The only items strictly required to run an experiment are a :doc:`clock </user_guide/hw/clock>` and an :doc:`FTMW digitizer </user_guide/hw/ftmwdigitizer>`; all other devices are optional. The set of devices in use for a given instrument is selected through a hardware loadout (see :ref:`hardware-menu-loadouts`).
 
-All pieces of hardware have some settings in common, and these may be edited in the `hardware settings menu <hardware_menu.html#hardware-control-settings>`_ associated with each item. These are:
+Two settings are common to every hardware object and worth highlighting here:
 
-  * **critical** (true/false): If true, an experiment will be aborted if an error occurs with this hardware, and experiments cannot be started until the `connection is retested <hardware_menu.html#communication>`_.
-  * **rollingDataIntervalSec** (int): Time between `rolling data samples <rolling-aux-data.html>`_, in seconds. If set to 0, rolling data is disabled. Not all pieces of hardware generate rolling data; see the documentation for a particular piece of hardware to see what is available.
+* ``critical`` (true/false): When true, an error reported by this device aborts the running experiment, and new experiments cannot be started until the connection is retested from the :ref:`hardware-menu-communication` dialog. Set this to false for auxiliary devices whose failure should not stop acquisition.
+* ``rollingDataIntervalSec`` (int): Polling interval, in seconds, for :doc:`rolling auxiliary data </user_guide/rolling-aux-data>`. Setting the value to 0 disables rolling data for that device. Not every hardware object produces rolling data; see the per-device pages for details.
 
-Further details about each hardware item, their user-controllable settings, and implementation-specific details/known issues are available on the pages below.
+Most other settings are surfaced inline by the hardware settings registry: each setting carries a human-readable label and tooltip that appear directly in the device dialog. See the :doc:`hardware dialog </user_guide/hwdialog>` page for the conventions used in that UI. The per-device pages below document only the behavior the inline tooltips do not already convey, along with implementation-specific caveats.
 
 .. toctree::
    :caption: Detailed Documentation
    :glob:
 
    hw/*
-

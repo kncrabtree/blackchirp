@@ -8,79 +8,105 @@ AWG
 Overview
 --------
 
-An AWG represents the source that generates chirps in the FTMW spectrometer, whether or not the device is truly an Arbirary Waveform Generator. If enabled, Blackchirp can be used to `create and configure chirps <experiment/chirp_setup.html>`_ that are associated with an experiment. It is optional; however, even if you do not intend to use Blackchirp to create the chirps, it is recommended that you use the virtual implementation, which will allow you to record the details of the chirp you are using with an experiment.
+An AWG represents the source that generates chirps in the FTMW spectrometer, whether or not the device is truly an Arbitrary Waveform Generator. When enabled, Blackchirp can :doc:`create and configure chirps </user_guide/experiment/chirp_setup>` that are stored alongside an experiment. The AWG is optional, but even if you generate chirps with another tool the virtual implementation is recommended so that the chirp parameters are recorded with the data.
 
-The basic concept for an AWG is modeled after the Tektronix AWG7122B, and uses one analog output channel along with two (optional) digital markers: one of which is used to control a protection switch, and the other of which is used to control the gate of a TWT amplifier. For AWGs that do not have markers, Blackchirp can use a `pulse generator <pulsegenerator.html>`_ to generate analogous signals. Some AWGs have multiple outputs, however Blackchirp only supports a single analog output at present.
-
-.. note::
-   In the future, the AWG device will support an arbitrary number of digital markers that can be flexibly assigned to different roles.
+The AWG abstraction is modeled on the Tektronix AWG7122B: one analog output channel plus a configurable number of digital marker outputs. Markers are typically used to drive a low-noise-amplifier protection switch and a TWT amplifier gate, but Blackchirp's marker model is general-purpose and supports additional roles such as digitizer triggers or fully custom signals. AWGs that have no markers can use a :doc:`pulse generator </user_guide/hw/pulsegenerator>` to produce analogous signals. Some AWGs have multiple analog outputs; Blackchirp uses only one.
 
 Settings
 --------
 
-* ``hasAmpEnablePulse`` (true/false): If true, a digital output is used to control a gate signal delivered to the high-power amplifier. If false, a Pulse Generator channel with the "Amp" role may be used to generate a similar pulse.
-* ``hasProtectionPulse`` (true/false): If true, a digital output is used to control a gate signal delivered to a switch protecting the low-noise amplifier. If false, a Pulse Generator channel with the "Prot" role may be used to generate a similar pulse.
-* ``maxFreqMHz`` (float): Maximum frequency, in MHz. By default this will be set to the maximum frequency supported by the device; however setting this to a smaller number is possible if only a limited range of the device is useful.
-* ``minFreqMHz`` (float): Minimum frequency, in MHz. By default this will be set to the minimum frequency supported by the device; however setting this to a larger number is possible if only a limited range of the device is useful.
-* ``maxSamples`` (int): Maximum number of samples in an AWG record. This is limited by the memory of the device, but may be set to a smaller number if desired.
-* ``rampOnly`` (true/false): Set to true for devices that are ramp generators (e.g., AD9914) rather than AWGs. For these devices, only one chirp per trigger is used, and the chirp may consist of only a single segment which may not be empty.
-* ``sampleRateHz`` (int): Sample rate of the AWG, in Hz. Currently Blackchirp does not support controlling the sample rate of the AWG. By default this value is set to the maximum sample rate of the device; however, if this is incorrect (or if you manually change the operating sample rate), the value can be changed to reflect that value.
-* ``triggered`` (true/false): If true, the AWG is triggered externally. If set to false, the chirp will be played repeatedly on supported AWGs. *Note: This is not yet implemented for all AWGs!*
+The frequency, sample-rate, and triggering settings are exposed in the device dialog with inline labels and tooltips; see the :doc:`hardware dialog </user_guide/hwdialog>` page for conventions. A few items deserve special mention:
 
+* ``markerCount`` (int) reports the number of physical marker outputs that the implementation drives. The chirp configuration widget exposes a Markers tab with one row per channel, where each marker is given a name, a role (Protection, Gate, Trigger, or Custom), and a timing window relative to each chirp. See the :doc:`chirp setup </user_guide/experiment/chirp_setup>` page for full details on the Markers tab and the safety validation associated with the Protection and Gate roles.
+* ``rampOnly`` (true/false) is set for direct digital synthesis devices (e.g., the AD9914) that can only emit a single linear ramp per trigger. With ``rampOnly`` enabled, the chirp is constrained to a single non-empty segment.
+* ``triggered`` (true/false) selects external triggering. When false, supported AWGs play their loaded waveform continuously; not every implementation honors the untriggered mode.
+
+Sample-rate and ``maxSamples`` defaults are taken from the hardware specification of each device. Lowering them is acceptable for restricting the usable range; raising them past what the hardware supports will produce malformed waveforms or device errors.
 
 .. warning::
 
-  Setting the sample rate and maxSamples to incorrect values may lead to incorrect chirps or potentially device errors.
+  Setting the sample rate or ``maxSamples`` to values the hardware does not support may lead to incorrect chirps or device errors.
 
 Implementations
 ---------------
 
-Virtual (virtual)
-.................
+.. list-table::
+   :header-rows: 1
+   :widths: 20 10 70
+   :class: longtable
+   :width: 100%
 
-The virtual implementation can be thought of as a "read-only" device useful for recording the chirp settings in use. This implementation is recommended if you use another program to produce your chirps. In addition, setting the ``hasAmpEnablePulse`` and/or ``hasProtectionPulse`` options to false will allow Blackchirp to configure appropriate pulse generator channels automatically if desired.
+   * - Implementation
+     - markerCount
+     - Notes
+   * - Virtual
+     - 4
+     - Records chirp parameters without driving hardware. Useful for archiving chirp settings when an external tool drives the AWG, and for exercising the marker UI with a non-trivial channel count.
+   * - Tektronix AWG70002A
+     - 2
+     - 16 GSa/s, 6.25 GHz max output. TCP socket on port 4000 (TekVisa). Markers map to physical outputs 1 and 2.
+   * - Tektronix AWG7122B
+     - 2
+     - 24 GSa/s, 12 GHz max output. TCP socket on port 4000 (TekVisa). Markers map to physical outputs 1 and 2. May be triggered externally or run continuously.
+   * - Tektronix AWG5204
+     - 4
+     - 10 GSa/s, 2.5 GHz bandwidth. Hardcoded to channel 1 for the chirp output. All four marker outputs are exposed, and any channel can carry a Trigger-role marker — the AWG5204 has no separate trigger output, so the digitizer trigger is generated by assigning one of the four marker channels to the Trigger role.
+   * - Keysight M8195A
+     - 2
+     - 65 GSa/s, 25 GHz max output. Locked to an external 10 MHz reference. Chirp output on channel 1; markers map to physical outputs 1 and 2.
+   * - Keysight M8190
+     - 2
+     - 12 GSa/s, up to 55 GHz max output. The implementation is hardcoded to a 12-bit output on channel 1 at 9.375 GSa/s with markers unused; the hardware supports markers and the channel count is reserved for future use.
+   * - Analog Devices AD9914
+     - 0
+     - DDS chip with a built-in linear ramp generator. ``rampOnly`` is forced true and there are no marker outputs; protection and gate signals must come from a pulse generator.
 
-Tektronix AWG70002A (awg7002a)
-..............................
+Virtual
+.......
 
-The `AWG70002A <https://www.tek.com/en/signal-generator/awg70000-arbitrary-waveform-generator-manual>`_ is a 16 GSa/s AWG with a maximum output frequency of 6.25 GHz, and this implementation communicates over a TCP socket. The default TekVisa software running on the AWG communicates on port 4000. The implementation is currently hardcoded to be externally triggered with a rising edge on trigger A with the trigger mode set to synchronous to ensure phase coherence (assuming the trigger source is locked to the same external reference as the AWG). The chirp output is on channel 1, and both markers are always used (marker A = Protection, marker B = Amplifier Gate).
+The virtual implementation can be thought of as a "read-only" device useful for recording the chirp settings in use. This implementation is recommended if you use another program to produce your chirps. Pairing it with a pulse generator that has channels in the Protection and Amplifier-gate roles lets Blackchirp generate analogous protection and gate signals without driving any AWG hardware.
 
-When an experiment begins, the chirp data and markers are written to the device over and Blackchirp maintains a list of waveforms that have been sent to the AWG. As long as the AWG hasn't been reset, if you reuse a chirp, it is likely that Blackchirp will find it in the list and reload it rather than re-transferring the data. If this behavior causes problems, you can always restart the AWG or delete the offending records to force Blackchirp to reload the chirp. If successful, the outputs are enabled and the device is set to run mode, which will then play waveforms upon receiving a trigger. This will generate an audible click due to the relays in the AWG. At the end of the experiment, the outputs are disabled (producing another audible click) and the device placed into standby.
+Tektronix AWG70002A
+......................
+
+The `AWG70002A <https://www.tek.com/en/signal-generator/awg70000-arbitrary-waveform-generator-manual>`_ communicates over a TCP socket on port 4000 (TekVisa). The implementation is hardcoded to be externally triggered with a rising edge on trigger A with the trigger mode set to synchronous to ensure phase coherence (assuming the trigger source is locked to the same external reference as the AWG). The chirp output is on channel 1.
+
+When an experiment begins, the chirp data and markers are written to the device, and Blackchirp maintains a list of waveforms that have been sent to the AWG. As long as the AWG has not been reset, reusing a chirp will reload the existing record rather than re-transferring the data. If this behavior causes problems, restart the AWG or delete the offending records to force a reload. Once the upload is complete the outputs are enabled and the device is set to run mode, producing an audible click from the internal relays. At the end of the experiment the outputs are disabled (another click) and the device is placed into standby.
 
 .. warning::
    A bug in earlier versions of the TekVISA firmware would cause an error when transmitting chirp data to the AWG if the binary data sequence contained a 0x1d character. This has likely been fixed in newer versions. However, if you encounter this problem, Tektronix produced a "Socket Server Plus" program that communicates on port 4001. Contact Tektronix for further details.
 
-Tektronix AWG7122B (awg7122b)
+Tektronix AWG7122B
 .............................
 
-The `AWG7122B <https://www.tek.com/en/datasheet/arbitrary-waveform-generators-7>`_ is a 24 GSa/s AWG with a maximum output frequency of 12 GHz, and this implementation communicates over a TCP socket. The default TekVisa software running on the scope communicates on port 4000. This AWG may either be externally triggered or it may play waveforms continuously. In the case that it is externally triggered, the trigger is set to a rising edge on trigger A, and the device otherwise works identically to the AWG70002B described above. Otherwise, when the experiment begins, the AWG will be placed into Run mode (if it was not already).
+The `AWG7122B <https://www.tek.com/en/datasheet/arbitrary-waveform-generators-7>`_ communicates over a TCP socket on port 4000. It may be externally triggered or play waveforms continuously. When externally triggered, the trigger is a rising edge on trigger A and the device otherwise behaves like the AWG70002A described above; otherwise the AWG is placed into Run mode at the start of the experiment if it is not already running.
 
 .. note::
-   At the end of the experiment, the AWG7122B will be left in Run mode if it is **not** externally triggered. Usually one of the marker signals is used to trigger gas pulses, etc, and so these are left running in order to not interfere with any PID loops, etc.
+   At the end of the experiment the AWG7122B will be left in Run mode if it is **not** externally triggered. One of the marker signals is typically used to trigger gas pulses, etc., and the outputs are left running so as not to interfere with any PID loops.
 
-Analog Devices AD9914 (ad9914)
-..............................
-
-The `AD9914 <https://www.analog.com/en/products/ad9914.html>`_ is a direct digital synthesis chip that generates waveforms based on samples from an external clock. According to specs, the maximum external clock frequency is something like 3 GHz (but it seems to work still even at 4 GHz), and the maximum output frequency is half of the clock frequency. The AD9914 contains a built-in ramp generator that can be used to generate linear chirps.
-
-.. warning::
-
-  Support for this device should be considered experimental at best. At present, control of the AD9914 goes through an Arduino that uses the parallel interface to set register values on the AD9914 through a modified evaluation board. The performance is inconsistent and there are a number of register combinations that just do not seem to work as described in the documentation. You should strongly consider any other option than this! For more information, raise an issue on Github.
-
-Keysight M8195A (m8195a)
-........................
-
-The `M8195A <https://www.keysight.com/us/en/product/M8195A/65-gsa-s-arbitrary-waveform-generator.html>`_ is a 4-channel 65 GSa/s AWG with a maximum frequency of 25 GHz. Currently, it is hardcoded to lock to an external 10 MHz reference, and its chirp is output on channel 1. The protection pulse and the amplifier gate pulse are output on channel 3 and channel 4, respecivetly. It may be optionally externally triggered by a rising edge on the trigger input. Unlike the AWG7122B, at the end of the experiment, the outputs are disabled whether or not the scope is triggered.
-
-.. warning::
-   There have been reports that errors may occur when Blackchirp writes waveform data to the device, but currently there has not been enough information to debug the issue, so the current status is unknown.
-
-Keysight M8190 (m8190)
-........................
-
-The `M8190 <https://www.keysight.com/us/en/product/M8190A/12-gsa-s-arbitrary-waveform-generator.html>`_ is a 1 or 2-channel 12 GSa/s AWG with a maximum frequency of 55 GHz. Currently, it is hardcoded use only a 12-bit output on channel 1, a 9.375 GSa/s sampling rate, no markers. The hardcoding is set up for the MIT group, and can be made more flexible in the future.
-
-Tektronix AWG5204 (awg5204)
+Tektronix AWG5204
 ...........................
 
-The Tektronix AWG5024 is a 10 GSa/s AWG with a bandwidth of 2.5 GHz. Its output is hardcoded to channel 1. It uses 3 of the 4 marker outputs: marker 1 is the amplifier enable pulse, marker 2 is the protection pulse, and marker 3 is an additional trigger pulse. This configuration is hardcoded for th Harvey Mudd group and can be made more flexible in the future.
+The Tektronix AWG5204 is a 10 GSa/s AWG with a 2.5 GHz bandwidth. The chirp output is hardcoded to channel 1 and all four marker outputs are exposed through the marker system. Because the AWG5204 has no dedicated digitizer-trigger output, the digitizer trigger is produced by assigning one of the four marker channels the Trigger role in the Markers tab of the :doc:`chirp setup </user_guide/experiment/chirp_setup>` page; a 0.1 µs lead time relative to the chirp is the typical setting for that trigger. Any of the channels can equally well be repurposed for other timing tasks.
+
+Analog Devices AD9914
+..............................
+
+The `AD9914 <https://www.analog.com/en/products/ad9914.html>`_ is a direct digital synthesis chip that generates waveforms based on samples from an external clock. According to specs, the maximum external clock frequency is something like 3 GHz (but it seems to work still even at 4 GHz), and the maximum output frequency is half of the clock frequency. The AD9914 contains a built-in ramp generator that can be used to generate linear chirps. ``markerCount`` is zero; protection and gate signals must come from a pulse generator.
+
+.. warning::
+
+  Support for this device should be considered experimental at best. Control of the AD9914 goes through an Arduino that uses the parallel interface to set register values on the AD9914 through a modified evaluation board. The performance is inconsistent and there are a number of register combinations that just do not seem to work as described in the documentation. You should strongly consider any other option than this. For more information, raise an issue on Github.
+
+Keysight M8195A
+........................
+
+The `M8195A <https://www.keysight.com/us/en/product/M8195A/65-gsa-s-arbitrary-waveform-generator.html>`_ is a 4-channel 65 GSa/s AWG with a maximum frequency of 25 GHz. It is hardcoded to lock to an external 10 MHz reference, and its chirp is output on channel 1. It may be optionally externally triggered by a rising edge on the trigger input. Unlike the AWG7122B, the outputs are disabled at the end of the experiment whether or not the device is triggered.
+
+.. warning::
+   There have been reports of errors when Blackchirp writes waveform data to the device, but there has not been enough information to debug the issue.
+
+Keysight M8190
+......................
+
+The `M8190 <https://www.keysight.com/us/en/product/M8190A/12-gsa-s-arbitrary-waveform-generator.html>`_ is a 1- or 2-channel 12 GSa/s AWG with a maximum frequency of 55 GHz. It is hardcoded to use only a 12-bit output on channel 1 at 9.375 GSa/s, with markers unused. The hardcoding is set up for the MIT group and can be made more flexible in the future.

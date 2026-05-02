@@ -8,49 +8,71 @@ LIF Digitizer
 Overview
 --------
 
-The LIF Digitizer reads in LIF data. It is designed to support 2 channels: one for the LIF signal, and a second from a reference detector for normalizing by laser power. Each channel has a user-adjustable gate that will be used to integrate the digitized signal. If the reference channel is enabled, the integral of the LIF signal will be divided by the integral of the reference signal when processed. The full time-domain LIF and Reference signals are both saved to disk during an acquisition so they can be reprocessed later.
+The LIF Digitizer reads in laser-induced fluorescence data. It is
+designed around two channels: one for the LIF signal and a second for
+a reference detector used to normalize by laser power. Each channel
+has a user-adjustable integration gate. When the reference channel is
+enabled, the integral of the LIF signal is divided by the integral of
+the reference signal during processing. The full time-domain LIF and
+reference traces are saved to disk during acquisition so they can be
+reprocessed later.
 
 .. note::
-   At present, the LIF data channel is hardcoded to channel 1 and the reference channel to 2. This can be made more versatile in a future version if needed.
+   The LIF data channel is hardcoded to channel 1 and the reference
+   channel to channel 2.
 
 Settings
 --------
 
-Same as FTMW Digitizer, but multiple record and block averaging modes are not supported.
+The LIF digitizer shares its underlying configuration with the
+:doc:`/user_guide/hw/ftmwdigitizer`, and most settings are exposed in
+the :doc:`hardware dialog </user_guide/hwdialog>` with inline labels
+and tooltips. Two differences are worth keeping in mind:
 
+* Multi-record and block-averaging modes are not used for LIF, even
+  if the underlying device advertises them. Each shot is transferred
+  to the host individually.
+* Because LIF traces are typically short and acquired at modest
+  repetition rates, transfer-rate tuning is rarely necessary; pick a
+  sample rate that resolves the gate region cleanly and leave the
+  rest at their defaults.
 
 Implementations
 ---------------
 
-Virtual (virtual)
+Virtual
 .................
 
-A dummy implementation.
+A dummy implementation used for development and for installs that
+only view archived data.
 
-Spectrum Instrumentation M4i2211x8 (m4i2211x8)
+Spectrum Instrumentation M4i2211x8
 ..............................................
 
-The Spectrum Instrumentation M4i.2211x8 is a 2-channel high-speed digitizer
-with a bandwidth of 500 MHz. Using this digitizer requires that the spcm
-library be installed and linked to Blackchirp at compile time.
+The Spectrum Instrumentation M4i.2211x8 is a 2-channel high-speed
+digitizer with 500 MHz of analog bandwidth.
 
-Rigol DS2302A (ds2302a)
+This implementation requires the Spectrum Instrumentation ``spcm``
+driver to be installed and linked at compile time. See
+:doc:`/user_guide/library_status` for installation details and to
+verify that the library is detected by the running Blackchirp build.
+
+Rigol DS2302A
 .......................
 
-The `Rigol DS2302A <https://www.testequity.com/product/31591-1-DS2302A>`_ is a
-2-channel, 300 MHz oscilloscope with a maximum sampling rate of 2 GSa/s. Unlike
-many other oscilloscopes, the sample rate cannot be set manually for this
-scope; the scope chooses a sampling rate automatically based on the total
-record duration. This implementation takes the user's sampling rate and record
-length, calculates the time requested, and sets the horizontal scale of the
-scope to the nearest "nice" value obtainable by coarse tunings, which are 1, 2,
-and 5eN seconds, where N is an integer. Then the implementation queries the
-sampling rate at that value, and updates the record length accordingly.
+The `Rigol DS2302A <https://www.testequity.com/product/31591-1-DS2302A>`_
+is a 2-channel, 300 MHz oscilloscope with a maximum sampling rate of
+2 GSa/s. Unlike most scopes Blackchirp supports, the sample rate
+cannot be set directly; the instrument chooses a rate based on the
+total record duration. The implementation takes the user's requested
+sample rate and record length, computes the corresponding time
+window, sets the horizontal scale to the nearest "nice" coarse value
+(1, 2, or 5 × 10\ :sup:`N` seconds), then queries the resulting
+sample rate and updates the record length to match.
 
-Another feature of this scope is that there seems to be no way to detect
-individual trigger events. The current implementation uses a timer to transfer
-the data shown on the screen to the computer. The timer interval is set by the
-`queryInterval_ms` setting, which as units of ms. It is recommended to set this
-interval to a value just slightly greater than the interval between trigger
-events (e.g., a value of 101 ms for a trigger rate of 10 Hz). This setting
-should be changed anytime the repetition rate is changed.
+The scope also offers no way to detect individual trigger events, so
+the implementation polls for screen data on a timer. The polling
+interval is controlled by the ``queryInterval_ms`` setting, in
+milliseconds. Set it slightly longer than the interval between
+trigger events (for example, 101 ms for a 10 Hz trigger) and update
+it whenever the repetition rate changes.

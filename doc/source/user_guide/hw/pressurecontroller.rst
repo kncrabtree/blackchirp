@@ -8,32 +8,32 @@ Pressure Controller
 Overview
 --------
 
-A PressureController is a device which monitors and/or controls a pressure by means of a PID control, and which optionally controls a valve.
+A PressureController monitors and optionally controls a pressure by means of a PID loop, and may also operate a gate valve.
 
 .. note::
-   The PressureController was implemented with a limited scope of functionality in mind: regulating a vacuum chamber pressure for CRESU experiments on a chambber with a programmable pendulum valve. In the future, it would be better to expand this implementation to support multiple channels and valves, or to split the functionality to create one controller class and one monitor class. This would enable reading, e.g., pressures from TC or ion gauges.
+   The PressureController interface was implemented with a narrow scope in mind: regulating a vacuum chamber pressure for CRESU experiments on a chamber with a programmable pendulum valve. A natural extension is to support multiple channels and valves, or to split the role into separate controller and monitor classes so that thermocouple or ion gauges can be exposed without a control loop. Contributions are welcome.
 
 Settings
 --------
 
-- ``decimal`` (int): Number of decimal places to display on UI.
-- ``hasValve`` (bool): If true, adds controls for opening/closing a valve.
-- ``intervalMs`` (int): Time between pressure readings, in ms.
-- ``max`` (double): Maximum pressure setting.
-- ``min`` (double): Minimum pressure setting.
-- ``units`` (string): Units for pressure setting. Displayed on UI
+Most settings are exposed in the :doc:`hardware dialog </user_guide/hwdialog>` with inline labels and tooltips supplied by the settings registry. A few items are worth highlighting:
 
+* ``min`` and ``max`` set the display range for the pressure readout and the bounds enforced by the setpoint spin box; ``decimal`` controls the number of decimal places.
+* ``units`` (Pressure Units) is registered as an Important setting because it must match the unit system reported by the device. The base-class default is ``Torr``.
+* ``readInterval`` is the polling period in milliseconds. Faster intervals smooth the rolling-data trace at the cost of more serial traffic.
+* ``hasValve`` controls whether the dialog and gas-control widget expose explicit open/close gate-valve actions. Read-only monitor configurations should leave this off.
+
+Pressure values are reported as both rolling data and auxiliary data, so the channel can be used as a validation setting to terminate an acquisition that drifts outside an acceptable window.
 
 Implementations
 ---------------
 
-Virtual (virtual)
+Virtual
 .................
 
-A dummy implementation which returns a pressure equal to the setpoint.
+A dummy implementation that returns a pressure equal to the setpoint. Useful for offline UI testing.
 
-Intellisys IQplus (intellisys)
+Intellisys IQplus
 ..............................
 
-The `Intellisys IQplus <https://www.idealvac.com/files/manuals/08-Nor-CalProductsDownstreamPressureControlCatalog2018.pdf>`_ is an adaptice pressure controller that uses a pressure sensor, PID controller, and pendulum valve to regulate the pressure in a process chamber.
-
+The `Intellisys IQplus <https://www.idealvac.com/files/manuals/08-Nor-CalProductsDownstreamPressureControlCatalog2018.pdf>`_ is an adaptive pressure controller that combines a pressure sensor, PID loop, and pendulum valve to regulate the pressure in a process chamber. The communication protocol is RS232. The implementation overrides the base-class default for ``min`` to ``0.0`` to match the device's downstream-control range.

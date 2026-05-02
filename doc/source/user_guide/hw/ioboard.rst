@@ -8,30 +8,33 @@ IO Board
 Overview
 --------
 
-An IOBoard is a device with one or more analog and/or digital input/output channels. In Blackchirp, an IOBoard is used to monitor analog or digital signals by taking a single measurement at designated time intervals. Analog channels can be read as rolling data for continous monitoring in addition to auxiliary data during a scan. Digital channels are read as auxiliary data during a scan and used to automatically abort a scan.
+An IOBoard is a device with one or more analog and/or digital input/output channels. In Blackchirp, an IOBoard takes a single measurement at designated time intervals to monitor analog or digital signals. Analog channels can be read as rolling data for continuous monitoring as well as auxiliary data during a scan. Digital channels are read as auxiliary data during a scan and can be used to automatically abort a scan when a validation condition is violated.
 
-At present, Blackchirp does not support analog or digital output signals, even for devices which support it. Control of digital output signals is planned for future support. The "Role" field available on the IO Board configuration page
+Blackchirp does not drive analog or digital output signals, even on devices that support it.
 
 Settings
 --------
 
-The settings are similar to the `FTMW Digitizer <hw/ftmwdigitizer.html>`_. However, some settings such as ``maxRecordLength``, ``canBlockAverage``, etc are not used and will be ignored if changed, as the IO board is configured to only read 1 sample on demand. In addition, there are the following settings:
+The IOBoard reuses many of the same settings as the :doc:`/user_guide/hw/ftmwdigitizer`, and the :doc:`hardware dialog </user_guide/hwdialog>` presents them with inline labels and tooltips. Most digitizer-only settings (``maxRecordLength``, ``canBlockAverage``, multi-record options, and so on) are ignored because the IO board only reads one sample on demand.
 
-* ``numAnalogChannels`` (int): Number of analog input channels. For some IO boards (e.g., LabJack U3), some channels may by configured as analog or digital, and this allows a user to change how many channels are configured as each.
-* ``numDigitalChannels`` (int): Number of digital input/output channels.
+Two settings are worth highlighting:
 
+* ``numAnalogChannels`` selects how many channels are configured as analog inputs on devices where channels can be reassigned (such as the LabJack U3). It is a Required setting and is read-only after profile creation.
+* ``numDigitalChannels`` sets the number of digital input/output channels and is similarly read-only after profile creation.
+
+Per-channel role and naming options are exposed in the IO Board configuration page of the hardware dialog.
 
 Implementations
 ---------------
 
-Virtual (virtual)
+Virtual
 .................
 
-A dummy implementation which returns a random value for each enabled channel (8 analog channels, 8 digital channels).
+A dummy implementation that returns a random value for each enabled channel (8 analog channels, 8 digital channels).
 
-LabJack U3 (labjacku3)
+LabJack U3
 ......................
 
-The `LabJack U3 <https://labjack.com/products/u3>`_ is a multichannel, configurable IO board with a variable number of analog/digital channels. The implementation defaults to 8 analog inputs (pins 0-7 which correspond to the 4 analog inputs and the first 4 FIO pins) and 8 digital input/outputs corresponding to FIO4-11. If ``numAnalogChannels`` is set to 4, then up to 12 digital channels can be used. Errors may occur if ``numAnalogChannels`` is less than 4.
+The `LabJack U3 <https://labjack.com/products/u3>`_ is a multichannel, configurable IO board with a variable number of analog/digital channels. The implementation defaults to 8 analog inputs (pins 0-7, corresponding to the 4 analog inputs and the first 4 FIO pins) and 8 digital input/outputs corresponding to FIO4-11. Setting ``numAnalogChannels`` to 4 frees pins for up to 12 digital channels; values below 4 are not supported and may produce errors at runtime.
 
-The LabJack U3 requires the LabJackUSB driver to be installed on the system and linked to the applcication executable.
+The LabJack U3 is supported on Linux, macOS, and Windows. Linux and macOS builds talk to the device through the ``liblabjackusb`` Exodriver; Windows builds load the LabJackUD driver instead. In every case the driver must be installed on the host computer and discoverable by Blackchirp's runtime library loader. See :doc:`/user_guide/library_status` for the current driver load state and platform-specific installation guidance, including the Windows UD-driver install hint.

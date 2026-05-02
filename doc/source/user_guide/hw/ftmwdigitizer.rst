@@ -8,82 +8,156 @@ FTMW Digitizer
 Overview
 --------
 
-The FTMW Digitizer is the fast digitizer used to record FIDs during a CP-FTMW experiment. At is simplest, on each trigger event, the digitizer simply records a given number of data points at the desired sample rate, then transmits the raw digitizer values to Blackchirp for averaging. However, some devices support fast retriggering (e.g., Tektronix's "FastFrame" mode), and it is possible to acquire a series of *frames* in sequence. For applications involving pulsed gas sources, this allows each gas pulse to be probed by a series of chirps. The resultant frames may be transmitted to Blackchirp individually. Some digitizers also support internal averaging (sometimes called *block averaging*), in which some number of records may be averaged by the digitizer prior to being transmitted to Blackchirp. For some scopes, this block averaging is only possible among frames captured in a single acquisition event, thereby resulting in a single frame. Others though can block average multiple records in parallel prior to transmitting to Blackchirp, and in this case the final record would still contain multiple (averaged) frames.
+The FTMW Digitizer is the fast digitizer used to record FIDs during a
+CP-FTMW experiment. At its simplest, on each trigger event the digitizer
+records a fixed number of points at the configured sample rate and sends
+the raw samples to Blackchirp for averaging. Some devices support fast
+retriggering (e.g., Tektronix's "FastFrame" mode), which lets a series
+of *frames* be acquired in a single shot. For pulsed gas sources this
+allows each gas pulse to be probed by a series of chirps, with the
+resulting frames transmitted individually.
 
-No matter how many analog channels the digitizer possesses, Blackchirp only records data from a single input channel.
+Many digitizers also support internal averaging (sometimes called
+*block averaging*), where some number of records are co-averaged on the
+device before transfer. On some scopes block averaging produces a single
+averaged frame; others can co-average multiple records in parallel and
+transfer a record that still contains several (averaged) frames.
+
+Regardless of how many analog channels the digitizer has, Blackchirp
+records data from a single input channel.
+
+To keep up with high shot rates, Blackchirp owns a small fixed-size
+buffer between the digitizer thread and the acquisition thread. If
+processing falls behind, the digitizer automatically accumulates shots
+locally so that no triggers are lost; the accumulated data is handed off
+as soon as the buffer drains. This is transparent to the user, but it
+means that brief stalls in the GUI or storage path do not corrupt the
+shot count.
 
 .. note::
-   Some errors that may occur on Keysight and Tektronix scopes may cause the instrument to become unresponsive. For Keysight scopes, closing and reopening the scope software will resolve this issue. For Tektronix scopes, it is usually necessary to restart the scope entirely.
+   Some errors on Keysight and Tektronix scopes can leave the
+   instrument unresponsive. For Keysight scopes, closing and reopening
+   the scope software clears the condition. For Tektronix scopes, a
+   full instrument restart is usually required.
 
 Settings
 --------
 
- * ``bandwidthMHz`` (float): The analog bandwidth of the digitizer, in MHz. This value has no effect on the program at present.
- * ``canBlockAndMultiRecord`` (true/false): Indicates whether the digitizer can simultaneously average multiple frames separately. In this case, the record transmitted to Blackchirp would contain several FIDs, each of which has been averaged for a designated number of shots.
- * ``canBlockAverage`` (true/false): Indicates whether the digitizer can perform averaging prior to transmitting data to Blackchirp.
- * ``canMultiRecord`` (true/false): Indicates whether the digitizer supports transmitting a single record containing multiple frames.
- * ``hasAuxTriggerChannel`` (true/false): Indicates whether the digitizer has a separate external trigger channel in addition to the possibility of triggering on an input channel.
- * ``maxAverages`` (int): Maximum number of averages that can be accommodated in block averaging mode. This may be limited by the number of bytes used to store averaged data on the device.
- * ``maxBytesPerPoint`` (int): Maximum number of bytes that may be used to encode data. The value entered here affects the range of allowed bytes per point values on the digitizer configuration page, but most implementations will override this value, setting the appropriate number for the data requested.
- * ``maxFullScale`` (float): Maximum full scale voltage for the digitizer, in V.
- * ``maxRecordLength`` (int): Maximum length of an FID record, typically limited by digitizer memory. Note that enabling multi record mode will decrease the maximum length, as the memory is then divided into multiple records. For some devices, enabling block averaging also limits the memory available.
- * ``maxRecords`` (int): Maximum number of records that can be requested in multi record mode. The actual number of records that is possible may be limited by scope memory for long records.
- * ``maxTrigDelayUs`` (float): Maximum delay between the trigger event and the start of the record, in μs. A positive delay means that the start of the record begins after the trigger, while a negative delay means that the start of the record begins before the trigger.
- * ``maxTrigLevel`` (float): Maximum edge trigger level, in V.
- * ``maxVOffset`` (float): Maximum vertical offset on an input channel.
- * ``minFullScale`` (float): Minimum full scale voltage for the digitizer, in V.
- * ``minTrigDelayUs`` (float): Minimum delay between the trigger event and the start of the record, in μs. A positive delay means that the start of the record begins after the trigger, while a negative delay means that the start of the record begins before the trigger.
- * ``minTrigLevel`` (float): Minimum edge trigger level, in V.
- * ``maxVOffset`` (float): Minimum vertical offset on an input channel.
- * ``sampleRates`` (menu): Allowed sample rates. Most scopes support only a few discrete values. For each entry, there are 2 subitems:
-   - ``text`` (string): The text to be displayed in a drop-down options box when configuring the digitizer.
-   - ``value`` (float): The sample rate in Sa/s (or Hz)
+Most digitizer settings are exposed in the :doc:`hardware dialog
+</user_guide/hwdialog>` with inline labels and tooltips, so they do not
+need to be re-documented here. A few behaviors are worth highlighting:
+
+* **Capability flags** (``canBlockAverage``, ``canMultiRecord``,
+  ``canBlockAndMultiRecord``, ``hasAuxTriggerChannel``) describe what
+  the device supports. Implementations set these to match the
+  hardware; do not enable a capability the device cannot actually
+  provide.
+* **Memory-derived limits** (``maxRecordLength``, ``maxRecords``,
+  ``maxAverages``) reflect device memory. Enabling multi-record mode
+  divides the available memory among records, and on some devices
+  enabling block averaging further reduces the usable record length.
+* **Sample rates** are presented as a fixed menu of supported values
+  rather than a free-form numeric entry, because most scopes only
+  accept a discrete set.
+* ``bandwidthMHz`` is informational only; it does not change the
+  configuration sent to the device.
+
+Transfer rate is often the practical bottleneck. Two recommendations
+that still apply:
+
+* Prefer a link-local Ethernet connection of at least 1 Gbps to
+  network-attached scopes; lower bandwidth quickly becomes the limit
+  for long records or fast retriggering.
+* Where the digitizer supports it, enable block averaging to push
+  co-averaging onto the device. The record sent to Blackchirp is then
+  the sum of many shots, which dramatically reduces network traffic
+  and host-side processing per FID.
 
 Implementations
 ---------------
 
-Virtual (virtual)
+Virtual
 .................
 
-The virtual implementation comes with a resource file that contains a sample chirp-FID waveform that is 750k points in length. It adjusts the vertical scaling, sample rate, byte order, etc, to change the encoding of the data dynamically as settings are adjusted. Regular users should only enable this device if running Blackchirp on a machine for viewing data.
+The virtual implementation synthesizes a fresh FID on every shot by
+summing 10–100 sinusoidal components at randomly chosen frequencies,
+amplitudes, and phases, then adds Gaussian noise at the byte width
+configured for the run. It honors the current vertical scale, sample
+rate, and byte order, so changes made in the dialog take effect
+immediately. The implementation is intended for development and for
+installs that only view archived data; it should not be enabled on a
+real acquisition machine.
 
-Tektronix DSA71604C (dsa71604c)
+Tektronix DSA71604C
 ...............................
 
-This is a 4-channel, 100 GSa/sec oscilloscope with 16 GHz analog bandwidth. It supports FastFrame acquisition which allows a variable number of waveforms to be collected with a low retrigger interval (about 4 &mu;s); the number of these frames is limited by the scope's memory which is variable. The scope is capable of coaveraging the frames collected and sending only a record containing the average; Blackchirp uses this mode when "Block Averaging" is enabled. Communication takes place over TCP, and it is recommended that the scope be connected via link-local networking with a minimum bandwidth of 1 Gbps. That said, often the data rate of the scope is limited by its own internal processing, not the bandwidth of the connection.
+A 4-channel, 100 GSa/s oscilloscope with 16 GHz analog bandwidth. It
+supports FastFrame acquisition, so a variable number of waveforms can
+be captured with a low retrigger interval (about 4 μs); the frame
+count is bounded by scope memory. The scope can co-average frames and
+send only the average; Blackchirp uses this mode when block averaging
+is enabled. Communication is over TCP, and a link-local connection of
+at least 1 Gbps is recommended. In practice the scope's internal
+processing, not network bandwidth, often sets the throughput limit.
 
-Tektronix MSO72004C (mso72004c)
+Tektronix MSO72004C
 ...............................
 
-Virtually identical to the DSA71604C, except that its bandwidth is 20 GHz.
+Functionally identical to the DSA71604C, but with 20 GHz analog
+bandwidth.
 
-Keysight DSOV204A (dsov204a)
+Keysight DSOV204A
 ............................
 
-The `DSOV204A <https://www.keysight.com/us/en/product/DSOV204A/infiniium-v-series-oscilloscope-20-ghz-4-analog-channels.html>`_ is an 80 GSa/s oscilloscope with a maximum bandwidth of 20 GHz, and this implementation communicates over a TCP socket. A static IP address has to be set in the Windows OS running on the scope and usual remote communication is on port 5025. This implementation is currently coded so that the scope can be triggered on any of its 4 analog channels but triggering on the AUX channel is recommended.
+The `DSOV204A <https://www.keysight.com/us/en/product/DSOV204A/infiniium-v-series-oscilloscope-20-ghz-4-analog-channels.html>`_
+is an 80 GSa/s oscilloscope with up to 20 GHz of bandwidth.
+Communication is over a TCP socket on port 5025, requiring a static
+IP address configured in the Windows OS running on the scope. The
+scope can be triggered on any of its four analog channels, but
+triggering on the AUX channel is recommended.
 
-Keysight DSOx92004a (dsox92004a)
+Keysight DSOX92004A
 ................................
 
-The `DSOX92004A <https://www.keysight.com/us/en/product/DSOX92004A/infiniium-high-performance-oscilloscope-20-ghz.html>`_ is an 80 GSa/s oscilloscope with a bandwidth of 20 GHz, upgradable to 33 GHz, and this implementation communicates over a TCP socket. A static IP address has to be set in the Windows OS running on the scope and usual remote communication is on port 5025. Caution: This implementation has not been tested since Blackchirp's update to v1.0.
+The `DSOX92004A <https://www.keysight.com/us/en/product/DSOX92004A/infiniium-high-performance-oscilloscope-20-ghz.html>`_
+is an 80 GSa/s oscilloscope with 20 GHz of bandwidth, upgradable to
+33 GHz. Communication is over a TCP socket on port 5025, requiring a
+static IP address configured in the Windows OS running on the scope.
+This implementation has not been re-verified against the data-path
+refactor that introduced block-averaging support; treat it as
+untested.
 
-Tektronix MSO64B (mso64b)
+Tektronix MSO64B
 .........................
 
-A 4-channel scope with 2.5 GHz bandwidth, appropriate for segmented LO scanning setups. However, when Tektronix switched to a new FastFrame backend within their scopes, they broke the operation of "CURVESTREAM" mode which allows for fast, real-time data transfer. As a result, the data transfer rate of this scope is extremely limited.
+A 4-channel scope with 2.5 GHz bandwidth, suitable for segmented LO
+scanning. Tektronix's FastFrame backend on this model breaks the
+CURVESTREAM mode that Blackchirp relies on for fast real-time data
+transfer, so the data transfer rate of this scope is severely
+limited.
 
-Spectrum Instrumentation M4i2220x8 (m4i2220x8)
+Spectrum Instrumentation M4i2220x8
 ..............................................
 
-A high-speed digitizer with an acquisition rate of 2.5 GSa/s and an analog bandwidth of 1.25 GHz, appropriate for segmented LO scanning setups. The implementation here requires that the device have the "block averaging" firmware module enabled, and as a result the acquisition rate can be extremely fast (50,000 FIDs/sec has been possible). This digitizer requires that the spcm drivers from Spectrum Instrumentation are installed and linked to the application at compile time.
+A high-speed digitizer with a 2.5 GSa/s sampling rate and 1.25 GHz
+analog bandwidth, suitable for segmented LO scanning. The
+implementation requires the device to have the block-averaging
+firmware module enabled; with that module, sustained acquisition
+rates of 50,000 FIDs/s have been achieved.
 
-Tektronix DPO71254B (dpo71524b)
+This implementation requires the Spectrum Instrumentation ``spcm``
+driver to be installed and linked at compile time. See
+:doc:`/user_guide/library_status` for installation details and to
+verify that the library is detected by the running Blackchirp build.
+
+Tektronix DPO71254B
 ...............................
 
-The `DPO71254B <https://www.tek.com/en/oscilloscope/dpo70000-mso70000-manual-18>`_ is a 50 GSa/s oscilloscope with a maximum bandwidth of 12.5 GHz, and this implementation communicates over a TCP socket. A static IP address has to be set in the Windows OS running on the scope and the default TekVisa software running on the scope communicates on port 4000. This implementation is currently coded so that the scope can be triggered on any of its 4 analog channels but triggering on the AUX channel is recommended. This implementation is currently being tested.
-
-.. Tektronix DPO72004 (dpo72004)
-.. ...............................
-
-.. The `DPO72004 <https://www.tek.com/en/oscilloscope/dpo70000-mso70000-manual-18>`_ is a 50 GSa/s oscilloscope with a maximum bandwidth of 20 GHz, and this implementation communicates over a TCP socket. A static IP address has to be set in the Windows OS running on the scope and the default TekVisa software running on the scope communicates on port 4000. This implementation is currently coded so that the scope can be triggered on any of its 4 analog channels but triggering on the AUX channel is recommended. This implementation is currently being tested.
+The `DPO71254B <https://www.tek.com/en/oscilloscope/dpo70000-mso70000-manual-18>`_
+is a 50 GSa/s oscilloscope with up to 12.5 GHz of bandwidth.
+Communication is over a TCP socket on port 4000, the default for
+TekVisa, requiring a static IP address configured in the Windows OS
+running on the scope. The scope can be triggered on any of its four
+analog channels, but triggering on the AUX channel is recommended.
+Treat this implementation as experimental.
 
