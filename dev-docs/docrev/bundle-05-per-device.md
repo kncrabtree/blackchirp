@@ -1,10 +1,20 @@
 # Bundle 05 — Per-Device Hardware Pages
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
 - (entries appended in reverse chronological order; most recent first)
+- 2026-05-01: not started → complete. Content commit 2dfda1eb. Drafter
+  fan-out (six parallel Sonnet drafters owning ≤2 files each) plus
+  per-page and cross-page Sonnet verifiers; orchestrator applied the
+  load-bearing punch-list fixes directly. Subsequent user review
+  surfaced several factual corrections (virtual FTMW scope synthesizes
+  an FID rather than shipping a resource; multiple GPIB controllers
+  supported; LabJack U3 on macOS too; pulse generators reorganized by
+  series rather than model) which were applied before staging. Final
+  pass dropped the parenthetical short-key suffixes that were artifacts
+  of compile-time hardware selection.
 -->
 
 Light refresh of the eleven `doc/source/user_guide/hw/*.rst` pages.
