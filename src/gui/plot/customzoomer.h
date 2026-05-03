@@ -18,6 +18,13 @@ public:
     bool xLocked() const { return d_xLocked; }
     bool yLocked() const { return d_yLocked; }
 
+    /// \brief Aborts the current rubber-band selection if one is active.
+    ///
+    /// Exposes the protected QwtPicker::reset() so callers can cancel a
+    /// box-zoom that the user started but did not complete (e.g., dragged
+    /// off the canvas and released outside).
+    void cancel() { reset(); }
+
     // QwtPicker interface
 protected:
     QPolygon adjustedPoints(const QPolygon &p) const override;

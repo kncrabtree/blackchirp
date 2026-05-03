@@ -43,7 +43,11 @@ struct HwConfigParam {
  * - Optional: Rarely needs changing. Shown under a collapsible
  *   "Advanced Settings" section.
  */
-enum class HwSettingPriority { Required, Important, Optional };
+enum class HwSettingPriority {
+    Required,  ///< Must be set before construction; may not be edited after profile creation
+    Important, ///< Has a sensible default but the user should review it
+    Optional   ///< Rarely needs changing; rendered under a collapsible *Advanced Settings* group
+};
 
 /*!
  * \brief Input type for a custom communication parameter

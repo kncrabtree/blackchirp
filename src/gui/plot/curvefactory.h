@@ -2,7 +2,6 @@
 #define CURVEFACTORY_H
 
 #include <memory>
-#include <map>
 #include <QString>
 #include <QVariant>
 #include <qwt6/qwt_plot_curve.h>
@@ -12,153 +11,146 @@
 
 class OverlayBase;
 
-/*!
- * \brief Abstract interface for curve display settings storage
- * 
- * This interface allows curve classes to store their display settings
- * in different backends (QSettings via SettingsStorage, or overlay metadata).
- */
+/// \brief Polymorphic key/value storage contract for curve display settings.
+///
+/// \sa SettingsStorageWrapper, OverlayMetadataStorage, BlackchirpPlotCurveBase
 class CurveStorageInterface {
 public:
+    /// \brief Virtual destructor.
     virtual ~CurveStorageInterface() = default;
-    
-    /*!
-     * \brief Store a value with the given key
-     * \param key The settings key
-     * \param value The value to store
-     */
+
+    /// \brief Stores \a value under \a key.
+    /// \param key   Settings key.
+    /// \param value Value to store.
     virtual void set(const QString& key, const QVariant& value) = 0;
-    
-    /*!
-     * \brief Retrieve a value for the given key
-     * \param key The settings key
-     * \param defaultValue Default value if key doesn't exist
-     * \return The stored value or default
-     */
+
+    /// \brief Retrieves the value stored under \a key.
+    /// \param key          Settings key.
+    /// \param defaultValue Returned when \a key is absent.
+    /// \return Stored value, or \a defaultValue.
     virtual QVariant get(const QString& key, const QVariant& defaultValue = QVariant()) const = 0;
-    
-    /*!
-     * \brief Type-safe template method for retrieving values
-     * \param key The settings key
-     * \param defaultValue Default value if key doesn't exist
-     * \return The stored value or default, cast to type T
-     */
+
+    /// \brief Type-safe retrieval.
+    /// \tparam T Expected value type.
+    /// \param key          Settings key.
+    /// \param defaultValue Returned when \a key is absent.
+    /// \return Stored value cast to \c T, or \a defaultValue.
     template<typename T>
-    inline T get(const QString key, const T &defaultValue = QVariant().value<T>()) const { 
+    inline T get(const QString key, const T &defaultValue = QVariant().value<T>()) const {
         QVariant val = get(key, QVariant::fromValue(defaultValue));
-        return val.value<T>(); 
+        return val.value<T>();
     }
-    
-    /*!
-     * \brief Type-safe template method for storing values
-     * \param key The settings key
-     * \param value The value to store
-     */
+
+    /// \brief Type-safe storage.
+    /// \tparam T Value type; must be registered with QMetaType.
+    /// \param key   Settings key.
+    /// \param value Value to store.
     template<typename T>
     void set(const QString& key, const T& value) {
         set(key, QVariant::fromValue(value));
     }
 };
 
-/*!
- * \brief SettingsStorage wrapper implementing CurveStorageInterface
- * 
- * This wrapper allows existing SettingsStorage-based curves to use
- * the new storage interface while maintaining backward compatibility.
- */
+/// \brief CurveStorageInterface backed by SettingsStorage (QSettings).
+///
+/// Adapts the SettingsStorage / QSettings persistence layer to the
+/// CurveStorageInterface contract. Standard (non-overlay) curves use
+/// this backend so their appearance survives application restarts.
+///
+/// \sa CurveStorageInterface, SettingsStorage, CurveFactory::createStandardCurve
 class SettingsStorageWrapper : public CurveStorageInterface, public SettingsStorage {
 public:
-    /*!
-     * \brief Constructor mirroring BlackchirpPlotCurveBase's SettingsStorage initialization
-     * \param key The settings key for this curve
-     * \param category The settings category (default: General)
-     */
+    /// \brief Constructs the wrapper with the given key and storage type.
+    /// \param key  Settings key identifying this curve's storage group.
+    /// \param type Storage category (default: SettingsStorage::General).
     SettingsStorageWrapper(const QString& key, SettingsStorage::Type type = SettingsStorage::General);
-    
-    // CurveStorageInterface implementation
+
+    /// \brief Stores \a value under \a key via SettingsStorage.
     void set(const QString& key, const QVariant& value) override;
+
+    /// \brief Retrieves the value stored under \a key from SettingsStorage.
     QVariant get(const QString& key, const QVariant& defaultValue) const override;
 };
 
-/*!
- * \brief Overlay metadata storage implementing CurveStorageInterface
- * 
- * This storage backend stores curve display settings as metadata
- * within the OverlayBase object, allowing overlay-specific persistence.
- */
+/// \brief CurveStorageInterface backed by an OverlayBase metadata blob.
+///
+/// Routes all \c set / \c get calls into the metadata map of the supplied
+/// OverlayBase. Overlay curves use this backend so their appearance is
+/// saved alongside the overlay data rather than in QSettings.
+///
+/// \sa CurveStorageInterface, OverlayBase, CurveFactory::createOverlayCurve
 class OverlayMetadataStorage : public CurveStorageInterface {
 public:
-    /*!
-     * \brief Constructor
-     * \param overlay The overlay object to store metadata in
-     */
+    /// \brief Constructs storage that writes into \a overlay's metadata.
+    /// \param overlay Overlay whose metadata blob receives the curve settings.
     OverlayMetadataStorage(std::shared_ptr<OverlayBase> overlay);
-    
-    // CurveStorageInterface implementation
+
+    /// \brief Stores \a value under \a key in the overlay metadata.
     void set(const QString& key, const QVariant& value) override;
+
+    /// \brief Retrieves the value stored under \a key from the overlay metadata.
     QVariant get(const QString& key, const QVariant& defaultValue) const override;
-    
-    // Accessor for overlay (used by BlackchirpPlotCurveBase)
+
+    /// \brief Returns the overlay this storage writes into.
     std::shared_ptr<OverlayBase> getOverlay() const { return d_overlay; }
-    
+
 private:
     std::shared_ptr<OverlayBase> d_overlay;
 };
 
-/*!
- * \brief Factory class for creating curve objects with appropriate storage backends
- * 
- * This factory provides templated methods to create curve objects with either
- * SettingsStorage (for standard curves) or OverlayMetadata (for overlay curves)
- * storage backends.
- */
+/// \brief Factory that constructs BlackchirpPlotCurveBase subclasses with the
+///        correct storage backend.
+///
+/// \sa CurveStorageInterface, BlackchirpPlotCurveBase, OverlayBase
 class CurveFactory {
 public:
-    /*!
-     * \brief Create a standard curve with SettingsStorage backend
-     * \param key The settings key for the curve
-     * \param category The settings category (default: General)
-     * \param title The curve title (default: empty)
-     * \param defaultLineStyle Default line style (default: SolidLine)
-     * \param defaultMarker Default marker style (default: NoSymbol)
-     * \param defaultStyle Default curve style (default: Lines)
-     * \return Unique pointer to the created curve
-     */
+    /// \brief Creates a curve with a SettingsStorageWrapper backend.
+    ///
+    /// \tparam CurveType Concrete subclass of BlackchirpPlotCurveBase to
+    ///         instantiate.
+    /// \param key                Settings key for this curve.
+    /// \param type               Storage category (default: SettingsStorage::General).
+    /// \param title              Curve title shown in the legend (default: empty).
+    /// \param defaultLineStyle   Initial line style (default: Qt::SolidLine).
+    /// \param defaultMarker      Initial symbol style (default: QwtSymbol::NoSymbol).
+    /// \param defaultStyle       Initial curve style (default: QwtPlotCurve::Lines).
+    /// \return Owning pointer to the constructed curve.
     template<typename CurveType>
-    static std::unique_ptr<CurveType> 
-    createStandardCurve(const QString& key, 
+    static std::unique_ptr<CurveType>
+    createStandardCurve(const QString& key,
                        SettingsStorage::Type type = SettingsStorage::General,
                        const QString& title = QString(""),
                        Qt::PenStyle defaultLineStyle = Qt::SolidLine,
                        QwtSymbol::Style defaultMarker = QwtSymbol::NoSymbol,
                        QwtPlotCurve::CurveStyle defaultStyle = QwtPlotCurve::Lines) {
-        
+
         auto storage = std::make_unique<SettingsStorageWrapper>(key, type);
-        return std::make_unique<CurveType>(std::move(storage), key, title, 
+        return std::make_unique<CurveType>(std::move(storage), key, title,
                                           defaultLineStyle, defaultMarker, defaultStyle);
     }
-    
-    /*!
-     * \brief Create an overlay curve with OverlayMetadata backend
-     * \param key The settings key for the curve
-     * \param overlay The overlay object to store metadata in
-     * \param title The curve title (default: empty)
-     * \param defaultLineStyle Default line style (default: SolidLine)
-     * \param defaultMarker Default marker style (default: NoSymbol)
-     * \param defaultStyle Default curve style (default: Lines)
-     * \return Unique pointer to the created curve
-     */
+
+    /// \brief Creates a curve with an OverlayMetadataStorage backend.
+    ///
+    /// \tparam CurveType Concrete subclass of BlackchirpPlotCurveBase to
+    ///         instantiate.
+    /// \param key                Settings key for this curve.
+    /// \param overlay            Overlay that will own the appearance metadata.
+    /// \param title              Curve title shown in the legend (default: empty).
+    /// \param defaultLineStyle   Initial line style (default: Qt::SolidLine).
+    /// \param defaultMarker      Initial symbol style (default: QwtSymbol::NoSymbol).
+    /// \param defaultStyle       Initial curve style (default: QwtPlotCurve::Lines).
+    /// \return Owning pointer to the constructed curve.
     template<typename CurveType>
-    static std::unique_ptr<CurveType> 
-    createOverlayCurve(const QString& key, 
+    static std::unique_ptr<CurveType>
+    createOverlayCurve(const QString& key,
                       std::shared_ptr<OverlayBase> overlay,
                       const QString& title = QString(""),
                       Qt::PenStyle defaultLineStyle = Qt::SolidLine,
                       QwtSymbol::Style defaultMarker = QwtSymbol::NoSymbol,
                       QwtPlotCurve::CurveStyle defaultStyle = QwtPlotCurve::Lines) {
-        
+
         auto storage = std::make_unique<OverlayMetadataStorage>(overlay);
-        return std::make_unique<CurveType>(std::move(storage), key, title, 
+        return std::make_unique<CurveType>(std::move(storage), key, title,
                                           defaultLineStyle, defaultMarker, defaultStyle);
     }
 };

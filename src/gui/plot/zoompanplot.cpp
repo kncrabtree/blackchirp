@@ -129,6 +129,10 @@ bool ZoomPanPlot::isAutoScale()
 
 void ZoomPanPlot::resetPlot()
 {
+    // Wait for any in-flight filterData() pass before tearing down the
+    // item list. Without this, the worker thread can dereference a curve
+    // that the detach call has already removed.
+    waitForFilterComplete();
     detachItems();
     autoScale();
 }
@@ -660,13 +664,11 @@ bool ZoomPanPlot::eventFilter(QObject *obj, QEvent *ev)
             {
                 p_zoomerLB->lockY(true);
                 p_zoomerRT->lockY(true);
-                d_config.zoomYLock = true;
             }
             if(ke->key() == Qt::Key_Shift)
             {
                 p_zoomerLB->lockX(true);
                 p_zoomerRT->lockX(true);
-                d_config.zoomXLock = true;
             }
             if(ke->key() == Qt::Key_Home)
             {
@@ -787,25 +789,25 @@ bool ZoomPanPlot::eventFilter(QObject *obj, QEvent *ev)
             {
                 p_zoomerLB->lockY(false);
                 p_zoomerRT->lockY(false);
-                d_config.zoomYLock = false;
             }
             if(ke->key() == Qt::Key_Shift)
             {
                 p_zoomerLB->lockX(false);
                 p_zoomerRT->lockX(false);
-                d_config.zoomXLock = false;
             }
         }
         else if(ev->type() == QEvent::Leave)
         {
-            auto me = dynamic_cast<QMouseEvent*>(ev);
-            if(me)
+            // If the user drags a rubber band off the canvas and releases the
+            // button outside, the QwtPlotZoomer never sees the release and
+            // stays stuck in box-zoom mode on re-entry. Abort any active
+            // selection when the cursor leaves while the left button is held.
+            if(QApplication::mouseButtons() & Qt::LeftButton)
             {
-                if(me->buttons() & Qt::LeftButton)
-                {
-                    p_zoomerLB->zoom(1);
-                    p_zoomerRT->zoom(1);
-                }
+                if(p_zoomerLB->isActive())
+                    p_zoomerLB->cancel();
+                if(p_zoomerRT->isActive())
+                    p_zoomerRT->cancel();
             }
         }
     }
@@ -865,66 +867,74 @@ void ZoomPanPlot::pan(QMouseEvent *me)
 
 void ZoomPanPlot::panH(double factor)
 {
-    auto br = getLimitRect(xBottom,yLeft);
-    auto tr = getLimitRect(xTop,yRight);
+    bool bottomEnabled = !d_config.axisMap.at(xBottom).override;
+    bool topEnabled = !d_config.axisMap.at(xTop).override
+            && !d_config.spectrogramMode;
 
-    auto ll1 = br.left();
-    auto ul1 = br.right();
+    if(bottomEnabled)
+    {
+        auto br = getLimitRect(xBottom,yLeft);
+        auto s1 = axisScaleDiv(xBottom);
+        auto d1 = qAbs(s1.upperBound() - s1.lowerBound())*factor;
 
-    auto ll2 = tr.left();
-    auto ul2 = tr.right();
+        if(s1.lowerBound() + d1 < br.left())
+            d1 = br.left() - s1.lowerBound();
+        if(s1.upperBound() + d1 > br.right())
+            d1 = br.right() - s1.upperBound();
 
-    auto s1 = axisScaleDiv(xBottom);
-    auto s2 = axisScaleDiv(xTop);
+        setAxisScale(xBottom,s1.lowerBound() + d1,s1.upperBound() + d1);
+    }
 
-    auto d1 = qAbs(s1.upperBound() - s1.lowerBound())*factor;
-    auto d2 = qAbs(s2.upperBound() - s2.lowerBound())*factor;
+    if(topEnabled)
+    {
+        auto tr = getLimitRect(xTop,yRight);
+        auto s2 = axisScaleDiv(xTop);
+        auto d2 = qAbs(s2.upperBound() - s2.lowerBound())*factor;
 
-    if(s1.lowerBound() + d1 < ll1)
-        d1 = ll1 - s1.lowerBound();
-    if(s1.upperBound() + d1 > ul1)
-        d1 = ul1 - s1.upperBound();
+        if(s2.lowerBound() + d2 < tr.left())
+            d2 = tr.left() - s2.lowerBound();
+        if(s2.upperBound() + d2 > tr.right())
+            d2 = tr.right() - s2.upperBound();
 
-    if(s2.lowerBound() + d2 < ll2)
-        d2 = ll2 - s2.lowerBound();
-    if(s2.upperBound() + d2 > ul2)
-        d2 = ul2 - s2.upperBound();
-
-    setAxisScale(xBottom,s1.lowerBound() + d1,s1.upperBound() + d1);
-    setAxisScale(xTop,s2.lowerBound() + d2,s2.upperBound() + d2);
+        setAxisScale(xTop,s2.lowerBound() + d2,s2.upperBound() + d2);
+    }
 
     replot();
 }
 
 void ZoomPanPlot::panV(double factor)
 {
-    auto br = getLimitRect(xBottom,yLeft);
-    auto tr = getLimitRect(xTop,yRight);
+    bool leftEnabled = !d_config.axisMap.at(yLeft).override;
+    bool rightEnabled = !d_config.axisMap.at(yRight).override
+            && !d_config.spectrogramMode;
 
-    auto ll1 = br.top();
-    auto ul1 = br.bottom();
+    if(leftEnabled)
+    {
+        auto br = getLimitRect(xBottom,yLeft);
+        auto s1 = axisScaleDiv(yLeft);
+        auto d1 = qAbs(s1.upperBound() - s1.lowerBound())*factor;
 
-    auto ll2 = tr.top();
-    auto ul2 = tr.bottom();
+        if(s1.lowerBound() + d1 < br.top())
+            d1 = br.top() - s1.lowerBound();
+        if(s1.upperBound() + d1 > br.bottom())
+            d1 = br.bottom() - s1.upperBound();
 
-    auto s1 = axisScaleDiv(yLeft);
-    auto s2 = axisScaleDiv(yRight);
+        setAxisScale(yLeft,s1.lowerBound() + d1,s1.upperBound() + d1);
+    }
 
-    auto d1 = qAbs(s1.upperBound() - s1.lowerBound())*factor;
-    auto d2 = qAbs(s2.upperBound() - s2.lowerBound())*factor;
+    if(rightEnabled)
+    {
+        auto tr = getLimitRect(xTop,yRight);
+        auto s2 = axisScaleDiv(yRight);
+        auto d2 = qAbs(s2.upperBound() - s2.lowerBound())*factor;
 
-    if(s1.lowerBound() + d1 < ll1)
-        d1 = ll1 - s1.lowerBound();
-    if(s1.upperBound() + d1 > ul1)
-        d1 = ul1 - s1.upperBound();
+        if(s2.lowerBound() + d2 < tr.top())
+            d2 = tr.top() - s2.lowerBound();
+        if(s2.upperBound() + d2 > tr.bottom())
+            d2 = tr.bottom() - s2.upperBound();
 
-    if(s2.lowerBound() + d2 < ll2)
-        d2 = ll2 - s2.lowerBound();
-    if(s2.upperBound() + d2 > ul2)
-        d2 = ul2 - s2.upperBound();
-
-    setAxisScale(yLeft,s1.lowerBound() + d1,s1.upperBound() + d1);
-    setAxisScale(yRight,s2.lowerBound() + d2,s2.upperBound() + d2);
+        setAxisScale(yRight,s2.lowerBound() + d2,s2.upperBound() + d2);
+    }
 
     replot();
 }
@@ -1010,20 +1020,15 @@ void ZoomPanPlot::zoom(QWheelEvent *we)
 
 void ZoomPanPlot::zoom(const QRectF &rect, Axis xAx, Axis yAx)
 {
-
     p_mutex->lock();
-    auto xlock = d_config.zoomXLock;
-    auto ylock = d_config.zoomYLock;
     d_config.axisMap[xAx].autoScale = false;
     d_config.axisMap[yAx].autoScale = false;
     p_mutex->unlock();
 
     auto r = getLimitRect(xAx,yAx) & rect;
 
-    if(!xlock)
-        setAxisScale(xAx,qMin(r.left(), r.right()),qMax(r.left(), r.right()));
-    if(!ylock)
-        setAxisScale(yAx,qMin(r.bottom(), r.top()),qMax(r.bottom(), r.top()));
+    setAxisScale(xAx,qMin(r.left(), r.right()),qMax(r.left(), r.right()));
+    setAxisScale(yAx,qMin(r.bottom(), r.top()),qMax(r.bottom(), r.top()));
 
     replot();
 }

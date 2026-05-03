@@ -253,7 +253,7 @@ void BlackchirpPlotCurve::appendPoint(const QPointF p)
         d_boundingRect.setRight(qMax(d_curveData.first().x(),d_curveData.last().x()));
 
         d_boundingRect.setBottom(qMax(d_boundingRect.bottom(),p.y()));
-        d_boundingRect.setBottom(qMin(d_boundingRect.top(),p.y()));
+        d_boundingRect.setTop(qMin(d_boundingRect.top(),p.y()));
     }
 }
 
@@ -560,6 +560,7 @@ BlackchirpFIDCurve::BlackchirpFIDCurve(std::unique_ptr<CurveStorageInterface> st
 
 BlackchirpFIDCurve::~BlackchirpFIDCurve()
 {
+    delete p_mutex;
 }
 
 void BlackchirpFIDCurve::setCurrentFid(const QVector<double> d, double spacing, double min, double max)

@@ -24,33 +24,16 @@ class QTabWidget;
 enum class HwSettingsMode { Create, Edit };
 
 /*!
- * \brief Shared embeddable widget for viewing and editing hardware settings
+ * \brief Embeddable widget that renders hardware settings from the HardwareRegistry grouped by priority.
  *
- * Renders settings from the HardwareRegistry for a given hardware type and
- * implementation, grouped by priority:
+ * Settings are drawn from the HardwareRegistry for a given hardware type and driver
+ * and are presented in three tiers:
+ * - \b Required — editable QFormLayout in Create mode; read-only text rows in Edit mode.
+ * - \b Important — always-visible two-column table.
+ * - \b Optional/Advanced — collapsible two-column table inside a QGroupBox.
  *
- * - Required: QFormLayout at the top. Editable in Create mode; read-only
- *   text in Edit mode.
- * - Important: Always-visible two-column table (Setting | Value).
- * - Advanced/Optional: Collapsible two-column table inside a QGroupBox.
- *
- * Array settings appear as a table row with an inline entry count label and
- * an Edit button that opens HwArrayEditDialog.
- *
- * Usage in AddProfileDialog (Create mode):
- * \code
- *   auto *w = new HwSettingsWidget(hwType, impl, HwSettingsMode::Create);
- *   // In accept():
- *   auto vals = w->values();
- *   auto arrVals = w->arrayValues();
- * \endcode
- *
- * Usage in HWDialog (Edit mode):
- * \code
- *   auto *w = new HwSettingsWidget(hwType, impl, HwSettingsMode::Edit, storageKey);
- *   // In accept():
- *   w->saveToStorage(storageKey);
- * \endcode
+ * Array settings appear as a table row with an inline entry count and an Edit button
+ * that opens HwArrayEditDialog.
  */
 class HwSettingsWidget : public QWidget
 {

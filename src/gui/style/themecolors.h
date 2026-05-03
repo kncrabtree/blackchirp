@@ -5,125 +5,108 @@
 #include <QWidget>
 #include <QIcon>
 
-/**
- * @brief Theme-aware color management system for BlackChirp
- * 
- * This class provides centralized color management that automatically adapts
- * to light/dark themes while maintaining accessibility and visual consistency.
- * All colors are derived from the system palette and adjusted for proper
- * contrast ratios.
- */
+/// \brief All-static utility class for theme-aware colors and icons.
+///
+/// Every color is derived from the system palette and adjusted for
+/// contrast so that status indicators and icons remain readable under
+/// both light and dark system themes.
+///
+/// \sa ColorRole
 class ThemeColors
 {
 public:
-    /**
-     * @brief Color roles for different UI elements
-     */
+    /// \brief Semantic color roles used throughout the UI.
     enum ColorRole {
         // Status colors for feedback and states
-        StatusSuccess,      // Success messages, valid states
-        StatusWarning,      // Warning messages, caution states  
-        StatusError,        // Error messages, invalid states
-        StatusInfo,         // Information messages, neutral states
-        StatusNeutral,      // Neutral/default status
-        
+        StatusSuccess,  ///< Success messages and valid states.
+        StatusWarning,  ///< Warning messages and caution states.
+        StatusError,    ///< Error messages and invalid states.
+        StatusInfo,     ///< Informational messages and neutral states.
+        StatusNeutral,  ///< Default or unclassified status.
+
         // Text colors for different emphasis levels
-        SubtleText,         // Secondary text, less important content
-        EmphasisText,       // Important text, highlighted content
-        DisabledText,       // Disabled/inactive text
-        
+        SubtleText,     ///< Secondary or less-important text.
+        EmphasisText,   ///< Important or highlighted text.
+        DisabledText,   ///< Inactive or disabled text.
+
         // Icon colors for SVG theming
-        IconPrimary,        // Primary icon color (main interface elements)
-        IconSecondary,      // Secondary icon color (supporting elements)
-        IconAccent          // Accent icon color (special highlighting)
+        IconPrimary,    ///< Main interface element icons.
+        IconSecondary,  ///< Supporting element icons.
+        IconAccent      ///< Special-highlight icons.
     };
 
-    /**
-     * @brief Get a theme-aware color for the specified role
-     * @param role The color role to get
-     * @param widget Optional widget to use for palette context (default: nullptr)
-     * @return QColor that adapts to the current theme
-     */
+    /// \brief Returns a palette-derived color for \a role.
+    /// \param role   Color role to resolve.
+    /// \param widget Widget whose palette is used as context; pass \c nullptr
+    ///               to use the application palette.
+    /// \return QColor appropriate for the active theme.
     static QColor getThemeAwareColor(ColorRole role, const QWidget* widget = nullptr);
 
-    /**
-     * @brief Get a CSS color string for stylesheets
-     * @param role The color role to get
-     * @param widget Optional widget to use for palette context (default: nullptr)
-     * @return QString in format suitable for CSS (e.g., "#ff0000" or "rgb(255,0,0)")
-     */
+    /// \brief Returns a CSS hex string for \a role (e.g., \c "#ff0000").
+    /// \param role   Color role to resolve.
+    /// \param widget Widget whose palette is used as context; pass \c nullptr
+    ///               to use the application palette.
+    /// \return QString suitable for use in a Qt stylesheet.
     static QString getCSSColor(ColorRole role, const QWidget* widget = nullptr);
 
-    /**
-     * @brief Check if the current theme is dark
-     * @param widget Optional widget to use for palette context (default: nullptr)
-     * @return true if dark theme is detected, false for light theme
-     */
+    /// \brief Returns \c true when the active palette is a dark theme.
+    /// \param widget Widget whose palette is inspected; pass \c nullptr for
+    ///               the application palette.
     static bool isDarkTheme(const QWidget* widget = nullptr);
 
-    /**
-     * @brief Ensure adequate contrast for accessibility
-     * @param color The color to adjust
-     * @param background The background color to contrast against
-     * @param minContrastRatio Minimum contrast ratio (default: 4.5 for WCAG AA)
-     * @return QColor with adjusted contrast if necessary
-     */
+    /// \brief Adjusts \a color until its contrast ratio against \a background
+    ///        meets \a minContrastRatio.
+    ///
+    /// The default target of 4.5 corresponds to WCAG AA compliance for normal
+    /// text. Returns \a color unchanged if the ratio is already satisfied.
+    ///
+    /// \param color            Color to adjust.
+    /// \param background       Background color to contrast against.
+    /// \param minContrastRatio Minimum acceptable contrast ratio (default: 4.5).
+    /// \return Adjusted QColor.
     static QColor ensureContrast(const QColor& color, const QColor& background, double minContrastRatio = 4.5);
 
-    /**
-     * @brief Calculate contrast ratio between two colors
-     * @param color1 First color
-     * @param color2 Second color
-     * @return Contrast ratio (1.0 = no contrast, 21.0 = maximum contrast)
-     */
+    /// \brief Calculates the WCAG contrast ratio between two colors.
+    ///
+    /// The ratio ranges from 1.0 (identical colors) to 21.0 (black on white).
+    ///
+    /// \param color1 First color.
+    /// \param color2 Second color.
+    /// \return Contrast ratio.
     static double calculateContrastRatio(const QColor& color1, const QColor& color2);
 
-    /**
-     * @brief Create a theme-aware QIcon from an SVG resource
-     * @param svgResourcePath Path to SVG resource (e.g., ":/icons/play.svg")
-     * @param colorRole Color role to use for the icon (default: IconPrimary)
-     * @param widget Optional widget for palette context (default: nullptr)
-     * @return QIcon with theme-appropriate colors
-     */
-    static QIcon createThemedIcon(const QString& svgResourcePath, 
-                                 ColorRole colorRole = IconPrimary, 
+    /// \brief Creates a QIcon from an SVG resource with the color for \a colorRole.
+    /// \param svgResourcePath Qt resource path to the SVG (e.g., \c ":/icons/play.svg").
+    /// \param colorRole       Color role applied to the icon (default: IconPrimary).
+    /// \param widget          Widget for palette context (default: \c nullptr).
+    /// \return QIcon with theme-appropriate coloring.
+    static QIcon createThemedIcon(const QString& svgResourcePath,
+                                 ColorRole colorRole = IconPrimary,
                                  const QWidget* widget = nullptr);
 
-    /**
-     * @brief Create a theme-aware QIcon with different colors for enabled/disabled states
-     * @param svgResourcePath Path to SVG resource (e.g., ":/icons/play.svg")
-     * @param enabledColorRole Color role for enabled state (default: IconPrimary)
-     * @param disabledColorRole Color role for disabled state (default: DisabledText)
-     * @param widget Optional widget for palette context (default: nullptr)
-     * @return QIcon with proper enabled/disabled state colors
-     */
+    /// \brief Creates a QIcon with separate colors for enabled and disabled states.
+    /// \param svgResourcePath    Qt resource path to the SVG.
+    /// \param enabledColorRole   Color role for the enabled state (default: IconPrimary).
+    /// \param disabledColorRole  Color role for the disabled state (default: DisabledText).
+    /// \param widget             Widget for palette context (default: \c nullptr).
+    /// \return QIcon with per-state theme-appropriate coloring.
     static QIcon createThemedIconWithStates(const QString& svgResourcePath,
                                            ColorRole enabledColorRole = IconPrimary,
                                            ColorRole disabledColorRole = DisabledText,
                                            const QWidget* widget = nullptr);
 
 private:
-    /**
-     * @brief Get the base color for a role from the system palette
-     * @param role The color role
-     * @param widget Widget for palette context
-     * @return Base QColor from system palette
-     */
+    /// \brief Returns the base palette-derived color for \a role.
     static QColor getBaseColor(ColorRole role, const QWidget* widget);
 
-    /**
-     * @brief Adjust color brightness while preserving hue and saturation
-     * @param color Original color
-     * @param factor Brightness factor (-1.0 to 1.0, negative = darker, positive = lighter)
-     * @return QColor with adjusted brightness
-     */
+    /// \brief Adjusts the brightness of \a color by \a factor.
+    ///
+    /// \a factor ranges from -1.0 (fully dark) to 1.0 (fully bright).
     static QColor adjustBrightness(const QColor& color, double factor);
 
-    /**
-     * @brief Calculate relative luminance for contrast calculations
-     * @param color The color to analyze
-     * @return Relative luminance (0.0 = black, 1.0 = white)
-     */
+    /// \brief Computes the WCAG relative luminance of \a color.
+    ///
+    /// Returns a value in [0.0, 1.0] where 0.0 is black and 1.0 is white.
     static double relativeLuminance(const QColor& color);
 };
 
