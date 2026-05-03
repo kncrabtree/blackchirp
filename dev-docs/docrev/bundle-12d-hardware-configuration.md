@@ -1,10 +1,27 @@
 # Bundle 12d — Developer Guide: Hardware Configuration
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
-- (entries appended in reverse chronological order; most recent first)
+- 2026-05-03: not started → complete. Single new page
+  doc/source/developer_guide/hardware_configuration.rst introduces the
+  four configuration singletons (HardwareRegistry,
+  HardwareProfileManager, RuntimeHardwareConfig, LoadoutManager) and
+  maps the Hardware Configuration dialog's four panels onto them.
+  Page uses corrected profile-vocabulary: a profile is an immutable
+  (hardwareType, label, implementation) triple, Type.label is the
+  profile's identity (not a "slot"), and RuntimeHardwareConfig records
+  which profiles are active rather than what is "bound" to a slot.
+  No source-tree change taken (12d does not authorise one). Misleading
+  "slot"/"bind" phrasing identified in five header Doxygen blocks
+  (hardwareprofilemanager.h, hardwareloadout.h, loadoutmanager.h),
+  dev-docs/loadout-system.md, bundle-12c-architecture.md (lines 125,
+  130, 135), this bundle file (lines 36 and 115),
+  developer_guide/architecture.rst (lines 181, 203), and
+  classes/hardwareloadout.rst (line 12); flagged for a follow-up
+  cleanup task that uses the corrected vocabulary across all of them.
+  Content commit f859c72c.
 -->
 
 Sub-page of the Developer Guide chapter. Documents the four
