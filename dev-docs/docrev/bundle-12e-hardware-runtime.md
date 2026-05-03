@@ -1,10 +1,22 @@
 # Bundle 12e — Developer Guide: Hardware Runtime
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
-- (entries appended in reverse chronological order; most recent first)
+- 2026-05-03: not started → complete. Drafted
+  doc/source/developer_guide/hardware_runtime.rst with the H2 outline
+  the bundle file specifies. Mermaid sequence diagram added at the
+  bottom (initial draft used `<hwKey>` literals that mermaid parses
+  as arrow tokens; reworded the participant alias and message labels
+  to plain text). HardwareObject::supportedProtocols() virtual
+  removal was investigated and reverted: the test mock at
+  tests/tst_hardwarecommunication.cpp:29 overrides the function to
+  inject a fake protocol set bypassing HardwareRegistry, so dropping
+  `virtual` would require updating the test. Per the umbrella's
+  "uncontroversial, single-conceptual-change" criterion this crosses
+  into the test subsystem and is flagged for separate consideration.
+  Content commit d7b62dbf1df8f0b1f69b0928f70c30bfe0449c7c.
 -->
 
 Sub-page of the Developer Guide chapter. Documents the runtime half

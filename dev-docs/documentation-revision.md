@@ -43,7 +43,7 @@ requirements, and acceptance criteria.
 | 12b | Developer Guide: Coding Conventions | S | 12 | complete |
 | 12c | Developer Guide: Architecture | M | 12 | complete |
 | 12d | Developer Guide: Hardware Configuration | M | 12c | complete |
-| 12e | Developer Guide: Hardware Runtime | M | 12d | not started |
+| 12e | Developer Guide: Hardware Runtime | M | 12d | complete |
 | 12f | Developer Guide: Experiment Lifecycle | M | 12e | not started |
 | 12g | Developer Guide: FTMW Acquisition & Visualization | M | 12f | not started |
 | 12h | Developer Guide: LIF Acquisition & Visualization | M | 12f | not started |
