@@ -12,8 +12,7 @@ using namespace BC::Key::ClockManager;
 ClockManager::ClockManager(QObject *parent) : QObject(parent),
     SettingsStorage(clockManager)
 {
-    // Clock instances will be provided by HardwareManager via setClocksFromHardwareManager()
-    // This matches the uniform hardware lifecycle pattern where HardwareManager owns all hardware
+    // Clock instances are provided by HardwareManager via setClocksFromHardwareManager().
 }
 
 void ClockManager::readActiveClocks()
@@ -181,9 +180,7 @@ void ClockManager::setClocksFromHardwareManager(const QVector<Clock*>& clocks)
 
 void ClockManager::reconfigureFromRuntimeConfig()
 {
-    // This method would be called by HardwareManager when clocks change
-    // For now, just re-setup the existing clocks
-    // In future, this could handle dynamic clock reconfiguration
+    // Rebuilds role assignments and signal connections from the current clock list.
     setupClocks();
 }
 
