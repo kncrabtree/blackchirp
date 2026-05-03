@@ -7,6 +7,7 @@
 #include <memory>
 
 #include <src/hardware/core/hardwareobject.h>
+#include <src/hardware/core/hardwareregistry.h>
 #include <src/hardware/core/communication/communicationprotocol.h>
 #include <src/data/storage/settingsstorage.h>
 
@@ -14,34 +15,27 @@
 #include <src/hardware/optional/gpibcontroller/virtualgpibcontroller.h>
 #include <src/hardware/core/communication/gpibinstrument.h>
 
-// Test hardware object that supports multiple protocols
+// Test hardware object whose supported-protocol set is registered at
+// initTestCase() time via HardwareRegistry, the same lookup path real
+// drivers use. The Virtual default carried by the base constructor is
+// overridden after registration via setCommProtocol() in tests that
+// need a different transport.
 class TestHardwareObject : public HardwareObject {
     Q_OBJECT
 public:
-    TestHardwareObject(const QString& subKey = "test", QObject* parent = nullptr)
-        : HardwareObject("TestHW", subKey, "Test Hardware", 
-                        CommunicationProtocol::Virtual, parent, false, false, d_count++)
+    TestHardwareObject(const QString& label = "test", QObject* parent = nullptr)
+        : HardwareObject(QLatin1StringView("TestHW"),
+                         QLatin1StringView("Test Hardware"),
+                         label, parent)
     {
     }
-    
+
     virtual ~TestHardwareObject() = default;
-    
-    QVector<CommunicationProtocol::CommType> supportedProtocols() const override {
-        QVector<CommunicationProtocol::CommType> protocols;
-        protocols << CommunicationProtocol::Virtual;
-        protocols << CommunicationProtocol::Rs232;
-        protocols << CommunicationProtocol::Tcp;
-        protocols << CommunicationProtocol::Gpib;  // Always include GPIB for test
-        return protocols;
-    }
-    
+
 protected:
     bool testConnection() override { return true; }
     void initialize() override {}
     void readSettings() override {}
-    
-private:
-    inline static int d_count = 0;
 };
 
 /**
@@ -106,16 +100,29 @@ void HardwareCommunicationTest::initTestCase()
     s.setFallbacksEnabled(false);
     s.clear();
     s.sync();
-    
-    // Set up basic test hardware settings
-    s.beginGroup("Blackchirp");
-    s.setValue("TestHW.0/test/key", "TestHW.0");
-    s.setValue("TestHW.0/test/name", "Test Hardware");
-    s.setValue("TestHW.0/test/critical", false);
-    s.setValue("TestHW.0/test/commType", static_cast<int>(CommunicationProtocol::Virtual));
-    s.endGroup();
-    s.sync();
-    
+
+    // Register the test hardware in the registry the same way real drivers
+    // do via REGISTER_HARDWARE_META + REGISTER_HARDWARE_PROTOCOLS, so the
+    // base HardwareObject's supportedProtocols() lookup returns the protocol
+    // set the multi-protocol tests below expect. The factory is unused —
+    // tests construct TestHardwareObject directly — but registerHardware
+    // requires one.
+    auto& registry = HardwareRegistry::instance();
+    registry.registerHardware(
+        QStringLiteral("TestHW"),
+        QStringLiteral("Test Hardware"),
+        QStringLiteral("Multi-protocol test hardware"),
+        [](const QString& label) -> HardwareObject* {
+            return new TestHardwareObject(label);
+        });
+    registry.addSupportedProtocols(
+        QStringLiteral("TestHW"),
+        QStringLiteral("Test Hardware"),
+        {CommunicationProtocol::Virtual,
+         CommunicationProtocol::Rs232,
+         CommunicationProtocol::Tcp,
+         CommunicationProtocol::Gpib});
+
     m_testHw = std::make_unique<TestHardwareObject>();
     m_testHw->bcInitInstrument(); // Initialize to populate settings including supportedProtocols
     m_gpibController = std::make_unique<VirtualGpibController>();

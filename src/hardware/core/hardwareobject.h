@@ -259,17 +259,19 @@ public:
     void purgeSettings() { purge(); }
 
     /*!
-     * \brief Returns list of supported communication protocols
-     * 
-     * Hardware implementations should override this function to declare which
-     * communication protocols they support. This enables runtime protocol
-     * selection and validates user protocol choices.
-     * 
-     * The default implementation returns the hardcoded protocol from constructor.
-     * 
-     * \return Vector of supported CommunicationProtocol::CommType values
+     * \brief Returns the list of supported communication protocols.
+     *
+     * Looks the protocol set up in HardwareRegistry by this instance's
+     * hardware type and implementation key. The set is populated at
+     * static-initialization time by \c REGISTER_HARDWARE_PROTOCOLS;
+     * change a driver's supported protocols by editing that macro
+     * invocation in the driver's .cpp file, not by overriding this
+     * function. Returns \c {CommunicationProtocol::Virtual} when no
+     * protocols are registered for the implementation.
+     *
+     * \return Vector of supported CommunicationProtocol::CommType values.
      */
-    virtual QVector<CommunicationProtocol::CommType> supportedProtocols() const;
+    QVector<CommunicationProtocol::CommType> supportedProtocols() const;
 	
 signals:
     /*!
