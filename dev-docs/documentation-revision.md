@@ -45,7 +45,7 @@ requirements, and acceptance criteria.
 | 13d | API ref: loadout/preset classes | S | 13a | complete |
 | 13e | API ref: data/experiment classes | M | 13a | complete |
 | 13f | API ref: storage classes | M | 13a | complete |
-| 13g | API ref: GUI helper classes | M | 13a | not started |
+| 13g | API ref: GUI helper classes | M | 13a | complete |
 | 13h | API ref: file parsers | S | 13a | not started |
 | 14 | Final pass: screenshot sizing & navigation review | S | most user-guide bundles | not started |
 | 15 | LIF module (experiment setup, configuration, tab, storage) | M | 08 | complete |
