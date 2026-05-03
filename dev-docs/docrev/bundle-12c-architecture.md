@@ -122,19 +122,21 @@ The page should answer the following for a contributor:
      custom-comm descriptors, library dependencies).
      Singleton; populated before `main()` runs.
    - `HardwareProfileManager` — the profile metadata layer. A
-     *profile* is a `<HardwareType>:<label>` instance bound to
-     one implementation, with persistent settings and (for
-     Python) script path and class name. CRUD'd by
-     `RuntimeHardwareConfigDialog`.
-   - `RuntimeHardwareConfig` — the active-selection layer. Maps
-     each `<HardwareType>.<label>` key to an implementation key.
-     Read by `HardwareManager` to know what to instantiate.
-     Validated against `HardwareRegistry`.
-   - `LoadoutManager` — named hardware maps and the FTMW presets
-     that ride on top. A *loadout* captures a complete hardware
-     selection (which AWG, which digitizer, which clocks bound to
-     which slots) plus its FTMW presets (RF chain + chirp +
-     digitizer config, named within the loadout).
+     *profile* is an immutable `(<HardwareType>, <label>,
+     <implementation>)` triple with persistent settings and (for
+     Python) script path and class name; the
+     `<HardwareType>.<label>` pair is the profile's identity.
+     CRUD'd by `RuntimeHardwareConfigDialog`. Changing
+     implementation requires creating a new profile.
+   - `RuntimeHardwareConfig` — the active-selection layer. Records
+     which profiles are active in the running session, keyed by
+     profile identity. Read by `HardwareManager` to know what to
+     instantiate. Validated against `HardwareRegistry`.
+   - `LoadoutManager` — named sets of member profiles and the FTMW
+     presets that ride on top. A *loadout* captures a complete
+     hardware selection (which AWG profile, which digitizer
+     profile, which clock profiles) plus its FTMW presets (RF
+     chain + chirp + digitizer config, named within the loadout).
    - `HardwareManager` — the runtime owner of live
      `HardwareObject` instances. Lives on its own thread; moves
      threaded hardware objects to per-device threads; mediates

@@ -177,30 +177,34 @@ follow the cross-link for the per-method contract.
 
 :cpp:class:`HardwareProfileManager` (profile metadata)
    :doc:`/classes/hardwareprofilemanager` owns the persistent
-   profile records. A *profile* is a ``<HardwareType>:<label>``
-   instance bound to one implementation, with its own persisted
-   settings and (for Python drivers) script path and class name.
-   Profiles are CRUD'd from
+   profile records. A *profile* is an immutable
+   ``(hardwareType, label, implementation)`` triple with its own
+   persisted settings and (for Python drivers) script path and
+   class name; the ``<hardwareType>.<label>`` pair is the
+   profile's identity, and the implementation is fixed at
+   creation time. Profiles are CRUD'd from
    :cpp:class:`RuntimeHardwareConfigDialog` (the Configure Hardware
    dialog) and stored via :cpp:class:`SettingsStorage`. The user
    workflow is documented in :doc:`/user_guide/hardware_config`.
 
 :cpp:class:`RuntimeHardwareConfig` (active selection)
-   :doc:`/classes/runtimehardwareconfig` records *which* profile is
-   active for each hardware role. It maps each
-   ``<HardwareType>.<label>`` key to an implementation key,
-   validated against :cpp:class:`HardwareRegistry`. Read access is
-   open from any thread (read/write-locked); write access is
-   restricted to friend classes — primarily
-   :cpp:class:`HardwareManager` and
-   :cpp:class:`RuntimeHardwareConfigDialog`. The active map is what
+   :doc:`/classes/runtimehardwareconfig` records *which* profiles
+   are active in the running session, keyed by profile identity
+   (``<HardwareType>.<label>``). The implementation key for each
+   active profile is held as a denormalized copy of the profile's
+   immutable value and validated against
+   :cpp:class:`HardwareRegistry`. Read access is open from any
+   thread (read/write-locked); write access is restricted to
+   friend classes — primarily :cpp:class:`HardwareManager` and
+   :cpp:class:`RuntimeHardwareConfigDialog`. The active set is what
    :cpp:func:`HardwareManager::initialize` consults to decide what
    to instantiate.
 
-:cpp:class:`LoadoutManager` (named hardware maps + FTMW presets)
+:cpp:class:`LoadoutManager` (named member-profile sets + FTMW presets)
    :doc:`/classes/loadoutmanager` persists named *loadouts* (a
-   complete hardware selection — which AWG, which digitizer, which
-   clocks bound to which roles) and the *FTMW presets* that ride on
+   complete hardware selection — which AWG profile, which
+   digitizer profile, which clock profiles) and the *FTMW presets*
+   that ride on
    top of each loadout (an :cpp:class:`RfConfig` chain plus
    :cpp:class:`ChirpConfig` and digitizer config, named within the
    loadout). The user picks a loadout from the Loadout menu and an

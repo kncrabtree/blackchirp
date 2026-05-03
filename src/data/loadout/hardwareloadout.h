@@ -30,9 +30,9 @@ inline constexpr QLatin1StringView clockOp{"MultOperation"};
 inline constexpr QLatin1StringView clockFactor{"Factor"};
 /// \brief Desired clock output frequency in MHz.
 inline constexpr QLatin1StringView clockFreqMHz{"FreqMHz"};
-/// \brief Hardware key identifying the implementation (shared by clock and hardware-map entries).
+/// \brief Profile identity ("<Type>.<label>", shared by clock and hardware-map entries).
 inline constexpr QLatin1StringView hwKey{"HwKey"};
-/// \brief Implementation key for the hardware slot.
+/// \brief Implementation key carried by the referenced profile when the loadout was last saved.
 inline constexpr QLatin1StringView hwImpl{"Implementation"};
 }
 
@@ -58,18 +58,21 @@ struct FtmwPreset {
     QDateTime lastModified;
 };
 
-/// \brief Named hardware map plus the FTMW presets it owns.
+/// \brief Named set of member profiles plus the FTMW presets it owns.
 ///
-/// A `HardwareLoadout` records which implementation key is bound to each
-/// `"<Type>.<label>"` slot in a complete hardware configuration, and
-/// holds the named `FtmwPreset` operating points associated with that
-/// configuration. `LoadoutManager` owns the persistent collection of
-/// loadouts; instances are passed around by value and serialized into a
-/// QSettings subtree on write.
+/// A `HardwareLoadout` records the profile identities (`"<Type>.<label>"`)
+/// that make up a complete hardware configuration, alongside the
+/// implementation key each member profile carried at the time the loadout
+/// was last saved (a denormalized field, used for validation and drift
+/// detection — the canonical implementation lives on the profile in
+/// `HardwareProfileManager`). It also holds the named `FtmwPreset`
+/// operating points associated with that configuration. `LoadoutManager`
+/// owns the persistent collection of loadouts; instances are passed
+/// around by value and serialized into a QSettings subtree on write.
 struct HardwareLoadout {
     /// \brief User-visible loadout name (also the QSettings subgroup key).
     QString name;
-    /// \brief Map of `"<Type>.<label>"` slot keys to implementation keys.
+    /// \brief Member profile identities (`"<Type>.<label>"`) and the implementation each profile carried at save time.
     std::map<QString, QString, std::less<>> hardwareMap;
     /// \brief Named FTMW presets owned by this loadout, including the `__LastUsed__` sentinel when present.
     std::map<QString, FtmwPreset, std::less<>> ftmwPresets;

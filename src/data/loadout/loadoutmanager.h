@@ -115,7 +115,7 @@ public:
     /// \brief Convenience accessor that returns the default loadout, if any.
     std::optional<HardwareLoadout> defaultLoadout() const;
 
-    /// \brief Names of all loadouts that bind any slot to the given hardware key.
+    /// \brief Names of all loadouts whose member set includes the given profile identity.
     QStringList loadoutsMatchingHwKey(const QString &hwKey) const;
 
     // FTMW preset CRUD

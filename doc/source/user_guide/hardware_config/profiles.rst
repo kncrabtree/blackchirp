@@ -17,15 +17,18 @@ A **hardware profile** is a persistent record that binds three pieces of
 information:
 
 - **Type** — the hardware role (e.g., ``FtmwScope``, ``AWG``,
-  ``PulseGenerator``, ``FlowController``). The type determines which
-  hardware-type slot in a loadout this profile can fill.
+  ``PulseGenerator``, ``FlowController``). The type categorizes which kind
+  of hardware this profile represents.
 - **Label** — a short, user-chosen name that distinguishes profiles of the
-  same type. Labels must be unique within a type. The label and type together
-  form a profile key (``Type.label``) that loadouts reference.
+  same type. Labels must be unique within a type. The type and label
+  together form the profile's identity (``Type.label``) — a stable
+  reference that loadouts use to name the profile.
 - **Implementation** — the driver class that communicates with the physical
   instrument (e.g., ``SpinCore PB24``, ``Spectrum M4i.44xx``,
-  ``Virtual AWG``). The implementation determines which settings the profile
-  exposes and which communication protocols are available.
+  ``Virtual AWG``). The implementation is fixed when the profile is
+  created and determines which settings the profile exposes and which
+  communication protocols are available; to use a different
+  implementation, create a new profile.
 
 Profiles are created once and then reused across loadouts. Changing a
 profile's settings affects every loadout that includes it.

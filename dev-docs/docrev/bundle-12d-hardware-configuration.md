@@ -50,17 +50,22 @@ The page should answer the following for a contributor:
      `main()`, so the registry catalog is complete before anything
      else exists.
    - At program start, `HardwareProfileManager` loads any saved
-     profile metadata from `QSettings`. A *profile* binds a label
-     to a registered implementation and stores its persistent
-     settings.
-   - `RuntimeHardwareConfig` records which profile is *active* for
-     each `<HardwareType>.<label>` slot. This is the layer
-     `HardwareManager` reads when it instantiates objects.
+     profile metadata from `QSettings`. A *profile* is an
+     immutable `(hardwareType, label, implementation)` triple
+     with persistent settings; the `<hardwareType>.<label>` pair
+     is the profile's identity, and the implementation is fixed
+     at creation time (changing it requires creating a new
+     profile).
+   - `RuntimeHardwareConfig` records which profiles are *active*
+     in the running session, keyed by profile identity. This is
+     the layer `HardwareManager` reads when it instantiates
+     objects.
    - `LoadoutManager` is the user-friendly layer on top: a
-     *loadout* is a named hardware map (the active set in
+     *loadout* is a named set of member profile identities (the
+     active set that should be applied to
      `RuntimeHardwareConfig`) plus its FTMW presets (RF chain +
      chirp + digitizer config snapshots). Switching loadouts
-     swaps the active map.
+     swaps the active set.
 
    The four singletons are loosely coupled and have distinct
    responsibilities; they are not a single class because the
@@ -129,9 +134,12 @@ The page should answer the following for a contributor:
 
 4. **`RuntimeHardwareConfig` — active selections.** Cover:
 
-   - Maps each `<HardwareType>.<label>` key to an implementation
-     key. This is the data `HardwareManager` reads at startup and
-     on loadout switches.
+   - Records the set of active profiles, keyed by profile
+     identity (`<HardwareType>.<label>`). The implementation key
+     is held alongside as a denormalized copy of the profile's
+     immutable implementation; the canonical value lives on the
+     profile in `HardwareProfileManager`. This is the data
+     `HardwareManager` reads at startup and on loadout switches.
    - Validation: `validateConfiguration()` checks every active
      selection against `HardwareRegistry` and returns a per-type
      `HardwareValidationResult`. Errors are surfaced to the user;

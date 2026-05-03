@@ -8,20 +8,27 @@ HardwareLoadout
 ===============
 
 ``HardwareLoadout`` is the value-typed record that represents one named
-hardware map and the FTMW operating points associated with it. A
-loadout binds each ``"<Type>.<label>"`` slot — for example,
-``"FtmwScope.default"`` or ``"AWG.frontPanel"`` — to an implementation
-key, and owns a collection of named :cpp:struct:`FtmwPreset` records
-that capture full FTMW configurations against that hardware map.
-Loadouts are created, stored, and switched by
-:cpp:class:`LoadoutManager`; the user-facing model is described in the
-:doc:`/user_guide/hardware_config/loadouts` chapter.
+set of member profiles and the FTMW operating points associated with
+it. A loadout records each member profile's identity
+(``"<Type>.<label>"`` — for example, ``"FtmwScope.default"`` or
+``"AWG.frontPanel"``) together with the implementation key the profile
+carried at the time the loadout was last saved, and owns a collection
+of named :cpp:struct:`FtmwPreset` records that capture full FTMW
+configurations against that hardware selection. Loadouts are created,
+stored, and switched by :cpp:class:`LoadoutManager`; the user-facing
+model is described in the :doc:`/user_guide/hardware_config/loadouts`
+chapter.
 
 A loadout's ``hardwareMap`` field has the same shape as the active
 selection table held by :cpp:class:`RuntimeHardwareConfig`: switching
-loadouts replaces the active map with the loadout's stored map (after
-the drift-detection prompt in
-``RuntimeHardwareConfigDialog``). The ``ftmwPresets`` collection is
+loadouts replaces the active set with the loadout's stored member
+identities (after the drift-detection prompt in
+``RuntimeHardwareConfigDialog``). The implementation half of each
+``hardwareMap`` entry is denormalized — the canonical implementation
+lives on the profile in :cpp:class:`HardwareProfileManager` — and is
+used by the dialog to detect when a previously-saved member profile
+has been removed or recreated under a different implementation. The
+``ftmwPresets`` collection is
 keyed by user-visible preset name; the reserved name ``__LastUsed__``
 identifies the per-loadout sentinel preset described under
 :cpp:class:`LoadoutManager`. The ``currentFtmwPresetName`` field points

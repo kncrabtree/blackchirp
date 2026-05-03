@@ -3,14 +3,19 @@
 ## Concepts
 
 A **loadout** captures the active hardware map for a given experimental setup
-— which AWG, which digitizer, which clock implementations are bound to which
-profile slots. An **FTMW preset** is a named operating point — RF chain
-parameters, clock frequencies, chirp waveform, and digitizer configuration —
-that lives inside a single loadout. Switching loadouts swaps the hardware map;
-switching FTMW presets within a loadout swaps the FTMW operating point.
+— the set of member profiles (which AWG profile, which digitizer profile,
+which clock profiles) that should be active when this loadout is applied.
+Each profile is an immutable `(Type, label, implementation)` triple owned by
+`HardwareProfileManager`; the loadout references profiles by their
+`Type.label` identity. An **FTMW preset** is a named operating point — RF
+chain parameters, clock frequencies, chirp waveform, and digitizer
+configuration — that lives inside a single loadout. Switching loadouts
+swaps the active set; switching FTMW presets within a loadout swaps the
+FTMW operating point.
 
-- **Loadout** — a hardware map (`Type.label` → implementation) plus the FTMW
-  presets it owns.
+- **Loadout** — a set of member profile identities (`Type.label`) plus the
+  implementation each profile carried at save time (denormalized for drift
+  detection) and the FTMW presets the loadout owns.
 - **FTMW Preset** — a named `FtmwPreset` (RF + chirp + digitizer) owned by a
   loadout. A preset cannot exist outside a loadout.
 - **`__LastUsed__`** (`BC::Store::LM::lastUsedFtmwPresetName`) — a

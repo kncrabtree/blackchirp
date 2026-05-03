@@ -41,10 +41,14 @@ struct HardwareProfileData {
 /*!
  * \brief Complete lifecycle management of hardware configurations with user-controlled labels
  *
- * Profiles bind a user-chosen label to a (hardware type, implementation) pair
- * to form keys of the form "FlowController.frontPanel" or
- * "FlowController.backup". Labels survive hardware reconfiguration and are
- * the canonical identifier for a hardware object's settings group.
+ * A profile is a (hardware type, label, implementation) triple — fixed at
+ * creation time — together with its persisted settings. The hardware type
+ * and label form the profile's identity, of the form
+ * "FlowController.frontPanel" or "FlowController.backup". The
+ * implementation key is stored as a profile field but is immutable; using
+ * a different implementation requires creating a new profile under a new
+ * label. Profile identities survive hardware reconfiguration and are the
+ * canonical reference for a hardware object's settings group.
  *
  * This class provides:
  * - User-controlled hardware identification through meaningful labels
