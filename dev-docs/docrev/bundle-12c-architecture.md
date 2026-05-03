@@ -1,9 +1,22 @@
 # Bundle 12c — Developer Guide: Architecture
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
+- 2026-05-03: not started → complete. doc/source/developer_guide/architecture.rst
+  landed with intro, source tree, orchestration singletons,
+  MainWindow-as-wiring-hub, threading model, cross-thread call
+  patterns, and a Mermaid ownership/signal-flow diagram. Toolchain
+  picked up sphinxcontrib-mermaid (added to extensions) plus a
+  _static/mermaid_force_light.js shim that adds the 'light' class to
+  <html> so the package's auto-theme heuristic short-circuits before
+  matchMedia falls through to the user's OS dark-mode preference.
+  Authorized source-tree change: removed the qmake-era
+  src/modules/lif/hardware/lifhw_h.h aggregator (untracked,
+  referenced nowhere) and its now-empty parent dirs; src/config/ is
+  .gitignored on a clean clone, so it dropped from the source-tree
+  walk too. Content commit a9e333cf.
 - (entries appended in reverse chronological order; most recent first)
 -->
 

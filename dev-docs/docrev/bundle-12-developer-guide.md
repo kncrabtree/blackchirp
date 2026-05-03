@@ -318,6 +318,30 @@ already in use on existing API pages (see e.g. the index blocks on
 None for the developer guide. ASCII or Mermaid diagrams are fine
 inline; no `.. image::` or `.. figure::` directives.
 
+### Mermaid diagrams are wired up
+
+The Sphinx toolchain carries `sphinxcontrib-mermaid` (added in 12c) and
+a `_static/mermaid_force_light.js` shim that pins the diagram palette
+to the package's light theme regardless of the reader's OS dark-mode
+preference. Use `.. mermaid::` directives freely where a diagram
+clarifies cross-system flow more cleanly than prose; ASCII art inside
+`.. code-block:: text` is still acceptable for small diagrams that fit
+the column width and read well on every renderer. Two notes for
+authors:
+
+- Mermaid is loaded as an ESM module from a CDN. Firefox blocks ESM
+  imports from a `https://` URL when the host page is `file://`, so
+  diagrams render blank if you preview the docs by double-clicking
+  the HTML. Serve over HTTP locally (`python -m http.server -d
+  build/docs/html`) or use Chrome to verify; readthedocs serves over
+  HTTPS so the production build is unaffected.
+- The `mermaid_force_light.js` shim works by adding the `light` class
+  to `<html>` before the Mermaid module evaluates. Do not rely on the
+  package's `mermaid_init_js` config key — it does not exist in the
+  installed (2.0.x) version; theme overrides go through
+  `mermaid_init_config` and would otherwise be re-overridden by the
+  package's auto-detect.
+
 ## Sub-bundle file format
 
 Each `dev-docs/docrev/bundle-12<X>-<topic>.md` carries the standard
