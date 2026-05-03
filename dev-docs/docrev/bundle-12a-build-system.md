@@ -1,10 +1,20 @@
 # Bundle 12a — Developer Guide: Build System & Project Layout
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
-- (entries appended in reverse chronological order; most recent first)
+- 2026-05-03: not started → complete. Authored
+  doc/source/developer_guide/build_system.rst covering the cmake module
+  map, BuildConfig.cmake user options, the hw_base/hw_impl/hw_h
+  aggregator-header AUTOMOC mechanism, glob-based driver discovery, the
+  test list and blackchirp-test-hardware library, the documentation
+  build, and a self-contained packaging tour. Removed the BC_ALLHARDWARE
+  option from cmake/BuildConfig.cmake.template (with parallel cleanup
+  of the dead HardwareConfig.cmake comment cross-references) and the
+  matching row from doc/source/user_guide/installation.rst. Added a
+  warning admonition under BC_ENABLE_CUDA flagging the CUDA module as
+  unmaintained. Content commit 2d8e1bf7.
 -->
 
 First sub-page of the Developer Guide chapter (bundle 12). Explains the
