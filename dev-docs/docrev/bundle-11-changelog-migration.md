@@ -1,10 +1,17 @@
 # Bundle 11 — Changelog and Migration Guide (Chapter Umbrella)
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
-- (entries appended in reverse chronological order; most recent first)
+- 2026-05-03 — not started → complete (content commit 642f5d9f). Replaced
+  the changelog.rst and migration.rst placeholders with chapter intros
+  and explicit toctrees referencing changelog/2.0.0 and
+  migration/v1_to_v2. Four transient build warnings remain until 11a
+  and 11b land: two toctree-points-to-missing-document warnings, one
+  orphan warning for the bundle-00 changelog/v2_0_0_alpha.rst placeholder
+  (11a should remove it when it creates 2.0.0.rst), and one cross-link
+  warning for /migration/v1_to_v2 in the changelog intro.
 -->
 
 Builds the chapter scaffolds for the **changelog** and the
