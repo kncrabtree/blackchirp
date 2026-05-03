@@ -1,10 +1,23 @@
 # Bundle 12j — Developer Guide: Python Hardware
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
-- (entries appended in reverse chronological order; most recent first)
+- 2026-05-03: not started → complete. New page
+  doc/source/developer_guide/python_hardware.rst landed with the
+  scope's nine sections (subprocess+IPC rationale, push model,
+  proxy injection, mixin members, three state-management
+  patterns A/B/C, trampoline recipe, QSettings key-path gotcha,
+  hot-reload, per-profile env). The trampoline→pattern table
+  was forwarded to the user-guide companion at
+  python-hardware-trampoline-overview rather than duplicated.
+  Recipe step 4 dropped its `forbiddenKeys()` /
+  `pythonForbiddenKeys()` clause: neither helper exists in the
+  current source tree (verified by grep across src/hardware/);
+  this sub-bundle file and dev-docs/python-hardware.md were
+  edited to remove the obsolete reference. Content commit
+  b7e3729b.
 -->
 
 Sub-page of the Developer Guide chapter. Documents the Python
@@ -152,8 +165,10 @@ The page should answer the following for a contributor:
        `Scripts/python.exe`; falls back to system `python3`.
      - `pythonSleep(b)`, `pythonReadSettings()` — common IPC
        dispatches the trampoline's overrides delegate to.
-     - `pythonForbiddenKeys()` — `{commType, model}`; the
-       trampoline's `forbiddenKeys` builds on this.
+     - `pythonErrorString()` — exposes the human-readable error
+       from the most recent failed `startPythonProcess` /
+       `testPythonConnection`; trampolines copy it into
+       `d_errorString` on failure.
      - The destructor stops `pu_process` if running.
    - Cross-link to `:doc:`/classes/pythonhardwarebase``.
 
@@ -209,10 +224,8 @@ The page should answer the following for a contributor:
    3. In `testConnection()` (or the type-specific helper,
       e.g., `fcTestConnection`), call
       `testPythonConnection(p_comm)`.
-   4. Delegate `sleep()` to `pythonSleep()`,
-      `readSettings()` to `pythonReadSettings()`, and build
-      `forbiddenKeys()` from
-      `pythonForbiddenKeys()` plus any class-specific keys.
+   4. Delegate `sleep()` to `pythonSleep()` and
+      `readSettings()` to `pythonReadSettings()`.
    5. Implement hardware-specific virtuals as
       `pu_process->sendRequest(...)` dispatches. Pattern A
       classes implement `configure(...)`; Pattern B classes

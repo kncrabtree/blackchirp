@@ -125,7 +125,8 @@ boilerplate. The mixin provides:
 - **`findHostScript()`** — static method to locate `python_hw_host.py`
 - **`pythonSleep(b)`** / **`pythonReadSettings()`** — common IPC
   dispatches
-- **`pythonForbiddenKeys()`** — static, returns `{commType, model}`
+- **`pythonErrorString()`** — human-readable error from the most
+  recent failed `startPythonProcess` / `testPythonConnection`
 - **Destructor** — stops `pu_process` if running
 
 The mixin's constructor takes `(key, model)` strings — no back-pointer
@@ -257,11 +258,9 @@ PythonFlowController, etc.) and must be followed when creating new ones.
 1. Inherit from both the hardware base class and `PythonHardwareBase`
 2. Initialize `PythonHardwareBase(d_key, d_model)` in the constructor
 3. In the initialize override, call `initPythonProcess(p_comm, getter, setter)`
-   and connect `pu_process->logMessage` to `this->logMessage`
 4. In the test connection override, call `testPythonConnection(p_comm)`
-5. Delegate `sleep()` to `pythonSleep()`, `readSettings()` to
-   `pythonReadSettings()`, and build `forbiddenKeys()` from
-   `pythonForbiddenKeys()` plus any class-specific keys
+5. Delegate `sleep()` to `pythonSleep()` and `readSettings()` to
+   `pythonReadSettings()`
 6. Implement hardware-specific virtual methods as JSON IPC dispatches
    using `pu_process->sendRequest()`
 
