@@ -7,163 +7,146 @@
 #include <QPointF>
 #include <QDateTime>
 
-/**
- * @brief Parser for generic XY data files (CSV, TSV, space-delimited)
- * 
- * This parser handles various text-based XY data formats with:
- * - Auto-detection of delimiters (comma, tab, space, semicolon)
- * - Configurable header line skipping (with comment character detection)
- * - Column mapping for X and Y data selection
- * - Robust parsing with invalid data skipping
- * - Preview capabilities for UI integration
- */
+/// \brief Parser for generic two-column XY text files.
 class GenericXYParser : public FileParser
 {
 public:
+    /// \brief Resolved parse parameters for a single file.
+    ///
+    /// The defaults match a comma-delimited file with no header rows and
+    /// X/Y in the first two columns. ``autoDetectSettings()`` populates
+    /// these fields from the file contents; the overlay dialog can then
+    /// edit them and pass the result back to ``parseWithSettings()``.
     struct ParseSettings {
-        QString delimiter = ",";
-        int headerLines = 0;
-        int xColumn = 0;
-        int yColumn = 1;
-        QStringList columnNames;
-        bool hasColumnHeaders = false;
+        QString delimiter = ",";       ///< Delimiter string used between fields.
+        int headerLines = 0;           ///< Number of leading comment/header lines to skip.
+        int xColumn = 0;               ///< Zero-based index of the X column.
+        int yColumn = 1;               ///< Zero-based index of the Y column.
+        QStringList columnNames;       ///< Resolved column names (auto-generated when no header row is present).
+        bool hasColumnHeaders = false; ///< ``true`` when the first data line is a text header row.
     };
-    
+
+    /// \brief Result of a parse-preview pass.
+    ///
+    /// Combines the auto-detected settings, a small sample of raw lines,
+    /// a short slice of parsed points, the total data-line count, and a
+    /// success flag with optional error message. Used by
+    /// ``GenericXYOverlayWidget`` to show the user what the importer
+    /// will produce before they commit to the full parse.
     struct ParsePreview {
-        QStringList sampleLines;
-        ParseSettings detectedSettings;
-        QVector<QPointF> previewData;
-        int totalDataLines = 0;
-        QString errorMessage;
-        bool success = false;
+        QStringList sampleLines;        ///< First lines of the file, in source order.
+        ParseSettings detectedSettings; ///< Settings produced by auto-detection.
+        QVector<QPointF> previewData;   ///< Up to a handful of parsed points for display.
+        int totalDataLines = 0;         ///< Total number of data lines in the file.
+        QString errorMessage;           ///< Detection error, when ``success`` is ``false``.
+        bool success = false;           ///< ``true`` when auto-detection produced a usable result.
     };
-    
+
     GenericXYParser();
-    
-    // FileParser interface
+
+    /// \brief Recognize a file by suffix and a structural sniff of the
+    /// first lines.
     bool canParse(const QString &filePath, const QVariantMap &hints = QVariantMap()) const override;
+
+    /// \brief Returns ``"GenericXY"``.
     QString formatName() const override;
+
+    /// \brief Returns a one-line description of the format.
     QString formatDescription() const override;
+
+    /// \brief Returns the list of recognized suffixes.
     QStringList fileExtensions() const override;
-    
-    // GenericXY-specific methods
+
+    /// \brief Parse a recognized file using auto-detected settings.
+    ///
+    /// Equivalent to calling :cpp:func:`parseWithSettings` with the
+    /// result of :cpp:func:`autoDetectSettings`.
     GenericXYData parse(const QString &filePath, const QVariantMap &hints = QVariantMap()) const;
+
+    /// \brief Sniff ``filePath`` and return the inferred parse settings.
     ParseSettings autoDetectSettings(const QString &filePath) const;
+
+    /// \brief Generate a preview using the supplied settings.
     ParsePreview generatePreview(const QString &filePath, const ParseSettings &settings) const;
-    ParsePreview generatePreview(const QString &filePath) const; // Uses auto-detected settings
+
+    /// \brief Generate a preview using auto-detected settings.
+    ParsePreview generatePreview(const QString &filePath) const;
+
+    /// \brief Parse a recognized file with explicit settings.
+    ///
+    /// Overrides any auto-detection and uses the supplied
+    /// :cpp:struct:`ParseSettings` verbatim.
     GenericXYData parseWithSettings(const QString &filePath, const ParseSettings &settings) const;
-    
-    // Public test access methods
+
+    /// \brief Test-only delimiter-detection accessor.
     QString detectDelimiterPublic(const QStringList &lines) const { return detectDelimiter(lines); }
+
+    /// \brief Test-only header-line-count accessor.
     int detectHeaderLinesPublic(const QStringList &lines) const { return detectHeaderLines(lines); }
+
+    /// \brief Test-only column-header detection accessor.
     bool detectColumnHeadersPublic(const QString &line, const QString &delimiter) const { return detectColumnHeaders(line, delimiter); }
+
+    /// \brief Test-only sample-line reader.
     QStringList readSampleLinesPublic(const QString &filePath, int maxLines = 20) const { return readSampleLines(filePath, maxLines); }
 
 private:
-    /**
-     * @brief Detect the most likely delimiter character
-     * @param lines Sample lines from the file
-     * @return Detected delimiter character
-     */
+    /// \brief Score the candidate delimiters and return the winner.
     QString detectDelimiter(const QStringList &lines) const;
-    
-    /**
-     * @brief Count header lines to skip (comment lines with #, !, %)
-     * @param lines Sample lines from the file
-     * @return Number of header lines to skip
-     */
+
+    /// \brief Count consecutive comment/header lines at the top of the file.
     int detectHeaderLines(const QStringList &lines) const;
-    
-    /**
-     * @brief Detect if first data line contains column headers
-     * @param line First data line after header
-     * @param delimiter Detected delimiter
-     * @return true if line appears to contain text headers
-     */
+
+    /// \brief Decide whether ``line`` looks like a textual column-header row.
     bool detectColumnHeaders(const QString &line, const QString &delimiter) const;
-    
-    /**
-     * @brief Generate automatic column names
-     * @param numColumns Number of columns detected
-     * @return List of auto-generated column names (Col1, Col2, etc.)
-     */
+
+    /// \brief Generate placeholder column names ``Col1``, ``Col2``, ...
     QStringList generateColumnNames(int numColumns) const;
-    
-    /**
-     * @brief Parse column headers from a line
-     * @param line Header line
-     * @param delimiter Delimiter character
-     * @return List of cleaned column names
-     */
+
+    /// \brief Split a header row into cleaned column names.
     QStringList parseColumnHeaders(const QString &line, const QString &delimiter) const;
-    
-    /**
-     * @brief Parse a data line into numerical values
-     * @param line Data line
-     * @param delimiter Delimiter character
-     * @param xCol X column index
-     * @param yCol Y column index
-     * @return QPointF with X,Y data, or invalid point if parsing fails
-     */
-    QPointF parseDataLine(const QString &line, const QString &delimiter, 
+
+    /// \brief Parse one data line into an ``(x, y)`` point.
+    /// \return Valid ``QPointF`` on success; an invalid point on failure.
+    QPointF parseDataLine(const QString &line, const QString &delimiter,
                           int xCol, int yCol) const;
-    
-    /**
-     * @brief Check if a line is a comment line
-     * @param line Line to check
-     * @return true if line starts with comment characters (#, !, %)
-     */
+
+    /// \brief Test whether ``line`` begins with one of the recognized
+    /// comment characters (``#``, ``!``, ``%``).
     bool isCommentLine(const QString &line) const;
-    
-    /**
-     * @brief Clean semicolons from strings (BC CSV compatibility)
-     * @param input Input string
-     * @return String with semicolons removed/replaced
-     */
+
+    /// \brief Strip embedded semicolons so the result can round-trip
+    /// safely through Blackchirp's CSV storage.
     QString cleanSemicolons(const QString &input) const;
-    
-    /**
-     * @brief Read sample lines from file for analysis
-     * @param filePath Path to file
-     * @param maxLines Maximum lines to read (default: 20)
-     * @return Sample lines for format detection
-     */
+
+    /// \brief Read the first ``maxLines`` lines of ``filePath``.
     QStringList readSampleLines(const QString &filePath, int maxLines = 20) const;
-    
-    /**
-     * @brief Calculate expected numeric columns using current delimiter and data lines
-     * Updates d_cachedAnalysis.expectedNumericColumns
-     */
+
+    /// \brief Recompute and cache the expected numeric-column count.
     void calculateExpectedNumericColumns() const;
-    
-    /**
-     * @brief Detect header lines using cached analysis data
-     * @return Number of header lines
-     */
+
+    /// \brief Header-line count derived from the cached delimiter.
     int detectHeaderLinesUsingDelimiter() const;
-    
-    // Analysis caching for performance and consistency
+
+    /// \brief Cached file analysis used by ``analyzeFile()`` so the
+    /// preview, ``canParse``, and full-parse paths share one detection
+    /// result per ``(filePath, lastModified)`` pair.
     struct FileAnalysis {
-        QString filePath;
-        QDateTime lastModified;
-        QStringList allLines;
-        QStringList dataLines;
-        ParseSettings settings;
-        int expectedNumericColumns = 0;
-        int expectedTotalColumns = 0;
-        bool isValid = false;
+        QString filePath;            ///< File the cached result describes.
+        QDateTime lastModified;      ///< Mtime captured when the result was produced.
+        QStringList allLines;        ///< Full file contents.
+        QStringList dataLines;       ///< Subset of ``allLines`` past the header.
+        ParseSettings settings;      ///< Auto-detected settings.
+        int expectedNumericColumns = 0; ///< Number of columns that parse as numbers in the data section.
+        int expectedTotalColumns = 0;   ///< Total column count, including non-numeric columns.
+        bool isValid = false;        ///< ``true`` when the cached analysis is current and usable.
     };
-    
-    /**
-     * @brief Perform comprehensive file analysis with caching
-     * @param filePath Path to file to analyze
-     * @param hints Optional parsing hints from interface
-     * @return true if file can be parsed, false otherwise
-     */
+
+    /// \brief Run a full file analysis, populating ``d_cachedAnalysis``.
+    /// \return ``true`` when the file is recognized as a parseable XY file.
     bool analyzeFile(const QString &filePath, const QVariantMap &hints = QVariantMap()) const;
-    
-    // Mutable cache for analysis results
-    mutable FileAnalysis d_cachedAnalysis;
+
+    mutable FileAnalysis d_cachedAnalysis; ///< Cached analysis result; invalidated when the file's mtime changes.
 };
 
 #endif // GENERICXYPARSER_H

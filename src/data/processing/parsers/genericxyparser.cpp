@@ -248,7 +248,7 @@ QString GenericXYParser::formatDescription() const
 
 QStringList GenericXYParser::fileExtensions() const
 {
-    return {".csv", ".tsv", ".txt", ".dat", ".data", ".xy", ".tab"};
+    return {"*.csv", "*.tsv", "*.txt", "*.dat", "*.data", "*.xy", "*.tab"};
 }
 
 GenericXYParser::ParseSettings GenericXYParser::autoDetectSettings(const QString &filePath) const

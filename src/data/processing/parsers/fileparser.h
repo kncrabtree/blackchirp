@@ -5,66 +5,59 @@
 #include <QStringList>
 #include <QVariantMap>
 
-/**
- * @brief Abstract base interface for file parsers
- * 
- * This interface defines the common functionality for parsing different file formats.
- * It provides a flexible foundation that can be extended for specific use cases like
- * spectroscopic catalogs (CatalogParser) or generic data files (GenericXYParser).
- */
+/// \brief Abstract interface for file-format parsers.
+///
+/// \sa CatalogParser, GenericXYParser, FileParserRegistry
 class FileParser
 {
 public:
     virtual ~FileParser() = default;
-    
-    /**
-     * @brief Check if this parser can handle the given file
-     * @param filePath Path to the file to check
-     * @param hints Optional parsing hints/settings (default: empty)
-     * @return true if this parser can handle the file format
-     */
+
+    /// \brief Test whether this parser recognizes the given file.
+    ///
+    /// Implementations typically combine an extension check
+    /// (\ref hasMatchingExtension) with a structural sniff of the first
+    /// few lines (\ref readFileHeader) to keep the test cheap.
+    ///
+    /// \param filePath Absolute or relative path to the candidate file.
+    /// \param hints Optional format-specific hints (delimiter overrides,
+    ///              column indices, etc.). Each subclass documents which
+    ///              keys it consumes.
+    /// \return ``true`` when the parser is willing to handle the file.
     virtual bool canParse(const QString &filePath, const QVariantMap &hints = QVariantMap()) const = 0;
-    
-    /**
-     * @brief Get the human-readable name of this file format
-     * @return Format name (e.g., "SPCAT", "GenericXY")
-     */
+
+    /// \brief Short, human-readable format identifier.
+    ///
+    /// Used in file-dialog filters and in user-visible error messages.
+    /// Examples: ``"SPCAT"``, ``"XIAM"``, ``"GenericXY"``.
     virtual QString formatName() const = 0;
-    
-    /**
-     * @brief Get typical file extensions for this format
-     * @return List of file extensions (e.g., [".cat", ".csv"])
-     */
+
+    /// \brief Glob patterns this parser accepts for file-dialog filters.
+    ///
+    /// Patterns include the leading wildcard and dot (e.g. ``"*.cat"``).
+    /// :cpp:func:`FileParserRegistry::fileDialogFilter` joins these into
+    /// a single ``QFileDialog`` filter string.
     virtual QStringList fileExtensions() const = 0;
-    
-    /**
-     * @brief Get a description of this file format
-     * @return Human-readable description
-     */
+
+    /// \brief One-line description of the format suitable for tooltips.
     virtual QString formatDescription() const = 0;
-    
+
 protected:
-    /**
-     * @brief Helper method to check if file exists and is readable
-     * @param filePath Path to check
-     * @return true if file can be read
-     */
+    /// \brief Verify that ``filePath`` exists, is a regular file, and is readable.
+    /// \return ``true`` when ``QFileInfo`` reports the file is readable.
     bool isFileReadable(const QString &filePath) const;
-    
-    /**
-     * @brief Helper method to detect format by file extension
-     * @param filePath Path to check
-     * @param extensions List of supported extensions
-     * @return true if extension matches
-     */
+
+    /// \brief Test whether the file's suffix matches one of ``extensions``.
+    ///
+    /// Comparison is case-insensitive. ``extensions`` entries should be of
+    /// the form ``".cat"`` (with the leading dot, no glob wildcard).
     bool hasMatchingExtension(const QString &filePath, const QStringList &extensions) const;
-    
-    /**
-     * @brief Helper method to read file header for format detection
-     * @param filePath Path to file
-     * @param headerLines Number of lines to read (default: 10)
-     * @return Header lines as string list
-     */
+
+    /// \brief Read the first ``headerLines`` lines of ``filePath`` as text.
+    ///
+    /// Returns an empty list if the file is unreadable. Used by
+    /// ``canParse()`` implementations that need to peek at the file body
+    /// without reading the entire file.
     QStringList readFileHeader(const QString &filePath, int headerLines = 10) const;
 };
 

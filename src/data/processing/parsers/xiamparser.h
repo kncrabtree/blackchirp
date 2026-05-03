@@ -4,99 +4,74 @@
 #include "catalogparser.h"
 #include <QRegularExpression>
 
-/**
- * @brief Parser for XIAM spectroscopic catalog output files
- * 
- * XIAM (eXtended Internal Axis Method) is a program for analyzing
- * internal rotation effects in molecular spectra. This parser handles
- * both ints=2 (simple) and ints=3 (with splitting analysis) output modes.
- * 
- * Format characteristics:
- * - ints=2: Direct frequency and intensity listings
- * - ints=3: Includes rigid rotor reference and symmetry state splittings
- * - File extensions: .xo (output), .out
- * - Header pattern: "-- B [num]" followed by column headers
- */
+/// \brief Parser for XIAM (eXtended Internal Axis Method) catalog output.
 class XIAMParser : public CatalogParser
 {
 public:
+    /// \brief Recognize a file by its ``.xo`` or ``.out`` suffix and the
+    /// XIAM ``-- B`` header pattern.
     bool canParse(const QString &filePath, const QVariantMap &hints = QVariantMap()) const override;
+
+    /// \brief Parse a recognized XIAM file into a :cpp:class:`CatalogData`.
+    ///
+    /// Detects the intensity mode (``ints=2`` or ``ints=3``) automatically
+    /// and dispatches to the matching internal parser.
     CatalogData parse(const QString &filePath, const QVariantMap &hints = QVariantMap()) const override;
+
+    /// \brief Returns ``"XIAM"``.
     QString formatName() const override;
+
+    /// \brief Returns a one-line description of the format.
     QString formatDescription() const override;
+
+    /// \brief Returns ``{"*.xo", "*.out"}``.
     QStringList fileExtensions() const override;
 
 private:
-    /**
-     * @brief Detect which XIAM intensity mode is used in the file
-     * @param lines File content lines
-     * @return 2 for ints=2 mode, 3 for ints=3 mode, 0 if unknown
-     */
+    /// \brief Detect the XIAM intensity mode used in the file.
+    /// \return ``2`` for ``ints=2``, ``3`` for ``ints=3``, ``0`` if no
+    ///         mode declaration is found.
     int detectIntensityMode(const QStringList &lines) const;
-    
-    /**
-     * @brief Parse XIAM file in ints=2 mode (simple format)
-     * @param lines File content lines
-     * @param startLine Index where data section begins
-     * @return CatalogData with parsed transitions
-     */
+
+    /// \brief Parse the ``ints=2`` (simple) variant.
     CatalogData parseInts2Format(const QStringList &lines, int startLine) const;
-    
-    /**
-     * @brief Parse XIAM file in ints=3 mode (with splitting analysis)
-     * @param lines File content lines  
-     * @param startLine Index where data section begins
-     * @return CatalogData with parsed transitions
-     */
+
+    /// \brief Parse the ``ints=3`` (with splitting analysis) variant.
     CatalogData parseInts3Format(const QStringList &lines, int startLine) const;
-    
-    /**
-     * @brief Find the line where transition data begins
-     * @param lines File content lines
-     * @return Line index, or -1 if not found
-     */
+
+    /// \brief Find the line index where transition data begins.
+    /// \return Zero-based line index, or ``-1`` if no header is found.
     int findDataStartLine(const QStringList &lines) const;
-    
-    /**
-     * @brief Parse quantum number assignments from XIAM format
-     * @param qnString Quantum number string (e.g., "K -1  0  t  2  1")
-     * @return Formatted quantum number string
-     */
+
+    /// \brief Normalize a XIAM quantum-number string.
     QString parseQuantumNumbers(const QString &qnString) const;
-    
-    /**
-     * @brief Extract molecule name from file header
-     * @param lines File content lines
-     * @return Molecule name or filename if not found
-     */
+
+    /// \brief Extract the molecule name from the file header.
+    /// \return Header-supplied name when present; otherwise the file's
+    ///         base name as a fallback.
     QString extractMoleculeName(const QStringList &lines, const QString &filePath) const;
-    
-    /**
-     * @brief Parse a transition line in ints=2 format
-     * @param line Input line containing transition data
-     * @param blockNumber Block number string to append to quantum numbers
-     * @return TransitionData structure, or invalid transition if parsing fails
-     */
+
+    /// \brief Parse a single transition line in ``ints=2`` mode.
+    /// \param blockNumber Block label appended to the quantum-number
+    ///                    string when the file contains multiple blocks.
     TransitionData parseInts2Line(const QString &line, const QString &blockNumber = QString()) const;
-    
-    /**
-     * @brief Parse an individual transition line in ints=3 format
-     * @param line Input line
-     * @param groupQuantumNumbers Quantum numbers from group start (for split lines)
-     * @return TransitionData structure
-     */
+
+    /// \brief Parse a single transition line in ``ints=3`` mode.
+    /// \param groupQuantumNumbers Quantum numbers carried over from the
+    ///                            block start so split lines inherit
+    ///                            the parent assignment.
     TransitionData parseInts3Line(const QString &line, const QString &groupQuantumNumbers = QString()) const;
-    
-    /**
-     * @brief Calculate optimal intensity considering XIAM's fixed decimal precision issues
-     * @param linestr Line strength from XIAM output
-     * @param total Total intensity from XIAM output
-     * @param statWeight Statistical weight
-     * @param population Population factor
-     * @param hvEnergy Energy factor
-     * @return Optimal intensity value (either linestr or calculated from components)
-     */
-    double calculateOptimalIntensity(double linestr, double total, double statWeight, double population, double hvEnergy) const;
+
+    /// \brief Reconstruct a high-precision intensity from XIAM's
+    /// constituent fields.
+    ///
+    /// XIAM prints intensities with fixed decimal precision; for weak
+    /// transitions the printed total can lose significant digits.
+    /// This helper recomputes the intensity from line strength,
+    /// statistical weight, population, and energy factors and returns
+    /// whichever value is more precise.
+    double calculateOptimalIntensity(double linestr, double total, double statWeight,
+                                     double population, double hvEnergy) const;
 };
 
 #endif // XIAMPARSER_H
