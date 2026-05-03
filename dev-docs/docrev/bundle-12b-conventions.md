@@ -1,9 +1,22 @@
 # Bundle 12b — Developer Guide: Coding Conventions
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
+- 2026-05-03: not started → complete. Authored
+  doc/source/developer_guide/conventions.rst per spec: naming/indent,
+  4-form string-literal table, function-signature policy, container
+  rule, three key-declaration patterns with anti-example, Doxygen
+  section forwarding to api_style, logging section naming all five
+  free functions plus four hw* helpers and the five severity levels,
+  persistent-settings section establishing the protected-set/public-get
+  split and static-key rule. Forward-links land on /classes/loghandler,
+  /classes/settingsstorage, /classes/hardwareregistry,
+  /developer_guide/api_style, and /developer_guide/hardware_configuration
+  (12d, not yet written — Sphinx warning expected per umbrella). No
+  dev-docs/ links in rendered output. No source-tree change required.
+  Content commit 836c73afe944f77c91dc28eb256973917909278f.
 - (entries appended in reverse chronological order; most recent first)
 -->
 
