@@ -1,10 +1,28 @@
 # Bundle 13i — API Reference: Orchestration Managers
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
 - (entries appended in reverse chronological order; most recent first)
+- 2026-05-02: drafted → complete. Content commit 2f50d947. Adds
+  Sphinx pages and Doxygen refreshes for HardwareManager,
+  AcquisitionManager, BatchManager, and ClockManager. Also removes
+  three pieces of dead code surfaced during the documentation pass:
+  AcquisitionManager::motorRest() (missed by 2021 motor removal),
+  AcquisitionManager::takeSnapshot() + doFinalSave() (orphaned by
+  the 2021 SnapWorker → QtConcurrent refactor), and the
+  motorscan.svg icon entry re-added by accident during a 2025
+  PNG → SVG migration.
+- 2026-05-02: not started → drafted. Two parallel drafter/verifier
+  cycles (Drafter A: HardwareManager; Drafter B: AcquisitionManager
+  + BatchManager). Mid-flight scope extension added ClockManager via
+  Drafter C. Each verifier returned one to three load-bearing items;
+  all addressed in single revision passes. Working tree carries
+  four new .rst files under doc/source/classes/ and Doxygen
+  refreshes of the four target headers (including removal of
+  Phase/Task temporal markers from hardwaremanager.h code comments
+  and source-evolution comments from clockmanager.cpp).
 -->
 
 Adds API reference pages for the three top-level orchestration
