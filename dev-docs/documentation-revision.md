@@ -37,7 +37,9 @@ requirements, and acceptance criteria.
 | 08 | Experiment workflow refresh | M | 07 | complete |
 | 09 | FTMW data viewing, overlays, data storage refresh | M | 08 | complete |
 | 10 | Rolling/Aux, Log tab, Blackchirp-viewer | M | 08 | complete |
-| 11 | Migration guide v1.x → 2.0.0 + Changelog | S | most user-guide bundles | not started |
+| 11 | Changelog + Migration Guide chapter umbrella | S | most user-guide bundles | not started |
+| 11a | Changelog: 2.0.0 release notes (user-perspective) | M | 11 | not started |
+| 11b | Migration Guide: v1.x → 2.0.0 | M | 11a | not started |
 | 12 | Developer Guide chapter scaffold + intro | S | — (independent) | complete |
 | 12a | Developer Guide: Build System & Project Layout | M | 12 | complete |
 | 12b | Developer Guide: Coding Conventions | S | 12 | complete |
@@ -62,7 +64,12 @@ requirements, and acceptance criteria.
 | 13g | API ref: GUI helper classes | M | 13a | complete |
 | 13h | API ref: file parsers | S | 13a | complete |
 | 13i | API ref: orchestration managers (HardwareManager, AcquisitionManager, BatchManager, ClockManager) | M | 13a | complete |
-| 14 | Final pass: screenshot sizing & navigation review | S | most user-guide bundles | not started |
+| 14 | Final consistency pass — chapter umbrella | S | most user-guide bundles | not started |
+| 14a | API page intro / header-comment harmonization | M | 14 | not started |
+| 14b | Screenshot sizing pass | S | 14 | not started |
+| 14c | File organization & menu layout audit | S | 14 | not started |
+| 14d | American English sweep | S | 14 | not started |
+| 14e | Implementation → driver terminology sweep | S | 14 | not started |
 | 15 | LIF module (experiment setup, configuration, tab, storage) | M | 08 | complete |
 
 Effort key: S ≈ 1 session, M ≈ 2 sessions, L ≈ 3+ sessions.
@@ -70,13 +77,10 @@ Effort key: S ≈ 1 session, M ≈ 2 sessions, L ≈ 3+ sessions.
 Status values:
 
 - **not started** — no work has been done on this bundle.
-- **in progress** — drafter has been dispatched but the bundle is not
-  yet accepted. The bundle's own header (see "Bundle status header"
-  below) carries the detail (revision pass, open punch list).
-- **drafted** — drafter output has landed in the working tree, the
-  verifier punch list is resolved, and the orchestrator has handed
-  off to the user for review of the rendered docs. The bundle stays
-  in `drafted` through any user-directed revision rounds.
+- **in progress** — the bundle has been opened in an orchestrator
+  session but is not yet accepted. The bundle's own header (see
+  *Bundle status header* below) carries the detail (handoff notes,
+  open questions, partial-landing summary).
 - **complete** — the bundle's content commit (stage 1 of the
   two-stage commit pattern) has landed. The commit hash is recorded
   in the bundle's own status header for traceability.
@@ -89,68 +93,40 @@ orchestrator updates it (via `Edit`) when a bundle's status
 transitions. The user is encouraged to confirm the table is correct
 before each new orchestrator session.
 
-**Developer-guide track (12, 12a–12n).** Direct orchestrator
-drafting, one bundle per session, no drafter/verifier subagents.
-The "Per-bundle workflow (delegated bundles)", "Orchestrator
-hygiene", and "Dispatch checklist" sections below describe the
-delegated workflow used by the user-guide and API-reference
-tracks; they do not apply to the developer-guide track. The
-developer-guide track substitutes the workflow in
-`dev-docs/docrev/bundle-12-developer-guide.md`. This file remains
-the canonical source of truth for **status** (the bundles table
-above) for every track.
+The user-guide track (00–10, 15) and the API-reference track
+(13a–13i) used a delegated drafter/verifier workflow that is no
+longer in service — those tracks are complete. Every remaining
+track (developer guide 12 + 12a–12n, changelog/migration 11 +
+11a/11b, final consistency pass 14 + 14a–14e) uses the
+**orchestrator-direct** workflow described in *Workflow* below.
+Each chapter umbrella (`bundle-12-developer-guide.md`,
+`bundle-11-changelog-migration.md`, `bundle-14-final-pass.md`)
+restates the workflow as it applies to that track; this file
+remains the canonical source of truth for **status** (the bundles
+table above) for every track.
 
 ## Recommended order
 
-Bundles are tackled one at a time. The user-guide track (00 → 11) is
-mostly linear; the API-reference track (13a → 13h) and the developer
-guide (12) are independent of it and can be slotted in between
-user-guide bundles in whatever order suits.
+The user-guide (00–10, 15), API-reference (13a–13i), and
+developer-guide (12 + 12a–12n) tracks are complete. The remaining
+work is:
 
-### Sequential critical path (user guide)
-
-1. **00 — Doc infrastructure & landing.** Establishes the toctree
-   skeleton and Sphinx changelog scaffold that every other bundle plugs
-   into.
-2. **01 — Installation.** Replaces qmake-era content; binary downloads
-   are referenced from later bundles.
-3. **02 — First Run & Application Configuration.** Introduces concepts
-   (data path, profiles, library status) that bundles 03 and onwards
-   reference.
-4. **03 — Hardware Configuration: profiles, loadouts, FTMW presets.**
-   This is the largest conceptual shift from v1.x and is referenced by
-   nearly every later chapter.
-5. **04 — Hardware Menu, Communication, Status Panel.** Updates the
-   day-to-day UI navigation page.
-6. **07 — RF, chirp, FTMW configuration.** Depends on 03 (`FtmwConfigDialog`
-   and preset bar) and 04 (Hardware menu entry points).
-7. **08 — Experiment workflow refresh.** Depends on 07 (chirp/RF setup
-   pages are linked from the wizard walkthrough).
-8. **09 — FTMW data viewing, overlays, data storage refresh.** Depends
-   on 08 (data storage describes what the experiment writes).
-9. **10 — Rolling/Aux, Log tab, Blackchirp-viewer.** Depends on 08
-   (the data-storage page describes what each tab consumes).
-10. **15 — LIF module.** Depends on 08 (LIF acquisition setup is
-    part of the experiment wizard). Peer of bundle 10; either can
-    land first.
-11. **11 — Migration guide and changelog.** Best done last so it can
-    cross-reference the new pages.
-
-### Independent bundles
-
-These can be tackled at any point in the schedule without blocking the
-critical path:
-
-- **05 — Per-device hardware pages.** Light refresh; depends on 04 only
-  for terminology.
-- **06 — Python hardware user guide.** Depends conceptually on 03
-  (profiles); cross-link to the relevant user-guide pages once both
-  have landed.
-- **12 — Developer Guide.** Sources are dev-docs and source code; no
-  dependency on the user-guide bundles.
-- **13a–13i — API reference bundles.** Each is independent of the others
-  except that 13a establishes the Doxygen-comment style guide that
-  13b–13i follow.
+1. **11 + 11a + 11b — Changelog and migration guide.** 11 is a
+   chapter-umbrella commit. 11a populates the 2.0.0 changelog page
+   (user perspective: what is new from a v1.0 user's point of view)
+   and notes any items the migration guide will need that the 11b
+   spec does not already enumerate. 11b writes the migration guide
+   itself, consuming 11a's carry-forward list. 11a depends on 11;
+   11b depends on 11a.
+2. **14 + 14a + 14b–14e — Final consistency pass.** 14 is a
+   chapter-umbrella commit. **14a runs first** because it may
+   involve new API-page writing (re-balancing class-level prose
+   between Doxygen headers and the `.rst` page) and writes the
+   `api_style.rst` rule that future API edits should follow.
+   14b–14e are mechanical sweeps (screenshot sizing, file
+   organization audit, American-English sweep, implementation →
+   driver terminology sweep) and can be tackled in any order
+   after 14a.
 
 ## Common conventions for bundle authors
 
@@ -216,139 +192,96 @@ orchestrator/drafter/verifier cycle.
   presets, the **Save Curve Appearance Preset** dialog, and the
   apply/save/delete workflows.
 
-## Orchestrator instructions
+## Workflow
 
-This plan is designed to be driven by an **orchestrator** (Opus,
-fresh context) that dispatches **drafter** subagents (Sonnet) to
-implement individual bundles, then dispatches separate **verifier**
-subagents to grade the output against acceptance criteria. The
-orchestrator's own context stays clean — it reads bundle files,
-briefs subagents, judges results, and merges.
+Every remaining bundle uses the **orchestrator-direct** workflow:
+one bundle per orchestrator session, one Opus context, no
+drafter/verifier subagents writing prose. The orchestrator reads
+the chapter umbrella plus the sub-bundle file plus the cited
+sources and writes the page directly. The five steps below are the
+canonical sequence; each chapter umbrella restates them as they
+apply to that track.
 
-### When to delegate vs. do yourself
+1. **Read the sub-bundle file and verify its scope is current.**
+   Confirm cited paths still exist, that any class names match the
+   current code, and that the listed sources are still
+   load-bearing. The codebase keeps moving; a sub-bundle authored
+   weeks ago may need a touch-up before drafting begins. If scope
+   has drifted enough that the sub-bundle file itself needs
+   revising, do that first and flag it to the user.
 
-| Bundle | Mode | Reason |
-|--------|------|--------|
-| 00 (infrastructure) | Direct | Small, fiddly Sphinx wiring; delegation overhead exceeds drafting time |
-| 01–10 (user guide) | Delegate | Bulk RST writing; well-scoped; Sonnet handles cleanly |
-| 11 (changelog/migration) | Direct | Synthesis-heavy; cross-references every other bundle's output |
-| 12 + 12a–12n (developer guide) | Direct, one bundle per session | Each sub-page involves higher-level reasoning across multiple systems; orchestrator drafts directly without delegation, fresh context per sub-bundle |
-| 13a (existing API refresh) | Direct | Establishes the API style convention 13b–13h follow |
-| 13b–13i (API reference) | Delegate | Independent of each other once 13a is locked |
+2. **Draft the page directly.** Read the chapter umbrella, the
+   sub-bundle file, and the cited sources. Use the
+   `codebase-memory` MCP tools (project name
+   `home-kncrabtree-github-blackchirp-src`) for code exploration
+   per `CLAUDE.md`. Produce only the RST files the sub-bundle
+   declares in scope. Do not edit `MEMORY.md`, the master plan,
+   the umbrella, or any other sub-bundle file (with the narrow
+   exception of the sub-bundle's own status header in stage 5).
 
-### Per-bundle workflow (delegated bundles)
+3. **Sanity-check and hand off to the user for review.** Build the
+   docs:
 
-1. **Read the bundle file and verify scope is current.** The
-   codebase keeps moving; a bundle authored weeks ago may reference
-   files or behaviour that has shifted. Skim the cited sources
-   (dev-docs and source headers). If scope has drifted, revise the
-   bundle file *before* dispatching — drafters cannot be expected
-   to detect plan staleness.
-2. **Dispatch drafter (Sonnet).** Brief with: the bundle file path,
-   the codebase-memory project name
-   (`home-kncrabtree-github-blackchirp-src`), the explicit
-   instruction to use codebase-memory tools first per `CLAUDE.md`,
-   and a hard scope: "produce only the Sphinx files the bundle
-   lists; leave screenshot TODO markers with the bundle's specified
-   filenames; do not edit `MEMORY.md` or the bundle file itself."
-   The drafter edits the working tree directly.
-3. **Dispatch verifier (Sonnet, fresh context).** Brief with: the
-   working-tree diff, the bundle file, and the instruction "grade
-   against each acceptance criterion; check that any cited file
-   paths and class names exist; report a punch list under 300
-   words." Fresh context matters — the drafter has motivated
-   reasoning the verifier lacks.
-4. **Orchestrator judges the punch list.** Decide which items are
-   load-bearing. For load-bearing issues, dispatch a revision pass
-   to the drafter with a focused prompt: "address items N, M, P
-   from this punch list". For minor prose issues, fix directly via
-   Edit. Do not loop through more than two revision passes; if a
-   third is needed, the bundle scope is wrong and needs human
-   input.
-5. **Sanity-check and hand off to the user for review.** Once the
-   verifier's punch list is resolved, do a quick orchestrator-level
-   sanity check on the working-tree diff (file count plausible,
-   nothing landed outside scope, headers and RSTs touched the
-   classes the bundle declares). Then report to the user with
-   anything that explicitly needs their attention: screenshots
-   that need to be captured, design decisions the drafter made
-   that they should sign off on, unexpected output, scope
-   adjustments made mid-flight, or any acceptance criterion the
-   drafter could not satisfy. Keep the report short — the user
-   builds the docs locally (`cmake --build build --target docs`),
-   reads the rendered output, and replies with revisions or
-   approval. Loop on user-directed revisions (drafter or direct
-   Edit, whichever is cheaper) until the user signals they are
-   satisfied. Do not stage anything during this phase — the
-   working tree stays unstaged so the user can experiment freely.
-6. **Stage and run the two-stage commit** once the user has
-   approved the bundle. Stage 1 is the **content commit**: every
-   file the bundle declared as in scope (typically the new/edited
-   files under `doc/source/`, plus any header refreshes the bundle
-   authorized in `src/`). Stage only those files; do not stage
+   ```bash
+   touch doc/source/index.rst && conda run -n breathe cmake --build build --target docs
+   ```
+
+   Note any new warnings or unresolved cross-references. Report
+   to the user with: a one-paragraph summary of what landed; any
+   gaps the sub-bundle's sources could not support; any deviations
+   from stated scope and why; and the path to the rendered page
+   so the user can review locally. Do not stage anything yet —
+   the working tree stays unstaged so the user can experiment
+   freely. Loop on user-directed revisions until the user signals
+   approval.
+
+4. **Stage and run the content commit (stage 1 of two).** Stage
+   only the files the sub-bundle declared in scope. Do not stage
    anything under `dev-docs/` for stage 1. Commit with a subject
-   that names the bundle's deliverable (not "Bundle 13b"; the
+   that names the page's deliverable (not "Bundle 11a"; the
    reader of `git log` does not care which bundle it was).
-7. **Stage 2 is the tracking commit.** Record the stage-1 commit
-   hash in the bundle's status header (status → `complete`,
-   append a status-log entry with the hash) and update the
-   master-plan table (status → `complete`). Stage those two
-   `dev-docs/` files and commit with the subject
+
+5. **Stage and run the tracking commit (stage 2 of two).** Update
+   the sub-bundle's status header (status → `complete`, append a
+   status-log entry timestamped with the stage-1 commit hash) and
+   the master-plan table cell in this file. Stage those two files
+   and commit with subject
    `Update documentation revision tracking status`. The
    orchestrator may run both commits itself, or wait for the user
    to commit, per the user's preference for the session.
 
-### Orchestrator hygiene
+### Research-agent dispatch
 
-- **One bundle per orchestrator session.** Running the
-  orchestrator across many bundles in a single context defeats the
-  chunking — context grows linearly and prompt-cache benefit is
-  lost by the third or fourth bundle. Start a fresh Opus session
-  per bundle.
-- **Stay out of file-by-file writing.** If the orchestrator finds
-  itself using `Edit`/`Write` for routine prose, push the work
-  back to a drafter. The orchestrator's job is briefing,
-  judging, and merging.
-- **Pin codebase-memory in every subagent prompt.** Sonnet
-  without that hint falls back to grep and misses indexed
-  structural relationships.
-- **Subagents do not touch this plan or MEMORY.md.** Drafters
-  edit `doc/source/`, plus the header refreshes that bundles
-  13a–13h explicitly authorize. Plan revisions, memory updates,
-  and commits are the orchestrator's (and ultimately the user's)
-  responsibility.
-- **Screenshots are deferred.** Drafters leave TODO markers with
-  the filenames specified in the bundle's Screenshots section.
-  Screenshot capture is a separate human pass after a bundle is
-  otherwise accepted.
+The orchestrator may dispatch agents (Sonnet or Haiku) for
+**context-gathering tasks only** — surveying the commit log
+between two refs, pulling specific snippets out of dev-docs or
+source headers, summarizing a long file, listing every page that
+references a given symbol, etc. Research agents return data that
+the orchestrator synthesizes; they do **not** write the RST or
+take design decisions. This protects the orchestrator's context
+while keeping high-level reasoning at the Opus tier.
 
-### Dispatch checklist
+### Resuming a partial session
 
-Before each drafter dispatch, the orchestrator confirms:
+If a session ends mid-bundle, the orchestrator must:
 
-- [ ] Bundle file scope is still accurate (cited paths exist;
-      cited behaviour matches code).
-- [ ] All bundle dependencies (per the table at the top of this
-      plan) have status `complete`.
-- [ ] The drafter prompt includes: bundle file path,
-      codebase-memory project name, explicit scope limits, and a
-      reminder to follow `CLAUDE.md` conventions (string
-      literals, timeless prose, American English spelling, no
-      emojis unless requested).
-- [ ] The verifier dispatch is queued to follow drafter
-      completion, and the verifier prompt explicitly instructs it
-      to flag any British English spellings as part of the punch
-      list (per the "Common conventions for bundle authors"
-      American-English rule).
-- [ ] Stage 1 (content commit) and stage 2 (tracking commit) are
-      treated as separate commits — never combined. Both are run
-      only after the user has reviewed the rendered docs and
-      signed off on the bundle.
+- update the sub-bundle's status header to `in progress` and
+  append a status-log entry summarizing what landed, what
+  remains, and any open questions or design decisions the next
+  session needs;
+- stop at a clean checkpoint (do not leave the docs in a
+  half-built state);
+- not run either commit; hand off to the user with the same
+  summary so they can decide whether to commit the partial work
+  or roll it back.
+
+The next orchestrator session reads the status header before
+continuing.
 
 ### Bundle status header
 
-Each bundle file (`dev-docs/docrev/bundle-NN-*.md`) carries a status
-block at the top, immediately under the H1, in the form:
+Each bundle file (`dev-docs/docrev/bundle-NN-*.md`) carries a
+status block at the top, immediately under the H1, in the form:
 
 ```markdown
 **Status:** not started
@@ -359,113 +292,26 @@ Status log:
 -->
 ```
 
-The orchestrator updates this block in lockstep with the master-plan
-table whenever a status transition occurs. Each transition appends
-one entry to the status log with: timestamp, transition (e.g.
-`not started → in progress`), and a one-line note (verifier
-outcome, blocker, commit hash, etc.). When a bundle reaches
-`complete`, record the **content commit** hash (stage 1 of the
-two-stage commit pattern). The tracking commit (stage 2) is the one
-that physically writes the `complete` status into this block and into
-the master-plan table; its hash is not separately recorded.
-
-The status log gives a fresh orchestrator session enough context to
-resume mid-bundle: it tells the orchestrator whether a verifier
-punch list is outstanding and whether the previous attempt was
-abandoned for a known reason.
+The orchestrator updates this block in lockstep with the
+master-plan table whenever a status transition occurs. Each
+transition appends one entry to the status log with: timestamp,
+transition (e.g. `not started → complete`), and a short note
+(handoff summary, blocker description, content-commit hash). When
+a bundle reaches `complete`, record the stage-1 (content) commit
+hash; the stage-2 tracking commit is the one that physically
+writes `complete` and is not separately recorded.
 
 ### Resuming work in a fresh orchestrator session
 
-On startup the orchestrator's first action (after reading the master
-plan and `CLAUDE.md`) is:
+On startup the orchestrator's first action (after reading the
+master plan and `CLAUDE.md`) is:
 
 1. Read the status column in the bundle table above.
 2. For any bundle marked `in progress` or `blocked`, read that
    bundle file's status header for context.
-3. Surface the current state to the user in the form: "Bundle X is
-   in progress, awaiting Y. Bundle W is blocked on V. Recommended
-   next action: …" — and wait for user direction.
+3. Surface the current state to the user and wait for direction.
 
-Do not assume that work marked `not started` actually has not been
-attempted: glance at the latest few git log entries on the working
-branch as a sanity check. If the table and git history disagree,
-the user resolves it.
-
-## Bundle 14 — Final pass: screenshot sizing & navigation review
-
-A short cleanup bundle to be run after the bulk of the user-guide work
-has landed. Five scopes:
-
-1. **Screenshot sizing.** Walk every `.. image::` and `.. figure::`
-   directive under `doc/source/user_guide/`. For each referenced PNG,
-   inspect the native pixel width:
-   - **Native width ≤ 800 px:** drop any explicit `:width:` option (or
-     set it to the native width) so the image renders at 1:1.
-   - **Native width > 800 px:** cap the rendered width at 800 px and
-     wrap the directive so the figure links to the full-resolution
-     image (e.g. via `:target:` pointing at the same `_static` path,
-     or a `figure` with a click-through). Pick one approach and apply
-     it consistently.
-
-2. **File organization & menu layout.** Reassess whether the
-   `doc/source/user_guide/` directory layout still matches the final
-   shape of the documentation. Candidates to reconsider:
-   - Whether the `experiment/` subdirectory should remain (or its
-     contents promoted) given that several pages there are now
-     subpages of `ftmw_configuration` rather than `experiment_setup`.
-   - Whether the `hw/` subdirectory should sit under
-     `hardware_details` as a logical sub-tree or stay flat.
-   - Toctree ordering and `:caption:` choices in the top-level
-     `index.rst` and any `:hidden:` toctrees.
-
-   The goal is a consistent navigation tree that matches how a reader
-   would actually browse the manual; do not rearrange files unless a
-   concrete improvement is identified.
-
-3. **American English sweep.** Run a final pass for any British
-   English spellings that slipped past per-bundle verifiers. Walk
-   every `.rst` file under `doc/source/user_guide/` (and
-   `doc/source/api/` if API-reference bundles have landed) and
-   convert: `-ise/-isation` → `-ize/-ization` (normalize, organize,
-   visualize, optimize, randomize, initialize, summarize,
-   categorize, customize, etc.); `-yse` → `-yze` (analyze,
-   catalyze); `colour` → `color`; `behaviour` → `behavior`;
-   `centre` → `center`; `fibre` → `fiber`; `metre` → `meter`;
-   `dialogue` → `dialog` only when referring to a UI dialog box
-   (leave the literary sense alone); `programme` → `program`;
-   `coaveraging` → `co-averaging`; plus any others surfaced by a
-   regex sweep. Skip code blocks and source-identifier names; only
-   change prose. Match UI labels exactly when quoting them.
-
-4. **API page intro / header-comment harmonization.** Earlier API
-   bundles (notably 13a `SettingsStorage`) put the bulk of the
-   class-level prose in the header's Doxygen block and left the
-   `.rst` page short. Later bundles (13e onward, formalized in 13f)
-   moved orientation prose to the `.rst` and trimmed the header's
-   class-level block to a tight `\brief` plus internals-as-needed.
-   Walk every page under `doc/source/classes/` and align them to
-   the later convention: the `.rst` carries the plain-language
-   orientation, the header `\brief` block stays tight, and
-   per-method `///` blocks remain rich. Update `api_style.rst` to
-   make this split explicit so future API bundles do not drift back.
-
-5. **Implementation → driver terminology sweep.** Replace
-   user-facing uses of "implementation" with "driver" where the term
-   refers to a concrete hardware backend for a hardware type
-   (e.g. `AWG70002a`, `VirtualAwg`, `PythonAwg`). The mental model
-   the manual should reinforce is *Hardware Object → Hardware Type
-   → one of several drivers*: "implementation" reads as a
-   programming abstraction, "driver" matches how users think about
-   choosing a backend for a device. Walk every `.rst` file under
-   `doc/source/user_guide/` and the API pages under
-   `doc/source/classes/` and `doc/source/developer_guide/`. Skip
-   code blocks, identifier names, and documentation comments that
-   quote a Doxygen tag or registry macro literally
-   (`REGISTER_HARDWARE_*` etc.). Headers and source files are out
-   of scope; the C++ comments use whichever term reads naturally for
-   each call site. After the sweep, update any glossary, index, or
-   cross-reference that uses the old term.
-
-Drafter mode: direct (orchestrator-driven). All scopes are mechanical
-enough that delegation overhead exceeds the work, and a single
-reviewer pass keeps the cross-page consistency tight.
+Do not assume that work marked `not started` actually has not
+been attempted: glance at the latest few git log entries on the
+working branch as a sanity check. If the table and git history
+disagree, the user resolves it.
