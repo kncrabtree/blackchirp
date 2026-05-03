@@ -169,7 +169,7 @@ protected:
 private:
     bool d_acquiring{false};
     int d_currentSegment{0};
-    std::size_t d_maxCacheSize{1 << 25}; ///< Maximum cache size in bytes (~200 MB).
+    std::size_t d_maxCacheSize{1 << 28}; ///< Maximum cache size in bytes (~256 MB).
     QVector<Fid> d_templateList;
     std::unique_ptr<QMutex> pu_baseMutex;
     std::queue<int> d_cacheKeys;         ///< Insertion-ordered queue of cached segment indices.
