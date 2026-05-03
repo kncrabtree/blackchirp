@@ -1,10 +1,24 @@
 # Bundle 12f — Developer Guide: Experiment Lifecycle
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
-- (entries appended in reverse chronological order; most recent first)
+- 2026-05-03: not started → complete. Drafted
+  doc/source/developer_guide/experiment_lifecycle.rst (~2,400 words)
+  covering the cross-manager round-trip — entry-point dialogs,
+  startBatch wiring hub, the three-step
+  HardwareManager::initializeExperiment, Experiment::initialize on the
+  GUI thread, the AM steady-state loop (clocks round-trip via
+  MainWindow::clockPrompt, aux/validation, drain timer, backups), the
+  LIF parallel path, the four abort flows, the batch-level decision
+  tree, and a Mermaid sequence diagram. Forward-references to 12g, 12h,
+  and 12n raise expected unknown-document warnings that resolve when
+  those bundles land. Two factual corrections vs the original sub-bundle
+  scope: Peak Up is documented as an FtmwType setting (not a separate
+  entry point), and the newClockSettings chain is documented as routing
+  through MainWindow::clockPrompt (not direct AM→HM). Content commit
+  c0a9bf843e.
 -->
 
 Sub-page of the Developer Guide chapter. The end-to-end coordination
