@@ -77,7 +77,14 @@ extensions = [
     'nbsphinx',
     'nbsphinx_link',
     'breathe',
+    'sphinxcontrib.mermaid',
 ]
+
+# sphinx_rtd_theme is always light, but sphinxcontrib-mermaid auto-detects a
+# dark Mermaid theme from the OS prefers-color-scheme media query. Force the
+# light variant by tagging <html> with the 'light' class before the Mermaid
+# ESM module evaluates; the package's heuristic short-circuits on that class.
+html_js_files = ['mermaid_force_light.js']
 
 autosectionlabel_prefix_document = True
 autodoc_mock_imports = ['pandas', 'scipy', 'numpy']
