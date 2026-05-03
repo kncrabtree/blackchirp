@@ -54,7 +54,7 @@ waveform lead time and tail time are computed as the maximum required
 offsets across all enabled channels.
 
 For guidance on integrating ``ChirpConfig`` into a new experiment
-objective, see :doc:`/developer_guide/adding_experiment_objective`.
+mode, see :doc:`/developer_guide/adding_an_experiment_mode`.
 
 .. highlight:: cpp
 
