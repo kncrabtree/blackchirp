@@ -1,10 +1,32 @@
 # Bundle 12h — Developer Guide: LIF Acquisition and Visualization
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
-- (entries appended in reverse chronological order; most recent first)
+- 2026-05-03: not started → complete. Drafted
+  doc/source/developer_guide/lif_acquisition.rst covering the LIF
+  scan model, LifConfig/LifDigitizerConfig roles, the per-point
+  acquisition handshake (nextLifPoint → setLifParameters →
+  lifSettingsComplete → lifHardwareReady → lifScopeShotAcquired →
+  processLifScopeShot → addWaveform → advance), the laser-fastest
+  row-major LifStorage flattening (with a 3×4 grid illustration of
+  the visit order under each LifScanOrder), processing-gate
+  persistence, the four LIF tab plots and their indexing into the
+  flat integrated buffer, the reverse-step axis flip, and the
+  configuration-UI split between ExperimentTypePage and
+  ExperimentLifConfigPage. Bundle file's *Configuration UI* bullet
+  (item 6 in Scope) corrected to match the actual code: the scan
+  grid + scan order + randomize + complete mode + disable-flashlamp
+  knobs live on ExperimentTypePage (wizard's first page), not on
+  ExperimentLifConfigPage; the latter wraps LifControlWidget and
+  configures the digitizer, shots-per-point, and processing
+  settings. Confirmed `LifPeakUpStorage` does not exist; the page
+  documents the absence and notes that live LIF alignment uses
+  LifControlWidget against fresh waveformRead shots without a
+  LifStorage instance. Doc build clean: 120 warnings, none new and
+  none referencing the new page. Content commit
+  9d42421170154f69e6859466308ef8f8fb1465f1.
 -->
 
 Sub-page of the Developer Guide chapter. Documents the LIF
@@ -163,13 +185,24 @@ The page should answer the following for a contributor:
 
 6. **Configuration UI.**
 
+   - `ExperimentTypePage`
+     (`src/gui/expsetup/experimenttypepage.{cpp,h}`) is the
+     wizard's first page; its LIF group defines the scan grid
+     (delay/laser start/step/points), scan order, randomization,
+     complete mode, and the disable-flashlamp option.
+     `ExperimentTypePage::apply` writes those onto `LifConfig`.
    - `ExperimentLifConfigPage`
      (`src/gui/lif/gui/experimentlifconfigpage.{cpp,h}`) is the
-     experiment-setup wizard page where the user defines the
-     scan grid, scan order, randomization, and complete mode.
-   - `LifControlWidget` and `LifLaserControlDoubleSpinBox`
-     drive the live laser; `LifProcessingWidget` is the
-     gate/units controls in the LIF tab.
+     per-LIF wizard page that wraps `LifControlWidget` and sets
+     the digitizer (`scopeConfig`), shots-per-point, and
+     processing-gate settings (`d_procSettings`).
+   - `LifControlWidget` (also embedded in the
+     **Hardware → LIF Configuration** dialog) hosts the live
+     `LifTracePlot`, the digitizer config widget, and
+     `LifLaserWidget` for live laser control.
+     `LifLaserControlDoubleSpinBox` is the spinbox used inside
+     `LifLaserWidget`. `LifProcessingWidget` provides the gate
+     and filter controls in both the wizard page and the LIF tab.
    - Forward-link to `:doc:`/user_guide/lif`` for the user-
      facing operation; this page covers the data flow and the
      class wiring.
