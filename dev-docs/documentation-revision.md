@@ -45,7 +45,7 @@ requirements, and acceptance criteria.
 | 12d | Developer Guide: Hardware Configuration | M | 12c | complete |
 | 12e | Developer Guide: Hardware Runtime | M | 12d | complete |
 | 12f | Developer Guide: Experiment Lifecycle | M | 12e | complete |
-| 12g | Developer Guide: FTMW Acquisition & Visualization | M | 12f | not started |
+| 12g | Developer Guide: FTMW Acquisition & Visualization | M | 12f | complete |
 | 12h | Developer Guide: LIF Acquisition & Visualization | M | 12f | not started |
 | 12i | Developer Guide: Persistence | M | 12f | not started |
 | 12j | Developer Guide: Python Hardware | L | 12e | not started |

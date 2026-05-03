@@ -1,10 +1,26 @@
 # Bundle 12g — Developer Guide: FTMW Acquisition and Visualization
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
-- (entries appended in reverse chronological order; most recent first)
+- 2026-05-03: not started → complete. Page landed at
+  doc/source/developer_guide/ftmw_acquisition.rst with end-to-end
+  Mermaid diagram and prose covering the producer/consumer ring,
+  drain loop, parse-and-accumulate (CUDA and non-CUDA), FidStorage
+  accumulator + cache, and the FtmwViewWidget/FtWorker layer.
+  Authorized source-tree change: bumped
+  FidStorageBase::d_maxCacheSize from 1 << 25 to 1 << 28 (~256 MB),
+  matching the doxygen intent. Sub-bundle scope had two stale
+  claims about visualization that the page corrected against the
+  current code: (1) FtWorker is parented to FtmwViewWidget on the
+  GUI thread and dispatched via QtConcurrent::run, not moved to a
+  helper thread; (2) live-plot refresh is driven by the widget's
+  own QObject::startTimer (default 500 ms via
+  BC::Key::FtmwView::refresh), not by AcquisitionManager::ftmwUpdateProgress
+  (which drives the main-window progress bar). Build clean except
+  for the expected forward-link to /developer_guide/persistence
+  (12i, not yet landed). Content commit 43517240.
 -->
 
 Sub-page of the Developer Guide chapter. Documents the FTMW data
