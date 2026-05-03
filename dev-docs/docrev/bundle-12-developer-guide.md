@@ -1,10 +1,16 @@
 # Bundle 12 — Developer Guide (Chapter Umbrella)
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
-- (entries appended in reverse chronological order; most recent first)
+- 2026-05-03: not started → complete. Chapter intro and explicit toctree
+  landed on doc/source/developer_guide.rst; placeholder
+  developer_guide/overview.rst deleted; stale :doc: cross-reference in
+  classes/chirpconfig.rst retargeted onto adding_an_experiment_mode
+  per the new sub-bundle layout. Master plan table already enumerated
+  12 + 12a–12n with effort and dependency columns, so no structural
+  edit was required there. Content commit 943cf1fae79c33a6fde82d8f3264765445884f87.
 -->
 
 Builds the Developer Guide chapter scaffold and lands the chapter-level

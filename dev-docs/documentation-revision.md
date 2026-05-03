@@ -38,7 +38,7 @@ requirements, and acceptance criteria.
 | 09 | FTMW data viewing, overlays, data storage refresh | M | 08 | complete |
 | 10 | Rolling/Aux, Log tab, Blackchirp-viewer | M | 08 | complete |
 | 11 | Migration guide v1.x → 2.0.0 + Changelog | S | most user-guide bundles | not started |
-| 12 | Developer Guide chapter scaffold + intro | S | — (independent) | not started |
+| 12 | Developer Guide chapter scaffold + intro | S | — (independent) | complete |
 | 12a | Developer Guide: Build System & Project Layout | M | 12 | not started |
 | 12b | Developer Guide: Coding Conventions | S | 12 | not started |
 | 12c | Developer Guide: Architecture | M | 12 | not started |
