@@ -44,7 +44,7 @@ requirements, and acceptance criteria.
 | 13c | API ref: Python hardware classes | S | 13a | complete |
 | 13d | API ref: loadout/preset classes | S | 13a | complete |
 | 13e | API ref: data/experiment classes | M | 13a | complete |
-| 13f | API ref: storage classes | M | 13a | not started |
+| 13f | API ref: storage classes | M | 13a | complete |
 | 13g | API ref: GUI helper classes | M | 13a | not started |
 | 13h | API ref: file parsers | S | 13a | not started |
 | 14 | Final pass: screenshot sizing & navigation review | S | most user-guide bundles | not started |
@@ -368,7 +368,7 @@ the user resolves it.
 ## Bundle 14 — Final pass: screenshot sizing & navigation review
 
 A short cleanup bundle to be run after the bulk of the user-guide work
-has landed. Three scopes:
+has landed. Five scopes:
 
 1. **Screenshot sizing.** Walk every `.. image::` and `.. figure::`
    directive under `doc/source/user_guide/`. For each referenced PNG,
@@ -411,7 +411,19 @@ has landed. Three scopes:
    regex sweep. Skip code blocks and source-identifier names; only
    change prose. Match UI labels exactly when quoting them.
 
-4. **Implementation → driver terminology sweep.** Replace
+4. **API page intro / header-comment harmonization.** Earlier API
+   bundles (notably 13a `SettingsStorage`) put the bulk of the
+   class-level prose in the header's Doxygen block and left the
+   `.rst` page short. Later bundles (13e onward, formalized in 13f)
+   moved orientation prose to the `.rst` and trimmed the header's
+   class-level block to a tight `\brief` plus internals-as-needed.
+   Walk every page under `doc/source/classes/` and align them to
+   the later convention: the `.rst` carries the plain-language
+   orientation, the header `\brief` block stays tight, and
+   per-method `///` blocks remain rich. Update `api_style.rst` to
+   make this split explicit so future API bundles do not drift back.
+
+5. **Implementation → driver terminology sweep.** Replace
    user-facing uses of "implementation" with "driver" where the term
    refers to a concrete hardware backend for a hardware type
    (e.g. `AWG70002a`, `VirtualAwg`, `PythonAwg`). The mental model
