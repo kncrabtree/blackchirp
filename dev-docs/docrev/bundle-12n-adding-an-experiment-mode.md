@@ -1,9 +1,18 @@
 # Bundle 12n — Developer Guide: Adding an Experiment Mode
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
+- 2026-05-03: not started → complete. Drafted
+  doc/source/developer_guide/adding_an_experiment_mode.rst with the two
+  five-touch recipes (FtmwType, BatchManager subclass), the
+  multi-segment vs. single-segment guidance, the completion-pattern
+  taxonomy, the storage-class table, and the persistence note honestly
+  flagging report generation as a stub with a recommended batch/ peer
+  folder for the future. Added a chapter-intro note pointing wider
+  ExperimentObjective-level changes to the Discord/GitHub issues board
+  per user request. Content commit 3baba96b.
 - (entries appended in reverse chronological order; most recent first)
 -->
 

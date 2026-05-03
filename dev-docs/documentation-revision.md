@@ -52,7 +52,7 @@ requirements, and acceptance criteria.
 | 12k | Developer Guide: Vendor Libraries | M | 12e | complete |
 | 12l | Developer Guide: Adding a Driver | M | 12e | complete |
 | 12m | Developer Guide: Adding a Hardware Type | M | 12e, 12j | complete |
-| 12n | Developer Guide: Adding an Experiment Mode | M | 12f | not started |
+| 12n | Developer Guide: Adding an Experiment Mode | M | 12f | complete |
 | 13a | API ref: refresh existing 5 (HardwareObject etc.) | S | — | complete |
 | 13b | API ref: hardware-management classes | S | 13a | complete |
 | 13c | API ref: Python hardware classes | S | 13a | complete |
