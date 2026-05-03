@@ -89,6 +89,17 @@ orchestrator updates it (via `Edit`) when a bundle's status
 transitions. The user is encouraged to confirm the table is correct
 before each new orchestrator session.
 
+**Developer-guide track (12, 12a–12n).** Direct orchestrator
+drafting, one bundle per session, no drafter/verifier subagents.
+The "Per-bundle workflow (delegated bundles)", "Orchestrator
+hygiene", and "Dispatch checklist" sections below describe the
+delegated workflow used by the user-guide and API-reference
+tracks; they do not apply to the developer-guide track. The
+developer-guide track substitutes the workflow in
+`dev-docs/docrev/bundle-12-developer-guide.md`. This file remains
+the canonical source of truth for **status** (the bundles table
+above) for every track.
+
 ## Recommended order
 
 Bundles are tackled one at a time. The user-guide track (00 → 11) is

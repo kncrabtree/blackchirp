@@ -78,6 +78,78 @@ the dependent sub-bundle's RST has been written), because the later
 page expects to cross-reference the earlier one with `:doc:` and
 relies on its terminology.
 
+## Workflow for sub-bundle dispatch
+
+The developer-guide track is **orchestrator-direct, one bundle per
+session, no drafter/verifier subagents**. The workflow described in
+the *Per-bundle workflow (delegated bundles)* section of
+`dev-docs/documentation-revision.md` does **not** apply to this
+track. Use this workflow instead. The five steps below correspond
+to (and adapt) steps 1, 2, 5, 6, and 7 of the delegated workflow;
+the dispatch and verifier steps (3, 4) are dropped because the
+orchestrator drafts directly.
+
+1. **Read the sub-bundle file and verify its scope is current.**
+   Confirm the cited paths still exist, that any class names match
+   the current code, and that the sources listed in the four
+   buckets (source files, dev-docs, user-guide pages, API ref
+   pages) are still load-bearing. The codebase keeps moving; a
+   sub-bundle authored weeks ago may need a touch-up before
+   drafting begins. If scope has drifted enough that the sub-bundle
+   file itself needs revising, do that first and flag it to the
+   user.
+
+2. **Draft the page directly.** Read the cross-cutting conventions
+   in this umbrella, the sub-bundle file, and the listed sources
+   (every dev-doc, user-guide page, and API ref page in the four
+   buckets, plus the cited source files). Use the
+   `codebase-memory` MCP tools (`search_graph`, `get_code_snippet`,
+   `trace_path`, `query_graph`) for code exploration; project name
+   `home-kncrabtree-github-blackchirp-src`. Produce only the RST
+   files the sub-bundle declares in scope. If the sub-bundle
+   authorizes a single source-tree change (e.g., 12a's
+   `BC_ALLHARDWARE` removal), make that change in the same
+   working-tree pass. Do not edit `MEMORY.md`, the master plan,
+   the umbrella, or any other sub-bundle file.
+
+3. **Sanity-check and hand off to the user for review.** Build the
+   docs so the page actually renders:
+   ```
+   touch doc/source/index.rst && conda run -n breathe cmake --build build --target docs
+   ```
+   Note any new warnings or unresolved cross-references. Report to
+   the user with: a one-paragraph summary of what landed; any
+   gaps flagged per the *Source treatment* policy in this
+   umbrella; any deviations from the sub-bundle's stated scope and
+   why; the path to the rendered page so the user can review
+   locally. Do not stage anything during this phase — the working
+   tree stays unstaged so the user can experiment freely. Loop on
+   user-directed revisions until the user signals approval.
+
+4. **Stage and run the content commit (stage 1 of two).** Stage
+   only the files the sub-bundle declared in scope (the new RST
+   page, any toctree edit on `developer_guide.rst` if not already
+   landed by bundle 12 itself, plus any single source-tree change
+   the sub-bundle authorized). Do not stage anything under
+   `dev-docs/` for stage 1. Commit with a subject that names the
+   page's deliverable (e.g., "Add developer guide page on
+   architecture and threading"; not "Bundle 12c"; the reader of
+   `git log` does not care which bundle it was).
+
+5. **Stage and run the tracking commit (stage 2 of two).** Update
+   the sub-bundle's status header (status → `complete`, append a
+   status-log entry timestamped with the stage-1 commit hash) and
+   update the master-plan table in
+   `dev-docs/documentation-revision.md` (status → `complete`).
+   Stage those two files and commit with subject
+   `Update documentation revision tracking status`. The
+   orchestrator may run both commits itself, or wait for the user
+   to commit, per the user's preference for the session.
+
+The status-header format and status-log convention from the
+*Bundle status header* section of
+`dev-docs/documentation-revision.md` apply here unchanged.
+
 ## What this bundle (12) produces
 
 This bundle is the chapter-level scaffold. Its deliverables are
