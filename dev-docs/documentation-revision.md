@@ -38,7 +38,21 @@ requirements, and acceptance criteria.
 | 09 | FTMW data viewing, overlays, data storage refresh | M | 08 | complete |
 | 10 | Rolling/Aux, Log tab, Blackchirp-viewer | M | 08 | complete |
 | 11 | Migration guide v1.x → 2.0.0 + Changelog | S | most user-guide bundles | not started |
-| 12 | Developer Guide | L | — (independent) | not started |
+| 12 | Developer Guide chapter scaffold + intro | S | — (independent) | not started |
+| 12a | Developer Guide: Build System & Project Layout | M | 12 | not started |
+| 12b | Developer Guide: Coding Conventions | S | 12 | not started |
+| 12c | Developer Guide: Architecture | M | 12 | not started |
+| 12d | Developer Guide: Hardware Configuration | M | 12c | not started |
+| 12e | Developer Guide: Hardware Runtime | M | 12d | not started |
+| 12f | Developer Guide: Experiment Lifecycle | M | 12e | not started |
+| 12g | Developer Guide: FTMW Acquisition & Visualization | M | 12f | not started |
+| 12h | Developer Guide: LIF Acquisition & Visualization | M | 12f | not started |
+| 12i | Developer Guide: Persistence | M | 12f | not started |
+| 12j | Developer Guide: Python Hardware | L | 12e | not started |
+| 12k | Developer Guide: Vendor Libraries | M | 12e | not started |
+| 12l | Developer Guide: Adding a Driver | M | 12e | not started |
+| 12m | Developer Guide: Adding a Hardware Type | M | 12e, 12j | not started |
+| 12n | Developer Guide: Adding an Experiment Mode | M | 12f | not started |
 | 13a | API ref: refresh existing 5 (HardwareObject etc.) | S | — | complete |
 | 13b | API ref: hardware-management classes | S | 13a | complete |
 | 13c | API ref: Python hardware classes | S | 13a | complete |
@@ -207,7 +221,7 @@ briefs subagents, judges results, and merges.
 | 00 (infrastructure) | Direct | Small, fiddly Sphinx wiring; delegation overhead exceeds drafting time |
 | 01–10 (user guide) | Delegate | Bulk RST writing; well-scoped; Sonnet handles cleanly |
 | 11 (changelog/migration) | Direct | Synthesis-heavy; cross-references every other bundle's output |
-| 12 (developer guide) | Delegate per sub-page | Each sub-page is independently scoped; large total volume |
+| 12 + 12a–12n (developer guide) | Direct, one bundle per session | Each sub-page involves higher-level reasoning across multiple systems; orchestrator drafts directly without delegation, fresh context per sub-bundle |
 | 13a (existing API refresh) | Direct | Establishes the API style convention 13b–13h follow |
 | 13b–13i (API reference) | Delegate | Independent of each other once 13a is locked |
 
