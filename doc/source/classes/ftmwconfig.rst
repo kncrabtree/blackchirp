@@ -33,7 +33,7 @@ The FTMW configuration dialog and the user-facing setup workflow are covered in
 WaveformBuffer integration
 --------------------------
 
-``FtmwConfig`` holds a *non-owning* pointer to a ``WaveformBuffer`` object.
+``FtmwConfig`` holds a *non-owning* pointer to a :cpp:class:`WaveformBuffer` object.
 The buffer is created and owned by the ``FtmwScope`` hardware object, which
 calls ``setWaveformBuffer()`` during acquisition setup; ``FtmwConfig`` must
 not free or outlive this pointer.  ``AcquisitionManager`` retrieves the buffer

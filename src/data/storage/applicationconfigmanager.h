@@ -38,19 +38,6 @@ struct AppOption {
  * - Thread-safe with QMutex
  * - Qt integration with signals for configuration changes
  * - Declarative option registry for UI generation
- *
- * Usage example:
- * ```cpp
- * // Check if LIF is enabled (replaces #ifdef BC_LIF)
- * if (ApplicationConfigManager::instance().isLifEnabled()) {
- *     // LIF-specific code
- * }
- *
- * // Check if CUDA is enabled (replaces #ifdef BC_CUDA)
- * if (ApplicationConfigManager::instance().isCudaEnabled()) {
- *     // CUDA-specific code
- * }
- * ```
  */
 class ApplicationConfigManager : public QObject
 {

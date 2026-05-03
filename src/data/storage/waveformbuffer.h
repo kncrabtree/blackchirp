@@ -52,7 +52,7 @@ struct WaveformEntry {
  * Replaces Qt signal/slot connections for high-throughput waveform data transfer.
  * The digitizer writes raw waveform data; the acquisition manager drains and
  * processes entries. Provides bounded memory usage, backpressure-free writes
- * (drop-oldest on overflow), and cross-platform consumer notification via
+ * (drop-newest on overflow), and cross-platform consumer notification via
  * QSemaphore.
  *
  * This class does NOT inherit from QObject.
