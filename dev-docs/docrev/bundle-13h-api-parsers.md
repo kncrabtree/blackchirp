@@ -1,10 +1,19 @@
 # Bundle 13h — API Reference: File Parsers
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
-- (entries appended in reverse chronological order; most recent first)
+- 2026-05-02: in progress → complete. Content commit 221344ec.
+  Also normalized `GenericXYParser::fileExtensions()` to the
+  glob-prefixed form matching SPCAT/XIAM so that
+  `FileParserRegistry::fileDialogFilter()` produces a valid
+  filter string across all registered parsers.
+- 2026-05-02: not started → in progress. Scope expanded to add
+  `catalogparser.rst` (intermediate abstract base between
+  `FileParser` and `SPCATParser`/`XIAMParser`; documents the
+  `parse() → CatalogData` hook). `FileParserRegistry` confirmed
+  to exist; `fileparserregistry.rst` is in scope.
 -->
 
 Adds API reference pages for the catalog and generic-XY file
@@ -16,16 +25,27 @@ New pages under `doc/source/classes/`:
 
 - `fileparser.rst` ← `src/data/processing/parsers/fileparser.h`
   (`FileParser` base class).
+- `catalogparser.rst` ←
+  `src/data/processing/parsers/catalogparser.h`
+  (intermediate abstract base for spectroscopic catalog
+  parsers; adds the `parse() → CatalogData` hook on top of
+  `FileParser`).
 - `spcatparser.rst` ←
   `src/data/processing/parsers/spcatparser.h`.
 - `xiamparser.rst` ←
   `src/data/processing/parsers/xiamparser.h`.
 - `genericxyparser.rst` ←
   `src/data/processing/parsers/genericxyparser.h`.
+- `fileparserregistry.rst` ←
+  `src/data/processing/parsers/fileparserregistry.h`
+  (singleton registry; `CatalogParserRegistry` was renamed to
+  `FileParserRegistry` in commit `124bdaa8`).
 
-If a `FileParserRegistry` exists (commit `124bdaa8` mentions a
-parser registry rename), add a `fileparserregistry.rst` page as
-well.
+`GenericXYData` (the value type returned by
+`GenericXYParser::parse()`) does **not** get its own page; the
+`genericxyparser.rst` prose names it via inline
+`:cpp:class:`GenericXYData`` and the Doxygen output on that page
+covers the rest.
 
 ## Out of scope
 
