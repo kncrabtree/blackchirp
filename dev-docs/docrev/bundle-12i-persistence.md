@@ -1,10 +1,21 @@
 # Bundle 12i — Developer Guide: Persistence
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
-- (entries appended in reverse chronological order; most recent first)
+- 2026-05-03: not started → complete. doc/source/developer_guide/persistence.rst
+  landed covering the two-layer model, SettingsStorage, the BC::Key/Store/CSV
+  namespaces, BlackchirpCSV, the HeaderStorage tree, the DataStorageBase
+  lifecycle and its subclasses, the experiment-directory layout, the
+  auxiliary on-disk streams (rolling data, log files, text exports — added
+  by reference beyond the bundle's stated scope so the persistence chapter
+  has a complete picture of every CSV stream Blackchirp writes), and the
+  FileParser/FileParserRegistry ecosystem. Corrected the bundle file's
+  static-init claim about parser registration (parsers are registered from
+  main()). Confirmed overlay annotations live under <experiment>/overlays/.
+  No new doc-build warnings or unresolved cross-references. Content commit
+  093cb2bb.
 -->
 
 Sub-page of the Developer Guide chapter. Documents the two-layer
