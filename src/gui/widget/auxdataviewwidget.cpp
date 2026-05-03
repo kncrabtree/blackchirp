@@ -95,7 +95,7 @@ void AuxDataViewWidget::pointUpdated(const AuxDataStorage::AuxDataMap m, const Q
         c->appendPoint({x,value});
         if(c->plotIndex() < 0)
             c->setCurvePlotIndex(d_plotCurves.size() % d_allPlots.size());
-        c->attach(d_allPlots.at(c->plotIndex() % d_allPlots.size()));
+        d_allPlots.at(c->plotIndex() % d_allPlots.size())->attachCurve(c);
         if(c->isVisible())
             c->plot()->replot();
 
@@ -106,12 +106,14 @@ void AuxDataViewWidget::pointUpdated(const AuxDataStorage::AuxDataMap m, const Q
 
 void AuxDataViewWidget::moveCurveToPlot(BlackchirpPlotCurve *c, int newPlotIndex)
 {
-    auto oldPlot = c->plot();
-    c->detach();
+    auto oldPlot = dynamic_cast<ZoomPanPlot*>(c->plot());
+    if(oldPlot)
+        oldPlot->detachCurve(c);
     c->setCurvePlotIndex(newPlotIndex % d_allPlots.size());
-    c->attach(d_allPlots.at(c->plotIndex()));
+    d_allPlots.at(c->plotIndex())->attachCurve(c);
 
-    oldPlot->replot();
+    if(oldPlot)
+        oldPlot->replot();
     c->plot()->replot();
 }
 

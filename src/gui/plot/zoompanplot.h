@@ -2,6 +2,7 @@
 #define ZOOMPANPLOT_H
 
 #include <QFutureWatcher>
+#include <QList>
 
 #include <qwt6/qwt_plot.h>
 #include <qwt6/qwt_symbol.h>
@@ -63,6 +64,11 @@ public:
     bool isAutoScale();
 
     /// \brief Detaches all plot items and resets all axes to autoscale.
+    ///
+    /// Items are detached without being deleted (\c autoDelete=false), so
+    /// subclasses that own their items via \c std::unique_ptr (or any other
+    /// external owner) are safe to call this. Curves are also removed from
+    /// the internal registry so the next filter pass sees an empty set.
     void resetPlot();
 
     /// \brief Switches the plot into spectrogram mode.
@@ -90,6 +96,28 @@ public:
     /// \param a    Axis identifier (e.g. QwtPlot::xBottom).
     /// \param text Title string.
     void setPlotAxisTitle(QwtPlot::Axis a, const QString &text);
+
+    /// \brief Attaches \p curve to this plot and registers it for the filter pass.
+    ///
+    /// This is the only supported way to attach a BlackchirpPlotCurveBase
+    /// to a ZoomPanPlot. \c QwtPlotItem::attach() is hidden in
+    /// BlackchirpPlotCurveBase to prevent direct attach/detach calls that
+    /// would race with the asynchronous filter pass driven by replot().
+    ///
+    /// Blocks until any in-flight filter pass completes, then attaches the
+    /// curve and adds it to the internal registry under \c p_mutex. Safe to
+    /// call multiple times with the same curve (subsequent calls are no-ops
+    /// after the registry insert is deduplicated).
+    /// \param curve Curve to attach; must not be null.
+    void attachCurve(BlackchirpPlotCurveBase *curve);
+
+    /// \brief Detaches \p curve from this plot and removes it from the registry.
+    ///
+    /// Blocks until any in-flight filter pass completes before detaching, so
+    /// the worker cannot dereference the curve after it is removed. Safe to
+    /// call on a curve that is not currently attached.
+    /// \param curve Curve to detach; must not be null.
+    void detachCurve(BlackchirpPlotCurveBase *curve);
 
     const QString d_name; ///< Unique plot name used as the SettingsStorage key.
 
@@ -267,13 +295,6 @@ protected:
     /// \brief Blocks until any concurrent data-filter operation completes.
     void waitForFilterComplete();
 
-    /// \brief Recomputes the downsampled sample sets for all attached curves.
-    ///
-    /// Called asynchronously via QtConcurrent::run whenever the x range changes.
-    /// Subclasses may override to perform additional pre- or post-filter work;
-    /// call the base implementation to ensure curves are updated.
-    virtual void filterData();
-
     /// \brief Handles canvas resize events; updates axis fonts and marks x as dirty.
     virtual void resizeEvent(QResizeEvent *ev);
 
@@ -357,6 +378,32 @@ private:
     QFutureWatcher<void> *p_watcher;
     bool d_busy{false};
     QMutex *p_mutex;
+    QList<BlackchirpPlotCurveBase*> d_curveRegistry; ///< Curves the worker is allowed to filter; guarded by \c p_mutex.
+
+    /// \brief Removes \p curve from the registry; called by ~BlackchirpPlotCurveBase.
+    ///
+    /// Drains any in-flight filter pass first so the worker cannot hold a
+    /// stale snapshot pointer to a curve that is mid-destruction.
+    /// \param curve Curve being destroyed; may or may not be in the registry.
+    void _unregisterCurve(BlackchirpPlotCurveBase *curve);
+    friend class BlackchirpPlotCurveBase;
+
+    /// \brief Snapshots the registry and launches the asynchronous filter worker.
+    ///
+    /// Builds a list of (curve, x-axis canvasMap) pairs under \c p_mutex,
+    /// captures the canvas width, and dispatches the worker via
+    /// QtConcurrent::run. The lambda owns its snapshot by value, so the
+    /// worker never touches the live curve registry, the QwtPlot item list,
+    /// or any widget state. Sets \c d_busy = true.
+    void _kickoffFilterPass();
+
+    /// \brief Recomputes per-axis bounding rects from the current registry.
+    ///
+    /// Runs on the UI thread (called from the QFutureWatcher::finished slot).
+    /// Mirrors the bounding-rect union logic in replot(), but limited to the
+    /// curve registry — markers and other items are handled by replot().
+    /// Caller must hold \c p_mutex.
+    void _recomputeBoundingRects();
 
     // QWidget interface
 public:

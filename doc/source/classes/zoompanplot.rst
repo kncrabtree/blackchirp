@@ -5,6 +5,8 @@
    single: plot; autoscale model
    single: plot; settings keys
    single: SettingsStorage; ZoomPanPlot
+   single: plot; curve registry
+   single: plot; thread safety
 
 ZoomPanPlot
 ===========
@@ -17,11 +19,62 @@ the application — FT view, FID view, tracking plots, LIF plots — inherits fr
 ``ZoomPanPlot`` and obtains consistent zoom, pan, and curve-management behavior
 without reimplementing it.
 
-Subclasses override the protected hook layer (``filterData``, ``pan``, ``zoom``,
+Subclasses override the protected hook layer (``pan``, ``zoom``,
 ``getLimitRect``, ``buildContextMenu``, ``contextMenu``) to specialize behavior
 for their data type. The :cpp:class:`BlackchirpPlotCurveBase` family provides the
 curve objects attached to the plot; curve creation is handled by
 :cpp:class:`CurveFactory`.
+
+Curve registry and thread safety
+--------------------------------
+
+``ZoomPanPlot`` runs an asynchronous worker (via ``QtConcurrent::run``) that
+downsamples each attached curve's data whenever the x range changes. Because
+that worker reads curve pointers, the set of attached curves cannot be
+mutated freely from the UI thread.
+
+To make this safe, ``ZoomPanPlot`` keeps an internal registry
+(``d_curveRegistry``, guarded by ``p_mutex``) of every
+:cpp:class:`BlackchirpPlotCurveBase` attached to it, and exposes the only
+two supported attach/detach entry points:
+
+- ``attachCurve()`` — drains any in-flight filter pass, then attaches
+  the curve and adds it to the registry.
+- ``detachCurve()`` — drains any in-flight filter pass, then detaches
+  the curve and removes it from the registry.
+
+When the worker is dispatched, the registry is snapshotted under
+``p_mutex`` into a list of ``(curve*, x-axis canvasMap)`` tuples and the
+canvas width is captured. The lambda owns the snapshot by value, so the
+worker never touches the live registry, the QwtPlot item list, or any
+widget state. Bounding-rect recomputation runs in the
+``QFutureWatcher::finished`` slot on the UI thread, again driven by the
+registry rather than ``itemList()``.
+
+To make accidental misuse impossible to compile,
+``QwtPlotItem::attach`` and ``QwtPlotItem::detach`` are made ``private``
+inside :cpp:class:`BlackchirpPlotCurveBase` via ``using``-declarations,
+with ``ZoomPanPlot`` friended so its registry helpers can still call them.
+A direct ``curve->attach(plot)`` or ``curve->detach()`` call is therefore
+a hard compile error.
+
+Curves held in ``std::unique_ptr`` (the common pattern for plot subclasses)
+do **not** require an explicit ``detachCurve`` before destruction: the
+``~BlackchirpPlotCurveBase`` destructor calls a private
+``ZoomPanPlot::_unregisterCurve`` helper that drains the worker and
+removes the pointer from the registry before ``~QwtPlotItem`` performs
+its own detach. This makes
+``d_overlayCurves.clear()``, ``d_overlayCurves.erase(it)``, and
+``unique_ptr::reset()`` all safe with respect to the worker.
+
+Items that are **not** :cpp:class:`BlackchirpPlotCurveBase` (markers,
+labels, grids, spectrograms) do not participate in the filter pass and
+should be attached and detached via the standard ``QwtPlotItem`` API.
+
+``resetPlot()`` clears the registry, then calls
+``detachItems(QwtPlotItem::Rtti_PlotItem, false)`` so subclasses that
+own their items via ``std::unique_ptr`` (or any other external owner) are
+safe to call it without risking a double free.
 
 Modifier-key contract
 ---------------------

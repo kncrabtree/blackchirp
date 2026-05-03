@@ -19,7 +19,7 @@ ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(BC::Key::chirpPl
 
     // Create chirp waveform curve using CurveFactory
     p_chirpCurve = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::chirpCurve);
-    p_chirpCurve->attach(this);
+    attachCurve(p_chirpCurve.get());
 
     insertLegend(new QwtLegend(this));
 }
@@ -49,7 +49,7 @@ void ChirpConfigPlot::newChirp(const ChirpConfig cc)
         int idx = static_cast<int>(d_markerCurves.size());
         auto curve = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(
             QString("Marker%1").arg(idx));
-        curve->attach(this);
+        attachCurve(curve.get());
         d_markerCurves.push_back(std::move(curve));
     }
 

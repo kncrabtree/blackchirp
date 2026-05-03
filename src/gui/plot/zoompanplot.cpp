@@ -91,15 +91,22 @@ ZoomPanPlot::ZoomPanPlot(const QString &name, QWidget *parent) : QwtPlot(parent)
 
     p_watcher = new QFutureWatcher<void>(this);
     connect(p_watcher,&QFutureWatcher<void>::finished,this,[this](){
+        // Worker has finished; refresh per-axis bounding rects on the UI
+        // thread from the (now-stable) curve registry, then paint. If
+        // anything dirtied the x range during the worker run, kick off
+        // another pass.
+        {
+            QMutexLocker l(p_mutex);
+            _recomputeBoundingRects();
+        }
         d_busy = false;
         QwtPlot::replot();
         if(d_config.xDirty)
         {
             updateAxes();
             QApplication::sendPostedEvents(this,QEvent::LayoutRequest);
-            d_busy = true;
             d_config.xDirty = false;
-            p_watcher->setFuture(QtConcurrent::run([this](){filterData();}));
+            _kickoffFilterPass();
         }
     },Qt::QueuedConnection);
 }
@@ -129,12 +136,52 @@ bool ZoomPanPlot::isAutoScale()
 
 void ZoomPanPlot::resetPlot()
 {
-    // Wait for any in-flight filterData() pass before tearing down the
-    // item list. Without this, the worker thread can dereference a curve
-    // that the detach call has already removed.
+    // Wait for any in-flight filter pass before tearing down the item list.
+    // Without this, the worker thread can dereference a curve that the
+    // detach call has already removed.
     waitForFilterComplete();
-    detachItems();
+    {
+        QMutexLocker l(p_mutex);
+        d_curveRegistry.clear();
+    }
+    // Pass autoDelete=false: subclasses (e.g. FtPlot) own attached curves,
+    // labels, and markers via std::unique_ptr. The default detachItems()
+    // call would delete them, double-freeing on subsequent unique_ptr
+    // destruction.
+    detachItems(QwtPlotItem::Rtti_PlotItem, false);
     autoScale();
+}
+
+void ZoomPanPlot::attachCurve(BlackchirpPlotCurveBase *curve)
+{
+    if(!curve)
+        return;
+    waitForFilterComplete();
+    QMutexLocker l(p_mutex);
+    curve->attach(this);
+    if(!d_curveRegistry.contains(curve))
+        d_curveRegistry.append(curve);
+}
+
+void ZoomPanPlot::detachCurve(BlackchirpPlotCurveBase *curve)
+{
+    if(!curve)
+        return;
+    waitForFilterComplete();
+    QMutexLocker l(p_mutex);
+    curve->detach();
+    d_curveRegistry.removeAll(curve);
+}
+
+void ZoomPanPlot::_unregisterCurve(BlackchirpPlotCurveBase *curve)
+{
+    if(!curve)
+        return;
+    waitForFilterComplete();
+    QMutexLocker l(p_mutex);
+    d_curveRegistry.removeAll(curve);
+    // Do not call curve->detach() here; ~QwtPlotItem will detach as part of
+    // the destruction sequence currently in progress.
 }
 
 void ZoomPanPlot::setSpectrogramMode(bool b)
@@ -377,8 +424,7 @@ void ZoomPanPlot::replot()
         if(!d_busy)
         {
             d_config.xDirty = false;
-            d_busy = true;
-            p_watcher->setFuture(QtConcurrent::run([this](){filterData();}));
+            _kickoffFilterPass();
         }
     }
     else
@@ -528,59 +574,69 @@ void ZoomPanPlot::setAxisOverride(QwtPlot::Axis axis, bool override)
     d_config.axisMap[axis].override = override;
 }
 
-void ZoomPanPlot::filterData()
+void ZoomPanPlot::_kickoffFilterPass()
 {
-    if(d_config.spectrogramMode)
-        return;
-
-    auto l = itemList();
-    p_mutex->lock();
-    auto w = canvas()->width();
-    p_mutex->unlock();
-
-    for(auto item : l)
+    // Build the worker's snapshot under p_mutex so attachCurve/detachCurve
+    // cannot mutate the registry concurrently. Capture canvasMap() and
+    // canvas()->width() here (UI thread) so the worker never touches widget
+    // state. The lambda owns the snapshot by value.
+    struct Task { BlackchirpPlotCurveBase *curve; QwtScaleMap xMap; };
+    QVector<Task> snapshot;
+    int width;
+    bool spec;
     {
-        if(!item)
+        QMutexLocker l(p_mutex);
+        spec = d_config.spectrogramMode;
+        width = canvas()->width();
+        if(!spec)
+        {
+            snapshot.reserve(d_curveRegistry.size());
+            for(auto curve : d_curveRegistry)
+            {
+                if(!curve)
+                    continue;
+                snapshot.append({curve, canvasMap(curve->xAxis())});
+            }
+        }
+    }
+
+    d_busy = true;
+    p_watcher->setFuture(QtConcurrent::run([snapshot, width]() {
+        for(const auto &t : snapshot)
+            t.curve->filter(width, t.xMap);
+    }));
+}
+
+void ZoomPanPlot::_recomputeBoundingRects()
+{
+    // Caller holds p_mutex. Mirrors the union logic in replot() but is
+    // restricted to the curve registry — markers, labels, and spectrograms
+    // are handled by replot() on the next pass.
+    const QRectF invalid{1.0, 1.0, -2.0, -2.0};
+    for(auto &[t,d] : d_config.axisMap)
+        d.boundingRect = invalid;
+
+    for(auto curve : d_curveRegistry)
+    {
+        if(!curve)
+            continue;
+        auto r = curve->boundingRect();
+        if(r.width() <= 0.0 || r.height() <= 0.0)
             continue;
 
-        auto c = dynamic_cast<BlackchirpPlotCurveBase*>(item);
-        if(c)
-        {
-            p_mutex->lock();
-            auto map = canvasMap(c->xAxis());
-            p_mutex->unlock();
+        auto &xa = d_config.axisMap[static_cast<Axis>(curve->xAxis())];
+        auto &ya = d_config.axisMap[static_cast<Axis>(curve->yAxis())];
 
-            c->filter(w,map);
-        }
+        if(ya.boundingRect.height() >= 0.0)
+            ya.boundingRect |= r;
+        else
+            ya.boundingRect = r;
+
+        if(xa.boundingRect.width() >= 0.0)
+            xa.boundingRect |= r;
+        else
+            xa.boundingRect = r;
     }
-
-    p_mutex->lock();
-    for(auto &[t,d] : d_config.axisMap)
-        d.boundingRect = QRectF{ QPointF{1.0,1.0}, QPointF{-2.0,-2.0} };
-    for(auto item : l)
-    {
-        auto c = dynamic_cast<BlackchirpPlotCurveBase*>(item);
-        if(c)
-        {
-            auto r = c->boundingRect();
-            if(r.width() <= 0.0 || r.height() <= 0.0)
-                continue;
-
-            auto &xa = d_config.axisMap[static_cast<Axis>(c->xAxis())];
-            auto &ya = d_config.axisMap[static_cast<Axis>(c->yAxis())];
-
-            if(ya.boundingRect.height() >=0.0)
-                ya.boundingRect |= r;
-            else
-                ya.boundingRect = r;
-
-            if(xa.boundingRect.width() >=0.0)
-                xa.boundingRect |= r;
-            else
-                xa.boundingRect = r;
-        }
-    }
-    p_mutex->unlock();
 }
 
 void ZoomPanPlot::resizeEvent(QResizeEvent *ev)

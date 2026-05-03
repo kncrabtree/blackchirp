@@ -125,7 +125,7 @@ void LifTracePlot::setTrace(const LifTrace t)
 
 
     if(p_lif->plot() != this)
-        p_lif->attach(this);
+        attachCurve(p_lif.get());
 
     if(p_lifZone->plot() != this)
         p_lifZone->attach(this);
@@ -133,7 +133,7 @@ void LifTracePlot::setTrace(const LifTrace t)
     if(t.hasRefData())
     {
         if(p_ref->plot() != this)
-            p_ref->attach(this);
+            attachCurve(p_ref.get());
 
         if(p_refZone->plot() != this)
             p_refZone->attach(this);
@@ -141,7 +141,7 @@ void LifTracePlot::setTrace(const LifTrace t)
     else
     {
         if(p_ref->plot() == this)
-            p_ref->detach();
+            detachCurve(p_ref.get());
         if(p_refZone->plot() == this)
             p_refZone->detach();
     }
@@ -194,9 +194,9 @@ void LifTracePlot::setIntegralText(double d)
 
 void LifTracePlot::clearPlot()
 {
-    p_lif->detach();
+    detachCurve(p_lif.get());
     p_lifZone->detach();
-    p_ref->detach();
+    detachCurve(p_ref.get());
     p_refZone->detach();
 //    p_integralLabel->setText(QString(""));
 

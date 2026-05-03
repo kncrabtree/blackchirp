@@ -7,7 +7,7 @@ MainFtPlot::MainFtPlot(QWidget *parent) :
     FtPlot(BC::Key::FtMainPlot::id,parent)
 {
     p_peakData = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::peakCurve+id(),SettingsStorage::General,"",Qt::NoPen,QwtSymbol::Ellipse);
-    p_peakData->attach(this);
+    attachCurve(p_peakData.get());
 }
 
 MainFtPlot::~MainFtPlot()

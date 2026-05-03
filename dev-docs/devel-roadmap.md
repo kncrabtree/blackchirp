@@ -8,29 +8,7 @@ None.
 
 ## Medium
 
-### ZoomPanPlot worker-thread snapshot for `filterData`
-
-`ZoomPanPlot::filterData` runs on a `QtConcurrent` worker and reads
-`QwtPlot::itemList()` (which walks an internal `QwtPlotDict`) and per-curve
-state directly from the shared plot. `QwtPlot` does not document this access
-path as thread-safe, and the worker has no protection against the UI thread
-calling `attach()` / `detach()` on plot items mid-filter — the destructor and
-`resetPlot()` already serialize via `waitForFilterComplete()`, but external
-callers (e.g., `FtmwViewWidget` rebuilding curves on data load) do not.
-
-The robust fix is for the UI thread to snapshot the work the worker needs —
-a list of `(curve, xAxis, yAxis, canvasMap, autoscale-flag)` tuples — under
-`p_mutex` before `QtConcurrent::run` is invoked, then have the worker iterate
-the snapshot rather than calling `itemList()`. Curve attach/detach also needs
-to take `p_mutex` so the snapshot and the live list stay coherent — the
-cleanest path is overriding `QwtPlot`-level protected hooks (which are not
-virtual in the public API) or wrapping curve construction/destruction in a
-`ZoomPanPlot`-managed registry.
-
-The shipped partial fix is `resetPlot()` calling `waitForFilterComplete()`
-before `detachItems()`, which closes the most common failure path. External
-classes that mutate the item list while a filter pass may be in flight are
-the remaining risk.
+None.
 
 ## Large
 

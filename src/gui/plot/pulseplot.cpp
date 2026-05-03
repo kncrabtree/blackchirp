@@ -32,7 +32,7 @@ PulsePlot::PulsePlot(std::shared_ptr<PulseGenConfig> cfg, QWidget *parent) :
         double top = (double)(numChannels-i)*1.5;
 
         auto c = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::pulseChannel+QString::number(i));
-        c->attach(this);
+        attachCurve(c.get());
         c->setVisible(false);
 
         auto p = c->pen();

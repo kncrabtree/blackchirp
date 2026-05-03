@@ -29,7 +29,7 @@ FidPlot::FidPlot(const QString &id, QWidget *parent) :
     setAutoDelete(false);
 
     p_curve = CurveFactory::createStandardCurve<BlackchirpFIDCurve>(BC::Key::fidCurve+id);
-    p_curve->attach(this);
+    attachCurve(p_curve.get());
 
     d_chirpMarkers.first = std::make_unique<QwtPlotMarker>();
     d_chirpMarkers.first->setLineStyle(QwtPlotMarker::VLine);

@@ -10,6 +10,7 @@
 
 class QMutex;
 class OverlayBase;
+class ZoomPanPlot;
 
 // Meta-type declarations moved to blackchirpplotcurve.cpp to avoid redefinition issues
 
@@ -177,6 +178,20 @@ public:
     void filter(int w, const QwtScaleMap map);
 
 private:
+    /// \name Hidden QwtPlotItem attach/detach
+    ///
+    /// These are made private (and only ZoomPanPlot is friended below) so
+    /// that callers cannot accidentally call \c curve->attach(plot) or
+    /// \c curve->detach() — those bypass ZoomPanPlot's curve registry and
+    /// race with the asynchronous filter pass. Use
+    /// \c ZoomPanPlot::attachCurve() and \c ZoomPanPlot::detachCurve()
+    /// instead.
+    /// @{
+    using QwtPlotItem::attach;
+    using QwtPlotItem::detach;
+    /// @}
+    friend class ZoomPanPlot;
+
     std::unique_ptr<CurveStorageInterface> d_storage;
     const QString d_key;
     QMutex *p_samplesMutex;

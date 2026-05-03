@@ -7,6 +7,7 @@
    single: plot curve; hierarchy
    single: plot curve; storage backend
    single: plot curve; downsampling filter
+   single: plot curve; attach and detach
    single: CurveFactory
    single: CurveStorageInterface
 
@@ -127,14 +128,38 @@ lower-level appearance setters (``setColor``, etc.) are for transient changes
 that do not need to survive a restart. See the ``setCurveVisible`` note in the
 rendered API below for details.
 
+Attaching and detaching curves
+------------------------------
+
+``QwtPlotItem::attach`` and ``QwtPlotItem::detach`` are made ``private``
+inside ``BlackchirpPlotCurveBase`` via ``using``-declarations.  Calling
+``curve->attach(plot)`` or ``curve->detach()`` from anywhere outside
+:cpp:class:`ZoomPanPlot` (the only friend) is a hard compile error.
+
+The supported entry points are ``ZoomPanPlot::attachCurve`` and
+``ZoomPanPlot::detachCurve``, which drain the asynchronous filter
+worker before mutating the plot's curve registry.  See the *Curve registry
+and thread safety* section of :doc:`zoompanplot` for the full rationale.
+
+Curves held in ``std::unique_ptr`` do not need an explicit
+``detachCurve`` before destruction.  ``~BlackchirpPlotCurveBase`` calls
+``ZoomPanPlot::_unregisterCurve`` (a private helper friended to this
+class) which drains the worker and removes the pointer from the registry
+before ``~QwtPlotItem`` performs its own detach.  This makes container
+clearing patterns such as ``d_overlayCurves.clear()`` and
+``unique_ptr::reset()`` safe with respect to the worker.
+
 Downsampling filter
 -------------------
 
-``BlackchirpPlotCurveBase::filter()`` is called by ``ZoomPanPlot::filterData()``
-in a ``QtConcurrent`` worker thread whenever the x range changes.  It delegates
-to the protected pure-virtual ``_filter(int w, const QwtScaleMap map)`` and
-stores the result in the Qwt sample buffer under a mutex so that the paint
-thread always reads a consistent snapshot.
+``BlackchirpPlotCurveBase::filter()`` is called from a ``QtConcurrent``
+worker dispatched by ``ZoomPanPlot`` whenever the x range changes.  The
+worker iterates an immutable snapshot of the plot's curve registry that
+was built under the plot's mutex; it never touches the live registry, the
+QwtPlot item list, or any widget state.  ``filter()`` delegates to the
+protected pure-virtual ``_filter(int w, const QwtScaleMap map)`` and
+stores the result in the Qwt sample buffer under a mutex so that the
+paint thread always reads a consistent snapshot.
 
 Each implementation compresses the visible portion of the data to at most
 :math:`2w` points using **min/max compression per pixel column**: for each pixel

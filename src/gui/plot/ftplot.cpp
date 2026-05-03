@@ -40,7 +40,7 @@ FtPlot::FtPlot(const QString &id, QWidget *parent) :
 
     //build and configure curve object
     p_curve = CurveFactory::createStandardCurve<BlackchirpFTCurve>(BC::Key::ftCurve+id);
-    p_curve->attach(this);
+    attachCurve(p_curve.get());
 
 
 
@@ -178,8 +178,8 @@ void FtPlot::addOverlay(std::shared_ptr<OverlayBase> overlay)
     // Synchronize initial visibility with overlay enabled state
     curve->setCurveVisible(overlay->getEnabled());
     
-    curve->attach(this);
-    
+    attachCurve(curve.get());
+
     // Store the overlay-curve pair
     d_overlayCurves.emplace_back(overlay, std::move(curve));
     

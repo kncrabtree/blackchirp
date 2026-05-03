@@ -24,7 +24,7 @@ LifSlicePlot::LifSlicePlot(const QString name, QWidget *parent) :
 
     p_curve = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::lifSliceCurve, SettingsStorage::General, QString(""), Qt::SolidLine, QwtSymbol::Ellipse);
     p_curve->setZ(1.0);
-    p_curve->attach(this);
+    attachCurve(p_curve.get());
 
     p_label = std::make_unique<QwtPlotTextLabel>();
     p_label->setZ(10.0);

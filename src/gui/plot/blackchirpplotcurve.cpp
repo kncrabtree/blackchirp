@@ -1,5 +1,6 @@
 #include "blackchirpplotcurve.h"
 #include "curvefactory.h"
+#include "zoompanplot.h"
 
 #include <QPalette>
 #include <QMutex>
@@ -48,8 +49,13 @@ BlackchirpPlotCurveBase::BlackchirpPlotCurveBase(std::unique_ptr<CurveStorageInt
 
 BlackchirpPlotCurveBase::~BlackchirpPlotCurveBase()
 {
+    // If we are still attached to a ZoomPanPlot when destruction begins, the
+    // plot's curve registry holds our pointer and a concurrent filter pass
+    // may be iterating it. Drain the worker and remove ourselves from the
+    // registry before the QwtPlotItem destructor detaches us.
+    if(auto p = dynamic_cast<ZoomPanPlot*>(plot()))
+        p->_unregisterCurve(this);
     delete p_samplesMutex;
-
 }
 
 void BlackchirpPlotCurveBase::setColor(const QColor c)

@@ -368,7 +368,45 @@ if(BC_BUILD_TESTS)
     )
     add_blackchirp_definitions(tst_overlayoperations_simple)
     add_test(NAME OverlayOperationsSimpleTest COMMAND tst_overlayoperations_simple)
-    
+
+    # ZoomPanPlot Thread Safety Test
+    # blackchirp-gui has unresolved references into application sources that
+    # the main blackchirp executable provides directly (AcquisitionManager,
+    # BatchManager, mainwindow). Rather than dragging those in, the test
+    # compiles only the plot-layer translation units it needs.
+    add_executable(tst_zoompanplotthreadsafety
+        tests/tst_zoompanplotthreadsafety.cpp
+        src/gui/plot/zoompanplot.cpp
+        src/gui/plot/ftplot.cpp
+        src/gui/plot/blackchirpplotcurve.cpp
+        src/gui/plot/curvefactory.cpp
+        src/gui/plot/customtracker.cpp
+        src/gui/plot/customzoomer.cpp
+        src/gui/plot/curveappearancewidget.cpp
+        src/gui/plot/curveappearancepresetmanager.cpp
+        src/gui/plot/presetsavedialog.cpp
+        src/gui/style/themecolors.cpp
+        src/gui/util/numericformat.cpp
+    )
+    target_include_directories(tst_zoompanplotthreadsafety PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+    target_link_libraries(tst_zoompanplotthreadsafety
+        blackchirp-data
+        Qt6::Test
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Widgets
+        Qt6::Concurrent
+        QWT::QWT
+    )
+    add_blackchirp_definitions(tst_zoompanplotthreadsafety)
+    add_test(NAME ZoomPanPlotThreadSafetyTest COMMAND tst_zoompanplotthreadsafety)
+    set_tests_properties(ZoomPanPlotThreadSafetyTest PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+
     # SPCAT Parser Test
     add_executable(tst_spcatparser tests/tst_spcatparser.cpp)
     target_link_libraries(tst_spcatparser 
