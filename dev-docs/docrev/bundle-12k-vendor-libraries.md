@@ -1,10 +1,19 @@
 # Bundle 12k — Developer Guide: Vendor Libraries
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
 - (entries appended in reverse chronological order; most recent first)
+- 2026-05-03: not started → complete. Authored
+  doc/source/developer_guide/vendor_libraries.rst covering the
+  VendorLibrary contract, staged-configuration model and HardwareManager
+  reload coordination, REGISTER_LIBRARY linkage, the LabjackLibrary and
+  SpectrumLibrary subclasses, the LabJack exo/UD case study with a
+  Mermaid diagram of the three-layer split, and the 8-step recipe for
+  adding a new VendorLibrary subclass. No source-tree changes; no
+  warnings tied to the new page. Content commit
+  341d1aa18fb3b2a092c8f25dd83e87894baa4f0e.
 -->
 
 Sub-page of the Developer Guide chapter. Documents how Blackchirp
