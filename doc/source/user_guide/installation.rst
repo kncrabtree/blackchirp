@@ -189,11 +189,6 @@ saving changes.
    * - ``BC_BUILD_TESTS``
      - ``ON``
      - Build unit-test executables.
-   * - ``BC_ALLHARDWARE``
-     - ``OFF``
-     - Compile every available hardware implementation regardless of
-       what is selected in ``HardwareConfig.cmake``. Intended for
-       development and CI; increases build time significantly.
 
 **LIF module** — Laser-Induced Fluorescence is a runtime toggle
 controlled through the application's experiment-configuration interface.

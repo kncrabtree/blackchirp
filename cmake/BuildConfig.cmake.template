@@ -3,16 +3,19 @@
 # Copy this file to BuildConfig.cmake and modify as needed for your system.
 # This file is ignored by git to prevent updates from overwriting your settings.
 #
-# This file configures compilation options, optional modules, and build features
-# that are separate from hardware selection (which is in HardwareConfig.cmake).
+# This file configures compilation options, optional modules, and build
+# features. It does not select hardware: every hardware implementation is
+# always compiled in, and the active set is chosen at run time via the
+# registry/profile system.
 
 # ============================================================================
 # Build Configuration Instructions
 # ============================================================================
 #
-# This file configures build options, optional modules, and development features.
-# These settings control what gets compiled and how, but not which specific
-# hardware implementations are used (that's in HardwareConfig.cmake).
+# This file configures build options, optional modules, and development
+# features. These settings control what gets compiled and how. Hardware
+# selection is runtime, not compile-time, so there is no flag here that
+# governs which devices are available.
 #
 # Most users can use the default values provided here. Advanced users may want
 # to enable additional modules or change build settings for development.
@@ -47,16 +50,6 @@ option(BC_BUILD_TESTS "Build test executables" ON)
 # Enable this to build documentation using Doxygen or similar tools
 # Requires documentation tools to be installed
 option(BC_BUILD_DOCUMENTATION "Build documentation" OFF)
-
-# ============================================================================
-# Development and Debug Options
-# ============================================================================
-
-# All hardware compilation mode
-# Enable this to compile ALL available hardware implementations regardless
-# of what is selected in HardwareConfig.cmake. Useful for development to
-# ensure all hardware compiles correctly, but increases build time significantly
-option(BC_ALLHARDWARE "Compile all available hardware implementations (for development)" OFF)
 
 # ============================================================================
 # Advanced Build Settings
@@ -100,9 +93,10 @@ endif()
 # Configuration Notes
 # ============================================================================
 #
-# Build Configuration vs Hardware Configuration:
-# - BuildConfig.cmake (this file): Controls WHAT gets built and HOW
-# - HardwareConfig.cmake: Controls WHICH hardware implementations are used
+# BuildConfig.cmake (this file) controls WHAT gets built and HOW. Hardware
+# selection is runtime: the build always compiles every hardware
+# implementation, and the active set is chosen via the registry/profile
+# system in the running application.
 #
 # Common Build Configurations:
 #
@@ -123,8 +117,10 @@ endif()
 #    - CMAKE_BUILD_TYPE=Release for performance
 #
 # 4. Continuous Integration Build:
-#    - BC_ALLHARDWARE=ON to test all hardware compiles
 #    - BC_BUILD_TESTS=ON to run test suite
 #    - BC_BUILD_DOCUMENTATION=ON to verify docs build
+#
+# Hardware selection is fully runtime; the build always compiles every
+# implementation and the active set is chosen via the registry/profile system.
 #
 # For more information, see the Blackchirp documentation or CLAUDE.md file.
