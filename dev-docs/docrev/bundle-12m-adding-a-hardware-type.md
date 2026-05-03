@@ -1,9 +1,36 @@
 # Bundle 12m — Developer Guide: Adding a New Hardware Type
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
+- 2026-05-03: not started → complete. doc/source/developer_guide/adding_a_hardware_type.rst
+  drafted directly per the orchestrator-direct workflow. Frames the new-type vs.
+  new-driver decision up front; six pre-flight design decisions (state-management
+  pattern A/B/C, d_threaded/d_critical defaults, supported protocols,
+  REGISTER_HARDWARE_BASE shared settings, validation keys, optional config
+  object); Pattern B BeamBlocker interface skeleton with REGISTER_HARDWARE_BASE
+  block; the four CMake touchpoints (HARDWARE_TYPES_SOURCES,
+  HARDWARE_TYPE_HEADERS, plus a glob pair in HARDWARE_IMPLEMENTATIONS_SOURCES
+  / _HEADERS); HeaderStorage-derived config registration via
+  Experiment::addOptHwConfig; lifecycle hooks (Pattern A overrides
+  hwPrepareForExperiment, Pattern B/C overrides prepareForExperiment); three
+  GUI surfaces with their actual dispatch sites (MainWindow::buildHardwareUI
+  if/else chain, ExperimentSetupDialog's addOptHwPages<T> template);
+  HardwareManager fan-out with the <typename>Update(hwKey, ...) convention;
+  Virtual implementation pulled into its own H2 section per user feedback
+  (system-profile fall-back, live GUI exercise, end-to-end experiment runs —
+  not a test-only artifact); Python trampoline mapped onto the same A/B/C
+  taxonomy with cross-link to 12j; tests (config round-trip,
+  blackchirp-test-hardware wiring, registration-pipeline assertion);
+  documentation follow-up triad. Two minor deviations from the bundle spec:
+  named the actual MainWindow::buildHardwareUI dispatch site rather than the
+  bundle's placeholder createStatusBox/createHWDialog factories, and
+  described the Pattern A vs Pattern B/C hwPrepareForExperiment-vs-
+  prepareForExperiment override split precisely from source rather than
+  paraphrasing the bundle's looser summary. Build clean (108 → 108 warnings;
+  the two introduced and fixed during drafting). Content commit
+  15b41fb494b6fadb2c5ec2c4cce7a90d61d22d9c.
 - (entries appended in reverse chronological order; most recent first)
 -->
 
