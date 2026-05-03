@@ -1,9 +1,25 @@
 # Bundle 12l — Developer Guide: Adding a New Hardware Driver
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
+- 2026-05-03: not started → complete. doc/source/developer_guide/adding_a_driver.rst
+  drafted directly per the orchestrator-direct workflow. Eleven hardware-type
+  interface classes enumerated with domains and source directories; five-file
+  driver layout with the no-CMake-edits glob convention; constructor plus
+  REGISTER_HARDWARE_META / _PROTOCOLS / _SETTINGS skeleton with the
+  threaded-hardware constructor restriction; three state-management patterns
+  mapped onto C++ overrides with one worked example per pattern (IOBoard for
+  Pattern A, FlowController for Pattern B, AWG for Pattern C); initialize()
+  vs testConnection() split, aux/validation data, REGISTER_CUSTOM_COMM and
+  REGISTER_LIBRARY, smoke-testing checklist. Per-driver Virtual<Driver>
+  pushed out of scope here and routed to bundle 12m. Smoke-testing section
+  reframed to acknowledge that virtual-protocol profiles only verify the
+  registration is intact; recommends hwDebug + runtime debug logging + the
+  Python trampoline path for actual protocol bring-up. Build clean except
+  for three forward :doc: references to /developer_guide/adding_a_hardware_type
+  (bundle 12m, not started). Content commit 96a5c34598d59d04a043b86ef20b4245f39c291e.
 - (entries appended in reverse chronological order; most recent first)
 -->
 

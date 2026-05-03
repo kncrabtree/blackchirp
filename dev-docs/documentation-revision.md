@@ -50,7 +50,7 @@ requirements, and acceptance criteria.
 | 12i | Developer Guide: Persistence | M | 12f | complete |
 | 12j | Developer Guide: Python Hardware | L | 12e | complete |
 | 12k | Developer Guide: Vendor Libraries | M | 12e | complete |
-| 12l | Developer Guide: Adding a Driver | M | 12e | not started |
+| 12l | Developer Guide: Adding a Driver | M | 12e | complete |
 | 12m | Developer Guide: Adding a Hardware Type | M | 12e, 12j | not started |
 | 12n | Developer Guide: Adding an Experiment Mode | M | 12f | not started |
 | 13a | API ref: refresh existing 5 (HardwareObject etc.) | S | — | complete |
