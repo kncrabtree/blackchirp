@@ -47,6 +47,7 @@ requirements, and acceptance criteria.
 | 13f | API ref: storage classes | M | 13a | complete |
 | 13g | API ref: GUI helper classes | M | 13a | complete |
 | 13h | API ref: file parsers | S | 13a | complete |
+| 13i | API ref: orchestration managers (HardwareManager, AcquisitionManager, BatchManager) | M | 13a | not started |
 | 14 | Final pass: screenshot sizing & navigation review | S | most user-guide bundles | not started |
 | 15 | LIF module (experiment setup, configuration, tab, storage) | M | 08 | complete |
 
@@ -122,9 +123,9 @@ critical path:
   have landed.
 - **12 — Developer Guide.** Sources are dev-docs and source code; no
   dependency on the user-guide bundles.
-- **13a–13h — API reference bundles.** Each is independent of the others
+- **13a–13i — API reference bundles.** Each is independent of the others
   except that 13a establishes the Doxygen-comment style guide that
-  13b–13h follow.
+  13b–13i follow.
 
 ## Common conventions for bundle authors
 
@@ -208,7 +209,7 @@ briefs subagents, judges results, and merges.
 | 11 (changelog/migration) | Direct | Synthesis-heavy; cross-references every other bundle's output |
 | 12 (developer guide) | Delegate per sub-page | Each sub-page is independently scoped; large total volume |
 | 13a (existing API refresh) | Direct | Establishes the API style convention 13b–13h follow |
-| 13b–13h (API reference) | Delegate | Independent of each other once 13a is locked |
+| 13b–13i (API reference) | Delegate | Independent of each other once 13a is locked |
 
 ### Per-bundle workflow (delegated bundles)
 
