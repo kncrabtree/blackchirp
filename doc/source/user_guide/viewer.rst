@@ -17,6 +17,7 @@ Building from source produces both via the ``blackchirp`` and
 
 .. figure:: /_static/user_guide/viewer/main_window.png
    :width: 800
+   :target: ../_images/main_window.png
    :align: center
    :alt: Blackchirp Viewer launcher window with a saved experiment opened in a separate experiment view window
 

@@ -18,6 +18,8 @@ dialog configures the frequency conversion chain between the AWG output and
 the sample, and between the sample emission and the digitizer input.
 
 .. figure:: /_static/user_guide/ftmw_configuration/rf_configuration.png
+   :width: 800
+   :target: ../_images/rf_configuration.png
    :alt: RF Config tab of the FTMW Configuration dialog showing the clock
          role table, Common LO checkbox, AWG and chirp multiplication
          factors, and the upconversion/downconversion sideband selectors.

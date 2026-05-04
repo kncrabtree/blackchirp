@@ -15,6 +15,7 @@ The Overlay Manager is opened from the squares-plus icon on the CP-FTMW toolbar.
 
 .. image:: /_static/user_guide/overlays/overlay_types_comparison.png
    :width: 800
+   :target: ../_images/overlay_types_comparison.png
    :align: center
    :alt: Example showing different types of overlays on an FTMW spectrum
 
@@ -37,7 +38,8 @@ Displays a stick spectrum or convolved lineshape from a spectroscopic fitting pr
 For comparison with experimental data, the stick spectrum can be convolved with a Lorentzian or Gaussian lineshape of user-defined FWHM. Convolution runs in a background thread; for large catalogs it may take a minute or more, and progress is reported in a cancellable dialog. Convolution results are cached so that repeating the same parameters returns immediately.
 
 .. image:: /_static/user_guide/overlays/catalog_convolution_settings.png
-   :width: 700
+   :width: 800
+   :target: ../_images/catalog_convolution_settings.png
    :align: center
    :alt: Catalog overlay convolution settings dialog
 
@@ -49,7 +51,8 @@ Generic XY
 Loads arbitrary XY data from a delimited text file. Comma-, semicolon-, tab-, and space-separated formats are recognized, and a custom delimiter may be specified manually. The dialog displays the parsed file in a preview table so the column mapping can be verified before the overlay is created.
 
 .. image:: /_static/user_guide/overlays/generic_xy_preview.png
-   :width: 700
+   :width: 800
+   :target: ../_images/generic_xy_preview.png
    :align: center
    :alt: Generic XY data preview showing parsed file contents
 
@@ -71,6 +74,7 @@ To create an overlay:
 
 .. image:: /_static/user_guide/overlays/overlay_creation_dialog.png
    :width: 800
+   :target: ../_images/overlay_creation_dialog.png
    :align: center
    :alt: Unified overlay creation dialog
 
@@ -81,7 +85,6 @@ Overlay Manager
 Once created, overlays appear in a table in the Overlay Manager. Each row corresponds to one overlay.
 
 .. image:: /_static/user_guide/overlays/overlay_manager_main.png
-   :width: 800
    :align: center
    :alt: Overlay Manager interface
 

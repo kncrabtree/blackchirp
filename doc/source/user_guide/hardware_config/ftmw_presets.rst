@@ -56,6 +56,8 @@ interface for working with presets. See
 :doc:`/user_guide/ftmw_configuration` for the buttons and their behaviour.
 
 .. figure:: /_static/user_guide/ftmw_configuration/ftmw_configuration.png
+   :width: 800
+   :target: ../../_images/ftmw_configuration.png
    :alt: FTMW Configuration dialog with the FTMW Preset bar at the top
    :align: center
 

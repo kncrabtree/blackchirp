@@ -14,7 +14,8 @@ Acquisition Types
 
 .. image:: /_static/user_guide/experiment/startpage.png
    :align: center
-   :width: 400
+   :width: 800
+   :target: ../../_images/startpage.png
    :alt: Experiment start page
 
 .. todo:: Capture screenshot at ``doc/source/_static/user_guide/experiment/startpage.png``.
@@ -98,7 +99,6 @@ The number of shots collected at each LO step is set in the ``Shots/Point`` box 
    Before the LO Scan configuration controls become accessible, both an ``UpLO`` and a ``DownLO`` clock source must be assigned in the :ref:`user_guide/hardware_menu:Rf Configuration` (or, if the ``Common LO`` box is checked, only the ``UpLO`` needs to be set). The exact frequencies entered for those clocks are unimportant, as they are overridden by the scan parameters.
 
 .. image:: /_static/user_guide/experiment/loscan.png
-   :width: 800
    :align: center
    :alt: LO Scan configuration
 
@@ -140,7 +140,6 @@ The number of shots at each DR step is set in the ``Shots Per Step`` box within 
    A physical clock source must be assigned to the ``DR Clock`` role in the :ref:`user_guide/hardware_menu:Rf Configuration` before DR Scan parameters can be configured.
 
 .. image:: /_static/user_guide/experiment/drscan.png
-   :width: 400
    :align: center
    :alt: DR Scan configuration
 

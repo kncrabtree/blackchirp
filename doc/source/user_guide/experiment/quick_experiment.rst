@@ -7,7 +7,6 @@ Quick Experiment
 
 .. image:: /_static/user_guide/experiment/quickexpt_1.png
    :align: center
-   :width: 400
    :alt: Quick Experiment Dialog
 
 .. todo:: Capture screenshot at ``doc/source/_static/user_guide/experiment/quickexpt_1.png``.
@@ -19,8 +18,8 @@ Select the desired experiment to repeat using the number field; the details of t
    Blackchirp only supports repeating experiments stored in the current Data Storage Location.
 
 **Hardware compatibility check.** Blackchirp compares the hardware map (loadout) of the selected experiment against the runtime hardware map of the running instance.
-Each entry in the map records the hardware key and the specific implementation that was active at the time the experiment was saved.
-If the two maps differ in any way — a device missing, added, or replaced with a different implementation — the ``Configure Experiment`` and ``Start Experiment`` buttons are disabled and an error message is shown.
+Each entry in the map records the hardware key and the specific driver that was active at the time the experiment was saved.
+If the two maps differ in any way — a device missing, added, or replaced with a different driver — the ``Configure Experiment`` and ``Start Experiment`` buttons are disabled and an error message is shown.
 This check is loadout-based: it uses the runtime profile saved with the experiment, not a compile-time hardware list.
 
 A major-version mismatch also blocks repeating an experiment.
@@ -39,5 +38,4 @@ Unchecking a box causes the saved values to be restored instead.
 
 .. image:: /_static/user_guide/experiment/quickexpt_2.png
    :align: center
-   :width: 400
    :alt: Quick Experiment Dialog Error

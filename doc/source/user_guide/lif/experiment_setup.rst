@@ -24,7 +24,6 @@ settings are also configured.
 
 .. image:: /_static/user_guide/lif/lif_exp_setup.png
    :align: center
-   :width: 400
    :alt: LIF group on the first page of the experiment wizard
 
 The LIF group is divided into three panels: **Delay**, **Laser**, and

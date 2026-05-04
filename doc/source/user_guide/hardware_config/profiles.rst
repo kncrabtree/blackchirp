@@ -34,6 +34,8 @@ Profiles are created once and then reused across loadouts. Changing a
 profile's settings affects every loadout that includes it.
 
 .. figure:: /_static/user_guide/hardware_config/runtimedialog.png
+   :width: 800
+   :target: ../../_images/runtimedialog.png
    :alt: Hardware Configuration dialog with Loadout, Configuration Overview, Hardware Browser, and per-profile Configuration panels
    :align: center
 

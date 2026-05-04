@@ -37,7 +37,8 @@ custom search paths.
    guidance text area at the bottom-right should be partially visible.
 
 .. figure:: /_static/user_guide/library_status/widget.png
-   :width: 700
+   :width: 800
+   :target: ../_images/widget.png
    :alt: Library Status widget
 
    The Library Status widget. The overview table shows load status for each

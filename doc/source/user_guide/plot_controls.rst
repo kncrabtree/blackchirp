@@ -52,6 +52,7 @@ Plot Configuration Options
 
 .. image:: /_static/user_guide/plot_controls/contextmenu.png
    :width: 800
+   :target: ../_images/contextmenu.png
    :align: center
    :alt: Plot context menu
 

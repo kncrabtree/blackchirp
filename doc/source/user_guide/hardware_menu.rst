@@ -55,6 +55,8 @@ Communication
 -------------
 
 .. figure:: /_static/user_guide/hardware_menu/communication.png
+   :width: 800
+   :target: ../_images/communication.png
    :alt: Communication Settings dialog with TCP protocol selected for an
          FtmwScope device.
 

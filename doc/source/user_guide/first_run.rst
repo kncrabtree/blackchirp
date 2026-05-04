@@ -16,7 +16,7 @@ opening the main window. The sequence covers four steps:
 
 1. :ref:`first-run-data-path` — choose where experiment files are stored.
 2. :ref:`first-run-app-config` — review and adjust application settings.
-3. :ref:`first-run-hardware-onboarding` — assign hardware implementations to
+3. :ref:`first-run-hardware-onboarding` — assign hardware drivers to
    each required hardware type and create your first loadout.
 4. :ref:`first-run-library-status` — check whether optional vendor libraries
    (LabJack, Spectrum) are available on this system.
@@ -38,7 +38,6 @@ Data Storage Location
    after verifying it still matches.
 
 .. figure:: /_static/user_guide/first_run/savepathdialog.png
-   :width: 500
    :alt: Data storage path dialog
 
    The initial configuration dialog with the data storage section.
@@ -113,11 +112,12 @@ Hardware Onboarding
    be visible at the bottom.
 
 .. figure:: /_static/user_guide/first_run/onboarding-runtimeconfig.png
-   :width: 700
+   :width: 800
+   :target: ../_images/onboarding-runtimeconfig.png
    :alt: Runtime Hardware Configuration dialog on first run
 
    The Hardware Configuration dialog. Use this to assign hardware
-   implementations and create your first loadout.
+   drivers and create your first loadout.
 
 The Hardware Configuration dialog is where you tell Blackchirp which
 physical or virtual instruments are connected and how they should be

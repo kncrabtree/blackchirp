@@ -8,7 +8,6 @@ Sequence Mode
 
 .. image:: /_static/user_guide/experiment/sequence.png
    :align: center
-   :width: 400
    :alt: Experiment sequence mode
 
 Sequence mode runs a series of identical experiments automatically, separated by a configurable time interval.

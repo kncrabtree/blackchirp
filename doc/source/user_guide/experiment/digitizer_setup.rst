@@ -25,6 +25,8 @@ The tab is also accessible in the Experiment Setup dialog, where the same
 settings are reviewed and validated before an experiment starts.
 
 .. figure:: /_static/user_guide/ftmw_configuration/digitizer.png
+   :width: 800
+   :target: ../../_images/digitizer.png
    :alt: Digitizer Config tab of the FTMW Configuration dialog showing
          the analog channel list on the left, data-transfer settings,
          the trigger group, and the acquisition-mode selector.

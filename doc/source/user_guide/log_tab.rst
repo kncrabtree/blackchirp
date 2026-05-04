@@ -17,6 +17,7 @@ of what the program is doing.
 
 .. figure:: /_static/user_guide/log_tab/log_tab.png
    :width: 800
+   :target: ../_images/log_tab.png
    :align: center
    :alt: Log tab showing normal, highlight, warning, and error messages
 
@@ -81,7 +82,6 @@ check the **Debug Logging** option. See :ref:`app-config-debug-logging` for
 details.
 
 .. figure:: /_static/user_guide/log_tab/debug_toggle.png
-   :width: 500
    :align: center
    :alt: Application Settings dialog showing the Debug Logging checkbox
 

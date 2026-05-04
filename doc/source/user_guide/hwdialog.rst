@@ -42,6 +42,8 @@ Control Tab
 -----------
 
 .. figure:: /_static/user_guide/hwdialog/control_tab.png
+   :width: 800
+   :target: ../_images/control_tab.png
    :alt: Hardware Dialog showing a Pulse Generator's Control tab with the
          channel configuration table and timing-diagram preview.
 
@@ -83,6 +85,8 @@ Settings Tab
 ------------
 
 .. figure:: /_static/user_guide/hwdialog/settings_tab.png
+   :width: 800
+   :target: ../_images/settings_tab.png
    :alt: Hardware Dialog showing the Advanced sub-tab of a Pulse Generator's
          Settings tab.
 

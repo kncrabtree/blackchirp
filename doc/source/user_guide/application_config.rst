@@ -28,7 +28,6 @@ To open the dialog: **Settings → Application Settings**.
    unchecked, Application Font showing the default font preview.
 
 .. figure:: /_static/user_guide/application_config/dialog.png
-   :width: 500
    :alt: Application Configuration dialog
 
    The Application Configuration dialog, showing all available options.

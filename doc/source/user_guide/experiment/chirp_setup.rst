@@ -24,6 +24,8 @@ The tab contains two sub-tabs: **Chirp Segments** and **Markers**. The
 Markers sub-tab is hidden when the active AWG reports zero marker channels.
 
 .. figure:: /_static/user_guide/ftmw_configuration/segments.png
+   :width: 800
+   :target: ../../_images/segments.png
    :alt: Chirp Config tab showing the Chirp Segments sub-tab with a table
          of segments, the multi-chirp controls, and the chirp preview plot
          below.
@@ -104,6 +106,8 @@ Markers Tab
 -----------
 
 .. figure:: /_static/user_guide/ftmw_configuration/markers.png
+   :width: 800
+   :target: ../../_images/markers.png
    :alt: Markers sub-tab showing the marker channel table and the chirp
          preview plot with the marker pulses overlaid on the frequency
          sweep.
