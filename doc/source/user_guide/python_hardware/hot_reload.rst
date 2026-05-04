@@ -10,7 +10,7 @@
 Reloading and Editing a Script
 ==============================
 
-When a Python implementation is in use, the per-device hardware
+When a Python driver is in use, the per-device hardware
 dialog gains a **Python Script** group at the top of its control
 panel. This group lets you open the script in an external editor
 and reload it after editing, without restarting Blackchirp.

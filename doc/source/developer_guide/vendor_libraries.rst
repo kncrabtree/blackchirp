@@ -27,7 +27,7 @@ This page documents the contract :cpp:class:`VendorLibrary` imposes on its
 subclasses, the staged-configuration model the
 :cpp:class:`LibraryStatusWidget` uses to edit library paths without disturbing
 running hardware, the ``REGISTER_LIBRARY`` linkage between hardware
-implementations and libraries, the two concrete subclasses, the LabJack
+drivers and libraries, the two concrete subclasses, the LabJack
 ``exo``/``UD`` cross-platform split as a worked example, and a recipe for
 adding a new ``VendorLibrary`` subclass. Per-class API detail lives on
 :doc:`/classes/vendorlibrary` and :doc:`/classes/hardwareregistry`; the
@@ -46,7 +46,7 @@ not installed on the build machine.
 Each :cpp:class:`VendorLibrary` subclass uses ``QLibrary`` to locate and load
 its vendor library at runtime. If the library is absent or fails to load,
 ``isAvailable()`` returns ``false`` and ``errorString()`` carries the reason;
-the dependent hardware implementations then surface the failure when the user
+the dependent hardware drivers then surface the failure when the user
 tries to connect them, but the application itself starts normally and other
 hardware is unaffected. The result is one binary, runtime-discovered hardware
 support.
@@ -177,7 +177,7 @@ success or failure, and restores the staged state for further editing.
 REGISTER_LIBRARY linkage
 ------------------------
 
-A hardware implementation declares its dependency on a vendor library with
+A hardware driver declares its dependency on a vendor library with
 a single macro call after ``REGISTER_HARDWARE_META``:
 
 .. code-block:: cpp
@@ -192,7 +192,7 @@ a single macro call after ``REGISTER_HARDWARE_META``:
 
 - The dependency itself, so that
   :cpp:func:`HardwareRegistry::getLibraryDependencies` can answer "which
-  vendor libraries does *this* implementation need" and
+  vendor libraries does *this* driver need" and
   :cpp:func:`HardwareRegistry::getHardwareDependingOnLibrary` can answer
   the inverse question for the reload coordination above.
 - A ``std::function<VendorLibrary*()>`` that returns the library's singleton
@@ -204,7 +204,7 @@ a single macro call after ``REGISTER_HARDWARE_META``:
   are registered through the macro.
 
 The Hardware Configuration dialog uses ``getLibraryDependencies()`` to label
-implementations whose required library is missing, so users can see at a
+drivers whose required library is missing, so users can see at a
 glance which entries cannot be selected with the current driver state. See
 :doc:`/classes/hardwareregistry` for the full registry API.
 
@@ -222,7 +222,7 @@ platforms — the open-source ``exodriver`` exposes a low-level USB transport
 on Linux/macOS, while the proprietary UD driver on Windows exposes a
 higher-level "easy-functions" API. The subclass uses ``#ifdef Q_OS_WIN`` to
 compile a different symbol set on each platform; the LabJack hardware
-implementations never see those symbols directly because a thin facade
+drivers never see those symbols directly because a thin facade
 (``BC::Labjack``) hides the platform difference. The arrangement is the
 worked example in *Case study: LabJack exo/UD split*, below. Cross-link to
 :doc:`/classes/vendorlibrary` for member-level detail.
@@ -420,9 +420,9 @@ When integrating a new closed-source SDK, follow these eight steps:
    library layer is unconditionally part of every build.
 
 6. **Wire dependent hardware with** ``REGISTER_LIBRARY``. In each
-   hardware implementation that needs the library, add
+   hardware driver that needs the library, add
    ``REGISTER_LIBRARY(YourHwClass, YourLibraryClass)`` after
-   ``REGISTER_HARDWARE_META`` in the implementation's ``.cpp`` file.
+   ``REGISTER_HARDWARE_META`` in the driver's ``.cpp`` file.
    The :cpp:class:`HardwareRegistry` will then know which hardware to
    tear down before a library reload.
 

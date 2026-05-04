@@ -3,7 +3,7 @@ Pulse Generator
 
 * Overview_
 * Settings_
-* Implementations_
+* Drivers_
 
 Overview
 --------
@@ -37,30 +37,30 @@ Settings
 
 The pulse generator's per-channel controls (name, role, width, delay, level, duty-cycle parameters, and sync target) are presented inline by the device dialog, with labels and tooltips supplied by the settings registry. The device-level settings exposed in the :doc:`hardware dialog </user_guide/hwdialog>` carry inline descriptions as well. A few items are worth highlighting:
 
-* ``numChannels`` is required and defines the number of channels the device exposes; for fixed-channel hardware the implementation sets it to the device's actual count.
+* ``numChannels`` is required and defines the number of channels the device exposes; for fixed-channel hardware the driver sets it to the device's actual count.
 * ``minWidth`` / ``maxWidth``, ``minDelay`` / ``maxDelay``, and ``minRepRate`` / ``maxRepRate`` set the allowed ranges (microseconds for widths and delays, Hz for the repetition rate). Blackchirp refuses values outside these ranges, so they must reflect the hardware capability rather than a user-imposed limit.
 * The capability flags ``canDutyCycle``, ``canTrigger``, ``canSyncToChannel``, and ``canDisableChannels`` advertise optional features. When a flag is false, the corresponding controls are hidden or disabled in the channel dialog and the matching set operations are rejected.
-* ``lockExternal`` requests that the timing clock lock to an external 10 MHz reference; implementations that lack this capability ignore the setting.
+* ``lockExternal`` requests that the timing clock lock to an external 10 MHz reference; drivers that lack this capability ignore the setting.
 
-Implementations
----------------
+Drivers
+-------
 
-Pulse-generator support is organized by product family rather than by individual model number, because devices within a series typically differ only in channel count and share the same command protocol. The Quantum Composers and Berkeley Nucleonics implementations all communicate over RS232, TCP, or GPIB; the SRS DG645 driver is RS232-only.
+Pulse-generator support is organized by product family rather than by individual model number, because devices within a series typically differ only in channel count and share the same command protocol. The Quantum Composers and Berkeley Nucleonics drivers all communicate over RS232, TCP, or GPIB; the SRS DG645 driver is RS232-only.
 
 Virtual
 ...............................
 
-An 8-channel stub implementation with all capability flags enabled. Used for development and for installs that drive their pulse-train hardware out-of-band from Blackchirp.
+An 8-channel stub driver with all capability flags enabled. Used for development and for installs that drive their pulse-train hardware out-of-band from Blackchirp.
 
 Quantum Composers 9210 Series
 ............................................
 
-The `9210 / Sapphire family <https://www.quantumcomposers.com/pulse-delay-generator-sapphire>`_ is the 4-channel low-cost line, including the QC 9214. The implementation supports the full feature set Blackchirp exposes for QC pulse generators: external triggering, channel synchronization, individual channel disable, and duty-cycle mode.
+The `9210 / Sapphire family <https://www.quantumcomposers.com/pulse-delay-generator-sapphire>`_ is the 4-channel low-cost line, including the QC 9214. The driver supports the full feature set Blackchirp exposes for QC pulse generators: external triggering, channel synchronization, individual channel disable, and duty-cycle mode.
 
 Quantum Composers 9510 Series
 ............................................
 
-The 9510 family is the 8-channel predecessor to the 9520 series, including the QC 9518. Feature support matches the 9210 series above. The 9510 hardware does not support locking to an external reference clock; ``lockExternal`` is ignored on this implementation. Quantum Composers no longer sells the 9510 series; the 9520 series is the current offering.
+The 9510 family is the 8-channel predecessor to the 9520 series, including the QC 9518. Feature support matches the 9210 series above. The 9510 hardware does not support locking to an external reference clock; ``lockExternal`` is ignored on this driver. Quantum Composers no longer sells the 9510 series; the 9520 series is the current offering.
 
 Quantum Composers 9520 Series
 ............................................
@@ -73,7 +73,7 @@ The `9520 family <https://www.quantumcomposers.com/pulse-delay-generator-9520>`_
 Berkeley Nucleonics 577
 ................................
 
-The `BNC 577 family <https://www.berkeleynucleonics.com/model-577>`_ is offered in 4-channel and 8-channel variants that share a single Blackchirp implementation; the channel count is selected from the device dialog when the hardware is added to a profile. The 577 supports the full QC-style feature set.
+The `BNC 577 family <https://www.berkeleynucleonics.com/model-577>`_ is offered in 4-channel and 8-channel variants that share a single Blackchirp driver; the channel count is selected from the device dialog when the hardware is added to a profile. The 577 supports the full QC-style feature set.
 
 Stanford Research Systems DG645
 ..........................................

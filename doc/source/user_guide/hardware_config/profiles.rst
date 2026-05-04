@@ -23,12 +23,12 @@ information:
   same type. Labels must be unique within a type. The type and label
   together form the profile's identity (``Type.label``) — a stable
   reference that loadouts use to name the profile.
-- **Implementation** — the driver class that communicates with the physical
+- **Driver** — the driver class that communicates with the physical
   instrument (e.g., ``SpinCore PB24``, ``Spectrum M4i.44xx``,
-  ``Virtual AWG``). The implementation is fixed when the profile is
+  ``Virtual AWG``). The driver is fixed when the profile is
   created and determines which settings the profile exposes and which
   communication protocols are available; to use a different
-  implementation, create a new profile.
+  driver, create a new profile.
 
 Profiles are created once and then reused across loadouts. Changing a
 profile's settings affects every loadout that includes it.
@@ -60,7 +60,7 @@ and they allow you to start and configure the application before physical
 instruments are connected.
 
 System profiles cannot be deleted while they are the only profile of their
-type. Add a real implementation first, then remove the virtual profile from
+type. Add a real driver first, then remove the virtual profile from
 any loadout that no longer needs it.
 
 .. _hardware-config-profiles-create:
@@ -75,17 +75,17 @@ Profile** in the Configuration panel on the right.
 The **Add Profile** dialog collects:
 
 1. A **label** for the new profile (required; must be unique within the type).
-2. The **implementation** to use, chosen from the list of available drivers
+2. The **driver** to use, chosen from the list of available drivers
    for that hardware type.
-3. For Python-backed implementations, the path to the Python script.
+3. For Python-backed drivers, the path to the Python script.
 4. The **communication protocol** (RS232, TCP/IP, GPIB, Custom, or Virtual),
    where applicable.
 
-After selecting an implementation, the dialog shows a settings widget
+After selecting a driver, the dialog shows a settings widget
 organized into priority sections.
 
 .. figure:: /_static/user_guide/hardware_config/addprofile.png
-   :alt: Add Profile dialog showing the Implementation, Label, and Required and Important Settings sections
+   :alt: Add Profile dialog showing the Driver, Label, and Required and Important Settings sections
    :align: center
 
    The Add Profile dialog (here shown for an FtmwScope profile). The
@@ -118,7 +118,7 @@ attention each setting deserves before you accept the dialog.
 
 **Optional / Advanced Settings**
     Settings that rarely need changing. These appear under an **Advanced**
-    tab. The tab is hidden if the implementation has no optional settings.
+    tab. The tab is hidden if the driver has no optional settings.
 
 Hovering over any setting row shows a tooltip with a description of the
 setting and its effect.

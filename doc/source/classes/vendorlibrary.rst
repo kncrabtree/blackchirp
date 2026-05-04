@@ -13,7 +13,7 @@ driver wrappers. Blackchirp is built and distributed without compile-time
 dependencies on vendor SDKs; instead, each ``VendorLibrary`` subclass uses
 ``QLibrary`` to locate and load the vendor library at runtime. If the library
 is absent or cannot be loaded, Blackchirp starts normally and the dependent
-hardware implementations report themselves as unavailable.
+hardware drivers report themselves as unavailable.
 
 The loading sequence is:
 
@@ -36,7 +36,7 @@ Application Settings dialog uses this API to manage library paths safely
 without requiring a hardware restart until the user explicitly applies the
 changes.
 
-Hardware implementations that depend on a vendor library register the
+Hardware drivers that depend on a vendor library register the
 dependency with ``REGISTER_LIBRARY`` (see :doc:`/classes/hardwareregistry`).
 The ``HardwareRegistry`` tracks these dependencies so ``HardwareManager``
 can destroy and recreate affected hardware objects around a library reload.
@@ -55,7 +55,7 @@ Concrete subclasses
 
 ``SpectrumLibrary``
    Loads the Spectrum Instrumentation driver (``spcm_linux`` / ``spcm64.dll``).
-   Used by M4i digitizer implementations for FTMW acquisition. Because the
+   Used by M4i digitizer drivers for FTMW acquisition. Because the
    Spectrum library maintains global state, a single instance is enforced via
    the singleton pattern.
 

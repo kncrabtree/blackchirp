@@ -13,7 +13,7 @@ string and a user-supplied label, combined to form the settings key
 
 Subclasses typically come in two layers: an *interface* class (e.g.
 ``AWG``, ``FtmwDigitizer``) that declares the slot/signal API the rest
-of Blackchirp uses, and one or more *implementation* classes that
+of Blackchirp uses, and one or more *driver* classes that
 inherit the interface and translate it into vendor-specific commands.
 The ``d_critical`` flag in the constructor decides whether a
 communication failure aborts the active experiment, and ``d_threaded``

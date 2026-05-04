@@ -12,7 +12,7 @@ HardwareRegistry
 ================
 
 ``HardwareRegistry`` is the singleton catalog that maps hardware-type and
-implementation keys to factory functions and metadata. Every concrete hardware
+driver keys to factory functions and metadata. Every concrete hardware
 driver calls one or more registration macros at static-initialization time —
 before ``main()`` runs — to publish its factory, supported communication
 protocols, setting definitions, and custom-connection parameters. The rest of
@@ -38,18 +38,18 @@ Registration runs once per process, at static-initialization time, before
 ``REGISTER_HARDWARE_META(CLASS, DESC)``
    The primary registration macro. Uses Qt's ``staticMetaObject`` to derive
    the hardware-type key (direct child of ``HardwareObject``) and the
-   implementation key (the class name itself). Registers a factory lambda and
+   driver key (the class name itself). Registers a factory lambda and
    the full inheritance chain so that base-class settings are inherited
    automatically. Must appear before any other macro for the same class.
 
 ``REGISTER_HARDWARE_PROTOCOLS(CLASS, ...)``
-   Registers the communication protocols the implementation supports
+   Registers the communication protocols the driver supports
    (e.g., ``CommunicationProtocol::Rs232``, ``CommunicationProtocol::Tcp``).
    Must follow ``REGISTER_HARDWARE_META``.
 
 ``REGISTER_HARDWARE_SETTINGS(CLASS, ...)``
    Registers one or more :cpp:class:`HwSettingDef` descriptors for the
-   implementation. Each descriptor carries a settings key, a user-facing label,
+   driver. Each descriptor carries a settings key, a user-facing label,
    a tooltip, a type-aware default value, optional bounds, and a
    ``HwSettingPriority`` that controls where the field appears in the UI.
    The ``defaultValue`` type drives the widget: ``int`` → ``QSpinBox``,
@@ -59,14 +59,14 @@ Registration runs once per process, at static-initialization time, before
 ``REGISTER_HARDWARE_BASE(CLASS, ...)``
    Registers setting definitions for a non-instantiable base class
    (e.g., ``Clock``, ``FtmwScope``). No prior ``REGISTER_HARDWARE_META``
-   call is required. Settings are merged into any implementation whose
-   inheritance chain contains the base class name. An implementation can
+   call is required. Settings are merged into any driver whose
+   inheritance chain contains the base class name. A driver can
    override a base-class default by registering the same key with
    ``REGISTER_HARDWARE_SETTINGS``.
 
 ``REGISTER_HARDWARE_ARRAY(CLASS, ARRAY_KEY, LABEL, DESC, PRIORITY)``
    Declares an array-type setting with display metadata for a concrete
-   implementation. Must precede any ``REGISTER_HARDWARE_ARRAY_ENTRY`` calls
+   driver. Must precede any ``REGISTER_HARDWARE_ARRAY_ENTRY`` calls
    for the same key.
 
 ``REGISTER_HARDWARE_ARRAY_ENTRY(CLASS, ARRAY_KEY, ...)``
@@ -75,21 +75,21 @@ Registration runs once per process, at static-initialization time, before
 
 ``REGISTER_HARDWARE_BASE_ARRAY(CLASS, ARRAY_KEY, LABEL, DESC, PRIORITY)``
    Declares an array-type setting for a base class. Ensures the key always
-   appears in the settings dialog even for implementations — such as
+   appears in the settings dialog even for drivers — such as
    Python-backed drivers — that do not supply their own array entries.
 
 ``REGISTER_HARDWARE_BASE_ARRAY_ENTRY(CLASS, ARRAY_KEY, ...)``
    Appends one default entry to a base-class array setting.
 
 ``REGISTER_LIBRARY(CLASS, LIBRARY_NAME)``
-   Links a registered hardware implementation to a :cpp:class:`VendorLibrary`
+   Links a registered hardware driver to a :cpp:class:`VendorLibrary`
    singleton. The registry records the dependency so
    ``HardwareRegistry::getLibraryDependencies`` can report which hardware
    must be torn down before a library reload.
 
 ``REGISTER_CUSTOM_COMM(CLASS, ...)``
    Registers one or more :cpp:class:`CustomCommDef` descriptors for a
-   concrete implementation whose communication type is
+   concrete driver whose communication type is
    ``CommunicationProtocol::Custom``. Each descriptor specifies a settings
    key, label, description, ``CustomCommType`` (``String``, ``Int``, or
    ``FilePath``), and optional bounds. The UI reads these descriptors before
@@ -98,7 +98,7 @@ Registration runs once per process, at static-initialization time, before
 
 ``REGISTER_CUSTOM_COMM_BASE(CLASS, ...)``
    Registers ``CustomCommDef`` descriptors for a non-instantiable base
-   class. Merged into results for any implementation whose inheritance chain
+   class. Merged into results for any driver whose inheritance chain
    includes the base class. No prior ``REGISTER_HARDWARE_META`` call needed.
 
 For Python-backed drivers, connection parameters are declared on the Python

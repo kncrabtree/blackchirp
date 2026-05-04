@@ -18,7 +18,7 @@ Python Hardware
 
 Blackchirp lets contributors and users write hardware drivers in
 Python without modifying or recompiling the application. From the
-contributor's side, a Python implementation is a *trampoline*: a C++
+contributor's side, a Python driver is a *trampoline*: a C++
 class that inherits from one of the hardware base classes
 (:cpp:class:`AWG`, :cpp:class:`Clock`, :cpp:class:`FlowController`,
 :cpp:class:`FtmwScope`, …) and from :cpp:class:`PythonHardwareBase`
@@ -480,7 +480,7 @@ A new ``Python<Type>`` trampoline follows a fixed recipe.
    handled by the .py script" indicator: the Python trampolines
    do not register :cpp:any:`REGISTER_CUSTOM_COMM` field
    descriptors, and the user-facing
-   :cpp:class:`CustomProtocolWidget` detects the implementation
+   :cpp:class:`CustomProtocolWidget` detects the driver
    prefix and shows a note rather than a generic empty-fields
    form.
 
@@ -534,7 +534,7 @@ value declared by :cpp:any:`REGISTER_HARDWARE_SETTINGS`, and any
 custom-comm parameters — lives directly under the
 ``<hwType>:<label>`` ``QSettings`` group. That group **is** the
 :cpp:class:`SettingsStorage` root for the
-:cpp:class:`HardwareObject`. There is no implementation-name
+:cpp:class:`HardwareObject`. There is no driver-name
 subgroup, no ``configParams`` subtree, and no two-layer fallback.
 A Python trampoline reads and writes settings through the same
 :cpp:func:`SettingsStorage::get` / :cpp:func:`SettingsStorage::set`

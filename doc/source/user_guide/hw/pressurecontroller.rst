@@ -3,7 +3,7 @@ Pressure Controller
 
 * Overview_
 * Settings_
-* Implementations_
+* Drivers_
 
 Overview
 --------
@@ -25,15 +25,15 @@ Most settings are exposed in the :doc:`hardware dialog </user_guide/hwdialog>` w
 
 Pressure values are reported as both rolling data and auxiliary data, so the channel can be used as a validation setting to terminate an acquisition that drifts outside an acceptable window.
 
-Implementations
----------------
+Drivers
+-------
 
 Virtual
 .................
 
-A dummy implementation that returns a pressure equal to the setpoint. Useful for offline UI testing.
+A dummy driver that returns a pressure equal to the setpoint. Useful for offline UI testing.
 
 Intellisys IQplus
 ..............................
 
-The `Intellisys IQplus <https://www.idealvac.com/files/manuals/08-Nor-CalProductsDownstreamPressureControlCatalog2018.pdf>`_ is an adaptive pressure controller that combines a pressure sensor, PID loop, and pendulum valve to regulate the pressure in a process chamber. The communication protocol is RS232. The implementation overrides the base-class default for ``min`` to ``0.0`` to match the device's downstream-control range.
+The `Intellisys IQplus <https://www.idealvac.com/files/manuals/08-Nor-CalProductsDownstreamPressureControlCatalog2018.pdf>`_ is an adaptive pressure controller that combines a pressure sensor, PID loop, and pendulum valve to regulate the pressure in a process chamber. The communication protocol is RS232. The driver overrides the base-class default for ``min`` to ``0.0`` to match the device's downstream-control range.

@@ -25,7 +25,7 @@ this page is one level deeper and assumes you are reading the cmake
 files alongside it.
 
 Hardware *selection* is not part of the build. Every hardware
-implementation in ``src/hardware/`` is always compiled into the
+driver in ``src/hardware/`` is always compiled into the
 ``blackchirp-hardware`` library; the active set is decided at run time
 by the registry and profile system. There is no compile-time flag that
 filters drivers in or out.
@@ -47,7 +47,7 @@ one library or executable target.
    the viewer.
 
 ``BlackchirpHardware.cmake`` → ``blackchirp-hardware`` (STATIC)
-   All hardware base classes, every concrete implementation,
+   All hardware base classes, every concrete driver,
    communication protocols (``rs232``, ``tcp``, ``virtual``, ``gpib``,
    ``custom``), the registration machinery
    (:cpp:class:`HardwareManager`, :cpp:class:`HardwareRegistry`,
@@ -200,13 +200,13 @@ Hardware aggregator headers
   ``flowcontroller.h``, ``gpibcontroller.h``, ``ioboard.h``,
   ``pressurecontroller.h``, ``temperaturecontroller.h``,
   ``lifscope.h``, ``liflaser.h``.
-* ``hw_impl.h`` — every concrete implementation header that the
+* ``hw_impl.h`` — every concrete driver header that the
   configure-time ``file(GLOB)`` calls find under
   ``src/hardware/core/<type>/`` and ``src/hardware/optional/<type>/``,
   plus every Python trampoline header under ``src/hardware/python/``.
 * ``hw_h.h`` — a one-line wrapper that ``#include``-s both of the
   above. This is the header consumers refer to when they want "all
-  hardware types and implementations."
+  hardware types and drivers."
 
 These are not just convenience headers. They exist because of how
 ``CMAKE_AUTOMOC`` interacts with static libraries and Qt's static
@@ -220,14 +220,14 @@ driver's ``.cpp`` translation unit at file scope. In a static-library
 build, the linker is allowed to drop any object file whose symbols are
 not referenced from the final executable — and a static initializer
 counts as "unreferenced" for that purpose. Without an explicit symbol
-reference into each implementation, the registrations would silently
+reference into each driver, the registrations would silently
 disappear at link time and the registry would come up empty.
 
-The fix is to feed the implementation headers to ``AUTOMOC``. AUTOMOC
+The fix is to feed the driver headers to ``AUTOMOC``. AUTOMOC
 generates ``moc_<class>.cpp`` for every ``Q_OBJECT`` it finds, and the
 generated ``meta_object_offsets`` references pull the corresponding
 object file out of the static library at link time. Listing every
-implementation header in ``hw_impl.h`` (which is itself part of the
+driver header in ``hw_impl.h`` (which is itself part of the
 ``blackchirp-hardware`` source set) is what gives AUTOMOC the
 visibility it needs.
 
@@ -282,7 +282,7 @@ The recognized patterns, by hardware type:
      - ``virtual*``, ``lakeshore*``
 
 If a new driver does not match any existing pattern (for example, a
-new vendor prefix), add the prefix to both the implementations glob and
+new vendor prefix), add the prefix to both the drivers glob and
 the headers glob in ``BlackchirpHardware.cmake``. The two lists are
 parallel; keep them in sync.
 
@@ -371,13 +371,13 @@ The ``blackchirp-test-hardware`` library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A handful of tests need the hardware base classes plus the
-``virtual*`` implementations, but cannot link against the main
+``virtual*`` drivers, but cannot link against the main
 ``blackchirp-hardware`` library because that pulls in
 :cpp:class:`HardwareManager`, which in turn references symbols that
 only the main application provides. ``CMakeLists.txt`` defines a
 parallel static library, ``blackchirp-test-hardware``, that includes
 the hardware base classes, the communication protocols, and just the
-``virtual*`` implementations. Tests like ``tst_experimentloading``
+``virtual*`` drivers. Tests like ``tst_experimentloading``
 link against this instead so they can exercise the registration
 machinery without dragging in the manager.
 

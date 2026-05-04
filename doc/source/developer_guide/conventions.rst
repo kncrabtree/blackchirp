@@ -328,7 +328,7 @@ header. The compiler then catches typos at the call site, and a
 For hardware drivers specifically, *defaults* are not set by ad-hoc
 ``setDefault`` calls in the subclass constructor. They are declared
 through the hardware-settings registry — ``REGISTER_HARDWARE_SETTINGS``
-for an implementation, ``REGISTER_HARDWARE_BASE`` for shared
+for a driver, ``REGISTER_HARDWARE_BASE`` for shared
 base-class defaults — and applied by
 ``HardwareObject::applyRegisteredSettings()`` during construction. The
 registry is also what populates the hardware settings dialog without

@@ -3,7 +3,7 @@ GPIB Controller
 
 * Overview_
 * Settings_
-* Implementations_
+* Drivers_
 
 Overview
 --------
@@ -15,15 +15,15 @@ Settings
 
 The GpibController base class itself has no user-facing settings; the controller is configured entirely through its underlying communication channel (TCP host/port or RS232 port and baud rate), which is set up in the standard :ref:`hardware-menu-communication` flow.
 
-Implementations
----------------
+Drivers
+-------
 
 The supported hardware is the Prologix bridge, which Blackchirp can talk to over either Ethernet or USB. A virtual controller is also registered for testing.
 
 Virtual
 .................
 
-A stub implementation that responds successfully to writes and echoes queries. Used for testing and for builds without GPIB hardware attached.
+A stub driver that responds successfully to writes and echoes queries. Used for testing and for builds without GPIB hardware attached.
 
 Prologix GPIB-LAN Controller
 ..............................................

@@ -49,7 +49,7 @@ For a DC-coupled input the signal range is offset ± full scale.
 .. note::
    In most CP-FTMW setups the digitizer should be AC-coupled, which
    makes the vertical offset effectively zero. Some digitizer
-   implementations may not expose a coupling control through Blackchirp;
+   drivers may not expose a coupling control through Blackchirp;
    in those cases the coupling must be set on the instrument directly.
 
 Data Transfer
@@ -73,12 +73,12 @@ the digitizer to Blackchirp.
     Number of bytes encoding each digitizer sample. Determined by the
     ADC bit depth (1 byte for 8-bit records, 2 bytes for 12- or 16-bit
     records) or by the accumulator width for on-board averaging. A
-    digitizer implementation may override this value automatically.
+    digitizer driver may override this value automatically.
 
 **Byte Order**
     Whether multi-byte samples are transmitted most-significant byte
     first (Big Endian) or least-significant byte first (Little Endian).
-    A digitizer implementation may override this value automatically.
+    A digitizer driver may override this value automatically.
 
 Trigger
 .......

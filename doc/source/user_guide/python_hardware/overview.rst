@@ -31,11 +31,11 @@ Writing a driver in Python is appropriate when:
   handles the wire protocol.
 - A driver must be tuned, patched, or swapped in the field by someone
   who is not a C++ developer.
-- A user-contributed implementation can be shared as a single ``.py``
+- A user-contributed driver can be shared as a single ``.py``
   file rather than a forked source tree.
 
 Python drivers coexist with built-in C++ drivers. The choice of
-implementation is a per-profile setting (see
+driver is a per-profile setting (see
 :doc:`selecting`); a single loadout may mix Python-backed and
 native-C++ profiles freely.
 
@@ -89,7 +89,7 @@ treat any other executable downloaded from the internet.
 Supported hardware types
 ------------------------
 
-Each hardware type that supports Python implementations ships with a
+Each hardware type that supports Python drivers ships with a
 trampoline class on the C++ side and a starter template script.
 The default class name is the name the driver class uses inside the
 template; the **Add Profile** dialog scans the chosen script for

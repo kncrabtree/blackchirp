@@ -14,7 +14,7 @@ Blackchirp identifies and manages hardware through three layered concepts:
 
 **Profiles** identify a single physical (or virtual) instrument.
 Each profile binds a hardware type (for example, FTMW Scope or AWG), a
-human-readable label, and a driver implementation. Profile settings — such
+human-readable label, and a driver. Profile settings — such
 as the number of digitizer channels or the AWG output sample rate table —
 are stored persistently and survive application restarts.
 
@@ -51,7 +51,7 @@ the FTMW configuration widgets.
 
 :doc:`hardware_config/profiles`
    How profiles are created, labeled, and managed. Covers the
-   Type / Label / Implementation triple, the settings priority sections
+   Type / Label / Driver triple, the settings priority sections
    (Required, Important, Optional / Advanced), and enabling or disabling
    profiles within a loadout.
 

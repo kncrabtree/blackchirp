@@ -15,7 +15,7 @@
 Adding a New Hardware Driver
 ============================
 
-Adding a new C++ implementation of an *existing* hardware type — a new
+Adding a new C++ driver of an *existing* hardware type — a new
 AWG model, a new mass flow controller, a new GPIB synthesizer — is the
 single most common contributor task in Blackchirp. This page is the
 canonical recipe. It walks through picking the right interface class,
@@ -204,9 +204,9 @@ scope in the ``.cpp``, plus a small constructor:
 
 A few non-obvious points:
 
-- **Implementation key.** The base class constructor takes an
+- **Driver key.** The base class constructor takes an
   ``impl`` string as its first argument. Pass
-  ``QString(MyAwg::staticMetaObject.className())`` so the implementation
+  ``QString(MyAwg::staticMetaObject.className())`` so the driver
   key tracks the class name automatically — renaming the class renames
   the registry key for free, with no parallel string table to update.
   The base class's ``hwType`` is filled in similarly inside the
@@ -235,12 +235,12 @@ A few non-obvious points:
   survives subsequent constructions of the same profile.
 - **Settings precedence.** ``REGISTER_HARDWARE_SETTINGS`` re-registers
   one key from the base class to override its default, bounds, or
-  priority for this implementation; you do *not* need to copy the
+  priority for this driver; you do *not* need to copy the
   whole base set. The ``AWG70002a`` example above re-registers only
   ``markerCount`` (the AWG70002A has two markers, the base class
-  declares four as the generic default). The base/implementation
+  declares four as the generic default). The base/driver
   override pattern is described in
-  :doc:`/developer_guide/hardware_configuration` (*Base / implementation
+  :doc:`/developer_guide/hardware_configuration` (*Base / driver
   override pattern*); the macro reference and the
   :cpp:struct:`HwSettingDef` field list are on
   :doc:`/classes/hardwareregistry`.
@@ -344,7 +344,7 @@ walk the driver's own ``d_analogChannels`` / ``d_digitalChannels``
 state (inherited from :cpp:class:`IOBoardConfig`) and return readings
 only for the channels currently enabled. The
 ``src/hardware/optional/ioboard/labjacku3.cpp`` driver is the canonical
-ground-truth implementation; ``virtualioboard.cpp`` is the non-vendor
+ground-truth driver; ``virtualioboard.cpp`` is the non-vendor
 sibling.
 
 Worked example B — Pattern B (FlowController)
@@ -478,7 +478,7 @@ Two things to call out:
   ``maxSamples``, ``minFreq``, ``maxFreq``, ``markerCount``,
   ``rampOnly``, ``triggered``) via ``REGISTER_HARDWARE_BASE`` so they
   appear automatically on every driver. Re-register a key with
-  ``REGISTER_HARDWARE_SETTINGS`` only when the implementation's value
+  ``REGISTER_HARDWARE_SETTINGS`` only when the driver's value
   is fixed by the model — e.g., ``markerCount = 2`` for the
   AWG70002A — or when the bounds need tightening.
 
@@ -486,7 +486,7 @@ Pattern C also covers :cpp:class:`Clock` drivers, which override the
 ``setHwFrequency`` / ``readHwFrequency`` per-output virtuals plus an
 optional ``prepareClock`` for one-shot reference and lock setup. See
 ``src/hardware/core/clock/valon5009.cpp`` for the canonical Pattern C
-clock implementation.
+clock driver.
 
 initialize() and testConnection()
 ---------------------------------
@@ -570,17 +570,17 @@ Virtual siblings
 ----------------
 
 Every hardware *type* in Blackchirp ships with a ``Virtual<Type>``
-implementation that synthesizes plausible readings without a real
+driver that synthesizes plausible readings without a real
 instrument — :cpp:class:`VirtualAwg`,
 :cpp:class:`VirtualFlowController`, :cpp:class:`VirtualIOBoard`, and
-so on. The virtual implementation backs the system profiles that
+so on. The virtual driver backs the system profiles that
 guarantee a required type always has something for
 :cpp:class:`HardwareManager` to talk to, and it is the canonical
 fixture for the hardware unit tests under ``tests/``.
 
 Adding a new *driver* of an existing type does **not** require a
 parallel ``Virtual<Driver>``: the per-type virtual already covers the
-fall-back and test-fixture roles for every implementation of that
+fall-back and test-fixture roles for every driver of that
 type. If your driver's behavior diverges from the type's virtual
 sibling enough that the existing fixture no longer represents it
 faithfully, that usually indicates the *type* itself needs an

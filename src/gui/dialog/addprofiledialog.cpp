@@ -33,14 +33,14 @@ AddProfileDialog::AddProfileDialog(const QString &hardwareType, QWidget *parent)
 
     auto *layout = new QVBoxLayout(this);
 
-    // Get available implementations
+    // Get available drivers
     QStringList implementations = HardwareRegistry::instance().getImplementations(hardwareType);
     implementations.sort();
 
     auto *formLayout = new QFormLayout();
 
     if (implementations.isEmpty()) {
-        layout->addWidget(new QLabel("No implementations available"));
+        layout->addWidget(new QLabel("No drivers available"));
         p_implementationCombo = new QComboBox();
         p_protocolCombo = new QComboBox();
         p_protocolLabel = new QLabel("Protocol:");
@@ -55,10 +55,10 @@ AddProfileDialog::AddProfileDialog(const QString &hardwareType, QWidget *parent)
         return;
     }
 
-    // Implementation combo
+    // Driver combo
     p_implementationCombo = new QComboBox();
     p_implementationCombo->addItems(implementations);
-    formLayout->addRow("Implementation:", p_implementationCombo);
+    formLayout->addRow("Driver:", p_implementationCombo);
 
     // Protocol combo (shown only when multiple protocols are supported)
     p_protocolLabel = new QLabel("Protocol:");

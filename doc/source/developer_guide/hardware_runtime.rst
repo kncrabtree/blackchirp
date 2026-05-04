@@ -23,7 +23,7 @@ Hardware Runtime
 This page is the runtime companion to
 :doc:`/developer_guide/hardware_configuration`. The configuration page
 describes the four singletons that decide *which* hardware exists in
-the active loadout, *which* implementation backs each profile, and
+the active loadout, *which* driver backs each profile, and
 *which* persisted settings each profile carries. This page picks up at
 the moment :cpp:func:`HardwareManager::initialize` runs: how the
 manager turns that configuration into a live set of
@@ -137,7 +137,7 @@ On :cpp:func:`HardwareManager::initialize` the manager:
    :cpp:func:`RuntimeHardwareConfig::activateMissingSystemProfiles` so
    every required hardware type (``FtmwScope``, ``Clock``, plus the
    LIF types when LIF is enabled) has at least one active profile —
-   the virtual implementation when no real device is configured.
+   the virtual driver when no real device is configured.
 2. Calls :cpp:func:`HardwareManager::syncWithRuntimeConfig` to
    reconcile the empty hardware map against the runtime configuration
    and bring up every active profile.

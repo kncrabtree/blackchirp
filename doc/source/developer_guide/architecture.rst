@@ -122,7 +122,7 @@ is one level deep from there.
    - ``gui/util/`` — small GUI utilities (numeric formatting).
 
 ``src/hardware/``
-   Hardware abstraction and implementations.
+   Hardware abstraction and drivers.
 
    - ``hardware/core/`` — :cpp:class:`HardwareObject` (the abstract
      device base), :cpp:class:`HardwareManager`,
@@ -133,7 +133,7 @@ is one level deep from there.
      :cpp:class:`HardwareProfileManager`, the interface-class
      sub-directories (``clock/``, ``ftmwdigitizer/``,
      ``lifdigitizer/``, ``liflaser/``), and ``communication/``.
-   - ``hardware/optional/`` — interfaces and implementations for
+   - ``hardware/optional/`` — interfaces and drivers for
      hardware classes that are optional in any given experiment:
      ``chirpsource/`` (AWG), ``flowcontroller/``,
      ``gpibcontroller/``, ``ioboard/``, ``pressurecontroller/``,
@@ -166,22 +166,22 @@ follow the cross-link for the per-method contract.
 
 :cpp:class:`HardwareRegistry` (compile-time catalog)
    :doc:`/classes/hardwareregistry` is the static catalog of every
-   hardware implementation linked into the binary. Each driver
+   hardware driver linked into the binary. Each driver
    registers itself before ``main()`` runs (factory function,
-   supported communication protocols, per-implementation settings,
+   supported communication protocols, per-driver settings,
    inheritance chain) using the ``REGISTER_HARDWARE_*`` macros from
    ``hardwareregistration.h``. The registry is the authoritative
-   answer to "what implementations exist for hardware type *X*?" and
+   answer to "what drivers exist for hardware type *X*?" and
    is the only place that constructs :cpp:class:`HardwareObject`
    instances by key.
 
 :cpp:class:`HardwareProfileManager` (profile metadata)
    :doc:`/classes/hardwareprofilemanager` owns the persistent
    profile records. A *profile* is an immutable
-   ``(hardwareType, label, implementation)`` triple with its own
+   ``(hardwareType, label, driver)`` triple with its own
    persisted settings and (for Python drivers) script path and
    class name; the ``<hardwareType>.<label>`` pair is the
-   profile's identity, and the implementation is fixed at
+   profile's identity, and the driver is fixed at
    creation time. Profiles are CRUD'd from
    :cpp:class:`RuntimeHardwareConfigDialog` (the Configure Hardware
    dialog) and stored via :cpp:class:`SettingsStorage`. The user
@@ -190,7 +190,7 @@ follow the cross-link for the per-method contract.
 :cpp:class:`RuntimeHardwareConfig` (active selection)
    :doc:`/classes/runtimehardwareconfig` records *which* profiles
    are active in the running session, keyed by profile identity
-   (``<HardwareType>.<label>``). The implementation key for each
+   (``<HardwareType>.<label>``). The driver key for each
    active profile is held as a denormalized copy of the profile's
    immutable value and validated against
    :cpp:class:`HardwareRegistry`. Read access is open from any

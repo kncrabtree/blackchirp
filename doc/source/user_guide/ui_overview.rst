@@ -121,7 +121,7 @@ given session depends on the hardware types present in the active loadout.
 
 *LIF Laser Status Box* for the LIF laser
    Shows the current laser position (wavelength or delay, depending on the
-   implementation) and a flashlamp enable LED. Present when the LIF module is
+   driver) and a flashlamp enable LED. Present when the LIF module is
    enabled and a LifLaser is in the active loadout.
 
 

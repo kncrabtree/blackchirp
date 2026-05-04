@@ -16,24 +16,24 @@ Python Hardware
    python_hardware/per_type_capabilities
 
 Blackchirp can drive a hardware device through a user-supplied Python
-script instead of a compiled C++ implementation. The Python driver
+script instead of a compiled C++ driver. The Python driver
 runs in a separate subprocess and communicates with Blackchirp over a
 JSON-lines pipe, so adding a new device or customizing an existing
 one does not require rebuilding the application.
 
 A Python driver is selected per-profile, the same way a built-in
-implementation is. Each Python-backed hardware type has a template
+driver is. Each Python-backed hardware type has a template
 script that ships with Blackchirp and works out of the box against
 the Virtual communication protocol; users start from that template
 and adapt it to their hardware. The :doc:`hardware_config/profiles`
 page covers profile creation generally; this chapter covers the
-parts that are specific to Python implementations.
+parts that are specific to Python drivers.
 
 .. rubric:: In this chapter
 
 - :doc:`python_hardware/overview` — what Python hardware is, the
   architecture in one paragraph, and the supported hardware types
-- :doc:`python_hardware/selecting` — choosing a Python implementation
+- :doc:`python_hardware/selecting` — choosing a Python driver
   in the Hardware Configuration dialog and configuring the script,
   class name, and Python environment for a profile
 - :doc:`python_hardware/writing_a_driver` — the Python API contract:

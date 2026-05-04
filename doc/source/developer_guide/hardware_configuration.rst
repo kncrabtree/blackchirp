@@ -26,7 +26,7 @@ Hardware Configuration
 
 Blackchirp's hardware story has two halves. The *configuration* half — what
 this page covers — describes the four singletons that decide which hardware
-implementations exist, which user-visible profiles have been created from
+drivers exist, which user-visible profiles have been created from
 them, which profiles are *active* in the running session, and which
 profiles are grouped together as a named loadout. The *runtime* half —
 :doc:`/developer_guide/hardware_runtime` — picks up where this page leaves
@@ -67,12 +67,12 @@ compile-time outward:
 2. **Profile metadata (per process).** When the application starts,
    :cpp:class:`HardwareProfileManager` loads any persisted profile
    records from ``QSettings`` into its in-memory cache. A *profile* is
-   a ``(hardwareType, label, implementation)`` triple — fixed at
+   a ``(hardwareType, label, driver)`` triple — fixed at
    creation time — together with its persisted settings and, for
    Python drivers, a script path / class name / environment path. The
    ``hardwareType`` and ``label`` together form the profile's identity
    (``"FtmwScope.frontPanel"``, ``"FlowController.backup"``); the
-   implementation is immutable, so changing implementations means
+   driver is immutable, so changing drivers means
    creating a new profile rather than re-pointing an existing one.
 
 3. **Active selection (per loadout).** :cpp:class:`RuntimeHardwareConfig`
@@ -148,7 +148,7 @@ static-initialization. Eight macros cover the registration surface:
 
 ``REGISTER_HARDWARE_SETTINGS(CLASS, ...)``
    Declares :cpp:struct:`HwSettingDef` descriptors for the
-   implementation's scalar settings: key, label, description,
+   driver's scalar settings: key, label, description,
    type-aware default, optional bounds, and
    :cpp:enum:`HwSettingPriority`.
 
@@ -156,7 +156,7 @@ static-initialization. Eight macros cover the registration surface:
    Same shape as ``REGISTER_HARDWARE_SETTINGS``, but for a
    non-instantiable base class (``Clock``, ``FtmwScope``,
    ``HardwareObject`` itself). Settings are merged into every
-   implementation whose inheritance chain contains the base class.
+   driver whose inheritance chain contains the base class.
 
 ``REGISTER_HARDWARE_ARRAY`` / ``REGISTER_HARDWARE_ARRAY_ENTRY``
    Declare an array setting and append entries to it. Each entry is a
@@ -167,7 +167,7 @@ static-initialization. Eight macros cover the registration surface:
    Array equivalents for base classes. Calling
    ``REGISTER_HARDWARE_BASE_ARRAY`` with no entries reserves the array
    key so it is always rendered in the settings dialog, even for
-   implementations (Python-backed drivers, virtual drivers) that supply
+   drivers (Python-backed drivers, virtual drivers) that supply
    no entries of their own.
 
 ``REGISTER_LIBRARY(CLASS, LIBRARY_NAME)``
@@ -181,24 +181,24 @@ static-initialization. Eight macros cover the registration surface:
    GUI reads these descriptors before construction so it can render the
    right input widgets without instantiating the driver.
 
-Hardware-type and implementation keys are derived from Qt's
+Hardware-type and driver keys are derived from Qt's
 ``staticMetaObject`` rather than passed by hand. ``REGISTER_HARDWARE_META``
 walks the metaobject ``superClass()`` chain to find the direct child of
 :cpp:class:`HardwareObject` (the *type* key — ``Clock``, ``FtmwScope``,
 ``Awg``, …), and uses ``CLASS::staticMetaObject.className()`` for the
-*implementation* key (the class name itself — ``Valon5009``,
+*driver* key (the class name itself — ``Valon5009``,
 ``M4i2220x8``). Renaming a class therefore renames its registry key for
 free; there is no parallel string table to update.
 
-Base / implementation override pattern
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Base / driver override pattern
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A setting registered with ``REGISTER_HARDWARE_BASE`` is shared by every
-implementation that inherits from the base. An implementation that needs
+driver that inherits from the base. A driver that needs
 a different default (or different bounds, or a different priority) for
 the same key re-registers the key with ``REGISTER_HARDWARE_SETTINGS``.
 :cpp:func:`HardwareRegistry::getSettingDefs` returns the
-implementation's entry first and skips the base-class entry for that
+driver's entry first and skips the base-class entry for that
 key, so no duplicate row appears in the UI and
 :cpp:func:`HardwareObject::applyRegisteredSettings` writes the right
 default. The same precedence applies to arrays.
@@ -246,18 +246,18 @@ HardwareProfileManager — profile metadata
 
 :cpp:class:`HardwareProfileManager` owns the persistent collection of
 profiles. A profile is the tuple
-``(hardwareType, label, implementation, settings, [pythonScriptPath,
+``(hardwareType, label, driver, settings, [pythonScriptPath,
 pythonClassName, pythonEnvPath])``. The
-``(hardwareType, label, implementation)`` triple is set when the
+``(hardwareType, label, driver)`` triple is set when the
 profile is created and is immutable thereafter — only the settings
 and the per-profile metadata fields (description, threading override,
-Python paths) can be edited later. To use a different implementation,
+Python paths) can be edited later. To use a different driver,
 create a new profile.
 
 The pair ``<hardwareType>:<label>`` is the QSettings group root and the
 profile's stable identity for everything outside the profile manager
 (the runtime configuration, loadouts, the active hardware map). The
-implementation key is stored under that group as one of the fields, not
+driver key is stored under that group as one of the fields, not
 as part of the path, but it is fixed for the life of the profile. The
 API is documented on :doc:`/classes/hardwareprofilemanager`.
 
@@ -325,8 +325,8 @@ RuntimeHardwareConfig — active selections
 
 :cpp:class:`RuntimeHardwareConfig` records which profiles are currently
 *active*, keyed by their ``"<HardwareType>.<label>"`` profile identity.
-The implementation key for each active profile is held alongside as a
-denormalized field — a copy of the profile's immutable implementation
+The driver key for each active profile is held alongside as a
+denormalized field — a copy of the profile's immutable driver
 that supports validation and drift detection — but the profile
 identity is the source of truth. This is the layer
 :cpp:func:`HardwareManager::initialize` consults to decide what to
@@ -380,12 +380,12 @@ the data model and persistence helpers, and the user-guide pages
 :doc:`/user_guide/hardware_config/ftmw_presets` for the workflow.
 
 The hardware map inside a loadout records each member profile's
-identity together with the implementation that profile carried at the
-time the loadout was last saved. The implementation is denormalized —
+identity together with the driver that profile carried at the
+time the loadout was last saved. The driver is denormalized —
 the canonical value lives on the profile in
 :cpp:class:`HardwareProfileManager` — but storing it lets the loadout
 detect when a previously-saved member profile has been removed or
-recreated under a different implementation, and replay the active set
+recreated under a different driver, and replay the active set
 atomically when the loadout is applied. Loadouts persist under the
 ``Loadouts/`` QSettings subtree; the manager is the only writer of
 that subtree. All public methods are thread-safe via an internal
@@ -475,7 +475,7 @@ panel X, so look at singleton Y."
    currently active profile identities that the dialog edits before
    commit. The validation status bar at the bottom of the tab reports
    whether the preview is valid (every active profile resolves to a
-   registered implementation, every required type has at least one
+   registered driver, every required type has at least one
    active profile).
 
 **Hardware Browser panel** — driven by :cpp:class:`HardwareRegistry`.
@@ -485,7 +485,7 @@ panel X, so look at singleton Y."
 
 **Configuration panel** (rightmost) — driven by :cpp:class:`HardwareProfileManager`.
    For the type selected in the Hardware Browser, shows every profile
-   (with its label and implementation), the *Enable* checkbox for
+   (with its label and driver), the *Enable* checkbox for
    single-instance types, and *Add Profile* / *Remove Profile*
    buttons. *Add Profile* invokes :cpp:class:`AddProfileDialog`, which
    composes :cpp:class:`HwSettingsWidget` in
@@ -496,7 +496,7 @@ panel X, so look at singleton Y."
    carries the *Run in own thread* override (which writes to
    :cpp:func:`RuntimeHardwareConfig::setThreaded` on accept — the
    runtime effect is on :doc:`/developer_guide/hardware_runtime`) and,
-   for Python implementations, the script path / class name /
+   for Python drivers, the script path / class name /
    environment fields that ``HardwareProfileManager`` persists.
 
 The *Library Status* tab is hosted by :cpp:class:`LibraryStatusWidget`;

@@ -9,7 +9,7 @@ HardwareProfileManager
 
 ``HardwareProfileManager`` is the singleton that persists and manages hardware
 profiles. A *profile* ties a user-chosen label (e.g., ``"frontPanel"``) to a
-hardware-type/implementation pair and stores whether it is active, along with
+hardware-type/driver pair and stores whether it is active, along with
 timestamps and an optional description. Profiles use human-readable keys of
 the form ``<Type>.<label>`` (``"FlowController.frontPanel"``,
 ``"FlowController.backup"``) so that hardware identity survives reconfiguration.
@@ -47,8 +47,8 @@ Three fields stored per profile support Python-backed hardware drivers:
    (``<env>/bin/python3``). Persisted under ``pythonEnvPath``. An empty
    string means the system ``python3`` executable is used.
 
-These fields are only meaningful for Python implementation keys; non-Python
-implementations leave them empty. Python hardware is described in
+These fields are only meaningful for Python driver keys; non-Python
+drivers leave them empty. Python hardware is described in
 :doc:`/user_guide/python_hardware`.
 
 System profiles

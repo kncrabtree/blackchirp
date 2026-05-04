@@ -7,8 +7,8 @@ RuntimeHardwareConfig
 =====================
 
 ``RuntimeHardwareConfig`` is the singleton that records which hardware
-implementations are *active* at any given moment. It maps each
-``"<Type>.<label>"`` key to an implementation key (e.g.,
+drivers are *active* at any given moment. It maps each
+``"<Type>.<label>"`` key to a driver key (e.g.,
 ``"FtmwScope.default"`` → ``"m4i2220x8"``), validates those selections
 against the :cpp:class:`HardwareRegistry`, and exposes the configuration to
 the rest of Blackchirp for experiment setup.

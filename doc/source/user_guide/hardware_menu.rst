@@ -69,18 +69,18 @@ master-detail layout: the left panel lists every device in the active hardware
 map, and the right panel shows the protocol configuration for the selected
 device.
 
-Each device exposes the communication protocols supported by its driver
-implementation. The available protocol types are:
+Each device exposes the communication protocols supported by its driver.
+The available protocol types are:
 
 - **RS232** — direct serial port connection (USB-to-serial adapters are
   common; FTDI-based adapters are recommended for their per-device serial
   numbers).
 - **TCP** — Ethernet connection via IP address and port number.
 - **GPIB** — IEEE-488 bus access, typically through a GPIB-LAN or GPIB-RS232
-  bridge (a Prologix GPIB-LAN controller is the supported implementation).
+  bridge (a Prologix GPIB-LAN controller is the supported driver).
 - **Custom** — driver-defined connection type used by some specialized
   hardware.
-- **Virtual** — software-only implementation; no physical connection is
+- **Virtual** — software-only driver; no physical connection is
   required.
 
 Selecting a protocol from the drop-down immediately shows the

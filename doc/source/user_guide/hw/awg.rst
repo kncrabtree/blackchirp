@@ -3,12 +3,12 @@ AWG
 
 * Overview_
 * Settings_
-* Implementations_
+* Drivers_
 
 Overview
 --------
 
-An AWG represents the source that generates chirps in the FTMW spectrometer, whether or not the device is truly an Arbitrary Waveform Generator. When enabled, Blackchirp can :doc:`create and configure chirps </user_guide/ftmw_configuration/chirp_setup>` that are stored alongside an experiment. The AWG is optional, but even if you generate chirps with another tool the virtual implementation is recommended so that the chirp parameters are recorded with the data.
+An AWG represents the source that generates chirps in the FTMW spectrometer, whether or not the device is truly an Arbitrary Waveform Generator. When enabled, Blackchirp can :doc:`create and configure chirps </user_guide/ftmw_configuration/chirp_setup>` that are stored alongside an experiment. The AWG is optional, but even if you generate chirps with another tool the virtual driver is recommended so that the chirp parameters are recorded with the data.
 
 The AWG abstraction is modeled on the Tektronix AWG7122B: one analog output channel plus a configurable number of digital marker outputs. Markers are typically used to drive a low-noise-amplifier protection switch and a TWT amplifier gate, but Blackchirp's marker model is general-purpose and supports additional roles such as digitizer triggers or fully custom signals. AWGs that have no markers can use a :doc:`pulse generator </user_guide/hw/pulsegenerator>` to produce analogous signals. Some AWGs have multiple analog outputs; Blackchirp uses only one.
 
@@ -17,9 +17,9 @@ Settings
 
 The frequency, sample-rate, and triggering settings are exposed in the device dialog with inline labels and tooltips; see the :doc:`hardware dialog </user_guide/hwdialog>` page for conventions. A few items deserve special mention:
 
-* ``markerCount`` (int) reports the number of physical marker outputs that the implementation drives. The chirp configuration widget exposes a Markers tab with one row per channel, where each marker is given a name, a role (Protection, Gate, Trigger, or Custom), and a timing window relative to each chirp. See the :doc:`chirp setup </user_guide/ftmw_configuration/chirp_setup>` page for full details on the Markers tab and the safety validation associated with the Protection and Gate roles.
+* ``markerCount`` (int) reports the number of physical marker outputs that the driver drives. The chirp configuration widget exposes a Markers tab with one row per channel, where each marker is given a name, a role (Protection, Gate, Trigger, or Custom), and a timing window relative to each chirp. See the :doc:`chirp setup </user_guide/ftmw_configuration/chirp_setup>` page for full details on the Markers tab and the safety validation associated with the Protection and Gate roles.
 * ``rampOnly`` (true/false) is set for direct digital synthesis devices (e.g., the AD9914) that can only emit a single linear ramp per trigger. With ``rampOnly`` enabled, the chirp is constrained to a single non-empty segment.
-* ``triggered`` (true/false) selects external triggering. When false, supported AWGs play their loaded waveform continuously; not every implementation honors the untriggered mode.
+* ``triggered`` (true/false) selects external triggering. When false, supported AWGs play their loaded waveform continuously; not every driver honors the untriggered mode.
 
 Sample-rate and ``maxSamples`` defaults are taken from the hardware specification of each device. Lowering them is acceptable for restricting the usable range; raising them past what the hardware supports will produce malformed waveforms or device errors.
 
@@ -27,8 +27,8 @@ Sample-rate and ``maxSamples`` defaults are taken from the hardware specificatio
 
   Setting the sample rate or ``maxSamples`` to values the hardware does not support may lead to incorrect chirps or device errors.
 
-Implementations
----------------
+Drivers
+-------
 
 .. list-table::
    :header-rows: 1
@@ -36,7 +36,7 @@ Implementations
    :class: longtable
    :width: 100%
 
-   * - Implementation
+   * - Driver
      - markerCount
      - Notes
    * - Virtual
@@ -56,7 +56,7 @@ Implementations
      - 65 GSa/s, 25 GHz max output. Locked to an external 10 MHz reference. Chirp output on channel 1; markers map to physical outputs 1 and 2.
    * - Keysight M8190
      - 2
-     - 12 GSa/s, up to 55 GHz max output. The implementation is hardcoded to a 12-bit output on channel 1 at 9.375 GSa/s with markers unused; the hardware supports markers and the channel count is reserved for future use.
+     - 12 GSa/s, up to 55 GHz max output. The driver is hardcoded to a 12-bit output on channel 1 at 9.375 GSa/s with markers unused; the hardware supports markers and the channel count is reserved for future use.
    * - Analog Devices AD9914
      - 0
      - DDS chip with a built-in linear ramp generator. ``rampOnly`` is forced true and there are no marker outputs; protection and gate signals must come from a pulse generator.
@@ -64,12 +64,12 @@ Implementations
 Virtual
 .......
 
-The virtual implementation can be thought of as a "read-only" device useful for recording the chirp settings in use. This implementation is recommended if you use another program to produce your chirps. Pairing it with a pulse generator that has channels in the Protection and Amplifier-gate roles lets Blackchirp generate analogous protection and gate signals without driving any AWG hardware.
+The virtual driver can be thought of as a "read-only" device useful for recording the chirp settings in use. This driver is recommended if you use another program to produce your chirps. Pairing it with a pulse generator that has channels in the Protection and Amplifier-gate roles lets Blackchirp generate analogous protection and gate signals without driving any AWG hardware.
 
 Tektronix AWG70002A
 ......................
 
-The `AWG70002A <https://www.tek.com/en/signal-generator/awg70000-arbitrary-waveform-generator-manual>`_ communicates over a TCP socket on port 4000 (TekVisa). The implementation is hardcoded to be externally triggered with a rising edge on trigger A with the trigger mode set to synchronous to ensure phase coherence (assuming the trigger source is locked to the same external reference as the AWG). The chirp output is on channel 1.
+The `AWG70002A <https://www.tek.com/en/signal-generator/awg70000-arbitrary-waveform-generator-manual>`_ communicates over a TCP socket on port 4000 (TekVisa). The driver is hardcoded to be externally triggered with a rising edge on trigger A with the trigger mode set to synchronous to ensure phase coherence (assuming the trigger source is locked to the same external reference as the AWG). The chirp output is on channel 1.
 
 When an experiment begins, the chirp data and markers are written to the device, and Blackchirp maintains a list of waveforms that have been sent to the AWG. As long as the AWG has not been reset, reusing a chirp will reload the existing record rather than re-transferring the data. If this behavior causes problems, restart the AWG or delete the offending records to force a reload. Once the upload is complete the outputs are enabled and the device is set to run mode, producing an audible click from the internal relays. At the end of the experiment the outputs are disabled (another click) and the device is placed into standby.
 

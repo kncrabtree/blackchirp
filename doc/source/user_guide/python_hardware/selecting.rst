@@ -1,6 +1,6 @@
 .. index::
    single: Python hardware; selecting
-   single: Add Profile; Python implementation
+   single: Add Profile; Python driver
    single: Python Script (field)
    single: Python Class (field)
    single: Python Environment (field)
@@ -9,12 +9,12 @@
 
 .. _python-hardware-selecting:
 
-Selecting a Python Implementation
-=================================
+Selecting a Python Driver
+=========================
 
-A Python implementation is chosen the same way as any other driver:
+A Python driver is chosen the same way as any other driver:
 through the **Hardware Configuration** dialog (**Hardware → Hardware
-Selection**). Pick a Python-backed implementation when adding a
+Selection**). Pick a Python-backed driver when adding a
 profile, then point Blackchirp at the script that contains your
 driver class. Three settings on the profile control the binding:
 the script path, the class name within the script, and an optional
@@ -24,15 +24,15 @@ For an introduction to profiles in general, see
 :ref:`hardware-config-profiles`. The notes below cover the
 Python-specific parts of that flow.
 
-Choosing a Python implementation
---------------------------------
+Choosing a Python driver
+------------------------
 
-In the **Add Profile** dialog, the **Implementation** dropdown lists
+In the **Add Profile** dialog, the **Driver** dropdown lists
 every driver class registered for the selected hardware type. Python
-implementations are named with a ``Python`` prefix (for example,
+drivers are named with a ``Python`` prefix (for example,
 ``PythonAwg``, ``PythonFlowController``). The trampoline classes that
 ship in the build are listed in :ref:`python-hardware-overview`;
-the same selection is also available from the **Implementation**
+the same selection is also available from the **Driver**
 dropdown shown on the existing profile in the Hardware Configuration
 dialog.
 
@@ -52,7 +52,7 @@ dialog.
 Template-script copy
 --------------------
 
-When you save a new profile that uses a Python implementation,
+When you save a new profile that uses a Python driver,
 Blackchirp offers to seed it with the bundled template:
 
 .. figure:: /_static/user_guide/python_hardware/template_copy_prompt.png
@@ -70,14 +70,14 @@ The prompt repeats the security warning from
 a copy of the template script to customize?". Choosing **Yes**
 opens a file-save dialog with a suggested filename based on the
 hardware type (for example, ``my_flow_controller.py``). The
-template that matches the chosen implementation is copied to the
+template that matches the chosen driver is copied to the
 location you pick, and the saved path is filled in on the new
 profile automatically.
 
 When you switch a Python profile to a real protocol after creating
 it, the **Communication Settings** dialog (Hardware → Communication)
 exposes the same RS-232 / TCP / GPIB / Custom / Virtual options the
-implementation registered. Picking **Custom** is appropriate when the
+driver registered. Picking **Custom** is appropriate when the
 driver bypasses ``self.comm`` entirely and talks to its hardware
 through a vendor Python package; the panel shows a note pointing the
 user back to the script in that case (see
@@ -99,8 +99,8 @@ The **Python Script** field in the **Advanced** section of the
 profile holds the absolute path to the ``.py`` file that defines
 your driver class. The accompanying **Browse...** button opens a
 file picker filtered to ``*.py``. The field is shown only when the
-selected implementation is a Python-backed driver; switching to a
-native C++ implementation hides it.
+selected driver is Python-backed; switching to a
+native C++ driver hides it.
 
 The script may live anywhere readable by the user account that runs
 Blackchirp. A common pattern is to keep all of a site's Python
@@ -160,7 +160,7 @@ Where the settings are saved
 
 The script path, class name, and environment path are stored
 on the profile by ``HardwareProfileManager`` and reloaded when
-Blackchirp starts. They are independent of the per-implementation
+Blackchirp starts. They are independent of the per-driver
 settings shown in the Required Settings, Important Settings, and
 Advanced sections, so changing them does not affect any other
-profile that uses the same Python implementation.
+profile that uses the same Python driver.

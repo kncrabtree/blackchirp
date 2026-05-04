@@ -108,7 +108,7 @@ This file contains the list of hardware compiled into Blackchirp when the experi
   AWG.Ka;VirtualAwg;8
   FtmwScope.virtual;VirtualFtmwScope;6
 
-The ``key`` field uses the format ``HardwareClass.Label``, where the label is the user-assigned name configured at setup time (for example, ``FtmwScope.virtual``, ``PulseGenerator.Default``, ``FlowController.Main``). The ``subKey`` field records which specific hardware implementation was used. The ``hardwareType`` column is a programmatic integer from the internal ``HardwareType`` enum; it is used by the dialog and menu wiring to route settings and does not need to be interpreted manually. The number of items in this list may vary depending on your configuration.
+The ``key`` field uses the format ``HardwareClass.Label``, where the label is the user-assigned name configured at setup time (for example, ``FtmwScope.virtual``, ``PulseGenerator.Default``, ``FlowController.Main``). The ``subKey`` field records which specific hardware driver was used. The ``hardwareType`` column is a programmatic integer from the internal ``HardwareType`` enum; it is used by the dialog and menu wiring to route settings and does not need to be interpreted manually. The number of items in this list may vary depending on your configuration.
 
 header.csv
 ..........

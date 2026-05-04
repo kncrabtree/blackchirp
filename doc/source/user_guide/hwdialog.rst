@@ -15,7 +15,7 @@ Hardware Dialog
 Selecting any per-device entry from the :ref:`Hardware menu
 <hardware-menu-device-entries>` opens the **Hardware Dialog** for that device.
 The dialog is a tabbed window. The title bar shows the hardware key
-(``Type.Label``) and the model name of the active implementation.
+(``Type.Label``) and the model name of the active driver.
 
 The dialog provides two tabs: **Control** (when available) and **Settings**.
 The tabs serve different purposes and have different save semantics — reading

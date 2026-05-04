@@ -9,7 +9,7 @@ installation paths are available:
   through GitHub Releases. This is the recommended path for most
   users.
 * **Source build** — compile Blackchirp from source using CMake. This
-  path is appropriate when you need to enable a hardware implementation
+  path is appropriate when you need to enable a hardware driver
   that the binary distribution does not include, or when you want to
   contribute to development.
 

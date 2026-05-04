@@ -11,7 +11,7 @@ HardwareLoadout
 set of member profiles and the FTMW operating points associated with
 it. A loadout records each member profile's identity
 (``"<Type>.<label>"`` — for example, ``"FtmwScope.default"`` or
-``"AWG.frontPanel"``) together with the implementation key the profile
+``"AWG.frontPanel"``) together with the driver key the profile
 carried at the time the loadout was last saved, and owns a collection
 of named :cpp:struct:`FtmwPreset` records that capture full FTMW
 configurations against that hardware selection. Loadouts are created,
@@ -23,11 +23,11 @@ A loadout's ``hardwareMap`` field has the same shape as the active
 selection table held by :cpp:class:`RuntimeHardwareConfig`: switching
 loadouts replaces the active set with the loadout's stored member
 identities (after the drift-detection prompt in
-``RuntimeHardwareConfigDialog``). The implementation half of each
-``hardwareMap`` entry is denormalized — the canonical implementation
+``RuntimeHardwareConfigDialog``). The driver half of each
+``hardwareMap`` entry is denormalized — the canonical driver
 lives on the profile in :cpp:class:`HardwareProfileManager` — and is
 used by the dialog to detect when a previously-saved member profile
-has been removed or recreated under a different implementation. The
+has been removed or recreated under a different driver. The
 ``ftmwPresets`` collection is
 keyed by user-visible preset name; the reserved name ``__LastUsed__``
 identifies the per-loadout sentinel preset described under

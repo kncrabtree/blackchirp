@@ -38,7 +38,7 @@ make sure you have already read
 driver carries (constructor signature, registration macros,
 :cpp:func:`HardwareObject::initialize` /
 :cpp:func:`HardwareObject::testConnection`, aux/validation data) is
-the same surface every implementation of the new type will carry, and
+the same surface every driver of the new type will carry, and
 this page does not repeat it.
 
 When this applies vs. adding a driver
@@ -133,7 +133,7 @@ Set ``d_threaded`` in the interface-class constructor body. Most
 hardware types are threaded — vendor I/O is expensive enough that
 running it on the manager thread starves every other device — and
 the interface class is the right place to set the default so every
-implementation inherits it. The user can still override the per-
+driver inherits it. The user can still override the per-
 profile threading at profile creation time
 (:doc:`/developer_guide/hardware_runtime` covers the runtime side).
 The same is true for ``d_critical``, which defaults to ``true``;
@@ -145,7 +145,7 @@ experiment is the rare exception).
 Once a type sets ``d_threaded = true``, the
 **threaded-hardware constructor restriction** from
 :doc:`/developer_guide/hardware_runtime` applies to every
-implementation: no ``QObject`` parent at construction, and no
+driver: no ``QObject`` parent at construction, and no
 child :cpp:any:`QObject` constructed in the constructor. Construct
 children inside :cpp:func:`HardwareObject::initialize`. Document
 this once at the top of the new interface header so driver authors
@@ -160,7 +160,7 @@ Decide which subset of
 :cpp:enumerator:`CommunicationProtocol::Gpib`,
 :cpp:enumerator:`CommunicationProtocol::Custom`, and
 :cpp:enumerator:`CommunicationProtocol::Virtual` the type can
-support across implementations. Each driver further narrows the
+support across drivers. Each driver further narrows the
 set with its own ``REGISTER_HARDWARE_PROTOCOLS`` invocation. Most
 new types should at least allow ``Virtual`` so the system-profile
 fall-back pattern (every required type carries a ``virtual``
@@ -171,15 +171,15 @@ new type.
 Shared settings and validation keys
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Every setting that every implementation of the new type will share
+Every setting that every driver of the new type will share
 — channel counts, range tables, polling intervals — is registered
 on the interface class with ``REGISTER_HARDWARE_BASE`` (or
 ``REGISTER_HARDWARE_BASE_ARRAY`` for array settings). Drivers
 re-register a key with ``REGISTER_HARDWARE_SETTINGS`` only to
 override the default, the bounds, or the priority for their own
-implementation. The merge is described in
+driver. The merge is described in
 :doc:`/developer_guide/hardware_configuration` (*Base /
-implementation override pattern*). Pick which keys go in
+driver override pattern*). Pick which keys go in
 ``BC::Key::<TypeName>::`` versus which belong on a per-driver
 sub-namespace at the same time you draft the registration block.
 
@@ -291,15 +291,15 @@ A few pieces are worth calling out:
   ``staticMetaObject.className()`` for ``hwImpl``, so the
   combination yields a unique ``d_key`` of
   ``"BeamBlocker.<label>"`` for the type and
-  ``"<DriverName>"`` for the implementation. Renaming the class
+  ``"<DriverName>"`` for the driver. Renaming the class
   renames the registry key.
 - ``REGISTER_HARDWARE_BASE`` is the type-level counterpart of
   ``REGISTER_HARDWARE_SETTINGS``. The settings declared here are
-  applied to every implementation through
+  applied to every driver through
   :cpp:func:`HardwareObject::applyRegisteredSettings` from the
   base-class constructor; a driver that needs different defaults
   re-registers the same keys with ``REGISTER_HARDWARE_SETTINGS``,
-  and the implementation-level entry wins. The macro reference is
+  and the driver-level entry wins. The macro reference is
   on :doc:`/classes/hardwareregistry`.
 - The public ``setBlocked`` / ``readBlocked`` slots are the
   surface :cpp:class:`HardwareManager` and the GUI consume; they
@@ -322,14 +322,14 @@ in detail; the points specific to a new type are:
    :cpp:class:`Clock` or :cpp:class:`FtmwScope`) or *optional*
    (everything else). Put the interface ``.cpp``/``.h`` in a new
    subdirectory under ``src/hardware/core/<type>/`` or
-   ``src/hardware/optional/<type>/``. Driver implementations of the
+   ``src/hardware/optional/<type>/``. Drivers of the
    new type will live alongside the interface in the same
    directory.
 
 2. **Add the interface .cpp to** ``HARDWARE_TYPES_SOURCES``. The
    list in ``cmake/BlackchirpHardware.cmake`` enumerates every
    interface ``.cpp`` explicitly. Append the new type's interface
-   path; the implementation files are picked up by the glob
+   path; the driver source files are picked up by the glob
    pattern in step 4.
 
 3. **Add the interface .h to** ``HARDWARE_TYPE_HEADERS``. The same
@@ -606,18 +606,18 @@ new type without enumerating the active profiles in advance. The
 existing per-type signal lists on :doc:`/classes/hardwaremanager`
 are the ground truth.
 
-Virtual implementation
-----------------------
+Virtual driver
+--------------
 
 Every hardware type in Blackchirp ships with a ``Virtual<TypeName>``
-driver, and a new type is no exception. The virtual implementation
-is not a test-only artifact — it is the implementation Blackchirp
+driver, and a new type is no exception. The virtual driver
+is not a test-only artifact — it is the driver Blackchirp
 itself runs whenever the user has not configured a real device, and
 it is what makes the new type visible in the running application
 from the moment the type lands. Plan and write it alongside the
 interface class, not after.
 
-Three responsibilities the virtual implementation carries inside
+Three responsibilities the virtual driver carries inside
 the application:
 
 - **System-profile fall-back.** :cpp:class:`HardwareProfileManager`
@@ -642,7 +642,7 @@ the application:
   configuration can run a full experiment end-to-end against the
   virtual driver — chirp generation, FID acquisition, aux-data
   recording, validation — without owning the real hardware. The
-  virtual implementation is what keeps that workflow possible
+  virtual driver is what keeps that workflow possible
   for the new type.
 
 Conventions for the virtual driver:
@@ -732,7 +732,7 @@ A new hardware type warrants three test additions:
   template.
 - **Wire the virtual driver into** ``blackchirp-test-hardware``.
   The ``Virtual<TypeName>`` driver authored in *Virtual
-  implementation* above is the canonical test fixture; add its
+  driver* above is the canonical test fixture; add its
   ``.cpp`` to the explicit list of test-hardware sources in the
   top-level ``CMakeLists.txt`` (alongside
   ``virtualflowcontroller.cpp``, ``virtualawg.cpp``, and the

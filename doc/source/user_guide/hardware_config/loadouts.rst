@@ -38,7 +38,7 @@ The Default Loadout
 
 Blackchirp creates one loadout named **Default** on first run. This loadout
 uses the system (virtual) profiles for any required hardware types that have
-no real implementation yet. You can rename, edit, or delete the Default
+no real driver yet. You can rename, edit, or delete the Default
 loadout once you have created at least one other loadout to replace it.
 
 .. _hardware-config-loadouts-dialog:

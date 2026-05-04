@@ -3,7 +3,7 @@ FTMW Digitizer
 
 * Overview_
 * Settings_
-* Implementations_
+* Drivers_
 
 Overview
 --------
@@ -49,7 +49,7 @@ need to be re-documented here. A few behaviors are worth highlighting:
 
 * **Capability flags** (``canBlockAverage``, ``canMultiRecord``,
   ``canBlockAndMultiRecord``, ``hasAuxTriggerChannel``) describe what
-  the device supports. Implementations set these to match the
+  the device supports. Drivers set these to match the
   hardware; do not enable a capability the device cannot actually
   provide.
 * **Memory-derived limits** (``maxRecordLength``, ``maxRecords``,
@@ -73,18 +73,18 @@ that still apply:
   the sum of many shots, which dramatically reduces network traffic
   and host-side processing per FID.
 
-Implementations
----------------
+Drivers
+-------
 
 Virtual
 .................
 
-The virtual implementation synthesizes a fresh FID on every shot by
+The virtual driver synthesizes a fresh FID on every shot by
 summing 10–100 sinusoidal components at randomly chosen frequencies,
 amplitudes, and phases, then adds Gaussian noise at the byte width
 configured for the run. It honors the current vertical scale, sample
 rate, and byte order, so changes made in the dialog take effect
-immediately. The implementation is intended for development and for
+immediately. The driver is intended for development and for
 installs that only view archived data; it should not be enabled on a
 real acquisition machine.
 
@@ -123,7 +123,7 @@ The `DSOX92004A <https://www.keysight.com/us/en/product/DSOX92004A/infiniium-hig
 is an 80 GSa/s oscilloscope with 20 GHz of bandwidth, upgradable to
 33 GHz. Communication is over a TCP socket on port 5025, requiring a
 static IP address configured in the Windows OS running on the scope.
-This implementation has not been re-verified against the data-path
+This driver has not been re-verified against the data-path
 refactor that introduced block-averaging support; treat it as
 untested.
 
@@ -141,11 +141,11 @@ Spectrum Instrumentation M4i2220x8
 
 A high-speed digitizer with a 2.5 GSa/s sampling rate and 1.25 GHz
 analog bandwidth, suitable for segmented LO scanning. The
-implementation requires the device to have the block-averaging
+driver requires the device to have the block-averaging
 firmware module enabled; with that module, sustained acquisition
 rates of 50,000 FIDs/s have been achieved.
 
-This implementation requires the Spectrum Instrumentation ``spcm``
+This driver requires the Spectrum Instrumentation ``spcm``
 driver to be installed and linked at compile time. See
 :doc:`/user_guide/library_status` for installation details and to
 verify that the library is detected by the running Blackchirp build.
@@ -159,5 +159,5 @@ Communication is over a TCP socket on port 4000, the default for
 TekVisa, requiring a static IP address configured in the Windows OS
 running on the scope. The scope can be triggered on any of its four
 analog channels, but triggering on the AUX channel is recommended.
-Treat this implementation as experimental.
+Treat this driver as experimental.
 
