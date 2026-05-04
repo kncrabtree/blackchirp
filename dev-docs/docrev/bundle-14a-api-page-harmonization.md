@@ -1,10 +1,44 @@
 # Bundle 14a — API page intro / header-comment harmonization
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
-- (entries appended in reverse chronological order; most recent first)
+- 2026-05-03 — in progress → complete (content commit 45dc5922).
+  Trimmed the class-level (or, for waveformbuffer.h, file-level)
+  Doxygen block on all 11 flagged headers — communicationprotocol,
+  ftworker, hardwareobject, hardwareprofilemanager, headerstorage,
+  pythonhardwarebase, pythonprocess, runtimehardwareconfig,
+  settingsstorage, vendorlibrary (and the spectrumlibrary subclass
+  surfaced on the same page), and waveformbuffer — to a tight brief
+  plus only the lifecycle, ownership, threading, and configuration
+  invariants a header reader genuinely needs. Per-method blocks
+  untouched. Moved the HeaderStorage developer how-to (the two
+  virtuals, tree composition, read/write call sequences, object-key
+  conventions) onto the rst page, which previously deferred to the
+  header. Added the class-level-block rule to api_style.rst between
+  the existing "Where prose lives" and "Doxygen comment style"
+  sections. Resolved the outdated TODO deferrals on
+  pythonhardwarebase.rst and pythonprocess.rst by replacing them
+  with :doc: cross-refs to the developer_guide/python_hardware page
+  that now exists. Build clean: 105 warnings, identical to the
+  pre-bundle baseline; zero new warnings on any of the 16 touched
+  files. Pre-existing baseline issues (rfconfig doxygenenum errors;
+  duplicate target names on acquisitionmanager / batchmanager /
+  chirpconfig; missing `todo` directive type on user_guide pages)
+  are flagged for future attention but were not opportunistically
+  fixed in this pass — they are out of the 11-page hit list.
+- 2026-05-03 — not started → in progress. Research-agent
+  enumeration walked all 50 pages under doc/source/classes/ and
+  flagged 11 whose header `\brief` carries long orientation
+  prose that the convention places only on the .rst page:
+  communicationprotocol, ftworker, hardwareobject,
+  hardwareprofilemanager, headerstorage, pythonhardwarebase,
+  pythonprocess, runtimehardwareconfig, settingsstorage,
+  vendorlibrary, waveformbuffer. The remaining 39 already
+  follow convention (rich .rst orientation; tight or moderate
+  header brief that surfaces only collaborator/lifecycle
+  invariants a header reader genuinely needs).
 -->
 
 Sub-page of the Final Consistency Pass. Re-balances class-level
