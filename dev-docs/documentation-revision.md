@@ -69,7 +69,7 @@ requirements, and acceptance criteria.
 | 14b | Screenshot sizing pass | S | 14 | complete |
 | 14c | File organization & menu layout audit | S | 14 | complete |
 | 14d | American English sweep | S | 14 | complete |
-| 14e | Implementation → driver terminology sweep | S | 14 | not started |
+| 14e | Implementation → driver terminology sweep | S | 14 | complete |
 | 15 | LIF module (experiment setup, configuration, tab, storage) | M | 08 | complete |
 
 Effort key: S ≈ 1 session, M ≈ 2 sessions, L ≈ 3+ sessions.

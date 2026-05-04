@@ -1,10 +1,47 @@
 # Bundle 14e — Implementation → driver terminology sweep
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
-- (entries appended in reverse chronological order; most recent first)
+- 2026-05-04 — not started → complete. Stage-1 content commit
+  841df7164ca0eacb9e9850f25e509946f5277de9. Replaced prose uses of
+  "implementation" with "driver" across user guide, API reference,
+  and developer guide where the term named a concrete hardware
+  backend. Renamed three section headings (`Implementations` →
+  `Drivers` on every `hw/<type>` page; `Selecting a Python
+  Implementation` and matching subsection in `python_hardware/
+  selecting.rst`; `Virtual implementation` → `Virtual driver` in
+  `developer_guide/adding_a_hardware_type.rst`; `Base /
+  implementation override pattern` → `Base / driver override
+  pattern` in `hardware_configuration.rst`) with intra-page
+  `Implementations_` link targets and explicit cross-page
+  references updated. Glossary/index sweep flipped one entry
+  (`single: Add Profile; Python implementation` → `Python driver`);
+  no `:ref:` labels contained the term. The bundle authorized a
+  paired UI-label change: `src/gui/dialog/addprofiledialog.cpp`
+  now reads "Driver:" instead of "Implementation:" on the Add
+  Profile combo, and the docs surface that quotes the label
+  (`hardware_config.rst`, `hardware_config/profiles.rst`,
+  `python_hardware/selecting.rst`) flipped from `**Implementation**`
+  to `**Driver**`. The `hardware_config/addprofile.png` screenshot
+  was recaptured against the new label. Borderline cases left as
+  algorithmic/code "implementation" (per scope): `cp-ftmw.rst`
+  algorithm references, `acquisition_types.rst:90` "implements a
+  version of segmented CP-FTMW", `lif_acquisition.rst` /
+  `ftmw_acquisition.rst` "tab is implemented by …",
+  `experiment_lifecycle.rst:400` "default implementation",
+  every "subclass implements / interface implements" usage on the
+  class pages, and `adding_an_experiment_mode.rst` interface-impl
+  uses. Spectrum Instrumentation `spcm` driver references in
+  `hw/ftmwdigitizer.rst:148` and `hw/lifdigitizer.rst:55` produce
+  "This driver requires the Spectrum Instrumentation ``spcm``
+  driver" — vendor product name uses "driver" too; left as the
+  minimal swap. `selecting.rst:102` and `hardware_config.rst:17`
+  required minor rephrasing to avoid doubled "driver". C++
+  identifiers (`selectedImplementation()`, `getImplementation()`,
+  etc.) and the QSettings persistence field name `implementation`
+  are out of scope and unchanged.
 -->
 
 Sub-page of the Final Consistency Pass. Replaces user-facing
