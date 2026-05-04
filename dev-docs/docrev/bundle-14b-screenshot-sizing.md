@@ -1,10 +1,29 @@
 # Bundle 14b — Screenshot sizing pass
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
-- (entries appended in reverse chronological order; most recent first)
+- 2026-05-03 — not started → complete (content commit ffca502a).
+  All 50 image/figure directives under doc/source/user_guide/ now
+  follow the rule: native ≤800 px renders 1:1 (no :width:); native
+  >800 px caps at :width: 800 with :target: pointing at
+  ../_images/<basename>.png (1-level pages) or
+  ../../_images/<basename>.png (2-level pages under experiment/,
+  lif/, hw/, python_hardware/, hardware_config/). Sphinx flattens
+  every directive image to _images/<basename>, so the relative
+  :target: paths resolve under ReadTheDocs as well as locally.
+  Opportunistic edits, authorized by the user: 8 orphan PNGs under
+  _static/user_guide/ were git-rm'd; one HTML-anchor cross-reference
+  in data_storage.rst was rewritten as a :ref:; three
+  "implementation" prose uses naming a hardware backend (in
+  experiment/quick_experiment.rst and first_run.rst) were swapped to
+  "driver". Build is clean — the 105 warnings are pre-existing
+  (Pygments lexer + auto-generated C++ duplicate-declaration
+  warnings in classes/) and not introduced by this work. Click-
+  through is a static link; a JS lightbox upgrade was discussed and
+  deferred (would need a Sphinx extension dependency, out of 14b
+  scope).
 -->
 
 Sub-page of the Final Consistency Pass. Standardizes how
