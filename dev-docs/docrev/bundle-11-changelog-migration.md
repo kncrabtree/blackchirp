@@ -4,6 +4,20 @@
 
 <!--
 Status log:
+- 2026-05-03 — scope revision during the 11a session. Dropped the
+  user-vs-developer audience split and the 2.0.0-page user-only
+  exception; bug fixes are now in scope on every release page.
+  Per-release pages organize as Highlights → component-level
+  sections grouped by subsystem → Bug fixes (also grouped by
+  subsystem). The 1.0.0 → 1.1.0 change set was split out onto its
+  own page (11a now creates two pages — changelog/1.1.0.rst and
+  changelog/2.0.0.rst — and the umbrella's toctree lists both).
+  The "Keeping the changelog updated" H2 in changelog.rst was
+  folded into the chapter-intro paragraphs so the toctree sits at
+  the bottom of the page. The umbrella's content commit hash
+  (642f5d9f) still stands; the re-edit lands as part of 11a's
+  content commit. This entry records the spec change so the
+  policy in this file matches the rendered page.
 - 2026-05-03 — not started → complete (content commit 642f5d9f). Replaced
   the changelog.rst and migration.rst placeholders with chapter intros
   and explicit toctrees referencing changelog/2.0.0 and
@@ -18,14 +32,18 @@ Builds the chapter scaffolds for the **changelog** and the
 **migration guide** and lands the chapter-level intros. The
 substantive content is split across two sub-bundles:
 
-- **11a** — populate `changelog.rst` plus the per-release page
-  `changelog/2.0.0.rst` that summarizes what is new in 2.0.0
-  *from the user's perspective*. As 11a writes that page it also
-  builds a **carry-forward list** of items the migration guide
-  will need that the 11b spec does not already enumerate; the list
-  is appended to the 11b sub-bundle file (or recorded inline in
-  the 11a status-log entry the user can move into 11b before
-  11b's session begins).
+- **11a** — populate `changelog.rst` (already converted from
+  placeholder by this umbrella; 11a edits the intro if the
+  per-release-page convention shifts) plus two per-release pages,
+  `changelog/1.1.0.rst` (1.0.0 → 1.1.0; the devel-only commits
+  that will be tagged 1.1.0 before merging cmakemigration) and
+  `changelog/2.0.0.rst` (1.1.0 → 2.0.0; the cmakemigration-only
+  commits that will be tagged 2.0.0 after merge). As 11a writes
+  those pages it also builds a **carry-forward list** of items the
+  migration guide will need that the 11b spec does not already
+  enumerate; the list is appended to the 11b sub-bundle file (or
+  recorded inline in the 11a status-log entry the user can move
+  into 11b before 11b's session begins).
 - **11b** — populate `migration.rst` plus the
   `migration/v1_to_v2.rst` page, consuming 11a's carry-forward
   list and the 11b spec.
@@ -56,25 +74,16 @@ to do about it." Each direction cross-links to the other.
 
 ## Reader profile
 
-- The **changelog** reader, *for the 2.0.0 page specifically*,
-  is a current Blackchirp user (any version) who wants a quick
-  scan of what is new from their seat. They are not a
-  contributor; they will not read the developer guide. Frame
-  2.0.0 entries in terms of UI, workflow, file formats, and
-  observable behavior. "From a v1.0 user's perspective, what is
-  different?" is the test. The 2.0.0 release is the exception:
-  the change set is large enough that a developer-oriented log
-  on the same page would drown out the user-visible content.
-  **For every release after 2.0.0, the changelog page addresses
-  developers as a secondary audience** — backend / non-user-
-  visible changes (refactors, internal API rearrangements,
-  threading or storage rework that does not surface in the UI)
-  get their own short section on each release page so that
-  contributors and integrators can scan a release page for
-  relevant context. The chapter intro in `changelog.rst` should
-  state this convention explicitly so future maintainers know
-  the 2.0.0 framing is the one-off and that subsequent pages
-  carry both audiences.
+- The **changelog** reader is a Blackchirp user (any version)
+  who wants a scan of what is new in a given release. They are
+  not necessarily a contributor and they may not read the
+  developer guide; frame entries in terms of UI, workflow, file
+  formats, and observable behavior, and lean toward language a
+  user can act on. Backend or refactoring changes that show up
+  in a release belong on the page only when they affect
+  reliability or performance the user notices — internal-only
+  rearrangements that do not surface in the UI are out of
+  scope.
 - The **migration guide** reader is specifically a v1.x user
   bringing a working installation and possibly a body of
   acquired data to 2.0. Frame the page as a checklist of upgrade
@@ -89,7 +98,7 @@ user-guide pages, not developer-guide pages or API references.
 
 | Sub-bundle | Page (under `doc/source/`) | Depends on |
 |---|---|---|
-| 11a | `changelog.rst`, `changelog/2.0.0.rst` | — |
+| 11a | `changelog.rst`, `changelog/1.1.0.rst`, `changelog/2.0.0.rst` | — |
 | 11b | `migration.rst`, `migration/v1_to_v2.rst` | 11a |
 
 ## Workflow
@@ -137,8 +146,8 @@ sub-bundle.
 
 - The changelog uses **past tense** for entries describing what
   changed in a specific release ("Replaced compile-time hardware
-  selection with runtime profiles"). The chapter intro and the
-  "best practices" note are present tense.
+  selection with runtime profiles"). The chapter intro is
+  present tense.
 - The migration guide uses **second person, imperative present**
   ("Open the Hardware menu, click *Configure Profiles*…"). It
   addresses the v1.x user directly.
@@ -147,9 +156,28 @@ sub-bundle.
   "X is now configured at runtime instead of at compile time" is
   the user-visible delta and is fine.
 
-### What "user-visible" means
+### Per-page structure
 
-In scope for both pages:
+Each release page is organized the same way:
+
+1. A short summary paragraph framing the release.
+2. A **Highlights** section with 3–5 bullets surfacing the
+   largest changes.
+3. **Component-level sections grouped by subsystem** — only the
+   subsystems the release actually touched. The standard buckets
+   are: build & distribution, hardware configuration, hardware
+   drivers (Python hardware, communication, AWG/chirp, GPIB,
+   per-driver behavior), acquisition and data flow, user
+   interface, overlays, LIF, logging and diagnostics, file
+   formats and data storage, and tooling. Merge or split as the
+   change set warrants; do not list a category that has no
+   entries.
+4. A **Bug fixes** section, also grouped by the same subsystem
+   labels, listing user-noticeable fixes (the kind the user
+   would have filed, would have hit during a run, or would
+   notice as restored or improved behavior on upgrade).
+
+### What is in scope
 
 - UI changes (new menus, dialogs, tabs; renamed widgets;
   reordered workflows).
@@ -164,15 +192,19 @@ In scope for both pages:
   waveform processing; collapsible status boxes; theme-aware
   colors; etc.) when the change is large enough to be worth
   noting.
+- Bug fixes that change observable behavior, restore a
+  previously-broken feature, or fix instability the user would
+  notice (crashes, hangs, races, data corruption). Group these
+  under the **Bug fixes** section.
 
-Out of scope for both pages:
+Out of scope:
 
-- Bug fixes that do not change documented behavior. A user-
-  visible bug fix (a previously broken feature that now works)
-  may merit a one-line changelog entry; routine fixes do not.
-- Internal refactors that do not change observable behavior
-  (developer guide territory).
+- Pure refactors and internal API rearrangements that do not
+  surface in the UI, output, or runtime behavior (developer
+  guide territory).
 - Per-class API changes (API reference territory).
+- Test-only or build-script-only commits with no user
+  observable effect.
 
 ### Cross-references
 
@@ -192,12 +224,16 @@ Out of scope for both pages:
 
 ### Source treatment
 
-- **Commit history.** `git log 8bc115ae..HEAD --oneline` is the
-  primary source. The orchestrator (or a research agent) walks
-  it and builds a categorized list before drafting begins. Pure
-  bug-fix commits are dropped; feature commits are condensed
-  into one bullet per logical feature, regardless of how many
-  commits implemented it.
+- **Commit history.** `git log <prev-release>..<this-release> --oneline`
+  is the primary source. The orchestrator (or a research agent)
+  walks it and builds a categorized list before drafting begins.
+  Feature commits are condensed into one bullet per logical
+  feature, regardless of how many commits implemented it. Bug
+  fixes are also pulled in (see *What is in scope* above);
+  group them under the page's **Bug fixes** section. For 1.1.0,
+  the range is `8bc115ae..eec074ae` (the devel-only commits).
+  For 2.0.0, the range is `eec074ae..<cmakemigration tip>` (the
+  cmakemigration-only commits).
 - **dev-docs.** `dev-docs/awg-marker-system.md`,
   `dev-docs/loadout-system.md`,
   `dev-docs/python-hardware.md`, etc. are useful for naming and
@@ -273,12 +309,14 @@ None.
 
 ## Acceptance criteria
 
-- `doc/source/changelog.rst` carries a 2–3 paragraph chapter
-  intro describing the changelog's purpose, the per-release
-  page convention, the dual user/developer audience rule for
-  releases after 2.0.0 (and the 2.0.0-page user-only
-  exception), and a one-paragraph "best practices for keeping
-  the changelog updated" note.
+- `doc/source/changelog.rst` carries a chapter intro describing
+  the changelog's purpose, the per-release-page convention, the
+  per-page section structure (Highlights → component-level
+  sections by subsystem → Bug fixes), and the editorial
+  conventions for adding new release pages. The intro is plain
+  paragraphs above the toctree — no H2 between the intro and the
+  toctree, so the per-release pages render flush at the bottom
+  of the chapter landing.
 - `doc/source/migration.rst` carries a 2–3 paragraph chapter
   intro describing what the migration guide is, who it is for,
   and how to use it; cross-link to the changelog as the

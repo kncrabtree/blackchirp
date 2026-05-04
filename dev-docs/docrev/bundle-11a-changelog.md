@@ -1,80 +1,90 @@
-# Bundle 11a — Changelog: 2.0.0 release notes (user perspective)
+# Bundle 11a — Changelog: 1.1.0 and 2.0.0 release notes
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
-- (entries appended in reverse chronological order; most recent first)
+- 2026-05-03 — not started → complete (content commit 1100c515).
+  Mid-session scope revision (recorded on bundle 11's status log)
+  expanded 11a from one page to two: changelog/1.1.0.rst (devel-
+  only, 8bc115ae..eec074ae) and changelog/2.0.0.rst (cmakemigration-
+  only, eec074ae..2bda56a7). Bug fixes are now in scope on every
+  release page; per-page format is Highlights → subsystem sections
+  → Bug fixes (no user/dev split). Bug-fix entries link to the
+  implementing commit via a new :commit: extlink role added to
+  conf.py (sphinx.ext.extlinks). Re-edited changelog.rst intro to
+  drop the H2-then-toctree pattern in favor of plain paragraphs
+  followed directly by the toctree, listing 2.0.0 then 1.1.0.
+  Removed the bundle-00 placeholder changelog/v2_0_0_alpha.rst.
+  Carry-forward to 11b appended in
+  bundle-11b-migration-guide.md (four migration topics outside
+  the 11b checklist: Application Configuration dialog, FTMW
+  Configuration menu, HwDialog field hiding, overlay files in
+  experiment directory). Two transient build warnings remain
+  until 11b lands: changelog/2.0.0.rst:8 and migration.rst:30,
+  both pointing at /migration/v1_to_v2.
 -->
 
 Sub-page of the Changelog and Migration Guide chapter. Populates
-the 2.0.0 release notes.
+the 1.1.0 and 2.0.0 release-notes pages, and adjusts the chapter
+intro on `changelog.rst` if the per-release-page convention
+shifts during drafting.
 
 ## Scope
 
-Two RST files:
+Three RST files:
 
 1. `doc/source/changelog.rst` — already converted from a
-   placeholder to a chapter intro by bundle 11; 11a only edits the
-   intro if a change is needed for the per-release-page convention
-   to read correctly.
-2. `doc/source/changelog/2.0.0.rst` — the substantive page. New
-   file. The chapter toctree on `changelog.rst` (lands in bundle
-   11) already references it.
+   placeholder to a chapter intro by bundle 11; 11a edits the
+   intro if a change is needed for the per-release-page
+   convention to read correctly (and updates the toctree to list
+   both 1.1.0 and 2.0.0).
+2. `doc/source/changelog/1.1.0.rst` — release notes for the
+   1.0.0 → 1.1.0 range (the devel-only commits,
+   `8bc115ae..eec074ae`). New file. 1.1.0 will be tagged on the
+   `devel` branch before cmakemigration is merged into master,
+   so the page exists in the rendered docs once cmakemigration
+   lands.
+3. `doc/source/changelog/2.0.0.rst` — release notes for the
+   1.1.0 → 2.0.0 range (the cmakemigration-only commits,
+   `eec074ae..<cmakemigration tip>`). New file.
 
-The page should answer: **from a v1.0 user's perspective, what is
-new in 2.0.0?** It is *not* a per-commit log. The page focuses on
-major user-visible features and behavior changes. Bug fixes are
-out of scope unless they restore a previously-broken documented
-feature; routine fixes and internal refactors are skipped.
+The pages summarize what changed in each release for a Blackchirp
+user. They are not per-commit logs; condense related commits into
+one bullet per logical feature or fix. Bug fixes that change
+observable behavior, restore a previously-broken feature, or fix
+instability the user would notice are in scope and live in a
+**Bug fixes** section at the bottom of each page; pure refactors
+and internal-only fixes are out of scope.
 
-**The 2.0.0 page is user-audience-only by exception.** The 2.0.0
-change set is large enough that adding a developer-oriented
-section on the same page would drown out the user-visible
-content. Per the convention documented in the chapter intro
-(`changelog.rst`), every release page **after** 2.0.0 will
-address developers as a secondary audience — backend / non-user-
-visible changes (refactors, internal API rearrangements,
-threading or storage rework that does not surface in the UI) get
-their own short section on each post-2.0.0 release page. The
-2.0.0 page does not carry such a section.
+### Page structure
 
-### Page content
+Each release page follows the same shape (per the umbrella's
+*Per-page structure* section):
 
-Per-release page structure:
-
-1. **H1: Blackchirp 2.0.0**.
-2. **Release date** if known; otherwise omit (the page should
-   read correctly without one).
-3. **One-paragraph summary** framing 2.0.0 as the major release
-   that introduced binary distribution, runtime hardware
-   selection, Python hardware drivers, and a number of
-   acquisition and visualization improvements. Cross-link to
-   the migration guide (`:doc:`/migration/v1_to_v2``) as the
-   place to learn how to upgrade.
-4. **Categorized bullets**. Group the entries by category; one
-   short bullet per logical feature, each cross-linked to the
-   user-guide page that documents it. Suggested categories
-   (the orchestrator may merge or split as the actual change
-   set warrants):
+1. **H1: Blackchirp <version>**.
+2. **Release date** if known; otherwise omit.
+3. **Short summary paragraph** framing the release. For 2.0.0,
+   cross-link to the migration guide (`:doc:`/migration/v1_to_v2``).
+4. **Highlights** — 3–5 bullets surfacing the largest changes.
+5. **Component-level sections** grouped by subsystem; only the
+   subsystems the release actually touched. Standard buckets the
+   orchestrator can draw from:
    - Build & distribution
-   - Hardware configuration model (profiles, loadouts, FTMW
-     presets, settings registry, `HwDialog`)
-   - Python hardware drivers
-   - Communication (runtime protocol selection)
-   - AWG & chirp (marker system)
-   - Digitizer data flow (WaveformBuffer, parallel parse)
-   - Overlays (catalog, generic XY, BCExperiment, unified
-     dialog, persistence)
-   - LIF (runtime toggle, randomized delay points)
-   - Logging (`bcLog`/`hwLog`, runtime debug toggle, log
-     highlighting)
-   - UI (collapsible status boxes, ScientificSpinBox, Heroicons
-     icons, theme-aware colors, Help/About menu)
-   - Blackchirp-viewer
-   - QSettings versioning
-   - File-format / data-storage changes (markers.csv, version
-     bump in version.csv, etc.)
+   - Hardware configuration (profiles, loadouts, FTMW presets,
+     settings registry, `HwDialog`)
+   - Hardware drivers (Python hardware, communication, AWG/chirp,
+     GPIB, per-driver behavior)
+   - Acquisition and data flow
+   - User interface
+   - Overlays
+   - LIF
+   - Logging and diagnostics
+   - File formats and data storage
+   - Tooling (`blackchirp-viewer`)
+6. **Bug fixes**, also grouped by the same subsystem labels,
+   listing user-noticeable fixes (crashes, hangs, races,
+   restored-behavior fixes, observable misbehaviors).
 
 ### Carry-forward to 11b
 
@@ -95,25 +105,29 @@ instead and flag for the user in the handoff.
 ## Out of scope
 
 - The migration guide itself (bundle 11b).
-- Per-feature deep dives (those live in their respective user-
-  guide chapters; 11a cross-links to them).
-- Internal refactors (developer guide).
-- Per-commit attribution. The 2.0.0 page summarizes features,
-  not the commit history that produced them.
-- Bug fixes that do not change documented behavior.
+- Per-feature deep dives (those live in their respective
+  user-guide chapters; 11a cross-links to them).
+- Internal refactors and pure-bookkeeping commits.
+- Per-commit attribution. Each release page summarizes features
+  and bug fixes, not the commit history that produced them.
 
 ## Sources
 
 ### Related source files
 
-- `git log 8bc115ae..HEAD --oneline` — the primary input.
-  Recommended approach: dispatch a research agent to pull the
-  log and pre-categorize entries (build/install, hardware
-  config, hardware runtime, UI, data, etc.). The orchestrator
-  judges which entries are user-visible and synthesizes the
-  bullet text.
+- `git log 8bc115ae..eec074ae --oneline` — primary input for the
+  1.1.0 page (devel-only commits).
+- `git log eec074ae..<cmakemigration tip> --oneline` — primary
+  input for the 2.0.0 page (cmakemigration-only commits).
+  Recommended approach: dispatch a research agent to pull both
+  ranges and pre-categorize entries (build/install, hardware
+  config, hardware runtime, UI, data, bug fixes, etc.) split by
+  release. The orchestrator judges which entries are
+  user-visible and synthesizes the bullet text.
 - `doc/source/changelog.rst` — chapter landing (created by
-  bundle 11; do not re-edit unless necessary).
+  bundle 11; 11a updates the toctree to list both 1.1.0 and
+  2.0.0, and adjusts the intro if the per-release-page convention
+  shifts).
 
 ### Related dev-docs
 
@@ -166,13 +180,18 @@ pages.
 
 **Created:**
 
+- `doc/source/changelog/1.1.0.rst`.
 - `doc/source/changelog/2.0.0.rst`.
 
 **Modified:**
 
-- `doc/source/changelog.rst` — only if the chapter intro from
-  bundle 11 needs adjustment to read correctly with the 2.0.0
-  page in place.
+- `doc/source/changelog.rst` — adjust the chapter intro and the
+  toctree to list both 1.1.0 and 2.0.0.
+
+**Deleted:**
+
+- `doc/source/changelog/v2_0_0_alpha.rst` — bundle-00 placeholder
+  superseded by `2.0.0.rst`.
 
 If the orchestrator chooses the *preferred* carry-forward
 location (append to 11b's sub-bundle file), then also:
@@ -180,49 +199,23 @@ location (append to 11b's sub-bundle file), then also:
 - `dev-docs/docrev/bundle-11b-migration-guide.md` — append a
   `### Carry-forward to 11b` section under *Scope*.
 
-## Page structure
-
-Suggested H2 organization for `changelog/2.0.0.rst`:
-
-- *Highlights* — 3–5 bullets surfacing the largest changes.
-- *Build, distribution, and configuration* — CMake build,
-  binary packages, runtime hardware configuration model.
-- *Hardware* — Python hardware, communication-protocol
-  selection, marker system, per-type behavior changes.
-- *Acquisition and data flow* — WaveformBuffer, parallel
-  processing, digitizer changes.
-- *User interface* — status boxes, plot controls, overlays,
-  icons, theme.
-- *LIF*
-- *Logging and diagnostics*
-- *File formats and data storage* — version-bumped files,
-  new CSVs.
-- *Tooling* — Blackchirp-viewer.
-
-The orchestrator may rearrange or merge sections to match the
-actual feature set surfaced from the commit log.
-
 ## Acceptance criteria
 
-- `changelog/2.0.0.rst` is organized into clearly-labeled
-  sections covering every category named in the *Page content*
-  section above (or a justified merge thereof).
-- Every bullet describes a user-visible change and cross-links
-  to the user-guide page that documents it.
-- Bug fixes that do not restore a documented behavior are
-  excluded.
-- The 2.0.0 page does not carry a developer-audience section
-  (per the chapter convention, that is a post-2.0.0 thing). The
-  chapter intro on `changelog.rst` (landed by bundle 11) already
-  states the convention; 11a does not need to restate it on the
-  2.0.0 page.
-- A research agent (or the orchestrator) has walked
-  `git log 8bc115ae..HEAD` and the entries actually present in
-  the page reflect that survey, not a pre-baked feature list.
+- Both `changelog/1.1.0.rst` and `changelog/2.0.0.rst` follow the
+  shared per-page structure above (Highlights → component-level
+  sections by subsystem → Bug fixes), listing only the
+  subsystems each release actually touched.
+- Every feature and bug-fix entry cross-links to the user-guide
+  page that documents the affected feature when one exists; a
+  bug-fix entry without a stable user-guide target may stand on
+  its own.
+- A research agent (or the orchestrator) has walked the two
+  commit ranges and the entries actually present on each page
+  reflect that survey, not a pre-baked feature list.
 - The carry-forward to 11b is recorded — either as an appended
   section in `bundle-11b-migration-guide.md` (preferred) or in
   this sub-bundle's status-log entry with a note to the user.
 - No rendered link points into `dev-docs/`.
 - Build is clean: `touch doc/source/index.rst && conda run -n
   breathe cmake --build build --target docs` produces no new
-  warnings on the new page.
+  warnings on the new pages.
