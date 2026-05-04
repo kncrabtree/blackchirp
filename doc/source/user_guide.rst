@@ -7,7 +7,7 @@ ordered roughly in the sequence a new user encounters when setting up
 a spectrometer for the first time.
 
 .. toctree::
-   :caption: Contents:
+   :caption: Getting Started
    :maxdepth: 2
 
    user_guide/installation
@@ -15,13 +15,28 @@ a spectrometer for the first time.
    user_guide/application_config
    user_guide/library_status
    user_guide/ui_overview
+
+.. toctree::
+   :caption: Hardware Setup
+   :maxdepth: 2
+
    user_guide/hardware_config
    user_guide/python_hardware
    user_guide/hardware_menu
    user_guide/hwdialog
    user_guide/hardware_details
+
+.. toctree::
+   :caption: Running Experiments
+   :maxdepth: 2
+
    user_guide/ftmw_configuration
    user_guide/experiment_setup
+
+.. toctree::
+   :caption: Inspecting Data
+   :maxdepth: 2
+
    user_guide/cp-ftmw
    user_guide/data_storage
    user_guide/overlays
@@ -29,4 +44,9 @@ a spectrometer for the first time.
    user_guide/rolling-aux-data
    user_guide/log_tab
    user_guide/viewer
+
+.. toctree::
+   :caption: Modules
+   :maxdepth: 2
+
    user_guide/lif
