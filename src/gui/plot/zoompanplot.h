@@ -10,11 +10,10 @@
 
 #include <data/storage/settingsstorage.h>
 #include <gui/plot/customzoomer.h>
+#include <gui/plot/blackchirpplotcurve.h>
 
 class QMenu;
 class CustomTracker;
-class BlackchirpPlotCurve;
-class BlackchirpPlotCurveBase;
 class QMutex;
 
 
@@ -65,11 +64,13 @@ public slots:
 
     void exportCurve(BlackchirpPlotCurveBase *curve);
     void setCurveColor(BlackchirpPlotCurveBase* curve);
+    void setCurveStyle(BlackchirpPlotCurveBase* curve, QwtPlotCurve::CurveStyle s);
     void setCurveLineThickness(BlackchirpPlotCurveBase* curve, double t);
     void setCurveLineStyle(BlackchirpPlotCurveBase* curve, Qt::PenStyle s);
     void setCurveMarker(BlackchirpPlotCurveBase* curve, QwtSymbol::Style s);
     void setCurveMarkerSize(BlackchirpPlotCurveBase* curve, int s);
     void setCurveVisible(BlackchirpPlotCurveBase* curve, bool v);
+    void setCurveAutoscale(BlackchirpPlotCurveBase* curve, bool enabled);
     void setCurveAxisY(BlackchirpPlotCurveBase* curve, QwtPlot::Axis a);
     void configureGridMajorPen();
     void configureGridMinorPen();
@@ -79,6 +80,7 @@ signals:
     void panningFinished();
     void plotRightClicked(QMouseEvent *ev);
     void curveMoveRequested(BlackchirpPlotCurve*, int);
+    void curveMetadataChanged(BlackchirpPlotCurveBase* curve);
 
 protected:
     int d_maxIndex;
@@ -113,6 +115,7 @@ protected:
     };
 
     void setAxisOverride(QwtPlot::Axis axis, bool override = true);
+    void waitForFilterComplete();
 
     virtual void filterData();
     virtual void resizeEvent(QResizeEvent *ev);

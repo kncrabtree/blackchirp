@@ -1,6 +1,11 @@
 #include <data/storage/settingsstorage.h>
 #include <gui/mainwindow.h>
 #include <gui/dialog/bcsavepathdialog.h>
+#include <gui/plot/curveappearancepresetmanager.h>
+#include <data/processing/parsers/fileparserregistry.h>
+#include <data/processing/parsers/spcatparser.h>
+#include <data/processing/parsers/xiamparser.h>
+#include <data/processing/parsers/genericxyparser.h>
 
 #include <memory>
 
@@ -147,6 +152,12 @@ R"000(Next, you can configure the communication settings for the hardware connec
     gsl_set_error_handler_off();
 #endif
 
+    // Register catalog parsers
+    auto registry = FileParserRegistry::instance();
+    registry->registerParser(std::make_unique<SPCATParser>());
+    registry->registerParser(std::make_unique<XIAMParser>());
+    registry->registerParser(std::make_unique<GenericXYParser>());
+
     MainWindow w;
     QApplication::connect(ls.get(),&QLocalServer::newConnection,[&w](){
         w.setWindowState(Qt::WindowMaximized|Qt::WindowActive);
@@ -157,6 +168,10 @@ R"000(Next, you can configure the communication settings for the hardware connec
     w.showMaximized();
     w.initializeHardware();
     int ret = a.exec();
+    
+    // Cleanup global instances before application shutdown
+    FileParserRegistry::cleanup();
+    CurveAppearancePresetManager::cleanup();
 
     return ret;
 }

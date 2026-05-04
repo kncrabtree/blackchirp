@@ -35,7 +35,7 @@
           </property>
           <property name="icon">
            <iconset resource="../../resources/resources.qrc">
-            <normaloff>:/icons/add.png</normaloff>:/icons/add.png</iconset>
+            <normaloff>:/icons/plus.svg</normaloff>:/icons/plus.svg</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -52,7 +52,7 @@
           </property>
           <property name="icon">
            <iconset resource="../../resources/resources.qrc">
-            <normaloff>:/icons/go-last.png</normaloff>:/icons/go-last.png</iconset>
+            <normaloff>:/icons/go-last.svg</normaloff>:/icons/go-last.svg</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -69,7 +69,7 @@
           </property>
           <property name="icon">
            <iconset resource="../../resources/resources.qrc">
-            <normaloff>:/icons/add.png</normaloff>:/icons/add.png</iconset>
+            <normaloff>:/icons/plus.svg</normaloff>:/icons/plus.svg</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -86,7 +86,7 @@
           </property>
           <property name="icon">
            <iconset resource="../../resources/resources.qrc">
-            <normaloff>:/icons/go-last.png</normaloff>:/icons/go-last.png</iconset>
+            <normaloff>:/icons/go-last.svg</normaloff>:/icons/go-last.svg</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -116,7 +116,7 @@
           </property>
           <property name="icon">
            <iconset resource="../../resources/resources.qrc">
-            <normaloff>:/icons/arrow-up.png</normaloff>:/icons/arrow-up.png</iconset>
+            <normaloff>:/icons/chevron-up.svg</normaloff>:/icons/chevron-up.svg</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -133,7 +133,7 @@
           </property>
           <property name="icon">
            <iconset resource="../../resources/resources.qrc">
-            <normaloff>:/icons/arrow-down.png</normaloff>:/icons/arrow-down.png</iconset>
+            <normaloff>:/icons/chevron-down.svg</normaloff>:/icons/chevron-down.svg</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -163,7 +163,7 @@
           </property>
           <property name="icon">
            <iconset resource="../../resources/resources.qrc">
-            <normaloff>:/icons/remove.png</normaloff>:/icons/remove.png</iconset>
+            <normaloff>:/icons/minus.svg</normaloff>:/icons/minus.svg</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -180,7 +180,7 @@
           </property>
           <property name="icon">
            <iconset resource="../../resources/resources.qrc">
-            <normaloff>:/icons/clear.png</normaloff>:/icons/clear.png</iconset>
+            <normaloff>:/icons/backspace.svg</normaloff>:/icons/backspace.svg</iconset>
           </property>
           <property name="iconSize">
            <size>

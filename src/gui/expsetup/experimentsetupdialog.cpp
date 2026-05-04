@@ -1,4 +1,5 @@
 #include "experimentsetupdialog.h"
+#include <gui/style/themecolors.h>
 
 #include <QTreeWidget>
 #include <QPushButton>
@@ -35,6 +36,9 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
     : QDialog{parent}
 {
     setWindowTitle("Experiment Setup");
+    
+    // Set BlackChirp branding
+    setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg", ThemeColors::IconPrimary, this));
 
     auto mainLayout = new QVBoxLayout;
 

@@ -22,20 +22,25 @@
 #include <QtWidgets/QDoubleSpinBox>
 #include <QFutureWatcher>
 #include <QList>
-
+#include <memory>
 
 #include <data/experiment/experiment.h>
 #include <data/analysis/ftworker.h>
 #include <data/storage/settingsstorage.h>
 #include <gui/plot/fidplot.h>
 #include <gui/plot/ftplot.h>
+#include <gui/plot/mainftplot.h>
 #include <gui/widget/ftmwprocessingtoolbar.h>
 #include <gui/widget/ftmwplottoolbar.h>
 #include <gui/widget/toolbarwidgetaction.h>
+#include <data/experiment/overlaybase.h>
+#include <data/storage/overlaystorage.h>
 
 class QThread;
 class FtmwSnapshotWidget;
 class PeakFindWidget;
+class OverlayManagerWidget;
+class BlackchirpPlotCurveBase;
 
 namespace Ui {
 class FtmwViewWidget;
@@ -50,9 +55,25 @@ class FtmwViewWidget : public QWidget, public SettingsStorage
 {
     Q_OBJECT
 public:
-    explicit FtmwViewWidget(bool main, QWidget *parent = 0, QString path = QString(""));
+    explicit FtmwViewWidget(bool main, QWidget *parent = 0, QString path = QString(""), bool overlaysEnabled = true);
     ~FtmwViewWidget();
     void prepareForExperiment(const Experiment &e);
+
+    FtWorker::FidProcessingSettings getProcessingSettings() const { return d_currentProcessingSettings; }
+    
+    // Overlay management
+    std::shared_ptr<OverlayStorage> getOverlayStorage() const { return ps_overlayStorage; }
+    QVector<std::shared_ptr<OverlayBase>> getAllOverlays() const;
+    void addOverlay(std::shared_ptr<OverlayBase> overlay);
+    void removeOverlay(std::shared_ptr<OverlayBase> overlay);
+    bool promptOverlayTransition();
+    
+    // Plot management
+    QStringList getPlotNames() const { return d_plotNames; }
+    Ft getMainPlotFt() const;
+
+signals:
+    void externalOverlayDataChanged(std::shared_ptr<OverlayBase> overlay);
 
 public slots:
     void setLiveUpdateInterval(int intervalms);
@@ -81,17 +102,32 @@ public slots:
 
     void updateBackups();
     void experimentComplete();
+    
+    // Overlay display slots
+    void onOverlayAdded(std::shared_ptr<OverlayBase> overlay);
+    void onOverlayRemoved(std::shared_ptr<OverlayBase> overlay);
+    void onOverlayDataChanged(std::shared_ptr<OverlayBase> overlay);
+    void onCurveMetadataChanged(BlackchirpPlotCurveBase* curve);
+    
+    // Internal overlay display methods
+    void addOverlayToPlots(std::shared_ptr<OverlayBase> overlay);
+    void removeOverlayFromPlots(std::shared_ptr<OverlayBase> overlay);
 
     void changeRollingAverageShots(int shots);
     void resetRollingAverage();
 
     void launchPeakFinder();
+    void launchOverlayManager();
+    void saveOverlays();
 
 
 private:
     Ui::FtmwViewWidget *ui;
+    
+    void setupThemedIcons();
 
     std::shared_ptr<FidStorageBase> ps_fidStorage;
+    std::shared_ptr<OverlayStorage> ps_overlayStorage;
     FtWorker* p_worker;
 
     FtWorker::FidProcessingSettings d_currentProcessingSettings;
@@ -114,6 +150,7 @@ private:
         int frame{0}; //only used for plot1 and plot2
         int segment{0}; //only used for plot1 and plot2
         int backup{0}; //only used for plot1 and plot2
+        bool differential{false}; //only used for plot1 and plot2
         bool loadWhenDone{false};
     };
 
@@ -121,7 +158,13 @@ private:
     std::map<int,WorkerStatus> d_workersStatus;
     std::map<int,PlotStatus> d_plotStatus;
     PeakFindWidget *p_pfw{nullptr};
+    OverlayManagerWidget *p_omw{nullptr};
     QString d_path;
+    // Overlay storage is now handled via ps_overlayStorage shared pointer
+    QVector<std::shared_ptr<OverlayBase>> d_overlaysToCopy;
+    QStringList d_plotNames;
+    bool d_overlaysEnabled{true};
+    std::map<QString, FtPlot*> d_plotMap;  // Maps plot names to FtPlot instances
     const int d_liveId = 0, d_mainId = 3, d_plot1Id = 1, d_plot2Id = 2;
     const QString d_shotsString = QString("Shots: %1");
 
@@ -135,6 +178,8 @@ private:
 
 
     void updateFid(int id);
+    void createPlotNamesList();
+    void closeOverlayManager();
 
 
     // QObject interface
@@ -161,7 +206,7 @@ public:
     QHBoxLayout *plot2Layout;
     FidPlot *fidPlot2;
     FtPlot *ftPlot2;
-    FtPlot *mainFtPlot;
+    MainFtPlot *mainFtPlot;
     QToolBar *toolBar;
     QAction *processingAct;
     FtmwProcessingToolBar *processingToolBar;
@@ -170,6 +215,7 @@ public:
     QSpinBox *averagesSpinbox;
     QPushButton *resetAveragesButton;
     QAction *peakFindAction;
+    QAction *overlayAction;
     SpinBoxWidgetAction *refreshBox;
 
     void setupUi(bool main, QWidget *FtmwViewWidget)
@@ -250,7 +296,7 @@ public:
 //        verticalLayout->setStretch(0, 1);
 //        verticalLayout->setStretch(1, 1);
         splitter->addWidget(widget);
-        mainFtPlot = new FtPlot(QString("Main"),splitter);
+        mainFtPlot = new MainFtPlot(splitter);
         mainFtPlot->setObjectName(QStringLiteral("mainFtPlot"));
         mainFtPlot->setMinimumSize(QSize(0, 100));
         splitter->addWidget(mainFtPlot);
@@ -259,20 +305,20 @@ public:
 
         toolBar = new QToolBar(FtmwViewWidget);
         toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-        processingAct =toolBar->addAction(QIcon(QString(":/icons/labplot-xy-fourier-transform-curve.svg")),QString("FID Processing Settings"));
+        processingAct =toolBar->addAction(QIcon(QString(":/icons/presentation-chart-line.svg")),QString("FID Processing Settings"));
         processingAct->setCheckable(true);
 
         processingToolBar = new FtmwProcessingToolBar(main,FtmwViewWidget);
         processingToolBar->setVisible(false);
 
 
-        plotAction = toolBar->addAction(QIcon(QString(":/icons/view-media-visualization.svg")),QString("Plot Settings"));
+        plotAction = toolBar->addAction(QIcon(QString(":/icons/presentation-chart-bar.svg")),QString("Plot Settings"));
         plotAction->setCheckable(true);
 
         plotToolBar = new FtmwPlotToolBar(FtmwViewWidget);
         plotToolBar->setVisible(false);
 
-        auto peakupAction = toolBar->addAction(QIcon(":/icons/averaging.svg"),QString("Peak Up Options"));
+        auto peakupAction = toolBar->addAction(QIcon(":/icons/arrow-trending-up.svg"),QString("Peak Up Options"));
         auto peakupButton = dynamic_cast<QToolButton*>(toolBar->widgetForAction(peakupAction));
         auto peakupMenu = new QMenu;
         auto peakupWa = new QWidgetAction(peakupMenu);
@@ -287,7 +333,7 @@ public:
         avgLbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
         peakupFl->addRow(avgLbl,averagesSpinbox);
 
-        resetAveragesButton = new QPushButton(QIcon(":/icons/reset.svg"),QString("Reset Averages"));
+        resetAveragesButton = new QPushButton(QIcon(":/icons/arrow-path.svg"),QString("Reset Averages"));
         resetAveragesButton->setEnabled(false);
         peakupFl->addRow(resetAveragesButton);
 
@@ -297,8 +343,11 @@ public:
         peakupButton->setMenu(peakupMenu);
         peakupButton->setPopupMode(QToolButton::InstantPopup);
 
-        peakFindAction = toolBar->addAction(QIcon(":/icons/peak-find.svg"),QString("Peak Find"));
+        peakFindAction = toolBar->addAction(QIcon(":/icons/magnifying-glass-circle.svg"),QString("Peak Find"));
         peakFindAction->setEnabled(false);
+
+        overlayAction = toolBar->addAction(QIcon(":/icons/squares-plus.svg"),QString("Overlays"));
+        overlayAction->setEnabled(false);
 
         auto *spacer = new QWidget;
         spacer->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Minimum);

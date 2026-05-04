@@ -2,6 +2,7 @@
 #define CHIRPCONFIGPLOT_H
 
 #include <gui/plot/zoompanplot.h>
+#include <memory>
 
 class ChirpConfig;
 class BlackchirpPlotCurve;
@@ -23,7 +24,9 @@ public slots:
     void newChirp(const ChirpConfig cc);
 
 private:
-    BlackchirpPlotCurve *p_ampEnableCurve, *p_protectionCurve, *p_chirpCurve;
+    std::unique_ptr<BlackchirpPlotCurve> p_chirpCurve;
+    std::unique_ptr<BlackchirpPlotCurve> p_ampEnableCurve;
+    std::unique_ptr<BlackchirpPlotCurve> p_protectionCurve;
 };
 
 #endif // CHIRPCONFIGPLOT_H

@@ -19,6 +19,7 @@ static const QString completeMode("CompleteMode");
 static const QString dStart("DelayStart");
 static const QString dStep("DelayStep");
 static const QString dPoints("DelayPoints");
+static const QString dRandom("DelayRandom");
 static const QString lStart("LaserStart");
 static const QString lStep("LaserStep");
 static const QString lPoints("LaserPoints");
@@ -56,6 +57,9 @@ public:
     double d_delayStartUs {-1.0};
     double d_delayStepUs {0.0};
     int d_delayPoints {0};
+    bool d_delayRandom{false};
+    QVector<int> d_delayIndices;
+    int d_delayScanIndex{0};
 
     double d_laserPosStart {-1.0};
     double d_laserPosStep {0.0};

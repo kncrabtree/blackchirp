@@ -57,6 +57,7 @@ public:
 public slots:
     void initialize() override;
     bool testConnection() override;
+    bool testManual(QString name, qint32 br);
     
 private:
     QSerialPort *p_device;

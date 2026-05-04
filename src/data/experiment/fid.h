@@ -87,6 +87,18 @@ public:
     Fid &operator +=(const Fid other);
     Fid &operator +=(const QVector<qint64> other);
     Fid &operator +=(const qint64 *other);
+    
+    /*!
+     * \brief Subtraction
+     * 
+     * Note: if other has more shots, then the subtraction operation is reversed. For example, 
+     * if evaluating X - Y, if Y.shots > X.shots, then this will return Y - X such that the number
+     * of shots in the result object is positive.
+     * 
+     * \param other
+     * \return 
+     */
+    Fid &operator -=(const Fid other);
 
     void add(const Fid other, int shift);
     void copyAdd(const qint64 *other, const unsigned int offset = 0);

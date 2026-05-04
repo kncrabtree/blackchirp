@@ -55,11 +55,12 @@ public:
     QAction *actionAutoscale_Rolling;
     QAction *actionAutoscale_Aux;
     SpinBoxWidgetAction *rollingDurationBox;
-    QAction *actionView_Experiment;
+    QAction *viewExperimentAction;
     QAction *actionQuick_Experiment;
     QAction *actionStart_Sequence;
     QAction *actionRfConfig;
     QToolButton *hardwareButton;
+    QToolButton *viewExperimentButton;
     QToolButton *settingsButton;
     QAction *fontAction;
     QAction *savePathAction;
@@ -91,6 +92,7 @@ public:
     QMenu *menuRollingData;
     QMenu *menuAuxData;
     QMenu *settingsMenu;
+    QMenu *viewExperimentMenu;
     QToolBar *mainToolBar;
     QStatusBar *statusBar;
     QScrollArea *hwStatusScrollArea;
@@ -110,54 +112,36 @@ public:
     {
         if (MainWindow->objectName().isEmpty())
             MainWindow->setObjectName(QString::fromUtf8("MainWindow"));
-        QIcon icon;
-        icon.addFile(QString::fromUtf8(":/icons/bc_logo_small.png"), QSize(), QIcon::Normal, QIcon::Off);
-        MainWindow->setWindowIcon(icon);
+        // BlackChirp branding icon set programmatically in setupThemeAwareIconStyling()
+        MainWindow->setWindowIcon(QIcon());
         actionStart_Experiment = new QAction(MainWindow);
         actionStart_Experiment->setObjectName(QString::fromUtf8("actionStart_Experiment"));
-        QIcon icon1;
-        icon1.addFile(QString::fromUtf8(":/icons/experiment.png"), QSize(), QIcon::Normal, QIcon::Off);
-        actionStart_Experiment->setIcon(icon1);
+        // Icon set programmatically in setupThemeAwareIconStyling()
         pauseButton = new QToolButton(MainWindow);
         pauseButton->setObjectName(QString::fromUtf8("actionPause"));
         pauseButton->setToolTip("Pause acquisition");
-        QIcon icon2;
-        icon2.addFile(QString::fromUtf8(":/icons/pause.png"), QSize(), QIcon::Normal, QIcon::Off);
-        pauseButton->setIcon(icon2);
+        // Icon set programmatically in setupThemeAwareIconStyling()
         resumeButton = new QToolButton(MainWindow);
         resumeButton->setObjectName(QString::fromUtf8("actionResume"));
         resumeButton->setToolTip("Resume acquisition");
-        QIcon icon3;
-        icon3.addFile(QString::fromUtf8(":/icons/start.png"), QSize(), QIcon::Normal, QIcon::Off);
-        resumeButton->setIcon(icon3);
+        // Icon set programmatically in setupThemeAwareIconStyling()
         abortButton = new QToolButton(MainWindow);
         abortButton->setObjectName(QString::fromUtf8("actionAbort"));
         abortButton->setToolTip("Abort acquistiion");
-        QIcon icon4;
-        icon4.addFile(QString::fromUtf8(":/icons/abort.png"), QSize(), QIcon::Normal, QIcon::Off);
-        abortButton->setIcon(icon4);
+        // Icon set programmatically in setupThemeAwareIconStyling()
         actionCommunication = new QAction(MainWindow);
         actionCommunication->setObjectName(QString::fromUtf8("actionCommunication"));
-        QIcon icon5;
-        icon5.addFile(QString::fromUtf8(":/icons/computer.png"), QSize(), QIcon::Normal, QIcon::Off);
-        actionCommunication->setIcon(icon5);
-        QIcon auxIcon;
-        auxIcon.addFile(QString::fromUtf8(":/icons/dataplots.png"), QSize(), QIcon::Normal, QIcon::Off);
-        QIcon rollIcon;
-        rollIcon.addFile(QString(":/icons/view-media-visualization.svg"), QSize(), QIcon::Normal, QIcon::Off);
+        // Icon set programmatically in setupThemeAwareIconStyling()
+        // Icon set programmatically in setupThemeAwareIconStyling()
         QIcon icon7;
         icon7.addFile(QString::fromUtf8(":/icons/num.png"), QSize(), QIcon::Normal, QIcon::Off);
-        QIcon icon8;
-        icon8.addFile(QString::fromUtf8(":/icons/connect.png"), QSize(), QIcon::Normal, QIcon::Off);
         actionTest_All_Connections = new QAction(MainWindow);
         actionTest_All_Connections->setObjectName(QString::fromUtf8("actionTest_All_Connections"));
-        actionTest_All_Connections->setIcon(icon8);
+        // Icon set programmatically in setupThemeAwareIconStyling()
         sleepButton = new QToolButton(MainWindow);
         sleepButton->setObjectName(QString::fromUtf8("actionSleep"));
         sleepButton->setCheckable(true);
-        QIcon icon9;
-        icon9.addFile(QString::fromUtf8(":/icons/sleep.png"), QSize(), QIcon::Normal, QIcon::Off);
-        sleepButton->setIcon(icon9);
+        // Icon set programmatically in setupThemeAwareIconStyling()
         sleepButton->setToolTip("Toggle sleep mode, putting hardware in a standby state.\nIf pressed during an acquisition, sleep mode will be activated when the acquisition is complete.");
         actionAutoscale_Aux = new QAction(MainWindow);
         actionAutoscale_Aux->setObjectName(QString::fromUtf8("actionAutoscale_Aux"));
@@ -167,36 +151,21 @@ public:
         actionAutoscale_Rolling = new QAction(MainWindow);
         actionAutoscale_Rolling->setObjectName(QString::fromUtf8("actionAutoscale_Rolling"));
         actionAutoscale_Rolling->setIcon(icon10);
-        QIcon rfIcon;
-        rfIcon.addFile(QString::fromUtf8(":/icons/chirp.png"), QSize(), QIcon::Normal, QIcon::Off);
         actionRfConfig = new QAction("Rf Configuration",MainWindow);
         actionRfConfig->setObjectName("ActionRfConfig");
-        actionRfConfig->setIcon(rfIcon);
-        QIcon icon12;
-        icon12.addFile(QString::fromUtf8(":/icons/controltab.png"), QSize(), QIcon::Normal, QIcon::Off);
-        QIcon icon13;
-        icon13.addFile(QString::fromUtf8(":/icons/log.png"), QSize(), QIcon::Normal, QIcon::Off);
-        actionView_Experiment = new QAction(MainWindow);
-        actionView_Experiment->setObjectName(QString::fromUtf8("actionView_Experiment"));
-        QIcon icon14;
-        icon14.addFile(QString::fromUtf8(":/icons/viewold.png"), QSize(), QIcon::Normal, QIcon::Off);
-        actionView_Experiment->setIcon(icon14);
+        // Icon set programmatically in setupThemeAwareIconStyling()
+        // Icons set programmatically in setupThemeAwareIconStyling()
         actionQuick_Experiment = new QAction(MainWindow);
         actionQuick_Experiment->setObjectName(QString::fromUtf8("actionQuick_Experiment"));
-        QIcon icon15;
-        icon15.addFile(QString::fromUtf8(":/icons/quickexpt.png"), QSize(), QIcon::Normal, QIcon::Off);
-        actionQuick_Experiment->setIcon(icon15);
+        // Icon set programmatically in setupThemeAwareIconStyling()
         actionStart_Sequence = new QAction(MainWindow);
         actionStart_Sequence->setObjectName(QString::fromUtf8("actionStart_Sequence"));
-        QIcon icon16;
-        icon16.addFile(QString::fromUtf8(":/icons/sequence.png"), QSize(), QIcon::Normal, QIcon::Off);
-        actionStart_Sequence->setIcon(icon16);
+        // Icon set programmatically in setupThemeAwareIconStyling()
 #ifdef BC_LIF
-        QIcon lifIcon;
-        lifIcon.addFile(QString(":/icons/laser.png"),QSize(), QIcon::Normal, QIcon::Off);
         actionLifConfig = new QAction("LIF Configuration",MainWindow);
+        // Icon set programmatically in setupThemeAwareIconStyling()
         actionLifConfig->setObjectName("ActionLifConfig");
-        actionLifConfig->setIcon(lifIcon);
+        // Icon set programmatically in setupThemeAwareIconStyling()
 #endif
 
         centralWidget = new QWidget(MainWindow);
@@ -214,17 +183,22 @@ public:
         acquireButton = new QToolButton(MainWindow);
         acquireButton->setText("Acquire");
         acquireButton->setToolTip("Start a new acquisition");
-        acquireButton->setIcon(icon1);
+        // Icon set programmatically in setupThemeAwareIconStyling()
         acquireButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
         acquireButton->setPopupMode(QToolButton::InstantPopup);
 
-        QIcon hwIcon;
-        hwIcon.addFile(QString(":/icons/bc.png"),QSize(), QIcon::Normal, QIcon::Off);
         hardwareButton = new QToolButton(MainWindow);
         hardwareButton->setText("Hardware");
         hardwareButton->setToolTip("Configure hardware settings");
-        hardwareButton->setIcon(hwIcon);
+        // Icon set programmatically in setupThemeAwareIconStyling()
         hardwareButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+        
+        viewExperimentButton = new QToolButton(MainWindow);
+        viewExperimentButton->setText("View Experiment");
+        viewExperimentButton->setToolTip("View existing experiments");
+        // Icon set programmatically in setupThemeAwareIconStyling()
+        viewExperimentButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+        viewExperimentButton->setPopupMode(QToolButton::InstantPopup);
         hardwareButton->setPopupMode(QToolButton::InstantPopup);
 
         instStatusLabel->setAlignment(Qt::AlignCenter);
@@ -232,35 +206,29 @@ public:
         auxPlotButton = new QToolButton(MainWindow);
         auxPlotButton->setText(QString("Aux Data"));
         auxPlotButton->setToolTip("Configure settings for aux data plots");
-        auxPlotButton->setIcon(auxIcon);
+        // Icon set programmatically in setupThemeAwareIconStyling()
         auxPlotButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
         auxPlotButton->setPopupMode(QToolButton::InstantPopup);
 
         rollingPlotButton = new QToolButton(MainWindow);
         rollingPlotButton->setText(QString("Rolling Data"));
         rollingPlotButton->setToolTip("Configure settings for rolling data plots");
-        rollingPlotButton->setIcon(rollIcon);
+        // Icon set programmatically in setupThemeAwareIconStyling()
         rollingPlotButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
         rollingPlotButton->setPopupMode(QToolButton::InstantPopup);
 
-        QIcon settingsIcon;
-        settingsIcon.addFile(QString(":/icons/menu.svg"),QSize(), QIcon::Normal, QIcon::Off);
         settingsButton = new QToolButton(MainWindow);
-        settingsButton->setIcon(settingsIcon);
+        // Icon set programmatically in setupThemeAwareIconStyling()
         settingsButton->setText("Settings");
         settingsButton->setToolTip("Configure application and miscellaneous settings");
         settingsButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
         settingsButton->setPopupMode(QToolButton::InstantPopup);
 
-        QIcon fontIcon;
-        fontIcon.addFile(QString(":/icons/font.svg"),QSize(), QIcon::Normal, QIcon::Off);
         fontAction = new QAction("Application Font");
-        fontAction->setIcon(fontIcon);
+        // Icon set programmatically in setupThemeAwareIconStyling()
 
-        QIcon saveIcon;
-        saveIcon.addFile(QString(":/icons/save-as.svg"),QSize(), QIcon::Normal, QIcon::Off);
         savePathAction = new QAction("Data Storage");
-        savePathAction->setIcon(saveIcon);
+        // Icon set programmatically in setupThemeAwareIconStyling()
 
 
         instrumentStatusLayout->addWidget(instStatusLabel);
@@ -346,7 +314,7 @@ public:
 
         ftmwTabLayout->addWidget(ftViewWidget);
 
-        mainTabWidget->addTab(ftmwTab, rfIcon, QString());
+        mainTabWidget->addTab(ftmwTab, QIcon(), QString()); // Icon set programmatically
 
 #ifdef BC_LIF
         lifTab = new QWidget();
@@ -355,7 +323,7 @@ public:
         lifDisplayWidget = new LifDisplayWidget();
         lifDisplayWidget->setObjectName(QString("lifDisplayWidget"));
         lifTabLayout->addWidget(lifDisplayWidget);
-        mainTabWidget->addTab(lifTab,lifIcon,QString());
+        mainTabWidget->addTab(lifTab, QIcon(), QString()); // Icon set programmatically
         mainTabWidget->setTabText(mainTabWidget->indexOf(lifTab),QString("LIF"));
 
         lifProgressBar = new QProgressBar();
@@ -376,7 +344,7 @@ public:
 
         rollingDataViewLayout->addWidget(rollingDataViewWidget);
 
-        mainTabWidget->addTab(rollingDataTab, rollIcon, QString());
+        mainTabWidget->addTab(rollingDataTab, QIcon(), QString()); // Icon set programmatically
 
 
         auxDataTab = new QWidget();
@@ -390,7 +358,7 @@ public:
 
         auxDataViewLayout->addWidget(auxDataViewWidget);
 
-        mainTabWidget->addTab(auxDataTab, auxIcon, QString());
+        mainTabWidget->addTab(auxDataTab, QIcon(), QString()); // Icon set programmatically
 
 
 
@@ -423,15 +391,24 @@ public:
 
         menuAuxData = new QMenu(auxPlotButton);
         menuAuxData->setObjectName(QString::fromUtf8("menuAuxData"));
-        menuAuxData->setIcon(auxIcon);
+        // Icon set programmatically in setupThemeAwareIconStyling()
         menuRollingData = new QMenu(rollingPlotButton);
         menuRollingData->setObjectName(QString::fromUtf8("menuRollingData"));
-        menuRollingData->setIcon(rollIcon);
+        // Icon set programmatically in setupThemeAwareIconStyling()
 //        MainWindow->setMenuBar(menuBar);
 
         settingsMenu = new QMenu(settingsButton);
         settingsMenu->addAction(fontAction);
         settingsMenu->addAction(savePathAction);
+        
+        viewExperimentMenu = new QMenu(MainWindow);
+        viewExperimentMenu->setObjectName(QString::fromUtf8("viewExperimentMenu"));
+        
+        // Add the permanent "View Experiment..." action
+        viewExperimentAction = new QAction("View Experiment...", MainWindow);
+        // Icon set programmatically in setupThemeAwareIconStyling()
+        viewExperimentMenu->addAction(viewExperimentAction);
+        viewExperimentMenu->addSeparator();
 
         mainToolBar = new QToolBar(centralWidget);
         mainToolBar->setObjectName(QString::fromUtf8("mainToolBar"));
@@ -487,7 +464,8 @@ public:
         mainToolBar->addWidget(auxPlotButton);
         auxPlotButton->setMenu(menuAuxData);
 
-        mainToolBar->addAction(actionView_Experiment);
+        mainToolBar->addWidget(viewExperimentButton);
+        viewExperimentButton->setMenu(viewExperimentMenu);
 
         mainToolBar->addWidget(settingsButton);
         settingsButton->setMenu(settingsMenu);
@@ -547,7 +525,6 @@ public:
 #endif // QT_NO_SHORTCUT
         actionAutoscale_Rolling->setText(QApplication::translate("MainWindow", "&Autoscale All", nullptr));
         actionAutoscale_Aux->setText(QApplication::translate("MainWindow", "&Autoscale All", nullptr));
-        actionView_Experiment->setText(QApplication::translate("MainWindow", "&View Experiment...", nullptr));
         actionQuick_Experiment->setText(QApplication::translate("MainWindow", "&Quick Experiment", nullptr));
 #ifndef QT_NO_SHORTCUT
         actionQuick_Experiment->setShortcut(QApplication::translate("MainWindow", "F3", nullptr));

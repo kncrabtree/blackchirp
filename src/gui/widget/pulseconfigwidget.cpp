@@ -1,6 +1,7 @@
 #include "pulseconfigwidget.h"
 
 #include <QMetaEnum>
+#include <gui/style/themecolors.h>
 #include <QPushButton>
 #include <QToolButton>
 #include <QComboBox>
@@ -203,7 +204,7 @@ PulseConfigWidget::PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent)
         col++;
 
         ch.cfgButton = new QToolButton(this);
-        ch.cfgButton->setIcon(QIcon(":/icons/configure.png"));
+        ch.cfgButton->setIcon(ThemeColors::createThemedIcon(":/icons/cog-6-tooth.svg", ThemeColors::IconSecondary, this));
         ch.cfgButton->setIconSize(QSize(12,12));
         pulseConfigBoxLayout->addWidget(ch.cfgButton,i+1,col,1,1);
         connect(ch.cfgButton,&QToolButton::clicked,this,[this,i](){ launchChannelConfig(i); } );

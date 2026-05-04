@@ -2,6 +2,7 @@
 #define LIFSLICEPLOT_H
 
 #include <gui/plot/zoompanplot.h>
+#include <memory>
 
 class QwtPlotCurve;
 class QwtPlotTextLabel;
@@ -22,8 +23,8 @@ public:
     void setData(const QVector<QPointF> d, QString txt = "");
 
 protected:
-    BlackchirpPlotCurve *p_curve;
-    QwtPlotTextLabel *p_label;
+    std::unique_ptr<BlackchirpPlotCurve> p_curve;
+    std::unique_ptr<QwtPlotTextLabel> p_label;
 };
 
 #endif // LIFSLICEPLOT_H

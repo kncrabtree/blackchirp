@@ -6,36 +6,53 @@
 #include <qwt6/qwt_symbol.h>
 #include <qwt6/qwt_text.h>
 #include <qwt6/qwt_scale_map.h>
+#include <memory>
 
 class QMutex;
+class OverlayBase;
 
 Q_DECLARE_METATYPE(QwtSymbol::Style)
 Q_DECLARE_METATYPE(QwtPlot::Axis)
 
 #include <data/storage/settingsstorage.h>
 
+// Forward declarations for new storage system
+class CurveStorageInterface;
+class OverlayMetadataStorage;
+
 namespace BC::Key {
 static const QString bcCurve{"Curve"};
 static const QString bcCurveColor{"color"};
-static const QString bcCurveStyle{"style"};
+static const QString bcCurveCurveStyle{"curveStyle"};
+static const QString bcCurveLineStyle{"lineStyle"};
 static const QString bcCurveThickness{"thickness"};
 static const QString bcCurveMarker{"marker"};
 static const QString bcCurveMarkerSize{"markerSize"};
 static const QString bcCurveAxisX{"xAxis"};
 static const QString bcCurveAxisY{"yAxis"};
 static const QString bcCurveVisible{"visible"};
+static const QString bcCurveAutoscale{"autoscale"};
 static const QString bcCurvePlotIndex{"plotIndex"};
 }
 
-class BlackchirpPlotCurveBase : public QwtPlotCurve, public SettingsStorage
+class BlackchirpPlotCurveBase : public QwtPlotCurve
 {
 public:
-    BlackchirpPlotCurveBase(const QString key, const QString title=QString(""),
-                        Qt::PenStyle defaultLineStyle = Qt::SolidLine,
-                        QwtSymbol::Style defaultMarker = QwtSymbol::NoSymbol);
+    enum class StorageType {
+        Settings,      // Uses SettingsStorage backend
+        OverlayMetadata // Uses OverlayMetadataStorage backend
+    };
+    // New constructor with storage backend injection
+    BlackchirpPlotCurveBase(std::unique_ptr<CurveStorageInterface> storage,
+                           const QString key, 
+                           const QString title=QString(""),
+                           Qt::PenStyle defaultLineStyle = Qt::SolidLine,
+                           QwtSymbol::Style defaultMarker = QwtSymbol::NoSymbol,
+                           QwtPlotCurve::CurveStyle defaultStyle = QwtPlotCurve::Lines);
     virtual ~BlackchirpPlotCurveBase();
 
     void setColor(const QColor c);
+    void setCurveStyle(CurveStyle s);
     void setLineThickness(double t);
     void setLineStyle(Qt::PenStyle s);
     void setMarkerStyle(QwtSymbol::Style s);
@@ -43,6 +60,10 @@ public:
     void setName(const QString t);
     QString name() const { return title().text(); }
     QString key() const { return d_key; }
+    
+    // Storage type and overlay access methods
+    StorageType getStorageType() const { return d_storageType; }
+    std::shared_ptr<OverlayBase> getOverlay() const;
 
     virtual QVector<QPointF> curveData() const =0;
 
@@ -56,22 +77,28 @@ public:
      */
     void setCurveVisible(bool v);
 
+    void setCurveAutoscale(bool enabled);
+
     void setCurveAxisX(QwtPlot::Axis a);
     void setCurveAxisY(QwtPlot::Axis a);
     void setCurvePlotIndex(int i);
 
-    int plotIndex() const { return get(BC::Key::bcCurvePlotIndex,-1); }
+    int plotIndex() const;
 
     void updateFromSettings();
     void filter(int w, const QwtScaleMap map);
 
 private:
+    std::unique_ptr<CurveStorageInterface> d_storage;
     const QString d_key;
     QMutex *p_samplesMutex;
+    StorageType d_storageType;
+    OverlayMetadataStorage* p_overlayMetadataStorage; // Raw pointer for type checking
 
 
     void configurePen();
     void configureSymbol();
+    void configureCurveStyle();
     void setSamples(const QVector<QPointF> d);
 
 protected:
@@ -91,9 +118,12 @@ public:
 class BlackchirpPlotCurve : public BlackchirpPlotCurveBase
 {
 public:
-    BlackchirpPlotCurve(const QString key, const QString title=QString(""),
+    BlackchirpPlotCurve(std::unique_ptr<CurveStorageInterface> storage,
+                        const QString key, 
+                        const QString title=QString(""),
                         Qt::PenStyle defaultLineStyle = Qt::SolidLine,
-                        QwtSymbol::Style defaultMarker = QwtSymbol::NoSymbol);
+                        QwtSymbol::Style defaultMarker = QwtSymbol::NoSymbol,
+                        QwtPlotCurve::CurveStyle defaultStyle = QwtPlotCurve::Lines);
     ~BlackchirpPlotCurve();
 
     void setCurveData(const QVector<QPointF> d);
@@ -122,9 +152,12 @@ protected:
 class BCEvenSpacedCurveBase : public BlackchirpPlotCurveBase
 {
 public:
-    BCEvenSpacedCurveBase(const QString key, const QString title=QString(""),
+    BCEvenSpacedCurveBase(std::unique_ptr<CurveStorageInterface> storage,
+                          const QString key, 
+                          const QString title=QString(""),
                           Qt::PenStyle defaultLineStyle = Qt::SolidLine,
-                          QwtSymbol::Style defaultMarker = QwtSymbol::NoSymbol);
+                          QwtSymbol::Style defaultMarker = QwtSymbol::NoSymbol,
+                          QwtPlotCurve::CurveStyle defaultStyle = QwtPlotCurve::Lines);
     virtual ~BCEvenSpacedCurveBase();
 
     double xVal(int i) const;
@@ -143,9 +176,12 @@ protected:
 class BlackchirpFTCurve : public BCEvenSpacedCurveBase
 {
 public:
-    BlackchirpFTCurve(const QString key, const QString title=QString(""),
+    BlackchirpFTCurve(std::unique_ptr<CurveStorageInterface> storage,
+                      const QString key, 
+                      const QString title=QString(""),
                       Qt::PenStyle defaultLineStyle = Qt::SolidLine,
-                      QwtSymbol::Style defaultMarker = QwtSymbol::NoSymbol);
+                      QwtSymbol::Style defaultMarker = QwtSymbol::NoSymbol,
+                      QwtPlotCurve::CurveStyle defaultStyle = QwtPlotCurve::Lines);
     ~BlackchirpFTCurve();
 
     void setCurrentFt(const Ft f);
@@ -173,9 +209,12 @@ private:
 class BlackchirpFIDCurve : public BCEvenSpacedCurveBase
 {
 public:
-    BlackchirpFIDCurve(const QString key, const QString title=QString(""),
+    BlackchirpFIDCurve(std::unique_ptr<CurveStorageInterface> storage,
+                       const QString key, 
+                       const QString title=QString(""),
                        Qt::PenStyle defaultLineStyle = Qt::SolidLine,
-                       QwtSymbol::Style defaultMarker = QwtSymbol::NoSymbol);
+                       QwtSymbol::Style defaultMarker = QwtSymbol::NoSymbol,
+                       QwtPlotCurve::CurveStyle defaultStyle = QwtPlotCurve::Lines);
     ~BlackchirpFIDCurve();
 
     void setCurrentFid(const QVector<double> d, double spacing=1.0, double min=0.0, double max=0.0);

@@ -13,6 +13,7 @@
 
 #include <data/experiment/experiment.h>
 #include <data/storage/settingsstorage.h>
+#include <gui/style/themecolors.h>
 #include <gui/widget/experimentsummarywidget.h>
 
 #include <hardware/optional/flowcontroller/flowcontroller.h>
@@ -25,6 +26,10 @@ QuickExptDialog::QuickExptDialog(const std::map<QString, QString> &hwl, QWidget 
     QDialog(parent), d_hardware{hwl}
 {
     setWindowTitle("Quick Experiment");
+    
+    // Set BlackChirp branding
+    setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg", ThemeColors::IconPrimary, this));
+    
     auto vbl = new QVBoxLayout;
 
     auto tophbl = new QHBoxLayout;
@@ -73,8 +78,10 @@ QuickExptDialog::QuickExptDialog(const std::map<QString, QString> &hwl, QWidget 
     auto bl = new QHBoxLayout;
     auto ne = new QPushButton("New Experiment");
     p_cfgButton = new QPushButton("Configure Experiment");
+    p_cfgButton->setIcon(ThemeColors::createThemedIcon(":/icons/cog-6-tooth.svg", ThemeColors::IconPrimary, this));
     p_startButton = new QPushButton("Start Experiment");
     auto cb = new QPushButton("Cancel");
+    cb->setIcon(ThemeColors::createThemedIcon(":/icons/x-mark.svg", ThemeColors::IconPrimary, this));
 
     p_cfgButton->setEnabled(false);
     p_startButton->setEnabled(false);
@@ -158,14 +165,14 @@ void QuickExptDialog::loadExperiment(int num)
     if(!hwIdentical)
     {
         p_warningLabel->setText(QString("Error: Cannot repeat experiment %1 because the current hardware configuration is different.").arg(p_expSpinBox->value()));
-        p_warningLabel->setStyleSheet("QLabel { color : red; font-weight : bold; }");
+        p_warningLabel->setStyleSheet(QString("QLabel { color : %1; font-weight : bold; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusError, this)));
         return;
     }
 
     if(exp.d_majorVersion != QString(STRINGIFY(BC_MAJOR_VERSION)))
     {
         p_warningLabel->setText(QString("Error: Cannot repeat experiment %1 because it was recorded with a different major version of Blackchirp.").arg(p_expSpinBox->value()));
-        p_warningLabel->setStyleSheet("QLabel { color : red; font-weight : bold; }");
+        p_warningLabel->setStyleSheet(QString("QLabel { color : %1; font-weight : bold; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusError, this)));
         p_cfgButton->setEnabled(false);
         p_startButton->setEnabled(false);
         return;

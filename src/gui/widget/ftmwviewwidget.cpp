@@ -1,4 +1,5 @@
 #include <gui/widget/ftmwviewwidget.h>
+#include <gui/style/themecolors.h>
 
 #include <QThread>
 #include <QMessageBox>
@@ -8,19 +9,29 @@
 #include <QDoubleSpinBox>
 #include <QWidgetAction>
 #include <QFormLayout>
+#include <QDialog>
+#include <QTreeWidget>
 #include <QtConcurrent/QtConcurrent>
 
 #include <data/analysis/ftworker.h>
 #include <gui/widget/peakfindwidget.h>
+#include <gui/overlay/overlaymanagerwidget.h>
 #include <data/storage/fidsinglestorage.h>
 #include <data/storage/fidpeakupstorage.h>
 #include <data/storage/fidmultistorage.h>
 
-FtmwViewWidget::FtmwViewWidget(bool main, QWidget *parent, QString path) :
+
+FtmwViewWidget::FtmwViewWidget(bool main, QWidget *parent, QString path, bool overlaysEnabled) :
     QWidget(parent), SettingsStorage(BC::Key::FtmwView::key),
-    ui(new Ui::FtmwViewWidget), d_currentExptNum(-1), d_currentSegment(-1), d_path(path)
+    ui(new Ui::FtmwViewWidget), d_currentExptNum(-1), d_currentSegment(-1), d_path(path), d_overlaysEnabled(overlaysEnabled)
 {
     ui->setupUi(main,this);
+    
+    // Set up theme-aware icons (override hardcoded icons from setupUi)
+    setupThemedIcons();
+    
+    // Create plot names list after UI is set up
+    createPlotNamesList();
 
     d_currentProcessingSettings = ui->processingToolBar->getSettings();
     connect(ui->processingToolBar,&FtmwProcessingToolBar::resetSignal,this,&FtmwViewWidget::resetProcessingSettings);
@@ -30,6 +41,10 @@ FtmwViewWidget::FtmwViewWidget(bool main, QWidget *parent, QString path) :
     connect(p_worker,&FtWorker::fidDone,this,&FtmwViewWidget::fidProcessed,Qt::QueuedConnection);
     connect(p_worker,&FtWorker::ftDiffDone,this,&FtmwViewWidget::ftDiffDone,Qt::QueuedConnection);
     connect(p_worker,&FtWorker::sidebandDone,this,&FtmwViewWidget::sidebandProcessingComplete);
+    
+    // Enable idle cleanup for ExperimentViewWidget instances (non-main)
+    if(!main)
+        p_worker->setIdleCleanupEnabled(true);
 
     d_workerIds << d_liveId << d_mainId << d_plot1Id << d_plot2Id;
 
@@ -89,15 +104,55 @@ FtmwViewWidget::FtmwViewWidget(bool main, QWidget *parent, QString path) :
 
 
     connect(ui->peakFindAction,&QAction::triggered,this,&FtmwViewWidget::launchPeakFinder);
+    connect(ui->overlayAction,&QAction::triggered,this,&FtmwViewWidget::launchOverlayManager);
 
     connect(ui->averagesSpinbox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwViewWidget::changeRollingAverageShots,Qt::UniqueConnection);
     connect(ui->resetAveragesButton,&QPushButton::clicked,this,&FtmwViewWidget::resetRollingAverage,Qt::UniqueConnection);
 
+    // Connect curveMetadataChanged signal from all FT plots
+    QList<FtPlot*> ftPlots = findChildren<FtPlot*>();
+    for (FtPlot* plot : ftPlots) {
+        if (plot) {
+            connect(plot, &ZoomPanPlot::curveMetadataChanged, this, &FtmwViewWidget::onCurveMetadataChanged);
+        }
+    }
+}
+
+void FtmwViewWidget::setupThemedIcons()
+{
+    // Override hardcoded icons from setupUi with theme-aware versions
+    auto toolbar = findChild<QToolBar*>();
+    if (toolbar) {
+        auto actions = toolbar->actions();
+        for (auto action : actions) {
+            if (action->text() == "Peak Up Options") {
+                action->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-trending-up.svg", ThemeColors::IconSecondary, this));
+            } else if (action->text() == "FID Processing Settings") {
+                action->setIcon(ThemeColors::createThemedIcon(":/icons/presentation-chart-line.svg", ThemeColors::IconPrimary, this));
+            } else if (action->text() == "Peak Find") {
+                action->setIcon(ThemeColors::createThemedIcon(":/icons/magnifying-glass-circle.svg", ThemeColors::IconPrimary, this));
+            } else if (action->text() == "Overlays") {
+                action->setIcon(ThemeColors::createThemedIcon(":/icons/squares-plus.svg", ThemeColors::IconSecondary, this));
+            } else if (action->text() == "Plot Settings") {
+                action->setIcon(ThemeColors::createThemedIcon(":/icons/presentation-chart-bar.svg", ThemeColors::IconSecondary, this));
+            }
+        }
+    }
+    
+    // Theme the reset averages button
+    if (ui->resetAveragesButton) {
+        ui->resetAveragesButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-path.svg", ThemeColors::IconSecondary, this));
+    }
 }
 
 FtmwViewWidget::~FtmwViewWidget()
 {
     clearGetters();
+
+    closeOverlayManager();
+
+    // Save overlays before destruction
+    saveOverlays();
 
     if(p_pfw != nullptr)
         p_pfw->close();
@@ -116,6 +171,10 @@ FtmwViewWidget::~FtmwViewWidget()
         ws.p_watcher->waitForFinished();
     }
 
+    // Wait for any pending overlay writes before destruction
+    if (ps_overlayStorage) {
+        ps_overlayStorage->waitForPendingWrites();
+    }
 
     delete ui;
 }
@@ -127,6 +186,8 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         p_pfw->close();
         p_pfw = nullptr;
     }
+
+    closeOverlayManager();
 
     if(!ui->exptLabel->isVisible())
         ui->exptLabel->setVisible(true);
@@ -159,6 +220,39 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         ps.backup = 0;
         ps.loadWhenDone = false;
     }
+    
+    // Save overlays before switching to new experiment
+    if (ps_overlayStorage) {
+        ps_overlayStorage->waitForPendingWrites();
+        disconnect(ps_overlayStorage.get(), nullptr, this, nullptr);
+        ps_overlayStorage->save();
+    }
+
+    // Set overlay storage reference from experiment
+    ps_overlayStorage = e.overlayStorage();
+
+    // Connect to new overlay storage signals
+    if (ps_overlayStorage) {
+        connect(ps_overlayStorage.get(), &OverlayStorage::overlayAdded, this, &FtmwViewWidget::onOverlayAdded);
+        connect(ps_overlayStorage.get(), &OverlayStorage::overlayRemoved, this, &FtmwViewWidget::onOverlayRemoved);
+    }
+
+    // Load overlays from experiment storage and display them (only if overlays are enabled)
+    if (ps_overlayStorage && d_overlaysEnabled)
+    {
+        auto overlays = ps_overlayStorage->getAllOverlays();
+        for (const auto& overlay : overlays)
+            addOverlayToPlots(overlay);
+    }
+
+    // Copy selected overlays from previous experiment to new storage
+    if (ps_overlayStorage && d_overlaysEnabled) {
+        for (const auto &overlay : d_overlaysToCopy) {
+            ps_overlayStorage->addOverlay(overlay);
+            // addOverlay triggers overlayAdded signal → onOverlayAdded → addOverlayToPlots
+        }
+    }
+    d_overlaysToCopy.clear();
 
     if(e.ftmwEnabled())
     {        
@@ -188,12 +282,14 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
     else
     {
         ps_fidStorage.reset();
+        ps_overlayStorage.reset();
         ui->exptLabel->setText(QString("Experiment %1").arg(e.d_number));
         ui->resetAveragesButton->setEnabled(false);
         ui->averagesSpinbox->setEnabled(false);
     }
 
     ui->peakFindAction->setEnabled(false);
+    ui->overlayAction->setEnabled(false);
 
 }
 
@@ -223,6 +319,10 @@ void FtmwViewWidget::updateLiveFidList()
                 {
                     ps.fidList = fl;
                     process(key,fl,ps.frame);
+                }
+                else if(ui->plotToolBar->differential(key))
+                {
+                    updateFid(key);
                 }
             }
         }
@@ -291,6 +391,7 @@ void FtmwViewWidget::updatePlotSetting(int id)
         it->second.segment = ui->plotToolBar->segment(id)-1;
         it->second.frame = ui->plotToolBar->frame(id)-1;
         it->second.backup = ui->plotToolBar->backup(id);
+        it->second.differential = ui->plotToolBar->differential(id);
         updateFid(id);
     }
 }
@@ -387,6 +488,7 @@ void FtmwViewWidget::ftDone(const Ft ft, int workerId)
         //this is the main plot
         ui->mainFtPlot->newFt(ft);
         ui->peakFindAction->setEnabled(!ft.isEmpty());
+        ui->overlayAction->setEnabled(!ft.isEmpty() && d_overlaysEnabled);
         ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::CrossCursor));
         if(p_pfw != nullptr)
             p_pfw->newFt(ft);
@@ -439,6 +541,7 @@ void FtmwViewWidget::updateMainPlot()
     }
 
     ui->peakFindAction->setEnabled(!ui->mainFtPlot->currentFt().isEmpty());
+    ui->overlayAction->setEnabled(!ui->mainFtPlot->currentFt().isEmpty() && d_overlaysEnabled);
 }
 
 void FtmwViewWidget::reprocess(const QList<int> ignore)
@@ -702,7 +805,7 @@ void FtmwViewWidget::launchPeakFinder()
         if(id == d_mainId)
             p_pfw->newFt(ft);
     });
-    connect(p_pfw,&PeakFindWidget::peakList,ui->mainFtPlot,&FtPlot::newPeakList);
+    connect(p_pfw,&PeakFindWidget::peakList,ui->mainFtPlot,&MainFtPlot::newPeakList);
     connect(p_pfw,&PeakFindWidget::destroyed,this,[this](){
         p_pfw = nullptr;
     });
@@ -713,6 +816,43 @@ void FtmwViewWidget::launchPeakFinder()
 
 }
 
+void FtmwViewWidget::launchOverlayManager()
+{
+    // Check if overlay manager already exists and bring it to front
+    if(p_omw != nullptr)
+    {
+        p_omw->activateWindow();
+        p_omw->raise();
+        p_omw->show();
+        return;
+    }
+
+    // Create new overlay manager widget with overlay storage
+    p_omw = new OverlayManagerWidget(this, d_currentExptNum, getAllOverlays());
+
+    // Connect overlay manager to storage for async write tracking
+    if (ps_overlayStorage) {
+        p_omw->connectToOverlayStorage(ps_overlayStorage);
+    }
+
+    // Connect cleanup when widget is destroyed - also save overlays
+    connect(p_omw, &OverlayManagerWidget::destroyed, this, [this](){
+        saveOverlays(); // Auto-save overlays when manager is closed
+        p_omw = nullptr;
+    });
+
+    // Connect overlay manager signals for UI updates
+    connect(p_omw, &OverlayManagerWidget::overlayDataChanged, this, &FtmwViewWidget::onOverlayDataChanged);
+    
+    // Connect external overlay data changes to update the overlay manager table
+    connect(this, &FtmwViewWidget::externalOverlayDataChanged, p_omw, &OverlayManagerWidget::onExternalOverlayDataChanged);
+
+    // Show widget
+    p_omw->show();
+    p_omw->activateWindow();
+    p_omw->raise();
+}
+
 void FtmwViewWidget::updateFid(int id)
 {
     if(id == d_mainId)
@@ -721,6 +861,7 @@ void FtmwViewWidget::updateFid(int id)
     auto &ps = d_plotStatus[id];
     int seg = ps.segment;
     int backup = ps.backup;
+    bool diff = ps.differential;
 
     if(seg == d_currentSegment && id == d_liveId)
     {
@@ -738,7 +879,12 @@ void FtmwViewWidget::updateFid(int id)
         if(ps.p_watcher->isRunning())
             ps.loadWhenDone = true;
         else
-            ps.p_watcher->setFuture(QtConcurrent::run([this,seg](){ return ps_fidStorage->loadFidList(seg); }));
+        {
+            if(diff && backup > 0)
+                ps.p_watcher->setFuture(QtConcurrent::run([this,seg](){ return ps_fidStorage->loadDifferentialFidList(seg); }));
+            else
+                ps.p_watcher->setFuture(QtConcurrent::run([this,seg](){ return ps_fidStorage->loadFidList(seg); }));
+        }
     }
 }
 
@@ -751,4 +897,308 @@ void FtmwViewWidget::timerEvent(QTimerEvent *event)
         updateLiveFidList();
         event->accept();
     }
+}
+
+QVector<std::shared_ptr<OverlayBase>> FtmwViewWidget::getAllOverlays() const
+{
+    if (ps_overlayStorage) {
+        return ps_overlayStorage->getAllOverlays();
+    }
+    return QVector<std::shared_ptr<OverlayBase>>();
+}
+
+void FtmwViewWidget::addOverlay(std::shared_ptr<OverlayBase> overlay)
+{
+    if(overlay != nullptr) {
+        // Add overlay to storage first (if storage is available)
+        if (ps_overlayStorage) {
+            bool added = ps_overlayStorage->addOverlay(overlay);
+            if (!added) {
+                return;
+            }
+        }
+        
+        // Add overlay to plots for display
+        addOverlayToPlots(overlay);
+    }
+}
+
+void FtmwViewWidget::removeOverlay(std::shared_ptr<OverlayBase> overlay)
+{
+    if(overlay != nullptr && ps_overlayStorage) {
+        // Wait for any pending writes for this overlay before removing
+        // Note: removeOverlay in OverlayStorage already handles waiting for specific overlay
+        ps_overlayStorage->removeOverlay(overlay->getLabel());
+        // Remove from plots
+        removeOverlayFromPlots(overlay);
+    }
+}
+
+void FtmwViewWidget::addOverlayToPlots(std::shared_ptr<OverlayBase> overlay)
+{
+    if (!overlay) {
+        return;
+    }
+    
+    // Get the target plot name from the overlay
+    QString plotName = overlay->getPlotId();
+    
+    // Find the corresponding FtPlot instance in the map
+    auto it = d_plotMap.find(plotName);
+    if (it != d_plotMap.end()) {
+        it->second->addOverlay(overlay);
+    }
+}
+
+void FtmwViewWidget::onOverlayAdded(std::shared_ptr<OverlayBase> overlay)
+{
+    addOverlayToPlots(overlay);
+}
+
+void FtmwViewWidget::removeOverlayFromPlots(std::shared_ptr<OverlayBase> overlay)
+{
+    if (!overlay) {
+        return;
+    }
+    
+    // Get the target plot name from the overlay
+    QString plotName = overlay->getPlotId();
+    
+    // Find the corresponding FtPlot instance in the map
+    auto it = d_plotMap.find(plotName);
+    if (it != d_plotMap.end()) {
+        it->second->removeOverlay(overlay);
+    }
+}
+
+void FtmwViewWidget::onOverlayRemoved(std::shared_ptr<OverlayBase> overlay)
+{
+    // Only remove from plots here — the overlay has already been removed
+    // from storage by whoever emitted the overlayRemoved signal.
+    removeOverlayFromPlots(overlay);
+}
+
+void FtmwViewWidget::onOverlayDataChanged(std::shared_ptr<OverlayBase> overlay)
+{
+    if (!overlay) {
+        return;
+    }
+
+    // Get the target plot name from the overlay
+    QString targetPlotName = overlay->getPlotId();
+    
+    // Find which plot currently contains this overlay (if any)
+    QString currentPlotName;
+    for (auto& [plotName, plot] : d_plotMap) {
+        if (plot->hasOverlay(overlay)) {
+            currentPlotName = plotName;
+            break;
+        }
+    }
+    
+    // If overlay needs to move to a different plot
+    if (!currentPlotName.isEmpty() && currentPlotName != targetPlotName) {
+        // Remove from current plot
+        auto currentIt = d_plotMap.find(currentPlotName);
+        if (currentIt != d_plotMap.end()) {
+            currentIt->second->removeOverlay(overlay);
+        }
+        
+        // Add to target plot
+        auto targetIt = d_plotMap.find(targetPlotName);
+        if (targetIt != d_plotMap.end()) {
+            targetIt->second->addOverlay(overlay);
+        } else {
+        }
+    }
+    // If overlay is not yet on any plot, add it to the target plot
+    else if (currentPlotName.isEmpty()) {
+        auto targetIt = d_plotMap.find(targetPlotName);
+        if (targetIt != d_plotMap.end()) {
+            targetIt->second->addOverlay(overlay);
+        } else {
+            qWarning() << "Target plot" << targetPlotName << "not found!";
+        }
+    }
+    // If overlay is already on the correct plot, just update it
+    else {
+        auto targetIt = d_plotMap.find(targetPlotName);
+        if (targetIt != d_plotMap.end()) {
+            targetIt->second->updateOverlay(overlay);
+        } else {
+            qWarning() << "Target plot" << targetPlotName << "not found!";
+        }
+    }
+}
+
+void FtmwViewWidget::onCurveMetadataChanged(BlackchirpPlotCurveBase* curve)
+{
+    if (!curve || !ps_overlayStorage) {
+        return;
+    }
+    
+    // Check if this curve uses OverlayMetadataStorage backend
+    if (curve->getStorageType() == BlackchirpPlotCurveBase::StorageType::OverlayMetadata) {
+        auto overlay = curve->getOverlay();
+        if (overlay) {
+            // This curve belongs to an overlay - save its metadata immediately
+            ps_overlayStorage->saveOverlayMetadata(overlay);
+        }
+    }
+}
+
+void FtmwViewWidget::createPlotNamesList()
+{
+    d_plotNames.clear();
+    d_plotMap.clear();
+    
+    // Find all FtPlot children recursively
+    QList<FtPlot*> ftPlots = findChildren<FtPlot*>();
+    
+    for(FtPlot* plot : ftPlots) {
+        if(plot != nullptr) {
+            QString plotName = plot->objectName();
+            if(!plotName.isEmpty()) {
+                // Exclude live plots (case insensitive search for "ft" and "live")
+                QString nameLower = plotName.toLower();
+                if(nameLower.contains("ft") && nameLower.contains("live")) {
+                    continue; // Skip live plots
+                }
+                d_plotNames.append(plotName);
+                d_plotMap[plotName] = plot;  // Map plot name to FtPlot instance
+                
+                // Connect overlay data changed signal for bidirectional sync
+                connect(plot, &FtPlot::overlayDataChanged, 
+                        this, &FtmwViewWidget::onOverlayDataChanged);
+                
+                // Connect plot overlay changes directly to external signal for table updates
+                connect(plot, &FtPlot::overlayDataChanged, 
+                        this, &FtmwViewWidget::externalOverlayDataChanged);
+            }
+        }
+    }
+    
+    // Sort the names for consistent ordering
+    d_plotNames.sort();
+}
+
+Ft FtmwViewWidget::getMainPlotFt() const
+{
+    if (ui && ui->mainFtPlot) {
+        return ui->mainFtPlot->currentFt();
+    }
+    return Ft(); // Return empty Ft if mainFtPlot is null
+}
+
+void FtmwViewWidget::saveOverlays()
+{
+    if (ps_overlayStorage) {
+        // Wait for any pending background writes to complete before saving metadata
+        ps_overlayStorage->waitForPendingWrites();
+        ps_overlayStorage->save();
+    }
+}
+
+void FtmwViewWidget::closeOverlayManager()
+{
+    if (p_omw) {
+        // Disconnect destroyed signal to prevent saveOverlays() from firing
+        // after storage has potentially switched
+        disconnect(p_omw, &OverlayManagerWidget::destroyed, this, nullptr);
+        p_omw->close();  // WA_DeleteOnClose triggers destruction
+        p_omw = nullptr;
+    }
+}
+
+bool FtmwViewWidget::promptOverlayTransition()
+{
+    // Close overlay manager first (saves to current experiment properly)
+    closeOverlayManager();
+
+    // Clear any previous selection
+    d_overlaysToCopy.clear();
+
+    // If no overlays exist or overlays are disabled, nothing to prompt
+    if (!ps_overlayStorage || !d_overlaysEnabled) {
+        return true;
+    }
+
+    auto allOverlays = ps_overlayStorage->getAllOverlays();
+    if (allOverlays.isEmpty()) {
+        return true;
+    }
+
+    // Build a selection dialog
+    QDialog dlg(this);
+    dlg.setWindowTitle("Overlay Transition");
+
+    auto *layout = new QVBoxLayout(&dlg);
+
+    auto *label = new QLabel("Select overlays to copy to the new experiment:");
+    layout->addWidget(label);
+
+    auto *tree = new QTreeWidget;
+    tree->setHeaderLabels({"Name", "Type"});
+    tree->setRootIsDecorated(false);
+    tree->setSelectionMode(QAbstractItemView::NoSelection);
+
+    // Helper lambda: overlay type to display string (mirrors OverlayTableModel)
+    auto typeName = [](OverlayBase::OverlayType t) -> QString {
+        switch (t) {
+        case OverlayBase::BCExperiment: return "BC Experiment";
+        case OverlayBase::Catalog:      return "Catalog";
+        case OverlayBase::GenericXY:    return "Generic XY";
+        }
+        return "Unknown";
+    };
+
+    for (const auto &overlay : allOverlays) {
+        auto *item = new QTreeWidgetItem(tree);
+        item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+        item->setCheckState(0, Qt::Checked);  // Default: all selected
+        item->setText(0, overlay->getLabel());
+        item->setText(1, typeName(overlay->type()));
+    }
+
+    tree->resizeColumnToContents(0);
+    tree->resizeColumnToContents(1);
+    layout->addWidget(tree);
+
+    // Select All / Select None buttons
+    auto *selectionLayout = new QHBoxLayout;
+    auto *selectAllBtn = new QPushButton("Select All");
+    auto *selectNoneBtn = new QPushButton("Select None");
+    selectionLayout->addWidget(selectAllBtn);
+    selectionLayout->addWidget(selectNoneBtn);
+    selectionLayout->addStretch();
+    layout->addLayout(selectionLayout);
+
+    QObject::connect(selectAllBtn, &QPushButton::clicked, [tree]() {
+        for (int i = 0; i < tree->topLevelItemCount(); ++i)
+            tree->topLevelItem(i)->setCheckState(0, Qt::Checked);
+    });
+    QObject::connect(selectNoneBtn, &QPushButton::clicked, [tree]() {
+        for (int i = 0; i < tree->topLevelItemCount(); ++i)
+            tree->topLevelItem(i)->setCheckState(0, Qt::Unchecked);
+    });
+
+    // OK / Cancel
+    auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    QObject::connect(buttonBox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    QObject::connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    layout->addWidget(buttonBox);
+
+    // Size the dialog reasonably
+    dlg.resize(400, 300);
+
+    if (dlg.exec() != QDialog::Accepted)
+        return false;  // User cancelled — abort experiment start
+
+    // Collect checked overlays
+    for (int i = 0; i < tree->topLevelItemCount(); ++i) {
+        if (tree->topLevelItem(i)->checkState(0) == Qt::Checked)
+            d_overlaysToCopy.push_back(allOverlays.at(i));
+    }
+
+    return true;
 }

@@ -1,4 +1,5 @@
 #include <gui/widget/experimentviewwidget.h>
+#include <gui/style/themecolors.h>
 
 #include <QTabWidget>
 #include <QVBoxLayout>
@@ -12,6 +13,7 @@
 #include <QToolBar>
 #include <QAction>
 #include <QMessageBox>
+#include <QCloseEvent>
 
 #include <gui/widget/ftmwviewwidget.h>
 #include <gui/widget/experimentsummarywidget.h>
@@ -23,13 +25,12 @@
 #include <modules/lif/gui/lifdisplaywidget.h>
 #endif
 
-ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *parent) : QWidget(parent), p_ftmw(nullptr), p_lh(nullptr)
+ExperimentViewWidget::ExperimentViewWidget(int num, QString path, bool overlaysEnabled, QWidget *parent) : QWidget(parent), p_ftmw(nullptr), p_lh(nullptr), d_overlaysEnabled(overlaysEnabled)
 {
     pu_experiment = std::make_unique<Experiment>(num,path);
     setWindowFlags(Qt::Window);
     setWindowTitle(QString("Experiment %1").arg(pu_experiment->d_number));
-    setAttribute(Qt::WA_DeleteOnClose);
-    setWindowIcon(QIcon(QString(":/icons/bc_logo_small.png")));
+    setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg", ThemeColors::IconPrimary, this));
 
 
     QVBoxLayout *vbl = new QVBoxLayout;
@@ -51,13 +52,13 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *paren
 
     QWidget *hdr = buildHeaderWidget();
     if(hdr != nullptr)
-        p_tabWidget->addTab(hdr,QIcon(QString(":/icons/header.png")),QString("Header"));
+        p_tabWidget->addTab(hdr, ThemeColors::createThemedIcon(":/icons/header.svg", ThemeColors::IconSecondary, this), QString("Header"));
 
     if(pu_experiment->ftmwEnabled())
     {
         QWidget *ftmw = buildFtmwWidget(path);
         if(ftmw != nullptr)
-            p_tabWidget->addTab(ftmw,QIcon(QString(":/icons/chirp.png")),QString("CP-FTMW"));
+            p_tabWidget->addTab(ftmw, ThemeColors::createThemedIcon(":/icons/signal.svg", ThemeColors::IconPrimary, this), QString("CP-FTMW"));
     }
 
 #ifdef BC_LIF
@@ -65,17 +66,17 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *paren
     {
         QWidget *lif = buildLifWidget();
         if(lif != nullptr)
-            p_tabWidget->addTab(lif,QIcon(QString(":/icons/laser.png")),QString("LIF"));
+            p_tabWidget->addTab(lif, ThemeColors::createThemedIcon(":/icons/lif.svg", ThemeColors::IconSecondary, this), QString("LIF"));
     }
 #endif
 
     QWidget *tracking = buildTrackingWidget();
     if(tracking != nullptr)
-        p_tabWidget->addTab(tracking,QIcon(QString(":/icons/dataplots.png")),QString("Tracking"));
+        p_tabWidget->addTab(tracking, ThemeColors::createThemedIcon(":/icons/chart-bar.svg", ThemeColors::IconSecondary, this), QString("Tracking"));
 
     QWidget *log = buildLogWidget(path);
     if(log != nullptr)
-        p_tabWidget->addTab(log,QIcon(QString(":/icons/log.png")),QString("Log"));
+        p_tabWidget->addTab(log, ThemeColors::createThemedIcon(":/icons/log.svg", ThemeColors::IconSecondary, this), QString("Log"));
 
     vbl->addWidget(p_tabWidget);
     setLayout(vbl);
@@ -107,7 +108,7 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
     {
         out = new QWidget;
         QVBoxLayout *vbl = new QVBoxLayout;
-        p_ftmw = new FtmwViewWidget(false,out,path);
+        p_ftmw = new FtmwViewWidget(false,out,path,d_overlaysEnabled);
         vbl->addWidget(p_ftmw);
         out->setLayout(vbl);
 
@@ -194,5 +195,61 @@ QWidget *ExperimentViewWidget::buildLogWidget(QString path)
 
     return log;
 
+}
+
+FtWorker::FidProcessingSettings ExperimentViewWidget::getFtmwProcessingSettings() const
+{
+    if(p_ftmw != nullptr) {
+        return p_ftmw->getProcessingSettings();
+    }
+    
+    // Return default settings if p_ftmw is null (FTMW not enabled)
+    FtWorker::FidProcessingSettings defaultSettings;
+    defaultSettings.startUs = 0.0;
+    defaultSettings.endUs = 1.0;
+    defaultSettings.expFilter = 0.0;
+    defaultSettings.zeroPadFactor = 0;
+    defaultSettings.removeDC = false;
+    defaultSettings.units = FtWorker::FtuV;
+    defaultSettings.autoScaleIgnoreMHz = 250.0;
+    defaultSettings.windowFunction = FtWorker::None;
+    
+    return defaultSettings;
+}
+
+Ft ExperimentViewWidget::getMainPlotFt() const
+{
+    if (p_ftmw != nullptr) {
+        return p_ftmw->getMainPlotFt();
+    }
+    
+    return Ft(); // Return empty Ft if p_ftmw is null
+}
+
+void ExperimentViewWidget::setCurrentTab(const QString &tabName)
+{
+    if (!p_tabWidget) {
+        return;
+    }
+    
+    for (int i = 0; i < p_tabWidget->count(); ++i) {
+        if (p_tabWidget->tabText(i) == tabName) {
+            p_tabWidget->setCurrentIndex(i);
+            break;
+        }
+    }
+}
+
+void ExperimentViewWidget::notifyAlreadyOpen()
+{
+    QString title = QString("Experiment %1").arg(pu_experiment->d_number);
+    QString message = "This experiment is already open in this window.";
+    QMessageBox::information(this, title, message, QMessageBox::Ok);
+}
+
+void ExperimentViewWidget::closeEvent(QCloseEvent *event)
+{
+    emit widgetClosing();
+    QWidget::closeEvent(event);
 }
 

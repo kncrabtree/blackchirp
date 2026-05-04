@@ -51,6 +51,33 @@ bool Rs232Instrument::testConnection()
         return false;
 }
 
+bool Rs232Instrument::testManual(QString name, qint32 br)
+{
+    using namespace BC::Key::RS232;
+    if(p_device->isOpen())
+        p_device->close();
+
+    auto db = Data8;
+    auto p = NoParity;
+    auto stop = OneStop;
+    auto fc = NoFlowControl;
+
+    auto p_sp = dynamic_cast<QSerialPort*>(p_device);
+    p_sp->setPortName(name);
+
+    if(p_device->open(QIODevice::ReadWrite))
+    {
+        p_sp->setBaudRate(br);
+        p_sp->setParity(static_cast<QSerialPort::Parity>(p));
+        p_sp->setStopBits(static_cast<QSerialPort::StopBits>(stop));
+        p_sp->setDataBits(static_cast<QSerialPort::DataBits>(db));
+        p_sp->setFlowControl(static_cast<QSerialPort::FlowControl>(fc));
+        return true;
+    }
+    else
+        return false;
+}
+
 
 
 QIODevice *Rs232Instrument::_device()

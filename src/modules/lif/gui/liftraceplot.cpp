@@ -1,4 +1,5 @@
 #include "liftraceplot.h"
+#include <gui/plot/curvefactory.h>
 
 #include <QApplication>
 #include <QMenu>
@@ -26,25 +27,26 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
     setPlotAxisTitle(QwtPlot::xBottom,QString("Time (ns)"));
     setPlotAxisTitle(QwtPlot::yLeft,QString("LIF (V)"));
 
-    p_integralLabel = new QwtPlotTextLabel();
+    // Disable QwtPlot's automatic memory management
+    setAutoDelete(false);
+
+    p_integralLabel = std::make_unique<QwtPlotTextLabel>();
     p_integralLabel->setZ(10.0);
     p_integralLabel->attach(this);
     p_integralLabel->setItemAttribute(QwtPlotItem::AutoScale,false);
 
-    p_lif = new BlackchirpPlotCurve(BC::Key::lifCurve,"LIF");
+    p_lif = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::lifCurve, SettingsStorage::General, QString("LIF"));
     p_lif->setZ(1.0);
 
-    p_ref = new BlackchirpPlotCurve(BC::Key::refCurve,"Ref");
+    p_ref = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::refCurve, SettingsStorage::General, QString("Ref"));
     p_ref->setZ(1.0);
 
-    p_lifZone = new QwtPlotZoneItem();
+    p_lifZone = std::make_unique<QwtPlotZoneItem>();
     p_lifZone->setOrientation(Qt::Vertical);
     p_lifZone->setZ(2.0);
     p_lifZone->setItemAttribute(QwtPlotItem::AutoScale,false);
 
-
-
-    p_refZone = new QwtPlotZoneItem();
+    p_refZone = std::make_unique<QwtPlotZoneItem>();
     p_refZone->setOrientation(Qt::Vertical);
     p_refZone->setZ(2.0);
     p_refZone->setItemAttribute(QwtPlotItem::AutoScale,false);
@@ -57,20 +59,7 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
 
 LifTracePlot::~LifTracePlot()
 {
-    p_lif->detach();
-    delete p_lif;
-
-    p_ref->detach();
-    delete p_ref;
-
-    p_lifZone->detach();
-    delete p_lifZone;
-
-    p_refZone->detach();
-    delete p_refZone;
-
-    p_integralLabel->detach();
-    delete p_integralLabel;
+    // All items are managed by unique_ptr and will be automatically cleaned up
 }
 
 void LifTracePlot::setLifGateStart(int n)

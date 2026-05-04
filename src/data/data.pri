@@ -12,13 +12,26 @@ SOURCES += $$PWD/loghandler.cpp \
     $$PWD/experiment/fid.cpp \
     $$PWD/experiment/ftmwconfig.cpp \
     $$PWD/experiment/ftmwconfigtypes.cpp \
+    $$PWD/experiment/overlaybase.cpp \
+    $$PWD/experiment/overlaytypes.cpp \
+    $$PWD/experiment/catalogdata.cpp \
+    $$PWD/processing/parsers/fileparser.cpp \
+    $$PWD/processing/parsers/catalogparser.cpp \
+    $$PWD/processing/parsers/fileparserregistry.cpp \
+    $$PWD/processing/parsers/spcatparser.cpp \
+    $$PWD/processing/parsers/xiamparser.cpp \
+    $$PWD/processing/parsers/genericxyparser.cpp \
+    $$PWD/processing/parsers/genericxydata.cpp \
     $$PWD/experiment/rfconfig.cpp \
     $$PWD/model/chirptablemodel.cpp \
     $$PWD/model/clocktablemodel.cpp \
    $$PWD/model/exptsummarymodel.cpp \
    $$PWD/model/hwsettingsmodel.cpp \
+    $$PWD/model/overlaytablemodel.cpp \
     $$PWD/model/peaklistmodel.cpp \
 	$$PWD/model/validationmodel.cpp \
+    $$PWD/processing/overlayoperation.cpp \
+    $$PWD/processing/overlayprocessmanager.cpp \
     $$PWD/storage/auxdatastorage.cpp \
     $$PWD/storage/blackchirpcsv.cpp \
     $$PWD/storage/datastoragebase.cpp \
@@ -27,6 +40,7 @@ SOURCES += $$PWD/loghandler.cpp \
     $$PWD/storage/fidsinglestorage.cpp \
     $$PWD/storage/fidstoragebase.cpp \
     $$PWD/storage/headerstorage.cpp \
+    $$PWD/storage/overlaystorage.cpp \
    $$PWD/storage/settingsstorage.cpp
 
 
@@ -44,13 +58,26 @@ HEADERS += $$PWD/loghandler.h \
     $$PWD/experiment/fid.h \
     $$PWD/experiment/ftmwconfig.h \
     $$PWD/experiment/ftmwconfigtypes.h \
+    $$PWD/experiment/overlaybase.h \
+    $$PWD/experiment/overlaytypes.h \
+    $$PWD/experiment/catalogdata.h \
+    $$PWD/processing/parsers/fileparser.h \
+    $$PWD/processing/parsers/catalogparser.h \
+    $$PWD/processing/parsers/fileparserregistry.h \
+    $$PWD/processing/parsers/spcatparser.h \
+    $$PWD/processing/parsers/xiamparser.h \
+    $$PWD/processing/parsers/genericxyparser.h \
+    $$PWD/processing/parsers/genericxydata.h \
     $$PWD/experiment/rfconfig.h \
     $$PWD/model/chirptablemodel.h \
     $$PWD/model/clocktablemodel.h \
    $$PWD/model/exptsummarymodel.h \
    $$PWD/model/hwsettingsmodel.h \
+    $$PWD/model/overlaytablemodel.h \
     $$PWD/model/peaklistmodel.h \
 	$$PWD/model/validationmodel.h \
+    $$PWD/processing/overlayoperation.h \
+    $$PWD/processing/overlayprocessmanager.h \
     $$PWD/storage/auxdatastorage.h \
     $$PWD/storage/blackchirpcsv.h \
     $$PWD/storage/datastoragebase.h \
@@ -59,6 +86,7 @@ HEADERS += $$PWD/loghandler.h \
     $$PWD/storage/fidsinglestorage.h \
     $$PWD/storage/fidstoragebase.h \
     $$PWD/storage/headerstorage.h \
+    $$PWD/storage/overlaystorage.h \
    $$PWD/storage/settingsstorage.h
 
 DISTFILES += \

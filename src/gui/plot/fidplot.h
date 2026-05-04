@@ -3,6 +3,7 @@
 
 #include <gui/plot/zoompanplot.h>
 #include <qwt6/qwt_plot_textlabel.h>
+#include <memory>
 
 #include <QPointF>
 #include <QPair>
@@ -31,6 +32,7 @@ public:
      * \param parent Parent widget
      */
     explicit FidPlot(const QString id, QWidget *parent = 0);
+    ~FidPlot();
 
 signals:
     void ftStartChanged(double);
@@ -45,11 +47,11 @@ public slots:
     void setNumShots(quint64 shots);
 
 private:
-    BlackchirpFIDCurve *p_curve;
-    QwtPlotTextLabel *p_label;
+    std::unique_ptr<BlackchirpFIDCurve> p_curve;
+    std::unique_ptr<QwtPlotTextLabel> p_label;
 
-    QPair<QwtPlotMarker*,QwtPlotMarker*> d_chirpMarkers;
-    QPair<QwtPlotMarker*,QwtPlotMarker*> d_ftMarkers;
+    QPair<std::unique_ptr<QwtPlotMarker>,std::unique_ptr<QwtPlotMarker>> d_chirpMarkers;
+    QPair<std::unique_ptr<QwtPlotMarker>,std::unique_ptr<QwtPlotMarker>> d_ftMarkers;
 
     const QString d_shotsText{"Shots: %1"};
 

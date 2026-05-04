@@ -88,6 +88,15 @@ FtmwPlotToolBar::FtmwPlotToolBar(QWidget *parent) : QToolBar(parent)
         connect(bb,&SpinBoxWidgetAction::valueChanged,[this,i](){ emit plotSettingChanged(i); });
         d_backup.insert({i,bb});
         addAction(bb);
+        
+        auto db = new QAction("Differential",this);
+        db->setCheckable(true);
+        db->setChecked(false);
+        db->setToolTip("If checked, display all shots recorded since the indicated backup.");
+        d_differential.insert({i,db});
+        connect(db,&QAction::triggered,[this,i](){ emit plotSettingChanged(i); });
+        addAction(db);
+        
     }
 
 
@@ -162,6 +171,13 @@ void FtmwPlotToolBar::prepareForExperiment(const Experiment &e)
             it->second->setEnabled(false);
             it->second->blockSignals(false);
         }
+        for(auto it = d_differential.begin(); it != d_differential.end(); ++it)
+        {
+            it->second->blockSignals(true);
+            it->second->setEnabled(false);
+            it->second->setChecked(false);
+            it->second->blockSignals(false);
+        }
 
     }
 
@@ -183,6 +199,11 @@ void FtmwPlotToolBar::newBackup(int n)
     {
         Q_UNUSED(key)
         box->setMaximum(n);
+        box->setEnabled(true);
+    }
+    for(auto &[key,box] : d_differential)
+    {
+        Q_UNUSED(key)
         box->setEnabled(true);
     }
 }
@@ -237,6 +258,15 @@ int FtmwPlotToolBar::backup(int id) const
         return it->second->value();
 
     return 0;
+}
+
+bool FtmwPlotToolBar::differential(int id) const
+{
+    auto it = d_differential.find(id);
+    if(it != d_differential.end())
+        return it->second->isChecked();
+
+    return false;
 }
 
 bool FtmwPlotToolBar::viewingBackup(int plotId) const

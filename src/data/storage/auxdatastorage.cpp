@@ -5,7 +5,7 @@
 AuxDataStorage::AuxDataStorage(BlackchirpCSV *csv, int number, const QString path) : d_number(number), d_path(path)
 {
     auto d = BlackchirpCSV::exptDir(number,path);
-    QFile aux = d.absoluteFilePath(BC::CSV::auxFile);
+    QFile aux(d.absoluteFilePath(BC::CSV::auxFile));
     if(aux.open(QIODevice::ReadOnly|QIODevice::Text))
     {
         int count = 0;

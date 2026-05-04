@@ -31,6 +31,7 @@
 #include <gui/widget/gascontrolwidget.h>
 #include <gui/widget/pressurestatusbox.h>
 #include <gui/widget/pressurecontrolwidget.h>
+#include <gui/style/themecolors.h>
 
 #include <gui/dialog/communicationdialog.h>
 #include <gui/dialog/hwdialog.h>
@@ -42,6 +43,7 @@
 #include <gui/expsetup/experimentsetupdialog.h>
 
 #include <data/loghandler.h>
+#include <data/storage/blackchirpcsv.h>
 #include <acquisition/acquisitionmanager.h>
 #include <acquisition/batch/batchmanager.h>
 #include <acquisition/batch/batchsingle.h>
@@ -71,6 +73,10 @@ MainWindow::MainWindow(QWidget *parent) :
     qRegisterMetaType<QwtPlot::Axis>("QwtPlot::Axis");
 
     ui->setupUi(this);
+    
+    // Apply theme-aware styling for SVG icons
+    setupThemeAwareIconStyling();
+    
     ui->rollingDurationBox->setValue(ui->rollingDataViewWidget->historyDuration());
     connect(ui->rollingDurationBox,&SpinBoxWidgetAction::valueChanged,
             ui->rollingDataViewWidget,&RollingDataWidget::setHistoryDuration);
@@ -342,7 +348,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionAutoscale_Rolling,&QAction::triggered,ui->rollingDataViewWidget,&RollingDataWidget::autoScaleAll);
     connect(ui->sleepButton,&QToolButton::toggled,this,&MainWindow::sleep);
     connect(ui->actionTest_All_Connections,&QAction::triggered,p_hwm,&HardwareManager::testAll);
-    connect(ui->actionView_Experiment,&QAction::triggered,this,&MainWindow::viewExperiment);
+    connect(ui->viewExperimentAction,&QAction::triggered,this,&MainWindow::viewExperiment);
 
 #ifdef BC_LIF
     connect(ui->actionLifConfig,&QAction::triggered,this,&MainWindow::launchLifConfigDialog);
@@ -831,24 +837,24 @@ void MainWindow::setLogIcon(LogHandler::MessageCode c)
         case LogHandler::Warning:
             if(d_logIcon != LogHandler::Error)
             {
-                ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab),QIcon(QString(":/icons/warning.png")));
+                ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab), ThemeColors::createThemedIcon(":/icons/exclamation-triangle.svg", ThemeColors::StatusWarning, this));
                 d_logIcon = c;
             }
             break;
         case LogHandler::Error:
-            ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab),QIcon(QString(":/icons/error.png")));
+            ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab), ThemeColors::createThemedIcon(":/icons/exclamation-triangle.svg", ThemeColors::StatusError, this));
             d_logIcon = c;
             break;
         default:
             d_logIcon = c;
-            ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab),QIcon());
+            ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab), ThemeColors::createThemedIcon(":/icons/document-text.svg", ThemeColors::IconSecondary, this));
             break;
         }
     }
     else
     {
         d_logIcon = LogHandler::Normal;
-        ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab),QIcon());
+        ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab), ThemeColors::createThemedIcon(":/icons/document-text.svg", ThemeColors::IconSecondary, this));
     }
 }
 
@@ -910,7 +916,7 @@ void MainWindow::viewExperiment()
 
     QLineEdit *pathEdit = new QLineEdit(&d);
     QToolButton *browseButton = new QToolButton(&d);
-    browseButton->setIcon(QIcon(QString(":/icons/view.png")));
+    browseButton->setIcon(ThemeColors::createThemedIcon(":/icons/document-magnifying-glass.svg", ThemeColors::IconSecondary, this));
 
     connect(browseButton,&QToolButton::clicked,this,[this,pathEdit](){
         QString path = QFileDialog::getExistingDirectory(this,QString("Select experiment directory"),QString("~"));
@@ -997,10 +1003,35 @@ void MainWindow::viewExperiment()
             return;
         }
 
-        ExperimentViewWidget *evw = new ExperimentViewWidget(num,path);
-        connect(this,&MainWindow::closing,evw,&ExperimentViewWidget::close);
-        evw->show();
-        evw->raise();
+        // Get the full path for tracking
+        QString fullPath = BlackchirpCSV::exptDir(num, path).absolutePath();
+        
+        // Check if experiment is already open
+        auto it = d_openExperiments.find(fullPath);
+        if (it != d_openExperiments.end()) {
+            // Experiment already open, raise existing window
+            ExperimentViewWidget* existingWidget = it->second.get();
+            existingWidget->show();
+            existingWidget->raise();
+            existingWidget->notifyAlreadyOpen();
+            return;
+        }
+        
+        // Create new experiment view widget
+        auto evw = std::make_unique<ExperimentViewWidget>(num, path, true);
+        ExperimentViewWidget* evwPtr = evw.get();
+        
+        // Connect signals for cleanup and window management
+        connect(this, &MainWindow::closing, evwPtr, &ExperimentViewWidget::close);
+        connect(evwPtr, &ExperimentViewWidget::widgetClosing, this, [this, fullPath]() {
+            removeExperimentWidget(fullPath);
+        });
+        
+        // Store in tracking map and show
+        d_openExperiments[fullPath] = std::move(evw);
+        updateViewExperimentMenu();
+        evwPtr->show();
+        evwPtr->raise();
     }
 }
 
@@ -1116,12 +1147,20 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
 
 void MainWindow::startBatch(BatchManager *bm)
 {
+    // Prompt user about overlays before committing to experiment start
+    if (!ui->ftViewWidget->promptOverlayTransition()) {
+        delete bm;
+        return;
+    }
+
     delete p_batchManager;
 
     connect(bm,&BatchManager::statusMessage,ui->statusBar,&QStatusBar::showMessage);
     connect(bm,&BatchManager::logMessage,p_lh,&LogHandler::logMessage);
     connect(bm,&BatchManager::beginExperiment,p_lh,&LogHandler::endExperimentLog);
-    connect(bm,&BatchManager::beginExperiment,[this,bm](){p_hwm->initializeExperiment(bm->currentExperiment());});
+    connect(bm,&BatchManager::beginExperiment,[this,bm](){
+        QMetaObject::invokeMethod(p_hwm,[this,bm](){ p_hwm->initializeExperiment(bm->currentExperiment());});
+    });
     connect(p_am,&AcquisitionManager::experimentComplete,bm,&BatchManager::experimentComplete);
     connect(p_am,&AcquisitionManager::experimentComplete,ui->ftViewWidget,&FtmwViewWidget::experimentComplete);
     connect(ui->abortButton,&QToolButton::clicked,bm,&BatchManager::abort);
@@ -1168,4 +1207,117 @@ void MainWindow::closeEvent(QCloseEvent *ev)
 
         ev->accept();
     }
+}
+
+void MainWindow::removeExperimentWidget(const QString& path)
+{
+    auto it = d_openExperiments.find(path);
+    if (it != d_openExperiments.end()) {
+        d_openExperiments.erase(it);
+        updateViewExperimentMenu();
+    }
+}
+
+void MainWindow::updateViewExperimentMenu()
+{
+    // Get current actions (skip first action and separator)
+    QList<QAction*> actions = ui->viewExperimentMenu->actions();
+    
+    // Remove actions for experiments that are no longer open
+    // Start from index 2 to skip "View Experiment..." action and separator
+    for (int i = actions.size() - 1; i >= 2; --i) {
+        QAction* action = actions[i];
+        QString actionPath = action->data().toString();
+        
+        if (d_openExperiments.find(actionPath) == d_openExperiments.end()) {
+            ui->viewExperimentMenu->removeAction(action);
+            action->deleteLater();
+        }
+    }
+    
+    // Add actions for new experiments that aren't in the menu yet
+    for (const auto& [path, widget] : d_openExperiments) {
+        bool actionExists = false;
+        for (int i = 2; i < actions.size(); ++i) {
+            if (actions[i]->data().toString() == path) {
+                actionExists = true;
+                break;
+            }
+        }
+        
+        if (!actionExists) {
+            QString experimentTitle = widget->windowTitle();
+            QAction* experimentAction = new QAction(experimentTitle, this);
+            experimentAction->setData(path); // Store path in data for identification
+            connect(experimentAction, &QAction::triggered, this, [this, path]() {
+                showExistingExperiment(path);
+            });
+            ui->viewExperimentMenu->addAction(experimentAction);
+        }
+    }
+}
+
+void MainWindow::showExistingExperiment(const QString& path)
+{
+    auto it = d_openExperiments.find(path);
+    if (it != d_openExperiments.end()) {
+        ExperimentViewWidget* widget = it->second.get();
+        widget->show();
+        widget->raise();
+        widget->notifyAlreadyOpen();
+    }
+}
+
+void MainWindow::setupThemeAwareIconStyling()
+{
+    // Set BlackChirp branding - main application window icon  
+    this->setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg", ThemeColors::IconPrimary, this));
+    
+    // Create theme-aware icons for control buttons using SVG color replacement
+    ui->pauseButton->setIcon(ThemeColors::createThemedIcon(":/icons/pause.svg", ThemeColors::IconPrimary, this));
+    ui->resumeButton->setIcon(ThemeColors::createThemedIcon(":/icons/play.svg", ThemeColors::IconPrimary, this));
+    ui->abortButton->setIcon(ThemeColors::createThemedIcon(":/icons/stop.svg", ThemeColors::IconPrimary, this));
+    ui->sleepButton->setIcon(ThemeColors::createThemedIcon(":/icons/moon.svg", ThemeColors::IconPrimary, this));
+    
+    // Set action icons
+    ui->actionStart_Experiment->setIcon(ThemeColors::createThemedIcon(":/icons/document-plus.svg", ThemeColors::IconPrimary, this));
+    ui->actionCommunication->setIcon(ThemeColors::createThemedIcon(":/icons/computer-desktop.svg", ThemeColors::IconPrimary, this));
+    ui->actionTest_All_Connections->setIcon(ThemeColors::createThemedIcon(":/icons/link.svg", ThemeColors::IconPrimary, this));
+    ui->actionQuick_Experiment->setIcon(ThemeColors::createThemedIcon(":/icons/quickexpt.svg", ThemeColors::IconPrimary, this));
+    ui->actionStart_Sequence->setIcon(ThemeColors::createThemedIcon(":/icons/sequence.svg", ThemeColors::IconPrimary, this));
+    
+#ifdef BC_LIF
+    ui->actionLifConfig->setIcon(ThemeColors::createThemedIcon(":/icons/lif.svg", ThemeColors::IconPrimary, this));
+#endif
+
+    ui->actionRfConfig->setIcon(ThemeColors::createThemedIcon(":/icons/rf.svg", ThemeColors::IconPrimary, this));
+    
+    // Set button icons  
+    ui->acquireButton->setIcon(ThemeColors::createThemedIcon(":/icons/play-circle.svg", ThemeColors::IconPrimary, this));
+    ui->hardwareButton->setIcon(ThemeColors::createThemedIcon(":/icons/wrench-screwdriver.svg", ThemeColors::IconPrimary, this));
+    ui->settingsButton->setIcon(ThemeColors::createThemedIcon(":/icons/cog-6-tooth.svg", ThemeColors::IconSecondary, this));
+    ui->auxPlotButton->setIcon(ThemeColors::createThemedIcon(":/icons/chart-bar.svg", ThemeColors::IconSecondary, this));
+    ui->rollingPlotButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-path-rounded-square.svg", ThemeColors::IconSecondary, this));
+    ui->viewExperimentButton->setIcon(ThemeColors::createThemedIcon(":/icons/viewold.svg", ThemeColors::IconSecondary, this));
+    
+    // Set action icons
+    ui->viewExperimentAction->setIcon(ThemeColors::createThemedIcon(":/icons/viewold.svg", ThemeColors::IconSecondary, this));
+    ui->fontAction->setIcon(ThemeColors::createThemedIcon(":/icons/language.svg", ThemeColors::IconSecondary, this));
+    ui->savePathAction->setIcon(ThemeColors::createThemedIcon(":/icons/folder-open.svg", ThemeColors::IconSecondary, this));
+    
+    // Set tab icons
+    ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->ftmwTab), ThemeColors::createThemedIcon(":/icons/signal.svg", ThemeColors::IconPrimary, this));
+    ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->rollingDataTab), ThemeColors::createThemedIcon(":/icons/arrow-path-rounded-square.svg", ThemeColors::IconSecondary, this));
+    ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->auxDataTab), ThemeColors::createThemedIcon(":/icons/chart-bar.svg", ThemeColors::IconSecondary, this));
+#ifdef BC_LIF
+    ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->lifTab), ThemeColors::createThemedIcon(":/icons/sparkles.svg", ThemeColors::IconSecondary, this));
+#endif
+    
+    // Set autoscale action icons
+    ui->actionAutoscale_Rolling->setIcon(ThemeColors::createThemedIcon(":/icons/arrows-pointing-out.svg", ThemeColors::IconSecondary, this));
+    ui->actionAutoscale_Aux->setIcon(ThemeColors::createThemedIcon(":/icons/arrows-pointing-out.svg", ThemeColors::IconSecondary, this));
+    
+    // Set menu icons
+    ui->menuRollingData->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-path-rounded-square.svg", ThemeColors::IconSecondary, this));
+    ui->menuAuxData->setIcon(ThemeColors::createThemedIcon(":/icons/chart-bar.svg", ThemeColors::IconSecondary, this));
 }

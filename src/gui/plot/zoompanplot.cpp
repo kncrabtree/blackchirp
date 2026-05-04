@@ -1,4 +1,7 @@
 #include <gui/plot/zoompanplot.h>
+#include "curveappearancewidget.h"
+#include "curveappearancepresetmanager.h"
+#include "presetsavedialog.h"
 
 #include <QApplication>
 #include <QMouseEvent>
@@ -22,7 +25,6 @@
 #include <qwt6/qwt_scale_div.h>
 #include <qwt6/qwt_plot_marker.h>
 #include <qwt6/qwt_plot_spectrogram.h>
-#include <gui/plot/blackchirpplotcurve.h>
 #include <data/storage/blackchirpcsv.h>
 
 #include <gui/plot/customtracker.h>
@@ -104,7 +106,14 @@ ZoomPanPlot::ZoomPanPlot(const QString name, QWidget *parent) : QwtPlot(parent),
 
 ZoomPanPlot::~ZoomPanPlot()
 {
+    waitForFilterComplete();
     delete p_mutex;
+}
+
+void ZoomPanPlot::waitForFilterComplete()
+{
+    if(p_watcher->isRunning())
+        p_watcher->waitForFinished();
 }
 
 bool ZoomPanPlot::isAutoScale()
@@ -221,7 +230,7 @@ void ZoomPanPlot::replot()
 
         //update bounding rects
         auto c = dynamic_cast<BlackchirpPlotCurveBase*>(l.at(i));
-        if(c)
+        if(c && c->testItemAttribute(QwtPlotItem::AutoScale))
         {
             auto r = c->boundingRect();
             if(r.width() < 0.0 || r.height() < 0.0 || !c->isVisible())
@@ -431,44 +440,66 @@ void ZoomPanPlot::setCurveColor(BlackchirpPlotCurveBase *curve)
 {
     auto c = QColorDialog::getColor(curve->pen().color(),this,
                            QString("Choose a color for the ")+curve->title().text()+QString(" curve"),QColorDialog::ShowAlphaChannel);
-    if(c.isValid())
+    if(c.isValid()) {
         curve->setColor(c);
+        emit curveMetadataChanged(curve);
+    }
+    replot();
+}
+
+void ZoomPanPlot::setCurveStyle(BlackchirpPlotCurveBase *curve, QwtPlotCurve::CurveStyle s)
+{
+    curve->setCurveStyle(s);
+    emit curveMetadataChanged(curve);
     replot();
 }
 
 void ZoomPanPlot::setCurveLineThickness(BlackchirpPlotCurveBase *curve, double t)
 {
     curve->setLineThickness(t);
+    emit curveMetadataChanged(curve);
     replot();
 }
 
 void ZoomPanPlot::setCurveLineStyle(BlackchirpPlotCurveBase *curve, Qt::PenStyle s)
 {
     curve->setLineStyle(s);
+    emit curveMetadataChanged(curve);
     replot();
 }
 
 void ZoomPanPlot::setCurveMarker(BlackchirpPlotCurveBase *curve, QwtSymbol::Style s)
 {
     curve->setMarkerStyle(s);
+    emit curveMetadataChanged(curve);
     replot();
 }
 
 void ZoomPanPlot::setCurveMarkerSize(BlackchirpPlotCurveBase *curve, int s)
 {
     curve->setMarkerSize(s);
+    emit curveMetadataChanged(curve);
     replot();
 }
 
 void ZoomPanPlot::setCurveVisible(BlackchirpPlotCurveBase *curve, bool v)
 {
     curve->setCurveVisible(v);
+    emit curveMetadataChanged(curve);
+    replot();
+}
+
+void ZoomPanPlot::setCurveAutoscale(BlackchirpPlotCurveBase *curve, bool enabled)
+{
+    curve->setCurveAutoscale(enabled);
+    emit curveMetadataChanged(curve);
     replot();
 }
 
 void ZoomPanPlot::setCurveAxisY(BlackchirpPlotCurveBase *curve, QwtPlot::Axis a)
 {
     curve->setCurveAxisY(a);
+    emit curveMetadataChanged(curve);
     replot();
 }
 
@@ -505,6 +536,9 @@ void ZoomPanPlot::filterData()
 
     for(auto item : l)
     {
+        if(!item)
+            continue;
+
         auto c = dynamic_cast<BlackchirpPlotCurveBase*>(item);
         if(c)
         {
@@ -1250,112 +1284,80 @@ QMenu *ZoomPanPlot::contextMenu()
             connect(exportAct,&QAction::triggered,[this,curve](){ exportCurve(curve); });
 
 
-            auto colorAct = m->addAction(QString("Color..."));
-            connect(colorAct,&QAction::triggered,this,[this,curve](){ setCurveColor(curve); });
-
+            // Create curve appearance widget for all styling controls
             auto curveWa = new QWidgetAction(m);
-            auto curveWidget = new QWidget(m);
-            auto cfl = new QFormLayout(curveWidget);
-
-            auto thicknessBox = new QDoubleSpinBox;
-            thicknessBox->setRange(0.0,10.0);
-            thicknessBox->setDecimals(1);
-            thicknessBox->setSingleStep(0.5);
-            thicknessBox->setValue(curve->pen().widthF());
-            connect(thicknessBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,
-                    [this,curve](double v){ setCurveLineThickness(curve, v); });
-            cfl->addRow(QString("Line Width"),thicknessBox);
-
-            auto lineStyleBox = new QComboBox;
-            lineStyleBox->addItem(QString("None"),QVariant::fromValue(Qt::NoPen));
-            lineStyleBox->addItem(QString::fromUtf16(u"⸻ "),QVariant::fromValue(Qt::SolidLine));
-            lineStyleBox->addItem(QString("- - - "),QVariant::fromValue(Qt::DashLine));
-            lineStyleBox->addItem(QString::fromUtf16(u"· · · "),QVariant::fromValue(Qt::DotLine));
-            lineStyleBox->addItem(QString::fromUtf16(u"-·-·-"),QVariant::fromValue(Qt::DashDotLine));
-            lineStyleBox->addItem(QString::fromUtf16(u"-··-··"),QVariant::fromValue(Qt::DashDotDotLine));
-            lineStyleBox->setCurrentIndex(lineStyleBox->findData(QVariant::fromValue(curve->pen().style())));
-            connect(lineStyleBox,qOverload<int>(&QComboBox::currentIndexChanged),this,
-                    [this,curve,lineStyleBox](int i){
-                setCurveLineStyle(curve,lineStyleBox->itemData(i).value<Qt::PenStyle>());
+            auto appearanceWidget = new CurveAppearanceWidget(m);
+            
+            // Connect to global preset manager for preset functionality
+            appearanceWidget->setPresetManager(CurveAppearancePresetManager::instance());
+            
+            // Initialize widget with current curve properties
+            appearanceWidget->initializeFromCurve(curve);
+            
+            // Connect widget to real-time curve updates
+            connect(appearanceWidget, &CurveAppearanceWidget::curveAppearanceChanged,
+                    this, [this, curve](const CurveAppearanceWidget::CurveAppearance &appearance) {
+                // Apply changes to curve immediately for real-time feedback
+                curve->setColor(appearance.color);
+                setCurveStyle(curve, appearance.curveStyle);
+                setCurveLineThickness(curve, appearance.lineThickness);
+                setCurveLineStyle(curve, appearance.lineStyle);
+                setCurveMarker(curve, appearance.markerStyle);
+                setCurveMarkerSize(curve, appearance.markerSize);
+                setCurveVisible(curve, appearance.visible);
+                setCurveAutoscale(curve, appearance.autoscale);
+                setCurveAxisY(curve, static_cast<QwtPlot::Axis>(appearance.yAxis));
             });
-            cfl->addRow(QString("Line Style"),lineStyleBox);
-
-            auto markerBox = new QComboBox;
-            markerBox->addItem(QString("None"),QVariant::fromValue(QwtSymbol::NoSymbol));
-            markerBox->addItem(QString::fromUtf16(u"●"),QVariant::fromValue(QwtSymbol::Ellipse));
-            markerBox->addItem(QString::fromUtf16(u"■"),QVariant::fromValue(QwtSymbol::Rect));
-            markerBox->addItem(QString::fromUtf16(u"⬥"),QVariant::fromValue(QwtSymbol::Diamond));
-            markerBox->addItem(QString::fromUtf16(u"▲"),QVariant::fromValue(QwtSymbol::UTriangle));
-            markerBox->addItem(QString::fromUtf16(u"▼"),QVariant::fromValue(QwtSymbol::DTriangle));
-            markerBox->addItem(QString::fromUtf16(u"◀"),QVariant::fromValue(QwtSymbol::LTriangle));
-            markerBox->addItem(QString::fromUtf16(u"▶"),QVariant::fromValue(QwtSymbol::RTriangle));
-            markerBox->addItem(QString::fromUtf16(u"＋"),QVariant::fromValue(QwtSymbol::Cross));
-            markerBox->addItem(QString::fromUtf16(u"⨯"),QVariant::fromValue(QwtSymbol::XCross));
-            markerBox->addItem(QString::fromUtf16(u"—"),QVariant::fromValue(QwtSymbol::HLine));
-            markerBox->addItem(QString::fromUtf16(u"︱"),QVariant::fromValue(QwtSymbol::VLine));
-            markerBox->addItem(QString::fromUtf16(u"✳"),QVariant::fromValue(QwtSymbol::Star1));
-            markerBox->addItem(QString::fromUtf16(u"✶"),QVariant::fromValue(QwtSymbol::Star2));
-            markerBox->addItem(QString::fromUtf16(u"⬢"),QVariant::fromValue(QwtSymbol::Hexagon));
-            markerBox->setCurrentIndex(markerBox->findData(QVariant::fromValue(curve->symbol()->style())));
-            connect(markerBox,qOverload<int>(&QComboBox::currentIndexChanged),this,
-                    [this,curve,markerBox](int i){
-                setCurveMarker(curve,markerBox->itemData(i).value<QwtSymbol::Style>());
+            
+            // Handle color change requests through existing setCurveColor method
+            connect(appearanceWidget, &CurveAppearanceWidget::colorChangeRequested,
+                    this, [this, curve, appearanceWidget]() {
+                setCurveColor(curve);
+                // Update widget's color display after color change
+                appearanceWidget->updateColorDisplay(curve->pen().color());
             });
-            cfl->addRow(QString("Marker"),markerBox);
-
-            auto markerSizeBox = new QSpinBox;
-            markerSizeBox->setRange(1,20);
-            markerSizeBox->setValue(curve->symbol()->size().width());
-            connect(markerSizeBox,qOverload<int>(&QSpinBox::valueChanged),this,
-                    [this,curve,markerSizeBox](int s){ setCurveMarkerSize(curve,s); });
-            cfl->addRow(QString("Marker Size"),markerSizeBox);
-
-            auto visBox = new QCheckBox;
-            visBox->setChecked(curve->isVisible());
-            connect(visBox,&QCheckBox::toggled,this,[this,curve](bool v){
-                setCurveVisible(curve,v);
-            });
-            cfl->addRow(QString("Visible"),visBox);
-
-            for(int i=0; i<cfl->rowCount(); ++i)
-            {
-                auto lbl = qobject_cast<QLabel*>(cfl->itemAt(i,QFormLayout::LabelRole)->widget());
-                if(lbl)
-                {
-                    lbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
-                    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+            
+            // Handle preset save requests with custom dialog
+            connect(appearanceWidget, &CurveAppearanceWidget::presetSaveRequested,
+                    this, [this, appearanceWidget](const QString &suggestedName) {
+                PresetSaveDialog dialog(suggestedName, CurveAppearancePresetManager::instance(), this);
+                
+                if (dialog.exec() == QDialog::Accepted) {
+                    QString presetName = dialog.getPresetName();
+                    if (!presetName.isEmpty()) {
+                        // If overwriting existing preset, no additional confirmation needed
+                        // since the dialog already handled the selection
+                        if (!dialog.isOverwriteMode()) {
+                            // For new presets, check if name already exists
+                            if (CurveAppearancePresetManager::instance()->hasPreset(presetName)) {
+                                int result = QMessageBox::question(this, "Preset Exists", 
+                                                                 QString("Preset '%1' already exists. Overwrite?").arg(presetName),
+                                                                 QMessageBox::Yes | QMessageBox::No);
+                                if (result != QMessageBox::Yes) {
+                                    return;
+                                }
+                            }
+                        }
+                        
+                        appearanceWidget->saveCurrentAsPreset(presetName);
+                    }
                 }
-            }
-
-            curveWidget->setLayout(cfl);
-            curveWa->setDefaultWidget(curveWidget);
+            });
+            
+            // Handle preset delete requests with confirmation dialog
+            connect(appearanceWidget, &CurveAppearanceWidget::presetDeleteRequested,
+                    this, [this, appearanceWidget](const QString &presetName) {
+                int result = QMessageBox::question(this, "Delete Preset", 
+                                                 QString("Delete preset '%1'?").arg(presetName),
+                                                 QMessageBox::Yes | QMessageBox::No);
+                
+                if (result == QMessageBox::Yes) {
+                    appearanceWidget->deletePreset(presetName);
+                }
+            });
+            
+            curveWa->setDefaultWidget(appearanceWidget);
             m->addAction(curveWa);
-
-
-            m->addSection(QString("Y Axis"));
-            QActionGroup *axisGroup = new QActionGroup(menu);
-            axisGroup->setExclusive(true);
-            QAction *lAction = axisGroup->addAction(QString("Left"));
-            QAction *rAction = axisGroup->addAction(QString("Right"));
-            lAction->setCheckable(true);
-            rAction->setCheckable(true);
-            if(curve->yAxis() == QwtPlot::yLeft)
-            {
-                lAction->setEnabled(false);
-                lAction->setChecked(true);
-                connect(rAction,&QAction::triggered,this,[this,curve](){
-                    setCurveAxisY(curve,QwtPlot::yRight);
-                });
-            }
-            else
-            {
-                rAction->setEnabled(false);
-                rAction->setChecked(true);
-                connect(lAction,&QAction::triggered,this,[this,curve](){
-                    setCurveAxisY(curve,QwtPlot::yLeft);
-                });
-            }
-            m->addActions(axisGroup->actions());
 
             auto c = dynamic_cast<BlackchirpPlotCurve*>(curve);
             if(c && d_maxIndex > 0)

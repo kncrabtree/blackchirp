@@ -81,7 +81,7 @@ QByteArray TcpInstrument::queryCmd(QString cmd, bool suppressError)
 bool TcpInstrument::connectSocket()
 {
     p_device->connectToHost(d_ip,d_port);
-    if(!p_device->waitForConnected(1000))
+    if(!p_device->waitForConnected(3000))
     {
         setErrorString(QString("Could not connect to %1:%2. %3")
                        .arg(d_ip).arg(d_port).arg(p_device->errorString()));

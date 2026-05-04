@@ -1,12 +1,15 @@
 #include "blackchirpplotcurve.h"
+#include "curvefactory.h"
 
 #include <QPalette>
 #include <QMutex>
 
-BlackchirpPlotCurveBase::BlackchirpPlotCurveBase(const QString key, const QString title, Qt::PenStyle defaultLineStyle, QwtSymbol::Style defaultMarker) :
-    SettingsStorage({BC::Key::bcCurve,key},General), d_key{key},
-    p_samplesMutex{new QMutex}
+BlackchirpPlotCurveBase::BlackchirpPlotCurveBase(std::unique_ptr<CurveStorageInterface> storage, const QString key, const QString title, Qt::PenStyle defaultLineStyle, QwtSymbol::Style defaultMarker, CurveStyle defaultStyle) :
+    d_storage{std::move(storage)}, d_key{key}, p_samplesMutex{new QMutex}
 {
+    // Determine storage type by checking the concrete type of the storage interface
+    p_overlayMetadataStorage = dynamic_cast<OverlayMetadataStorage*>(d_storage.get());
+    d_storageType = p_overlayMetadataStorage ? StorageType::OverlayMetadata : StorageType::Settings;
     if(!title.isEmpty())
         setTitle(title);
     else
@@ -16,16 +19,26 @@ BlackchirpPlotCurveBase::BlackchirpPlotCurveBase(const QString key, const QStrin
     setItemAttribute(QwtPlotItem::AutoScale);
     setItemInterest(QwtPlotItem::ScaleInterest);
 
-    getOrSetDefault(BC::Key::bcCurveStyle,static_cast<int>(defaultLineStyle));
-    getOrSetDefault(BC::Key::bcCurveMarker,static_cast<int>(defaultMarker));
+    // Set defaults using storage backend
+    if (!d_storage->get(BC::Key::bcCurveLineStyle).isValid()) {
+        d_storage->set(BC::Key::bcCurveLineStyle, static_cast<int>(defaultLineStyle));
+    }
+    if (!d_storage->get(BC::Key::bcCurveCurveStyle).isValid()) {
+        d_storage->set(BC::Key::bcCurveCurveStyle, static_cast<int>(defaultStyle));
+    }
+    if (!d_storage->get(BC::Key::bcCurveMarker).isValid()) {
+        d_storage->set(BC::Key::bcCurveMarker, static_cast<int>(defaultMarker));
+    }
 
     configurePen();
     configureSymbol();
+    configureCurveStyle();
     setRenderHint(QwtPlotItem::RenderAntialiased);
 
-    setAxes(get<QwtPlot::Axis>(BC::Key::bcCurveAxisX,QwtPlot::xBottom),
-            get<QwtPlot::Axis>(BC::Key::bcCurveAxisY,QwtPlot::yLeft));
-    setVisible(get<bool>(BC::Key::bcCurveVisible,true));
+    setAxes(d_storage->get<QwtPlot::Axis>(BC::Key::bcCurveAxisX, QwtPlot::xBottom),
+            d_storage->get<QwtPlot::Axis>(BC::Key::bcCurveAxisY, QwtPlot::yLeft));
+    setVisible(d_storage->get<bool>(BC::Key::bcCurveVisible, true));
+    setItemAttribute(QwtPlotItem::AutoScale, d_storage->get<bool>(BC::Key::bcCurveAutoscale, true));
 
 }
 
@@ -37,32 +50,38 @@ BlackchirpPlotCurveBase::~BlackchirpPlotCurveBase()
 
 void BlackchirpPlotCurveBase::setColor(const QColor c)
 {
-    set(BC::Key::bcCurveColor,c);
+    d_storage->set(BC::Key::bcCurveColor, c);
     configurePen();
     configureSymbol();
 }
 
+void BlackchirpPlotCurveBase::setCurveStyle(CurveStyle s)
+{
+    d_storage->set(BC::Key::bcCurveCurveStyle, static_cast<int>(s));
+    configureCurveStyle();
+}
+
 void BlackchirpPlotCurveBase::setLineThickness(double t)
 {
-    set(BC::Key::bcCurveThickness,t);
+    d_storage->set(BC::Key::bcCurveThickness, t);
     configurePen();
 }
 
 void BlackchirpPlotCurveBase::setLineStyle(Qt::PenStyle s)
 {
-    set(BC::Key::bcCurveStyle,static_cast<int>(s));
+    d_storage->set(BC::Key::bcCurveLineStyle, static_cast<int>(s));
     configurePen();
 }
 
 void BlackchirpPlotCurveBase::setMarkerStyle(QwtSymbol::Style s)
 {
-    set(BC::Key::bcCurveMarker,static_cast<int>(s));
+    d_storage->set(BC::Key::bcCurveMarker, static_cast<int>(s));
     configureSymbol();
 }
 
 void BlackchirpPlotCurveBase::setMarkerSize(int s)
 {
-    set(BC::Key::bcCurveMarkerSize,s);
+    d_storage->set(BC::Key::bcCurveMarkerSize, s);
     configureSymbol();
 }
 
@@ -71,45 +90,65 @@ void BlackchirpPlotCurveBase::setName(const QString t)
     setTitle(t);
 }
 
+std::shared_ptr<OverlayBase> BlackchirpPlotCurveBase::getOverlay() const
+{
+    if (d_storageType == StorageType::OverlayMetadata && p_overlayMetadataStorage) {
+        return p_overlayMetadataStorage->getOverlay();
+    }
+    return nullptr;
+}
+
 void BlackchirpPlotCurveBase::setCurveVisible(bool v)
 {
-    set(BC::Key::bcCurveVisible,v);
+    d_storage->set(BC::Key::bcCurveVisible, v);
     setVisible(v);
+}
+
+void BlackchirpPlotCurveBase::setCurveAutoscale(bool enabled)
+{
+    d_storage->set(BC::Key::bcCurveAutoscale, enabled);
+    setItemAttribute(QwtPlotItem::AutoScale, enabled);
 }
 
 void BlackchirpPlotCurveBase::setCurveAxisX(QwtPlot::Axis a)
 {
-    set(BC::Key::bcCurveAxisX,static_cast<int>(a));
+    d_storage->set(BC::Key::bcCurveAxisX, static_cast<int>(a));
     setXAxis(a);
 }
 
 void BlackchirpPlotCurveBase::setCurveAxisY(QwtPlot::Axis a)
 {
-    set(BC::Key::bcCurveAxisY,static_cast<int>(a));
+    d_storage->set(BC::Key::bcCurveAxisY, static_cast<int>(a));
     setYAxis(a);
 }
 
 void BlackchirpPlotCurveBase::setCurvePlotIndex(int i)
 {
-    set(BC::Key::bcCurvePlotIndex,i);
+    d_storage->set(BC::Key::bcCurvePlotIndex, i);
+}
+
+int BlackchirpPlotCurveBase::plotIndex() const
+{
+    return d_storage->get<int>(BC::Key::bcCurvePlotIndex, -1);
 }
 
 void BlackchirpPlotCurveBase::updateFromSettings()
 {
     configurePen();
     configureSymbol();
-    setAxes(get<QwtPlot::Axis>(BC::Key::bcCurveAxisX,QwtPlot::xBottom),
-            get<QwtPlot::Axis>(BC::Key::bcCurveAxisY,QwtPlot::yLeft));
-    setVisible(get<bool>(BC::Key::bcCurveVisible,true));
+    configureCurveStyle();
+    setAxes(d_storage->get<QwtPlot::Axis>(BC::Key::bcCurveAxisX, QwtPlot::xBottom),
+            d_storage->get<QwtPlot::Axis>(BC::Key::bcCurveAxisY, QwtPlot::yLeft));
+    setVisible(d_storage->get<bool>(BC::Key::bcCurveVisible, true));
 }
 
 void BlackchirpPlotCurveBase::configurePen()
 {
     QPen p;
     QPalette pal;
-    p.setColor(get<QColor>(BC::Key::bcCurveColor,pal.color(QPalette::Text)));
-    p.setWidthF(get<double>(BC::Key::bcCurveThickness,1.0));
-    p.setStyle(get<Qt::PenStyle>(BC::Key::bcCurveStyle,Qt::SolidLine));
+    p.setColor(d_storage->get<QColor>(BC::Key::bcCurveColor, pal.color(QPalette::Text)));
+    p.setWidthF(d_storage->get<double>(BC::Key::bcCurveThickness, 1.0));
+    p.setStyle(d_storage->get<Qt::PenStyle>(BC::Key::bcCurveLineStyle, Qt::SolidLine));
     setPen(p);
 }
 
@@ -117,12 +156,17 @@ void BlackchirpPlotCurveBase::configureSymbol()
 {
     auto sym = new QwtSymbol();
     QPalette pal;
-    sym->setStyle(get<QwtSymbol::Style>(BC::Key::bcCurveMarker,QwtSymbol::NoSymbol));
-    sym->setColor(get<QColor>(BC::Key::bcCurveColor,pal.color(QPalette::Text)));
-    sym->setPen(get<QColor>(BC::Key::bcCurveColor,pal.color(QPalette::Text)));
-    auto s = get<int>(BC::Key::bcCurveMarkerSize,5);
-    sym->setSize(QSize(s,s));
+    sym->setStyle(d_storage->get<QwtSymbol::Style>(BC::Key::bcCurveMarker, QwtSymbol::NoSymbol));
+    sym->setColor(d_storage->get<QColor>(BC::Key::bcCurveColor, pal.color(QPalette::Text)));
+    sym->setPen(d_storage->get<QColor>(BC::Key::bcCurveColor, pal.color(QPalette::Text)));
+    auto s = d_storage->get<int>(BC::Key::bcCurveMarkerSize, 5);
+    sym->setSize(QSize(s, s));
     setSymbol(sym);
+}
+
+void BlackchirpPlotCurveBase::configureCurveStyle()
+{
+    setStyle(d_storage->get<CurveStyle>(BC::Key::bcCurveCurveStyle, Lines));
 }
 
 void BlackchirpPlotCurveBase::setSamples(const QVector<QPointF> d)
@@ -144,8 +188,8 @@ void BlackchirpPlotCurveBase::draw(QPainter *painter, const QwtScaleMap &xMap, c
     QwtPlotSeriesItem::draw(painter,xMap,yMap,canvasRect);
 }
 
-BlackchirpPlotCurve::BlackchirpPlotCurve(const QString key, const QString title, Qt::PenStyle defaultLineStyle, QwtSymbol::Style defaultMarker) :
-    BlackchirpPlotCurveBase(key,title,defaultLineStyle,defaultMarker), p_dataMutex{new QMutex}
+BlackchirpPlotCurve::BlackchirpPlotCurve(std::unique_ptr<CurveStorageInterface> storage, const QString key, const QString title, Qt::PenStyle defaultLineStyle, QwtSymbol::Style defaultMarker, QwtPlotCurve::CurveStyle defaultStyle) :
+    BlackchirpPlotCurveBase(std::move(storage), key, title, defaultLineStyle, defaultMarker, defaultStyle), p_dataMutex{new QMutex}
 {
 
 }
@@ -344,8 +388,8 @@ QVector<QPointF> BlackchirpPlotCurve::_filter(int w, const QwtScaleMap map)
     return filtered;
 }
 
-BCEvenSpacedCurveBase::BCEvenSpacedCurveBase(const QString key, const QString title, Qt::PenStyle defaultLineStyle, QwtSymbol::Style defaultMarker) :
-    BlackchirpPlotCurveBase(key,title,defaultLineStyle,defaultMarker)
+BCEvenSpacedCurveBase::BCEvenSpacedCurveBase(std::unique_ptr<CurveStorageInterface> storage, const QString key, const QString title, Qt::PenStyle defaultLineStyle, QwtSymbol::Style defaultMarker, QwtPlotCurve::CurveStyle defaultStyle) :
+    BlackchirpPlotCurveBase(std::move(storage), key, title, defaultLineStyle, defaultMarker, defaultStyle)
 {
 }
 
@@ -442,8 +486,8 @@ QVector<QPointF> BCEvenSpacedCurveBase::_filter(int w, const QwtScaleMap map)
 
 }
 
-BlackchirpFTCurve::BlackchirpFTCurve(const QString key, const QString title, Qt::PenStyle defaultLineStyle, QwtSymbol::Style defaultMarker) :
-    BCEvenSpacedCurveBase(key,title,defaultLineStyle,defaultMarker), p_mutex(new QMutex)
+BlackchirpFTCurve::BlackchirpFTCurve(std::unique_ptr<CurveStorageInterface> storage, const QString key, const QString title, Qt::PenStyle defaultLineStyle, QwtSymbol::Style defaultMarker, QwtPlotCurve::CurveStyle defaultStyle) :
+    BCEvenSpacedCurveBase(std::move(storage), key, title, defaultLineStyle, defaultMarker, defaultStyle), p_mutex(new QMutex)
 {
 
 }
@@ -505,8 +549,8 @@ QVector<double> BlackchirpFTCurve::yData()
     return d_currentFt.yData();
 }
 
-BlackchirpFIDCurve::BlackchirpFIDCurve(const QString key, const QString title, Qt::PenStyle defaultLineStyle, QwtSymbol::Style defaultMarker) :
-    BCEvenSpacedCurveBase(key,title,defaultLineStyle,defaultMarker), p_mutex(new QMutex)
+BlackchirpFIDCurve::BlackchirpFIDCurve(std::unique_ptr<CurveStorageInterface> storage, const QString key, const QString title, Qt::PenStyle defaultLineStyle, QwtSymbol::Style defaultMarker, QwtPlotCurve::CurveStyle defaultStyle) :
+    BCEvenSpacedCurveBase(std::move(storage), key, title, defaultLineStyle, defaultMarker, defaultStyle), p_mutex(new QMutex)
 {
 }
 

@@ -1,4 +1,5 @@
 #include "experimentvalidatorconfigpage.h"
+#include <gui/style/themecolors.h>
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -31,12 +32,12 @@ and the other to the specific value (e.g., flow1).)000"));
     tl->addStretch(1);
 
     p_addButton = new QToolButton();
-    p_addButton->setIcon(QIcon(QString(":/icons/add.png")));
+    p_addButton->setIcon(ThemeColors::createThemedIcon(":/icons/plus.svg", ThemeColors::IconPrimary, this));
     p_addButton->setText(QString(""));
     tl->addWidget(p_addButton,0);
 
     p_removeButton = new QToolButton();
-    p_removeButton->setIcon(QIcon(QString(":/icons/remove.png")));
+    p_removeButton->setIcon(ThemeColors::createThemedIcon(":/icons/minus.svg", ThemeColors::IconPrimary, this));
     p_removeButton->setText(QString(""));
     tl->addWidget(p_removeButton,0);
     tl->addStretch(1);

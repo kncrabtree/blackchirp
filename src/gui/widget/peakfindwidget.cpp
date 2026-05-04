@@ -1,5 +1,6 @@
 #include "peakfindwidget.h"
 #include "ui_peakfindwidget.h"
+#include <gui/style/themecolors.h>
 
 #include <QThread>
 #include <QDialog>
@@ -16,6 +17,9 @@ PeakFindWidget::PeakFindWidget(Ft ft, int number, QWidget *parent):
     ui(new Ui::PeakFindWidget), d_number(number), d_busy(false), d_waiting(false)
 {
     ui->setupUi(this);
+    
+    // Override icons with theme-aware versions
+    ui->removeButton->setIcon(ThemeColors::createThemedIcon(":/icons/minus.svg", ThemeColors::IconPrimary, this));
 
     p_pf = new PeakFinder(this);
     connect(p_pf,&PeakFinder::peakList,this,&PeakFindWidget::newPeakList);

@@ -39,6 +39,7 @@ public:
     double xAt(int i) const;
     double xFirst() const;
     double xLast() const;
+    std::pair<double,double> xRange() const;
     double xSpacing() const;
     double minFreqMHz() const;
     double maxFreqMHz() const;

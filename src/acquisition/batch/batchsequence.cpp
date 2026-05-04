@@ -22,13 +22,12 @@ BatchSequence::BatchSequence(std::shared_ptr<Experiment> e, int numExpts, int in
 
 void BatchSequence::abort()
 {
+    d_experimentCount = d_numExperiments;
     if(d_waiting)
     {
-        d_experimentCount = d_numExperiments;
         p_intervalTimer->stop();
         p_intervalTimer->blockSignals(true);
         emit batchComplete(true);
-        return;
     }
 }
 

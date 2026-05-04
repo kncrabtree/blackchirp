@@ -13,7 +13,7 @@ DataStorageBase::~DataStorageBase()
 {
 }
 
-void DataStorageBase::writeMetadata(const std::map<QString, QVariant> &dat, QString dir)
+void DataStorageBase::writeMetadata(QString file, const std::map<QString, QVariant> &dat, QString dir)
 {
     QDir d(BlackchirpCSV::exptDir(d_number,d_path));
     if(!dir.isEmpty())
@@ -27,7 +27,7 @@ void DataStorageBase::writeMetadata(const std::map<QString, QVariant> &dat, QStr
         }
     }
 
-    QSaveFile f(d.absoluteFilePath(BC::Key::DS::proc));
+    QSaveFile f(d.absoluteFilePath(file));
     if(!f.open(QIODevice::WriteOnly|QIODevice::Text))
         return;
     QTextStream t(&f);
@@ -39,7 +39,7 @@ void DataStorageBase::writeMetadata(const std::map<QString, QVariant> &dat, QStr
     f.commit();
 }
 
-void DataStorageBase::readMetadata(std::map<QString, QVariant> &out, QString dir)
+void DataStorageBase::readMetadata(QString file, std::map<QString, QVariant> &out, QString dir)
 {
     QDir d(BlackchirpCSV::exptDir(d_number,d_path));
     if(!dir.isEmpty())
@@ -48,7 +48,7 @@ void DataStorageBase::readMetadata(std::map<QString, QVariant> &out, QString dir
             return;
     }
 
-    QFile f(d.absoluteFilePath(BC::Key::DS::proc));
+    QFile f(d.absoluteFilePath(file));
     if(!f.open(QIODevice::ReadOnly|QIODevice::Text))
         return;
 

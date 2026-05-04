@@ -8,6 +8,7 @@ Opolette::Opolette(QObject *parent)
     setDefault(units,QString("nm"));
     setDefault(minPos,250);
     setDefault(maxPos,2000);
+    setDefault(hasFl,true);
 }
 
 void Opolette::initialize()

@@ -20,6 +20,22 @@ FidSingleStorage::FidSingleStorage(int numRecords, int num, QString path) : FidS
     }
 }
 
+FidList FidSingleStorage::loadDifferentialFidList(int i)
+{
+    auto outl = getCurrentFidList();
+    if(outl.isEmpty())
+        outl = loadFidList(0);
+    
+    if(i>0)
+    {
+        auto diffl = loadFidList(i);
+        for(int i=0; (i<outl.size()) && (i<diffl.size()); i++)
+            outl[i] -= diffl[i];
+    }
+    
+    return outl;
+}
+
 int FidSingleStorage::getCurrentIndex()
 {
     return 0;

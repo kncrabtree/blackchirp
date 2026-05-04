@@ -8,6 +8,10 @@
 #include <QSaveFile>
 #include <math.h>
 
+#ifndef M_PI
+#define M_PI 3.1415926535897323846
+#endif
+
 #include <gsl/gsl_sf_trig.h>
 #include <gsl/gsl_complex_math.h>
 #include <gsl/gsl_const.h>

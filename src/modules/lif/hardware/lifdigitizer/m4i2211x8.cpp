@@ -139,7 +139,7 @@ void M4i2211x8::readWaveform()
                                    0,static_cast<quint64>(d_bufferSize));
         spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA);
         errorCheck();
-        emit waveformRead(ba);
+        emitWaveform(ba);
 
         startCard();
     }

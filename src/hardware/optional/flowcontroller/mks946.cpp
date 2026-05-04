@@ -177,7 +177,7 @@ double Mks946::hwReadFlow(const int ch)
         return 0.0;
 
     QByteArray resp = mksQuery(QString("FR%1?").arg(ch+get(offset,1)));
-    if(resp.contains(QByteArray("MISCONN")))
+    if(resp.contains(QByteArray("MISCONN")) || resp.contains(QByteArray("NAK")))
         return 0.0;
 
     bool ok = false;
@@ -201,7 +201,7 @@ double Mks946::hwReadPressure()
     if(resp.contains(QByteArray("LO")))
         return 0.0;
 
-    if(resp.contains(QByteArray("MISCONN")))
+    if(resp.contains(QByteArray("MISCONN")) || resp.contains(QByteArray("NO_GAUGE")))
     {
         emit logMessage(QString("No pressure gauge connected."),LogHandler::Warning);
         setPressureControlMode(false);
@@ -232,7 +232,31 @@ void Mks946::hwSetPressureControlMode(bool enabled)
 
     if(enabled)
     {
-        //first ensure recipe 1 is active
+        QList<QString> chNames;
+        chNames << QString("A1") << QString("A2") << QString("B1") << QString("B2") << QString("C1") << QString("C2");
+        QString expectedPch = chNames.at(get(pressureChannel,5)-1);
+
+        // If PID is already running, check whether all settings are already correct.
+        // If so, leave PID running to avoid disturbing the control loop.
+        if(mksQuery(QString("PID?")).contains(QByteArray("ON")))
+        {
+            bool rcpOk   = mksQuery(QString("RCP?")).trimmed()  == QByteArray("1");
+            bool rrcpOk  = mksQuery(QString("RRCP?")).trimmed() == QByteArray("1");
+            bool rpchOk  = mksQuery(QString("RPCH?")).contains(expectedPch.toLatin1());
+            bool rdchOk  = mksQuery(QString("RDCH?")).contains(QByteArray("Rat"));
+
+            if(rcpOk && rrcpOk && rpchOk && rdchOk)
+                return;
+
+            // Settings are wrong; disable PID before reconfiguring
+            if(!mksWrite(QString("PID!OFF")))
+            {
+                emit logMessage(d_errorString,LogHandler::Error);
+                emit hardwareFailure();
+                return;
+            }
+        }
+
         if(!mksWrite(QString("RCP!1")))
         {
             emit logMessage(d_errorString,LogHandler::Error);
@@ -247,11 +271,7 @@ void Mks946::hwSetPressureControlMode(bool enabled)
             return;
         }
 
-        QList<QString> chNames;
-        chNames << QString("A1") << QString("A2") << QString("B1") << QString("B2") << QString("C1") << QString("C2");
-
-        //ensure pressure sensor is set to control channel
-        if(!mksWrite(QString("RPCH!%1").arg(chNames.at(get(pressureChannel,5)-1))))
+        if(!mksWrite(QString("RPCH!%1").arg(expectedPch)))
         {
             emit logMessage(d_errorString,LogHandler::Error);
             emit hardwareFailure();
@@ -274,11 +294,14 @@ void Mks946::hwSetPressureControlMode(bool enabled)
     }
     else
     {
-        if(!mksWrite(QString("PID!OFF")))
+        if(mksQuery(QString("PID?")).contains(QByteArray("ON")))
         {
-            emit logMessage(d_errorString,LogHandler::Error);
-            emit hardwareFailure();
-            return;
+            if(!mksWrite(QString("PID!OFF")))
+            {
+                emit logMessage(d_errorString,LogHandler::Error);
+                emit hardwareFailure();
+                return;
+            }
         }
     }
 }

@@ -19,12 +19,27 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/expsetup/experimenttemperaturecontrollerconfigpage.cpp \
     $$PWD/expsetup/experimenttypepage.cpp \
     $$PWD/expsetup/experimentvalidatorconfigpage.cpp \
+    $$PWD/overlay/unifiedoverlaydialog.cpp \
+    $$PWD/overlay/unifiedoverlaywidget.cpp \
+    $$PWD/overlay/overlaytypespecificwidget.cpp \
+    $$PWD/overlay/bcexpoverlaywidget.cpp \
+    $$PWD/overlay/catalogoverlaywidget.cpp \
+    $$PWD/overlay/genericxyoverlaywidget.cpp \
+    $$PWD/overlay/overlaybaseoptionswidget.cpp \
+    $$PWD/overlay/overlaymanagerwidget.cpp \
+    $$PWD/overlay/overlayconfiguredelegate.cpp \
+    $$PWD/overlay/overlaycheckboxdelegate.cpp \
     $$PWD/plot/blackchirpplotcurve.cpp \
     $$PWD/plot/chirpconfigplot.cpp \
+    $$PWD/plot/curveappearancewidget.cpp \
+    $$PWD/plot/curveappearancepresetmanager.cpp \
+    $$PWD/plot/presetsavedialog.cpp \
+    $$PWD/plot/curvefactory.cpp \
     $$PWD/plot/customtracker.cpp \
     $$PWD/plot/customzoomer.cpp \
     $$PWD/plot/fidplot.cpp \
     $$PWD/plot/ftplot.cpp \
+    $$PWD/plot/mainftplot.cpp \
     $$PWD/plot/pulseplot.cpp \
     $$PWD/plot/trackingplot.cpp \
     $$PWD/plot/zoompanplot.cpp \
@@ -49,9 +64,12 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/widget/pulseconfigwidget.cpp \
    $$PWD/widget/pulsestatusbox.cpp \
     $$PWD/widget/rfconfigwidget.cpp \
+    $$PWD/widget/scientificspinbox.cpp \
+    $$PWD/widget/scientificinputwidget.cpp \
     $$PWD/widget/temperaturecontrolwidget.cpp \
     $$PWD/widget/temperaturestatusbox.cpp \
-    $$PWD/widget/toolbarwidgetaction.cpp
+    $$PWD/widget/toolbarwidgetaction.cpp \
+    $$PWD/style/themecolors.cpp
 
 HEADERS += $$PWD/mainwindow.h \
     $$PWD/dialog/batchsequencedialog.h \
@@ -75,12 +93,27 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/expsetup/experimenttypepage.h \
     $$PWD/expsetup/experimentvalidatorconfigpage.h \
     $$PWD/mainwindow_ui.h \
+    $$PWD/overlay/unifiedoverlaydialog.h \
+    $$PWD/overlay/unifiedoverlaywidget.h \
+    $$PWD/overlay/overlaytypespecificwidget.h \
+    $$PWD/overlay/bcexpoverlaywidget.h \
+    $$PWD/overlay/catalogoverlaywidget.h \
+    $$PWD/overlay/genericxyoverlaywidget.h \
+    $$PWD/overlay/overlaybaseoptionswidget.h \
+    $$PWD/overlay/overlaymanagerwidget.h \
+    $$PWD/overlay/overlayconfiguredelegate.h \
+    $$PWD/overlay/overlaycheckboxdelegate.h \
     $$PWD/plot/blackchirpplotcurve.h \
     $$PWD/plot/chirpconfigplot.h \
+    $$PWD/plot/curveappearancewidget.h \
+    $$PWD/plot/curveappearancepresetmanager.h \
+    $$PWD/plot/presetsavedialog.h \
+    $$PWD/plot/curvefactory.h \
     $$PWD/plot/customtracker.h \
     $$PWD/plot/customzoomer.h \
     $$PWD/plot/fidplot.h \
     $$PWD/plot/ftplot.h \
+    $$PWD/plot/mainftplot.h \
     $$PWD/plot/pulseplot.h \
     $$PWD/plot/trackingplot.h \
     $$PWD/plot/zoompanplot.h \
@@ -106,9 +139,12 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/widget/pulseconfigwidget.h \
    $$PWD/widget/pulsestatusbox.h \
     $$PWD/widget/rfconfigwidget.h \
+    $$PWD/widget/scientificspinbox.h \
+    $$PWD/widget/scientificinputwidget.h \
     $$PWD/widget/temperaturecontrolwidget.h \
     $$PWD/widget/temperaturestatusbox.h \
-    $$PWD/widget/toolbarwidgetaction.h
+    $$PWD/widget/toolbarwidgetaction.h \
+    $$PWD/style/themecolors.h
 
 FORMS += \
     $$PWD/dialog/communicationdialog.ui \

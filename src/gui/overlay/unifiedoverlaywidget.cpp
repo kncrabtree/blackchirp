@@ -1,0 +1,702 @@
+#include "unifiedoverlaywidget.h"
+
+#include <QFormLayout>
+#include <QSplitter>
+#include <QMessageBox>
+#include <QColorDialog>
+#include <QDebug>
+
+#include "overlaybaseoptionswidget.h"
+#include <gui/plot/curveappearancewidget.h>
+#include "overlaytypespecificwidget.h"
+#include "bcexpoverlaywidget.h"
+#include "catalogoverlaywidget.h"
+#include "genericxyoverlaywidget.h"
+#include <data/storage/settingsstorage.h>
+#include <gui/plot/curveappearancepresetmanager.h>
+#include <gui/plot/blackchirpplotcurve.h>
+#include <data/experiment/overlaybase.h>
+
+UnifiedOverlayWidget::UnifiedOverlayWidget(const QString &settingsKey, 
+                                           OverlayBase::OverlayType type,
+                                           const QStringList &plotNames,
+                                           const Ft &currentFt,
+                                           std::shared_ptr<OverlayBase> overlay,
+                                           std::shared_ptr<OverlayStorage> overlayStorage,
+                                           QWidget *parent)
+    : QWidget(parent),
+      SettingsStorage(settingsKey, SettingsStorage::General),
+      d_context(overlay ? Context::Settings : Context::Creation),  // Auto-detect context
+      d_overlayType(type),
+      d_plotNames(plotNames),
+      d_currentFt(currentFt),
+      d_overlay(overlay),
+      p_overlayStorage(overlayStorage),
+      p_mainLayout(nullptr),
+      p_typeSpecificWidget(nullptr),
+      p_overlayBaseOptionsBox(nullptr),
+      p_overlayBaseOptionsWidget(nullptr),
+      p_curveAppearanceBox(nullptr),
+      p_curveAppearanceWidget(nullptr),
+      d_hasBackupState(false)
+{
+    
+    setupUI();
+    configureForContext();
+    
+    // Load current overlay settings if in settings context
+    if (isSettingsContext() && overlay && p_overlayBaseOptionsWidget) {
+        loadOverlaySettings();
+    }
+    
+    // Create backup of original overlay state for cancel functionality (after loading settings)
+    if (isSettingsContext()) {
+        backupOverlayState();
+    }
+}
+
+UnifiedOverlayWidget::~UnifiedOverlayWidget()
+{
+    // Cleanup moved to type-specific widgets
+    
+    // Ensure preview overlay is properly cleaned up to avoid dangling references
+    cleanupPreviewOverlay();
+}
+
+
+std::shared_ptr<OverlayBase> UnifiedOverlayWidget::createOverlay()
+{
+    if (d_context != Context::Creation) {
+        qWarning() << "createOverlay() called in settings context";
+        return nullptr;
+    }
+    
+    if (!isDataValid()) {
+        return nullptr;
+    }
+    
+    // Delegate to type-specific widget for overlay creation
+    std::shared_ptr<OverlayBase> overlay;
+    if (p_typeSpecificWidget) {
+        overlay = p_typeSpecificWidget->createOverlay();
+    }
+    
+    if (!overlay) {
+        return nullptr;
+    }
+    
+    // Apply base overlay options
+    if (p_overlayBaseOptionsWidget) {
+        p_overlayBaseOptionsWidget->applyToOverlay(overlay);
+        // Set overlay reference for autoscale functionality
+        p_overlayBaseOptionsWidget->setOverlayReference(overlay);
+    }
+    
+    // Apply curve appearance settings
+    if (p_curveAppearanceWidget) {
+        p_curveAppearanceWidget->applyToOverlay(overlay);
+    }
+    
+    return overlay;
+}
+
+void UnifiedOverlayWidget::applyToOverlay() const
+{
+    // Get the appropriate target overlay based on context
+    auto targetOverlay = getCurrentTargetOverlay();
+    if (!targetOverlay) {
+        return; // No target overlay available
+    }
+    
+    // Apply base overlay options
+    if (p_overlayBaseOptionsWidget) {
+        p_overlayBaseOptionsWidget->applyToOverlay(targetOverlay);
+    }
+    
+    // Apply curve appearance settings
+    if (p_curveAppearanceWidget) {
+        p_curveAppearanceWidget->applyToOverlay(targetOverlay);
+    }
+    
+    // Apply type-specific settings
+    if (p_typeSpecificWidget) {
+        p_typeSpecificWidget->applyToOverlay(targetOverlay);
+    }
+}
+
+bool UnifiedOverlayWidget::validateSettings(QString &errorMessage) const
+{
+    QStringList errors;
+    
+    // Validate base overlay options
+    if (p_overlayBaseOptionsWidget) {
+        QString baseError;
+        if (!p_overlayBaseOptionsWidget->validateSettings(baseError, getExistingOverlays())) {
+            errors << baseError;
+        }
+    }
+    
+    // Validate type-specific settings
+    if (p_typeSpecificWidget) {
+        if (!p_typeSpecificWidget->validateSettings()) {
+            QString typeError = p_typeSpecificWidget->getSettingsErrorMessage();
+            if (!typeError.isEmpty()) {
+                errors << typeError;
+            }
+        }
+    }
+    
+    if (!errors.isEmpty()) {
+        errorMessage = errors.join("\n");
+        return false;
+    }
+    
+    return true;
+}
+
+bool UnifiedOverlayWidget::validateAcceptance()
+{
+    // Delegate to type-specific widget
+    if (p_typeSpecificWidget) {
+        return p_typeSpecificWidget->validateAcceptance();
+    }
+    
+    return true; // Default to proceed if no type-specific widget
+}
+
+bool UnifiedOverlayWidget::isDataValid() const
+{
+    // Quick check for data readiness without generating error messages
+    if (p_typeSpecificWidget && !p_typeSpecificWidget->isDataValid()) {
+        return false;
+    }
+    
+    // Check overlay base options are ready (simplified check to avoid duplicate validation)
+    if (p_overlayBaseOptionsWidget) {
+        QString label = p_overlayBaseOptionsWidget->getLabel();
+        if (label.isEmpty()) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+
+
+
+
+void UnifiedOverlayWidget::onRealTimeUpdate()
+{
+    // Only apply settings and emit updates if current settings are valid
+    QString errorMessage;
+    bool isValid = validateSettings(errorMessage);
+    
+    if (!isValid) {
+        return;
+    }
+    
+    // Apply current settings to the appropriate overlay
+    applyToOverlay();
+    
+    // Emit update signal with the appropriate overlay based on context
+    if (isSettingsContext()) {
+        // Settings context: emit for the actual overlay
+        if (d_overlay) {
+            emit overlayDataChanged(d_overlay);
+        }
+    } else {
+        // Creation context: emit for the preview overlay
+        if (d_previewOverlay) {
+            emit overlayDataChanged(d_previewOverlay);
+        }
+    }
+}
+
+void UnifiedOverlayWidget::onDataValidityChanged()
+{
+    // Use centralized validation logic - this will handle both UI updates and auto-preview
+    performCompleteValidation();
+}
+
+void UnifiedOverlayWidget::onAccept()
+{
+    saveSettings();
+}
+
+
+void UnifiedOverlayWidget::setupUI()
+{
+    // Create main horizontal layout
+    p_mainLayout = new QHBoxLayout(this);
+    p_mainLayout->setContentsMargins(6, 6, 6, 6);
+    p_mainLayout->setSpacing(12);
+    
+    // Create left side vertical layout for overlay widgets
+    auto leftVLayout = new QVBoxLayout();
+    leftVLayout->setSpacing(6);
+    
+    // Add top spacer
+    // leftVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
+    
+    // Create overlay widgets
+    setupTypeSpecificWidget();
+    createOverlayBaseOptionsBox();
+    
+    // Add overlay widgets to left layout
+    leftVLayout->addWidget(p_typeSpecificWidget);
+    
+    // Add bottom spacer
+    leftVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
+
+    auto centerVLayout = new QVBoxLayout;
+    // centerVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
+    centerVLayout->addWidget(p_overlayBaseOptionsBox);
+    centerVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
+    
+    // Create right side vertical layout for curve appearance
+    auto rightVLayout = new QVBoxLayout();
+    rightVLayout->setSpacing(6);
+    
+    // Add top spacer
+    // rightVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
+    
+    // Create curve appearance widget
+    createCurveAppearanceBox();
+    rightVLayout->addWidget(p_curveAppearanceBox);
+    
+    // Add bottom spacer
+    rightVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
+    
+    // Add all layouts to main horizontal layout with equal stretch
+    p_mainLayout->addLayout(leftVLayout, 1);
+    p_mainLayout->addLayout(centerVLayout, 1);
+    p_mainLayout->addLayout(rightVLayout, 1);
+    
+    setLayout(p_mainLayout);
+    
+    setupConnections();
+}
+
+void UnifiedOverlayWidget::setupConnections()
+{
+    // Three-tier connections now handled by type-specific widgets
+    
+    // Base options widget connections will be added when widget is created
+    // Curve appearance widget connections will be added when widget is created
+    // Type-specific widget connections will be added when widget is created
+}
+
+
+
+void UnifiedOverlayWidget::createOverlayBaseOptionsBox()
+{
+    p_overlayBaseOptionsBox = new QGroupBox("Base Options", this);
+    
+    // Create the overlay base options widget
+    p_overlayBaseOptionsWidget = new OverlayBaseOptionsWidget(d_plotNames, d_currentFt, this);
+    
+    auto boxLayout = new QVBoxLayout(p_overlayBaseOptionsBox);
+    boxLayout->addWidget(p_overlayBaseOptionsWidget);
+    
+    // Connect signals once during creation
+    connect(p_overlayBaseOptionsWidget, &OverlayBaseOptionsWidget::settingsChanged,
+            this, [this]() {
+                performCompleteValidation();
+                onRealTimeUpdate();
+            });
+    
+    // Connect label changes to trigger validation (label validation is critical for overlay creation)
+    connect(p_overlayBaseOptionsWidget, &OverlayBaseOptionsWidget::labelChanged,
+            this, [this]() {
+                performCompleteValidation();
+            });
+}
+
+void UnifiedOverlayWidget::loadOverlaySettings()
+{
+
+    if (!d_overlay || !p_overlayBaseOptionsWidget) {
+        return;
+    }
+    
+    // Load base overlay settings using proper getter methods
+    QSignalBlocker blobk(p_overlayBaseOptionsWidget);
+    p_overlayBaseOptionsWidget->setLabel(d_overlay->getLabel());
+    p_overlayBaseOptionsWidget->setPlotId(d_overlay->getPlotId());
+    p_overlayBaseOptionsWidget->setYScale(d_overlay->getYScale());
+    p_overlayBaseOptionsWidget->setYOffset(d_overlay->getYOffset());
+    p_overlayBaseOptionsWidget->setXOffset(d_overlay->getXOffset());
+    p_overlayBaseOptionsWidget->setMinFreqLimit(d_overlay->getMinFreqEnabled(), d_overlay->getMinFreqValue());
+    p_overlayBaseOptionsWidget->setMaxFreqLimit(d_overlay->getMaxFreqEnabled(), d_overlay->getMaxFreqValue());
+    
+    // Load curve appearance settings
+    if (p_curveAppearanceWidget)
+        p_curveAppearanceWidget->initializeFromOverlay(d_overlay);
+    
+    // Set overlay reference for autoscale functionality
+    if (p_overlayBaseOptionsWidget) {
+        p_overlayBaseOptionsWidget->setOverlayReference(d_overlay);
+    }
+}
+
+void UnifiedOverlayWidget::saveSettings()
+{
+    // Save settings for type-specific widget using the OverlayTypeSpecificWidget interface
+    if (p_typeSpecificWidget) {
+        p_typeSpecificWidget->onAccept();
+    }
+    
+    // Note: OverlayBaseOptionsWidget and CurveAppearanceWidget don't use persistent settings
+    // They work with live overlay metadata instead
+}
+
+void UnifiedOverlayWidget::createCurveAppearanceBox()
+{
+    p_curveAppearanceBox = new QGroupBox("Curve Appearance", this);
+    
+    // Create the curve appearance widget
+    p_curveAppearanceWidget = new CurveAppearanceWidget(this);
+    
+    auto boxLayout = new QVBoxLayout(p_curveAppearanceBox);
+    boxLayout->addWidget(p_curveAppearanceWidget);
+    
+    // Connect signals once during creation - no context-dependent connections needed
+    connect(p_curveAppearanceWidget, &CurveAppearanceWidget::curveAppearanceChanged,
+            this, [this]() {
+                performCompleteValidation();
+                onRealTimeUpdate();
+            });
+    connect(p_curveAppearanceWidget, &CurveAppearanceWidget::colorChangeRequested,
+            this, &UnifiedOverlayWidget::onColorChangeRequested);
+}
+
+
+
+void UnifiedOverlayWidget::configureForContext()
+{
+    
+    // Type-specific widget title is now handled by the widget itself
+    
+    // Set intelligent defaults for overlays in creation mode
+    if (p_curveAppearanceWidget && isCreationContext())
+    {
+        auto presetManager = CurveAppearancePresetManager::instance();
+        
+        if (d_overlayType == OverlayBase::BCExperiment)
+        {
+            // Default to Curve - Primary for BC experiment data
+            if (presetManager && presetManager->hasPreset(BC::Key::CurveAppearancePresets::curvePrimary)) {
+                auto preset = presetManager->getPreset(BC::Key::CurveAppearancePresets::curvePrimary);
+                p_curveAppearanceWidget->setCurrentAppearance(preset.appearance);
+            }
+        }
+        else if (d_overlayType == OverlayBase::Catalog)
+        {
+            // Default to Stem - Secondary for discrete catalog data
+            if (presetManager && presetManager->hasPreset(BC::Key::CurveAppearancePresets::stemSecondary)) {
+                auto preset = presetManager->getPreset(BC::Key::CurveAppearancePresets::stemSecondary);
+                p_curveAppearanceWidget->setCurrentAppearance(preset.appearance);
+            }
+        }
+        else
+        {
+            // Default fallback for other overlay types
+            if (presetManager && presetManager->hasPreset(BC::Key::CurveAppearancePresets::curveSecondary)) {
+                auto preset = presetManager->getPreset(BC::Key::CurveAppearancePresets::curveSecondary);
+                p_curveAppearanceWidget->setCurrentAppearance(preset.appearance);
+            }
+        }
+    }
+}
+
+
+void UnifiedOverlayWidget::setupTypeSpecificWidget()
+{    
+    // Factory pattern: Create type-specific widget based on overlay type
+    switch (d_overlayType) {
+    case OverlayBase::BCExperiment:
+        p_typeSpecificWidget = new BCExpOverlayWidget(d_currentFt, this);
+        break;
+    case OverlayBase::Catalog:
+        p_typeSpecificWidget = new CatalogOverlayWidget(d_currentFt, this);
+        break;
+    case OverlayBase::GenericXY:
+        p_typeSpecificWidget = new GenericXYOverlayWidget(d_currentFt, this);
+        break;
+    }
+    
+    if (p_typeSpecificWidget) {
+        // Setup UI after construction since it calls virtual methods
+        p_typeSpecificWidget->setupUI();
+
+        // Setup context for the type-specific widget
+        setupTypeSpecificWidgetContext();
+
+        // Setup connections for the type-specific widget
+        setupTypeSpecificWidgetConnections();
+
+        // Type-specific widget handles its own layout
+    }
+}
+
+
+QVector<std::shared_ptr<OverlayBase>> UnifiedOverlayWidget::getExistingOverlays() const
+{
+    QVector<std::shared_ptr<OverlayBase>> existingOverlays;
+    if (p_overlayStorage) {
+        auto allOverlays = p_overlayStorage->getAllOverlays();
+        for (const auto &existing : allOverlays) {
+            if (existing && existing != d_overlay) {
+                existingOverlays.append(existing);
+            }
+        }
+    }
+    return existingOverlays;
+}
+
+void UnifiedOverlayWidget::performCompleteValidation()
+{
+    // Perform complete validation including both type-specific and overlay base options
+    QString errorMessage;
+    bool isValid = validateSettings(errorMessage);
+    
+    // Update internal state
+    d_lastValidationError = errorMessage;
+    
+    // Emit validation status change for UI updates
+    emit validationStatusChanged(isValid, errorMessage);
+    
+    // Handle auto-preview logic for creation context
+    if (isCreationContext()) {
+        if (isValid && isDataValid()) {
+            updateAutoPreview();
+        } else {
+            removeAutoPreview();
+        }
+    }
+}
+
+void UnifiedOverlayWidget::setupTypeSpecificWidgetContext()
+{
+    if (!p_typeSpecificWidget) {
+        return;
+    }
+    
+    // Set context information via friend access
+    p_typeSpecificWidget->setContext(d_context);
+    p_typeSpecificWidget->setOverlay(d_overlay);
+    
+    // Call appropriate setup method based on context
+    if (isCreationContext()) {
+        p_typeSpecificWidget->setupForCreation();
+    } else if (isSettingsContext() && d_overlay) {
+        p_typeSpecificWidget->setupForSettings(d_overlay);
+        
+        // Trigger validation immediately after loading overlay settings
+        // This ensures the validation status is updated instead of showing "Validating settings..."
+        QMetaObject::invokeMethod(p_typeSpecificWidget, [this]() {
+            emit p_typeSpecificWidget->settingsChanged();
+        }, Qt::QueuedConnection);
+    }
+    
+    // Configure context-aware UI behavior
+    p_typeSpecificWidget->configureForContext();
+}
+
+void UnifiedOverlayWidget::setupTypeSpecificWidgetConnections()
+{
+    if (!p_typeSpecificWidget) {
+        return;
+    }
+    
+    // Base connections for both contexts
+    connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::settingsChanged,
+            this, [this]() {
+                performCompleteValidation();
+            });
+    // Source file validation now handled by type-specific widgets
+    connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::dataValidityChanged,
+            this, [this](bool) {
+                onDataValidityChanged(); // Ignore the parameter, use simplified method
+            });
+    connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::labelUpdateRequested,
+            this, &UnifiedOverlayWidget::onLabelUpdateRequested);
+    
+    // Real-time update and progress indication connections for both contexts
+    connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::settingsChanged,
+            this, &UnifiedOverlayWidget::onRealTimeUpdate);
+    
+}
+
+
+
+
+void UnifiedOverlayWidget::createAutoPreview()
+{
+    if (!isCreationContext() || !isDataValid()) {
+        return;
+    }
+    
+    if (d_previewOverlay) {
+        // Re-enable existing disabled preview and update it
+        d_previewOverlay->setEnabled(true);
+        applyToOverlay(); // Update with current settings
+        emit previewRequested();
+    } else {
+        // Create new preview overlay
+        d_previewOverlay = createOverlay();
+        if (d_previewOverlay) {
+            d_previewOverlay->setPreview(true);
+            emit previewRequested();
+        }
+    }
+}
+
+void UnifiedOverlayWidget::updateAutoPreview()
+{
+    if (!isCreationContext()) {
+        return;
+    }
+    
+    if (!d_previewOverlay) {
+        // No existing preview - create one
+        createAutoPreview();
+    }
+    // Note: If preview overlay exists, onRealTimeUpdate() will handle the updates
+    // This avoids duplicate applyToOverlay() calls that can cause race conditions
+}
+
+void UnifiedOverlayWidget::removeAutoPreview()
+{
+    if (d_previewOverlay) {
+        // SAFETY: Don't destroy the overlay - just disable it to hide from plot
+        d_previewOverlay->setEnabled(false);
+        emit previewCancelled();
+        // Keep the overlay object alive but disabled
+    }
+}
+
+void UnifiedOverlayWidget::cleanupPreviewOverlay()
+{
+    if (d_previewOverlay) {
+        // Block signals during cleanup to prevent race conditions during destruction
+        QSignalBlocker blocker(this);
+        
+        // Disable the overlay safely
+        d_previewOverlay->setEnabled(false);
+        
+        // Clear the reference
+        d_previewOverlay.reset();
+        
+        // Re-enable signals and emit cleanup signal if not being destroyed
+        blocker.unblock();
+        if (!isBeingDestroyed()) {
+            emit previewCancelled();
+        }
+    }
+}
+
+bool UnifiedOverlayWidget::isBeingDestroyed() const
+{
+    // Check if this widget is in the process of being destroyed
+    // This prevents signal emission during destruction
+    return signalsBlocked() || !parent() || parent()->signalsBlocked();
+}
+
+std::shared_ptr<OverlayBase> UnifiedOverlayWidget::getCurrentTargetOverlay() const
+{
+    if (isSettingsContext()) {
+        // In settings context, always target the actual overlay
+        return d_overlay;
+    } else {
+        // In creation context, target preview overlay if it exists, otherwise nullptr
+        return d_previewOverlay;
+    }
+}
+
+void UnifiedOverlayWidget::backupOverlayState()
+{
+    if (!isSettingsContext() || !d_overlay) {
+        return;
+    }
+    
+    // Clear any existing backup
+    d_backupMetadata.clear();
+    
+    // Store complete overlay metadata including all settings and curve appearance
+    d_overlay->storeMetadata(d_backupMetadata);
+    d_hasBackupState = true;
+}
+
+void UnifiedOverlayWidget::restoreOverlayState()
+{
+    if (!isSettingsContext() || !d_overlay || !d_hasBackupState) {
+        return;
+    }
+    
+    // First, reload original data from destination file to discard any source file changes
+    d_overlay->readFromDest();
+    
+    // Then restore all overlay metadata from backup
+    d_overlay->retrieveMetadata(d_backupMetadata);
+    
+    // Mark overlay as modified to ensure changes are reflected
+    d_overlay->setModified();
+}
+
+
+QString UnifiedOverlayWidget::getOriginalLabel() const
+{
+    if (!d_hasBackupState) {
+        return QString();
+    }
+    
+    auto it = d_backupMetadata.find(BC::Key::Overlay::oLabel);
+    if (it != d_backupMetadata.end()) {
+        return it->second.toString();
+    }
+    
+    return QString();
+}
+
+void UnifiedOverlayWidget::onLabelUpdateRequested(const QString &newLabel)
+{
+    // Update the overlay base options widget with the new label (only in creation context)
+    if (isCreationContext() && p_overlayBaseOptionsWidget && !newLabel.isEmpty()) {
+        p_overlayBaseOptionsWidget->setLabel(newLabel);
+    }
+}
+
+
+void UnifiedOverlayWidget::onColorChangeRequested()
+{
+    if (!p_curveAppearanceWidget) {
+        return;
+    }
+    
+    // Get current color - behavior depends on context
+    QColor currentColor;
+    
+    if (isSettingsContext() && d_overlay) {
+        // Settings context: get color from overlay metadata
+        currentColor = d_overlay->getCurveMetadata(BC::Key::bcCurveColor).value<QColor>();
+    } else {
+        // Creation context: get color from widget's current appearance
+        auto appearance = p_curveAppearanceWidget->getCurrentAppearance();
+        currentColor = appearance.color;
+    }
+    
+    // Fall back to default color if not valid
+    if (!currentColor.isValid()) {
+        currentColor = palette().color(QPalette::Text);
+    }
+    
+    // Open color dialog
+    QColor newColor = QColorDialog::getColor(currentColor, this, "Choose Curve Color");
+    
+    // Update widget color display if valid color chosen
+    if (newColor.isValid()) {
+        p_curveAppearanceWidget->updateColorDisplay(newColor);
+    }
+}

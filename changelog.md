@@ -1,3 +1,17 @@
+# July 21 2025
+
+- Initial incorporation of overlays into development branch, pushing the versioning to 1.1.0. Overlays allow for plotting additional data on the FT Plots in the CP-FTMW tab. Currently 3 types of overlays are supported:
+  * **Blackchirp Experiments**: Plot the FT from another experiment. The processing settings can be modified if needed (window function, etc).
+  * **Spectral Catalogs**: Load a stick spectrum from an SPCAT or XIAM spectral catalog. Also supports convolution with a Gaussian or Lorentzian lineshape function.
+  * **General XY Data**: Load data from an arbitrary delimited data file. A powerful generic parser is included that can handle a wide variety of header formats, delimiters, multiple columns, etc.
+- Overlay data is copied and stored in an overlays folder within the BlackChirp experiment. They can be shared, opened, and partially configured on other computers; however, some processing settings which require access to the raw data file may not be available, as the overlay only stores the file path to the source file where the data came from and does not make an internal copy of the source file.
+
+
+# July 18 2025
+
+- Added differential backup viewing. In this mode, the selected backup is subtracted from the current live FID to enable viewing more recent signal levels during a long average.
+
+
 # June 5 2024
 
 General updates:

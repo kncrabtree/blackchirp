@@ -1,4 +1,5 @@
 #include "chirpconfigplot.h"
+#include "curvefactory.h"
 
 #include <QMouseEvent>
 #include <QMenu>
@@ -13,13 +14,17 @@ ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(BC::Key::chirpPl
     setPlotAxisTitle(QwtPlot::xBottom,QString::fromUtf16(u"Time (μs)"));
     setPlotAxisTitle(QwtPlot::yLeft,QString("Chirp (Normalized)"));
 
-    p_chirpCurve = new BlackchirpPlotCurve(BC::Key::chirpCurve);
+    // Disable QwtPlot's automatic memory management
+    setAutoDelete(false);
+
+    // Create curves using CurveFactory
+    p_chirpCurve = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::chirpCurve);
     p_chirpCurve->attach(this);
 
-    p_ampEnableCurve= new BlackchirpPlotCurve(BC::Key::ampCurve);
+    p_ampEnableCurve = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::ampCurve);
     p_ampEnableCurve->attach(this);
 
-    p_protectionCurve = new BlackchirpPlotCurve(BC::Key::protCurve);
+    p_protectionCurve = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::protCurve);
     p_protectionCurve->attach(this);
 
     insertLegend(new QwtLegend(this));
@@ -28,7 +33,7 @@ ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(BC::Key::chirpPl
 
 ChirpConfigPlot::~ChirpConfigPlot()
 {
-    detachItems();
+    // All items are managed by unique_ptr and will be automatically cleaned up
 }
 
 void ChirpConfigPlot::newChirp(const ChirpConfig cc)

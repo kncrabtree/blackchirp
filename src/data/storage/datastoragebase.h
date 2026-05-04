@@ -30,8 +30,8 @@ protected:
     std::unique_ptr<QMutex> pu_mutex;
     std::unique_ptr<BlackchirpCSV> pu_csv;
 
-    void writeMetadata(const std::map<QString,QVariant> &dat,QString dir = "");
-    void readMetadata(std::map<QString,QVariant> &out, QString dir = "");
+    void writeMetadata(QString file, const std::map<QString,QVariant> &dat,QString dir = "");
+    void readMetadata(QString file, std::map<QString,QVariant> &out, QString dir = "");
 };
 
 #endif // DATASTORAGEBASE_H

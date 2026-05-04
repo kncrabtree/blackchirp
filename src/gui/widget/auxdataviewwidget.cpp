@@ -12,6 +12,7 @@
 
 #include <gui/plot/trackingplot.h>
 #include <gui/plot/blackchirpplotcurve.h>
+#include <gui/plot/curvefactory.h>
 #include <data/storage/blackchirpcsv.h>
 
 
@@ -96,7 +97,7 @@ void AuxDataViewWidget::pointUpdated(const AuxDataStorage::AuxDataMap m, const Q
         if(foundCurve)
             continue;
 
-        BlackchirpPlotCurve *c = new BlackchirpPlotCurve(realKey,title);
+        auto c = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(realKey,SettingsStorage::General,title).release();
         c->appendPoint({x,value});
         if(c->plotIndex() < 0)
             c->setCurvePlotIndex(d_plotCurves.size() % d_allPlots.size());

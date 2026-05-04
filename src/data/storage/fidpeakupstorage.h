@@ -12,6 +12,7 @@ public:
     ~FidPeakUpStorage();
 
     // FidStorageBase interface
+    virtual FidList loadDifferentialFidList(int i);
     bool addFids(const FidList other, int shift) override;
     int getCurrentIndex() override;
     bool setFidsData(const FidList other) override;
