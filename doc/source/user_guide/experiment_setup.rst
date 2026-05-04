@@ -28,7 +28,7 @@ The key points for an FTMW acquisition are:
 
 1. On the first wizard page, select the desired :doc:`acquisition type <experiment/acquisition_types>` and enter the acquisition objective.
    For LO Scan and DR Scan types, the scan parameters appear on the same page immediately below the type selector.
-2. Verify and adjust the :doc:`FTMW Configuration <ftmw_configuration>` (Rf Configuration, :doc:`Chirp Configuration <experiment/chirp_setup>`, and :doc:`FTMW Digitizer Configuration <experiment/digitizer_setup>`).
+2. Verify and adjust the :doc:`FTMW Configuration <ftmw_configuration>` (Rf Configuration, :doc:`Chirp Configuration <ftmw_configuration/chirp_setup>`, and :doc:`FTMW Digitizer Configuration <ftmw_configuration/digitizer_setup>`).
 3. Review the settings for any present :doc:`optional hardware <experiment/optional_hardware>`.
 4. Set up any desired :doc:`validation conditions <experiment/validation>`.
 

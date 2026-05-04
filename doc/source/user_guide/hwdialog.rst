@@ -29,7 +29,7 @@ Below the tabs, a row of convenience controls is always visible:
   outcome (a green *Connected* indicator on success, a red *Connection failed*
   indicator on failure with the error message available as a tooltip). The
   button is disabled while a test is in flight.
-- **Communication Settings…** — opens the :doc:`communicationdialog` with this
+- **Communication Settings…** — opens the :ref:`Communication Settings dialog <user_guide/hardware_menu:Communication>` with this
   device pre-selected. The Communication Dialog is non-modal, so it can stay
   open alongside the Hardware Dialog while you adjust protocol or read-option
   settings; if it is already open, clicking the link raises it and switches

@@ -108,7 +108,7 @@ frequencies and the frequencies experienced by the sample:
     value of 2 indicates that the AWG output is sent through an external
     frequency doubler before reaching the mixer. The **Chirp Start** and
     **Chirp End** frequencies shown in the chirp segment table (see
-    :doc:`experiment/chirp_setup`) reflect the AWG frequency multiplied
+    :doc:`ftmw_configuration/chirp_setup`) reflect the AWG frequency multiplied
     by this factor.
 
 **Chirp Multiplication**

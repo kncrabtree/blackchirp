@@ -173,10 +173,10 @@ Blackchirp attempts to be conservative, only changing the current shift if there
 If the shift exceeds 50 points, an error is thrown.
 
 If the ``Chirp Start`` box is set to ``Automatic``, Blackchirp assumes that the digitizer is triggered at the start of the protection pulse.
-The chirp start is then set to the sum of the pre-chirp protection and pre-chirp delay settings entered on the :ref:`user_guide/experiment/chirp_setup:Chirp Setup` page, and the chirp end is determined from the chirp duration entered on that page.
+The chirp start is then set to the sum of the pre-chirp protection and pre-chirp delay settings entered on the :ref:`user_guide/ftmw_configuration/chirp_setup:Chirp Setup` page, and the chirp end is determined from the chirp duration entered on that page.
 These computed values will be displayed on the FID plots displayed on the :ref:`user_guide/cp-ftmw:CP-FTMW Tab`.
 If they are not correct, you can override the chirp starting time by entering the actual chirp start you observe into the ``Chirp Start`` box.
-The duration still comes from the :ref:`user_guide/experiment/chirp_setup:Chirp Setup` value.
+The duration still comes from the :ref:`user_guide/ftmw_configuration/chirp_setup:Chirp Setup` value.
 
 Chirp Scoring
 .............

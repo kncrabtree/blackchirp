@@ -264,4 +264,4 @@ the Hardware menu to select and configure the devices connected to your
 system.
 
 For a full walkthrough of the hardware-configuration workflow, see
-:doc:`hardware_configuration`.
+:doc:`hardware_config`.

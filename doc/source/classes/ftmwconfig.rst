@@ -28,7 +28,7 @@ Digitizer settings are encapsulated in an
 ``FtmwDigitizerConfig`` shared instance (accessible via ``scopeConfig()``).
 The FTMW configuration dialog and the user-facing setup workflow are covered in
 :doc:`/user_guide/ftmw_configuration`; digitizer setup specifics appear in
-:doc:`/user_guide/experiment/digitizer_setup`.
+:doc:`/user_guide/ftmw_configuration/digitizer_setup`.
 
 WaveformBuffer integration
 --------------------------

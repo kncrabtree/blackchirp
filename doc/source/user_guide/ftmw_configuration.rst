@@ -18,8 +18,8 @@ The dialog contains a :ref:`preset bar <ftmw-preset-bar>` at
 the top and three tabs below it: **RF Config**, **Chirp Config**, and
 **Digitizer Config**. The RF Config tab is described in
 :doc:`rf_configuration`; the Chirp Config tab is described in
-:doc:`experiment/chirp_setup`; the Digitizer Config tab is described in
-:doc:`experiment/digitizer_setup`.
+:doc:`ftmw_configuration/chirp_setup`; the Digitizer Config tab is described in
+:doc:`ftmw_configuration/digitizer_setup`.
 
 The FTMW Configuration dialog is available only while Blackchirp is in
 the **Idle** state (hardware connected, no experiment running). The dialog
@@ -102,5 +102,5 @@ following pages.
    :maxdepth: 2
 
    rf_configuration
-   experiment/chirp_setup
-   experiment/digitizer_setup
+   ftmw_configuration/chirp_setup
+   ftmw_configuration/digitizer_setup

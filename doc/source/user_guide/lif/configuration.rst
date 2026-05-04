@@ -79,7 +79,7 @@ Digitizer settings
 The **LIF Digitizer** group exposes the standard digitizer controls (sample
 rate, record length, input coupling, voltage range, trigger settings, and
 per-channel enable/range). These follow the same conventions as the FTMW
-digitizer widget; see :doc:`/user_guide/experiment/digitizer_setup` for the
+digitizer widget; see :doc:`/user_guide/ftmw_configuration/digitizer_setup` for the
 field-by-field walkthrough. For per-device wiring, see
 :doc:`/user_guide/hw/lifdigitizer` and :doc:`/user_guide/hw/liflaser`.
 

@@ -17,7 +17,7 @@ all frequency quantities are in MHz. ``ChirpConfig`` is owned by
 :cpp:class:`RfConfig` as the ``d_chirpConfig`` member and is a child
 :cpp:class:`HeaderStorage` node in the experiment header tree. The
 user-facing controls for building chirp waveforms are described in
-:doc:`/user_guide/experiment/chirp_setup`.
+:doc:`/user_guide/ftmw_configuration/chirp_setup`.
 
 The segment list is a two-dimensional structure: a vector of chirps,
 each containing an ordered vector of :cpp:struct:`ChirpConfig::ChirpSegment`

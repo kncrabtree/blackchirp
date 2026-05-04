@@ -8,7 +8,7 @@ AWG
 Overview
 --------
 
-An AWG represents the source that generates chirps in the FTMW spectrometer, whether or not the device is truly an Arbitrary Waveform Generator. When enabled, Blackchirp can :doc:`create and configure chirps </user_guide/experiment/chirp_setup>` that are stored alongside an experiment. The AWG is optional, but even if you generate chirps with another tool the virtual implementation is recommended so that the chirp parameters are recorded with the data.
+An AWG represents the source that generates chirps in the FTMW spectrometer, whether or not the device is truly an Arbitrary Waveform Generator. When enabled, Blackchirp can :doc:`create and configure chirps </user_guide/ftmw_configuration/chirp_setup>` that are stored alongside an experiment. The AWG is optional, but even if you generate chirps with another tool the virtual implementation is recommended so that the chirp parameters are recorded with the data.
 
 The AWG abstraction is modeled on the Tektronix AWG7122B: one analog output channel plus a configurable number of digital marker outputs. Markers are typically used to drive a low-noise-amplifier protection switch and a TWT amplifier gate, but Blackchirp's marker model is general-purpose and supports additional roles such as digitizer triggers or fully custom signals. AWGs that have no markers can use a :doc:`pulse generator </user_guide/hw/pulsegenerator>` to produce analogous signals. Some AWGs have multiple analog outputs; Blackchirp uses only one.
 
@@ -17,7 +17,7 @@ Settings
 
 The frequency, sample-rate, and triggering settings are exposed in the device dialog with inline labels and tooltips; see the :doc:`hardware dialog </user_guide/hwdialog>` page for conventions. A few items deserve special mention:
 
-* ``markerCount`` (int) reports the number of physical marker outputs that the implementation drives. The chirp configuration widget exposes a Markers tab with one row per channel, where each marker is given a name, a role (Protection, Gate, Trigger, or Custom), and a timing window relative to each chirp. See the :doc:`chirp setup </user_guide/experiment/chirp_setup>` page for full details on the Markers tab and the safety validation associated with the Protection and Gate roles.
+* ``markerCount`` (int) reports the number of physical marker outputs that the implementation drives. The chirp configuration widget exposes a Markers tab with one row per channel, where each marker is given a name, a role (Protection, Gate, Trigger, or Custom), and a timing window relative to each chirp. See the :doc:`chirp setup </user_guide/ftmw_configuration/chirp_setup>` page for full details on the Markers tab and the safety validation associated with the Protection and Gate roles.
 * ``rampOnly`` (true/false) is set for direct digital synthesis devices (e.g., the AD9914) that can only emit a single linear ramp per trigger. With ``rampOnly`` enabled, the chirp is constrained to a single non-empty segment.
 * ``triggered`` (true/false) selects external triggering. When false, supported AWGs play their loaded waveform continuously; not every implementation honors the untriggered mode.
 
@@ -87,7 +87,7 @@ The `AWG7122B <https://www.tek.com/en/datasheet/arbitrary-waveform-generators-7>
 Tektronix AWG5204
 ...........................
 
-The Tektronix AWG5204 is a 10 GSa/s AWG with a 2.5 GHz bandwidth. The chirp output is hardcoded to channel 1 and all four marker outputs are exposed through the marker system. Because the AWG5204 has no dedicated digitizer-trigger output, the digitizer trigger is produced by assigning one of the four marker channels the Trigger role in the Markers tab of the :doc:`chirp setup </user_guide/experiment/chirp_setup>` page; a 0.1 µs lead time relative to the chirp is the typical setting for that trigger. Any of the channels can equally well be repurposed for other timing tasks.
+The Tektronix AWG5204 is a 10 GSa/s AWG with a 2.5 GHz bandwidth. The chirp output is hardcoded to channel 1 and all four marker outputs are exposed through the marker system. Because the AWG5204 has no dedicated digitizer-trigger output, the digitizer trigger is produced by assigning one of the four marker channels the Trigger role in the Markers tab of the :doc:`chirp setup </user_guide/ftmw_configuration/chirp_setup>` page; a 0.1 µs lead time relative to the chirp is the typical setting for that trigger. Any of the channels can equally well be repurposed for other timing tasks.
 
 Analog Devices AD9914
 ..............................

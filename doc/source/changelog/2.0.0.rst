@@ -146,7 +146,7 @@ Hardware drivers
   ``MarkerRole`` definitions are entered through a marker table
   on the chirp configuration tab. See
   :ref:`chirp-setup-markers` on the
-  :doc:`chirp setup </user_guide/experiment/chirp_setup>` page.
+  :doc:`chirp setup </user_guide/ftmw_configuration/chirp_setup>` page.
 - Added the LabJack vendor-library wrapper with platform-
   specific backends (Linux/macOS exodriver, Windows UD), so
   LabJack support no longer requires the exodriver at compile
@@ -176,7 +176,7 @@ Acquisition and data flow
 - The number-of-chirps spinbox is now enabled unconditionally;
   a warning is emitted when the active digitizer does not
   support multi-record acquisition. See
-  :doc:`/user_guide/experiment/digitizer_setup`.
+  :doc:`/user_guide/ftmw_configuration/digitizer_setup`.
 
 User interface
 --------------
