@@ -1,10 +1,35 @@
 # Bundle 11b — Migration Guide: v1.x → 2.0.0
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
-- (entries appended in reverse chronological order; most recent first)
+- 2026-05-03 — not started → complete (content commit b0f0f727).
+  Created doc/source/migration/v1_to_v2.rst as a checklist-style
+  upgrade guide covering all topics from the bundle scope plus the
+  four 11a carry-forward items (Application Configuration dialog,
+  FTMW Configuration menu, HwDialog field hiding, overlay files).
+  migration.rst was not edited; the chapter intro from bundle 11
+  reads correctly with the new page in place. Closes the two
+  transient toctree warnings flagged in 11a's status log
+  (changelog/2.0.0.rst:8 and migration.rst:30 → /migration/v1_to_v2).
+  User-directed revisions during the session: clarified that v1.x
+  QSettings/data are not lost on upgrade and remain accessible;
+  removed the incorrect implication that the binary distribution
+  excludes some hardware implementations and reframed source-build
+  motivations around development/debugging; added a safety warning
+  in the marker-timing section to verify markers on a scope before
+  reconnecting amplifiers; clarified that older Blackchirp versions
+  may not read 2.0 files and the 2.0 viewer can be used during a
+  rollback; corrected the HwDialog implementation-change workflow
+  (a profile's implementation cannot be edited in place; create a
+  new profile instead); reframed the overlays paragraph to reflect
+  that overlays were introduced in v1.1 with an unchanged schema in
+  2.0; tightened the Quick Experiment gate description to make
+  clear that comparison is against the live RuntimeHardwareConfig
+  hardware map regardless of named-loadout state. Build is clean
+  (105 warnings total, all pre-existing; no new warnings on the
+  page).
 -->
 
 Sub-page of the Changelog and Migration Guide chapter. Populates

@@ -39,7 +39,7 @@ requirements, and acceptance criteria.
 | 10 | Rolling/Aux, Log tab, Blackchirp-viewer | M | 08 | complete |
 | 11 | Changelog + Migration Guide chapter umbrella | S | most user-guide bundles | complete |
 | 11a | Changelog: 1.1.0 + 2.0.0 release notes | M | 11 | complete |
-| 11b | Migration Guide: v1.x → 2.0.0 | M | 11a | not started |
+| 11b | Migration Guide: v1.x → 2.0.0 | M | 11a | complete |
 | 12 | Developer Guide chapter scaffold + intro | S | — (independent) | complete |
 | 12a | Developer Guide: Build System & Project Layout | M | 12 | complete |
 | 12b | Developer Guide: Coding Conventions | S | 12 | complete |
