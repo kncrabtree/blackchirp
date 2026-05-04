@@ -1,9 +1,36 @@
 # Bundle 14d — American English sweep
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
+- 2026-05-03 — not started → complete (content commit
+  8a3e847e). Converted 44 prose occurrences across 24 RST files
+  in the user guide, developer guide, and migration guide:
+  initialisation/initialises/re-initialise → initialization/
+  initializes/re-initialize; summarise(s) → summarize(s);
+  organis(ed) → organiz(ed); optimised → optimized; digitised →
+  digitized; specialised → specialized; maximising → maximizing;
+  customised → customized; labelled → labeled (12 sites);
+  cancelled → canceled (2 sites); modelled → modeled; greyed →
+  grayed; behaviour → behavior (8 sites); colours → colors;
+  coaverage* → co-average* (5 sites). Borderline call: a
+  Mermaid diagram label in developer_guide/hardware_configuration
+  (`Static initialisation` → `Static initialization`) was
+  included because the text is rendered to the user even though
+  the directive isn't `.. code-block::`. Authorized source-tree
+  edits made in the same pass: brace-initialised → brace-
+  initialized in src/hardware/core/hardwareregistration.h
+  Doxygen comment; initialises → initializes in two Doxygen
+  comments in src/data/experiment/rfconfig.h and one in
+  src/gui/widget/customprotocolwidget.h; recognised →
+  recognized in a user-visible HTML message string in
+  src/hardware/library/labjacklibrary.cpp. The `Cancelled`
+  enum/class identifiers (overlay processing) and other
+  `cancelled`/`cancellation` source-code uses were left as-is per
+  user direction (American English accepts both, and these often
+  follow Qt API style). Build clean: 103 warnings, all
+  pre-existing, none introduced by this sweep.
 - (entries appended in reverse chronological order; most recent first)
 -->
 

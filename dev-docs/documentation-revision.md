@@ -68,7 +68,7 @@ requirements, and acceptance criteria.
 | 14a | API page intro / header-comment harmonization | M | 14 | complete |
 | 14b | Screenshot sizing pass | S | 14 | complete |
 | 14c | File organization & menu layout audit | S | 14 | complete |
-| 14d | American English sweep | S | 14 | not started |
+| 14d | American English sweep | S | 14 | complete |
 | 14e | Implementation → driver terminology sweep | S | 14 | not started |
 | 15 | LIF module (experiment setup, configuration, tab, storage) | M | 08 | complete |
 
