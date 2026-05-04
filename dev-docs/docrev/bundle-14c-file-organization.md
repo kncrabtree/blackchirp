@@ -1,10 +1,47 @@
 # Bundle 14c — File organization & menu layout audit
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
-- (entries appended in reverse chronological order; most recent first)
+- 2026-05-03 — not started → complete (content commits 751bcbbb +
+  6b6773af). Audit performed via research-agent enumeration of every
+  user-guide page, every toctree directive, the cross-link map
+  between pages, and orphan/double-listed checks. Three concrete
+  improvements applied:
+  (1) Moved experiment/chirp_setup.rst and experiment/digitizer_setup.rst
+      to ftmw_configuration/. They were already toctree'd from
+      ftmw_configuration.rst, not experiment_setup.rst — the directory
+      path no longer matched the chapter assignment. 17 :doc: and
+      :ref: cross-references updated across 9 files spanning user
+      guide pages, the FtmwConfig and ChirpConfig API class pages,
+      and the 2.0.0 changelog.
+  (2) Reordered the top-level user_guide.rst toctree to match new-
+      user reading flow: getting-started orientation up front,
+      hardware setup as a contiguous block, FTMW configuration and
+      experiment setup before the during/after-acquisition tabs.
+  (3) Split the flat top-level toctree into five captioned
+      toctrees (Getting Started, Hardware Setup, Running Experiments,
+      Inspecting Data, Modules) so the chapter landing renders
+      visible section headings around the same 20 pages in the same
+      order. The sphinx_rtd_theme sidebar does not propagate
+      captions from chapter landings, so the sidebar stays flat;
+      the structure shows up on user_guide.html.
+  Two pre-existing broken :doc: targets fixed opportunistically
+  (hwdialog.rst → communicationdialog became a :ref: into
+  hardware_menu.rst; installation.rst → hardware_configuration
+  became hardware_config). Items considered and held for follow-up:
+  the hw/ → hardware_details/ rename (modest reader benefit vs.
+  external-bookmark cost was judged borderline). Items considered
+  and rejected: stub consolidation in experiment/ (each "stub" is
+  actually a complete self-contained page on its own topic).
+  Build is clean — every remaining warning is pre-existing
+  (autosectionlabel duplicates in classes/, ipython3 lexer hits,
+  python-hardware-custom-protocol and rf-configuration ref-target
+  gaps in pages outside 14c scope). The 6b6773af follow-up commit
+  is layered on the same in-flight working tree as the 751bcbbb
+  content commit and shares its scope; recording 751bcbbb as the
+  primary stage-1 hash for the master-plan table.
 -->
 
 Sub-page of the Final Consistency Pass. Audits whether the
