@@ -89,7 +89,7 @@ compile-time outward:
 .. mermaid::
 
    flowchart LR
-       subgraph Compile[Static initialisation]
+       subgraph Compile[Static initialization]
            Macros[REGISTER_HARDWARE_*<br/>in driver .cpp files]
        end
 
@@ -237,7 +237,7 @@ the hardware object is constructed, because the constructor reads them
 to size internal arrays, allocate buffers, and so on. That is why
 :cpp:class:`HwSettingsWidget` renders them read-only in Edit mode — the
 profile must be deleted and recreated to change a Required value. See
-:doc:`/classes/hwsettingswidget` for the per-mode behaviour and
+:doc:`/classes/hwsettingswidget` for the per-mode behavior and
 :doc:`/classes/hardwareregistry` for the full
 :cpp:struct:`HwSettingDef` field reference.
 
@@ -313,7 +313,7 @@ System profiles
 
 Some hardware types are required for Blackchirp to operate
 (``FtmwScope``, ``Clock``, plus the LIF types when LIF is enabled). The
-manager guarantees a *system profile* — a profile labelled ``virtual``
+manager guarantees a *system profile* — a profile labeled ``virtual``
 backed by the corresponding virtual driver — for each required type via
 :cpp:func:`HardwareProfileManager::ensureSystemProfiles`. System
 profiles are flagged by :cpp:func:`HardwareProfileManager::isSystemProfile`
@@ -509,7 +509,7 @@ state. Hitting **Apply Configuration** validates the preview, calls
 :cpp:func:`RuntimeHardwareConfig::applyConfiguration`, applies any
 threading or Python overrides via the friend-class write path, and
 emits the signals that drive the rest of the application to
-re-initialise. Hitting **Cancel** drops the preview unchanged.
+re-initialize. Hitting **Cancel** drops the preview unchanged.
 
 Where settings live
 -------------------

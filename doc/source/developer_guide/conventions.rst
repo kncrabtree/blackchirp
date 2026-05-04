@@ -311,7 +311,7 @@ code that may change it.
   it. UI code routinely does this to populate a widget from a hardware
   driver's persisted settings.
 * The ``set`` family is **protected**. Only a class that *owns* a
-  group — i.e. inherits from ``SettingsStorage`` and initialises its
+  group — i.e. inherits from ``SettingsStorage`` and initializes its
   base with the group keys — may write. The split is what keeps
   persisted state from drifting behind the owner's back; a friend
   helper is the explicit escape hatch when one manager class needs to

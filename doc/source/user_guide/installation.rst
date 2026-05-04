@@ -140,7 +140,7 @@ configurations are supported:
     cmake . -B build/Desktop-Debug/
     cmake --build build/Desktop-Debug/ -j$(nproc)
 
-**Release** (optimised; ``QDEBUG`` output suppressed)::
+**Release** (optimized; ``QDEBUG`` output suppressed)::
 
     cmake . -B build/Desktop-Release/ -DCMAKE_BUILD_TYPE=Release
     cmake --build build/Desktop-Release/ -j$(nproc)

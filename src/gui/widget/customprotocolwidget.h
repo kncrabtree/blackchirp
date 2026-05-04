@@ -21,7 +21,7 @@ class QVBoxLayout;
  *   the BC::Key::Comm::custom group in SettingsStorage.
  *
  * - New-profile mode (used by AddProfileDialog): pass \a hwType and \a hwImpl;
- *   the widget loads schema from the registry and initialises fields to their
+ *   the widget loads schema from the registry and initializes fields to their
  *   type-appropriate defaults. Call saveToStorage() on accept to persist the values.
  */
 class CustomProtocolWidget : public ProtocolWidget

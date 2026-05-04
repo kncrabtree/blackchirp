@@ -35,6 +35,6 @@ The key points for an FTMW acquisition are:
 A past experiment can be repeated using the :doc:`Quick Experiment <experiment/quick_experiment>` option, which pre-populates the wizard from a saved experiment.
 
 Once you have finished with the wizard, Blackchirp reads the settings for each piece of hardware and attempts to initialize each item in turn.
-If any errors occur during this process, the experiment is cancelled and error messages will be displayed on the ``Log`` tab.
+If any errors occur during this process, the experiment is canceled and error messages will be displayed on the ``Log`` tab.
 In the event that you encounter errors, check the :doc:`Hardware Details <hardware_details>` section of this manual to see if there are known issues or workarounds, and consider `reporting a bug <https://github.com/kncrabtree/blackchirp/issues>`_ if the problem cannot be solved.
 Once all hardware has been initialized successfully, Blackchirp will ensure that it can acquire system resources (including GPU initialization if applicable), create a new folder to store data, and begin the acquisition.

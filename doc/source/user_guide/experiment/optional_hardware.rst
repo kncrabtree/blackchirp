@@ -11,7 +11,7 @@ Optional Hardware Pages
 =======================
 
 After the FTMW chirp and digitizer pages, the experiment wizard inserts a dedicated configuration page for each optional hardware device that is present in the active :doc:`hardware loadout <../hardware_config/loadouts>`.
-Each page is labelled with the display name of the hardware item so that it is unambiguous when multiple devices of the same type are configured.
+Each page is labeled with the display name of the hardware item so that it is unambiguous when multiple devices of the same type are configured.
 
 The pages that may appear correspond to the following device types; each is documented in detail on its :doc:`Hardware Details <../hardware_details>` page, including the controls that appear on the wizard page:
 

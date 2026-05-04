@@ -253,7 +253,7 @@ inline QStringList buildInheritanceChain(const QMetaObject* metaObj) {
  * CustomProtocolWidget can render the appropriate input fields without needing
  * to construct a hardware object first.
  *
- * Each entry is a brace-initialised CustomCommDef. For String fields, supply
+ * Each entry is a brace-initialized CustomCommDef. For String fields, supply
  * {key, "Label", "Description", CustomCommType::String, maxLen}.
  * For Int fields, supply {key, "Label", "Description", CustomCommType::Int, min, max}.
  * For FilePath fields, supply {key, "Label", "Description", CustomCommType::FilePath}.

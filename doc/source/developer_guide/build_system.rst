@@ -336,7 +336,7 @@ Test executables and what each covers:
    * - ``tst_spcatparser``, ``tst_xiamparser``
      - Catalog/spectrum parsers against fixture files.
    * - ``tst_hardwareregistrytest``
-     - Registry behaviour: registration macros, lookups, factory invocation.
+     - Registry behavior: registration macros, lookups, factory invocation.
    * - ``tst_runtimehardwareconfigtest``
      - :cpp:class:`RuntimeHardwareConfig` profile resolution and selection.
    * - ``tst_hardwareprofilemanagertest``

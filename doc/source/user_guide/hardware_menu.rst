@@ -42,7 +42,7 @@ appear in the following order:
 #. **LIF Configuration** *(visible only when the LIF module is enabled)* —
    opens the LIF configuration dialog.
 #. **Per-device entries** — one entry per device in the active hardware map,
-   labelled by the device's hardware key (``Type.Label``). Selecting an entry
+   labeled by the device's hardware key (``Type.Label``). Selecting an entry
    opens the :doc:`Hardware Dialog <hwdialog>` for that device. These entries
    stay reachable regardless of connection state so that cached settings can be
    inspected and Python scripts can be reloaded after a failure; the dialog's
@@ -78,7 +78,7 @@ implementation. The available protocol types are:
 - **TCP** — Ethernet connection via IP address and port number.
 - **GPIB** — IEEE-488 bus access, typically through a GPIB-LAN or GPIB-RS232
   bridge (a Prologix GPIB-LAN controller is the supported implementation).
-- **Custom** — driver-defined connection type used by some specialised
+- **Custom** — driver-defined connection type used by some specialized
   hardware.
 - **Virtual** — software-only implementation; no physical connection is
   required.
@@ -174,7 +174,7 @@ Per-Device Entries
 ------------------
 
 Below the FTMW Configuration entry, one menu action appears for each device in
-the active hardware map, labelled by the device's hardware key
+the active hardware map, labeled by the device's hardware key
 (``Type.Label``). Selecting an entry opens the :doc:`Hardware Dialog
 <hwdialog>` for that device. These entries stay reachable regardless of
 connection state — including while Blackchirp is in the **Disconnected** state

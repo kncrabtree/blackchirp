@@ -369,7 +369,7 @@ canonical next candidate) does not require restructuring:
    functions (``eAIN``, ``eDAC``, ``eDI``, ``eDO``, …) are device-agnostic
    in the UD library and need no per-model changes.
 4. Add a :cpp:class:`LabjackU6` hardware class under
-   ``hardware/optional/ioboard/`` modelled on :cpp:class:`LabjackU3`,
+   ``hardware/optional/ioboard/`` modeled on :cpp:class:`LabjackU3`,
    register it with ``REGISTER_HARDWARE_META`` and ``REGISTER_LIBRARY``,
    and pick up the new entry through the CMake glob.
 

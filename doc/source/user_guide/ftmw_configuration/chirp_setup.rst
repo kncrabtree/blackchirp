@@ -33,7 +33,7 @@ Markers sub-tab is hidden when the active AWG reports zero marker channels.
    The **Chirp Segments** sub-tab. The table at the top lists each segment
    with its AWG frequency range, molecular frequency range, duration, and
    empty flag. The preview plot below the tab shows the resulting waveform
-   as a frequency sweep over time, with one labelled rectangle per enabled
+   as a frequency sweep over time, with one labeled rectangle per enabled
    marker channel.
 
 .. _chirp-setup-segments:
@@ -156,8 +156,8 @@ Default timing values when ``markerCount >= 2`` are −0.5 μs for Start and
 +0.5 μs for End on both Protection and Gate channels, matching the
 previous default of 0.5 μs pre- and post-chirp margins.
 
-Each enabled marker is drawn as a labelled rectangle in the chirp preview
-plot. The plot shows one curve per enabled channel, labelled with the
+Each enabled marker is drawn as a labeled rectangle in the chirp preview
+plot. The plot shows one curve per enabled channel, labeled with the
 channel name and role.
 
 .. note::

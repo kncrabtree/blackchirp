@@ -269,7 +269,7 @@ model performs.
    roughly equivalent to v1.x's 0.5 µs default on all four
    spinboxes; if you used the defaults, no further action is
    required.
-#. If you customised the v1.x spinbox values, translate them into
+#. If you customized the v1.x spinbox values, translate them into
    the new timings using the formulas below. Let ``preProt``,
    ``preGate``, ``postGate``, and ``postProt`` be your v1.x values
    (in microseconds):
@@ -281,7 +281,7 @@ model performs.
    For example, v1.x defaults of 0.5 µs across all four spinboxes
    yield Protection = −1.0 / +0.5 µs and Gate = −0.5 / +0.5 µs in
    the new model — slightly wider than the 2.0 default but a
-   faithful reproduction of v1.x behaviour.
+   faithful reproduction of v1.x behavior.
 #. Confirm both rows are **Enabled** and the role column is set
    correctly. The validator emits a warning if the Protection
    window does not fully enclose the Gate window or the chirp
@@ -300,7 +300,7 @@ model performs.
    that each marker pulse rises and falls exactly when you expect
    relative to the chirp. Confirm both polarity and timing for
    every enabled marker channel. Only reconnect the amplifiers
-   once the marker behaviour has been verified.
+   once the marker behavior has been verified.
 
 Hardware Identification on Disk
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -33,10 +33,10 @@ the sample, and between the sample emission and the digitizer input.
 RF Config Tab
 -------------
 
-The diagram below summarises Blackchirp's model of the RF chain. The AWG
+The diagram below summarizes Blackchirp's model of the RF chain. The AWG
 output is multiplied, mixed against the upconversion local oscillator, and
 delivered to the sample. The sample emission is mixed against the
-downconversion local oscillator and digitised. Each labelled stage in the
+downconversion local oscillator and digitized. Each labeled stage in the
 diagram corresponds to a setting on this tab.
 
 .. figure:: /_static/user_guide/ftmw_configuration/clocks.svg

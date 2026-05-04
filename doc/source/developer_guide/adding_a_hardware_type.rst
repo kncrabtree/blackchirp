@@ -622,7 +622,7 @@ the application:
 
 - **System-profile fall-back.** :cpp:class:`HardwareProfileManager`
   guarantees that every required hardware type carries a profile
-  labelled ``virtual`` backed by the type's virtual driver, so
+  labeled ``virtual`` backed by the type's virtual driver, so
   :cpp:func:`HardwareManager::initialize` always has something to
   instantiate even when no real hardware is configured (see
   :doc:`/developer_guide/hardware_configuration`, *System profiles*).

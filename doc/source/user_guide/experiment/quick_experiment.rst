@@ -25,7 +25,7 @@ This check is loadout-based: it uses the runtime profile saved with the experime
 A major-version mismatch also blocks repeating an experiment.
 A minor-version mismatch produces a warning and strongly recommends configuring the experiment manually before starting.
 
-**Use Current Settings.** The panel on the right side of the dialog lists each optional hardware device (Pulse Generators, Flow Controllers, Pressure Controllers, IO Boards, and Temperature Controllers) with a checkbox labelled ``Use Current Settings``.
+**Use Current Settings.** The panel on the right side of the dialog lists each optional hardware device (Pulse Generators, Flow Controllers, Pressure Controllers, IO Boards, and Temperature Controllers) with a checkbox labeled ``Use Current Settings``.
 When a box is checked, the experiment uses the live settings for that device rather than the values saved with the original experiment.
 By default all optional hardware boxes are checked, so pulse timings, flow setpoints, and similar day-to-day parameters are taken from the current hardware state.
 Unchecking a box causes the saved values to be restored instead.

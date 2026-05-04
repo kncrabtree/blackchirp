@@ -136,7 +136,7 @@ Maximizing Transfer Efficiency
 ..............................
 
 Each digitizer operates differently, and understanding how Blackchirp
-interacts with your device is important for maximising throughput.
+interacts with your device is important for maximizing throughput.
 Blackchirp is designed to receive independent records: each transfer is
 treated as new data to be co-averaged with the data collected so far.
 Polling from a continuously-accumulating math waveform (as some

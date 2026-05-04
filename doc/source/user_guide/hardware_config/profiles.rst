@@ -41,7 +41,7 @@ profile's settings affects every loadout that includes it.
 
    The Hardware Configuration dialog. From left to right: the **Loadout**
    panel lists saved loadouts and offers loadout-level operations; the
-   **Configuration Overview** summarises the preview hardware map; the
+   **Configuration Overview** summarizes the preview hardware map; the
    **Hardware Browser** shows the count of profiles for each supported
    hardware type; and the rightmost panel shows per-profile settings for
    the selection. The validation status bar across the bottom reports
@@ -82,7 +82,7 @@ The **Add Profile** dialog collects:
    where applicable.
 
 After selecting an implementation, the dialog shows a settings widget
-organised into priority sections.
+organized into priority sections.
 
 .. figure:: /_static/user_guide/hardware_config/addprofile.png
    :alt: Add Profile dialog showing the Implementation, Label, and Required and Important Settings sections

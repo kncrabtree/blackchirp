@@ -152,7 +152,7 @@ QString LabjackLibrary::getInstallationInstructions() const
         "<a href=\"https://labjack.com/support/software/installers/ud\">labjack.com</a></li>"
         "<li>Run the installer as Administrator</li>"
         "<li><code>LabJackUD.dll</code> is placed in <code>C:\\Windows\\System32</code></li>"
-        "<li>Check Device Manager under \"LabJack\" if the device is not recognised</li>"
+        "<li>Check Device Manager under \"LabJack\" if the device is not recognized</li>"
         "</ol>"
         "<p>Only 64-bit Windows is supported.</p>"
     );

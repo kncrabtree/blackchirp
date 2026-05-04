@@ -459,7 +459,7 @@ gate zones whenever the user nudges any of the spin boxes, so the
 trace view tracks the panel without going through ``Reprocess
 All``.
 
-The user-facing behaviour of the LIF tab — what each control does,
+The user-facing behavior of the LIF tab — what each control does,
 how the cursors interact with the slices — is documented in
 :doc:`/user_guide/lif/lif_tab`; this page covers only the data flow
 and the class wiring.

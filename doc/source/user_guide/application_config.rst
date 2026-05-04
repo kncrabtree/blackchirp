@@ -71,7 +71,7 @@ this setting.
 Default: **disabled**.
 
 Enable debug logging temporarily when diagnosing communication failures or
-unexpected behaviour. Disable it during normal operation to reduce disk usage.
+unexpected behavior. Disable it during normal operation to reduce disk usage.
 
 Application Font
 ^^^^^^^^^^^^^^^^
@@ -115,7 +115,7 @@ as ``Blackchirp`` or ``Blackchirp1``), Blackchirp 2 will not pick them up
 automatically. You must reconfigure hardware profiles, the data path, and
 application settings from scratch when upgrading between major versions.
 This isolation prevents stale or incompatible settings from silently affecting
-behaviour after an upgrade.
+behavior after an upgrade.
 
 Blackchirp records the current version numbers in the settings file on every
 startup, which allows future tooling to detect the version that last wrote the

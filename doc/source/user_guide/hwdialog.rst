@@ -99,7 +99,7 @@ will only be applied when this dialog is closed with the Ok button. Editing
 these settings incorrectly may result in unexpected behavior. Consider backing
 up your config file before making changes."*
 
-Each device can declare any number of persistent settings, organised by
+Each device can declare any number of persistent settings, organized by
 priority. The Settings tab presents them through a nested set of sub-tabs:
 
 - A **Settings** sub-tab containing the Required and Important groups (when
@@ -144,7 +144,7 @@ below.
    and cannot be recalled by closing the dialog.
 
 .. warning::
-   Incorrect or inappropriate settings may cause unexpected program behaviour.
+   Incorrect or inappropriate settings may cause unexpected program behavior.
    Consider backing up your configuration file before making changes to
    hardware settings.
 

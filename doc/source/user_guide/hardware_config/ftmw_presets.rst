@@ -53,7 +53,7 @@ The Preset Bar
 
 The preset bar at the top of the FTMW Configuration dialog is the primary
 interface for working with presets. See
-:doc:`/user_guide/ftmw_configuration` for the buttons and their behaviour.
+:doc:`/user_guide/ftmw_configuration` for the buttons and their behavior.
 
 .. figure:: /_static/user_guide/ftmw_configuration/ftmw_configuration.png
    :width: 800

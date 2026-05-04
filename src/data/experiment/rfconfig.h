@@ -37,7 +37,7 @@ inline constexpr QLatin1StringView downSB{"DownconversionSideband"}; ///< Downco
 /// - A *clock step list* (\c d_clockConfigs) holds one hash per acquisition
 ///   segment; for LO and DR scans each element differs only in the scanned
 ///   clock's desired frequency. The list is empty for non-scan acquisitions,
-///   in which case \c prepareForAcquisition() initialises it from the template.
+///   in which case \c prepareForAcquisition() initializes it from the template.
 ///
 /// \c clockFrequency() and \c getClocks() always return from the active step
 /// (indexed by \c d_currentClockIndex). \c rawClockFrequency() converts the
@@ -116,7 +116,7 @@ public:
     //chirp
     ChirpConfig d_chirpConfig; ///< Embedded chirp waveform configuration.
 
-    /// \brief Validates and initialises the clock step list for acquisition.
+    /// \brief Validates and initializes the clock step list for acquisition.
     ///
     /// If no clock steps have been added (non-scan case) the template is copied
     /// to produce a single-step list. Resets \c d_currentClockIndex to 0 and

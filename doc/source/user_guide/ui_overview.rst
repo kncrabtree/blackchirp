@@ -69,14 +69,14 @@ contains:
 Status boxes are added and removed dynamically when the active hardware map
 changes (see :doc:`hardware_config/loadouts`). Only devices in the active
 loadout have status boxes; devices not in the current loadout do not appear.
-Status boxes are disabled (greyed out) when the corresponding device is
+Status boxes are disabled (grayed out) when the corresponding device is
 offline.
 
 **Experiment info panel**
 
 - ``Expt`` displays the last experiment number in the current save directory,
   or 0 if no experiments have been performed. The number increments upon
-  successful initialisation of an experiment.
+  successful initialization of an experiment.
 - ``FTMW Progress`` shows the completion percentage of an ongoing FTMW
   acquisition.
 - ``LIF Progress`` shows the completion percentage of an ongoing LIF
@@ -114,7 +114,7 @@ given session depends on the hardware types present in the active loadout.
    stored in settings. Present when a PulseGenerator is in the active loadout.
 
 *Temperature Status Box* for temperature controllers
-   Shows the most recent temperature reading for each enabled channel, labelled
+   Shows the most recent temperature reading for each enabled channel, labeled
    by channel name. Channels that are disabled in settings are hidden; a
    placeholder message appears when no channels are enabled. Present when a
    TemperatureController is in the active loadout.
@@ -171,5 +171,5 @@ tabbed view with three tabs:
 - **Build Info** — Qt version, operating system, CPU architecture, and
   the enabled optional modules (CUDA, LIF).
 
-**About Qt** opens Qt's standard About Qt dialog, which summarises the Qt
+**About Qt** opens Qt's standard About Qt dialog, which summarizes the Qt
 version and license in use.

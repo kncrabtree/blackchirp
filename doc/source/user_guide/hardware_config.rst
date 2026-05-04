@@ -29,7 +29,7 @@ A preset captures the RF chain configuration, clock frequencies, chirp
 waveform, and digitizer settings that together define one experimental
 operating point. Switching presets within a loadout swaps the FTMW
 configuration without touching the hardware map. For example, you might
-create one preset for that coaverages 10 full-bandwidth FIDs, and a second
+create one preset for that co-averages 10 full-bandwidth FIDs, and a second
 that retains all 10 FIDs separately so you can see how the FID quality
 varies with time relative to the gas pulse. Or you might set several
 presets which vary the chirp duration based on estimated dipole moments of
@@ -50,7 +50,7 @@ the FTMW configuration widgets.
 .. rubric:: In this chapter
 
 :doc:`hardware_config/profiles`
-   How profiles are created, labelled, and managed. Covers the
+   How profiles are created, labeled, and managed. Covers the
    Type / Label / Implementation triple, the settings priority sections
    (Required, Important, Optional / Advanced), and enabling or disabling
    profiles within a loadout.

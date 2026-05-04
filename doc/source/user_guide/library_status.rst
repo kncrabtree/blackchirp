@@ -31,7 +31,7 @@ custom search paths.
 .. TODO: capture screenshot — widget.png: the LibraryStatusWidget showing the
    full widget with both the LabJack U3 Driver and spcm rows in the overview
    table. Ideally one library shows "Available" (green) and the other shows
-   "Not Found" (red) so both status colours are visible. The right-hand
+   "Not Found" (red) so both status colors are visible. The right-hand
    configuration panel should be visible with the Library Path field,
    Additional Paths field, and Auto-Discovery checkbox. The installation
    guidance text area at the bottom-right should be partially visible.
