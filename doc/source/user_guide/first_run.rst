@@ -29,14 +29,6 @@ the application menus without repeating the full sequence.
 Data Storage Location
 ---------------------
 
-.. TODO: capture screenshot — savepathdialog.png: the BCSavePathWidget embedded
-   inside the ApplicationConfigDialog on first run, showing the path line edit,
-   experiment number spin box, and the Apply / Save (OK) button. The dialog
-   title should read "Welcome to Blackchirp - Initial Configuration". If this
-   dialog has not changed visually from the previous version the existing
-   screenshot at _static/user_guide/first_run/savepathdialog.png may be reused
-   after verifying it still matches.
-
 .. figure:: /_static/user_guide/first_run/savepathdialog.png
    :alt: Data storage path dialog
 
@@ -102,15 +94,6 @@ Click **OK** to apply your choices and advance to hardware onboarding.
 Hardware Onboarding
 --------------------
 
-.. TODO: capture screenshot — onboarding-runtimeconfig.png: the
-   RuntimeHardwareConfigDialog as it appears on first run. The four-panel
-   horizontal splitter should be fully visible: Loadout on the far left,
-   then Configuration Overview, then Hardware Browser, then the rightmost
-   Configuration panel. Select a hardware type in the Hardware Browser so
-   the rightmost panel is populated. The Library Status tab should be
-   visible in the tab bar at the top, and the validation status bar should
-   be visible at the bottom.
-
 .. figure:: /_static/user_guide/first_run/onboarding-runtimeconfig.png
    :width: 800
    :target: ../_images/onboarding-runtimeconfig.png
@@ -165,8 +148,6 @@ requires a complete and valid loadout before an experiment can be started.
    management, and FTMW presets are covered in
    :doc:`/user_guide/hardware_config`. The day-to-day Hardware menu
    navigation is covered in :doc:`/user_guide/hardware_menu`.
-
-   .. todo:: Cross-reference target ``/user_guide/hardware_menu`` is pending bundle 04.
 
 The **Library Status** tab within this dialog provides a quick view of
 vendor-library availability. See :ref:`first-run-library-status` below and

@@ -144,8 +144,6 @@ Optional settings remain editable. Changes take effect when you click
 
    :doc:`/user_guide/hardware_menu`
 
-   .. todo:: Cross-reference target ``/user_guide/hardware_menu`` is pending bundle 04.
-
 .. _hardware-config-profiles-enable:
 
 Enabling and Disabling Profiles

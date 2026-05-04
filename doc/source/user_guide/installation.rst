@@ -21,9 +21,6 @@ Binary Distribution
 Pre-built packages for all supported platforms are published on the
 `Blackchirp Releases page <https://github.com/kncrabtree/blackchirp/releases>`_.
 
-.. todo:: Add screenshot: ``_static/user_guide/installation/release-page.png``
-   (GitHub Releases page showing per-OS artifacts.)
-
 Each release provides the following artifacts:
 
 .. list-table::
@@ -160,9 +157,6 @@ On the first CMake configure, a file named ``cmake/BuildConfig.cmake``
 is created from the template ``cmake/BuildConfig.cmake.template``. Edit
 this file to change the options below. Re-run the configure step after
 saving changes.
-
-.. todo:: Optional screenshot: ``_static/user_guide/installation/cmake-buildconfig.png``
-   (Excerpt of ``BuildConfig.cmake`` highlighting the user-tunable options.)
 
 .. list-table::
    :header-rows: 1

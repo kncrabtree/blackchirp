@@ -83,5 +83,3 @@ sequence.
    :doc:`/user_guide/hardware_config/ftmw_presets`
 
    :doc:`/user_guide/hardware_menu`
-
-   .. todo:: Cross-reference target ``/user_guide/hardware_menu`` is pending bundle 04.

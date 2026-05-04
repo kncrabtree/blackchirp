@@ -18,8 +18,6 @@ Acquisition Types
    :target: ../../_images/startpage.png
    :alt: Experiment start page
 
-.. todo:: Capture screenshot at ``doc/source/_static/user_guide/experiment/startpage.png``.
-
 When starting a new experiment, the first page of the wizard allows for selecting the desired type of the FTMW acquisition along with other options related to real-time FID processing.
 The type of the acquisition determines how many FIDs will be recorded, and in some cases, how the entire spectrum will be partitioned into multiple **segments**.
 For the LO Scan and DR Scan types, the scan configuration controls appear inline on this same first wizard page immediately below the type selector; no separate page is shown for those settings.
@@ -102,8 +100,6 @@ The number of shots collected at each LO step is set in the ``Shots/Point`` box 
    :align: center
    :alt: LO Scan configuration
 
-.. todo:: Capture screenshot at ``doc/source/_static/user_guide/experiment/loscan.png``.
-
 The LO scan widget is laid out as three stacked groups: ``Scan Settings``, ``Upconversion LO``, and ``Downconversion LO``.
 The ``Scan Settings`` group contains the ``Shots/Point`` and ``Target Sweeps`` boxes.
 Blackchirp acquires the indicated number of ``Shots/Point`` at each LO frequency specified.
@@ -142,8 +138,6 @@ The number of shots at each DR step is set in the ``Shots Per Step`` box within 
 .. image:: /_static/user_guide/experiment/drscan.png
    :align: center
    :alt: DR Scan configuration
-
-.. todo:: Capture screenshot at ``doc/source/_static/user_guide/experiment/drscan.png``.
 
 To set up a DR scan, enter the desired ``Start`` frequency, ``Step Size``, ``Num Steps``, and ``Shots Per Step``.
 The ``End`` box updates automatically to show the final DR frequency.

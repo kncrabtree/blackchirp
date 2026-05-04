@@ -19,14 +19,6 @@ hardware profile or experiment. Options are grouped into two sections:
 
 To open the dialog: **Settings → Application Settings**.
 
-.. TODO: capture screenshot — dialog.png: the full ApplicationConfigDialog
-   (not first-run variant), showing the "Application Settings" group box with
-   all three options (LIF Module checkbox, Debug Logging checkbox, Application
-   Font row with Change button) and the "Data Storage" group box below. The
-   dialog title should read "Application Settings". All three options should be
-   visible with their default states: LIF Module checked, Debug Logging
-   unchecked, Application Font showing the default font preview.
-
 .. figure:: /_static/user_guide/application_config/dialog.png
    :alt: Application Configuration dialog
 

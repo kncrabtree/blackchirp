@@ -9,8 +9,6 @@ Quick Experiment
    :align: center
    :alt: Quick Experiment Dialog
 
-.. todo:: Capture screenshot at ``doc/source/_static/user_guide/experiment/quickexpt_1.png``.
-
 The Quick Experiment action initializes an experiment using some or all of the settings from a previous experiment.
 Select the desired experiment to repeat using the number field; the details of the selected experiment are shown in the lower panel.
 

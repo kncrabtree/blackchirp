@@ -28,14 +28,6 @@ custom search paths.
 - At any later time, choose **Hardware → Hardware Selection** from the menu
   bar and select the **Library Status** tab.
 
-.. TODO: capture screenshot — widget.png: the LibraryStatusWidget showing the
-   full widget with both the LabJack U3 Driver and spcm rows in the overview
-   table. Ideally one library shows "Available" (green) and the other shows
-   "Not Found" (red) so both status colors are visible. The right-hand
-   configuration panel should be visible with the Library Path field,
-   Additional Paths field, and Auto-Discovery checkbox. The installation
-   guidance text area at the bottom-right should be partially visible.
-
 .. figure:: /_static/user_guide/library_status/widget.png
    :width: 800
    :target: ../_images/widget.png
