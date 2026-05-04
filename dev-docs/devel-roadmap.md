@@ -4,7 +4,21 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 
 ## Small
 
-None.
+### Lightbox click-through for user-guide screenshots
+
+Replace the static `:target:` click-through wired up by bundle 14b
+with a JS lightbox so oversized screenshots open in an in-page modal
+overlay rather than navigating away to the raw PNG. The
+`sphinxcontrib-lightbox2` extension is the obvious candidate: drop it
+into `doc/source/requirements.txt` (so RTD picks it up) and into the
+`extensions` list in `doc/source/conf.py`, then convert the
+oversized-screenshot directives to its `.. lightbox::` form (or rely
+on whatever auto-wrapping the extension does for `.. image::`/
+`.. figure::` with a `:target:`). The 30 capped directives that 14b
+already shaped are the work surface; the small ones can stay as
+plain images. Verify: build clean, RTD preview shows an overlay
+rather than a navigation, click-outside / ESC dismisses correctly,
+and the keyboard / screen-reader path is still navigable.
 
 ## Medium
 
