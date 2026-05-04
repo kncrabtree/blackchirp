@@ -50,30 +50,18 @@ struct HardwareValidationResult {
 };
 
 /*!
- * \brief Singleton runtime hardware configuration manager
- * 
- * This class provides thread-safe runtime hardware configuration management using
- * SettingsStorage for persistence. Access is controlled through the singleton pattern
- * with read/write locking and friend class restrictions for modifications.
- * 
- * Design principles:
- * - Singleton with global read access, controlled write access
- * - Thread-safe with QReadWriteLock (multiple readers, exclusive writer)
- * - No automatic fallbacks (explicit error handling required)
- * - SettingsStorage integration for persistence
- * - Friend class pattern for write access control
- * 
- * Usage example:
- * ```cpp
- * // Read access (anywhere in the program)
- * const auto& config = RuntimeHardwareConfig::constInstance();
- * QString ftmwImpl = config.getHardwareSelection("ftmwDigitizer");
- * bool isValid = config.isConfigurationValid();
- * 
- * // Write access (only friend classes like HardwareManager)
- * auto& config = RuntimeHardwareConfig::instance();
- * config.setHardwareSelection("ftmwDigitizer", "m4i2220x8");
- * ```
+ * \brief Singleton runtime hardware configuration manager.
+ *
+ * Records which hardware implementations are active at any given
+ * moment and validates those selections against HardwareRegistry.
+ * Persistence rides on SettingsStorage. Read access is unrestricted
+ * via \c constInstance(); write access is restricted to
+ * HardwareManager and RuntimeHardwareConfigDialog via the
+ * friend-class pattern, so only the hardware management layer can
+ * change the active configuration. All operations are thread-safe
+ * via an internal QReadWriteLock (multiple readers, exclusive
+ * writer). Validation does not perform automatic fallbacks; callers
+ * must handle errors explicitly.
  */
 class RuntimeHardwareConfig : public SettingsStorage
 {

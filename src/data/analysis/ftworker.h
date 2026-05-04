@@ -21,45 +21,21 @@ class QReadWriteLock;
 /*!
  \brief Processes \c Fid objects into magnitude spectra using the GNU Scientific Library FFT.
 
- \c FtWorker computes mixed-radix Fast Fourier Transforms via the GSL real-data FFT routines,
- which are most efficient when the FID length can be factored into powers of 2, 3, and 5.
- In addition to the FFT itself, the worker applies an optional pipeline of time-domain
- preprocessing steps: truncation to a sub-window (\c FidProcessingSettings::startUs /
- \c endUs), DC removal, exponential apodization (\c expFilter), zero-padding
- (\c zeroPadFactor), and one of several \c FtWindowFunction apodization windows
- (Bartlett, Blackman, Blackman-Harris, Hamming, Hanning, Kaiser-Bessel).
+ Not moved to a dedicated \c QThread: callers invoke \c doFT(),
+ \c doFtDiff(), and \c processSideband() through \c QtConcurrent::run, so
+ the \c ftDone / \c fidDone / \c ftDiffDone / \c sidebandDone signals
+ are emitted on a thread-pool thread and require queued connections
+ to UI slots. The \a id parameter of \c doFT() picks the path: \c id = -1
+ suppresses signals (synchronous use); \c id >= 0 emits async signals.
+ Per-instance locks (\c pu_fftLock, \c pu_splineLock, \c pu_winfLock)
+ allow concurrent calls on the same instance provided each call uses
+ a different code path.
 
- The magnitude scale of the output \c Ft is controlled by \c FidProcessingSettings::units:
- the enumeration values map directly to powers of ten (e.g. \c FtmV = 3 → multiply by
- \c 10³ / rawSize).
-
- \section ftworker-threading Threading model
-
- \c FtWorker is a \c QObject but is \e not moved to a dedicated \c QThread. Instead,
- callers invoke \c doFT(), \c doFtDiff(), and \c processSideband() through
- \c QtConcurrent::run, which schedules each call on the global thread pool. The signals
- \c ftDone, \c fidDone, \c ftDiffDone, and \c sidebandDone are emitted from the
- thread-pool thread. Connecting them to slots in the UI thread requires queued connections
- (the default when objects live on different threads).
-
- When called from a non-UI thread (e.g. a \c BatchManager), the return values of
- \c doFT() and \c filterFid() can be used directly without waiting for the signals.
- The \a id parameter of \c doFT() controls whether signals are emitted: pass \c id >= 0
- to get signal delivery (asynchronous path) or \c id = -1 to suppress signals
- (synchronous path).
-
- GSL workspace allocation is guarded by \c pu_fftLock and spline allocation by
- \c pu_splineLock, so the same \c FtWorker instance can be called concurrently from
- multiple thread-pool threads provided each concurrent call uses a different code path.
- The window-function cache is guarded by \c pu_winfLock.
-
- \section ftworker-resources Resource management
-
- GSL wavetables, workspaces, and spline objects are allocated lazily on first use and
- freed by the destructor. When idle-cleanup is enabled via \c setIdleCleanupEnabled(),
- resources are also freed automatically after a 5-minute inactivity timeout
- (\c cleanupResources()). Call \c resetIdleTimer() after each processing operation
- to restart the countdown.
+ GSL wavetables, workspaces, and spline objects are allocated lazily on
+ first use and freed by the destructor. When idle-cleanup is enabled
+ via \c setIdleCleanupEnabled(), resources are also freed after a
+ 5-minute inactivity timeout; \c resetIdleTimer() restarts the
+ countdown after each processing operation.
 
  \sa Fid, Ft
 */

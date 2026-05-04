@@ -15,122 +15,27 @@ namespace BC::Store {
 }
 
 /*!
- * \brief Base class for objects that contribute fields to an experiment's
- * CSV header file.
+ * \brief Base class for objects that contribute fields to an
+ * experiment's CSV header file.
  *
- * Every Blackchirp experiment is described on disk by a six-column,
- * semicolon-delimited \c header.csv file:
+ * Each HeaderStorage is identified by an object key (column 0 of the
+ * six-column header CSV: object key, array key, array index, key,
+ * value, unit). Rows are dispatched between objects by matching
+ * column 0, so the same hardware-instance key (e.g.
+ * \c "PulseGenerator.main") that identifies a HardwareObject is also
+ * used as its HeaderStorage object key. The chosen key is stored in
+ * \c d_headerKey and cannot be changed afterward.
  *
- * | Column     | Meaning                                                       |
- * |------------|---------------------------------------------------------------|
- * | Object Key | Identifier of the producing HeaderStorage object              |
- * | Array Key  | Name of the array this row belongs to (empty if not an array) |
- * | Array Idx  | Index within the array (empty if not an array)                |
- * | Key        | The setting's key                                             |
- * | Value      | Stored value, formatted as a string                           |
- * | Unit       | Unit of the value (empty if dimensionless)                    |
- *
- * HeaderStorage subclasses populate a small in-memory cache of these
- * rows on the way out (write) and consume rows from it on the way in
- * (read). Rows are dispatched between objects by the Object Key — each
- * subclass picks a key in its constructor (typically a constant from
- * the BC::Store namespace, or, for hardware-instance objects, the
- * hardware key like \c "PulseGenerator.main") and only rows whose first
- * column matches that key end up in this object's cache.
- *
- * # The two virtuals you must implement
- *
- * Subclasses override two pure virtuals:
- *
- * - storeValues() runs just before the header is written. Inside it,
- *   call store() once per scalar field and storeArrayValue() once per
- *   cell of any array fields. Each row is buffered in this object's
- *   cache.
- * - retrieveValues() runs after the header has been parsed and all
- *   matching rows have been routed to this object. Inside it, call
- *   retrieve() and retrieveArrayValue() to extract the cached values
- *   into your own members.
- *
- * Each call to retrieve() or retrieveArrayValue() *removes* the row
- * from the cache. Asking for the same key twice yields the default the
- * second time. arrayStoreSize() reports how many entries an array has
- * before you start consuming it.
- *
- * # Composing a tree
- *
- * A HeaderStorage may own children: Experiment is the root, with
- * FtmwConfig, validators, hardware configs, the LIF config, etc. as
- * children, each of which may add its own grandchildren. Children are
- * declared by overriding prepareChildren() and calling addChild() once
- * per child:
- *
- *     void Experiment::prepareChildren()
- *     {
- *         addChild(ps_ftmwConfig.get());
- *         addChild(ps_validator.get());
- *         for(auto &p : d_hwCfgs)
- *             addChild(p.get());
- *         addChild(ps_lifCfg.get());
- *     }
- *
- * The framework calls prepareChildren() at the start of every read or
- * write pass, after wiping any prior child list, so it always reflects
- * the current shape of the tree. Children themselves do not call
- * addChild on their parent — the parent owns the relationship in
- * prepareChildren(). The framework recurses automatically: each
- * child's prepareChildren() is called next, allowing arbitrary
- * nesting.
- *
- * removeChild() exists for the rare case of a parent that needs to
- * detach a child mid-flight (Experiment uses it when the user disables
- * an FTMW or LIF subsystem). It does not delete the child object;
- * ownership lives with whoever holds the smart pointer.
- *
- * # Write flow (subclass perspective)
- *
- * 1. A caller invokes getStrings() on the root (Experiment does this
- *    inside save() via BlackchirpCSV::writeHeader).
- * 2. Each node's prepareToStore() runs, which calls prepareChildren()
- *    and recurses into each child.
- * 3. Each node's storeValues() runs, populating its cache via store()
- *    and storeArrayValue().
- * 4. The framework converts cached entries to the six-column form,
- *    merges in each child's getStrings() output, and clears the
- *    in-memory cache.
- *
- * Therefore: never call store() outside storeValues(); the rows would
- * be cleared on the next write.
- *
- * # Read flow (subclass perspective)
- *
- * 1. The caller (Experiment's reading constructor) calls
- *    prepareToStore() on the root once, so the child tree is built.
- * 2. The caller reads the CSV file line by line and hands each row to
- *    storeLine() on the root. Rows are dispatched to whichever node's
- *    \c d_headerKey matches column 0 (children searched first if the
- *    root does not match).
- * 3. After all lines have been routed, the caller invokes
- *    readComplete() on the root, which calls retrieveValues() on
- *    every node depth-first.
- * 4. Each retrieveValues() implementation pulls rows back out via
- *    retrieve() / retrieveArrayValue() and assigns them to the
- *    object's members.
- *
- * Therefore: never call retrieve() outside retrieveValues() (or after
- * readComplete() has run) — the cache is empty by then.
- *
- * # Object-key conventions
- *
- * - Singleton-style objects (Experiment, RfConfig, ChirpConfig, etc.)
- *   pass a constant key from their \c BC::Store::* namespace.
- * - Per-instance objects (PulseGenConfig and other hardware configs)
- *   pass the hardware key for the specific instance
- *   (e.g., \c "PulseGenerator.main"). This guarantees that experiments
- *   with several instances of the same hardware type produce
- *   distinguishable header rows.
- *
- * The chosen key is stored in d_headerKey and cannot be changed
- * afterward.
+ * Cache invariants: \c store() / \c storeArrayValue() may only be
+ * called inside \c storeValues(), and \c retrieve() /
+ * \c retrieveArrayValue() may only be called inside
+ * \c retrieveValues(). The cache is cleared at the start of each
+ * write pass, and each retrieve removes its row, so calls outside
+ * those hooks yield silently wrong results. Tree composition is
+ * declared by overriding \c prepareChildren() and calling
+ * \c addChild() once per child; the framework rebuilds the child
+ * list at the start of every read or write pass and recurses
+ * automatically.
  */
 class HeaderStorage
 {

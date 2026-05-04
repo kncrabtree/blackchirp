@@ -10,64 +10,28 @@
 class CommunicationProtocol;
 
 /*!
- * \brief Mixin that turns a HardwareObject subclass into a Python-backed
- * trampoline by handing off lifecycle work to a child Python subprocess.
+ * \brief Mixin that turns a HardwareObject subclass into a
+ * Python-backed trampoline by handing off lifecycle work to a child
+ * Python subprocess.
  *
- * # Trampoline contract
+ * A trampoline is a C++ class that inherits from both a hardware base
+ * (e.g. \c AWG, \c Clock, \c FlowController, \c FtmwScope) and
+ * PythonHardwareBase via multiple inheritance. The hardware base
+ * supplies the Qt slot/signal API; this mixin owns the subprocess and
+ * IPC plumbing. Subclasses initialize the mixin with \c d_key and
+ * \c d_model, call \c initPythonProcess() from their hardware-base
+ * initialize hook, call \c testPythonConnection() from the
+ * test-connection hook, delegate \c sleep and \c readSettings to
+ * \c pythonSleep() and \c pythonReadSettings(), and translate
+ * hardware-specific virtuals into \c pu_process->sendRequest()
+ * dispatches with snake_case method names matching the user script.
+ * Push-style hardware also calls \c setEnabledProxies() and connects
+ * \c pu_process->waveformReceived to a shot handler.
  *
- * A Python trampoline is a C++ class that inherits from both a
- * hardware base class (e.g., \c AWG, \c Clock, \c FlowController,
- * \c FtmwScope) and PythonHardwareBase via multiple inheritance.
- * The hardware base class supplies the Qt slot/signal API the rest
- * of Blackchirp uses; PythonHardwareBase supplies the subprocess
- * management and IPC plumbing. Concrete trampolines override the
- * pure virtuals of the hardware base class and forward each call
- * to the Python subprocess as a JSON-IPC method call through
- * \c pu_process->sendRequest.
- *
- * A subclass must:
- *
- * - Initialize the mixin in its constructor with d_key and d_model.
- *
- * - Call initPythonProcess() from its hardware-base initialize hook
- *   (\c initialize, \c initializeClock, \c fcInitialize, ...). For
- *   push-style hardware, also call setEnabledProxies() and connect
- *   \c pu_process->waveformReceived to the trampoline's handler.
- *
- * - Call testPythonConnection() from the hardware-base test-connection
- *   hook. The mixin lazily starts the subprocess on the first call
- *   and dispatches the user script's \c test_connection method.
- *
- * - Delegate \c sleep to pythonSleep() and \c readSettings to
- *   pythonReadSettings().
- *
- * - Translate hardware-specific virtuals into JSON IPC dispatches
- *   via \c pu_process->sendRequest() (typically with snake_case
- *   method names matching the user script's convention).
- *
- * Log lines the script emits travel as unsolicited \c {"log":...}
- * IPC messages and are forwarded to the global Blackchirp log inside
- * PythonProcess; trampolines do not wire log forwarding.
- *
- * # User-side script contract
- *
- * The Python class addressed by \c pythonClassName must implement
- * the snake_case methods that mirror the hardware base class's pure
- * virtuals. \c initialize() runs once per subprocess start (after the
- * standard \c self.comm / \c self.settings / \c self.log proxies
- * have been injected), and \c test_connection() may be invoked
- * repeatedly. The host script (\c python_hw_host.py) dispatches
- * method calls generically by name and keyword arguments, so adding
- * a new hardware-specific method requires no host-script changes.
- *
- * # Profile lookups
- *
- * The script path, class name, and Python environment directory are
- * resolved per-profile from HardwareProfileManager (see
- * \c pythonScriptPath, \c pythonClassName, \c pythonEnvPath).
- * startPythonProcess() reads them on demand and refuses to start the
- * subprocess if the script path or class name is empty rather than
- * silently falling back.
+ * Script path, class name, and Python environment are resolved per-
+ * profile from HardwareProfileManager. \c startPythonProcess()
+ * refuses to start the subprocess if either the script path or the
+ * class name is empty rather than substituting a default.
  *
  * \sa PythonProcess, HardwareProfileManager, HardwareObject
  */

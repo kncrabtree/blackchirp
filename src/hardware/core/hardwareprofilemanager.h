@@ -39,59 +39,22 @@ struct HardwareProfileData {
 };
 
 /*!
- * \brief Complete lifecycle management of hardware configurations with user-controlled labels
+ * \brief Singleton manager for hardware profiles.
  *
- * A profile is a (hardware type, label, implementation) triple — fixed at
- * creation time — together with its persisted settings. The hardware type
- * and label form the profile's identity, of the form
- * "FlowController.frontPanel" or "FlowController.backup". The
- * implementation key is stored as a profile field but is immutable; using
- * a different implementation requires creating a new profile under a new
- * label. Profile identities survive hardware reconfiguration and are the
- * canonical reference for a hardware object's settings group.
+ * A profile is a (hardware type, label, implementation) triple — fixed
+ * at creation — together with its persisted settings. The hardware
+ * type and label form the profile's identity (e.g.
+ * \c "FlowController.frontPanel"); the implementation key is stored
+ * as a profile field but is immutable, so changing the implementation
+ * requires creating a new profile under a new label. Profile
+ * identities survive hardware reconfiguration and are the canonical
+ * reference for a hardware object's settings group.
  *
- * This class provides:
- * - User-controlled hardware identification through meaningful labels
- * - Multiple profiles per hardware type with independent configurations
- * - Settings persistence through SettingsStorage integration
- * - Collision detection and resolution for conflicting labels
- * - Thread-safe operations for concurrent access
- * - Profile import/export functionality
- * 
- * Design Principles:
- * - Label uniqueness enforced within hardware type, reusable across types
- * - All operations are thread-safe using QReadWriteLock
- * - Graceful error handling with clear return values
- * - No automatic fallbacks - explicit user control required
- * - Full integration with existing SettingsStorage pattern
- * 
- * Storage Format:
- * ```
- * [HardwareProfiles]
- * FlowController/frontPanel/implementation=mks647c
- * FlowController/frontPanel/active=true
- * FlowController/frontPanel/created=2024-01-15T10:30:00
- * FlowController/frontPanel/description=Main flow controller
- * FlowController/backup/implementation=virtual
- * FlowController/backup/active=false
- * ```
- * 
- * Usage Example:
- * ```cpp
- * HardwareProfileManager manager;
- * 
- * // Create profiles with meaningful labels
- * QString label1 = manager.createHardwareProfile("FlowController", "mks647c", "frontPanel");
- * QString label2 = manager.createHardwareProfile("FlowController", "virtual", "backup");
- * 
- * // Query profiles
- * QStringList activeProfiles = manager.getActiveProfiles("FlowController");
- * QString implementation = manager.getImplementation("FlowController", "frontPanel");
- * 
- * // Manage profile state
- * manager.deactivateHardwareProfile("FlowController", "backup");
- * manager.deleteHardwareProfile("FlowController", "backup");
- * ```
+ * Labels are unique within a hardware type and reusable across types.
+ * Persistence rides on SettingsStorage; all operations are thread-safe
+ * via an internal QReadWriteLock (multiple readers, exclusive writer).
+ * Mutating operations return explicit success/failure values rather
+ * than substituting defaults, so callers must handle errors.
  */
 class HardwareProfileManager : public SettingsStorage
 {

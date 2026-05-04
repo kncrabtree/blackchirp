@@ -11,44 +11,16 @@
 
 
 /*!
- * \brief Represents a communication interface for a HardwareObject
- * 
- * The CommunicationProtocol is a light wrapper around a QIODevice (if
- * appropriate) which handles the actual communication. Extra features are
- * available for customizing the communication and executing common patterns
- * (queries, timeouts, parsing replies with termination characters, etc).
- * 
- * CommunicationProtocol is an interface class; subclasses must implement the
- * _device() function which returns the underlying QIODevice (which may safely
- * be nullptr if no such device exists). The device itself should be created in
- * the initialize() function, which must also be implemented in a subclass. For
- * instance, Rs232Instrument and TcpInstrument both return pointers to their
- * underlying QSerialPort and QTcpSocket devices, while the other
- * implementations return nullptr. The _device() function itself may be called
- * externally if direct access to the QIODevice is needed (i.e., if the
- * QIODevice functionality is not exposed by the wrapper), and the device()
- * template function can be called to conveniently cast to a derived type. For
- * example, if the device is a QTcpSocket:
- * 
- *     CommunicationProtocol *comm = new TcpInstrument("key");
- *     comm->initialize();
- *     auto socket = comm->device<QTcpSocket>();
- *     //socket is now a QTcpSocket*
- *     
- *     auto socket2 = comm->device<QSerialPort>();
- *     //socket2 is nullptr because comm is a TcpInstrument
- *     
- * CommunicationProtocol provides 3 convenience functions with default
- * implementations that may be extended or overwritten by subclasses:
- * 
- *   - writeCmd() writes an ASCII string to the QIODevice
- *   - writeBinary() writes binary data to the QIODevice
- *   - queryCmd() writes a command to the device and reads a response.
- *   
- * The read behavior can be set by a call to setReadOptions, which allows for
- * specifying a query timeout and query termination character(s) that are used
- * to detect the end of a message.
- * 
+ * \brief Communication interface for a HardwareObject.
+ *
+ * Interface class. Subclasses provide a transport (e.g. Rs232Instrument
+ * wraps QSerialPort, TcpInstrument wraps QTcpSocket; VirtualInstrument
+ * and CustomInstrument keep the device pointer null when no
+ * QIODevice representation is appropriate) by overriding _device() to
+ * return the underlying QIODevice. The device itself is created in
+ * initialize(), which subclasses must also implement. Read behavior —
+ * query timeout and termination characters — is loaded from settings
+ * by loadCommReadOptions().
  */
 class CommunicationProtocol : public QObject
 {

@@ -39,10 +39,9 @@ environment is set; ``findHostScript()`` locates the IPC host script
 ``share/blackchirp/`` install location. The profile workflow and
 the user-side script API are documented in
 :doc:`/user_guide/python_hardware/selecting` and
-:doc:`/user_guide/python_hardware/writing_a_driver`.
-
-.. TODO: cross-link to the contributor-level walk-through at
-   /developer_guide/python_hardware once that page exists.
+:doc:`/user_guide/python_hardware/writing_a_driver`; the contributor-
+level architecture of the trampoline mixin and the IPC host is
+covered in :doc:`/developer_guide/python_hardware`.
 
 .. highlight:: cpp
 

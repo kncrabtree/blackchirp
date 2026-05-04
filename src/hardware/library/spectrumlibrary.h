@@ -9,29 +9,11 @@ namespace BC::Key::Spectrum {
 }
 
 /*!
- * \brief Dynamic loader for Spectrum Instrumentation driver library
- * 
- * This class provides runtime loading of the Spectrum Instrumentation driver
- * library (spcm_linux) without requiring it at compile time. This allows
- * BlackChirp to be built and distributed without the Spectrum SDK, while
- * still supporting Spectrum hardware when the driver is installed.
- * 
- * The class uses the singleton pattern to ensure only one instance exists,
- * as the Spectrum library maintains global state that shouldn't be duplicated.
- * 
- * Usage:
- * ```cpp
- * SpectrumLibrary& lib = SpectrumLibrary::instance();
- * if (lib.isAvailable()) {
- *     void* handle = lib.spcm_hOpen("/dev/spcm0");
- *     // ... use other Spectrum functions
- * }
- * ```
- * 
- * The library automatically searches common installation paths:
- * - System library paths (LD_LIBRARY_PATH)
- * - /opt/spectrum/lib (default Spectrum installation)
- * - /usr/local/lib (manual installation)
+ * \brief Dynamic loader for the Spectrum Instrumentation driver
+ * library (\c spcm_linux / \c spcm64.dll).
+ *
+ * Singleton, because the Spectrum library maintains global state that
+ * cannot be duplicated. Used by the M4i digitizer implementations.
  */
 class SpectrumLibrary : public VendorLibrary
 {

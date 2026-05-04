@@ -8,25 +8,17 @@
 #include <data/storage/settingsstorage.h>
 
 /*!
- * \brief Abstract base class for all vendor library wrappers
- * 
- * This class provides a common interface for dynamically loading vendor libraries
- * at runtime using QLibrary. This eliminates compile-time dependencies on vendor
- * SDKs, allowing BlackChirp to be built and distributed as a single binary that
- * works with or without vendor libraries installed.
- * 
- * Each vendor library wrapper (e.g., SpectrumLibrary, LabjackLibrary) inherits
- * from this class and implements the specific function pointer loading for their
- * respective APIs.
- * 
- * The loading process follows this pattern:
- * 1. Attempt to load the library from standard system paths
- * 2. Try additional search paths specific to the vendor
- * 3. Resolve function symbols to function pointers
- * 4. Validate that all required functions were found
- * 
- * If any step fails, the library is marked as unavailable and error information
- * is stored for user feedback.
+ * \brief Abstract base class for all vendor library wrappers.
+ *
+ * Subclasses use \c QLibrary to load a vendor SDK at runtime; if the
+ * library is absent or cannot be loaded, the dependent hardware
+ * implementations report themselves as unavailable but Blackchirp
+ * starts normally. The staged-configuration API
+ * (\c setStagedUserProvidedPath, \c setStagedSearchPaths,
+ * \c setStagedAutoDiscoveryEnabled, \c applyChanges,
+ * \c revertChanges) lets UI code accumulate changes without
+ * affecting running hardware until \c applyChanges() persists and
+ * reloads.
  */
 /*!
  * Keys for storing vendor library configuration in SettingsStorage

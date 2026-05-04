@@ -34,10 +34,9 @@ that need them call it between ``initPythonProcess()`` and the
 first ``sendRequest()``.
 
 For the trampoline contract and the user-side script API, see
-:doc:`/user_guide/python_hardware/overview` and its sub-pages.
-
-.. TODO: cross-link to the developer-guide chapter at
-   /developer_guide/python_hardware once that page exists.
+:doc:`/user_guide/python_hardware/overview` and its sub-pages; the
+contributor-level architecture of the IPC host and the proxy system
+is covered in :doc:`/developer_guide/python_hardware`.
 
 .. highlight:: cpp
 

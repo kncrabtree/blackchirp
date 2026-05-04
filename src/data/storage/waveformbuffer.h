@@ -4,25 +4,6 @@
 /*!
  * \file waveformbuffer.h
  * \brief Bounded, thread-safe SPSC ring buffer for digitizer waveform data.
- *
- * \section Thread Safety Contract
- * This class is designed for exactly one producer thread (digitizer hardware thread)
- * and one consumer thread (acquisition manager thread). Multi-producer or
- * multi-consumer usage is NOT supported and will produce undefined behavior.
- *
- * The producer calls write(), writeFlushMarker(), and reset().
- * The consumer calls read(), drainAll(), available(), and waitForData().
- *
- * \section Overflow Policy
- * The producer never blocks. When the buffer is full, the incoming entry is
- * silently discarded (drop-newest). A dropped-entry counter is incremented for
- * each such event and can be queried via droppedCount(). This avoids any race
- * with the consumer, since the producer never modifies the read index.
- *
- * \section Memory
- * Slot storage is pre-allocated at construction time. If reserveBytes > 0, each
- * slot's QByteArray is pre-reserved to avoid per-shot heap allocation during
- * steady-state operation.
  */
 
 #include <atomic>
@@ -47,15 +28,19 @@ struct WaveformEntry {
 };
 
 /*!
- * \brief Bounded SPSC ring buffer for transferring waveform data between threads.
+ * \brief Bounded SPSC ring buffer for transferring waveform data
+ * between threads.
  *
- * Replaces Qt signal/slot connections for high-throughput waveform data transfer.
- * The digitizer writes raw waveform data; the acquisition manager drains and
- * processes entries. Provides bounded memory usage, backpressure-free writes
- * (drop-newest on overflow), and cross-platform consumer notification via
- * QSemaphore.
- *
- * This class does NOT inherit from QObject.
+ * Single-producer/single-consumer: the digitizer hardware thread is
+ * the producer (\c write(), \c writeFlushMarker(), \c reset()) and
+ * the acquisition manager thread is the consumer (\c read(),
+ * \c drainAll(), \c available(), \c waitForData()). Multi-producer
+ * or multi-consumer usage is undefined behavior. The producer never
+ * blocks; when the buffer is full the incoming entry is silently
+ * dropped (\c droppedCount() exposes the count). Slot storage is
+ * pre-allocated at construction; pass \c reserveBytes > 0 to also
+ * pre-reserve each slot's QByteArray and avoid per-shot heap
+ * allocation. Does not inherit from QObject.
  */
 class WaveformBuffer
 {

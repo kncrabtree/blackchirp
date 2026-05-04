@@ -14,14 +14,11 @@
 class CommunicationProtocol;
 
 /*!
- * \brief QProcess wrapper that owns a Python hardware subprocess and the
- * JSON-lines IPC channel between Blackchirp and the user driver script.
+ * \brief QProcess wrapper that owns a Python hardware subprocess and
+ * the JSON-lines IPC channel between Blackchirp and the user driver
+ * script.
  *
- * # Role
- *
- * PythonProcess is the C++-side endpoint of every Python hardware
- * trampoline (PythonAwg, PythonClock, PythonFlowController, ...). It
- * launches the IPC host script (\c python_hw_host.py) under the
+ * Launches the IPC host script (\c python_hw_host.py) under the
  * configured Python interpreter, hands it the user's driver script and
  * class name, and exposes a synchronous request/response API
  * (\c sendRequest) on top of an asynchronous, line-oriented JSON
@@ -29,59 +26,12 @@ class CommunicationProtocol;
  * heap stays in a separate process, so a script crash cannot corrupt
  * the Qt application.
  *
- * # IPC protocol
- *
- * The wire format is one JSON object per line in each direction.
- * Four message kinds travel over the channel:
- *
- * - **Method calls** (C++ → Python). Carry an integer \c id and a
- *   \c method name; any other keys are forwarded as keyword arguments
- *   to the corresponding snake_case method on the user's driver
- *   class (so type-specific methods such as \c hw_read_flow do not
- *   require host-script changes). Replies carry the same \c id and
- *   either a \c result or an \c error / \c traceback.
- *
- * - **Relay requests** (Python → C++, interleaved). The host script
- *   uses these to reach back through the C++ side for services it
- *   cannot perform itself: \c self.comm.query / \c write /
- *   \c read_bytes are relayed as \c "relay": "comm_query" (etc.)
- *   and serviced against the trampoline's CommunicationProtocol;
- *   \c self.settings.get / \c set are relayed against the registered
- *   SettingsStorage callbacks.
- *
- * - **Log messages** (Python → C++, unsolicited). Lines containing a
- *   \c log key are converted to a LogHandler severity and forwarded
- *   directly to the global Blackchirp log via \c bcLog(), so they
- *   appear in the hardware log panel alongside C++ driver output
- *   without any per-trampoline wiring.
- *
- * - **Waveform pushes** (Python → C++, unsolicited). Push-style
- *   hardware (PythonFtmwScope, PythonLifScope) sends raw shot data
- *   as \c "waveform": "<base64>"  with a \c shots count; the bytes
- *   are decoded and emitted as waveformReceived for the trampoline
- *   to forward into the WaveformBuffer.
- *
- * # Read loop and reentrancy
- *
- * Reads are event-driven: QProcess::readyReadStandardOutput is wired
- * to onReadyRead, which appends to a buffer, splits on \c '\n', and
- * dispatches each complete line by message kind. sendRequest() writes
- * its request and then runs a nested QEventLoop until either a
- * matching response arrives, the subprocess dies, or the configured
- * timeout fires. Because the loop continues to process events, relay
- * requests, log messages, and waveform pushes are handled correctly
- * while a method call is in flight.
- *
- * # Selective proxy injection
- *
- * The standard \c self.comm, \c self.settings, and \c self.log
- * proxies are injected into the user object on every \c _init.
- * Optional, hardware-type-specific proxies (such as \c self.scope
- * for digitizer push) are gated by setEnabledProxies(): the chosen
- * names are forwarded to the host script in the \c _init message
- * and only those proxies are constructed. Trampolines opt in by
- * calling setEnabledProxies() between initPythonProcess() and the
- * first sendRequest().
+ * Reentrancy: \c sendRequest() writes its request and then runs a
+ * nested \c QEventLoop until either a matching response arrives, the
+ * subprocess dies, or the configured timeout fires. Because the loop
+ * continues to process events, relay requests, log messages, and
+ * waveform pushes are handled correctly while a method call is in
+ * flight.
  *
  * \sa PythonHardwareBase, CommunicationProtocol, LogHandler
  */

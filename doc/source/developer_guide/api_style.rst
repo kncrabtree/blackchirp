@@ -24,12 +24,37 @@ comments **in the header file**. The corresponding ``.rst`` page under
   contains every ``.. doxygenclass::``, ``.. doxygenstruct::``, and
   ``.. doxygenenum::`` directive on the page.
 
-The header is the single source of truth. If the same sentence appears
-in both the header and the ``.rst`` page, delete it from the ``.rst``.
-Header comments are read by Doxygen, by ``codebase-memory``, by IDE
-tooltips, and by any contributor opening the file — none of those
-audiences ever see the ``.rst``. A ``.rst`` page that paraphrases the
-header just creates two places that have to be kept in sync.
+The header is the single source of truth for member-level
+documentation. Per-method ``///`` (or ``/*! ... */``) blocks describe
+what a function does, what its parameters mean, what it returns, and
+which invariants it preserves; those blocks are read by Doxygen,
+``codebase-memory``, IDE tooltips, and any contributor opening the
+file. The ``.rst`` page must not paraphrase those per-member blocks —
+that just creates two places to keep in sync.
+
+The class-level block (the ``/*! ... */`` block immediately preceding
+the ``class`` declaration) is governed by a different rule: orientation
+prose lives on the ``.rst``, not in the header.
+
+* The header's class-level ``\brief`` stays tight: one or two
+  sentences naming what the class is and its primary collaborators,
+  optionally followed by *internals notes a header reader genuinely
+  needs* — lifecycle invariants, ownership rules, threading
+  contracts, configuration-flag fields, the cache or
+  re-entrancy invariants a subclass author would otherwise miss.
+* What does *not* belong in the class-level header block: extended
+  motivation prose, worked code examples (interface/implementation
+  driver pairs, getter binding examples, friend-helper templates),
+  enumerated lists of usage patterns, paragraph-form orientation
+  for the class's role in the larger system. All of that lives on
+  the ``.rst`` page or, where the topic spans multiple classes, in
+  the developer guide.
+
+The test for a class-level header sentence: would removing it leave a
+contributor reading the header in isolation unable to use the class
+correctly? If yes, keep it. If the sentence is structural orientation
+that already appears (or could appear) on the ``.rst`` page, delete it
+from the header.
 
 Doxygen comment style
 ---------------------
