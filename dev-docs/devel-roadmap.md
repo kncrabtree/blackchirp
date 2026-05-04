@@ -4,6 +4,11 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 
 ## Small
 
+### AddProfileDialog size
+
+When opened, the AddHardwareProfile dialog does not resize to show the contents of the tab widget; the viewport for that widget is only about
+100 pixels.
+
 ### Lightbox click-through for user-guide screenshots
 
 Replace the static `:target:` click-through wired up by bundle 14b
@@ -20,9 +25,13 @@ plain images. Verify: build clean, RTD preview shows an overlay
 rather than a navigation, click-outside / ESC dismisses correctly,
 and the keyboard / screen-reader path is still navigable.
 
+- Fix doc warnings
+
+- Update python module for v1/v2 compatability
+
 ## Medium
 
-None.
+- Add LIF to python module, add example notebook.
 
 ## Large
 
