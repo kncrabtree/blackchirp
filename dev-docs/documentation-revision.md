@@ -64,7 +64,7 @@ requirements, and acceptance criteria.
 | 13g | API ref: GUI helper classes | M | 13a | complete |
 | 13h | API ref: file parsers | S | 13a | complete |
 | 13i | API ref: orchestration managers (HardwareManager, AcquisitionManager, BatchManager, ClockManager) | M | 13a | complete |
-| 14 | Final consistency pass — chapter umbrella | S | most user-guide bundles | not started |
+| 14 | Final consistency pass — chapter umbrella | S | most user-guide bundles | complete |
 | 14a | API page intro / header-comment harmonization | M | 14 | not started |
 | 14b | Screenshot sizing pass | S | 14 | not started |
 | 14c | File organization & menu layout audit | S | 14 | not started |

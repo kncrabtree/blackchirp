@@ -1,10 +1,19 @@
 # Bundle 14 — Final Consistency Pass (Chapter Umbrella)
 
-**Status:** not started
+**Status:** complete
 
 <!--
 Status log:
-- (entries appended in reverse chronological order; most recent first)
+- 2026-05-03 — not started → complete. The umbrella's three
+  acceptance criteria were already satisfied at the time of
+  this status flip: the master-plan table enumerates 14 and
+  14a–14e (commit 5ec30d8c, "Restructure documentation revision
+  plan: split bundles 11 and 14"); the five sub-bundle files
+  exist under dev-docs/docrev/ with their standard status
+  headers and scope detail (same commit); and the umbrella
+  authorizes no RST edits, so doc/source/ is untouched. This
+  bundle therefore has no separate stage-1 content commit; the
+  status flip is recorded as a single tracking commit.
 -->
 
 The cleanup pass run after the bulk of the documentation has
