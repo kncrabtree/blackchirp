@@ -25,7 +25,43 @@ and hyphens, and not exceed 64 characters. ``validateLabel()`` and
 ``isValidLabel()`` enforce these rules; ``generateDefaultLabel()`` produces a
 collision-free label drawn from the candidate list ``Default``, ``Main``,
 ``Primary``, ``Secondary``, ``Backup`` (falling back to ``<Type>1``,
-``<Type>2``, … if all are taken).
+``<Type>2``, … if all are taken). Mutating operations return explicit
+success/failure values rather than substituting defaults, so callers must
+handle errors.
+
+Storage layout and usage
+------------------------
+
+Profiles live under the ``HardwareProfiles`` ``QSettings`` group, with the
+path ``<Type>/<label>/<subkey>``:
+
+.. code-block:: ini
+
+   [HardwareProfiles]
+   FlowController/frontPanel/implementation=mks647c
+   FlowController/frontPanel/active=true
+   FlowController/frontPanel/created=2024-01-15T10:30:00
+   FlowController/frontPanel/description=Main flow controller
+   FlowController/backup/implementation=virtual
+   FlowController/backup/active=false
+
+Typical mutation/query sequence:
+
+.. code-block:: cpp
+
+   HardwareProfileManager manager;
+
+   // Create profiles with meaningful labels.
+   QString label1 = manager.createHardwareProfile("FlowController", "mks647c", "frontPanel");
+   QString label2 = manager.createHardwareProfile("FlowController", "virtual", "backup");
+
+   // Query.
+   QStringList active = manager.getActiveProfiles("FlowController");
+   QString impl       = manager.getImplementation("FlowController", "frontPanel");
+
+   // Manage state.
+   manager.deactivateHardwareProfile("FlowController", "backup");
+   manager.deleteHardwareProfile("FlowController", "backup");
 
 Per-profile Python fields
 -------------------------

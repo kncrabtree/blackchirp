@@ -57,7 +57,16 @@ Concrete subclasses
    Loads the Spectrum Instrumentation driver (``spcm_linux`` / ``spcm64.dll``).
    Used by M4i digitizer drivers for FTMW acquisition. Because the
    Spectrum library maintains global state, a single instance is enforced via
-   the singleton pattern.
+   the singleton pattern. M4i driver code reaches the resolved symbols through
+   the singleton accessor:
+
+   .. code-block:: cpp
+
+      SpectrumLibrary &lib = SpectrumLibrary::instance();
+      if (lib.isAvailable()) {
+          void *handle = lib.spcm_hOpen("/dev/spcm0");
+          // ... use other Spectrum functions
+      }
 
 .. highlight:: cpp
 
