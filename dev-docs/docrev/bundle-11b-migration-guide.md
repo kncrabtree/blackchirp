@@ -73,6 +73,46 @@ already enumerate.
   remains readable; new acquisitions write the additional
   files. Cross-link to `:doc:`/user_guide/data_storage``.
 
+### Carry-forward to 11b
+
+These items surfaced in 11a's commit-log survey and are
+user-visible upgrade actions that the existing checklist above
+does not enumerate. 11b should fold them into the appropriate
+section (likely "Recreating your v1.x configuration" or a new
+"User-interface relabels" section).
+
+- **Application Configuration dialog supplants v1.x's separate
+  configuration menus.** v1.x users opened independent dialogs
+  for font, save path, and other app-wide settings; in 2.0
+  these (plus the new LIF and debug-logging toggles)
+  consolidate into a single Application Configuration dialog
+  reachable from the experiment-info panel. Note where v1.x
+  users should look for each former entry. Cross-link to
+  `:doc:`/user_guide/application_config``.
+- **FTMW Configuration menu reorganization.** v1.x had an
+  *RF Configuration* dialog as the primary FTMW-config entry
+  point; 2.0 routes those controls through a consolidated
+  *FTMW Configuration* menu/dialog reachable from the same
+  area. Tell users navigating by menu name where the v1.x
+  controls landed. Cross-link to
+  `:doc:`/user_guide/ftmw_configuration``.
+- **HwDialog field hiding.** Fields that v1.x users edited
+  per-device in HwDialog (notably ``commType`` and ``model``)
+  are now managed at the registry level via the runtime
+  hardware configuration dialog rather than the per-device
+  dialog. A v1.x user looking for those fields in HwDialog
+  will not find them. Cross-link to
+  `:doc:`/user_guide/hwdialog`` and
+  `:doc:`/user_guide/hardware_config``.
+- **Overlay files in the experiment directory.** The Overlays
+  subsystem is new in 2.0; a v1.x experiment opened in 2.0
+  has no overlays attached, but new acquisitions and any
+  overlays the user creates in the viewer will write per-
+  experiment overlay state under the experiment directory.
+  No migration action is required for legacy data; mention
+  the new files exist so users are not surprised. Cross-link
+  to `:doc:`/user_guide/overlays``.
+
 ### Page structure
 
 Suggested layout:

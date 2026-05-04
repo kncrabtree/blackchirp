@@ -1,0 +1,205 @@
+.. index::
+   single: 1.1.0; release notes
+   single: release notes; 1.1.0
+
+Blackchirp 1.1.0
+================
+
+Blackchirp 1.1.0 is the final release of the v1.x line. It introduces
+the overlay subsystem, the standalone ``blackchirp-viewer`` offline
+visualization application, a theme-aware SVG icon set, a precision-
+aware ``ScientificSpinBox`` widget, and expanded curve-appearance
+controls in the FTMW plot. Several Sirah Cobra and Harvey Mudd LIF
+hardware additions ship in this release alongside reliability fixes
+across the overlay manager, sequence-mode aborts, the LIF tab, and
+the MKS 946 pressure controller.
+
+Highlights
+----------
+
+- Added the Overlays subsystem: catalog (SPCAT/XIAM), generic XY
+  (CSV/text), and other-experiment overlays managed through a
+  unified dialog and a sortable, drag-and-drop overlay table that
+  persists per-experiment under the experiment directory. See
+  :doc:`/user_guide/overlays`.
+- Added ``blackchirp-viewer``, a standalone read-only application
+  for inspecting completed experiments without bringing up
+  hardware or acquisition. See :doc:`/user_guide/viewer`.
+- Migrated the icon set to scalable SVG using Heroicons with
+  theme-aware colors that follow the active palette. See
+  :doc:`/user_guide/ui_overview`.
+- Added a precision-aware ``ScientificSpinBox`` with adaptive
+  stepping and unit-suffix support, and overhauled the plot
+  context menu with a curve-appearance submenu, alpha-channel
+  color selection, and copy/paste of curve settings. See
+  :doc:`/user_guide/plot_controls`.
+- Extended LIF hardware support, including Sirah Cobra
+  compensator calibration updates and the additions required for
+  the Harvey Mudd LIF instrument. See :doc:`/user_guide/lif`.
+
+Build and distribution
+----------------------
+
+- Switched to the MIT license.
+- Migrated the source tree to C++20 and resolved deprecated
+  Qt6 lambda captures.
+- Forced UTF-8 file encoding for sources and on-disk data
+  files. See :doc:`/user_guide/installation`.
+
+Hardware drivers
+----------------
+
+The :doc:`LIF chapter </user_guide/lif>` covers the hardware
+additions in this section.
+
+- Added Sirah Cobra control updates and external-crystal-stage
+  support tailored to the Harvey Mudd LIF instrument.
+- Added support for new Harvey Mudd LIF hardware types.
+- Cleaned up the ``CommunicationProtocol`` inheritance graph
+  for hardware drivers.
+
+Acquisition and data flow
+-------------------------
+
+- Added differential-backup viewing during a running experiment,
+  showing the change between the current state and the most
+  recent backup. See :doc:`/user_guide/cp-ftmw`.
+- Multi-step acquisitions (LO scan, DR scan, LIF delay scan) now
+  gate the digitizer between steps and discard potentially-stale
+  waveforms after each transition. See
+  :doc:`/user_guide/experiment/sequence_mode`.
+- Pulse generators are now paused while the user edits experiment
+  settings, preventing fired pulses during configuration. See
+  :doc:`/user_guide/experiment_setup`.
+- Experiments can be loaded from a path without specifying their
+  number. See :doc:`/user_guide/data_storage`.
+- Backups are viewable while an experiment is still running. See
+  :doc:`/user_guide/cp-ftmw`.
+
+Overlays
+--------
+
+The new overlay subsystem is documented end-to-end in
+:doc:`/user_guide/overlays`; the bullets below summarize the
+visible additions.
+
+- Added the unified Overlay Dialog and Overlay Manager widget
+  with type-specific configuration for ``BCExpOverlay``,
+  ``CatalogOverlay``, and ``GenericXY`` overlays.
+- Catalog overlays support SPCAT and XIAM input with optional
+  Gaussian convolution, intelligent state tracking, and
+  cancellable chunked computation.
+- Generic XY overlays auto-detect column layout from CSV and
+  whitespace-separated text input.
+- Overlay table supports drag-and-drop reordering, sortable
+  columns, per-row enable/disable, and an editable comment
+  column.
+- Overlay rename supports a sanitization preview and
+  collision-safe label protection.
+- Overlays can be filtered to a frequency range with cached
+  results and dedicated range spin boxes; per-overlay autoscale
+  is available alongside an overlay-aware autoscale on the FTMW
+  plot.
+- Overlays persist asynchronously to disk under the experiment
+  directory, integrated with the experiment lifecycle so
+  reopening an experiment (in the main application or in the
+  viewer) restores its overlays. See
+  :doc:`/user_guide/data_storage`.
+- Disk-loaded catalog overlays force a stick-plot rendering with
+  convolution disabled to keep prior-experiment views faithful.
+- Starting a new experiment can copy overlays forward from the
+  previous experiment.
+
+User interface
+--------------
+
+- Added the curve-appearance management system: per-curve type,
+  alpha-channel color selection, autoscale attribute, copy/paste,
+  and a preset manager with nine default presets. See
+  :doc:`/user_guide/plot_controls`.
+- Added the ``ScientificSpinBox`` widget with precision-aware
+  display and adaptive stepping. See
+  :doc:`/user_guide/ui_overview`.
+- Added the LIF delay-point randomization option. See
+  :doc:`/user_guide/lif/experiment_setup`.
+- Added a new transparent Blackchirp logo.
+- Added an LIF display refresh timer for smoother trace updates.
+  See :doc:`/user_guide/lif/lif_tab`.
+
+Tooling
+-------
+
+- Added ``blackchirp-viewer``, a standalone read-only
+  application for inspecting completed experiments. The viewer
+  shares the main codebase, has no hardware or acquisition
+  dependencies, and supports the FTMW, LIF, Tracking, and Log
+  tabs along with overlays. See :doc:`/user_guide/viewer`.
+
+File formats and data storage
+-----------------------------
+
+- The FT header stored alongside FTMW experiments was extended.
+  See :doc:`/user_guide/data_storage`.
+- FTMW configuration is reset when the displayed experiment
+  changes, so stale FT settings do not carry across files. See
+  :doc:`/user_guide/cp-ftmw`.
+
+Bug fixes
+---------
+
+**Overlays.**
+
+- Fixed crashes when starting a new experiment with an overlay
+  open (:commit:`2471b75e`).
+- Fixed a segmentation fault in ``FtmwViewWidget`` destruction
+  (:commit:`e455e08d`).
+- Fixed overlay label sanitization so comma-bearing labels no
+  longer break the per-experiment CSV (:commit:`3608d2a2`).
+- Fixed validation and UI-interaction defects in the GenericXY
+  overlay path (:commit:`444b43d9`, :commit:`8703c7f7`).
+- Fixed path validation during overlay-widget initialization
+  (:commit:`3b856af3`).
+- Fixed batch-paste and clipboard-contamination defects in the
+  Overlay Manager (:commit:`06a7686a`).
+- Fixed curve-appearance initialization timing in the overlay
+  settings dialog (:commit:`81133fc7`).
+- Fixed a validation bypass that allowed duplicate overlay
+  labels (:commit:`653c8708`).
+- Fixed overlay appearance propagation by removing automatic
+  preset application (:commit:`357187c7`).
+- Fixed inconsistencies in overlay creation, removal, and
+  persistence (:commit:`0feac4cc`, :commit:`b50820ce`,
+  :commit:`56996a05`).
+- Fixed XIAM parser fixed-column parsing, including ``ints=2``
+  mode, and group inheritance (:commit:`ada63d26`,
+  :commit:`7ad95172`).
+
+**Acquisition.**
+
+- Fixed a UI lock when aborting a sequence experiment
+  (:commit:`641e4f95`).
+- Fixed a thread-safety issue in ``FtWorker`` cleanup that
+  could surface as a ``QObject::startTimer`` warning
+  (:commit:`0d4d63c9`, :commit:`c0fd5395`).
+
+**Hardware.**
+
+- Fixed a bug in the MKS 946 driver when enabling PID mode and
+  added several follow-up MKS 946 fixes (:commit:`8f37803b`,
+  :commit:`eec074ae`).
+- Fixed the QC9214 sync-channel bug (:commit:`7183bd12`).
+- Fixed a typo in the Sirah hardware code (:commit:`06344407`).
+- Fixed a minor Rigol DS2302A scope issue (:commit:`6f5d4fa1`).
+
+**LIF.**
+
+- Bundled LIF storage, trace-display, and spectrogram-plot fixes
+  along with M4i-2211-x8 fixes (:commit:`65385b9d`).
+- Fixed the LIF trace display on the LIF control widget
+  (:commit:`5e2eeccc`).
+
+**Python module.**
+
+- Bumped the companion ``blackchirp`` Python module and fixed
+  reordered FID processing in the analysis path
+  (:commit:`a3f017af`, :commit:`5309e7eb`).

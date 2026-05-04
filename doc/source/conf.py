@@ -73,12 +73,23 @@ release = _full_version or '2.0.0-alpha'
 extensions = [
     'sphinx.ext.autosectionlabel',
     'sphinx.ext.autodoc',
+    'sphinx.ext.extlinks',
     'sphinx.ext.napoleon',
     'nbsphinx',
     'nbsphinx_link',
     'breathe',
     'sphinxcontrib.mermaid',
 ]
+
+# `:commit:` role rendered as a short hash linked to the GitHub commit page.
+# Use the short hash as the role argument; GitHub resolves any prefix length
+# to the canonical commit URL.
+extlinks = {
+    'commit': (
+        'https://github.com/kncrabtree/blackchirp/commit/%s',
+        '%s',
+    ),
+}
 
 # sphinx_rtd_theme is always light, but sphinxcontrib-mermaid auto-detects a
 # dark Mermaid theme from the OS prefers-color-scheme media query. Force the

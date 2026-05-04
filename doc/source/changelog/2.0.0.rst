@@ -1,0 +1,309 @@
+.. index::
+   single: 2.0.0; release notes
+   single: release notes; 2.0.0
+
+Blackchirp 2.0.0
+================
+
+Blackchirp 2.0.0 is a major release that replaces the qmake build with
+CMake and ships official binary packages, replaces compile-time
+hardware selection with a runtime configuration model, introduces
+Python hardware drivers as a first-class implementation type, rebuilds
+the acquisition pipeline around a lock-free ring buffer, and overhauls
+logging, configuration, and the on-disk hardware identifier scheme.
+A v1.x user upgrading to 2.0 should also read the
+:doc:`migration guide </migration/v1_to_v2>`, which walks through the
+upgrade actions for each user-visible change below.
+
+Highlights
+----------
+
+- Replaced the qmake build with CMake and added official binary
+  packages for Linux, Windows, and macOS, so most users no longer
+  need to build from source. See :doc:`/user_guide/installation`.
+- Replaced compile-time hardware selection with a runtime
+  configuration model: a single binary supports any combination
+  of compatible hardware, organized into profiles, loadouts, and
+  FTMW presets selectable from the Hardware menu. See
+  :doc:`/user_guide/hardware_config`.
+- Added Python hardware drivers as a first-class implementation
+  type alongside the C++ drivers, with hot reload, custom
+  protocol support, and per-type capability declarations. See
+  :doc:`/user_guide/python_hardware`.
+- Rebuilt the FTMW acquisition pipeline around a single-producer
+  single-consumer ring buffer with parallel batched parse and
+  accumulate, raising sustained shot rates and reducing dropped
+  frames under load. See :doc:`/user_guide/cp-ftmw`.
+- Consolidated logging through a thread-safe ``LogHandler`` and
+  replaced ``qDebug()`` everywhere with the ``bcLog`` / ``bcWarn``
+  / ``bcError`` / ``bcDebug`` and ``hwLog`` / ``hwWarn`` /
+  ``hwError`` / ``hwDebug`` free-function families; a runtime
+  debug-logging toggle in the new Application Configuration
+  dialog writes a ``debug_YYYYMM.csv`` file when enabled. See
+  :doc:`/user_guide/log_tab` and :doc:`/user_guide/application_config`.
+- Overhauled the documentation: refreshed the
+  :doc:`User Guide </user_guide>` end to end against the 2.0
+  feature set, added the new :doc:`Developer Guide </developer_guide>`
+  for contributors, and substantially expanded the
+  :doc:`C++ API reference </classes>` to cover the hardware,
+  experiment, persistence, and orchestration classes.
+
+Build and distribution
+----------------------
+
+- Replaced the qmake build with CMake. ``config.pri`` is no
+  longer used; build options are configured through CMake cache
+  variables. See :doc:`/user_guide/installation`.
+- Added official binary packages for Linux, Windows, and macOS,
+  with bundled Qt redistributables on Windows and macOS. See
+  :doc:`/user_guide/installation`.
+- Added cross-platform CPack packaging assets and a GitHub
+  Actions release workflow that produces release artifacts for
+  every supported platform.
+- Added a user-configurable hardware-selection system at
+  configure time (``BC_ALLHARDWARE`` and per-driver toggles) so
+  packagers can produce restricted builds when needed. See
+  :doc:`/user_guide/installation`.
+- Declared Eigen3 as an explicit CMake dependency.
+- Added a CMake documentation build (Sphinx + Doxygen) with
+  dual-Doxyfile support for ReadTheDocs.
+- Replaced the static ``virtualdata.qrc`` resource with a
+  dynamic FID simulation generator, so the Virtual digitizer
+  produces synthetic data without bundling sample CSVs. See
+  :doc:`/user_guide/first_run`.
+
+Hardware configuration
+----------------------
+
+- Added the runtime hardware configuration model with profiles,
+  loadouts, and FTMW presets. Hardware is enabled and configured
+  from the *Runtime Hardware Configuration* dialog without
+  recompilation. See :doc:`/user_guide/hardware_config/profiles`,
+  :doc:`/user_guide/hardware_config/loadouts`, and
+  :doc:`/user_guide/hardware_config/ftmw_presets`.
+- Added a first-run hardware onboarding flow that walks a new
+  user through profile creation. See
+  :doc:`/user_guide/first_run`.
+- Added the Hardware Loadouts submenu and a loadout selector in
+  the runtime hardware configuration dialog. See
+  :doc:`/user_guide/hardware_menu`.
+- Added the FTMW preset bar with full create, copy, save-as, and
+  delete operations. See
+  :doc:`/user_guide/hardware_config/ftmw_presets`.
+- Added the consolidated *FTMW Configuration* menu entry and
+  ``FtmwConfigDialog``, replacing the v1.x scattered FTMW pages.
+  See :doc:`/user_guide/ftmw_configuration`.
+- Added the unified Application Configuration dialog (font, save
+  path, runtime LIF toggle, debug-logging toggle), replacing the
+  per-setting menu entries from v1.x. See
+  :doc:`/user_guide/application_config`.
+- Added a ``VendorLibrary`` staging system and a Library
+  Configuration interface for managing externally-supplied
+  drivers, with platform-specific installation guidance. See
+  :doc:`/user_guide/library_status` and
+  :doc:`/user_guide/installation`.
+- Added the hardware settings registry: per-device settings are
+  declared once and rendered into the per-device dialog by the
+  ``HwSettingsWidget`` with priority-grouped layout. All hardware
+  classes (flow controllers, pressure controllers, temperature
+  controllers, IO boards, GPIB controllers, LIF lasers and
+  scopes, FTMW scopes, clocks, chirp sources, and pulse
+  generators) were migrated onto the registry. See
+  :doc:`/user_guide/hwdialog`.
+- Added per-object hardware threading configuration to the
+  hardware profile. See
+  :doc:`/user_guide/hardware_config/profiles`.
+- Added a "Direct Control" hardware concept for hardware
+  operated outside an experiment. See
+  :doc:`/user_guide/hardware_config`.
+
+Hardware drivers
+----------------
+
+- Added Python hardware drivers backed by a ``QProcess`` /
+  JSON-IPC bridge, with hot reload from the per-device dialog
+  and per-type trampolines for AWGs, flow controllers, IO
+  boards, clocks, pressure controllers, temperature controllers,
+  FTMW scopes, LIF scopes, pulse generators, GPIB controllers,
+  and LIF lasers. See :doc:`/user_guide/python_hardware`.
+- Python drivers expose RS232, TCP, GPIB, and Custom protocols.
+  See
+  :doc:`/user_guide/python_hardware/per_type_capabilities`.
+- The Python hardware combo box prepopulates from class names
+  scanned out of available scripts. See
+  :doc:`/user_guide/python_hardware/selecting`.
+- Added runtime communication-protocol selection per hardware
+  object via the per-device dialog, with protocol-specific
+  widgets backed by group-based settings storage. See
+  :doc:`/user_guide/hwdialog`.
+- Modernized the GPIB controller architecture so multiple GPIB
+  controllers (mixed LAN and RS232) cohabitate in one
+  installation. See :doc:`/user_guide/hardware_details`.
+- Added Test Connection and Communication Settings shortcuts to
+  the per-device dialog. See :doc:`/user_guide/hwdialog`.
+- Replaced the four fixed AWG protection/gate spinboxes with a
+  generalized marker system: arbitrary ``MarkerChannel`` /
+  ``MarkerRole`` definitions are entered through a marker table
+  on the chirp configuration tab. See
+  :ref:`chirp-setup-markers` on the
+  :doc:`chirp setup </user_guide/experiment/chirp_setup>` page.
+- Added the LabJack vendor-library wrapper with platform-
+  specific backends (Linux/macOS exodriver, Windows UD), so
+  LabJack support no longer requires the exodriver at compile
+  time. See :doc:`/user_guide/library_status` and
+  :doc:`/user_guide/installation`.
+- Added the Spectrum vendor-library wrapper with dynamic loading
+  for both Spectrum digitizer families. See
+  :doc:`/user_guide/library_status`.
+
+Acquisition and data flow
+-------------------------
+
+- Replaced the per-shot Qt signal waveform path with a
+  single-producer single-consumer ring buffer
+  (``WaveformBuffer``) and a worker-thread parse/accumulate
+  stage. See :doc:`/user_guide/cp-ftmw`.
+- Added backpressure-triggered pre-accumulation in
+  ``FtmwScope`` so the worker thread keeps up under bursty
+  load. See :doc:`/user_guide/cp-ftmw`.
+- Added parallel batched parse and accumulate in
+  ``AcquisitionManager``. See :doc:`/user_guide/cp-ftmw`.
+- Consolidated the FTMW experiment-setup pages into
+  ``FtmwConfigWidget``. See :doc:`/user_guide/experiment_setup`.
+- Extracted the LO scan and DR scan controls into reusable
+  widgets and incorporated them into the experiment-wizard
+  Type page. See :doc:`/user_guide/experiment/acquisition_types`.
+- The number-of-chirps spinbox is now enabled unconditionally;
+  a warning is emitted when the active digitizer does not
+  support multi-record acquisition. See
+  :doc:`/user_guide/experiment/digitizer_setup`.
+
+User interface
+--------------
+
+- Added a Help menu with About dialog, library information, and
+  links to online resources. See :doc:`/user_guide/ui_overview`.
+- Added the FTMW preset submenu under the Hardware menu. See
+  :doc:`/user_guide/hardware_menu`.
+- Reworked the experiment-info panel and wired ``HwStatusBox``
+  configure actions so each status box opens the device dialog
+  directly. See :doc:`/user_guide/ui_overview`.
+- Polished the left-side status panel layout and shortened
+  hardware status box titles. See :doc:`/user_guide/ui_overview`.
+- Added a Fixed step mode and full-precision handling to the
+  ``ScientificSpinBox``. See :doc:`/user_guide/ui_overview`.
+- Added a Save-As workflow on the FTMW preset bar that copies
+  the current configuration into a new preset, with
+  drift-detection on Save. See :doc:`/user_guide/hardware_menu`.
+- Updated the Peak Find Widget icon. See
+  :doc:`/user_guide/cp-ftmw`.
+- Relaxed the experiment-setup dialog minimum size. See
+  :doc:`/user_guide/experiment_setup`.
+
+Logging and diagnostics
+-----------------------
+
+- Redesigned ``LogHandler`` as a thread-safe global singleton
+  with a ``QAnyStringView`` API. See :doc:`/user_guide/log_tab`.
+- Added ``bcLog`` / ``bcWarn`` / ``bcError`` / ``bcDebug`` and
+  ``hwLog`` / ``hwWarn`` / ``hwError`` / ``hwDebug`` free
+  functions and migrated every call site in the source tree
+  off ``logMessage`` signals and ``qDebug()``. See
+  :doc:`/user_guide/log_tab`.
+- Added a runtime debug-logging toggle in the Application
+  Configuration dialog; when enabled, debug-level output is
+  written to a ``debug_YYYYMM.csv`` file alongside the
+  standard log. See :doc:`/user_guide/application_config`.
+- Successful connection-test events are highlighted in the Log
+  tab so they stand out from informational chatter. See
+  :doc:`/user_guide/log_tab`.
+
+File formats and data storage
+-----------------------------
+
+- Introduced QSettings versioning: each major version stores
+  its configuration under its own QSettings namespace
+  (``Blackchirp2``, ``Blackchirp3``, …), so v1.x and v2.x do
+  not share state. See :doc:`/user_guide/application_config`.
+- Migrated to label-based hardware identification across
+  configurations and on-disk storage. Implementation key
+  strings became labels keyed off the runtime hardware
+  configuration. See :doc:`/user_guide/data_storage`.
+- Added a ``markers.csv`` file written under each experiment
+  directory recording the active marker channel definitions
+  for the run. See :doc:`/user_guide/data_storage`.
+- Added the ``RfConfigSnapshot`` helper for serializing the
+  full RF configuration with each experiment. See
+  :doc:`/user_guide/rf_configuration`.
+
+Bug fixes
+---------
+
+**Hardware.**
+
+- Fixed inverted marker bit-packing on the AWG70002A and
+  AWG7122B (:commit:`ba07d008`).
+- Fixed common-LO clock persistence and clock-frequency signal
+  chaining (:commit:`836b7750`).
+- Fixed the *Apply Clock Settings* button so clock changes can
+  be pushed without closing the dialog (:commit:`cd07dd5f`).
+- Fixed aux-data registration key mismatches in the flow
+  controller and temperature controller paths and corrected the
+  resulting plot labels (:commit:`79dfe7e8`,
+  :commit:`8e67bebb`, :commit:`8458aad9`).
+- Fixed flow-controller channel display and the underlying
+  destructor; refined the gas-flow display layout
+  (:commit:`e53d7f90`, :commit:`eb8d7fbc`, :commit:`6783af97`).
+- Fixed the flow-controller poll loop and the Python template-
+  copy workflow (:commit:`63fee23d`).
+- Fixed Python hardware experiment aux-data emission and host-
+  script deployment (:commit:`dfb57021`).
+
+**Hardware configuration.**
+
+- Fixed loadout persistence and timestamp handling on save
+  (:commit:`1c9586b2`, :commit:`f8e83611`).
+- Fixed the ``SettingsStorage`` nested-group wipe that affected
+  FTMW preset CRUD (:commit:`3d73f08d`).
+- Fixed several runtime-hardware-config defects: protocol
+  registry initialization, vtable crashes during hardware
+  destruction, and a deadlock in the configuration dialog
+  (:commit:`68e49ab2`).
+- Fixed multiple Runtime Hardware Configuration Dialog defects
+  (:commit:`7a299892`, :commit:`aced0817`, :commit:`ed915a93`,
+  :commit:`d66aa076`).
+- Fixed ``BC_ALLHARDWARE`` build errors and the LIF logic under
+  ``BC_ALLHARDWARE`` (:commit:`0bfe75c0`, :commit:`fe7b5f0a`).
+- Fixed GPIB protocol configuration and connection testing
+  (:commit:`cfd85d62`).
+- Fixed Communication Settings dialog and clock-manager
+  initialization (:commit:`19f60cf6`, :commit:`d733af0d`).
+- Fixed vendor-library search priority and the library browse
+  dialog (:commit:`1c4f6604`).
+- Fixed ``QVariant`` enum serialization and duplicate error
+  messages when switching protocols (:commit:`f7e3d6f7`).
+- Fixed optional-hardware configuration init and wizard page
+  population (:commit:`be8a82e2`).
+
+**Acquisition.**
+
+- Fixed chirp recalculation and RF-config loss in the
+  experiment wizard (:commit:`1483a2d7`).
+- Fixed a minor ``FtmwViewWidget`` rendering glitch under heavy
+  processing load (:commit:`637d6d4e`).
+
+**Tooling.**
+
+- Fixed an intermittent crash on closing
+  ``blackchirp-viewer`` (:commit:`446a5c0a`).
+- Made ``ZoomPanPlot`` curve attach and detach thread-safe via
+  a curve registry, eliminating a class of races that surfaced
+  in both the main application and the viewer
+  (:commit:`af4aab85`).
+- Fixed additional ``ZoomPanPlot`` defects surfaced during the
+  API-reference work (:commit:`feb21753`).
+
+**User interface.**
+
+- Fixed ``ScientificSpinBox`` not displaying an initial value
+  of ``0.0`` (:commit:`00b0608d`).
