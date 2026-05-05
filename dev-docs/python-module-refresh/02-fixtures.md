@@ -1,6 +1,6 @@
 # Bundle 02 — Refresh `python/example-data/` Fixtures
 
-**Status:** not started
+**Status:** complete (bf054d4e)
 **Depends on:** —
 **Blocks:** 03, 04, 05
 **Effort:** S (1 session)
