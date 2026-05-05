@@ -1,0 +1,9 @@
+ObjKey;Value
+LifGateEndPoint;1421
+LifGateStartPoint;500
+LowPassAlpha;0
+RefGateEndPoint;300
+RefGateStartPoint;100
+SavGolEnabled;false
+SavGolPoly;3
+SavGolWindow;11

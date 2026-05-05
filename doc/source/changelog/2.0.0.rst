@@ -291,6 +291,12 @@ Bug fixes
   experiment wizard (:commit:`1483a2d7`).
 - Fixed a minor ``FtmwViewWidget`` rendering glitch under heavy
   processing load (:commit:`637d6d4e`).
+- Fixed a long-standing crash on LIF-only experiments when the
+  backup interval was set to a non-zero value: the backup
+  scheduler dereferenced the unallocated FTMW configuration.
+  LIF data is segment-flushed at acquisition time, so backup
+  is now skipped for non-FTMW experiments
+  (:commit:`f335b11d`).
 
 **Tooling.**
 

@@ -1,0 +1,5 @@
+Channel;Name;Role;TimingMode;StartUs;EndUs;Enabled
+0;Protection;Protection;ChirpRelative;-0.5;0.2;true
+1;Gate;Gate;ChirpRelative;-0.3;-0.17;true
+2;Marker 2;Custom;ChirpRelative;-0.5;0.5;false
+3;Marker 3;Custom;ChirpRelative;-0.5;0.5;false
