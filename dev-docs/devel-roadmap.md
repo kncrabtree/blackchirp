@@ -4,11 +4,15 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 
 ## Small
 
-- Update python module for v1/v2 compatability
+None.
 
 ## Medium
 
-- Add LIF to python module, add example notebook.
+- [Python module refresh](python-module-refresh/00-overview.md) — bring the
+  companion `blackchirp` Python package up to date with the v2 schema, add LIF
+  read/processing support and an example notebook, and refresh the rendered
+  documentation. Includes a prerequisite C++ enum-string migration and reader-
+  hardening pass.
 
 ## Large
 
