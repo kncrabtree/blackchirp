@@ -90,8 +90,10 @@ class BCExperiment:
             All hardware items and their driver identities. The second
             column is exposed as ``driver`` regardless of whether the
             on-disk header was ``driver`` or ``subKey``.
-        clocks (pd.DataFrame): Contents of clocks.csv
+        clocks (pd.DataFrame, optional): Contents of clocks.csv.
             Configurations of all clocks at each experimental step.
+            Required for CP-FTMW experiments and ``None`` for LIF-only
+            acquisitions, which do not produce a ``clocks.csv``.
         auxdata (pd.DataFrame, optional): Contents of auxdata.csv (if present).
             Data shown on `Aux Data <user_guide/rolling-aux-data.html>`_ plots
             during the experiment.
@@ -183,12 +185,15 @@ class BCExperiment:
         )
         if "subKey" in self.hardware.columns and "driver" not in self.hardware.columns:
             self.hardware = self.hardware.rename(columns={"subKey": "driver"})
-        self.clocks = pd.read_csv(
-            os.path.join(self.path, "clocks.csv"),
-            sep=self._sep,
-            header=0,
-            keep_default_na=False,
-        )
+        try:
+            self.clocks = pd.read_csv(
+                os.path.join(self.path, "clocks.csv"),
+                sep=self._sep,
+                header=0,
+                keep_default_na=False,
+            )
+        except FileNotFoundError:
+            self.clocks = None
 
         try:
             self.auxdata = pd.read_csv(
@@ -229,7 +234,13 @@ class BCExperiment:
             self.ftmw = BCFTMW(self.path, self._sep, ftmw_type)
 
         if os.path.exists(os.path.join(self.path, "lif")):
-            self.lif = BCLIF(self.path, self._sep)
+            self.lif = BCLIF(self.path, self._sep, self.header)
+
+        if hasattr(self, "ftmw") and self.clocks is None:
+            raise FileNotFoundError(
+                f"clocks.csv is required for CP-FTMW experiments but was not "
+                f"found at {os.path.join(self.path, 'clocks.csv')!r}"
+            )
 
     def header_unique_keys(self) -> set[str]:
         """Fetch all unique ObjKeys in experiment header

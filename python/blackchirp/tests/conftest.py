@@ -36,6 +36,18 @@ def v2_ftmw_path() -> str:
     return _fixture_path("v2-ftmw")
 
 
+@pytest.fixture(scope="session")
+def v2_lif_ref_path() -> str:
+    """Filesystem path to the v2 LIF fixture with a reference channel."""
+    return _fixture_path("v2-lif-ref")
+
+
+@pytest.fixture(scope="session")
+def v2_lif_noref_path() -> str:
+    """Filesystem path to the v2 single-channel LIF fixture."""
+    return _fixture_path("v2-lif-noref")
+
+
 @pytest.fixture
 def mtbe_exp(mtbe_path) -> BCExperiment:
     """Freshly loaded ``mtbe`` experiment.
@@ -50,6 +62,18 @@ def mtbe_exp(mtbe_path) -> BCExperiment:
 def v2_ftmw_exp(v2_ftmw_path) -> BCExperiment:
     """Freshly loaded ``v2-ftmw`` experiment."""
     return BCExperiment(v2_ftmw_path)
+
+
+@pytest.fixture
+def v2_lif_ref_exp(v2_lif_ref_path) -> BCExperiment:
+    """Freshly loaded LIF-with-reference experiment."""
+    return BCExperiment(v2_lif_ref_path)
+
+
+@pytest.fixture
+def v2_lif_noref_exp(v2_lif_noref_path) -> BCExperiment:
+    """Freshly loaded single-channel LIF experiment."""
+    return BCExperiment(v2_lif_noref_path)
 
 
 @pytest.fixture(params=["mtbe", "v2-ftmw"])

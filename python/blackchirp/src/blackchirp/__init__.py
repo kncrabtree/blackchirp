@@ -9,18 +9,19 @@ The Blackchirp python module is available from the `Python Package Index <https:
 
     pip install blackchirp
 
-The ``blackchirp`` module makes 4 classes available:
+The ``blackchirp`` module makes 5 classes available:
 
 * ``BCExperiment``: Loads the contents of an experiment folder.
 * ``BCFTMW``: Contains CP-FTMW data and processing functions that work with multiple FIDs.
 * ``BCFid``: Contains data for a (possibly multi-frame) FID and its Fourier transform.
-* ``BCLif``: Contains LIF data and processing functions.
+* ``BCLIF``: Contains LIF scan data and processing functions.
+* ``BCLifTrace``: Contains a single LIF scan-point trace and its smoothing / integration helpers.
 
 It is recommended to import these classes using::
 
     from blackchirp import *
 
-This import statement will bring all 4 classes into the main namespace. Alternatively,
+This import statement will bring all 5 classes into the main namespace. Alternatively,
 the statement ``import blackchirp as bc`` may be used, which requires prefixing all class names with ``bc.``.
 
 Example:
@@ -39,6 +40,6 @@ More detailed examples can be found on the individual class pages.
 """
 
 from .bcfid import BCFid
-from .bclif import BCLIF
+from .bclif import BCLIF, BCLifTrace
 from .bcftmw import BCFTMW
 from .blackchirpexperiment import BCExperiment
