@@ -258,6 +258,12 @@ Bug fixes
   copy workflow (:commit:`63fee23d`).
 - Fixed Python hardware experiment aux-data emission and host-
   script deployment (:commit:`dfb57021`).
+- Fixed threaded hardware destructors not running on shutdown:
+  ``~HardwareManager`` joined each worker thread but never deleted
+  the moved-to-thread object, so settings persisted by
+  ``~SettingsStorage::save()`` (such as flow-controller channel
+  names on ``PythonFlowController``) were silently dropped on exit
+  (:commit:`e0acf07d`).
 
 **Hardware configuration.**
 
