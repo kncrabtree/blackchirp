@@ -1,47 +1,9 @@
 # Bundle 01 — C++ Enum-String Migration and Reader Hardening
 
-**Status:** in progress
+**Status:** complete (f0c97231)
 **Depends on:** —
 **Blocks:** 03, 04, 05
 **Effort:** M (2 sessions)
-
-## Status notes
-
-Decisions captured before implementation:
-
-- **`hardware.csv` `hardwareType` column → drop.** The cell is fully
-  redundant with the key prefix. `RuntimeHardwareConfig::createHardware
-  DataContainer` derives the type from the key prefix when populating
-  the writer-side container, no downstream consumer reads the stored
-  type field independently of the key, and the legacy 2-column reader
-  path already proves the key prefix alone is enough. The reader keeps
-  accepting historical 3-column files (silently ignoring the third
-  column) and three on-disk key shapes: bare `"hwType"` (oldest),
-  `"hwType.index"` (mid-life), and `"hwType.label"` (current). Dropping
-  the column lets us also remove `toCsvTuples()` /
-  `fromCsvTuples()` and the `isNewFormat` branch in `loadFromFile`.
-- **`subKey` → `driver` rename.** Verified positional in the C++
-  reader; `liflasercontroldoublespinbox.cpp:16` and two
-  `tst_settingsstoragetest.cpp` matches are unrelated QSettings keys
-  and have been logged as latent-bug follow-ups in
-  `dev-docs/devel-roadmap.md` for a separate session.
-- **Overlay storage writer flip.** The audit turned up
-  `overlaystorage.cpp:111` writing
-  `static_cast<int>(overlay->type())`. Pulled into scope under the
-  bundle's "fix any inconsistent writer the audit turns up" provision.
-- **`CatalogOverlay::LineshapeType` promotion.** Surfaced by a
-  follow-up scan of the data-storage user-guide page: the
-  `catalogLineshapeType` cell in overlay metadata files was being
-  written as a raw integer. The enum is now `Q_ENUM`-registered (with
-  `Q_GADGET` on `CatalogOverlay`); writer wraps with
-  `QVariant::fromValue`, reader hardened with `enumFromVariant`. The
-  sibling `GenericXYOverlay` also gains an explicit `Q_GADGET` so its
-  pre-existing `Q_ENUM(DelimiterType)` continues to moc cleanly.
-- **Dual-form helper.** Added as `BlackchirpCSV::enumFromVariant<E>`
-  (free function in `blackchirpcsv.h`). `HeaderStorage::retrieve<T>`
-  and `retrieveArrayValue<T>` route through it for `Q_ENUM`-bearing
-  types via `if constexpr`, so existing call sites get backward-
-  compatible numeric-string parsing without per-site changes.
 
 ## Why this is a prerequisite
 
