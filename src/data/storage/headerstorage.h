@@ -4,8 +4,10 @@
 #include <QObject>
 #include <QVariant>
 #include <QAnyStringView>
+#include <type_traits>
 
 #include <data/bcglobals.h>
+#include <data/storage/enumcsvconvert.h>
 
 
 /*!
@@ -183,7 +185,10 @@ protected:
         auto it = d_values.find(key);
         if(it != d_values.end())
         {
-            out = it->second.first.value<T>();
+            if constexpr (std::is_enum_v<T> && QtPrivate::IsQEnumHelper<T>::Value)
+                out = BC::CSV::enumFromVariant<T>(it->second.first,defaultValue);
+            else
+                out = it->second.first.value<T>();
             d_values.erase(it);
         }
 
@@ -230,7 +235,10 @@ protected:
                 auto it2 = m.find(key);
                 if(it2 != m.end())
                 {
-                    out = it2->second.first.value<T>();
+                    if constexpr (std::is_enum_v<T> && QtPrivate::IsQEnumHelper<T>::Value)
+                        out = BC::CSV::enumFromVariant<T>(it2->second.first,defaultValue);
+                    else
+                        out = it2->second.first.value<T>();
                     m.erase(it2);
                 }
             }

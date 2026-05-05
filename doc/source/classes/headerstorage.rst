@@ -103,6 +103,21 @@ Read flow
 Therefore: never call ``retrieve()`` outside ``retrieveValues()`` (or
 after ``readComplete()`` has run) — the cache is empty by then.
 
+Enum cells
+----------
+
+``store()`` / ``storeArrayValue()`` template overloads wrap their
+argument with ``QVariant::fromValue``, so a ``Q_ENUM``-registered
+enumerator is written by name rather than as an opaque integer. On
+the read side ``retrieve()`` and ``retrieveArrayValue()`` dispatch
+to ``BC::CSV::enumFromVariant`` whenever the requested type carries
+``Q_ENUM`` or ``Q_ENUM_NS``, so historical fixtures whose cells held
+the integer form continue to round-trip back to the typed value
+without subclasses having to call the helper directly. The dual-form
+contract that motivates this is described under
+:ref:`Enum cells: writing names, reading both
+<persistence-enum-cells>`.
+
 Object-key conventions
 ----------------------
 

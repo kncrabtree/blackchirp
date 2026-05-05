@@ -66,7 +66,7 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
 
             if(key == BC::Config::Exp::ftmwType)
             {
-                auto type = l.constLast().value<FtmwConfig::FtmwType>();
+                auto type = BC::CSV::enumFromVariant<FtmwConfig::FtmwType>(l.constLast(),FtmwConfig::Forever);
                 obj = enableFtmw(type);
             }
 

@@ -29,7 +29,7 @@ single contributor in sequence.
 
 | ID | Title | Effort | Depends on | Status |
 |----|-------|--------|------------|--------|
-| 01 | C++ enum-string migration and reader hardening | M | — | not started |
+| 01 | C++ enum-string migration and reader hardening | M | — | in progress |
 | 02 | Refresh `python/example-data/` fixtures | S | — | not started |
 | 03 | Python module schema fixes (FTMW + experiment top level) | M | 01, 02 | not started |
 | 04 | `BCLIF` and `BCLifTrace` implementation | L | 01, 02 | not started |

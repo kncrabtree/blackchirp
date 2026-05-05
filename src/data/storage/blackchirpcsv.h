@@ -13,6 +13,7 @@
 
 #include <data/experiment/fid.h>
 #include <data/bcglobals.h>
+#include <data/storage/enumcsvconvert.h>
 
 /// \brief Namespace for canonical CSV constants used across the storage subsystem.
 namespace BC::CSV {

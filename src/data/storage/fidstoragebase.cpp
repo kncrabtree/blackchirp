@@ -33,7 +33,7 @@ FidStorageBase::FidStorageBase(int numRecords, int number, QString path) :
             fidTemplate.setProbeFreq(l.at(2).toDouble());
             fidTemplate.setVMult(l.at(3).toDouble());
             fidTemplate.setShots(l.at(4).toULongLong());
-            fidTemplate.setSideband(l.at(5).value<RfConfig::Sideband>());
+            fidTemplate.setSideband(BC::CSV::enumFromVariant<RfConfig::Sideband>(l.at(5),RfConfig::UpperSideband));
             d_templateList.append(fidTemplate);
         }
     }
@@ -282,7 +282,7 @@ void FidStorageBase::writeProcessingSettings(const FtWorker::FidProcessingSettin
     m.emplace(fidExp,c.expFilter);
     m.emplace(zpf,c.zeroPadFactor);
     m.emplace(rdc,c.removeDC);
-    m.emplace(units,c.units);
+    m.emplace(units,QVariant::fromValue(c.units));
     m.emplace(autoscaleIgnore,c.autoScaleIgnoreMHz);
     m.emplace(winf,QVariant::fromValue(c.windowFunction));
 
@@ -315,13 +315,13 @@ bool FidStorageBase::readProcessingSettings(FtWorker::FidProcessingSettings &out
         out.removeDC = it->second.toBool();
     it = m.find(units);
     if(it != m.end())
-        out.units = it->second.value<FtWorker::FtUnits>();
+        out.units = BC::CSV::enumFromVariant<FtWorker::FtUnits>(it->second,out.units);
     it = m.find(autoscaleIgnore);
     if(it != m.end())
         out.autoScaleIgnoreMHz = it->second.toDouble();
     it = m.find(winf);
     if(it != m.end())
-        out.windowFunction = it->second.value<FtWorker::FtWindowFunction>();
+        out.windowFunction = BC::CSV::enumFromVariant<FtWorker::FtWindowFunction>(it->second,out.windowFunction);
 
     return true;
 

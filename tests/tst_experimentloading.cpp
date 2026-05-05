@@ -25,6 +25,8 @@ private slots:
 
     // HardwareDataContainer round-trip
     void hardwareSaveLoadRoundTrip();
+    void hardwareReaderAcceptsBothHeaderLabels();
+    void hardwareReaderIgnoresThirdColumn();
 
     // Full experiment loading - oldest format (exp 200)
     void loadExperiment200_hardware();
@@ -176,6 +178,15 @@ void ExperimentLoadingTest::hardwareSaveLoadRoundTrip()
 
     QVERIFY(original.saveToFile(tmpPath));
 
+    // Verify the writer emits the current 2-column header with the
+    // "driver" label. The historical "subKey" label is a reader-side
+    // concern only.
+    QFile written(tmpPath);
+    QVERIFY(written.open(QIODevice::ReadOnly | QIODevice::Text));
+    auto firstLine = QString(written.readLine().trimmed());
+    written.close();
+    QCOMPARE(firstLine, QString("key;driver"));
+
     // Load back
     auto loaded = HardwareDataContainer::loadFromFile(tmpPath);
     QCOMPARE(loaded.hardwareMap.size(), original.hardwareMap.size());
@@ -185,6 +196,59 @@ void ExperimentLoadingTest::hardwareSaveLoadRoundTrip()
         QCOMPARE(loaded.hardwareMap[it.key()].implementation, it.value().implementation);
         QCOMPARE(loaded.hardwareMap[it.key()].type, it.value().type);
     }
+}
+
+void ExperimentLoadingTest::hardwareReaderAcceptsBothHeaderLabels()
+{
+    // Both header labels must be accepted positionally so historical
+    // fixtures (subKey) and current writer output (driver) load with the
+    // same semantics.
+    auto runCase = [](const char *headerLabel) {
+        QTemporaryFile tmp;
+        QVERIFY(tmp.open());
+        {
+            QTextStream t(&tmp);
+            t << "key;" << headerLabel << "\n";
+            t << "FtmwScope.main;VirtualFtmwScope\n";
+            t << "Clock.reference;FixedClock\n";
+        }
+        QString tmpPath = tmp.fileName();
+        tmp.close();
+
+        auto c = HardwareDataContainer::loadFromFile(tmpPath);
+        QCOMPARE(c.hardwareMap.size(), 2);
+        QVERIFY(c.hardwareMap.contains("FtmwScope.main"));
+        QCOMPARE(c.hardwareMap["FtmwScope.main"].type, HardwareType::FtmwScope);
+        QCOMPARE(c.hardwareMap["FtmwScope.main"].implementation, QString("VirtualFtmwScope"));
+        QVERIFY(c.hardwareMap.contains("Clock.reference"));
+        QCOMPARE(c.hardwareMap["Clock.reference"].type, HardwareType::Clock);
+    };
+
+    runCase("subKey");
+    runCase("driver");
+}
+
+void ExperimentLoadingTest::hardwareReaderIgnoresThirdColumn()
+{
+    // Transitional 3-column fixtures (key;subKey;hardwareType) must
+    // continue to load. The third cell — the historical numeric type
+    // mirror — is silently ignored; HardwareType is recovered from the
+    // key prefix instead.
+    QTemporaryFile tmp;
+    QVERIFY(tmp.open());
+    {
+        QTextStream t(&tmp);
+        t << "key;subKey;hardwareType\n";
+        t << "LifLaser.default;VirtualLifLaser;11\n";
+        t << "FtmwScope.default;VirtualFtmwScope;6\n";
+    }
+    QString tmpPath = tmp.fileName();
+    tmp.close();
+
+    auto c = HardwareDataContainer::loadFromFile(tmpPath);
+    QCOMPARE(c.hardwareMap.size(), 2);
+    QCOMPARE(c.hardwareMap["LifLaser.default"].type, HardwareType::LifLaser);
+    QCOMPARE(c.hardwareMap["FtmwScope.default"].type, HardwareType::FtmwScope);
 }
 
 // ============================================================

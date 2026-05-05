@@ -311,22 +311,28 @@ were numeric (``AWG.0``, ``Clock.0``, ``FtmwDigitizer.0``), and the
 second column held the C++ implementation class string (for
 example, ``awg70002a`` or ``valon5009``).
 
-**2.0 state.** The same file is still written, with three columns
-(``key``, ``subKey``, ``hardwareType``). The ``key`` field now uses
-the user-assigned label from the runtime hardware configuration in
-place of the numeric index, so you might see entries like
+**2.0 state.** The same file is still written, with two columns:
+``key`` and ``driver``. The ``key`` field now uses the user-assigned
+label from the runtime hardware configuration in place of the
+numeric index, so you might see entries like
 ``FlowController.frontPanel`` or ``FtmwScope.virtual``. The
-``subKey`` field still records the implementation; the new
-``hardwareType`` column carries the integer enum value used
-internally by Blackchirp. Old experiments remain readable: the
-loader detects the v1.x two-column layout and the very-old
-single-column layout and parses them appropriately.
+``driver`` field records the driver class identifier (the same
+information the v1.x ``subKey`` column carried). The hardware-type
+discriminator is recovered from the key prefix; an interim 2.0
+development format also wrote a third ``hardwareType`` column
+holding the integer enum value, and the loader silently ignores
+that column when present so those transitional fixtures load
+unchanged. Old experiments remain readable: the loader handles the
+v1.x two-column layout, the very-old single-column layout, and
+either header label (``subKey`` or ``driver``).
 
 **What to do.** Nothing for existing experiment files; they remain
 readable as-is. New experiments record using the label-based scheme.
-If you maintain external scripts that parse ``hardware.csv``, update
-them to handle the three-column layout; the example block in
-:doc:`/user_guide/data_storage` shows the new format.
+If you maintain external scripts that parse ``hardware.csv``, expect
+the two-column ``key;driver`` layout for new captures and accept
+either ``subKey`` or ``driver`` in the header row when supporting
+older experiments; the example block in
+:doc:`/user_guide/data_storage` shows the current format.
 
 .. note::
 
@@ -504,8 +510,10 @@ covers each new file in detail.
   the active configuration specified.
 - ``version.csv`` — already present in v1.x; 2.0 records the new
   major version number.
-- ``hardware.csv`` — gains the ``hardwareType`` column described
-  in :ref:`v1tov2-recreate-config` above.
+- ``hardware.csv`` — keys now embed user-assigned labels rather than
+  numeric indices and the second column has been renamed from
+  ``subKey`` to ``driver``, both described in
+  :ref:`v1tov2-recreate-config` above.
 
 The :doc:`Overlays </user_guide/overlays>` subsystem was introduced
 in v1.1; the on-disk schema has not changed in 2.0, so any

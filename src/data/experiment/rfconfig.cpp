@@ -316,11 +316,11 @@ void RfConfig::loadClockSteps(BlackchirpCSV *csv, int num, QString path)
                 int index = l.at(0).toInt(&ok);
                 if(!ok)
                     continue;
-                ClockType type = l.at(1).value<ClockType>();
+                ClockType type = BC::CSV::enumFromVariant<ClockType>(l.at(1),UpLO);
                 double freq = l.at(2).toDouble(&ok);
                 if(!ok)
                     continue;
-                MultOperation m = l.at(3).value<MultOperation>();
+                MultOperation m = BC::CSV::enumFromVariant<MultOperation>(l.at(3),Multiply);
                 double factor = l.at(4).toDouble(&ok);
                 if(!ok)
                     continue;

@@ -98,17 +98,17 @@ hardware.csv
 
 This file contains the list of hardware compiled into Blackchirp when the experiment was performed. It is used in the program to determine whether it is possible to perform a Quick Experiment, which can be done only if the same hardware configuration is available. Example::
 
-  key;subKey;hardwareType
-  LifScope.Default;PythonLifScope;10
-  PulseGenerator.Default;VirtualPulseGenerator;2
-  LifLaser.virtual;VirtualLifLaser;11
-  TemperatureController.default;VirtualTemperatureController;5
-  FlowController.Main;VirtualFlowController;3
-  Clock.virtual;FixedClock;7
-  AWG.Ka;VirtualAwg;8
-  FtmwScope.virtual;VirtualFtmwScope;6
+  key;driver
+  LifScope.Default;PythonLifScope
+  PulseGenerator.Default;VirtualPulseGenerator
+  LifLaser.virtual;VirtualLifLaser
+  TemperatureController.default;VirtualTemperatureController
+  FlowController.Main;VirtualFlowController
+  Clock.virtual;FixedClock
+  AWG.Ka;VirtualAwg
+  FtmwScope.virtual;VirtualFtmwScope
 
-The ``key`` field uses the format ``HardwareClass.Label``, where the label is the user-assigned name configured at setup time (for example, ``FtmwScope.virtual``, ``PulseGenerator.Default``, ``FlowController.Main``). The ``subKey`` field records which specific hardware driver was used. The ``hardwareType`` column is a programmatic integer from the internal ``HardwareType`` enum; it is used by the dialog and menu wiring to route settings and does not need to be interpreted manually. The number of items in this list may vary depending on your configuration.
+The ``key`` field uses the format ``HardwareClass.Label``, where the label is the user-assigned name configured at setup time (for example, ``FtmwScope.virtual``, ``PulseGenerator.Default``, ``FlowController.Main``). The ``driver`` field records which specific hardware driver was used. The number of items in this list may vary depending on your configuration. Older experiments may carry the historical ``subKey`` header label in place of ``driver``, and a third ``hardwareType`` column carrying the integer enum value; the loader accepts either header label and silently ignores the redundant third column when present.
 
 header.csv
 ..........
@@ -359,7 +359,7 @@ For each overlay listed in ``overlays.csv``, two additional files are created:
 
     ObjKey;Value
     catalogConvolutionEnabled;false
-    catalogLineshapeType;1
+    catalogLineshapeType;Gaussian
     catalogLinewidthKHz;100
     catalogTransitionCount;87
     curve_color;#40963a

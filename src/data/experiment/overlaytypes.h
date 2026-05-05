@@ -114,6 +114,7 @@ private:
  */
 class CatalogOverlay : public OverlayBase
 {
+    Q_GADGET
 public:
     /*!
      * \brief Lineshape function used when convolving the stick spectrum.
@@ -122,6 +123,7 @@ public:
         Lorentzian, ///< Lorentzian (Cauchy) profile.
         Gaussian    ///< Gaussian profile.
     };
+    Q_ENUM(LineshapeType)
 
     /// \brief Construct a Catalog-type overlay.
     CatalogOverlay();
@@ -321,6 +323,7 @@ private:
  */
 class GenericXYOverlay : public OverlayBase
 {
+    Q_GADGET
 public:
     /*!
      * \brief Delimiter type used when parsing the data file.

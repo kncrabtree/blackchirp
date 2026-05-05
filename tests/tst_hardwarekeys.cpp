@@ -55,8 +55,6 @@ private slots:
     void legacyStringToHardwareTypeKnown();
     void legacyStringToHardwareTypeAliases();
     void legacyStringToHardwareTypeUnknown();
-    void hardwareTypeToLegacyStringKnown();
-    void hardwareTypeToLegacyStringUnknown();
     void extractHardwareTypeFromKey();
 };
 
@@ -260,18 +258,6 @@ void HardwareKeysTest::legacyStringToHardwareTypeUnknown()
 {
     QCOMPARE(HardwareDataContainer::legacyStringToHardwareType("NonExistentHardware"), HardwareType::Unknown);
     QCOMPARE(HardwareDataContainer::legacyStringToHardwareType(""), HardwareType::Unknown);
-}
-
-void HardwareKeysTest::hardwareTypeToLegacyStringKnown()
-{
-    QCOMPARE(HardwareDataContainer::hardwareTypeToLegacyString(HardwareType::FtmwScope), QString("FtmwScope"));
-    QCOMPARE(HardwareDataContainer::hardwareTypeToLegacyString(HardwareType::GPIBController), QString("GPIBController"));
-    QCOMPARE(HardwareDataContainer::hardwareTypeToLegacyString(HardwareType::FlowController), QString("FlowController"));
-}
-
-void HardwareKeysTest::hardwareTypeToLegacyStringUnknown()
-{
-    QVERIFY(HardwareDataContainer::hardwareTypeToLegacyString(HardwareType::Unknown).isEmpty());
 }
 
 void HardwareKeysTest::extractHardwareTypeFromKey()

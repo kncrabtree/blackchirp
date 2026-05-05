@@ -609,7 +609,7 @@ void CatalogOverlay::_storeMetadata(std::map<QString, QVariant, std::less<>> &m)
     m.emplace(sourceProgram, d_catalogData.sourceProgram());
     m.emplace(moleculeName, d_catalogData.moleculeName());
     m.emplace(BC::Key::Overlay::Catalog::convolutionEnabled, d_convolutionEnabled);
-    m.emplace(BC::Key::Overlay::Catalog::lineshapeType, static_cast<int>(d_lineshapeType));
+    m.emplace(BC::Key::Overlay::Catalog::lineshapeType, QVariant::fromValue(d_lineshapeType));
     m.emplace(linewidthKHz, d_linewidth);
     m.emplace(BC::Key::Overlay::Catalog::convolutionMinFreq, d_convolutionMinFreq);
     m.emplace(BC::Key::Overlay::Catalog::convolutionMaxFreq, d_convolutionMaxFreq);
@@ -650,7 +650,7 @@ void CatalogOverlay::_retrieveMetadata(const std::map<QString, QVariant, std::le
     
     it = m.find(BC::Key::Overlay::Catalog::lineshapeType);
     if (it != m.end()) {
-        d_lineshapeType = static_cast<LineshapeType>(it->second.toInt());
+        d_lineshapeType = BC::CSV::enumFromVariant<LineshapeType>(it->second,Lorentzian);
     }
     
     it = m.find(linewidthKHz);

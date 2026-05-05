@@ -24,7 +24,7 @@ OverlayStorage::OverlayStorage(int number, const QString &path) :
             continue;
             
         auto fileBase = it->first;
-        auto type = it->second.value<OverlayBase::OverlayType>();
+        auto type = BC::CSV::enumFromVariant<OverlayBase::OverlayType>(it->second,OverlayBase::BCExperiment);
         
         loadOverlay(fileBase, type);
     }
@@ -108,7 +108,7 @@ void OverlayStorage::save()
         auto overlay = it->second;
         
         // Add overlay type to main index
-        m.emplace(label, static_cast<int>(overlay->type()));
+        m.emplace(label, QVariant::fromValue(overlay->type()));
         
         // Save overlay-specific settings (metadata only)
         std::map<QString,QVariant,std::less<>> overlaySettings;

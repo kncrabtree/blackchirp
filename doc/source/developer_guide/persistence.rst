@@ -256,6 +256,62 @@ auxiliary directories returned by ``logDir``, ``textExportDir``, and
 ``trackingDir`` are covered under
 :ref:`Other on-disk streams <persistence-other-streams>`.
 
+.. _persistence-enum-cells:
+
+Enum cells: writing names, reading both
+.......................................
+
+.. index::
+   single: persistence; Q_ENUM cells
+   single: BC::CSV; enumFromVariant
+
+Any CSV cell whose source is a ``Q_ENUM``- or ``Q_ENUM_NS``-registered
+enumeration must be written by name and read so that **both** name
+and integer forms parse back to the typed value. Blackchirp must
+read its own historical output, and the on-disk representation of
+these cells changed from numeric to name across versions.
+
+**Writer side.** Wrap the value in ``QVariant::fromValue`` so the
+default ``QVariant::toString()`` path used by
+``BlackchirpCSV::writeLine`` emits the enum name (``Multiply``)
+instead of an opaque integer (``0``):
+
+.. code-block:: cpp
+
+   // Correct: writes "Multiply"
+   m.emplace(opKey, QVariant::fromValue(c.op));
+
+   // Wrong: writes "0"
+   m.emplace(opKey, static_cast<int>(c.op));
+
+The :cpp:class:`HeaderStorage` ``store`` and ``storeArrayValue``
+templates already wrap their argument with ``QVariant::fromValue``,
+so any header-tree cell that takes a ``Q_ENUM`` value is correct
+by construction.
+
+**Reader side.** Always route enum reads through the helper
+
+.. code-block:: cpp
+
+   #include <data/storage/enumcsvconvert.h>   // exported via blackchirpcsv.h
+
+   // Resolution order: typed metatype hit → numeric form → name form.
+   auto type = BC::CSV::enumFromVariant<RfConfig::ClockType>(
+                   l.at(1), RfConfig::UpLO);
+
+The helper accepts a metatype-tagged enum (in-memory pipelines that
+never touched the disk), then a numeric string (historical output),
+then a name string (current output), falling back to the supplied
+default only when none of the three resolves. Bare ``value<E>()``
+calls on cells coming out of ``readLine`` are *not* sufficient: Qt's
+automatic ``QString``-to-enum conversion only handles the name form
+and silently returns the zero-valued enumerator for numeric strings.
+
+The :cpp:class:`HeaderStorage` ``retrieve`` and ``retrieveArrayValue``
+templates dispatch to ``enumFromVariant`` automatically when the
+target type is ``Q_ENUM``-registered, so subclasses' ``retrieveValues``
+overrides do not need to call the helper directly.
+
 HeaderStorage: the configuration tree
 -------------------------------------
 
@@ -449,8 +505,12 @@ constant for each filename appears in parentheses):
     The :cpp:class:`HeaderStorage` tree, six columns.
 
 ``hardware.csv`` (``hwFile``)
-    Active hardware map at acquisition time (key, subKey,
-    hardwareType).
+    Active hardware map at acquisition time. Two columns: ``key``
+    (``HardwareClass.Label``) and ``driver`` (the driver class
+    identifier). The hardware-type discriminator is recovered from
+    the key prefix; older fixtures may carry the legacy ``subKey``
+    header label and a redundant third ``hardwareType`` integer
+    column, both accepted by the loader for backward compatibility.
 
 ``objectives.csv`` (``objectivesFile``)
     Active acquisition objectives (FTMW/LIF and their termination

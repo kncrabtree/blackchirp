@@ -175,30 +175,6 @@ struct HardwareDataContainer {
     }
     
     /*!
-     * \brief Map hardware type enum to legacy string value (LEGACY COMPATIBILITY ONLY)
-     * \param hwType Hardware type enum
-     * \return Legacy hardware type string, or empty string if unknown
-     * 
-     * NOTE: This is ONLY for compatibility with legacy experiments. New code should use QMetaObject classnames.
-     */
-    static QString hardwareTypeToLegacyString(HardwareType hwType) {
-        static const QHash<HardwareType, QString> legacyStringMap = {
-            {HardwareType::IOBoard, "IOBoard"},
-            {HardwareType::PulseGenerator, "PulseGenerator"},
-            {HardwareType::FlowController, "FlowController"},
-            {HardwareType::PressureController, "PressureController"},
-            {HardwareType::TemperatureController, "TemperatureController"},
-            {HardwareType::FtmwScope, "FtmwScope"},
-            {HardwareType::Clock, "Clock"},
-            {HardwareType::AWG, "AWG"},
-            {HardwareType::GPIBController, "GPIBController"},
-            {HardwareType::LifScope, "LifScope"},
-            {HardwareType::LifLaser, "LifLaser"}
-        };
-        return legacyStringMap.value(hwType, QString());
-    }
-    
-    /*!
      * \brief Extract hardware type from hardware key (works with both legacy and new formats)
      * \param key Hardware key (e.g., "FlowController.frontPanel" or "FlowController.0")
      * \return Hardware type enum
@@ -425,58 +401,27 @@ struct HardwareDataContainer {
      * \brief Load hardware configuration from hardware.csv file with backward compatibility
      * \param filePath Full path to hardware.csv file to read
      * \return HardwareDataContainer with loaded data, or empty container if load failed
-     * 
-     * This method supports both file formats:
-     * - New format (3 columns): "key", "subKey", "hardwareType" - includes enum for robust type identification
-     * - Legacy format (2 columns): "key", "subKey" - hardware type inferred from key string
-     * 
-     * The original key format is preserved from the file for display/comparison purposes.
-     * Legacy keys will naturally fail hardware validation against current label-based 
-     * configurations, which is the desired behavior.
+     *
+     * Three on-disk formats are accepted so historical experiments load
+     * unchanged:
+     * - 1 column: a single hardware-type root key (predates multiple-
+     *   hardware support; the loader synthesises a \c "<type>.default" key
+     *   with implementation \c "virtual").
+     * - 2 columns: \c key and the driver class identifier. Header row's
+     *   second label may be either the historical \c "subKey" or the
+     *   current \c "driver"; the reader is positional so either works.
+     * - 3 columns: \c key, driver, and a redundant numeric hardware-type
+     *   cell from a transitional format. The third cell is silently
+     *   ignored — the \c HardwareType is recovered from the key prefix
+     *   instead.
+     *
+     * The original key format is preserved from the file for display and
+     * comparison purposes. Legacy keys will naturally fail hardware
+     * validation against current label-based configurations, which is the
+     * desired behavior.
      */
     static HardwareDataContainer loadFromFile(const QString& filePath);
-    
-    /*!
-     * \brief Convert to CSV-compatible list of key-implementation-type tuples (NEW FORMAT)
-     * \return List of {key, implementation, hardwareType} tuples for CSV serialization
-     */
-    QList<std::tuple<QString, QString, int>> toCsvTuples() const {
-        QList<std::tuple<QString, QString, int>> tuples;
-        for (auto it = hardwareMap.begin(); it != hardwareMap.end(); ++it) {
-            tuples.append({it.key(), it.value().implementation, static_cast<int>(it.value().type)});
-        }
-        return tuples;
-    }
-    
-    /*!
-     * \brief Create from legacy CSV format (2 columns: key, implementation)
-     * \param pairs List of {key, implementation} pairs from legacy CSV deserialization
-     * \return HardwareDataContainer with populated hardwareMap (hardware types inferred from key strings)
-     */
-    static HardwareDataContainer fromLegacyCsvPairs(const QList<QPair<QString, QString>>& pairs) {
-        HardwareDataContainer container;
-        for (const auto& pair : pairs) {
-            HardwareType hwType = extractHardwareType(pair.first);
-            container.hardwareMap[pair.first] = HardwareEntry(pair.second, hwType);
-        }
-        return container;
-    }
-    
-    /*!
-     * \brief Create from new CSV format (3 columns: key, implementation, hardwareType)
-     * \param tuples List of {key, implementation, hardwareType} tuples from new CSV deserialization
-     * \return HardwareDataContainer with populated hardwareMap
-     */
-    static HardwareDataContainer fromCsvTuples(const QList<std::tuple<QString, QString, int>>& tuples) {
-        HardwareDataContainer container;
-        for (const auto& tuple : tuples) {
-            const auto& [key, impl, typeInt] = tuple;
-            HardwareType hwType = static_cast<HardwareType>(typeInt);
-            container.hardwareMap[key] = HardwareEntry(impl, hwType);
-        }
-        return container;
-    }
-    
+
     /*!
      * \brief Check if hardware key uses legacy index format
      * \param key Hardware key to check (e.g., "FlowController.0" vs "FlowController.frontPanel")

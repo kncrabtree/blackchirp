@@ -9,6 +9,13 @@ public:
     BlackchirpCSVTest() {};
     ~BlackchirpCSVTest() {};
 
+    enum DualFormEnum {
+        First  = 0,
+        Second = 3,
+        Third  = 6,
+        Fourth = 9
+    };
+    Q_ENUM(DualFormEnum)
 
 private slots:
     void initTestCase();
@@ -19,6 +26,7 @@ private slots:
     void testExportY();
     void testExportYMulitple();
     void testFidConversion();
+    void testEnumFromVariantDualForm();
 };
 
 void BlackchirpCSVTest::initTestCase()
@@ -208,6 +216,30 @@ void BlackchirpCSVTest::testFidConversion()
     t << BlackchirpCSV::formatInt64(n2).toLongLong(nullptr,36) << "\n\n";
 
 
+}
+
+void BlackchirpCSVTest::testEnumFromVariantDualForm()
+{
+    using namespace BC::CSV;
+
+    // Name form (current writer output) parses back to the typed value.
+    QVERIFY(enumFromVariant<DualFormEnum>(QVariant{QString("Third")},First) == Third);
+
+    // Numeric form (historical writer output): both raw QString digits and
+    // an int-tagged QVariant must round-trip the cell value, NOT the enum
+    // ordinal. DualFormEnum::Third has value 6 — the third entry of the
+    // enum but with explicit value 6 — verifying the helper does not
+    // confuse "name index" with "numeric value".
+    QVERIFY(enumFromVariant<DualFormEnum>(QVariant{QString("6")},First) == Third);
+    QVERIFY(enumFromVariant<DualFormEnum>(QVariant{6},First) == Third);
+
+    // Direct metatype hit (in-memory pipeline that didn't round-trip
+    // through CSV) — pass through unchanged.
+    QVERIFY(enumFromVariant<DualFormEnum>(QVariant::fromValue(Fourth),First) == Fourth);
+
+    // Garbage falls back to the supplied default.
+    QVERIFY(enumFromVariant<DualFormEnum>(QVariant{QString("NotAKey")},Second) == Second);
+    QVERIFY(enumFromVariant<DualFormEnum>(QVariant{},Second) == Second);
 }
 
 QTEST_MAIN(BlackchirpCSVTest)

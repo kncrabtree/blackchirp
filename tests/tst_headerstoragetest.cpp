@@ -101,6 +101,7 @@ private slots:
     // Enhanced coverage tests
     void testArrayBoundaryConditions();
     void testEdgeCases();
+    void testEnumDualFormRetrieve();
     // void testChildManagement();  // Complex test - skip for now
     // void testErrorConditions();   // Causes segfault - skip for now
 };
@@ -395,6 +396,46 @@ void HeaderStorageTest::testEdgeCases()
         }
     }
     QVERIFY(foundChild);
+}
+
+void HeaderStorageTest::testEnumDualFormRetrieve()
+{
+    // The header CSV pipeline routes every cell through QString. After
+    // storeLine() the value is wrapped via QVariant::fromValue(QString),
+    // so retrieve<E>() must accept both name and numeric forms to remain
+    // backward-compatible with historical fixtures whose enum cells held
+    // integers rather than enum names.
+
+    // Name form (current writer output) — handled by Qt's QString -> enum
+    // conversion via QMetaEnum.
+    QVariantList nameLine = { QString("Test"), QString(""), QString(""),
+                              QString("nameForm"), QString("Test3"), QString("") };
+    QVERIFY(storeLine(nameLine));
+    QCOMPARE(retrieve("nameForm",Test1),Test3);
+
+    // Numeric form (historical writer output) — Qt's automatic conversion
+    // does not handle this; the dual-form helper installed in retrieve<T>
+    // is what makes this case parse back to the typed value.
+    QVariantList numericLine = { QString("Test"), QString(""), QString(""),
+                                 QString("numericForm"), QString("2"), QString("") };
+    QVERIFY(storeLine(numericLine));
+    QCOMPARE(retrieve("numericForm",Test1),Test3);
+
+    // Same dual-form behavior for retrieveArrayValue<T>.
+    QVariantList nameArrayLine = { QString("Test"), QString("enumArr"), QString("0"),
+                                   QString("k"), QString("Test2"), QString("") };
+    QVariantList numericArrayLine = { QString("Test"), QString("enumArr"), QString("1"),
+                                      QString("k"), QString("2"), QString("") };
+    QVERIFY(storeLine(nameArrayLine));
+    QVERIFY(storeLine(numericArrayLine));
+    QCOMPARE(retrieveArrayValue("enumArr",0,"k",Test1),Test2);
+    QCOMPARE(retrieveArrayValue("enumArr",1,"k",Test1),Test3);
+
+    // Unknown content falls back to the supplied default.
+    QVariantList garbageLine = { QString("Test"), QString(""), QString(""),
+                                 QString("garbageForm"), QString("NotAKey"), QString("") };
+    QVERIFY(storeLine(garbageLine));
+    QCOMPARE(retrieve("garbageForm",Test2),Test2);
 }
 
 QTEST_MAIN(HeaderStorageTest)
