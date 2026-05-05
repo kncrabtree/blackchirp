@@ -1,25 +1,9 @@
 # Bundle 03 — Python Module Schema Fixes (FTMW + Experiment Top Level)
 
-**Status:** in progress
+**Status:** complete (10bd9d08)
 **Depends on:** 01, 02
 **Blocks:** 05
 **Effort:** M (2 sessions)
-
-## Status notes
-
-- 2026-05-05: Bundle opened. Two scope additions agreed with the
-  maintainer before implementation began:
-  1. **Differential FID API.** Mirror Blackchirp's "differential
-     backup" view in the Python module. New `BCFTMW.get_differential_fid`
-     returns shots collected between two backup points; details in
-     §9 below.
-  2. **Error-handling sweep.** Convert silent-empty-return paths
-     ("return `""` on missing key") to explicit exceptions, since
-     they confuse Python users. Details in §10 below. The two
-     intentional exceptions (paths that keep their sentinel return)
-     are listed there.
-- No blockers; proceeding with implementation in the order listed
-  in the Changes section.
 
 ## Scope
 
