@@ -18,7 +18,6 @@ CP-FTMW Tab
 .. image:: /_static/user_guide/ui_overview/cp_ftmw.png
    :align: center
    :width: 800
-   :target: ../_images/cp_ftmw.png
    :alt: CP-FTMW tab overview
 
 
@@ -95,7 +94,6 @@ Peak Find
 .. image:: /_static/user_guide/ui_overview/peakfind.png
    :align: center
    :width: 800
-   :target: ../_images/peakfind.png
    :alt: Peak find panel
 
 The Peak Find menu has an implementation of a rough peak finding algorithm. In the peak finding routine, the FT data is run through a `Savitsky-Golay filter <https://en.wikipedia.org/wiki/Savitzky%E2%80%93Golay_filter>`_ which returns the second derivative of a smoothed version of the FT, determined by the window size (which must be odd) and a polynomial order which is used to fit the points within the window (must be less than the window size). A peak is identified when a 5-point local minimum in the second derivative is located and the corresponding point in the FT is at least SNR times an estimate of the local noise level.

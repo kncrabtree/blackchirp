@@ -9,7 +9,6 @@ Validation Settings
 .. image:: /_static/user_guide/experiment/validation.png
    :align: center
    :width: 800
-   :target: ../../_images/validation.png
    :alt: Experiment validation settings
 
 The Validation Settings page of the experiment wizard allows conditions to be defined that automatically terminate an experiment.

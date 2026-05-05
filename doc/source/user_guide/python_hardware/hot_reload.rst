@@ -115,7 +115,6 @@ modes include:
 
 .. figure:: /_static/user_guide/python_hardware/error_state.png
    :width: 800
-   :target: ../../_images/error_state.png
    :alt: Composite view of the Blackchirp main window with HwDialog open showing a red Error status label, the Log tab showing the full Python traceback, and an external editor displaying the script with the offending line highlighted.
    :align: center
 

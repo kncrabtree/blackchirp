@@ -38,7 +38,6 @@ dialog.
 
 .. figure:: /_static/user_guide/python_hardware/profile_creation.png
    :width: 800
-   :target: ../../_images/profile_creation.png
    :alt: Hardware Configuration dialog with a PythonAwg profile selected. The Advanced section shows the Python Script, Python Class, and Python Environment fields, with the resolved interpreter version displayed below.
    :align: center
 

@@ -79,6 +79,7 @@ extensions = [
     'nbsphinx_link',
     'breathe',
     'sphinxcontrib.mermaid',
+    'sphinxcontrib.lightbox2',
 ]
 
 # `:commit:` role rendered as a short hash linked to the GitHub commit page.

@@ -24,7 +24,6 @@ data. It is visible in the main window whenever the LIF module is enabled
 .. image:: /_static/user_guide/lif/lif_tab.png
    :align: center
    :width: 800
-   :target: ../../_images/lif_tab.png
    :alt: LIF Display tab showing time trace, slice plots, 2D spectrogram, and processing panel
 
 Plot areas

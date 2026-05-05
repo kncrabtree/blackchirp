@@ -27,7 +27,6 @@ is opened in read-only mode when Blackchirp is disconnected.
 
 .. figure:: /_static/user_guide/ftmw_configuration/ftmw_configuration.png
    :width: 800
-   :target: ../_images/ftmw_configuration.png
    :alt: FTMW Configuration dialog showing the preset bar at the top and
          the RF, Chirp, and Digitizer tabs below it.
 

@@ -29,7 +29,6 @@ and visible in the other.
 .. image:: /_static/user_guide/lif/lif_config.png
    :align: center
    :width: 800
-   :target: ../../_images/lif_config.png
    :alt: LIF Configuration dialog
 
 The dialog is divided into three areas:

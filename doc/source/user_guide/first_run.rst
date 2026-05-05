@@ -96,7 +96,6 @@ Hardware Onboarding
 
 .. figure:: /_static/user_guide/first_run/onboarding-runtimeconfig.png
    :width: 800
-   :target: ../_images/onboarding-runtimeconfig.png
    :alt: Runtime Hardware Configuration dialog on first run
 
    The Hardware Configuration dialog. Use this to assign hardware

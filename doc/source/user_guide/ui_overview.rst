@@ -17,7 +17,6 @@ User Interface Overview
 
 .. image:: /_static/user_guide/ui_overview/ui.png
    :width: 800
-   :target: ../_images/ui.png
    :alt: User interface screenshot
 
 Main Toolbar

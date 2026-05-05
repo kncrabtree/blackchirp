@@ -12,7 +12,6 @@ A pulse generator is a source of timing pulses whose delays and widths can be va
 
 .. image:: /_static/hardware/pulsegenerator_menu.png
    :width: 800
-   :target: ../../_images/pulsegenerator_menu.png
    :alt: Pulse Generator Control Screenshot
 
 The image above shows an overview of the pulse generator control widget. Individual channels can be further configured with the wrench-icon button, which opens a per-channel dialog (shown below) for setting the channel name and role, the active level, the duty-cycle behavior, and the step sizes for the numeric controls.

@@ -15,7 +15,6 @@ The Overlay Manager is opened from the squares-plus icon on the CP-FTMW toolbar.
 
 .. image:: /_static/user_guide/overlays/overlay_types_comparison.png
    :width: 800
-   :target: ../_images/overlay_types_comparison.png
    :align: center
    :alt: Example showing different types of overlays on an FTMW spectrum
 
@@ -39,7 +38,6 @@ For comparison with experimental data, the stick spectrum can be convolved with 
 
 .. image:: /_static/user_guide/overlays/catalog_convolution_settings.png
    :width: 800
-   :target: ../_images/catalog_convolution_settings.png
    :align: center
    :alt: Catalog overlay convolution settings dialog
 
@@ -52,7 +50,6 @@ Loads arbitrary XY data from a delimited text file. Comma-, semicolon-, tab-, an
 
 .. image:: /_static/user_guide/overlays/generic_xy_preview.png
    :width: 800
-   :target: ../_images/generic_xy_preview.png
    :align: center
    :alt: Generic XY data preview showing parsed file contents
 
@@ -74,7 +71,6 @@ To create an overlay:
 
 .. image:: /_static/user_guide/overlays/overlay_creation_dialog.png
    :width: 800
-   :target: ../_images/overlay_creation_dialog.png
    :align: center
    :alt: Unified overlay creation dialog
 

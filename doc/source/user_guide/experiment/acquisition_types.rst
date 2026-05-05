@@ -15,7 +15,6 @@ Acquisition Types
 .. image:: /_static/user_guide/experiment/startpage.png
    :align: center
    :width: 800
-   :target: ../../_images/startpage.png
    :alt: Experiment start page
 
 When starting a new experiment, the first page of the wizard allows for selecting the desired type of the FTMW acquisition along with other options related to real-time FID processing.

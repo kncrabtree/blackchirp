@@ -17,7 +17,6 @@ of what the program is doing.
 
 .. figure:: /_static/user_guide/log_tab/log_tab.png
    :width: 800
-   :target: ../_images/log_tab.png
    :align: center
    :alt: Log tab showing normal, highlight, warning, and error messages
 
