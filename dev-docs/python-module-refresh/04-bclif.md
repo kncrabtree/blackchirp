@@ -1,6 +1,6 @@
 # Bundle 04 — `BCLIF` and `BCLifTrace` Implementation
 
-**Status:** not started
+**Status:** complete (dc7e7640)
 **Depends on:** 01, 02
 **Blocks:** 05
 **Effort:** L (3+ sessions)
