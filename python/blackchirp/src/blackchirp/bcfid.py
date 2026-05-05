@@ -40,6 +40,41 @@ _FT_UNITS_INT_MAP = {0: "FtV", 3: "FtmV", 6: "FtuV", 9: "FtnV"}
 _SIDEBAND_MAP = {"UpperSideband": 0, "LowerSideband": 1}
 _SIDEBAND_INT_MAP = {0: "UpperSideband", 1: "LowerSideband"}
 
+_TIME_UNIT_SCALES = {
+    "s": 1.0,
+    "ms": 1.0e3,
+    "us": 1.0e6,
+    "μs": 1.0e6,
+    "ns": 1.0e9,
+}
+
+_FREQ_UNIT_SCALES_FROM_MHZ = {
+    "Hz": 1.0e6,
+    "kHz": 1.0e3,
+    "MHz": 1.0,
+    "GHz": 1.0e-3,
+    "THz": 1.0e-6,
+}
+
+
+def _resolve_time_scale(units: str) -> float:
+    try:
+        return _TIME_UNIT_SCALES[units]
+    except KeyError as err:
+        raise ValueError(
+            f"Unknown time unit {units!r}; choose from " f"{sorted(_TIME_UNIT_SCALES)}"
+        ) from err
+
+
+def _resolve_freq_scale_from_mhz(units: str) -> float:
+    try:
+        return _FREQ_UNIT_SCALES_FROM_MHZ[units]
+    except KeyError as err:
+        raise ValueError(
+            f"Unknown frequency unit {units!r}; choose from "
+            f"{sorted(_FREQ_UNIT_SCALES_FROM_MHZ)}"
+        ) from err
+
 
 class BCFid:
     """Container for FID data
@@ -134,25 +169,38 @@ class BCFid:
     #     out.data = out._rawdata * fp.loc[0].vmult / shots
     #     return out
 
-    def x(self) -> np.ndarray:
-        """Compute time array for FID (units: s)
+    def x(self, units: str = "s") -> np.ndarray:
+        """Compute time array for FID.
+
+        Args:
+            units: One of ``"s"``, ``"ms"``, ``"us"`` (or ``"μs"``),
+                ``"ns"``. ``"s"`` is the default; other choices
+                rescale the array for plotting convenience and have
+                no effect on the stored sample spacing.
 
         Returns:
-            Numpy array containing time points
-        """
-        return np.arange(self.fidparams["size"]) * self.fidparams.spacing
+            1D numpy array of sample times in the requested units.
 
-    def xy(self) -> tuple[np.ndarray, np.ndarray]:
-        """Get time and voltage arrays for FID
+        Raises:
+            ValueError: If ``units`` is not a recognised time-unit
+                string.
+        """
+        scale = _resolve_time_scale(units)
+        return np.arange(self.fidparams["size"]) * (self.fidparams.spacing * scale)
+
+    def xy(self, units: str = "s") -> tuple[np.ndarray, np.ndarray]:
+        """Get time and voltage arrays for FID.
 
         The FID data is a 2D numpy array whose second axis corresponds to the frame
         index. The time array is 1D.
 
-        Returns:
-            Time array, FID array
+        Args:
+            units: Time-axis units (see :meth:`x`).
 
+        Returns:
+            Time array, FID array.
         """
-        return self.x(), self.data
+        return self.x(units), self.data
 
     def is_lower_sideband(self) -> bool:
         """Indicate whether downconversion uses the lower sideband.
@@ -220,6 +268,7 @@ class BCFid:
         autoscale_MHz: float = None,
         units_power: int = None,
         frame: int = None,
+        freq_units: str = "MHz",
     ) -> tuple[np.ndarray, np.ndarray]:
         """Compute the Fourier transform of the FID
 
@@ -248,15 +297,21 @@ class BCFid:
                 an enum name (``FtV`` / ``FtmV`` / ``FtuV`` / ``FtnV``) or
                 as the corresponding integer.
             frame: Apply FT to only the specified frame.
+            freq_units: Units for the returned frequency array. One of
+                ``"Hz"``, ``"kHz"``, ``"MHz"`` (default), ``"GHz"``,
+                ``"THz"``. ``start_us``, ``end_us``, ``expf_us``, and
+                ``autoscale_MHz`` are interpreted in their declared
+                units regardless of this choice.
 
         Returns:
-            Frequency array (MHz), Intensity array
+            Frequency array (in ``freq_units``), Intensity array.
 
         Raises:
             ValueError: If ``winf`` is a string that does not match a known
                 window-function name, if the ``FidWindowFunction`` value
-                stored in ``processing.csv`` is unrecognised, or if the
-                ``FtUnits`` value is unrecognised.
+                stored in ``processing.csv`` is unrecognised, if the
+                ``FtUnits`` value is unrecognised, or if ``freq_units``
+                is not a recognised frequency-unit string.
 
         Examples:
             Assuming a BCFid object named ``fid``::
@@ -380,6 +435,7 @@ class BCFid:
                     np.abs(out_x - self.apply_lo(autoscale_MHz)) <= autoscale_MHz, i
                 ] = 0
 
+        out_x = out_x * _resolve_freq_scale_from_mhz(freq_units)
         return out_x, out_y
 
     def _resolve_window(self, winf):

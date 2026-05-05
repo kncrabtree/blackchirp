@@ -5,7 +5,7 @@ import os
 import warnings
 import numpy as np
 import pandas as pd
-from .bcfid import BCFid
+from .bcfid import BCFid, _resolve_freq_scale_from_mhz
 
 _MULTI_SEGMENT_FTMW_TYPES = frozenset({"LO_Scan", "DR_Scan", "Peak_Up"})
 
@@ -235,6 +235,7 @@ class BCFTMW:
         max_ft_offset: float = None,
         frame: int = 0,
         verbose: bool = False,
+        freq_units: str = "MHz",
         **proc_kwargs,
     ) -> tuple[np.ndarray, np.ndarray]:
         """Performs sideband deconvolution on an LO Scan experiment
@@ -258,18 +259,31 @@ class BCFTMW:
             frame: Frame number (indexed from 0).
                 If negative, all frames will be averaged
             verbose: If true, print a progress message during the deconvolution.
+            freq_units: Units for the returned frequency array. One of
+                ``"Hz"``, ``"kHz"``, ``"MHz"`` (default), ``"GHz"``,
+                ``"THz"``. ``min_ft_offset`` and ``max_ft_offset`` are
+                always interpreted in MHz regardless of this choice.
             \\*\\*proc_kwargs: FID processing settings passed as \\*\\*kwargs to BCFid.ft.
+                A ``freq_units`` entry here is ignored — the
+                deconvolution is computed in MHz and rescaled at the
+                end via the explicit ``freq_units`` argument.
 
         Returns:
-            Frequency and intensity arrays for processed spectrum.
+            Frequency (in ``freq_units``) and intensity arrays for the
+            processed spectrum.
 
         Raises:
             ValueError: If ``which`` is not one of ``'both'``, ``'upper'``,
                 ``'lower'``; if ``avg`` is not ``'harmonic'`` or
                 ``'geometric'``; if ``min_ft_offset`` or ``max_ft_offset``
-                is non-positive; or if any FID's ``sideband`` value is
-                unrecognised (propagated from ``BCFid.is_lower_sideband``).
+                is non-positive; if ``freq_units`` is not a recognised
+                frequency-unit string; or if any FID's ``sideband``
+                value is unrecognised (propagated from
+                ``BCFid.is_lower_sideband``).
         """
+
+        proc_kwargs = {k: v for k, v in proc_kwargs.items() if k != "freq_units"}
+        scale = _resolve_freq_scale_from_mhz(freq_units)
 
         min_probe = np.min(self.fidparams.probefreq.to_numpy())
         max_probe = np.max(self.fidparams.probefreq.to_numpy())
@@ -349,7 +363,7 @@ class BCFTMW:
                     y_out = avg_f(y_out, yint, shots_array, yshots)
                 shots_array += yshots
 
-        return xx, y_out
+        return xx * scale, y_out
 
 
 def BC_harm_mean(
