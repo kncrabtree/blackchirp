@@ -82,6 +82,45 @@ CLAUDE.md, applied to every bundle:
   notebook. Notebook-only dependencies are documented in the notebook
   itself, not added to `pyproject.toml` runtime requirements.
 
+## Conda environments
+
+Two separate conda environments back this work; do not mix them.
+
+- **`blackchirp-py`** — Python module development, testing, linting,
+  formatting, notebook execution, and PyPI build/publish. Defined by
+  `python/environment.yml` (mirror in `python/requirements.txt` for
+  pure-pip workflows). Run any Python-side command through it:
+
+  ```bash
+  conda run -n blackchirp-py pytest python/blackchirp/tests/
+  conda run -n blackchirp-py pylint -E python/blackchirp/src/blackchirp/
+  conda run -n blackchirp-py black --check python/blackchirp/src/blackchirp/
+  conda run -n blackchirp-py jupyter nbconvert --to notebook --execute python/single-fid.ipynb
+  conda run -n blackchirp-py python -m build python/blackchirp
+  ```
+
+  The environment already has the module installed in editable mode
+  (`pip install -e python/blackchirp`), so source edits are visible to
+  `pytest` and notebook runs without reinstalling. Re-run the editable
+  install only after the environment is recreated, after the package
+  layout changes, or after `pyproject.toml` metadata
+  (build-backend, `[project]`, or `dependencies`) changes.
+
+- **`breathe`** — Sphinx + Doxygen documentation builds only. Doc
+  rebuilds follow the recipe from `dev-docs/documentation-revision.md`
+  and the project CLAUDE.md:
+
+  ```bash
+  touch doc/source/index.rst && conda run -n breathe cmake --build build --target docs
+  ```
+
+  Use this for bundle 05's doc rebuild and any spot-check of rendered
+  output.
+
+C++ work in bundle 01 does not need a conda environment — build via
+`cmake --build build/Desktop-Debug -j$(nproc)` and test via
+`ctest --test-dir build/tests` per the standard recipes in CLAUDE.md.
+
 ## Cross-cutting safety rule
 
 Any C++ reader of an enum-bearing CSV cell must accept both numeric

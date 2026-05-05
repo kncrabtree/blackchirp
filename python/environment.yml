@@ -1,0 +1,48 @@
+# Conda environment for developing the Blackchirp Python module.
+#
+# Covers the four developer workflows:
+#   * test the module           (pytest)
+#   * lint / format the source  (pylint, black)
+#   * run the example notebooks (jupyterlab, matplotlib, ipykernel)
+#   * build / publish to PyPI   (python-build, twine)
+#
+# Create the environment:
+#   conda env create -f python/environment.yml
+#
+# Activate it:
+#   conda activate blackchirp-py
+#
+# Then editable-install the module from this directory:
+#   pip install -e python/blackchirp
+#
+# Update the environment after editing this file:
+#   conda env update -f python/environment.yml --prune
+
+name: blackchirp-py
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python>=3.9
+
+  # Runtime dependencies (mirror python/blackchirp/pyproject.toml)
+  - numpy
+  - pandas
+  - scipy
+
+  # Testing
+  - pytest
+
+  # Linting / formatting
+  - black
+  - pylint
+
+  # Notebook authoring and execution
+  - jupyterlab
+  - matplotlib
+  - ipykernel
+  - nbconvert
+
+  # Packaging / publishing
+  - python-build
+  - twine

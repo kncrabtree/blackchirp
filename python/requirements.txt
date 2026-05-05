@@ -1,0 +1,37 @@
+# Pip requirements for developing the Blackchirp Python module.
+#
+# Mirrors python/environment.yml for developers who prefer a pure
+# pip / venv workflow over conda. Covers test, lint/format, notebook,
+# and PyPI build/publish needs.
+#
+# Recommended setup (from the repository root):
+#   python -m venv .venv
+#   source .venv/bin/activate          # Windows: .venv\Scripts\activate
+#   pip install -r python/requirements.txt
+#   pip install -e python/blackchirp
+#
+# This file pins no versions on purpose: it is a developer-environment
+# manifest, not a deployment lock. The runtime dependency contract for
+# the published package is in python/blackchirp/pyproject.toml.
+
+# Runtime dependencies (mirror python/blackchirp/pyproject.toml)
+numpy
+pandas
+scipy
+
+# Testing
+pytest
+
+# Linting / formatting
+black
+pylint
+
+# Notebook authoring and execution
+jupyterlab
+matplotlib
+ipykernel
+nbconvert
+
+# Packaging / publishing
+build
+twine
