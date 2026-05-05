@@ -46,17 +46,30 @@ HardwareManager::~HardwareManager()
 {
     // Clear static instance
     s_instance = nullptr;
-    
-    //stop all threads
+
+    // Threaded hardware objects have no QObject parent (moveToThread is
+    // incompatible with parent-child affinity), so Qt's automatic child
+    // cleanup will not delete them. Stop their threads, then delete the
+    // objects manually so destructors run -- ~FlowController, etc., persist
+    // settings via SettingsStorage::save() and would otherwise be lost.
+    // Non-threaded hardware is parented to HardwareManager at creation time
+    // and is cleaned up automatically by QObject destruction.
     for(auto &[key,obj] : d_hardwareMap)
     {
         Q_UNUSED(key)
         if(obj->d_threaded)
         {
-            obj->thread()->quit();
-            obj->thread()->wait();
+            QThread *t = obj->thread();
+            // Delete on the worker thread so QTimer/startTimer members are
+            // stopped on the thread that owns them (killTimer is per-thread).
+            QMetaObject::invokeMethod(obj, [obj]{ delete obj; },
+                                      Qt::BlockingQueuedConnection);
+            t->quit();
+            t->wait();
+            delete t;
         }
     }
+    d_hardwareMap.clear();
 }
 
 QString HardwareManager::getHwName(const QString key)
