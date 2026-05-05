@@ -50,6 +50,7 @@ HwSettingsWidget::HwSettingsWidget(const QString &hwType,
     vbl->setContentsMargins(0, 0, 0, 0);
 
     p_tabWidget = new QTabWidget(this);
+    p_tabWidget->setMinimumHeight(200);
     vbl->addWidget(p_tabWidget);
 
     // ---- "Settings" tab: Required + Important ----

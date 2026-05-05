@@ -4,11 +4,6 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 
 ## Small
 
-### AddProfileDialog size
-
-When opened, the AddHardwareProfile dialog does not resize to show the contents of the tab widget; the viewport for that widget is only about
-100 pixels.
-
 - Update python module for v1/v2 compatability
 
 ## Medium

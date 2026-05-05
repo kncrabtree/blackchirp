@@ -125,6 +125,8 @@ AddProfileDialog::AddProfileDialog(const QString &hardwareType, QWidget *parent)
 
     // Trigger initial validation
     p_labelEdit->textChanged(p_labelEdit->text());
+
+    adjustSize();
 }
 
 QString AddProfileDialog::selectedImplementation() const
