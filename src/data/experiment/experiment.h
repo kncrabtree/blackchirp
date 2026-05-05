@@ -217,6 +217,9 @@ public:
     /// \brief Writes the chirp segment CSV file via the active \c FtmwConfig's chirp config.
     bool saveChirpFile() const;
 
+    /// \brief Writes the marker channel CSV file via the active \c FtmwConfig's chirp config.
+    bool saveMarkersFile() const;
+
     /// \brief Writes the clock steps CSV file via the active \c FtmwConfig's RF config.
     bool saveClockFile() const;
 

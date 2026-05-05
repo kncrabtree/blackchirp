@@ -133,6 +133,7 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
     if(ftmwEnabled())
     {
         ps_ftmwConfig->d_rfConfig.d_chirpConfig.readChirpFile(csv.get(),num,exptPath);
+        ps_ftmwConfig->d_rfConfig.d_chirpConfig.readMarkersFile(csv.get(),num,exptPath);
         ps_ftmwConfig->d_rfConfig.loadClockSteps(csv.get(),num,exptPath);
 
         if(!headerOnly)
@@ -372,6 +373,13 @@ bool Experiment::initialize()
                 return false;
             }
 
+            if(!saveMarkersFile())
+            {
+                d_errorString = QString("Could not open the file %1 for writing.")
+                        .arg(BlackchirpCSV::exptDir(d_number).absoluteFilePath(BC::CSV::markersFile));
+                return false;
+            }
+
             if(!saveClockFile())
             {
                 d_errorString = QString("Could not open the file %1 for writing.")
@@ -559,6 +567,11 @@ bool Experiment::saveHeader()
 bool Experiment::saveChirpFile() const
 {
     return ps_ftmwConfig->d_rfConfig.d_chirpConfig.writeChirpFile(d_number);
+}
+
+bool Experiment::saveMarkersFile() const
+{
+    return ps_ftmwConfig->d_rfConfig.d_chirpConfig.writeMarkersFile(d_number);
 }
 
 bool Experiment::saveClockFile() const
