@@ -189,8 +189,9 @@ HeaderStorage::HeaderStrings Experiment::getSummary()
 
 void Experiment::backup()
 {
-    //if we reach this point, it's time to backup
     d_lastBackupTime = QDateTime::currentDateTime();
+    if(!ftmwEnabled())
+        return;
     ps_ftmwConfig->storage()->backup();
 }
 
@@ -425,7 +426,7 @@ void Experiment::abort()
 
 bool Experiment::canBackup()
 {
-    if(isComplete() || d_backupIntervalMinutes < 1 || !d_startTime.isValid())
+    if(isComplete() || d_backupIntervalMinutes < 1 || !d_startTime.isValid() || !ftmwEnabled())
         return false;
 
     auto now = QDateTime::currentDateTime();
