@@ -79,7 +79,7 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const QHash<RfConf
 
     setLayout(mainLayout);
     mainLayout->setSizeConstraint(QLayout::SetNoConstraint);
-    setMinimumSize(1000, 600);
+    setMinimumSize(1400, 950);
 
     p_exp = exp;
 
