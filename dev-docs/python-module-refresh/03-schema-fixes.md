@@ -1,9 +1,25 @@
 # Bundle 03 — Python Module Schema Fixes (FTMW + Experiment Top Level)
 
-**Status:** not started
+**Status:** in progress
 **Depends on:** 01, 02
 **Blocks:** 05
 **Effort:** M (2 sessions)
+
+## Status notes
+
+- 2026-05-05: Bundle opened. Two scope additions agreed with the
+  maintainer before implementation began:
+  1. **Differential FID API.** Mirror Blackchirp's "differential
+     backup" view in the Python module. New `BCFTMW.get_differential_fid`
+     returns shots collected between two backup points; details in
+     §9 below.
+  2. **Error-handling sweep.** Convert silent-empty-return paths
+     ("return `""` on missing key") to explicit exceptions, since
+     they confuse Python users. Details in §10 below. The two
+     intentional exceptions (paths that keep their sentinel return)
+     are listed there.
+- No blockers; proceeding with implementation in the order listed
+  in the Changes section.
 
 ## Scope
 
@@ -122,6 +138,98 @@ The Python reader must:
 - Update `BCExperiment` `Attributes` block to add `markers`.
 - Trim or remove any references to the v1 numeric-only enum forms.
 
+### 9. Differential FID API
+
+Mirror the C++ `FidSingleStorage::loadDifferentialFidList` feature in
+the Python module, with a more general two-bound interface:
+
+```python
+class BCFTMW:
+    def is_multi_segment(self) -> bool: ...
+    def num_backups(self) -> int: ...
+    def get_differential_fid(self, start: int = 0, end: int = -1) -> BCFid: ...
+```
+
+Semantics (matches the C++ on-disk convention):
+
+- `0.csv` is the cumulative final FID. `1.csv`, `2.csv`, … are
+  backups taken at intermediate times; each contains the cumulative
+  FID up through its backup point.
+- `start=0` → no subtraction; the differential begins at the start
+  of the experiment.
+- `start=k` (`k > 0`) → subtract FID from `k.csv`.
+- `end=-1` → use `0.csv` as the upper bound (i.e. "current/final").
+- `end=k` (`k > 0`) → use `k.csv` as the upper bound.
+- The returned `BCFid` reports
+  `fidparams.shots = shots(end) − shots(start)` so that downstream
+  scaling (`vmult / shots`) is correct.
+
+`is_multi_segment` reads `FtmwType` from `objectives.csv` and returns
+`True` iff the value is in `{LO_Scan, DR_Scan, Peak_Up}`. To support
+this, `BCExperiment.__init__` must capture `FtmwType` from objectives
+and pass it (or a flag) into the `BCFTMW` constructor — `BCFTMW`
+itself does not read `objectives.csv`.
+
+`num_backups()` returns `len(fidparams) − 1` for single-segment
+experiments and `0` for multi-segment.
+
+`get_differential_fid` must raise:
+
+- `ValueError` if `is_multi_segment()` is true (with a message
+  identifying the FtmwType).
+- `ValueError` if `start < 0`, if `start > num_backups()`,
+  if `end != -1` and not in `[1, num_backups()]`, or if the
+  resolved `(start, end)` ordering does not satisfy `start < end`
+  (with `end=-1` resolved to "after every backup").
+
+Implementation: instantiate two `BCFid`s (start and end), subtract
+the raw integer arrays element-wise, recompute `data` as
+`_rawdata * vmult / shots_diff`, and patch the result's
+`fidparams` row before returning. Frames must match between the two
+inputs; if they do not (defensive check, should never trigger in
+single-segment data), raise `ValueError`.
+
+### 10. Error-handling sweep
+
+Replace silent-empty-return paths with explicit exceptions. Update
+each affected method's `Raises:` block to list every exception that
+this module's own code raises (downstream pandas/numpy/scipy errors
+are not enumerated unless the wrapper translates them).
+
+Conversions:
+
+- `BCExperiment.header_value(objKey, valKey, idx, arrKey)` — current
+  behavior returns `""` when no row matches. Change to raise
+  `KeyError` with a message naming the requested
+  `(ObjKey, ValueKey, ArrKey, idx)`. The message should make the
+  failed lookup unambiguous.
+- `BCExperiment.header_unit(...)` — same conversion for the
+  missing-row case. The "row exists, unit cell is empty/NaN" case
+  remains a return of `""` (this is a legitimate "no units"
+  answer). Document both behaviors in the docstring.
+- `BCFid.ft` — wired through `_resolve_enum`; unknown window
+  function name, unknown `FtUnits` value, and unknown sideband
+  value raise `ValueError`. Today's silent fallback to `boxcar`
+  / `units_power=0` is removed.
+- `BCFTMW.get_fid` — already raises `ValueError`; keep as is, but
+  ensure the `Raises:` block documents it.
+- `BCFTMW.process_sideband` — already raises `ValueError` on bad
+  `which` / `avg`; keep, document the full set in `Raises:`.
+- `BCFTMW.get_differential_fid` — raises per §9.
+- `BCExperiment.__init__` — already raises `FileNotFoundError`;
+  add a `KeyError`/`ValueError` if `header.csv` lacks the
+  `Experiment / Number` row that the constructor relies on
+  (currently fails with an opaque `IndexError`).
+
+Intentionally **not** converted (kept as sentinel returns):
+
+- `BCExperiment.header_rows(...)` returns an empty DataFrame on no
+  match. Empty DataFrame is the idiomatic pandas "zero matches"
+  result and callers can use `.empty` / `len()` to branch. Document
+  this explicitly in the docstring.
+- `BCExperiment.header_unit(...)` — empty unit cell (NaN) returns
+  `""` (see above; this case is "row found, no unit").
+
 ### 8. Tests
 
 The Python module currently has no test suite. This bundle adds a
@@ -172,6 +280,36 @@ For FTMW coverage:
 - `test_enum_helpers.py` — pure-unit test of the
   `_resolve_enum` helper introduced in change #4 (covers the
   int / int-string / name / unknown-input paths).
+- `test_differential_fid.py` — exercises the API added in §9:
+  - `get_differential_fid()` with defaults returns a `BCFid` whose
+    `fidparams.shots` equals `fidparams.iloc[0].shots`.
+  - `get_differential_fid(start=k, end=-1).fidparams.shots`
+    equals `fidparams.iloc[0].shots − fidparams.iloc[k].shots`
+    for each backup index `k` in the fixture.
+  - `get_differential_fid(start=i, end=j).fidparams.shots`
+    equals `fidparams.iloc[j].shots − fidparams.iloc[i].shots`
+    for at least one ordered pair with `0 < i < j`.
+  - `get_differential_fid(0, 1).fidparams.shots`
+    equals `fidparams.iloc[1].shots`.
+  - The returned `BCFid.ft()` runs without raising.
+  - Out-of-range `start` / `end`, `start >= end` after resolving
+    `end=-1`, and a stub experiment with `FtmwType=LO_Scan` each
+    raise `ValueError`.
+  - Runs against both `mtbe/` and `v2-ftmw/` fixtures.
+- `test_error_paths.py` — error-handling sweep coverage:
+  - `header_value` with an absent `(ObjKey, ValueKey)` raises
+    `KeyError`.
+  - `header_unit` with an absent `(ObjKey, ValueKey)` raises
+    `KeyError`; with a row whose unit cell is empty returns `""`
+    without raising.
+  - `BCFid.ft(winf="NoSuchWindow")` raises `ValueError`; the same
+    holds for unknown `FtUnits` (parametrize a fid whose
+    `processing.csv` has been monkey-patched to an unknown name).
+  - `BCFTMW.get_fid(num=999)` raises `ValueError`.
+  - A constructor invoked on a directory missing
+    `header.csv`'s `Experiment / Number` row raises
+    `KeyError` (or `ValueError`, whichever the implementation
+    chose; document and assert the same).
 
 Tests use `pytest`, no other test deps. Add `pytest` to a
 `dev-requirements.txt` (or `[project.optional-dependencies]` table in
@@ -183,9 +321,11 @@ tests cover only the FTMW + experiment-top-level surface.
 ## Files touched
 
 - `python/blackchirp/src/blackchirp/blackchirpexperiment.py`
-- `python/blackchirp/src/blackchirp/bcftmw.py`
+- `python/blackchirp/src/blackchirp/bcftmw.py` (includes the
+  differential-FID API and `is_multi_segment` / `num_backups`
+  helpers from §9)
 - `python/blackchirp/src/blackchirp/bcfid.py`
-- `python/blackchirp/src/blackchirp/_enum_helpers.py` (new, optional)
+- `python/blackchirp/src/blackchirp/_enum_helpers.py` (new)
 - `python/blackchirp/tests/` (new directory tree)
 - `python/blackchirp/pyproject.toml` — add `[project.optional-dependencies]`
   for `dev` (pytest); no runtime dep changes.
@@ -208,6 +348,16 @@ tests cover only the FTMW + experiment-top-level surface.
 - All four sideband forms (`0`, `1`, `'LowerSideband'`,
   `'UpperSideband'`) route through `apply_lo` and
   `BCFTMW.process_sideband` correctly.
+- `BCFTMW.get_differential_fid` returns FIDs whose `shots`
+  attribute matches the arithmetic on `fidparams.csv` for both
+  fixtures, raises `ValueError` on multi-segment experiments and
+  on out-of-range / non-monotone bounds, and produces output that
+  runs through `.ft()` without error.
+- The error-handling sweep is complete: `header_value` /
+  `header_unit` raise `KeyError` on missing rows;
+  `BCFid.ft` raises `ValueError` on unknown window or `FtUnits`
+  values; every public method's docstring `Raises:` block
+  matches the methods's actual behavior.
 - `pytest python/blackchirp/tests/` passes.
 - `pylint -E python/blackchirp/src/blackchirp/` clean.
 - `black --check python/blackchirp/src/blackchirp/` clean.

@@ -28,7 +28,11 @@ class BCExperiment:
 
 
     Raises:
-        FileNotFoundError: If no ``version.csv`` file is found
+        FileNotFoundError: If no ``version.csv`` file is found at the
+            resolved experiment path.
+        KeyError: If ``header.csv`` does not contain the
+            ``Experiment / Number`` row required to identify the
+            experiment.
 
     Example:
         To load data, pass the experiment number and/or the path to the
@@ -56,14 +60,19 @@ class BCExperiment:
         These DataFrames are each stored as a variable with the same name as the csv
         file. For example, to see the contents of hardware.csv::
 
-            $ e437.hardware
+            $ e347.hardware
 
-                            key   subKey
-            0             AWG.0  virtual
-            1           Clock.0    fixed
-            2           Clock.1    fixed
-            3   FtmwDigitizer.0  virtual
-            4  PulseGenerator.0  virtual
+                                          key                       driver
+            0                          AWG.Ka                   VirtualAwg
+            1                    Clock.virtual                   FixedClock
+            2                  FtmwScope.virtual           VirtualFtmwScope
+            3       FlowController.Default       PythonFlowController
+            4   PulseGenerator.Default       VirtualPulseGenerator
+
+        The ``hardware.csv`` file from older experiments may use the
+        legacy column header ``subKey`` instead of ``driver``. Both
+        forms are normalised to ``driver`` on read so downstream code
+        can use a single column name.
 
 
     Attributes:
@@ -78,7 +87,9 @@ class BCExperiment:
         log (pd.DataFrame): Contents of log.csv.
             All messages printed to Blackchirp's log during the experiment.
         hardware (pd.DataFrame): Contents of hardware.csv.
-            All hardware items and their implementation keys.
+            All hardware items and their driver identities. The second
+            column is exposed as ``driver`` regardless of whether the
+            on-disk header was ``driver`` or ``subKey``.
         clocks (pd.DataFrame): Contents of clocks.csv
             Configurations of all clocks at each experimental step.
         auxdata (pd.DataFrame, optional): Contents of auxdata.csv (if present).
@@ -86,6 +97,10 @@ class BCExperiment:
             during the experiment.
         chirps (pd.DataFrame, optional): Contents of chirps.csv (if present).
             Details of all chirps associated with a CP-FTMW acquisition.
+        markers (pd.DataFrame, optional): Contents of markers.csv (if present).
+            Marker channel configuration for the experiment's pulse pattern.
+            Columns: ``Channel``, ``Name``, ``Role``, ``TimingMode``,
+            ``StartUs``, ``EndUs``, ``Enabled``.
         ftmw (BCFTMW, optional): Contents of fid directory.
             This object provides an interface for accessing CP-FTMW data.
         lif (BCLIF, optional): Contents of lif directory.
@@ -104,7 +119,7 @@ class BCExperiment:
 
         if os.path.exists(os.path.join(path, "version.csv")):
             self.path = path
-        elif num is not None:  # maybe this is a savePath
+        elif num is not None:
             testpath = os.path.join(
                 path, f"experiments/{self._mil}/{self._th}/{self.num}"
             )
@@ -117,10 +132,9 @@ class BCExperiment:
                 f"Could not find Blackchirp data at {os.path.abspath(path)}"
             )
 
-        # read separator character from version file
         with open(os.path.join(self.path, "version.csv"), "r") as v:
-            l = v.readline()
-            self._sep = l.strip()
+            line = v.readline()
+            self._sep = line.strip()
         self.version = pd.read_csv(
             os.path.join(self.path, "version.csv"),
             sep=self._sep,
@@ -142,11 +156,12 @@ class BCExperiment:
             },
             keep_default_na=False,
         )
-        self.num = int(
-            self.header.query(
-                "ObjKey == 'Experiment' and ValueKey == 'Number'"
-            ).Value.iloc[0]
-        )
+        num_rows = self.header.query("ObjKey == 'Experiment' and ValueKey == 'Number'")
+        if num_rows.empty:
+            raise KeyError(
+                "header.csv is missing the required 'Experiment / Number' row"
+            )
+        self.num = int(num_rows.Value.iloc[0])
 
         self.objectives = pd.read_csv(
             os.path.join(self.path, "objectives.csv"),
@@ -166,6 +181,8 @@ class BCExperiment:
             header=0,
             keep_default_na=False,
         )
+        if "subKey" in self.hardware.columns and "driver" not in self.hardware.columns:
+            self.hardware = self.hardware.rename(columns={"subKey": "driver"})
         self.clocks = pd.read_csv(
             os.path.join(self.path, "clocks.csv"),
             sep=self._sep,
@@ -193,8 +210,23 @@ class BCExperiment:
         except FileNotFoundError:
             pass
 
+        try:
+            self.markers = pd.read_csv(
+                os.path.join(self.path, "markers.csv"),
+                sep=self._sep,
+                header=0,
+                keep_default_na=False,
+            )
+        except FileNotFoundError:
+            pass
+
+        ftmw_type_rows = self.objectives.query("key == 'FtmwType'")
+        ftmw_type = (
+            str(ftmw_type_rows.value.iloc[0]) if not ftmw_type_rows.empty else ""
+        )
+
         if os.path.exists(os.path.join(self.path, "fid")):
-            self.ftmw = BCFTMW(self.path, self._sep)
+            self.ftmw = BCFTMW(self.path, self._sep, ftmw_type)
 
         if os.path.exists(os.path.join(self.path, "lif")):
             self.lif = BCLIF(self.path, self._sep)
@@ -203,7 +235,7 @@ class BCExperiment:
         """Fetch all unique ObjKeys in experiment header
 
         Returns:
-            List of unique header keys
+            Set of unique header keys
 
         """
 
@@ -223,7 +255,8 @@ class BCExperiment:
             arrKey: Array key in header
 
         Returns:
-            DataFrame with matching wors
+            DataFrame with matching rows. May be empty (use ``.empty`` /
+            ``len()`` to test) — an empty result is not an error here.
 
         """
 
@@ -242,9 +275,9 @@ class BCExperiment:
     ) -> str:
         """Fetch one value from header
 
-        The objKey and valKey (and arrKey, if specified) are used to filter the header.
-        Then the idx value is used to determine which row to return. If a match is not
-        found, an empty string is returned
+        The ``objKey`` and ``valKey`` (and ``arrKey``, if specified) are used
+        to filter the header. The ``idx`` value then selects which matching
+        row to return.
 
         Args:
             objKey: Object key in header
@@ -253,12 +286,19 @@ class BCExperiment:
             arrKey: Array key in header (optional)
 
         Returns:
-            Matching value or empty string
+            Matching value as a string.
+
+        Raises:
+            KeyError: If no row matches the supplied filter, or if ``idx``
+                is past the end of the matching rows.
         """
 
         df = self.header_rows(objKey, valKey, arrKey)
         if len(df) <= idx:
-            return ""
+            raise KeyError(
+                f"No header row at index {idx} for ObjKey={objKey!r}, "
+                f"ValueKey={valKey!r}, ArrayKey={arrKey!r}"
+            )
 
         return df.Value.iloc[idx]
 
@@ -267,9 +307,9 @@ class BCExperiment:
     ) -> str:
         """Fetch one unit value from header
 
-        The objKey and valKey (and arrKey, if specified) are used to filter the header.
-        Then the idx value is used to determine which row to return. If a match is not
-        found, an empty string is returned
+        The ``objKey`` and ``valKey`` (and ``arrKey``, if specified) are used
+        to filter the header. The ``idx`` value then selects which matching
+        row to return.
 
         Args:
             objKey: Object key in header
@@ -278,12 +318,21 @@ class BCExperiment:
             arrKey: Array key in header (optional)
 
         Returns:
-            Matching value or empty string
+            Unit string for the matching row. An empty string is returned
+            when the row exists but its ``Units`` cell is empty (a value
+            with no associated unit is a legitimate state).
+
+        Raises:
+            KeyError: If no row matches the supplied filter, or if ``idx``
+                is past the end of the matching rows.
         """
 
         df = self.header_rows(objKey, valKey, arrKey)
         if len(df) <= idx:
-            return ""
+            raise KeyError(
+                f"No header row at index {idx} for ObjKey={objKey!r}, "
+                f"ValueKey={valKey!r}, ArrayKey={arrKey!r}"
+            )
 
         out = df.Units.iloc[idx]
         if out != out:

@@ -12,3 +12,6 @@ dependencies = [
     "pandas",
     "scipy",
 ]
+
+[project.optional-dependencies]
+dev = ["pytest"]

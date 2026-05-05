@@ -19,22 +19,22 @@ The ``blackchirp`` module makes 4 classes available:
 It is recommended to import these classes using::
 
     from blackchirp import *
-    
+
 This import statement will bring all 4 classes into the main namespace. Alternatively,
 the statement ``import blackchirp as bc`` may be used, which requires prefixing all class names with ``bc.``.
 
 Example:
     To quickly load an experiment and compute the Fourier transform for a single FID::
-    
+
         from blackchirp import *
         from matplotlib import pyplot as plt
-        
+
         exp = BCExperiment('path/to/experiment')
         x,y = exp.ftmw.get_fid().ft()
-        
+
         fig,ax = plt.subplots()
         ax.plot(x,y.flatten())
-        
+
 More detailed examples can be found on the individual class pages.
 """
 

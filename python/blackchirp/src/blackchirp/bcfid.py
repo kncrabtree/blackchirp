@@ -6,6 +6,40 @@ import pandas as pd
 import scipy.fft as sfft
 import scipy.signal as spsig
 
+from ._enum_helpers import _resolve_enum
+
+_WINDOW_MAP = {
+    "None": "boxcar",
+    "Bartlett": "bartlett",
+    "Blackman": "blackman",
+    "BlackmanHarris": "blackmanharris",
+    "Hamming": "hamming",
+    "Hanning": "hann",
+    "KaiserBessel": ("kaiser", 14.0),
+}
+
+_WINDOW_INT_MAP = {
+    0: "None",
+    1: "Bartlett",
+    2: "Blackman",
+    3: "BlackmanHarris",
+    4: "Hamming",
+    5: "Hanning",
+    6: "KaiserBessel",
+}
+
+_FT_UNITS_MAP = {
+    "FtV": 0,
+    "FtmV": 3,
+    "FtuV": 6,
+    "FtnV": 9,
+}
+
+_FT_UNITS_INT_MAP = {0: "FtV", 3: "FtmV", 6: "FtuV", 9: "FtnV"}
+
+_SIDEBAND_MAP = {"UpperSideband": 0, "LowerSideband": 1}
+_SIDEBAND_INT_MAP = {0: "UpperSideband", 1: "LowerSideband"}
+
 
 class BCFid:
     """Container for FID data
@@ -26,6 +60,7 @@ class BCFid:
     Args:
         num: Number of the FID csv file
         path: Base path of experiment
+        fidparams: DataFrame loaded from fidparams.csv (indexed by FID number)
         sep: CSV delimiter
         proc: Default processing settings from processing.csv
 
@@ -119,6 +154,24 @@ class BCFid:
         """
         return self.x(), self.data
 
+    def is_lower_sideband(self) -> bool:
+        """Indicate whether downconversion uses the lower sideband.
+
+        Returns:
+            ``True`` if the ``sideband`` field in ``fidparams`` denotes the
+            lower sideband (canonical name ``LowerSideband`` or integer ``1``).
+
+        Raises:
+            ValueError: If the ``sideband`` value is neither a recognised
+                name nor a recognised integer.
+        """
+        name = _resolve_enum(
+            self.fidparams["sideband"],
+            _SIDEBAND_MAP,
+            int_map=_SIDEBAND_INT_MAP,
+        )
+        return name == "LowerSideband"
+
     def apply_lo(self, freqMHz: np.ndarray) -> np.ndarray:
         """Compute molecular frequency from scope frequency.
 
@@ -132,11 +185,13 @@ class BCFid:
         Returns:
             1D numpy array of molecular frequencies, in MHz
 
+        Raises:
+            ValueError: If ``fidparams['sideband']`` is unrecognised.
+
         """
-        if (self.fidparams["sideband"] == 1) or ("Lower" in self.fidparams["sideband"]):
+        if self.is_lower_sideband():
             return self.fidparams.probefreq - freqMHz
-        else:
-            return self.fidparams.probefreq + freqMHz
+        return self.fidparams.probefreq + freqMHz
 
     def average_frames(self) -> None:
         """Coaverages all frames in the time domain
@@ -175,25 +230,33 @@ class BCFid:
         Args:
             start_us: Starting time, in μs. Points at earlier times are set to 0.
             end_us: Ending time, in μs. Points at later times are set to 0.
-            winf: Window function applied to points between start and end.
-                This is passed directly to `scipy.signal.get_window <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.get_window.html>`_.
+            winf: Window function name. One of ``None``, ``Bartlett``,
+                ``Blackman``, ``BlackmanHarris``, ``Hamming``, ``Hanning``,
+                ``KaiserBessel``. May also be passed in any form accepted by
+                `scipy.signal.get_window <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.get_window.html>`_
+                — tuples and arbitrary names are forwarded directly.
             zpf: Zero-padding factor (positive integer). If nonzero, the FID is
                 padded with zeroes until its length reaches the next power of 2,
-                Then, its length is further extended by 2\*\*zpf.
+                Then, its length is further extended by 2\\*\\*zpf.
             rdc: If true, the average of the FID is subtracted before the FT is
                 computed.
             expf_us: Time constant for an exponential decay filter, in μs.
             autoscale_MHz: Range of FT points to set to 0, relative to the Downconversion
                 LO frequency. Useful for suppressing noise near DC.
-            units_power: FT is scaled by 10\*\*units_power. For μV units, set
-                units_power=6.
+            units_power: FT is scaled by 10\\*\\*units_power. For μV units, set
+                units_power=6. May also be specified in ``processing.csv`` as
+                an enum name (``FtV`` / ``FtmV`` / ``FtuV`` / ``FtnV``) or
+                as the corresponding integer.
             frame: Apply FT to only the specified frame.
 
         Returns:
             Frequency array (MHz), Intensity array
 
         Raises:
-            ValueError: If supplied arguments are invalid
+            ValueError: If ``winf`` is a string that does not match a known
+                window-function name, if the ``FidWindowFunction`` value
+                stored in ``processing.csv`` is unrecognised, or if the
+                ``FtUnits`` value is unrecognised.
 
         Examples:
             Assuming a BCFid object named ``fid``::
@@ -239,7 +302,7 @@ class BCFid:
 
         if end < start:
             end = size
-        
+
         fid_data = self.data[start:end, :]
 
         if rdc is None:
@@ -266,31 +329,12 @@ class BCFid:
                     * 1e6
                 )
 
-        if winf is None:
-            try:
-                wf = self.proc["FidWindowFunction"]
-            except KeyError:
-                wf = 0
-
-            if (wf == "0") or ("None" in wf):
-                winf = "boxcar"
-            if (wf == 1) or ("Bartlett" in wf):
-                winf = "bartlett"
-            elif (wf == 2) or ("Blackman" in wf):
-                winf = "blackman"
-            elif (wf == 3) or ("BlackmanHarris" in wf):
-                winf = "blackmanharris"
-            elif (wf == 4) or ("Hamming" in wf):
-                winf = "hamming"
-            elif (wf == 5) or ("Hanning" in wf):
-                winf = "hann"
-            elif (wf == 6) or ("KaiserBessel" in wf):
-                winf = ("kaiser", 14.0)
+        winf_arg = self._resolve_window(winf)
 
         fid_data = fid_data * (
-            np.repeat(spsig.get_window(winf, end - start), self.data.shape[1]).reshape(
-                end - start, self.data.shape[1]
-            )
+            np.repeat(
+                spsig.get_window(winf_arg, end - start), self.data.shape[1]
+            ).reshape(end - start, self.data.shape[1])
         )
         if frame is not None:
             fid_data = fid_data[:, frame].reshape(-1, 1)
@@ -306,17 +350,12 @@ class BCFid:
         if zpf > 0:
             s = 1
 
-            # the operation << 1 is a fast implementation of *2
-            # starting at 1, double until s is the next bigger power of 2
-            # compared to the length of the FID
             while s <= size:
                 s = s << 1
 
-            # double 1 more time
             s = s << 1
 
-            # if zpf=1, we are done. Otherwise, keep multiplying zpf-1 times
-            for i in range(0, zpf - 1):
+            for _ in range(0, zpf - 1):
                 s = s << 1
         else:
             s = size
@@ -326,14 +365,7 @@ class BCFid:
         out_y = np.absolute(ft)
         out_y /= fid_data.shape[0]
 
-        if units_power is None:
-            try:
-                p = int(self.proc["FtUnits"])
-            except KeyError:
-                p = 0
-        else:
-            p = units_power
-
+        p = self._resolve_units_power(units_power)
         out_y *= 10**p
 
         if autoscale_MHz is None:
@@ -349,6 +381,44 @@ class BCFid:
                 ] = 0
 
         return out_x, out_y
+
+    def _resolve_window(self, winf):
+        """Resolve a window-function argument to a scipy ``get_window`` spec.
+
+        Lookup chain: explicit ``winf`` kwarg → ``processing.csv``
+        ``FidWindowFunction`` → default ``"None"`` (boxcar). String inputs
+        and integers go through the canonical enum name; any other type
+        (tuple, etc.) is forwarded to scipy unchanged so callers can use
+        scipy's full vocabulary.
+        """
+        if winf is None:
+            wf = self.proc.get("FidWindowFunction", "None")
+            name = _resolve_enum(
+                wf, _WINDOW_MAP, int_map=_WINDOW_INT_MAP, default="None"
+            )
+            return _WINDOW_MAP[name]
+        if isinstance(winf, str):
+            name = _resolve_enum(winf, _WINDOW_MAP, int_map=_WINDOW_INT_MAP)
+            return _WINDOW_MAP[name]
+        return winf
+
+    def _resolve_units_power(self, units_power):
+        """Resolve the FT-units exponent.
+
+        Lookup chain: explicit ``units_power`` kwarg → ``processing.csv``
+        ``FtUnits`` (string name or integer) → default 0.
+        """
+        if units_power is not None:
+            return int(units_power)
+        if "FtUnits" not in self.proc:
+            return 0
+        name = _resolve_enum(
+            self.proc["FtUnits"],
+            _FT_UNITS_MAP,
+            int_map=_FT_UNITS_INT_MAP,
+            default="FtV",
+        )
+        return _FT_UNITS_MAP[name]
 
     def __len__(self):
         return self.data.shape[0]
