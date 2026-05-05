@@ -9,7 +9,7 @@ ClockManager
 ============
 
 ``ClockManager`` owns the live :cpp:class:`Clock` instances for the active hardware
-loadout, maps each :cpp:class:`RfConfig::ClockType` role to the physical clock object
+loadout, maps each :cpp:enum:`RfConfig::ClockType` role to the physical clock object
 that serves it, and mediates all configure and read operations that flow between
 :doc:`hardwaremanager` and the underlying oscillator hardware.  It inherits from
 ``SettingsStorage`` and persists the available clock output table so that the RF
@@ -36,7 +36,7 @@ own the ``Clock`` objects — it borrows raw pointers from ``HardwareManager``.
 Clock-routing model
 -------------------
 
-Each :cpp:class:`RfConfig::ClockType` role (``UpLO``, ``DownLO``, ``AwgRef``,
+Each :cpp:enum:`RfConfig::ClockType` role (``UpLO``, ``DownLO``, ``AwgRef``,
 ``DRClock``, ``DigRef``, ``ComRef``) is satisfied by exactly one
 :cpp:class:`Clock` object paired with an output index on that clock.  A single
 :cpp:class:`Clock` device may expose multiple independent outputs (for example the
@@ -44,7 +44,7 @@ Valon 5009 has two independently tunable channels), so one physical device can
 simultaneously satisfy several distinct roles — each on a different output port.
 
 Internally, ``d_clockRoles`` maps every currently active ``ClockType`` to the
-:cpp:class:`Clock*` that serves it.  ``d_clockList`` holds the full set of
+:cpp:class:`Clock` that serves it.  ``d_clockList`` holds the full set of
 :cpp:class:`Clock` objects that ``HardwareManager`` has provided; entries in
 ``d_clockRoles`` are always a subset of that list.  When ``configureClocks()`` is
 called, the existing role map is cleared, each entry in the incoming

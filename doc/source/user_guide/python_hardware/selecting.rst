@@ -80,7 +80,7 @@ driver registered. Picking **Custom** is appropriate when the
 driver bypasses ``self.comm`` entirely and talks to its hardware
 through a vendor Python package; the panel shows a note pointing the
 user back to the script in that case (see
-:ref:`python-hardware-custom-protocol`).
+:ref:`Custom protocol <python-hardware-custom-protocol>`).
 
 The starter templates ship with working Virtual-protocol behavior
 and inline docstrings for every method, so a freshly copied script

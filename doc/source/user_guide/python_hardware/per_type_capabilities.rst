@@ -263,7 +263,7 @@ Pattern B — Granular Methods
 .. _python-hardware-flowcontroller:
 
 Flow Controller (``FlowControllerDriver``)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The base class polls each flow channel and the chamber pressure on a
 timer; it also calls the setters when the user changes a value or an

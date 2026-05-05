@@ -63,7 +63,7 @@ also exposed: selecting it tells Blackchirp that the driver does not
 use the C++ ``self.comm`` transport at all (typical when the script
 talks to its hardware through a vendor-supplied Python package or
 USB-HID library), and that any connection parameters live inside the
-``.py`` script itself. See :ref:`python-hardware-custom-protocol` for
+``.py`` script itself. See :ref:`Custom protocol <python-hardware-custom-protocol>` for
 the convention. Settings reads and writes go through
 ``self.settings``, and log messages routed through ``self.log``
 appear in the hardware log panel alongside messages from C++ drivers.

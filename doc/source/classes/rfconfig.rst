@@ -77,19 +77,3 @@ API Reference
    :members:
    :protected-members:
    :undoc-members:
-
-.. doxygenstruct:: RfConfig::ClockFreq
-   :members:
-   :undoc-members:
-
-.. doxygenenum:: RfConfig::ClockType
-   :members:
-   :undoc-members:
-
-.. doxygenenum:: RfConfig::MultOperation
-   :members:
-   :undoc-members:
-
-.. doxygenenum:: RfConfig::Sideband
-   :members:
-   :undoc-members:

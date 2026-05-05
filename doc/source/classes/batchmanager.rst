@@ -123,8 +123,6 @@ and pass it to ``MainWindow::startBatch``.
 API Reference
 -------------
 
-.. doxygenenum:: BatchManager::BatchType
-
 .. doxygenclass:: BatchManager
    :members:
    :protected-members:

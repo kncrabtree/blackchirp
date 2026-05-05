@@ -126,8 +126,6 @@ API Reference
    :members:
    :undoc-members:
 
-.. doxygenenum:: AcquisitionManager::AcquisitionState
-
 .. doxygenclass:: AcquisitionManager
    :members:
    :protected-members:

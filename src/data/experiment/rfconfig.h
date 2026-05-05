@@ -27,8 +27,6 @@ inline constexpr QLatin1StringView downSB{"DownconversionSideband"}; ///< Downco
 /// common reference, and double-resonance (DR) sources, the target sweep count,
 /// and the embedded \c ChirpConfig.
 ///
-/// \section rfconfig_clock_semantics Clock semantics
-///
 /// Clock frequencies are stored in two layers:
 ///
 /// - A *clock template* (\c d_clockTemplate) holds the single-point frequency
@@ -44,13 +42,11 @@ inline constexpr QLatin1StringView downSB{"DownconversionSideband"}; ///< Downco
 /// desired output frequency back to the hardware oscillator frequency via the
 /// multiplication or division factor stored in each \c ClockFreq record.
 ///
-/// \section rfconfig_freq_chain Frequency chain calculations
-///
 /// The chirp frequency at the sample for a given AWG output frequency is:
 ///
-///   \code
+///   \verbatim
 ///   chirpFreq = (awgFreq × awgMult ± upLO) × chirpMult
-///   \endcode
+///   \endverbatim
 ///
 /// where the sign depends on \c d_upMixSideband (upper = +, lower = −).
 /// The received signal is mixed with the down-LO and the digitizer captures the

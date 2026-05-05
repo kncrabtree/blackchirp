@@ -66,10 +66,6 @@ API Reference
    :protected-members:
    :undoc-members:
 
-.. doxygenstruct:: ChirpConfig::ChirpSegment
-   :members:
-   :undoc-members:
-
 .. doxygenstruct:: MarkerChannel
    :members:
    :undoc-members:
