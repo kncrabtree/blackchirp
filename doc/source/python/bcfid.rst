@@ -36,29 +36,11 @@ falls back to the value in ``processing.csv``. Window-function and
 values, so the loader works against acquisitions captured before and
 after the v2 enum-string migration.
 
-Multi-experiment coaveraging
-----------------------------
-
-For combining FIDs across separate Blackchirp experiments, two
-module-level helpers are exported alongside the classes:
-:func:`~blackchirp.coaverage_fids` returns a :class:`BCFid` whose raw
-integer data is the sample-by-sample sum of every input and whose
-shot count is the sum of input shot counts, with optional
-cross-correlation phase correction against a chosen reference window;
-:func:`~blackchirp.coaverage_spectra` returns a shot-weighted
-magnitude-spectrum coaverage as ``(x, y)`` arrays. Both refuse on any
-mismatch in ``spacing``, ``size``, ``sideband``, ``probefreq``,
-``vmult``, or frame count — none of those can be combined meaningfully
-without an explicit policy from the caller. The C++ acquisition path
-does not have an analogous cross-experiment coaverage primitive, so
-the Python module is the canonical home.
+For combining FIDs across multiple Blackchirp experiments, see the
+two module-level helpers documented in :doc:`/python/coaverage`.
 
 API Reference
 -------------
 
 .. autoclass:: blackchirp.BCFid
    :members:
-
-.. autofunction:: blackchirp.coaverage_fids
-
-.. autofunction:: blackchirp.coaverage_spectra

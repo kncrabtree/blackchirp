@@ -36,6 +36,15 @@ CP-FTMW and LIF analysis sessions.
 .. toctree::
    :caption: Class Documentation
    :titlesonly:
-   :glob:
 
-   python/bc*
+   python/bcexperiment
+   python/bcftmw
+   python/bcfid
+   python/bclif
+   python/bcliftrace
+
+.. toctree::
+   :caption: Module-level Helpers
+   :titlesonly:
+
+   python/coaverage
