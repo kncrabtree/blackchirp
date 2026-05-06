@@ -4,12 +4,6 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 
 ## Medium
 
-- [Python module refresh](python-module-refresh/00-overview.md) — bring the
-  companion `blackchirp` Python package up to date with the v2 schema, add LIF
-  read/processing support and an example notebook, and refresh the rendered
-  documentation. Includes a prerequisite C++ enum-string migration and reader-
-  hardening pass.
-
 - **Multi-experiment FID coaveraging in the Python module.** A
   commented-out `BCFid.create_coaverage` classmethod sketch lives in
   `python/blackchirp/src/blackchirp/bcfid.py`. The intended feature

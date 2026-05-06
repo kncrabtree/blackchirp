@@ -47,6 +47,13 @@ Highlights
   for contributors, and substantially expanded the
   :doc:`C++ API reference </classes>` to cover the hardware,
   experiment, persistence, and orchestration classes.
+- Refreshed the companion ``blackchirp`` Python package against
+  the v2 on-disk schema, added LIF read and processing support
+  (``BCLIF``, ``BCLifTrace``), extended ``BCFTMW`` with a
+  differential-FID API and configurable axis units, hardened the
+  reader against schema drift across v1 and v2 fixtures, and
+  restructured the Sphinx pages into a per-class layout. Tagged
+  on PyPI as ``0.1.0rc1``. See :doc:`/python`.
 
 Build and distribution
 ----------------------
@@ -235,6 +242,62 @@ File formats and data storage
 - Added the ``RfConfigSnapshot`` helper for serializing the
   full RF configuration with each experiment. See
   :doc:`/user_guide/rf_configuration`.
+
+Python companion module
+-----------------------
+
+- Hardened ``BCFTMW`` and ``BCFid`` against schema drift across
+  the v1 and v2 on-disk formats: window-function dispatch is
+  driven by an explicit name → ``scipy.signal`` map, sideband
+  selection accepts both numeric and string forms, ``FtUnits``
+  accepts both numeric and ``FtV`` / ``FtmV`` / ``FtuV`` /
+  ``FtnV`` forms, and a single helper centralizes the dual-form
+  parse used by every enum-bearing field. Unknown enum values
+  raise ``ValueError`` rather than falling through to a silent
+  default. See :doc:`/python/bcfid` and :doc:`/python/bcftmw`
+  (:commit:`10bd9d08`).
+- ``BCExperiment`` reads ``markers.csv`` when present and exposes
+  the active marker channel definitions as a ``markers``
+  DataFrame attribute. The ``hardware.csv`` reader accepts both
+  the legacy ``subKey`` and the current ``driver`` second-column
+  headers, and tolerates the historical ``hardwareType`` column
+  being numeric, string, or absent — so v1 fixtures continue to
+  load alongside v2 captures. See :doc:`/python/bcexperiment`
+  (:commit:`10bd9d08`).
+- Added a differential-FID API on ``BCFTMW``:
+  ``is_multi_segment``, ``num_backups``, and
+  ``get_differential_fid(start, end)`` produce a ``BCFid`` whose
+  data and shot count reflect the cumulative FID between two
+  backup points in ``fidparams.csv``, with ``vmult`` scaling
+  recomputed from the bounding entries. See
+  :doc:`/python/bcftmw` (:commit:`10bd9d08`).
+- Added optional axis-unit selection on ``BCFid.x``,
+  ``BCFid.xy``, ``BCFid.ft``, and ``BCFTMW.process_sideband``.
+  Time axes accept ``s`` / ``ms`` / ``us`` / ``μs`` / ``ns`` and
+  frequency axes accept ``Hz`` / ``kHz`` / ``MHz`` / ``GHz`` /
+  ``THz``; intensities and the user-facing μs/MHz gate keyword
+  arguments are unchanged. See :doc:`/python/bcfid`
+  (:commit:`9285f0f8`).
+- Added ``BCLIF`` and ``BCLifTrace`` for LIF read and processing,
+  mirroring the C++ ``LifTrace`` semantics. ``BCLifTrace``
+  exposes per-trace ``smooth`` (IIR low-pass plus
+  Savitzky–Golay) and ``integrate`` (sample-space trapezoidal
+  sum, with reference-channel ratio when a reference is
+  present); ``BCLIF`` provides ``delay_axis`` / ``laser_axis``,
+  ``delay_slice`` / ``laser_slice``, and ``image`` aggregating
+  helpers with configurable ``fill=np.nan|0.0`` for missing scan
+  points. See :doc:`/python/bclif` and :doc:`/python/bcliftrace`
+  (:commit:`dc7e7640`).
+- Restructured the Sphinx documentation into per-class pages
+  matching the C++ API reference layout, refreshed
+  ``single-fid.ipynb`` against the v2 schema, and added a fully
+  executed ``single-lif.ipynb`` covering trace loading,
+  smoothing, integration, slice extraction, and 2-D image
+  rendering. See :doc:`/python` (:commit:`7cb8ab84`).
+- Tagged the package as ``0.1.0rc1`` on PyPI. ``pip install
+  blackchirp`` continues to resolve to the prior stable release;
+  testers opt in with ``pip install --pre blackchirp`` or
+  ``pip install blackchirp==0.1.0rc1`` (:commit:`4a9b69d0`).
 
 Bug fixes
 ---------
