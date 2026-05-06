@@ -1,21 +1,37 @@
 Developer Guide
 ===============
 
-This chapter is for contributors working on the Blackchirp source tree.
-It covers the build system, the conventions that hold the C++ and
-Python code together, the architecture and threading layout, the
-cross-manager experiment lifecycle, the data-flow pipelines for FTMW
-and LIF acquisition, the persistence model, and the recipes that walk
-through adding a new driver, a new hardware type, or a new experiment
-mode.
+This chapter is for contributors working on Blackchirp's source tree.
+It covers the build system, the conventions that hold the C++ code,
+Python code, and documentation prose together, the C++ application
+architecture and threading layout, the cross-manager experiment
+lifecycle, the data-flow pipelines for FTMW and LIF acquisition, the
+persistence model, the standalone Python analysis module, and the
+recipes that walk through adding a new driver, a new hardware type, or
+a new experiment mode.
 
-The target reader has strong C++ and Qt6 skills (``QObject``,
-signal/slot, ``QThread``, ``QtConcurrent``, ``QSettings``, the
-metaobject system) but no prior knowledge of Blackchirp. Topics that
-require coordination across multiple files or subsystems are explained
-here. Topics that are confined to a single class belong in the
-:doc:`API reference </classes>`; topics about operating the program
-belong in the :doc:`User Guide </user_guide>`.
+The chapter has three audiences, served by different sets of pages:
+
+* **C++ application contributors** are the primary audience. Strong
+  C++ and Qt6 skills (``QObject``, signal/slot, ``QThread``,
+  ``QtConcurrent``, ``QSettings``, the metaobject system) are
+  assumed; Blackchirp-specific knowledge is not. The
+  :doc:`developer_guide/architecture` chapter and everything after
+  it are C++-application-specific.
+* **Python module contributors** working on ``python/blackchirp/``
+  are served by :doc:`developer_guide/python_module` — the module's
+  architecture, schema-versioning model, public API surface, and
+  test layout. C++ knowledge is not required.
+* **Documentation contributors** working on ``doc/source/`` are
+  served by :doc:`developer_guide/conventions` (prose style and
+  the API reference contract) and :doc:`developer_guide/build_system`
+  (the Sphinx + Doxygen + Breathe + nbsphinx pipeline).
+
+Topics that require coordination across multiple files or subsystems
+are explained here. Topics that are confined to a single class belong
+in the :doc:`API reference </classes>` (or, for Python, on the
+per-class page under :doc:`/python`); topics about operating the
+program belong in the :doc:`User Guide </user_guide>`.
 
 Pages in this chapter assume the API reference is available alongside
 them. Where a topic touches a class with its own API page, the
@@ -33,6 +49,7 @@ Python), and the Sphinx pages that surface them is documented in the
 
    developer_guide/build_system
    developer_guide/conventions
+   developer_guide/python_module
    developer_guide/architecture
    developer_guide/hardware_configuration
    developer_guide/hardware_runtime
