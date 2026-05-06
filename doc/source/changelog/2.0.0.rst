@@ -294,6 +294,16 @@ Python companion module
   executed ``single-lif.ipynb`` covering trace loading,
   smoothing, integration, slice extraction, and 2-D image
   rendering. See :doc:`/python` (:commit:`7cb8ab84`).
+- Added multi-experiment FID coaveraging via the new
+  ``coaverage_fids`` and ``coaverage_spectra`` module-level
+  functions. ``coaverage_fids`` produces a :class:`BCFid` whose
+  raw integer data is the sample-by-sample sum of the inputs and
+  whose shot count is the sum of input shot counts, with optional
+  cross-correlation phase correction against a chosen reference
+  window. ``coaverage_spectra`` returns a shot-weighted
+  magnitude-spectrum coaverage. Both refuse on any mismatch in
+  ``spacing``, ``size``, ``sideband``, ``probefreq``, ``vmult``,
+  or frame count. See :doc:`/python/bcfid`.
 - Tagged the package as ``0.1.0rc1`` on PyPI. ``pip install
   blackchirp`` continues to resolve to the prior stable release;
   testers opt in with ``pip install --pre blackchirp`` or

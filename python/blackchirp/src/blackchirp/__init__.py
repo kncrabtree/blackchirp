@@ -17,12 +17,18 @@ The ``blackchirp`` module makes 5 classes available:
 * ``BCLIF``: Contains LIF scan data and processing functions.
 * ``BCLifTrace``: Contains a single LIF scan-point trace and its smoothing / integration helpers.
 
-It is recommended to import these classes using::
+Two module-level helpers, ``coaverage_fids`` and ``coaverage_spectra``, combine FIDs
+across separate Blackchirp experiments — the first in the time domain, returning a
+``BCFid`` with summed raw integer data and an optional cross-correlation phase
+correction; the second in the magnitude-spectrum domain with shot-count weighting.
+
+It is recommended to import these names using::
 
     from blackchirp import *
 
-This import statement will bring all 5 classes into the main namespace. Alternatively,
-the statement ``import blackchirp as bc`` may be used, which requires prefixing all class names with ``bc.``.
+This import statement will bring all of the above into the main namespace.
+Alternatively, the statement ``import blackchirp as bc`` may be used, which requires
+prefixing all names with ``bc.``.
 
 Example:
     To quickly load an experiment and compute the Fourier transform for a single FID::
@@ -61,3 +67,4 @@ from .bcfid import BCFid
 from .bclif import BCLIF, BCLifTrace
 from .bcftmw import BCFTMW
 from .blackchirpexperiment import BCExperiment
+from .coaverage import coaverage_fids, coaverage_spectra

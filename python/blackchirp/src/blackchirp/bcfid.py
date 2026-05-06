@@ -129,46 +129,6 @@ class BCFid:
         self._rawdata = ic(d.to_numpy(dtype="str"), 36).astype(np.int64)
         self.data = self._rawdata * self.fidparams.vmult / self.fidparams.shots
 
-    # @classmethod
-    # def create_coaverage(
-    #     cls,
-    #     explist: list,
-    #     pathlist: list,
-    #     sep: str = ";",
-    #     pc_start: int = None,
-    #     pc_end: int = None,
-    # ) -> BCFid:
-    #     fidlist = []
-    #     for e, p in zip(explist, pathlist):
-    #         exp = BCExperiment(e, p)
-    #         fidlist.append(exp.ftmw.get_fid(0))
-    #         fp = exp.ftmw.fidparams
-    #
-    #     shots = np.sum(np.asarray([x.fidparams.shots for x in fidlist]))
-    #     if pc_start is not None and pc_end is not None:
-    #         rd = fidlist[0]._rawdata
-    #         for i in range(len(fidlist) - 1):
-    #             reff = fidlist[0]._rawdata[pc_start:pc_end].flatten() / shots
-    #             thisfid = fidlist[i + 1]._rawdata[pc_start:pc_end].flatten() / shots
-    #             shift = np.argmax(np.correlate(reff, thisfid, mode="full")) - (
-    #                 len(reff) - 1
-    #             )
-    #             if shift < 0:
-    #                 rd[:shift] += fidlist[i + 1]._rawdata[-shift:]
-    #             elif shift > 0:
-    #                 rd[:-shift] += fidlist[i + 1]._rawdata[shift:]
-    #             else:
-    #                 rd += fidlist[i + 1]._rawdata
-    #     else:
-    #         rd = np.sum(np.asarray([x._rawdata for x in fidlist]), axis=0)
-    #
-    #     fp.loc[0, "shots"] = shots
-    #     out = cls()
-    #     out.fidparams = fp.loc[0]
-    #     out._rawdata = rd
-    #     out.data = out._rawdata * fp.loc[0].vmult / shots
-    #     return out
-
     def x(self, units: str = "s") -> np.ndarray:
         """Compute time array for FID.
 

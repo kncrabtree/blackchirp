@@ -17,13 +17,16 @@ analysis pipelines can pick their own visualization stack.
 Five top-level classes are exported from the package root —
 :class:`~blackchirp.BCExperiment`, :class:`~blackchirp.BCFTMW`,
 :class:`~blackchirp.BCFid`, :class:`~blackchirp.BCLIF`, and
-:class:`~blackchirp.BCLifTrace`. The recommended import style is::
+:class:`~blackchirp.BCLifTrace` — together with two module-level
+helpers, :func:`~blackchirp.coaverage_fids` and
+:func:`~blackchirp.coaverage_spectra`, for combining FIDs across
+separate Blackchirp experiments. The recommended import style is::
 
     from blackchirp import *
 
-which brings all five into the current namespace. The example notebooks
-under :doc:`python/example` walk through end-to-end CP-FTMW and LIF
-analysis sessions.
+which brings all of them into the current namespace. The example
+notebooks under :doc:`python/example` walk through end-to-end
+CP-FTMW and LIF analysis sessions.
 
 .. toctree::
    :caption: Examples
