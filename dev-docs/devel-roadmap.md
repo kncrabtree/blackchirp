@@ -2,27 +2,6 @@
 
 Projects sorted by estimated complexity (smallest first). All are largely independent.
 
-## Small
-
-- **Latent `subKey` references in hardware-related code paths.** Two
-  surviving uses of the literal `"subKey"` look like leftovers from the
-  hardware-loadout naming scheme that the `cmakemigration` branch
-  superseded. Each likely needs to be reconciled with the current
-  `(hwType.label → driver)` model:
-  - `src/gui/lif/gui/liflasercontroldoublespinbox.cpp:16` reads
-    `s.value(QString("subKey"), …)` from QSettings inside the `lifLaser`
-    group. The intent appears to be picking the active LIF-laser
-    *driver* — but the runtime hardware system no longer stores driver
-    selections under a `subKey` group. Either rewrite this against the
-    current hardware selection plumbing or delete the dialog.
-  - `tests/tst_settingsstoragetest.cpp:299, 367` use `"subKey"` as an
-    arbitrary settings group name. These appear to be stale fixture
-    names that predate the loadout system; verify they still test
-    something meaningful and rename or remove as appropriate.
-  Both surfaced during the bundle 01 audit of the `hardware.csv`
-  `subKey → driver` rename and were intentionally left out of that
-  bundle's scope.
-
 ## Medium
 
 - [Python module refresh](python-module-refresh/00-overview.md) — bring the

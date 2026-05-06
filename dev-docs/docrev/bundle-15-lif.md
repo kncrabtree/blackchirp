@@ -124,8 +124,8 @@ Filenames and ordering below.
 - `src/gui/lif/gui/lifdisplaywidget.{h,cpp}` plus the supporting
   widgets in the same directory (`lifcontrolwidget`,
   `lifprocessingwidget`, `lifsliceplot`, `lifspectrogramplot`,
-  `liftraceplot`, `liflaserwidget`, `liflaserstatusbox`,
-  `liflasercontroldoublespinbox`) — LIF tab tour.
+  `liftraceplot`, `liflaserwidget`, `liflaserstatusbox`) —
+  LIF tab tour.
 - `src/data/storage/applicationconfigmanager.{h,cpp}` — runtime
   LIF-enable toggle key.
 - `cmake/BlackchirpApplication.cmake` — confirms LIF is built

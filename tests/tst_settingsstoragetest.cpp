@@ -32,7 +32,7 @@ private slots:
     void testContains();
     void testSet();
     void testDefault();
-    void testSubkeyRead();
+    void testNestedGroupRead();
     void testHardwareRead();
     void testDestruction();
     
@@ -293,10 +293,10 @@ void SettingsStorageTest::testDefault()
     QCOMPARE(readOnly.get("newKey"),QVariant(1000));
 }
 
-void SettingsStorageTest::testSubkeyRead()
+void SettingsStorageTest::testNestedGroupRead()
 {
     initSettingsFile();
-    SettingsStorage readOnly(QStringList{"readOnly","subKey"},General);
+    SettingsStorage readOnly(QStringList{"readOnly","nested"},General);
 
     QCOMPARE(readOnly.get("testInt").toInt(),420);
     QCOMPARE(readOnly.get<int>("testInt"),420);
@@ -362,9 +362,9 @@ void SettingsStorageTest::initSettingsFile()
     s.endArray();
     s.endGroup();
 
-    //Write settings for a readonly test with subkeys
+    //Write settings for a readonly test of a nested group path
     s.beginGroup("readOnly");
-    s.beginGroup("subKey");
+    s.beginGroup("nested");
     s.setValue("testInt",420);
     s.setValue("testDouble",1.3e-2);
     s.setValue("testString","Hello world 2.0!");
@@ -382,7 +382,7 @@ void SettingsStorageTest::initSettingsFile()
     s.endGroup();
     s.endGroup();
 
-    //Write settings for hardware (flat format — no subKey sub-group)
+    //Write settings for hardware (flat format — no sub-group nesting)
     s.beginGroup("hardwareKey");
     s.setValue("model","hardwareSubKey");
     s.setValue("hardwareInt",10);
