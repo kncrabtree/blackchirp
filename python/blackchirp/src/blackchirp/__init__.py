@@ -36,6 +36,24 @@ Example:
         fig,ax = plt.subplots()
         ax.plot(x,y.flatten())
 
+    To load a LIF scan, fetch a single ``(laser, delay)`` trace, and plot
+    its smoothed waveform::
+
+        from blackchirp import *
+        from matplotlib import pyplot as plt
+
+        exp = BCExperiment('path/to/lif/experiment')
+        trace = exp.lif.get_trace(l_index=0, d_index=0)
+        x = trace.x(units='ns')
+
+        fig,ax = plt.subplots()
+        ax.plot(x, trace.smooth())
+
+    Aggregating helpers on ``BCLIF`` (``delay_slice``, ``laser_slice``,
+    ``image``) integrate every present scan point with a single
+    processing-override surface; missing scan points are reported as
+    ``np.nan`` (or any value passed via ``fill=``).
+
 More detailed examples can be found on the individual class pages.
 """
 
