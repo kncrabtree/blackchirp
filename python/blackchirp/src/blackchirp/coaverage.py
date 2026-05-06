@@ -306,14 +306,10 @@ def coaverage_spectra(
     if total_shots <= 0:
         raise ValueError("total shot count across input FIDs is zero")
 
-    # BCFid.ft() may mutate self.data in place via the windowed view
-    # used for the FidRemoveDC subtraction. Operate on copies so that
-    # repeated FT calls during coaverage do not corrupt the caller's
-    # FIDs or each other.
-    x_ref, y_acc = copy.deepcopy(fids[0]).ft(**ft_kwargs)
+    x_ref, y_acc = fids[0].ft(**ft_kwargs)
     y_acc = y_acc * float(fids[0].fidparams.shots)
     for f in fids[1:]:
-        x, y = copy.deepcopy(f).ft(**ft_kwargs)
+        x, y = f.ft(**ft_kwargs)
         if x.shape != x_ref.shape or not np.allclose(x, x_ref):
             raise ValueError(
                 "FT frequency grids disagree across inputs; cannot coaverage"

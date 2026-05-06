@@ -231,9 +231,7 @@ def test_per_frame_pc_runs(any_exp):
 def test_coaverage_spectra_two_identical(any_exp):
     """Coaveraging two copies of a FID's spectrum yields the original."""
     f = any_exp.ftmw.get_fid(0)
-    # Compute the reference FT on a clone — BCFid.ft can mutate self.data
-    # in place under FidRemoveDC, so we want each FT call to start fresh.
-    x_ref, y_ref = _clone(f).ft()
+    x_ref, y_ref = f.ft()
     x, y = coaverage_spectra([f, _clone(f)])
     np.testing.assert_array_equal(x, x_ref)
     np.testing.assert_allclose(y, y_ref)
@@ -245,8 +243,8 @@ def test_coaverage_spectra_shot_weighting(any_exp):
     f = any_exp.ftmw.get_fid(0)
     g = _clone(f)
     _set_shots(g, int(f.fidparams.shots) * 3)
-    x0, y0 = _clone(f).ft()
-    _, y1 = _clone(g).ft()
+    x0, y0 = f.ft()
+    _, y1 = g.ft()
     s0 = int(f.fidparams.shots)
     s1 = int(g.fidparams.shots)
     expected = (s0 * y0 + s1 * y1) / (s0 + s1)

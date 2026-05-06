@@ -318,7 +318,10 @@ class BCFid:
         if end < start:
             end = size
 
-        fid_data = self.data[start:end, :]
+        # Copy the slice so subsequent in-place ops (DC subtraction,
+        # exp-decay multiplication) do not mutate self.data through
+        # the view.
+        fid_data = self.data[start:end, :].copy()
 
         if rdc is None:
             try:
@@ -336,13 +339,10 @@ class BCFid:
                 expf_us = 0.0
 
         if expf_us > 0.0:
-            for j in range(fid_data.shape[1]):
-                fid_data[:, j] = fid_data[:, j] * np.exp(
-                    -np.arange(len(fid_data[:, j]))
-                    * self.fidparams.spacing
-                    / expf_us
-                    * 1e6
-                )
+            decay = np.exp(
+                -np.arange(end - start) * self.fidparams.spacing / expf_us * 1e6
+            )
+            fid_data = fid_data * decay[:, None]
 
         winf_arg = self._resolve_window(winf)
 
