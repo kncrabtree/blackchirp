@@ -1,22 +1,8 @@
 # Bundle 05 — Documentation Refresh, Notebooks, Version Bump
 
-**Status:** in progress
+**Status:** complete (7cb8ab84)
 **Depends on:** 03, 04
 **Effort:** M (2 sessions)
-
-## Status notes
-
-- 2026-05-05: opened the bundle. Dependencies 03 and 04 are complete on
-  master. Plan is to land all bundle work in a single content commit:
-  five per-class Sphinx pages, `python.rst` rewrite + `docs-index.rst`
-  removal, `example.rst` caption refresh, new `single-lif.nblink`,
-  module docstring LIF quick-start, `pyproject.toml` version bump to
-  `0.1.0`, re-executed `single-fid.ipynb` against the v2-ftmw fixture,
-  and a fully-executed `single-lif.ipynb` against v2-lif-ref. README
-  text reads version-neutral; leaving it untouched. Acceptance checks
-  to run before reporting back: `cmake --build build --target docs`
-  (no new Sphinx warnings), pytest, pylint -E, black --check, plus
-  visual inspection of the rendered notebook outputs.
 
 ## Scope
 

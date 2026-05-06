@@ -33,7 +33,7 @@ single contributor in sequence.
 | 02 | Refresh `python/example-data/` fixtures | S | — | complete (bf054d4e) |
 | 03 | Python module schema fixes (FTMW + experiment top level) | M | 01, 02 | complete (10bd9d08) |
 | 04 | `BCLIF` and `BCLifTrace` implementation | L | 01, 02 | complete (dc7e7640) |
-| 05 | Documentation refresh, notebook updates, version bump | M | 03, 04 | not started |
+| 05 | Documentation refresh, notebook updates, version bump | M | 03, 04 | complete (7cb8ab84) |
 
 Effort key: S ≈ 1 session, M ≈ 2 sessions, L ≈ 3+ sessions.
 
