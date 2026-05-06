@@ -11,18 +11,40 @@
    single: blackchirp_deploy_qt
    single: tests; cmake target
    single: documentation; cmake target
+   single: documentation; pipeline
+   single: documentation; Sphinx
+   single: documentation; Doxygen
+   single: documentation; Breathe
+   single: documentation; nbsphinx
+   single: documentation; Read the Docs
+   single: Python module; build
+   single: Python module; pyproject.toml
+   single: Python module; PyPI
+   single: pyproject.toml
 
 Build System and Project Layout
 ===============================
 
-This page is the contributor-facing tour of Blackchirp's CMake setup —
-the layout of the ``cmake/*.cmake`` modules, the user-facing build
-options, the auto-generated hardware aggregator headers that hold the
-runtime registration model together, the test infrastructure, the
-documentation targets, and the CPack-based packaging path. The
+This page is the contributor-facing tour of Blackchirp's build
+plumbing. The bulk is CMake — the ``cmake/*.cmake`` modules, the
+user-facing build options, the auto-generated hardware aggregator
+headers that hold the runtime registration model together, the test
+infrastructure, the documentation targets, and the CPack-based
+packaging path — but the documentation pipeline and the Python module
+have their own sections below for the pieces CMake does not own. The
 user-facing source-build steps live on :doc:`/user_guide/installation`;
-this page is one level deeper and assumes you are reading the cmake
+this page is one level deeper and assumes you are reading the build
 files alongside it.
+
+Blackchirp produces three independently-buildable deliverables. The
+**C++ application** (``blackchirp`` and ``blackchirp-viewer``) is
+driven by CMake and packaged by CPack. The **documentation** under
+``doc/source/`` is also a CMake target (``docs``), but its pipeline
+chains four tools — Doxygen, Breathe, Sphinx, and nbsphinx — described
+in *Documentation build* below. The **Python module** under
+``python/blackchirp/`` is built outside CMake using ``pyproject.toml``
+and is versioned and released to PyPI on its own cadence; *Python
+module build* below covers it.
 
 Hardware *selection* is not part of the build. Every hardware
 driver in ``src/hardware/`` is always compiled into the
@@ -400,33 +422,221 @@ ENVIRONMENT ...)`` — the existing widget-touching tests do this.
 Documentation build
 -------------------
 
+The documentation pipeline weaves four tools together: Doxygen reads
+the C++ headers under ``src/`` and emits an XML representation of every
+class, struct, enum, and free function; Breathe (a Sphinx extension)
+turns that XML into RST entities at Sphinx build time so the project's
+hand-written RST pages can pull C++ symbols in via
+``.. doxygenclass::`` and friends; Sphinx renders all the RST sources
+under ``doc/source/`` into HTML (or PDF); and nbsphinx — together with
+nbsphinx-link, which wires standalone notebook files into the doctree
+— renders the example Jupyter notebooks under ``python/`` into pages
+alongside the rest of the documentation.
+
+For Python entities, Sphinx's built-in ``autodoc`` extension introspects
+the ``blackchirp`` module on disk (``conf.py`` puts
+``python/blackchirp/src`` on ``sys.path``) and renders Google-style
+docstrings via the ``napoleon`` extension. The contract between source
+code, the generators, and the rendered API pages is documented in
+:ref:`api-reference-style`.
+
+CMake-side wiring
+~~~~~~~~~~~~~~~~~
+
 With ``BC_BUILD_DOCUMENTATION=ON``, ``BlackchirpDocumentation.cmake``
 finds ``sphinx-build`` and Doxygen and registers the ``docs``,
 ``doxygen``, ``docs-pdf`` (if LaTeX is found), ``docs-linkcheck``, and
-``docs-clean`` custom targets. The Sphinx config and the Doxyfile
-template (``Doxyfile.in``) live in ``doc/source/``.
+``docs-clean`` custom targets. The Sphinx config (``conf.py``) and the
+Doxyfile template (``Doxyfile.in``) live in ``doc/source/``.
 
-The Sphinx setup uses Breathe to ingest the Doxygen XML, which means a
-stale Doxygen tree can leave the HTML build referencing classes that no
-longer exist. Editing an RST page and rebuilding sometimes does not
-trigger a Doxygen regeneration on its own. The reliable recipe is:
+The ``docs`` target depends transitively on ``doxygen`` when both
+Sphinx and Doxygen were located, so a single
+``cmake --build build --target docs`` invocation produces both the
+prose pages and the API reference. ``conf.py`` also calls
+``doxygen Doxyfile`` directly at import time so that Read the Docs
+(which does not use the CMake build) still gets fresh XML before
+Sphinx parses anything; the call is idempotent in either environment.
+
+Build environment
+~~~~~~~~~~~~~~~~~
+
+The full set of Python dependencies is in ``doc/source/requirements.txt``:
+
+* ``sphinx`` — the documentation generator.
+* ``sphinx_rtd_theme`` — the Read the Docs HTML theme.
+* ``breathe`` — Doxygen-XML adapter for Sphinx.
+* ``nbsphinx`` and ``nbsphinx-link`` — notebook rendering.
+* ``ipython`` — required by nbsphinx for syntax highlighting.
+* ``sphinxcontrib-lightbox2`` — image lightbox in rendered HTML.
+
+System-level dependencies: ``doxygen`` itself, plus the LaTeX toolchain
+(``pdflatex``, ``latexmk``) if you want PDF output.
+
+Activate an environment that satisfies these requirements before
+invoking the docs target. The build target itself is environment-
+agnostic; how a particular dev box satisfies the requirements (conda,
+pip, virtualenv) is a per-checkout convention recorded in the local
+``AGENTS.local.md`` file at the project root.
+
+Running the build
+~~~~~~~~~~~~~~~~~
+
+The reliable recipe is:
 
 .. code-block:: bash
 
    touch doc/source/index.rst
-   conda run -n breathe cmake --build build --target docs
+   cmake --build build --target docs
 
-The ``touch`` forces Sphinx to re-read the toctree, and running inside
-the ``breathe`` conda environment ensures the right Sphinx, Breathe,
-and theme versions are on the path.
+The ``touch`` forces Sphinx to re-evaluate the toctree so that pages
+added or removed since the last build are picked up; without it,
+Sphinx may skip regeneration on the assumption that the toctree has
+not changed.
 
-Output locations:
+A stale Doxygen tree is the other common gotcha: Breathe references
+the XML that the previous Doxygen run produced, so editing a header
+and rebuilding only the Sphinx side leaves the API pages out of sync.
+``cmake --build build --target doxygen`` followed by
+``cmake --build build --target docs`` refreshes both halves; the
+``docs`` target's dependency on ``doxygen`` makes a single
+``--target docs`` invocation safe in most cases.
 
-* ``build/docs/html/`` — Sphinx HTML output (the ``index.html``
-  CMake actually depends on lives at ``build/docs/html/index.html``).
+Read the Docs
+~~~~~~~~~~~~~
+
+The published documentation at https://blackchirp.readthedocs.io/ is
+built from ``master`` (and PR previews from feature branches) by Read
+the Docs, configured by ``.readthedocs.yaml`` at the project root. That
+config pins Python 3.11 and Ubuntu 22.04, points at
+``doc/source/conf.py``, and installs ``doc/source/requirements.txt``
+into the build environment. Doxygen runs via the
+``subprocess.call('doxygen Doxyfile')`` line in ``conf.py`` so that
+Read the Docs does not need its own Doxygen install step. Changes to
+the requirements file or to the ``conf.py`` Doxygen invocation flow
+through to Read the Docs on the next push.
+
+Output locations
+~~~~~~~~~~~~~~~~
+
+* ``build/docs/html/`` — Sphinx HTML output (the ``index.html`` CMake
+  actually depends on lives at ``build/docs/html/index.html``).
 * ``build/docs/doxygen/html/`` — Doxygen HTML browser, when the
   ``doxygen`` target has run.
 * ``build/docs/doxygen/xml/`` — Doxygen XML, the input to Breathe.
+
+Python module build
+-------------------
+
+The standalone ``blackchirp`` Python package under
+``python/blackchirp/`` is built independently of CMake. It uses the
+standard PEP 517 / 518 toolchain driven by ``pyproject.toml``, has its
+own dependency list (numpy, scipy, pandas at runtime; pytest as a dev
+extra), and is versioned and released to PyPI on its own cadence. CMake
+does not touch the Python module: the C++ application's build, test,
+and packaging pipelines do not depend on it being installed, and
+breaking the Python module does not break the CMake build.
+
+Layout and pyproject.toml
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The package follows the ``src/`` layout:
+
+::
+
+   python/
+   ├── blackchirp/
+   │   ├── pyproject.toml      # PEP 621 metadata, dependencies, version
+   │   ├── README.md           # PyPI listing description
+   │   ├── LICENSE
+   │   ├── src/blackchirp/     # importable package
+   │   │   ├── __init__.py     # public API surface (re-exports)
+   │   │   ├── bcfid.py
+   │   │   ├── bcftmw.py
+   │   │   ├── bclif.py
+   │   │   ├── blackchirpexperiment.py
+   │   │   └── coaverage.py
+   │   └── tests/              # pytest suite
+   ├── single-fid.ipynb        # example notebooks (not part of the package)
+   ├── single-lif.ipynb
+   ├── example-data/           # fixtures shared with the C++ test suite
+   ├── environment.yml         # conda env recipe (notebook-friendly)
+   └── requirements.txt        # pip equivalents
+
+The ``src/`` layout means the package cannot be imported from
+``python/blackchirp/`` itself; it must be installed (or installed in
+editable mode with ``pip install -e .``) to be importable. This is
+deliberate — it prevents accidental imports from a half-built source
+tree and matches how downstream users get the package from PyPI.
+
+``pyproject.toml`` declares the runtime dependencies (numpy, scipy,
+pandas), the dev extra (pytest), the supported Python versions
+(``>=3.9``), and the version string. The dependency list is
+load-bearing; see :doc:`/developer_guide/conventions` for the
+minimal-dependency policy that constrains additions.
+
+Build, test, install
+~~~~~~~~~~~~~~~~~~~~
+
+Build the wheel and source distribution:
+
+.. code-block:: bash
+
+   python -m build python/blackchirp
+
+Output lands in ``python/blackchirp/dist/`` as
+``blackchirp-<version>-py3-none-any.whl`` and
+``blackchirp-<version>.tar.gz``.
+
+For development, install in editable mode with the ``dev`` extra:
+
+.. code-block:: bash
+
+   pip install -e "python/blackchirp[dev]"
+
+This puts ``pytest`` on the path along with the package itself,
+imported directly from the source tree so edits take effect without a
+rebuild.
+
+Run the tests:
+
+.. code-block:: bash
+
+   pytest --rootdir python/blackchirp python/blackchirp/tests
+
+The test fixtures live under ``python/example-data/``. They are shared
+with the C++ test suite (specifically ``tst_experimentloading``), which
+keeps the on-disk schema definitions consistent across the two
+languages: a fixture-format change that breaks the C++ loader will
+also break the Python loader.
+
+Versioning
+~~~~~~~~~~
+
+The Python module's version is declared in
+``python/blackchirp/pyproject.toml`` under ``[project] version``. It is
+**independent** of the C++ application's version (set in the top-level
+``CMakeLists.txt``). The Python module ships its first release as
+``0.1.0rc1`` while the C++ application is at ``2.0.0`` — the two
+numbers do not track each other. Bumping the version is a one-line
+edit to ``pyproject.toml`` and should be done in the same PR that
+ships a user-visible Python change, with the rationale recorded in the
+PR's changelog entry under ``doc/source/changelog/``.
+
+Distribution
+~~~~~~~~~~~~
+
+The package is published to PyPI as
+`blackchirp <https://pypi.org/project/blackchirp/>`_. There is **no
+automation** in this repository for PyPI uploads: ``twine upload`` runs
+from the maintainer's machine after a manual review of the wheel and
+sdist. Publishing requires PyPI credentials that are not in the
+repository or in CI, and there is no GitHub Actions workflow that
+pushes to PyPI on release.
+
+Contributors and agents must not run ``twine upload``, ``python -m
+build`` followed by ``twine upload``, or any other PyPI-publication
+command without explicit user consent. Building the wheel locally for
+inspection is fine; pushing to a public index is not.
 
 Packaging
 ---------
