@@ -392,3 +392,13 @@ Bug fixes
 
 - Fixed ``ScientificSpinBox`` not displaying an initial value
   of ``0.0`` (:commit:`00b0608d`).
+
+**Python companion module.**
+
+- Made :meth:`BCFid.ft <blackchirp.BCFid.ft>` idempotent across
+  all processing options. The windowed slice taken from
+  ``self.data`` was a numpy view, so the in-place
+  ``FidRemoveDC`` subtraction and the per-frame exp-decay
+  multiplication mutated ``self.data`` and a second ``ft`` call
+  on the same FID produced different output
+  (:commit:`6fed7a0e`).
