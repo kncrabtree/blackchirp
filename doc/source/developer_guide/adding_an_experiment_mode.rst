@@ -215,7 +215,7 @@ A new ``FtmwType`` is a five-touch change. The first three live in
    (analogous to ``BC::Store::FtmwLO``), let the Doxygen comments on
    the namespace surface through the page rather than duplicating
    them in prose. The Doxygen-comment style contract that the API
-   ref enforces is :doc:`/developer_guide/api_style`.
+   ref enforces is :ref:`api-reference-style`.
 
 Multi-segment vs. single-segment design
 '''''''''''''''''''''''''''''''''''''''

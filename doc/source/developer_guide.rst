@@ -21,10 +21,11 @@ Pages in this chapter assume the API reference is available alongside
 them. Where a topic touches a class with its own API page, the
 developer guide provides a brief orientation and cross-links the API
 page; the API page carries the per-method contract while this chapter
-carries the cross-system flow. The
-:doc:`API Reference Style <developer_guide/api_style>` page at the end
-of this chapter documents the contract between the headers, the
-Doxygen XML they produce, and the Sphinx pages that surface them.
+carries the cross-system flow. The contract between source code, the
+generators that read it (Doxygen for C++, autodoc + napoleon for
+Python), and the Sphinx pages that surface them is documented in the
+:ref:`api-reference-style` section of
+:doc:`/developer_guide/conventions`.
 
 .. toctree::
    :maxdepth: 2
@@ -44,4 +45,3 @@ Doxygen XML they produce, and the Sphinx pages that surface them.
    developer_guide/adding_a_driver
    developer_guide/adding_a_hardware_type
    developer_guide/adding_an_experiment_mode
-   developer_guide/api_style

@@ -766,7 +766,7 @@ chapters.
 
 - **API reference.** Add a class page at
   ``doc/source/classes/<typename>.rst`` following
-  :doc:`/developer_guide/api_style`. The page carries a 1–3
+  :ref:`api-reference-style`. The page carries a 1–3
   paragraph orientation intro and a final ``API Reference``
   section with the ``.. doxygenclass::`` directive. Doxygen
   comments in the header are the source of truth for member-
