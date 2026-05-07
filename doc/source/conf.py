@@ -7,7 +7,19 @@ import os
 import re
 import subprocess
 import sys
+import types
 from datetime import date
+
+# nbsphinx-link 1.3.1 imports SafeString and ErrorString from
+# docutils.utils.error_reporting, which docutils 0.22 removed. Those names
+# were Python 2 unicode-coercion helpers; on Python 3 plain str() is a
+# safe substitute. Drop this shim once nbsphinx-link ships a fix for
+# https://github.com/vidartf/nbsphinx-link/issues/25.
+if 'docutils.utils.error_reporting' not in sys.modules:
+    _error_reporting_shim = types.ModuleType('docutils.utils.error_reporting')
+    _error_reporting_shim.SafeString = str
+    _error_reporting_shim.ErrorString = str
+    sys.modules['docutils.utils.error_reporting'] = _error_reporting_shim
 
 # Make the python/blackchirp package importable for autodoc.
 sys.path.insert(0, os.path.abspath('../../python/blackchirp/src'))
