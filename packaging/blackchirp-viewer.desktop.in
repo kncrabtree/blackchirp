@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Blackchirp Viewer
+GenericName=CP-FTMW Data Viewer
+Comment=View and analyze Blackchirp acquisition data without hardware
+Exec=blackchirp-viewer
+Icon=blackchirp
+Terminal=false
+Categories=Science;Education;DataVisualization;
+StartupNotify=true
+Keywords=spectroscopy;FTMW;microwave;viewer;

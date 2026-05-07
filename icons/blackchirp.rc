@@ -1,0 +1,4 @@
+// Windows resource file: associates the application icon with the executable.
+// IDI_ICON1 is the conventional id used by Windows shells to find the
+// default application icon resource.
+IDI_ICON1 ICON "blackchirp.ico"

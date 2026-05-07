@@ -137,6 +137,14 @@ if(APPLE)
     endif()
 endif()
 
+# Windows executable icon resource
+if(WIN32)
+    set(_bc_rc "${CMAKE_CURRENT_SOURCE_DIR}/icons/blackchirp.rc")
+    if(EXISTS ${_bc_rc})
+        target_sources(blackchirp PRIVATE ${_bc_rc})
+    endif()
+endif()
+
 # Include directories
 target_include_directories(blackchirp
     PRIVATE
@@ -242,13 +250,41 @@ if(UNIX AND NOT APPLE)
         )
     endif()
     
-    # Install application icon
-    if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/src/resources/icons/bc_logo_large.png)
-        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/resources/icons/bc_logo_large.png
+    # Install application icon. share/pixmaps is the legacy fallback that
+    # older desktop environments (and minimal installs without an
+    # icon-theme cache) still consult; the hicolor tree below is what
+    # modern XDG-compliant desktops render from.
+    set(_bc_pixmap "${CMAKE_CURRENT_SOURCE_DIR}/icons/blackchirp.png")
+    if(EXISTS ${_bc_pixmap})
+        install(FILES ${_bc_pixmap}
             DESTINATION share/pixmaps
-            RENAME blackchirp.png
             COMPONENT Applications
         )
+    endif()
+
+    # Install hicolor icon theme tree (XDG icon-theme spec). The
+    # regenerate-icons.sh helper produces icons/hicolor/<size>/apps/
+    # blackchirp.png at the standard sizes plus scalable/apps/blackchirp.svg.
+    set(_bc_hicolor_dir "${CMAKE_CURRENT_SOURCE_DIR}/icons/hicolor")
+    if(IS_DIRECTORY ${_bc_hicolor_dir})
+        foreach(_sz 16 22 24 32 48 64 128 256 512)
+            set(_bc_hicolor_png
+                "${_bc_hicolor_dir}/${_sz}x${_sz}/apps/blackchirp.png")
+            if(EXISTS ${_bc_hicolor_png})
+                install(FILES ${_bc_hicolor_png}
+                    DESTINATION share/icons/hicolor/${_sz}x${_sz}/apps
+                    COMPONENT Applications
+                )
+            endif()
+        endforeach()
+        set(_bc_hicolor_svg
+            "${_bc_hicolor_dir}/scalable/apps/blackchirp.svg")
+        if(EXISTS ${_bc_hicolor_svg})
+            install(FILES ${_bc_hicolor_svg}
+                DESTINATION share/icons/hicolor/scalable/apps
+                COMPONENT Applications
+            )
+        endif()
     endif()
 endif()
 

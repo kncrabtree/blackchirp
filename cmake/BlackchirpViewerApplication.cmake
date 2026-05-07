@@ -97,7 +97,11 @@ if(WIN32)
     set_target_properties(blackchirp-viewer PROPERTIES
         WIN32_EXECUTABLE TRUE
     )
-    
+    set(_bcv_rc "${CMAKE_CURRENT_SOURCE_DIR}/icons/blackchirp.rc")
+    if(EXISTS ${_bcv_rc})
+        target_sources(blackchirp-viewer PRIVATE ${_bcv_rc})
+    endif()
+
 elseif(APPLE)
     # macOS bundle configuration
     set(_bcv_icns "${CMAKE_CURRENT_SOURCE_DIR}/icons/blackchirp.icns")
@@ -118,8 +122,19 @@ elseif(APPLE)
     endif()
     
 else()
-    # Linux desktop integration
-    # TODO: Install viewer .desktop file and icons
+    # Linux desktop integration: viewer shares the main application's
+    # hicolor icons (Icon=blackchirp); only the .desktop file is unique.
+    if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/packaging/blackchirp-viewer.desktop.in)
+        configure_file(
+            ${CMAKE_CURRENT_SOURCE_DIR}/packaging/blackchirp-viewer.desktop.in
+            ${CMAKE_CURRENT_BINARY_DIR}/blackchirp-viewer.desktop
+            @ONLY
+        )
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/blackchirp-viewer.desktop
+            DESTINATION share/applications
+            COMPONENT Applications
+        )
+    endif()
 endif()
 
 # ============================================================================
