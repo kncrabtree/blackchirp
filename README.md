@@ -25,13 +25,9 @@ any analysis environment can read. A companion `blackchirp` Python
 package handles offline analysis using the same processing pipeline as
 the live application.
 
-<!--
-TODO: add a screenshot of the main UI here, e.g.:
-
 <p align="center">
-  <img src="doc/source/_static/user_guide/ui_overview/cp_ftmw.png" alt="Blackchirp main window" width="720">
+  <img src=".github/readme/cp_ftmw.png" alt="Blackchirp main window" width="720">
 </p>
--->
 
 ## Features
 

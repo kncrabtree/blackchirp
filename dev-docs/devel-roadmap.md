@@ -4,7 +4,17 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 
 ## Medium
 
-None.
+### Sirah Cobra integration refresh
+
+A new Sirah Cobra dye laser is coming online in late May / early June
+2026. Use that hardware as the trigger for revisiting the
+`SirahCobra` driver: the existing TODO in
+`src/hardware/core/liflaser/sirahcobra.cpp:112` flags that the
+external-stage communication settings need a different solution
+(separate baud / read terminator from the laser comm port). Plan the
+scope of the refresh — driver-side, settings-storage, and
+hardware-config UI — once the new instrument is on the bench. No
+work in this directory until that planning happens.
 
 ## Large
 
