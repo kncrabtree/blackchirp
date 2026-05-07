@@ -63,6 +63,22 @@ None.
 
 ## Pre-Release
 
+### [Crash Reporting](crash-reporting.md)
+
+End-user crash diagnostics for stripped release builds. POSIX (Linux +
+macOS) installs `sigaction` handlers that capture a `std::stacktrace`
+and write a text crash log under `<savePath>/log/crashes/`; Windows
+installs `SetUnhandledExceptionFilter` and emits a minidump via
+`MiniDumpWriteDump`. Symbols (`.debug`, `.dSYM`, `.pdb`) are kept
+developer-side as 90-day GitHub Actions workflow artifacts — never
+shipped to users — and resolved against a crash log's embedded git
+SHA via `addr2line` / `atos` / WinDbg. Builds at the application
+side: ~60 lines of POSIX boilerplate, a similar Windows path, and a
+symbol-capture step in `.github/workflows/release.yml`. Lands after
+the packaging-and-ci verification settles since it edits the same
+workflow file. See `crash-reporting.md` for file layout, phasing, and
+the developer triage runbook.
+
 ### [Packaging and Binary Generation (Github Actions)](packaging-and-ci.md)
 
 CMake-side work is complete: `cmake/Packaging.cmake` produces release-only DEB,
