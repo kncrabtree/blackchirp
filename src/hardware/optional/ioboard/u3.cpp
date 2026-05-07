@@ -799,7 +799,7 @@ long eAIN(HANDLE Handle, u3CalibrationInfo *CalibrationInfo, long ConfigIO, long
 	Q_UNUSED(Range)
 	Q_UNUSED(Reserved1)
 	Q_UNUSED(Reserved2)
-    quint8 sendDataBuff[3], recDataBuff[2];
+    quint8 sendDataBuff[3]{}, recDataBuff[2]{};
     quint8 FIOAnalog, EIOAnalog, curFIOAnalog, curEIOAnalog;
     quint8 curTCConfig, settling, quicksample, Errorcode;
     quint8 ErrorFrame, outDAC1Enable;
