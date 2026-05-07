@@ -331,6 +331,22 @@ public slots:
     virtual void endAcquisition(){}
 
     /*!
+     * \brief Append this device's configuration to an experiment.
+     *
+     * Called by HardwareManager::storeAllOptHw for each optional-hardware
+     * instance whose loadout flag is set. The default implementation does
+     * nothing; optional-hardware base classes (PulseGenerator, FlowController,
+     * IOBoard, PressureController, TemperatureController) override it to
+     * call \c exp->addOptHwConfig() with their typed config object.
+     *
+     * Declared as a slot so HardwareManager can invoke it via a blocking
+     * queued connection when the driver runs on its own thread.
+     *
+     * \param exp Experiment to populate.
+     */
+    virtual void storeOptHwConfig(Experiment *exp) { Q_UNUSED(exp) }
+
+    /*!
      * \brief Sets communication protocol at runtime
      * 
      * Allows changing the communication protocol after construction.

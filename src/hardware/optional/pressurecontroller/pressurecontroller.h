@@ -30,6 +30,7 @@ public slots:
     void openGateValve();
     void closeGateValve();
     PressureControllerConfig getConfig() const;
+    void storeOptHwConfig(Experiment *exp) override { exp->addOptHwConfig(getConfig()); }
 
 protected:
     const bool d_readOnly;

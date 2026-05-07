@@ -515,9 +515,7 @@ IOBoardConfig HardwareManager::getIOBoardConfig(const QString key)
 
 void HardwareManager::storeAllOptHw(Experiment *exp, std::map<QString, bool, std::less<>> hw)
 {
-    // TODO: This nested if/else pattern could be improved - consider refactoring to use
-    // a dispatch table or visitor pattern to reduce complexity and improve maintainability
-    for(auto const &[hwKey,_] : d_hardwareMap)
+    for(auto const &[hwKey,obj] : d_hardwareMap)
     {
         auto [type, label] = BC::Key::parseKey(hwKey);
 
@@ -529,19 +527,13 @@ void HardwareManager::storeAllOptHw(Experiment *exp, std::map<QString, bool, std
         if(it != hw.end())
             read = it->second;
 
-        if(read)
-        {
-            if(type == QString(PulseGenerator::staticMetaObject.className()))
-                exp->addOptHwConfig(getPGenConfig(hwKey));
-            else if(type == QString(FlowController::staticMetaObject.className()))
-                exp->addOptHwConfig(getFlowConfig(hwKey));
-            else if(type == QString(TemperatureController::staticMetaObject.className()))
-                exp->addOptHwConfig(getTemperatureControllerConfig(hwKey));
-            else if(type == QString(PressureController::staticMetaObject.className()))
-                exp->addOptHwConfig(getPressureControllerConfig(hwKey));
-            else if(type == QString(IOBoard::staticMetaObject.className()))
-                exp->addOptHwConfig(getIOBoardConfig(hwKey));
-        }
+        if(!read)
+            continue;
+
+        if(obj->thread() != QThread::currentThread())
+            QMetaObject::invokeMethod(obj,&HardwareObject::storeOptHwConfig,Qt::BlockingQueuedConnection,exp);
+        else
+            obj->storeOptHwConfig(exp);
     }
 }
 

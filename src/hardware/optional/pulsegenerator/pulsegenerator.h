@@ -16,6 +16,7 @@ public:
 public slots:
     void initialize() override final;
     bool prepareForExperiment(Experiment &exp) override final;
+    void storeOptHwConfig(Experiment *exp) override { exp->addOptHwConfig(config()); }
 
     PulseGenConfig config() { readAll(); return d_config; }
     void readChannel(const int index);

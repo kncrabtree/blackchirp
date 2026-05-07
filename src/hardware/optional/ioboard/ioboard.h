@@ -47,6 +47,7 @@ private:
 public slots:
     bool hwPrepareForExperiment(Experiment &exp) override final;
     IOBoardConfig getConfig() { return static_cast<IOBoardConfig&>(*this); }
+    void storeOptHwConfig(Experiment *exp) override { exp->addOptHwConfig(getConfig()); }
 
 };
 
