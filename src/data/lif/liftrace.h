@@ -6,7 +6,6 @@
 #include <data/lif/lifdigitizerconfig.h>
 
 #include <QVector>
-#include <QPointF>
 
 class LifTraceData;
 
@@ -34,8 +33,8 @@ public:
     double integrate(const LifProcSettings &s) const;
     int delayIndex() const;
     int laserIndex() const;
-    QVector<QPointF> lifToXY(const LifProcSettings &s) const;
-    QVector<QPointF> refToXY(const LifProcSettings &s) const;
+    QVector<double> lifToY(const LifProcSettings &s) const;
+    QVector<double> refToY(const LifProcSettings &s) const;
     double maxTime() const;
     QVector<qint64> lifRaw() const;
     QVector<qint64> refRaw() const;
@@ -53,7 +52,7 @@ public:
 
 private:
     QSharedDataPointer<LifTraceData> p_data;
-    QVector<QPointF> processXY(const QVector<double> d, const LifProcSettings &s) const;
+    QVector<double> processY(const QVector<double> d, const LifProcSettings &s) const;
 
 
 };

@@ -382,6 +382,59 @@ private:
     QVector<double> yData() override;
 };
 
+/// \brief Generic evenly-spaced y-vector curve.
+///
+/// BlackchirpEvenSpacedCurve stores a y-data vector with uniform x spacing
+/// and an explicit bounding rect. Use it for any uniformly-sampled trace
+/// where the caller can supply pre-computed min/max (so the filter loop
+/// does not need a second pass over the data) — e.g., LIF traces that
+/// have already been processed through smoothing/low-pass.
+class BlackchirpEvenSpacedCurve : public BCEvenSpacedCurveBase
+{
+public:
+    /// \brief Constructs the curve with an injected storage backend.
+    /// \sa BlackchirpPlotCurveBase::BlackchirpPlotCurveBase
+    BlackchirpEvenSpacedCurve(std::unique_ptr<CurveStorageInterface> storage,
+                              const QString key,
+                              const QString title=QString(""),
+                              Qt::PenStyle defaultLineStyle = Qt::SolidLine,
+                              QwtSymbol::Style defaultMarker = QwtSymbol::NoSymbol,
+                              QwtPlotCurve::CurveStyle defaultStyle = QwtPlotCurve::Lines);
+    ~BlackchirpEvenSpacedCurve();
+
+    /// \brief Replaces the displayed y-data.
+    ///
+    /// Thread-safe: all fields are updated under the internal mutex. If \a max
+    /// is not greater than \a min, both are recomputed from \a d.
+    /// \param d        Y-value samples.
+    /// \param spacing  Uniform x step between samples.
+    /// \param xFirst   X coordinate of the first sample.
+    /// \param min      Minimum y value (bounding rect top).
+    /// \param max      Maximum y value (bounding rect bottom).
+    void setCurveYData(const QVector<double> d, double spacing=1.0, double xFirst=0.0,
+                       double min=0.0, double max=0.0);
+
+private:
+    QMutex *p_mutex;
+    QVector<double> d_yData;
+    double d_spacing{1.0}, d_xFirst{0.0}, d_min{0.0}, d_max{1.0};
+
+    // QwtPlotItem interface
+public:
+    QRectF boundingRect() const override;
+
+    // BlackchirpPlotCurveBase interface
+public:
+    QVector<QPointF> curveData() const override;
+
+    // BCEvenSpacedCurveBase interface
+protected:
+    double xFirst() const override;
+    double spacing() const override;
+    int numPoints() const override;
+    QVector<double> yData() override;
+};
+
 /// \brief Curve for displaying a free-induction decay (FID) waveform.
 ///
 /// BlackchirpFIDCurve stores raw FID samples as a QVector<double> with a

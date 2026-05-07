@@ -35,10 +35,10 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
     p_integralLabel->attach(this);
     p_integralLabel->setItemAttribute(QwtPlotItem::AutoScale,false);
 
-    p_lif = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::lifCurve, SettingsStorage::General, QString("LIF"));
+    p_lif = CurveFactory::createStandardCurve<BlackchirpEvenSpacedCurve>(BC::Key::lifCurve, SettingsStorage::General, QString("LIF"));
     p_lif->setZ(1.0);
 
-    p_ref = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::refCurve, SettingsStorage::General, QString("Ref"));
+    p_ref = CurveFactory::createStandardCurve<BlackchirpEvenSpacedCurve>(BC::Key::refCurve, SettingsStorage::General, QString("Ref"));
     p_ref->setZ(1.0);
 
     p_lifZone = std::make_unique<QwtPlotZoneItem>();
@@ -119,9 +119,9 @@ void LifTracePlot::setTrace(const LifTrace t)
 {
     d_currentTrace = t;
 
-    ///TODO: update when curves are changed to fixed spacing
-    p_lif->setCurveData(t.lifToXY(d_procSettings));
-    p_ref->setCurveData(t.refToXY(d_procSettings));
+    p_lif->setCurveYData(t.lifToY(d_procSettings),t.xSpacingns());
+    if(t.hasRefData())
+        p_ref->setCurveYData(t.refToY(d_procSettings),t.xSpacingns());
 
 
     if(p_lif->plot() != this)

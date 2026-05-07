@@ -119,12 +119,12 @@ double LifTrace::integrate(const LifProcSettings &s) const
     //(think of it as end points have weight of 1, middle points have weight 2)
     //add up all y_i + y_{i+1}, then divide by 2 at the end
 
-    auto l = lifToXY(s);
+    auto l = lifToY(s);
 
 
     double sum = 0.0;
     for(int i = ls; i<le-1; i++)
-        sum += l.at(i).y() + l.at(i+1).y();
+        sum += l.at(i) + l.at(i+1);
 
     auto lifInt = sum/2.0;
 
@@ -132,14 +132,14 @@ double LifTrace::integrate(const LifProcSettings &s) const
     if(!hasRefData())
         return lifInt;
 
-    auto r = refToXY(s);
+    auto r = refToY(s);
 
     auto rs = qBound(0,s.refGateStart,p_data->refData.size()-2);
     auto re = qBound(rs+1,s.refGateEnd,p_data->refData.size()-1);
 
     sum = 0.0;
     for(int i = rs; i<re-1; i++)
-        sum += r.at(i).y() + r.at(i+1).y();
+        sum += r.at(i) + r.at(i+1);
 
     double refInt = sum/2.0;
 
@@ -160,7 +160,7 @@ int LifTrace::laserIndex() const
     return p_data->laserIndex;
 }
 
-QVector<QPointF> LifTrace::lifToXY(const LifProcSettings &s) const
+QVector<double> LifTrace::lifToY(const LifProcSettings &s) const
 {
     QVector<double> y;
     y.resize(p_data->lifData.size());
@@ -173,10 +173,10 @@ QVector<QPointF> LifTrace::lifToXY(const LifProcSettings &s) const
             y[i] = (static_cast<double>(p_data->lifData.at(i))*p_data->lifYMult/static_cast<double>(p_data->shots));
     }
 
-    return processXY(y,s);
+    return processY(y,s);
 }
 
-QVector<QPointF> LifTrace::refToXY(const LifProcSettings &s) const
+QVector<double> LifTrace::refToY(const LifProcSettings &s) const
 {
     QVector<double> y;
     y.resize(p_data->refData.size());
@@ -189,7 +189,7 @@ QVector<QPointF> LifTrace::refToXY(const LifProcSettings &s) const
             y[i] = (static_cast<double>(p_data->refData.at(i))*p_data->refYMult/static_cast<double>(p_data->shots));
     }
 
-    return processXY(y,s);
+    return processY(y,s);
 }
 
 double LifTrace::maxTime() const
@@ -283,7 +283,7 @@ void LifTrace::rollAvg(const LifTrace &other, int numShots)
     }
 }
 
-QVector<QPointF> LifTrace::processXY(const QVector<double> d, const LifProcSettings &s) const
+QVector<double> LifTrace::processY(const QVector<double> d, const LifProcSettings &s) const
 {
     //low-pass first, then Sav-Gol
     auto ynew = d;
@@ -299,10 +299,5 @@ QVector<QPointF> LifTrace::processXY(const QVector<double> d, const LifProcSetti
         ynew = Analysis::savGolSmooth(coefs,0,ynew,xSpacingns());
     }
 
-    QVector<QPointF> out;
-    out.resize(ynew.size());
-    for(int i=0; i<ynew.size(); i++)
-        out[i] = {xSpacingns()*i,ynew[i]};
-
-    return out;
+    return ynew;
 }

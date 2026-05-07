@@ -7,7 +7,7 @@
 #include <data/lif/lifconfig.h>
 #include <data/lif/liftrace.h>
 
-class QwtPlotCurve;
+class BlackchirpEvenSpacedCurve;
 class QwtPlotZoneItem;
 class QwtPlotTextLabel;
 
@@ -46,7 +46,7 @@ public slots:
 
 
 private:
-    std::unique_ptr<BlackchirpPlotCurve> p_lif, p_ref; ///TODO: convert to even spaced curves
+    std::unique_ptr<BlackchirpEvenSpacedCurve> p_lif, p_ref;
     std::unique_ptr<QwtPlotZoneItem> p_lifZone, p_refZone;
     std::unique_ptr<QwtPlotTextLabel> p_integralLabel;
     LifTrace d_currentTrace;

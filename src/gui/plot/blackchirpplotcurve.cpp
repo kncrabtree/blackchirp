@@ -559,6 +559,92 @@ QVector<double> BlackchirpFTCurve::yData()
     return d_currentFt.yData();
 }
 
+BlackchirpEvenSpacedCurve::BlackchirpEvenSpacedCurve(std::unique_ptr<CurveStorageInterface> storage, const QString key, const QString title, Qt::PenStyle defaultLineStyle, QwtSymbol::Style defaultMarker, QwtPlotCurve::CurveStyle defaultStyle) :
+    BCEvenSpacedCurveBase(std::move(storage), key, title, defaultLineStyle, defaultMarker, defaultStyle), p_mutex(new QMutex)
+{
+}
+
+BlackchirpEvenSpacedCurve::~BlackchirpEvenSpacedCurve()
+{
+    delete p_mutex;
+}
+
+void BlackchirpEvenSpacedCurve::setCurveYData(const QVector<double> d, double spacing, double xFirst, double min, double max)
+{
+    QMutexLocker l(p_mutex);
+    d_yData = d;
+    d_spacing = spacing;
+    d_xFirst = xFirst;
+    if(max > min)
+    {
+        d_min = min;
+        d_max = max;
+    }
+    else if(d.isEmpty())
+    {
+        d_min = 0.0;
+        d_max = 1.0;
+    }
+    else
+    {
+        auto [lo,hi] = std::minmax_element(d.cbegin(),d.cend());
+        d_min = *lo;
+        d_max = *hi;
+    }
+}
+
+QRectF BlackchirpEvenSpacedCurve::boundingRect() const
+{
+    QMutexLocker l(p_mutex);
+    if(d_yData.isEmpty())
+        return QRectF(1.0,1.0,-2.0,-2.0);
+
+    QRectF out;
+    out.setLeft(d_xFirst);
+    out.setRight(d_xFirst + d_spacing*d_yData.size());
+    out.setTop(d_min);
+    out.setBottom(d_max);
+
+    return out;
+}
+
+QVector<QPointF> BlackchirpEvenSpacedCurve::curveData() const
+{
+    QVector<QPointF> out;
+
+    QMutexLocker l(p_mutex);
+    auto s = d_yData.size();
+    out.reserve(s);
+    for(int i=0; i<s; ++i)
+        out.append({d_xFirst + d_spacing*i,d_yData.at(i)});
+
+    return out;
+}
+
+double BlackchirpEvenSpacedCurve::xFirst() const
+{
+    QMutexLocker l(p_mutex);
+    return d_xFirst;
+}
+
+double BlackchirpEvenSpacedCurve::spacing() const
+{
+    QMutexLocker l(p_mutex);
+    return d_spacing;
+}
+
+int BlackchirpEvenSpacedCurve::numPoints() const
+{
+    QMutexLocker l(p_mutex);
+    return d_yData.size();
+}
+
+QVector<double> BlackchirpEvenSpacedCurve::yData()
+{
+    QMutexLocker l(p_mutex);
+    return d_yData;
+}
+
 BlackchirpFIDCurve::BlackchirpFIDCurve(std::unique_ptr<CurveStorageInterface> storage, const QString key, const QString title, Qt::PenStyle defaultLineStyle, QwtSymbol::Style defaultMarker, QwtPlotCurve::CurveStyle defaultStyle) :
     BCEvenSpacedCurveBase(std::move(storage), key, title, defaultLineStyle, defaultMarker, defaultStyle), p_mutex(new QMutex)
 {
