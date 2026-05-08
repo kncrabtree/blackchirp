@@ -41,6 +41,13 @@ Highlights
   debug-logging toggle in the new Application Configuration
   dialog writes a ``debug_YYYYMM.csv`` file when enabled. See
   :doc:`/user_guide/log_tab` and :doc:`/user_guide/application_config`.
+- Added an in-process crash handler that captures POSIX signals
+  (Linux, macOS) and Windows unhandled exceptions to a diagnostic
+  report under ``<savePath>/log/crashes/``, with a startup
+  notification when an earlier run crashed. Release builds keep
+  debug info so the captured frames resolve to source lines via
+  ``addr2line`` / ``atos`` / WinDbg. See
+  :doc:`/user_guide/crash_reports`.
 - Overhauled the documentation: refreshed the
   :doc:`User Guide </user_guide>` end to end against the 2.0
   feature set, added the new :doc:`Developer Guide </developer_guide>`
@@ -224,6 +231,27 @@ Logging and diagnostics
 - Successful connection-test events are highlighted in the Log
   tab so they stand out from informational chatter. See
   :doc:`/user_guide/log_tab`.
+- Added an in-process crash handler. POSIX installs ``sigaction``
+  handlers (SIGSEGV/SIGABRT/SIGFPE/SIGILL/SIGBUS) on a
+  ``sigaltstack`` and writes a text crash log via raw ``write(2)``
+  with frames resolved through ``dladdr`` to ``module(+0xoffset)
+  [0xpc]`` lines. Windows installs ``SetUnhandledExceptionFilter``
+  plus the C-runtime auxiliaries and emits a minidump
+  (``MiniDumpWriteDump``) alongside a matching text sidecar so
+  triage tooling sees the same header on both platforms. Crash
+  artifacts land under ``<savePath>/log/crashes/`` and carry the
+  build identity (git SHA) so they can be resolved against an
+  unstripped binary. See :doc:`/user_guide/crash_reports` and
+  :doc:`/developer_guide/crash_handling` (:commit:`68449b0b`).
+- Added a startup notification dialog when prior crash reports
+  are present. The most recent acknowledged timestamp is
+  persisted under the dialog's settings group, so a dismissed
+  report does not re-prompt unless a still-newer crash arrives.
+  See :doc:`/user_guide/crash_reports` (:commit:`68449b0b`).
+- Release builds now keep debug info (``-g`` / ``/Zi``) so the
+  crash-handler stacktraces resolve against the unstripped
+  binary. Stripping continues to happen at install time in
+  ``cmake/Packaging.cmake`` (:commit:`68449b0b`).
 
 File formats and data storage
 -----------------------------
