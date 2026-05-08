@@ -54,6 +54,12 @@ protected:
     virtual AuxDataStorage::AuxDataMap readAuxData() override;
     void initialize() override final;
     bool testConnection() override final;
+    void hwReadSettings() override final;
+    /*!
+     * \brief Driver hook called after the base PressureController has
+     * refreshed its poll interval. Default is a no-op.
+     */
+    virtual void pcReadSettings() {}
 
 private:
     QTimer *p_readTimer;

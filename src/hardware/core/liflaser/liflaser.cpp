@@ -73,6 +73,11 @@ bool LifLaser::setFlashLamp(bool en)
 }
 
 
+void LifLaser::hwReadSettings()
+{
+    lifLaserReadSettings();
+}
+
 bool LifLaser::hwPrepareForExperiment(Experiment &exp)
 {
     if(exp.lifEnabled())

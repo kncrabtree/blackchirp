@@ -426,13 +426,31 @@ overrides land. Most types do **not** need to override every hook
   low-power state and you want :cpp:class:`HardwareManager` to
   put the device into it between experiments. Default is a
   no-op.
-- :cpp:func:`HardwareObject::readSettings` when the user editing
+- :cpp:func:`HardwareObject::hwReadSettings` when the user editing
   settings in :cpp:class:`HWDialog` should refresh in-driver cached
   state (a re-read of channel-count after a Required setting
-  change, a re-validation of array sizes). The base class calls
-  the override from :cpp:func:`HardwareObject::bcReadSettings`
-  after it has reloaded settings from disk and refreshed
-  ``d_critical`` and ``d_commType``.
+  change, a re-validation of array sizes). The base class dispatches
+  to it from :cpp:func:`HardwareObject::bcReadSettings` after it has
+  reloaded settings from disk and refreshed ``d_critical`` and
+  ``d_commType``.
+
+  When the type itself owns work that must run on every settings
+  refresh (a poll-interval applied to a base-class :cpp:any:`QTimer`,
+  a base-class config rebuilt against a new array size), follow the
+  NVI pattern the existing types use: ``final``-override
+  :cpp:func:`HardwareObject::hwReadSettings` in the interface class,
+  do the type-level work there, then call a new per-type virtual
+  hook with a default no-op body that drivers and trampolines
+  override. The hook name follows the per-type prefix already used
+  for ``initialize`` / ``testConnection`` (e.g.
+  ``fcReadSettings``, ``pcReadSettings``, ``tcReadSettings``,
+  ``pgReadSettings``, ``awgReadSettings``, ``clockReadSettings``,
+  ``ftmwReadSettings``, ``gpibReadSettings``, ``ioReadSettings``,
+  ``lifLaserReadSettings``, ``lifScopeReadSettings``); pick the matching
+  prefix for the new type. The ``final`` on
+  ``hwReadSettings`` makes it impossible for a derived driver — most
+  importantly a Python trampoline — to silently skip the type-level
+  refresh by forgetting to chain to the base.
 
 The full bring-up sequence (``bcInitInstrument`` →
 ``buildCommunication`` → ``initialize`` → ``bcTestConnection``)

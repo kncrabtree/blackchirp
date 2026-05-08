@@ -252,7 +252,7 @@ bool SirahCobra::setFl(bool en)
 }
 
 
-void SirahCobra::readSettings()
+void SirahCobra::lifLaserReadSettings()
 {
     d_params.clear();
     for(uint i=0; i<getArraySize(stages); i++)

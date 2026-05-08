@@ -59,9 +59,9 @@ bool PythonPulseGenerator::testConnection()
 }
 
 // ============================================================================
-// readSettings()
+// pgReadSettings()
 // ============================================================================
-void PythonPulseGenerator::readSettings()
+void PythonPulseGenerator::pgReadSettings()
 {
     pythonReadSettings();
 }

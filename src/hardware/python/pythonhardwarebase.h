@@ -21,7 +21,12 @@ class CommunicationProtocol;
  * IPC plumbing. Subclasses initialize the mixin with \c d_key and
  * \c d_model, call \c initPythonProcess() from their hardware-base
  * initialize hook, call \c testPythonConnection() from the
- * test-connection hook, delegate \c sleep and \c readSettings to
+ * test-connection hook, delegate \c sleep and the read-settings hook
+ * (\c hwReadSettings or the per-base variant:
+ * \c fcReadSettings, \c pcReadSettings, \c tcReadSettings,
+ * \c pgReadSettings, \c awgReadSettings, \c clockReadSettings,
+ * \c ftmwReadSettings, \c gpibReadSettings, \c ioReadSettings,
+ * \c lifLaserReadSettings, \c lifScopeReadSettings) to
  * \c pythonSleep() and \c pythonReadSettings(), and translate
  * hardware-specific virtuals into \c pu_process->sendRequest()
  * dispatches with snake_case method names matching the user script.
@@ -166,7 +171,7 @@ protected:
     /*!
      * \brief Forward \c read_settings to the running Python script.
      *
-     * Used by the trampoline's readSettings() override to push
+     * Used by the trampoline's per-base read-settings hook override to push
      * post-edit settings back into the script without restarting the
      * subprocess (a restart would re-run \c initialize() and disrupt
      * any connected state).

@@ -26,6 +26,12 @@ public:
     QString getAddressOwnerName(int address) const;
 
 protected:
+    void hwReadSettings() override final;
+    /*!
+     * \brief Driver hook called after GpibController base settings are refreshed. Default is a no-op.
+     */
+    virtual void gpibReadSettings() {}
+
     virtual bool readAddress() =0;
     virtual bool setAddress(int a) =0;
 

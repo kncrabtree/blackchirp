@@ -38,6 +38,13 @@ private:
 
     bool d_autoDisable{false};
 
+protected:
+    void hwReadSettings() override final;
+    /*!
+     * \brief Driver hook called after LifLaser base settings are refreshed. Default is a no-op.
+     */
+    virtual void lifLaserReadSettings() {}
+
     // HardwareObject interface
 public slots:
     bool hwPrepareForExperiment(Experiment &exp) override final;

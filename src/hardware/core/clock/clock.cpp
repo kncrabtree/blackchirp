@@ -90,6 +90,11 @@ QStringList Clock::channelNames()
     return QStringList();
 }
 
+void Clock::hwReadSettings()
+{
+    clockReadSettings();
+}
+
 void Clock::initialize()
 {
     initializeClock();

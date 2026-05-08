@@ -61,9 +61,15 @@ protected:
     void initialize() override final;
     bool testConnection() override final;
     bool prepareForExperiment(Experiment &e) override final;
-    void readSettings() override;
+    void hwReadSettings() override final;
     virtual void fcInitialize() =0;
     virtual bool fcTestConnection() =0;
+    /*!
+     * \brief Driver hook called after the base FlowController has refreshed
+     * its poll interval and rebuilt its channel configuration. Default
+     * is a no-op.
+     */
+    virtual void fcReadSettings() {}
 
     void readAll();
 

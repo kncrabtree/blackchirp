@@ -63,6 +63,12 @@ private:
 
 
 protected:
+    void hwReadSettings() override final;
+    /*!
+     * \brief Driver hook called after Clock base settings are refreshed. Default is a no-op.
+     */
+    virtual void clockReadSettings() {}
+
     virtual void initializeClock() =0;
     virtual bool testClockConnection() =0;
     virtual bool setHwFrequency(double freqMHz, int outputIndex = 0) =0;

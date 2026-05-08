@@ -159,9 +159,9 @@ void PythonFtmwScope::onWaveformReceived(const QByteArray &data, quint64 /*shotC
 }
 
 // ============================================================================
-// readSettings()
+// ftmwReadSettings()
 // ============================================================================
-void PythonFtmwScope::readSettings()
+void PythonFtmwScope::ftmwReadSettings()
 {
     pythonReadSettings();
 }

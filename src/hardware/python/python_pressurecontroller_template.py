@@ -243,7 +243,7 @@ class PressureControllerDriver:
     def read_settings(self):
         """Reload settings from Blackchirp without restarting the process.
 
-        Called by PythonPressureController::readSettings() when the user
+        Called by PythonPressureController::pcReadSettings() when the user
         changes hardware settings in the GUI. Use self.settings.get() to
         re-read any configuration values that affect operation.
 

@@ -36,7 +36,7 @@ protected:
     void initializePGen() override;
     bool testConnection() override;
 
-    void readSettings() override;
+    void pgReadSettings() override;
 
 private:
     // Per-channel set virtuals

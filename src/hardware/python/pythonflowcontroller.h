@@ -30,7 +30,7 @@ protected:
     void fcInitialize() override;
     bool fcTestConnection() override;
 
-    void readSettings() override;
+    void fcReadSettings() override;
 
 private:
     void hwSetPressureControlMode(bool enabled) override;

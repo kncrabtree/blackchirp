@@ -141,6 +141,14 @@ bool PressureController::testConnection()
     return success;
 }
 
+void PressureController::hwReadSettings()
+{
+    if(p_readTimer)
+        p_readTimer->setInterval(get(readInterval,200));
+
+    pcReadSettings();
+}
+
 
 QStringList PressureController::validationKeys() const
 {

@@ -114,9 +114,9 @@ double PythonClock::readHwFrequency(int outputIndex)
 }
 
 // ============================================================================
-// readSettings()
+// clockReadSettings()
 // ============================================================================
-void PythonClock::readSettings()
+void PythonClock::clockReadSettings()
 {
     pythonReadSettings();
 }

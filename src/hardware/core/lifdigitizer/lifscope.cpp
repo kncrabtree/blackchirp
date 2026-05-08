@@ -77,6 +77,11 @@ LifScope::~LifScope()
 
 }
 
+void LifScope::hwReadSettings()
+{
+    lifScopeReadSettings();
+}
+
 bool LifScope::prepareForExperiment(Experiment &exp)
 {
     d_enabledForExperiment = exp.lifEnabled();

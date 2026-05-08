@@ -537,26 +537,28 @@ void PulseGenerator::sleep(bool b)
         setPulseEnabled(false);
 }
 
-void PulseGenerator::readSettings()
+void PulseGenerator::hwReadSettings()
 {
     int newCount = get(BC::Key::PGen::numChannels, d_numChannels);
-    if (newCount == d_numChannels)
-        return;
-
-    PulseGenConfig newConfig(d_config.headerKey());
-    int preserve = qMin(d_numChannels, newCount);
-    for (int i = 0; i < newCount; ++i)
+    if (newCount != d_numChannels)
     {
-        newConfig.addChannel();
-        if (i < preserve)
+        PulseGenConfig newConfig(d_config.headerKey());
+        int preserve = qMin(d_numChannels, newCount);
+        for (int i = 0; i < newCount; ++i)
         {
-            newConfig.setCh(i, PulseGenConfig::NameSetting,
-                            d_config.setting(i, PulseGenConfig::NameSetting));
-            newConfig.setCh(i, PulseGenConfig::RoleSetting,
-                            d_config.setting(i, PulseGenConfig::RoleSetting));
+            newConfig.addChannel();
+            if (i < preserve)
+            {
+                newConfig.setCh(i, PulseGenConfig::NameSetting,
+                                d_config.setting(i, PulseGenConfig::NameSetting));
+                newConfig.setCh(i, PulseGenConfig::RoleSetting,
+                                d_config.setting(i, PulseGenConfig::RoleSetting));
+            }
         }
+        d_config = newConfig;
+        d_numChannels = newCount;
+        set(BC::Key::PGen::numChannels, d_numChannels, true);
     }
-    d_config = newConfig;
-    d_numChannels = newCount;
-    set(BC::Key::PGen::numChannels, d_numChannels, true);
+
+    pgReadSettings();
 }

@@ -93,9 +93,9 @@ void PythonGpibController::sleep(bool b)
 }
 
 // ============================================================================
-// readSettings()
+// gpibReadSettings()
 // ============================================================================
-void PythonGpibController::readSettings()
+void PythonGpibController::gpibReadSettings()
 {
     pythonReadSettings();
 }

@@ -45,12 +45,17 @@ signals:
     // void pulseEnabledUpdate(bool,QPrivateSignal);
 
 protected:
-    void readSettings() override;
+    void hwReadSettings() override final;
     void readAll();
 
     const PulseGenConfig &getConfig() const { return d_config; }
 
     virtual void initializePGen() =0;
+    /*!
+     * \brief Driver hook called after the base PulseGenerator has refreshed
+     * its channel-count configuration. Default is a no-op.
+     */
+    virtual void pgReadSettings() {}
     void sleep(bool b) override final;
 
     virtual bool setChWidth(const int index, const double width) =0;

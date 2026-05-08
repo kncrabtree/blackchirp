@@ -38,7 +38,7 @@ public slots:
 protected:
     void initialize() override;
     bool testConnection() override;
-    void readSettings() override;
+    void lifScopeReadSettings() override;
     void sleep(bool b) override;
 
 private slots:

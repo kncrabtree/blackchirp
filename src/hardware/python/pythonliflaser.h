@@ -32,7 +32,7 @@ public:
 protected:
     void initialize() override;
     bool testConnection() override;
-    void readSettings() override;
+    void lifLaserReadSettings() override;
     void sleep(bool b) override;
 
 private:

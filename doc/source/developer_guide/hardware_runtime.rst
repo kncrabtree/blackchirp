@@ -256,9 +256,11 @@ trigger to verify a device is responsive:
    honored), restarts the rolling-data timer to the current
    ``BC::Key::HW::rInterval`` value (described in
    :doc:`/classes/applicationconfigmanager` and the Aux/Rolling
-   section below), and finally calls the driver's
-   :cpp:func:`HardwareObject::readSettings` override so the driver
-   can refresh its own cached state.
+   section below), and finally dispatches to
+   :cpp:func:`HardwareObject::hwReadSettings` so the driver — or its
+   intermediate base class via the NVI hook described in
+   :doc:`/developer_guide/adding_a_hardware_type` — can refresh its
+   own cached state.
 3. Calls ``p_comm->bcTestConnection``, which exercises the
    underlying ``QIODevice`` (open the serial port, connect the
    socket, …). On failure the driver short-circuits and reports
@@ -284,7 +286,7 @@ For the full virtual surface a driver can override —
 :cpp:func:`HardwareObject::hwPrepareForExperiment`,
 :cpp:func:`HardwareObject::readAuxData`,
 :cpp:func:`HardwareObject::readValidationData`,
-:cpp:func:`HardwareObject::readSettings` — see
+:cpp:func:`HardwareObject::hwReadSettings` — see
 :doc:`/classes/hardwareobject`. The experiment-context hooks are
 covered cross-system in
 :doc:`/developer_guide/experiment_lifecycle`.
@@ -451,10 +453,16 @@ manager:
 in ``d_hardwareMap`` and dispatches
 :cpp:func:`HardwareObject::bcReadSettings` on its thread, which
 reloads the persisted settings, refreshes ``d_critical`` and
-``d_commType``, restarts the rolling-data timer, and calls the
-driver's :cpp:func:`HardwareObject::readSettings` override. For
-Python-backed drivers this triggers an IPC ``read_settings`` message
-rather than restarting the subprocess; that path is on
+``d_commType``, restarts the rolling-data timer, and dispatches to
+:cpp:func:`HardwareObject::hwReadSettings` (or, for the intermediate
+bases that ``final``-override it, the per-base hook —
+``fcReadSettings``, ``pcReadSettings``, ``tcReadSettings``,
+``pgReadSettings``, ``awgReadSettings``, ``clockReadSettings``,
+``ftmwReadSettings``, ``gpibReadSettings``, ``ioReadSettings``,
+``lifLaserReadSettings``, or ``lifScopeReadSettings`` — described in
+:doc:`/developer_guide/adding_a_hardware_type`). For Python-backed
+drivers this triggers an IPC ``read_settings`` message rather than
+restarting the subprocess; that path is on
 :doc:`/developer_guide/python_hardware`.
 
 Control widgets cannot reach a :cpp:class:`HardwareObject` directly

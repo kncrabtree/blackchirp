@@ -333,7 +333,7 @@ class FtmwScopeDriver:
     def read_settings(self):
         """Reload settings from Blackchirp without restarting the process.
 
-        Called by PythonFtmwScope::readSettings() when the user changes
+        Called by PythonFtmwScope::ftmwReadSettings() when the user changes
         hardware settings in the GUI. Use self.settings.get() to re-read
         any configuration values that affect operation.
 

@@ -125,9 +125,9 @@ bool PythonLifLaser::setFl(bool en)
 }
 
 // ============================================================================
-// readSettings()
+// lifLaserReadSettings()
 // ============================================================================
-void PythonLifLaser::readSettings()
+void PythonLifLaser::lifLaserReadSettings()
 {
     pythonReadSettings();
 }

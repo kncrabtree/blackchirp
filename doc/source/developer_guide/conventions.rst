@@ -60,7 +60,7 @@ Naming and indentation
 
 * Classes, structs, and enums use ``UpperCamelCase``: ``HardwareObject``,
   ``FtmwConfig``, ``CommunicationProtocol::CommType``.
-* Free functions and variables use ``lowerCamelCase``: ``readSettings()``,
+* Free functions and variables use ``lowerCamelCase``: ``hwReadSettings()``,
   ``currentExperimentNum``.
 * Member variables carry a one- or two-letter prefix that records what
   they hold:

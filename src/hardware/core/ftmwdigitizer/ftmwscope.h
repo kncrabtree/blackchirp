@@ -33,6 +33,12 @@ public:
     WaveformBuffer* waveformBuffer() const { return pu_waveformBuffer.get(); }
 
 protected:
+    void hwReadSettings() override final;
+    /*!
+     * \brief Driver hook called after FtmwScope base settings are refreshed. Default is a no-op.
+     */
+    virtual void ftmwReadSettings() {}
+
     void emitShot(const QByteArray &data);
     bool d_acquisitionGated{false};
     int d_discardCount{0};

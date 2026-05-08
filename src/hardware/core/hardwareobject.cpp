@@ -198,7 +198,7 @@ void HardwareObject::bcReadSettings()
     if(interval > 0)
         d_rollingDataTimerId = startTimer(interval*1000);
 
-    readSettings();
+    hwReadSettings();
 }
 
 

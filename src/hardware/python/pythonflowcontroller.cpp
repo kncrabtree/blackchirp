@@ -69,9 +69,9 @@ bool PythonFlowController::fcTestConnection()
 }
 
 // ============================================================================
-// readSettings()
+// fcReadSettings()
 // ============================================================================
-void PythonFlowController::readSettings()
+void PythonFlowController::fcReadSettings()
 {
     pythonReadSettings();
 }

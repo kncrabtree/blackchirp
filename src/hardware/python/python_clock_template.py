@@ -175,7 +175,7 @@ class ClockDriver:
     def read_settings(self):
         """Reload hardware settings without restarting the driver.
 
-        Called by PythonClock::readSettings(), which is invoked when
+        Called by PythonClock::clockReadSettings(), which is invoked when
         the user modifies hardware settings in the Blackchirp GUI.
         Use this to apply updated configuration to the hardware without
         requiring a full reconnect.

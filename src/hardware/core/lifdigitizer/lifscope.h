@@ -26,6 +26,12 @@ public slots:
     virtual bool configure(const LifDigitizerConfig &c) =0;
 
 protected:
+    void hwReadSettings() override final;
+    /*!
+     * \brief Driver hook called after LifScope base settings are refreshed. Default is a no-op.
+     */
+    virtual void lifScopeReadSettings() {}
+
     void emitWaveform(const QVector<qint8> &data);
     bool d_acquisitionGated{false};
     int d_discardCount{0};

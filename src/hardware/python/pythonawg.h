@@ -33,7 +33,7 @@ private:
     void beginAcquisition() override;
     void endAcquisition() override;
     void sleep(bool b) override;
-    void readSettings() override;
+    void awgReadSettings() override;
 
     AuxDataStorage::AuxDataMap parseAuxDataResult(const QJsonObject &response);
 };

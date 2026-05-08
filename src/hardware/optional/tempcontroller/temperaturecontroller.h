@@ -41,10 +41,15 @@ protected:
     virtual AuxDataStorage::AuxDataMap readAuxData() override;
     void initialize() override final;
     bool testConnection() override final;
-    void readSettings() override final;
+    void hwReadSettings() override final;
 
     virtual void tcInitialize() =0;
     virtual bool tcTestConnection() =0;
+    /*!
+     * \brief Driver hook called after the base TemperatureController has
+     * refreshed its poll interval. Default is a no-op.
+     */
+    virtual void tcReadSettings() {}
     virtual double readHwTemperature(const uint ch) =0;
     virtual bool readHwChannelEnabled(const uint ch) { return d_config.channelEnabled(ch); }
     virtual void setHwChannelEnabled(const uint ch, bool en) { d_config.setEnabled(ch,en); }

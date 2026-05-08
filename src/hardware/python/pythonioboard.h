@@ -34,7 +34,7 @@ protected:
     std::map<int, bool> readDigitalChannels() override;
 
     void sleep(bool b) override;
-    void readSettings() override;
+    void ioReadSettings() override;
 
 private:
     QJsonObject configToJson(const IOBoardConfig &config) const;

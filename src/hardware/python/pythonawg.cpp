@@ -219,9 +219,9 @@ void PythonAwg::sleep(bool b)
 }
 
 // ============================================================================
-// readSettings()
+// awgReadSettings()
 // ============================================================================
-void PythonAwg::readSettings()
+void PythonAwg::awgReadSettings()
 {
     pythonReadSettings();
 }

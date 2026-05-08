@@ -73,8 +73,8 @@
  * Optional virtual hooks: drivers may override \c validationKeys(),
  * \c sleep(), \c beginAcquisition() / \c endAcquisition(),
  * \c prepareForExperiment(), \c readAuxData(), \c readValidationData(),
- * and \c readSettings() to participate in the experiment lifecycle and
- * the auxiliary-data system. Each is documented at the per-method
+ * and \c hwReadSettings() to participate in the experiment lifecycle
+ * and the auxiliary-data system. Each is documented at the per-method
  * level below.
  *
  * Threading: functions intended to be invoked from outside the object
@@ -274,10 +274,11 @@ public slots:
      * Called whenever the user closes the hardware settings dialog or
      * a connection test is initiated. Refreshes the in-memory
      * SettingsStorage cache, updates d_critical and d_commType,
-     * restarts the rolling-data timer, and then calls readSettings()
-     * so the driver can refresh its own cached state.
+     * restarts the rolling-data timer, and then dispatches to
+     * hwReadSettings() so the driver (or its intermediate base) can
+     * refresh its own cached state.
      *
-     * \sa readSettings
+     * \sa hwReadSettings
      */
     void bcReadSettings();
 
@@ -490,15 +491,24 @@ private:
     virtual AuxDataStorage::AuxDataMap readValidationData();
     
     /*!
-     * \brief Update values from SettingsStorage
-     * 
-     * Derived classes may override this function to read and process any
-     * updates to settings made by the user in the Hardware Settings dialog.
-     * The function is called automatically when the user accepts that dialog
-     * and also when bcTestConnection() is called.
-     * 
+     * \brief Driver hook for refreshing values from SettingsStorage.
+     *
+     * Called from \c bcReadSettings() after the in-memory SettingsStorage
+     * cache has been refreshed from disk and the global per-instance
+     * fields (\c d_critical, \c d_commType, rolling-data timer) have been
+     * updated. Drivers and intermediate hardware bases override this to
+     * pick up any user-edited values relevant to their state — for
+     * example a poll-interval, a channel-count, or a per-driver
+     * Python-script hook.
+     *
+     * Intermediate bases (FlowController, PressureController,
+     * TemperatureController, PulseGenerator) override this as
+     * \c final and dispatch to a per-base hook
+     * (\c fcReadSettings, \c pcReadSettings, \c tcReadSettings,
+     * \c pgReadSettings) so derived drivers cannot accidentally bypass
+     * the base-class work by forgetting to chain.
      */
-    virtual void readSettings() {}
+    virtual void hwReadSettings() {}
 
     bool d_isConnected; /*!< Contains whether device's last communication was successful. */
     int d_rollingDataTimerId{-1}; /*!< ID for rolling data timerEvent */

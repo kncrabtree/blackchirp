@@ -213,10 +213,16 @@ PythonHardwareBase mixin
 
 :cpp:class:`PythonHardwareBase` carries the boilerplate every
 trampoline needs: the owned subprocess, the lazy-start hook, the
-helpers that turn :cpp:func:`HardwareObject::sleep` and
-:cpp:func:`HardwareObject::readSettings` into IPC dispatches, and
-the static helpers that find the host script and resolve a Python
-interpreter. The mixin's constructor takes the hardware key and
+helpers that turn :cpp:func:`HardwareObject::sleep` and the
+trampoline's read-settings hook (:cpp:func:`HardwareObject::hwReadSettings`
+or the per-base variant on the intermediate bases that
+``final``-override ``hwReadSettings`` — ``fcReadSettings``,
+``pcReadSettings``, ``tcReadSettings``, ``pgReadSettings``,
+``awgReadSettings``, ``clockReadSettings``, ``ftmwReadSettings``,
+``gpibReadSettings``, ``ioReadSettings``, ``lifLaserReadSettings``,
+``lifScopeReadSettings``) into
+IPC dispatches, and the static helpers that find the host script
+and resolve a Python interpreter. The mixin's constructor takes the hardware key and
 model strings and stores them; it does not need a back-pointer to
 the :cpp:class:`HardwareObject`, because the IPC and the settings
 relay are funneled through callbacks the trampoline installs.
@@ -260,12 +266,17 @@ The members the mixin owns and exposes to subclasses:
   ``PATH``) when ``envPath`` is empty or contains no interpreter.
 - :cpp:func:`PythonHardwareBase::pythonSleep` and
   :cpp:func:`PythonHardwareBase::pythonReadSettings` — the
-  trampoline's :cpp:func:`HardwareObject::sleep` and
-  :cpp:func:`HardwareObject::readSettings` overrides delegate to
-  these helpers. ``pythonReadSettings`` deliberately sends
-  ``read_settings`` over IPC rather than restarting the
-  subprocess, because a restart would re-run :meth:`initialize`
-  and disrupt connected state.
+  trampoline's :cpp:func:`HardwareObject::sleep` override and its
+  read-settings hook (:cpp:func:`HardwareObject::hwReadSettings`
+  for trampolines that inherit the default, or the per-base variant —
+  ``fcReadSettings``, ``pcReadSettings``, ``tcReadSettings``,
+  ``pgReadSettings``, ``awgReadSettings``, ``clockReadSettings``,
+  ``ftmwReadSettings``, ``gpibReadSettings``, ``ioReadSettings``,
+  ``lifLaserReadSettings``, or ``lifScopeReadSettings`` — when the
+  parent base ``final``-overrides ``hwReadSettings``) delegate to these helpers.
+  ``pythonReadSettings`` deliberately sends ``read_settings`` over
+  IPC rather than restarting the subprocess, because a restart
+  would re-run :meth:`initialize` and disrupt connected state.
 - :cpp:func:`PythonHardwareBase::pythonErrorString` — exposes the
   human-readable error from the most recent failed
   ``startPythonProcess`` or ``testPythonConnection``. Trampolines
@@ -277,8 +288,8 @@ The members the mixin owns and exposes to subclasses:
 A concrete trampoline therefore looks like a thin layer on top of
 the mixin: an ``initialize`` hook that calls ``initPythonProcess``,
 a ``testConnection`` hook that calls ``testPythonConnection``,
-delegations to the sleep/readSettings helpers, and one IPC
-dispatch per hardware-specific virtual.
+delegations to the sleep helper and the appropriate read-settings
+hook helper, and one IPC dispatch per hardware-specific virtual.
 
 .. _python-hw-state-patterns:
 
@@ -425,11 +436,18 @@ A new ``Python<Type>`` trampoline follows a fixed recipe.
           return true;
       }
 
-4. **Delegate sleep and readSettings.** Override
+4. **Delegate sleep and the read-settings hook.** Override
    :cpp:func:`HardwareObject::sleep` to call
-   :cpp:func:`PythonHardwareBase::pythonSleep`, and
-   :cpp:func:`HardwareObject::readSettings` to call
-   :cpp:func:`PythonHardwareBase::pythonReadSettings`.
+   :cpp:func:`PythonHardwareBase::pythonSleep`, and override the
+   appropriate read-settings hook to call
+   :cpp:func:`PythonHardwareBase::pythonReadSettings`. The hook is
+   :cpp:func:`HardwareObject::hwReadSettings` for trampolines whose
+   parent base does not ``final``-override it, and the per-base
+   variant (``fcReadSettings``, ``pcReadSettings``, ``tcReadSettings``,
+   ``pgReadSettings``, ``awgReadSettings``, ``clockReadSettings``,
+   ``ftmwReadSettings``, ``gpibReadSettings``, ``ioReadSettings``,
+   ``lifLaserReadSettings``, or ``lifScopeReadSettings``) for the
+   intermediate bases that do.
 
 5. **Implement the hardware-specific virtuals as IPC dispatches.**
    The pattern from :ref:`python-hw-state-patterns` chooses the

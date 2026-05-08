@@ -35,7 +35,7 @@ protected:
     void pcInitialize() override;
     bool pcTestConnection() override;
 
-    void readSettings() override;
+    void pcReadSettings() override;
     void sleep(bool b) override;
 
 private:

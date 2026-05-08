@@ -305,9 +305,9 @@ void PythonIOBoard::sleep(bool b)
 }
 
 // ============================================================================
-// readSettings()
+// ioReadSettings()
 // ============================================================================
-void PythonIOBoard::readSettings()
+void PythonIOBoard::ioReadSettings()
 {
     pythonReadSettings();
 

@@ -96,9 +96,9 @@ private:
     void moveRelative(qint32 steps);
     bool moveAbsolute(qint32 targetPos);
 
-    // HardwareObject interface
+    // LifLaser interface
 private:
-    void readSettings() override;
+    void lifLaserReadSettings() override;
 
     Rs232Instrument *p_extStagePort{ nullptr };
     PolyStageStatus d_crystalStatus, d_compStatus;

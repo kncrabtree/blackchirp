@@ -127,6 +127,11 @@ bool FtmwScope::hwPrepareForExperiment(Experiment &exp)
 
 
 
+void FtmwScope::hwReadSettings()
+{
+    ftmwReadSettings();
+}
+
 void FtmwScope::setAcquisitionGated(bool gated)
 {
     d_acquisitionGated = gated;

@@ -175,9 +175,9 @@ void PythonLifScope::onWaveformReceived(const QByteArray &data, quint64 /*shotCo
 }
 
 // ============================================================================
-// readSettings()
+// lifScopeReadSettings()
 // ============================================================================
-void PythonLifScope::readSettings()
+void PythonLifScope::lifScopeReadSettings()
 {
     pythonReadSettings();
 }

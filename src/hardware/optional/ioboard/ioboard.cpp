@@ -91,6 +91,11 @@ IOBoard::~IOBoard()
     writeSettings();
 }
 
+void IOBoard::hwReadSettings()
+{
+    ioReadSettings();
+}
+
 QStringList IOBoard::validationKeys() const
 {
     using namespace BC::Key::Digi;

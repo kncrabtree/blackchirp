@@ -16,6 +16,12 @@ public:
     virtual QStringList validationKeys() const override;
 
 protected:
+    void hwReadSettings() override final;
+    /*!
+     * \brief Driver hook called after IOBoard base settings are refreshed. Default is a no-op.
+     */
+    virtual void ioReadSettings() {}
+
     /*!
      * \brief Apply and validate channel/digitizer configuration on hardware.
      *

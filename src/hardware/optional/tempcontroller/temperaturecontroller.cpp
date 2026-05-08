@@ -163,9 +163,12 @@ bool TemperatureController::testConnection()
     return true;
 }
 
-void TemperatureController::readSettings()
+void TemperatureController::hwReadSettings()
 {
-    p_readTimer->setInterval(get(interval,500));
+    if(p_readTimer)
+        p_readTimer->setInterval(get(interval,500));
+
+    tcReadSettings();
 }
 
 void TemperatureController::poll()

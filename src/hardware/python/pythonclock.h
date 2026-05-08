@@ -42,7 +42,7 @@ protected:
     bool setHwFrequency(double freqMHz, int outputIndex = 0) override;
     double readHwFrequency(int outputIndex = 0) override;
 
-    void readSettings() override;
+    void clockReadSettings() override;
     void sleep(bool b) override;
 
 };

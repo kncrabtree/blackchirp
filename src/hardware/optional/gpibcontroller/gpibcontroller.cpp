@@ -6,6 +6,11 @@ GpibController::GpibController(const QString& impl, const QString& label, QObjec
     d_threaded = true;
 }
 
+void GpibController::hwReadSettings()
+{
+    gpibReadSettings();
+}
+
 GpibController::~GpibController()
 {
     // Release all addresses owned by any hardware objects when controller is destroyed

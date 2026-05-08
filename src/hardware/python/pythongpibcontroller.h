@@ -36,7 +36,7 @@ protected:
     bool setAddress(int a) override;
 
     void sleep(bool b) override;
-    void readSettings() override;
+    void gpibReadSettings() override;
 };
 
 #endif // PYTHONGPIBCONTROLLER_H

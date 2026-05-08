@@ -28,3 +28,8 @@ AWG::~AWG()
 {
 
 }
+
+void AWG::hwReadSettings()
+{
+    awgReadSettings();
+}

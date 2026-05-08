@@ -62,29 +62,35 @@ FlowController::~FlowController()
     save();
 }
 
-void FlowController::readSettings()
+void FlowController::hwReadSettings()
 {
     using namespace BC::Key::Flow;
+
+    if(p_readTimer)
+        p_readTimer->setInterval(get(interval,333));
+
     int newCount = get(flowChannels, d_numChannels);
-    if (newCount == d_numChannels)
-        return;
-
-    // Rebuild d_config preserving data for channels that still exist
-    FlowConfig newConfig(d_config.headerKey());
-    int preserve = qMin(d_numChannels, newCount);
-    for (int i = 0; i < newCount; ++i)
+    if (newCount != d_numChannels)
     {
-        if (i < preserve)
-            newConfig.addCh(d_config.setting(i, FlowConfig::Setpoint).toDouble(),
-                            d_config.setting(i, FlowConfig::Name).toString());
-        else
-            newConfig.addCh(0.0, getArrayValue(channels, i, chName, QString("Ch%1").arg(i+1)));
-    }
-    d_config = newConfig;
-    d_numChannels = newCount;
+        // Rebuild d_config preserving data for channels that still exist
+        FlowConfig newConfig(d_config.headerKey());
+        int preserve = qMin(d_numChannels, newCount);
+        for (int i = 0; i < newCount; ++i)
+        {
+            if (i < preserve)
+                newConfig.addCh(d_config.setting(i, FlowConfig::Setpoint).toDouble(),
+                                d_config.setting(i, FlowConfig::Name).toString());
+            else
+                newConfig.addCh(0.0, getArrayValue(channels, i, chName, QString("Ch%1").arg(i+1)));
+        }
+        d_config = newConfig;
+        d_numChannels = newCount;
 
-    if (d_nextRead >= d_numChannels)
-        d_nextRead = -1;
+        if (d_nextRead >= d_numChannels)
+            d_nextRead = -1;
+    }
+
+    fcReadSettings();
 }
 
 void FlowController::setAll(const FlowConfig &c)

@@ -34,6 +34,13 @@ class AWG : public HardwareObject
 public:
     AWG(const QString& impl, const QString& label, QObject *parent = nullptr);
     virtual ~AWG();
+
+protected:
+    void hwReadSettings() override final;
+    /*!
+     * \brief Driver hook called after AWG base settings are refreshed. Default is a no-op.
+     */
+    virtual void awgReadSettings() {}
 };
 
 #endif // AWG_H

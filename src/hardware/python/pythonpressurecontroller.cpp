@@ -70,9 +70,9 @@ bool PythonPressureController::pcTestConnection()
 }
 
 // ============================================================================
-// readSettings()
+// pcReadSettings()
 // ============================================================================
-void PythonPressureController::readSettings()
+void PythonPressureController::pcReadSettings()
 {
     pythonReadSettings();
 }
