@@ -32,6 +32,7 @@ public slots:
     bool readChannelEnabled(const uint ch);
     TemperatureControllerConfig getConfig() const { return d_config; }
     void storeOptHwConfig(Experiment *exp) override { exp->addOptHwConfig(getConfig()); }
+    void prepareForShutdown() override;
 
 
     // HardwareObject interface

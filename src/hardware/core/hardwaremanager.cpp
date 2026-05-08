@@ -60,6 +60,10 @@ HardwareManager::~HardwareManager()
         if(obj->d_threaded)
         {
             QThread *t = obj->thread();
+            // Quiesce poll-driven slots so no fresh request enters a
+            // nested QEventLoop while we are tearing the object down.
+            QMetaObject::invokeMethod(obj, &HardwareObject::prepareForShutdown,
+                                      Qt::BlockingQueuedConnection);
             // Delete on the worker thread so QTimer/startTimer members are
             // stopped on the thread that owns them (killTimer is per-thread).
             QMetaObject::invokeMethod(obj, [obj]{ delete obj; },
@@ -891,6 +895,10 @@ void HardwareManager::removeHardwareInternal(const QString& hwKey)
     if (obj->d_threaded) {
         QThread* thread = obj->thread();
         if (thread && thread != this->thread()) {
+            // Quiesce poll-driven slots so no fresh request enters a
+            // nested QEventLoop while we are tearing the object down.
+            QMetaObject::invokeMethod(obj, &HardwareObject::prepareForShutdown,
+                                      Qt::BlockingQueuedConnection);
             // Stop the thread gracefully
             thread->quit();
             if (!thread->wait(5000)) { // 5 second timeout
@@ -1138,6 +1146,10 @@ void HardwareManager::addHardwareInternal(const QString& hwKey, const QString& i
         if (hwObj->d_threaded) {
             QThread* thread = hwObj->thread();
             if (thread && thread != this->thread()) {
+                // Quiesce poll-driven slots so no fresh request enters a
+                // nested QEventLoop while we are tearing the object down.
+                QMetaObject::invokeMethod(hwObj, &HardwareObject::prepareForShutdown,
+                                          Qt::BlockingQueuedConnection);
                 thread->quit();
                 if (!thread->wait(5000)) {
                     thread->terminate();
@@ -1164,6 +1176,10 @@ void HardwareManager::addHardwareInternal(const QString& hwKey, const QString& i
         if (hwObj->d_threaded) {
             QThread* thread = hwObj->thread();
             if (thread && thread != this->thread()) {
+                // Quiesce poll-driven slots so no fresh request enters a
+                // nested QEventLoop while we are tearing the object down.
+                QMetaObject::invokeMethod(hwObj, &HardwareObject::prepareForShutdown,
+                                          Qt::BlockingQueuedConnection);
                 thread->quit();
                 if (!thread->wait(5000)) {
                     thread->terminate();

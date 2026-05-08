@@ -347,6 +347,24 @@ public slots:
     virtual void storeOptHwConfig(Experiment *exp) { Q_UNUSED(exp) }
 
     /*!
+     * \brief Quiesce a threaded driver before its thread is torn down.
+     *
+     * Called by HardwareManager via Qt::BlockingQueuedConnection
+     * immediately before \c thread->quit() during destruction or runtime
+     * removal. The default implementation does nothing; drivers that own
+     * recurring poll timers should override to stop them so no further
+     * slots fire on the worker thread once shutdown is in progress. This
+     * matters for drivers whose polled slots block on a nested QEventLoop
+     * (e.g. PythonProcess::sendRequest) — without quiescence, a fresh
+     * request can be initiated while the destruction sequence is already
+     * running, leading to use-after-free when the loop returns.
+     *
+     * Declared as a slot so HardwareManager can invoke it via a blocking
+     * queued connection when the driver runs on its own thread.
+     */
+    virtual void prepareForShutdown() {}
+
+    /*!
      * \brief Sets communication protocol at runtime
      * 
      * Allows changing the communication protocol after construction.

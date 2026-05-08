@@ -28,6 +28,7 @@ signals:
 
 public slots:
     void storeOptHwConfig(Experiment *exp) override { exp->addOptHwConfig(config()); }
+    void prepareForShutdown() override;
     void setAll(const FlowConfig &c);
     void setChannelName(const int ch, const QString name);
     void setPressureControlMode(bool enabled);

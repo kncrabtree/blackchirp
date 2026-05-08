@@ -59,7 +59,41 @@ signature) when the new instrument is on the bench and after the
 
 ## Large
 
-None.
+### Async PythonProcess + hardware base contracts
+
+Refactor `PythonProcess::sendRequest` from its current
+synchronous-with-nested-`QEventLoop` shape into a true async API
+(`QFuture<QJsonObject>` or callback-style), and propagate the change
+through every Python-driver-facing hardware base class
+(`FlowController`, `PressureController`, `TemperatureController`,
+`IOBoard`, `LifLaser`, `LifDigitizer`, `FtmwDigitizer`, `Clock`,
+`ChirpSource`/AWG, `PulseGenerator`, `GpibController`).
+
+Motivation: the nested event loop in `sendRequest` is the structural
+source of a destruction race observed at app shutdown — the loop
+processes events that can free `this` mid-call, so the post-loop
+member accesses dereference a corpse. The shutdown ordering fix in
+`python-process-shutdown-fix.md` (B + QPointer guard) treats the
+observed trigger and one defensive case but does not eliminate the
+class of bugs. Any new caller that initiates a `sendRequest` during
+a destructible sequence is still re-entrant.
+
+Why it cannot be hidden inside `PythonProcess`: relay requests from
+the Python script (`self.comm.write`, `self.settings.set`,
+`self.log`, scope waveform pushes) need to be serviced *on the
+hardware thread* while a Python method is in flight. Blocking the
+hardware thread on a semaphore while a separate dispatcher services
+relays deadlocks on the `BlockingQueuedConnection` back into the
+blocked thread. So either the nested loop stays (current) or the
+contract changes all the way out to the per-driver virtual.
+
+Rough scope: ~500–1000 LOC across ~50 files; 2–3 days of focused
+work plus a per-driver-type testing pass and updates to
+`developer_guide/adding_a_driver.rst`. Trigger for picking it up:
+the next major hardware-contract change (e.g., the Sirah aux-port
+work, or a new "remote hardware proxy" driver type that genuinely
+needs async), or evidence in production that the QPointer guard in
+`sendRequest` is being hit.
 
 ## Pre-Release
 

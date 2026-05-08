@@ -5,6 +5,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QFile>
+#include <QPointer>
 #include <QTimer>
 
 #include <hardware/core/communication/communicationprotocol.h>
@@ -126,6 +127,12 @@ QJsonObject PythonProcess::sendRequest(const QJsonObject &request)
 
     writeLine(req);
 
+    // The nested loop services relay requests on the hardware thread while
+    // a Python method is in flight (see header). If shutdown destroys this
+    // PythonProcess (or its owning driver) during the wait, the loop will
+    // return into a dangling 'this'. The QPointer detects that and lets us
+    // bail out without touching any member.
+    QPointer<PythonProcess> guard{this};
     QEventLoop loop;
     connect(this, &PythonProcess::responseReady, &loop, &QEventLoop::quit);
     connect(p_process, &QProcess::finished, &loop, [this, &loop]() {
@@ -134,6 +141,12 @@ QJsonObject PythonProcess::sendRequest(const QJsonObject &request)
     });
     QTimer::singleShot(d_timeoutMs, &loop, &QEventLoop::quit);
     loop.exec();
+
+    if (guard.isNull()) {
+        QJsonObject err;
+        err["error"_L1] = "Python process destroyed mid-request"_L1;
+        return err;
+    }
 
     d_waitingForResponse = false;
 

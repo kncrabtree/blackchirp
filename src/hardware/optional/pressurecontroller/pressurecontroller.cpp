@@ -125,6 +125,12 @@ void PressureController::initialize()
     pcInitialize();
 }
 
+void PressureController::prepareForShutdown()
+{
+    if(p_readTimer)
+        p_readTimer->stop();
+}
+
 bool PressureController::testConnection()
 {
     p_readTimer->stop();

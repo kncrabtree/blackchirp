@@ -146,6 +146,12 @@ void TemperatureController::initialize()
     tcInitialize();
 }
 
+void TemperatureController::prepareForShutdown()
+{
+    if(p_readTimer)
+        p_readTimer->stop();
+}
+
 bool TemperatureController::testConnection()
 {
     p_readTimer->stop();

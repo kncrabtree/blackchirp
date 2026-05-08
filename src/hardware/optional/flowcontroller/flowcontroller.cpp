@@ -107,6 +107,12 @@ void FlowController::initialize()
     fcInitialize();
 }
 
+void FlowController::prepareForShutdown()
+{
+    if(p_readTimer)
+        p_readTimer->stop();
+}
+
 bool FlowController::testConnection()
 {
     p_readTimer->stop();
