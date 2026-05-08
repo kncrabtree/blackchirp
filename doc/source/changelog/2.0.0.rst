@@ -365,6 +365,16 @@ Bug fixes
   ``~SettingsStorage::save()`` (such as flow-controller channel
   names on ``PythonFlowController``) were silently dropped on exit
   (:commit:`e0acf07d`).
+- Fixed a destruction race during application close when a Python
+  hardware driver was actively polling: ``PythonProcess::sendRequest``
+  ran a nested ``QEventLoop`` on the hardware thread to service relay
+  requests, and shutdown could destroy the driver while that loop was
+  in flight, so the post-loop ``isRunning()`` check dereferenced a
+  dangling pointer and the process segfaulted out of the
+  ``FlowController`` poll path. Quiesce poll timers via a new
+  ``HardwareObject::prepareForShutdown()`` virtual invoked before
+  worker-thread teardown, with a ``QPointer`` guard around the
+  nested loop for the residual case (:commit:`70fdc9ad`).
 
 **Hardware configuration.**
 
