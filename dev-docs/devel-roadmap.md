@@ -72,12 +72,23 @@ installs `SetUnhandledExceptionFilter` and emits a minidump via
 `MiniDumpWriteDump`. Symbols (`.debug`, `.dSYM`, `.pdb`) are kept
 developer-side as 90-day GitHub Actions workflow artifacts — never
 shipped to users — and resolved against a crash log's embedded git
-SHA via `addr2line` / `atos` / WinDbg. Builds at the application
-side: ~60 lines of POSIX boilerplate, a similar Windows path, and a
-symbol-capture step in `.github/workflows/release.yml`. Lands after
-the packaging-and-ci verification settles since it edits the same
-workflow file. See `crash-reporting.md` for file layout, phasing, and
-the developer triage runbook.
+SHA via `addr2line` / `atos` / WinDbg.
+
+In-process pieces have landed: `src/data/crashhandler.{h,cpp}` plus
+the `_unix.cpp` and `_win.cpp` per-platform implementations; install
++ reopen + setActiveExperiment wired through `main.cpp`,
+`BCSavePathWidget`, and `AcquisitionManager`; startup detection of
+prior crashes via `CrashReportDialog`; and Sphinx user-guide and
+developer-triage pages (`user_guide/crash_reports.rst`,
+`developer_guide/crash_handling.rst`). Release builds now keep `-g`
+/ `/Zi` so the captured frames resolve. Verified on Linux against a
+null-pointer deref triggered from the About dialog.
+
+The remaining piece is the CI symbol-capture step in
+`.github/workflows/release.yml` (Phase 3 of `crash-reporting.md`).
+That step lands after the packaging-and-ci verification settles since
+it edits the same workflow file. See `crash-reporting.md` for the
+phase table and triage runbook.
 
 ### [Packaging and Binary Generation (Github Actions)](packaging-and-ci.md)
 

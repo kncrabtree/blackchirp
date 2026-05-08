@@ -59,16 +59,20 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Compiler-specific flags
+# Compiler-specific flags. Release builds keep debug info (-g / /Zi)
+# so the crash-handler stacktraces can be resolved with addr2line / atos
+# / WinDbg against companion .debug / .dSYM / .pdb files captured in
+# CI. Stripping happens at install time in cmake/Packaging.cmake.
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     add_compile_options(-Wall -Wextra)
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
-        add_compile_options(-O3)
+        add_compile_options(-O3 -g)
     endif()
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     add_compile_options(/W4)
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
-        add_compile_options(/O2)
+        add_compile_options(/O2 /Zi)
+        add_link_options(/DEBUG)
     endif()
 endif()
 

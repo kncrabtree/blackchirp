@@ -59,6 +59,7 @@ Python), and the Sphinx pages that surface them is documented in the
    developer_guide/persistence
    developer_guide/python_hardware
    developer_guide/vendor_libraries
+   developer_guide/crash_handling
    developer_guide/adding_a_driver
    developer_guide/adding_a_hardware_type
    developer_guide/adding_an_experiment_mode

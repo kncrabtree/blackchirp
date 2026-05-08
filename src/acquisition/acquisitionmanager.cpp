@@ -1,6 +1,7 @@
 #include <acquisition/acquisitionmanager.h>
 
 #include <data/storage/waveformbuffer.h>
+#include <data/crashhandler.h>
 
 #include <math.h>
 
@@ -20,6 +21,7 @@ AcquisitionManager::~AcquisitionManager()
 void AcquisitionManager::beginExperiment(std::shared_ptr<Experiment> exp)
 {
     ps_currentExperiment = exp;
+    CrashHandler::setActiveExperiment(exp ? exp->d_number : 0);
 
     d_state = Acquiring;
     emit statusMessage(QString("Acquiring"));
@@ -358,6 +360,7 @@ void AcquisitionManager::finishAcquisition()
 
     emit experimentComplete();
     ps_currentExperiment.reset();
+    CrashHandler::setActiveExperiment(0);
 }
 
 void AcquisitionManager::timerEvent(QTimerEvent *event)

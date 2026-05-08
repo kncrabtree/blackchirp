@@ -21,6 +21,7 @@ set(BLACKCHIRP_DATA_SOURCES
     # Core data components
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loghandler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/bcglobals.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/crashhandler.cpp
     
     # Analysis and signal processing
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/analysis/analysis.cpp
@@ -93,6 +94,8 @@ set(BLACKCHIRP_DATA_HEADERS
     # Core data components
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loghandler.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/bcglobals.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/crashhandler.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/crashhandler_p.h
     
     # Analysis and signal processing
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/analysis/analysis.h
@@ -185,6 +188,20 @@ list(APPEND BLACKCHIRP_DATA_HEADERS
 )
 
 # ============================================================================
+# Platform-specific crash-handler source
+# ============================================================================
+
+if(WIN32)
+    list(APPEND BLACKCHIRP_DATA_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/data/crashhandler_win.cpp
+    )
+else()
+    list(APPEND BLACKCHIRP_DATA_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/data/crashhandler_unix.cpp
+    )
+endif()
+
+# ============================================================================
 # Create Data Library Target
 # ============================================================================
 
@@ -238,6 +255,19 @@ target_link_libraries(blackchirp-data
 # Add GSL math library on Unix systems
 if(UNIX)
     target_link_libraries(blackchirp-data PRIVATE m)
+endif()
+
+# Crash-handler dependencies. Linux/glibc needs libdl for dladdr();
+# libstdc++ 13+ requires -lstdc++exp for std::stacktrace symbol
+# resolution. Windows needs dbghelp for MiniDumpWriteDump.
+if(WIN32)
+    target_link_libraries(blackchirp-data PRIVATE dbghelp)
+else()
+    target_link_libraries(blackchirp-data PRIVATE ${CMAKE_DL_LIBS})
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+            AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "13")
+        target_link_libraries(blackchirp-data PRIVATE stdc++exp)
+    endif()
 endif()
 
 # ============================================================================

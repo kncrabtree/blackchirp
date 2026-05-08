@@ -1,7 +1,9 @@
 #include <data/storage/settingsstorage.h>
 #include <data/storage/applicationconfigmanager.h>
+#include <data/crashhandler.h>
 #include <gui/mainwindow.h>
 #include <gui/dialog/applicationconfigdialog.h>
+#include <gui/dialog/crashreportdialog.h>
 #include <gui/dialog/runtimehardwareconfigdialog.h>
 #include <gui/plot/curveappearancepresetmanager.h>
 #include <data/processing/parsers/fileparserregistry.h>
@@ -17,6 +19,7 @@
 #include <QSharedMemory>
 #include <QLocalServer>
 #include <QLocalSocket>
+#include <QTimer>
 #include <QtGlobal>
 
 #if QT_VERSION <= 0x060000
@@ -42,6 +45,8 @@ int main(int argc, char *argv[])
 #if QT_VERSION <= 0x060000
     QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
 #endif
+
+    CrashHandler::install();
 
     const QString settingsName = QString("Blackchirp%1").arg(BC_MAJOR_VERSION);
     const QString displayName = QString("Blackchirp");
@@ -128,7 +133,14 @@ If you are unsure which hardware to select, you can leave the defaults (virtual 
         // Fall through to normal startup — the saved hardware config will be loaded by
         // HardwareManager::initialize(). If any hardware fails to connect, the
         // Communication dialog will open automatically.
+
+        // savePath was set by the dialog; refresh the local copy so the
+        // crash handler opens its log under the correct directory.
+        SettingsStorage refreshed;
+        savePath = refreshed.get(BC::Key::savePath, QString(""));
     }
+
+    CrashHandler::reopen(savePath);
 
     qRegisterMetaType<std::shared_ptr<Experiment>>();
     qRegisterMetaType<LogHandler::MessageCode>();
@@ -169,11 +181,33 @@ If you are unsure which hardware to select, you can leave the defaults (virtual 
 
     w.showMaximized();
     w.initializeHardware();
+
+    auto priorCrashes = CrashHandler::collectPriorArtifacts();
+    if(!priorCrashes.isEmpty())
+    {
+        SettingsStorage cfg{BC::Key::CrashDialog::crashDialog};
+        auto lastSeen = cfg.get(BC::Key::CrashDialog::lastSeen, QString());
+        priorCrashes.removeIf([&lastSeen](const QString &path) {
+            return CrashHandler::artifactTimestamp(path) <= lastSeen;
+        });
+    }
+    if(!priorCrashes.isEmpty())
+    {
+        QTimer::singleShot(0, &w, [&w, priorCrashes]() {
+            auto dlg = new CrashReportDialog(priorCrashes,
+                                             CrashHandler::crashesDirectory(),
+                                             &w);
+            dlg->show();
+        });
+    }
+
     int ret = a.exec();
     
     // Cleanup global instances before application shutdown
     FileParserRegistry::cleanup();
     CurveAppearancePresetManager::cleanup();
+
+    CrashHandler::shutdown();
 
     return ret;
 }

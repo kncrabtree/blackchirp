@@ -1,5 +1,6 @@
 #include "bcsavepathwidget.h"
 #include <gui/style/themecolors.h>
+#include <data/crashhandler.h>
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -80,6 +81,7 @@ void BCSavePathWidget::save()
     set(BC::Key::savePath, p_lineEdit->text());
     set(BC::Key::exptNum, p_expBox->value() - 1);
     SettingsStorage::save();
+    CrashHandler::reopen(p_lineEdit->text());
 }
 
 void BCSavePathWidget::apply()
