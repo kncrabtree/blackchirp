@@ -375,6 +375,20 @@ Bug fixes
   ``HardwareObject::prepareForShutdown()`` virtual invoked before
   worker-thread teardown, with a ``QPointer`` guard around the
   nested loop for the residual case (:commit:`70fdc9ad`).
+- Fixed the flow-controller poll interval not refreshing when the
+  user changed it in the Hardware Settings dialog: the
+  ``PythonFlowController`` trampoline overrode ``readSettings``
+  without chaining to ``FlowController::readSettings``, so the
+  base-class timer reload was silently bypassed. Restructured the
+  contract as a non-virtual interface — ``HardwareObject`` exposes
+  ``hwReadSettings`` as the sole entry point, each intermediate
+  hardware base ``final``-overrides it and dispatches to a per-base
+  hook (``fcReadSettings``, ``pcReadSettings``, ``tcReadSettings``,
+  ``pgReadSettings``, ``awgReadSettings``, ``clockReadSettings``,
+  ``ftmwReadSettings``, ``gpibReadSettings``, ``ioReadSettings``,
+  ``lifLaserReadSettings``, ``lifScopeReadSettings``) — so a
+  derived driver that forgets to chain becomes a compile error
+  rather than a silent runtime omission (:commit:`d512ee5e`).
 
 **Hardware configuration.**
 
