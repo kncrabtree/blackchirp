@@ -65,7 +65,7 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: ${{ env.QT_VERSION }}
-          modules: 'qtserialport qtsvg'
+          modules: 'qtserialport'
           cache: true
 
       - name: Restore Qwt cache
@@ -83,7 +83,8 @@ jobs:
             "https://sourceforge.net/projects/qwt/files/qwt/${QWT_VERSION}/qwt-${QWT_VERSION}.tar.bz2/download"
           tar xf qwt.tar.bz2
           cd "qwt-${QWT_VERSION}"
-          echo "QWT_INSTALL_PREFIX = ${{ github.workspace }}/qwt-install" >> qwtconfig.pri
+          sed -i "s|^[[:space:]]*QWT_INSTALL_PREFIX[[:space:]]*=.*|QWT_INSTALL_PREFIX = ${{ github.workspace }}/qwt-install|" qwtconfig.pri
+          sed -i -E "/^[[:space:]]*QWT_CONFIG[[:space:]]*\+=[[:space:]]+Qwt(Examples|Playground|Designer|Tests)[[:space:]]*$/d" qwtconfig.pri
           qmake6 qwt.pro
           make -j"$(nproc)"
           make install
@@ -163,7 +164,8 @@ jobs:
             "https://sourceforge.net/projects/qwt/files/qwt/${QWT_VERSION}/qwt-${QWT_VERSION}.tar.bz2/download"
           tar xf qwt.tar.bz2
           cd "qwt-${QWT_VERSION}"
-          echo "QWT_INSTALL_PREFIX = ${{ github.workspace }}/qwt-install" >> qwtconfig.pri
+          sed -i "s|^[[:space:]]*QWT_INSTALL_PREFIX[[:space:]]*=.*|QWT_INSTALL_PREFIX = ${{ github.workspace }}/qwt-install|" qwtconfig.pri
+          sed -i -E "/^[[:space:]]*QWT_CONFIG[[:space:]]*\+=[[:space:]]+Qwt(Examples|Playground|Designer|Tests)[[:space:]]*$/d" qwtconfig.pri
           qmake6 qwt.pro
           make -j"$(nproc)"
           make install
@@ -242,7 +244,7 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: ${{ env.QT_VERSION }}
-          modules: 'qtserialport qtsvg'
+          modules: 'qtserialport'
           cache: true
 
       - name: Restore Qwt cache
@@ -260,7 +262,8 @@ jobs:
             "https://sourceforge.net/projects/qwt/files/qwt/${QWT_VERSION}/qwt-${QWT_VERSION}.tar.bz2/download"
           tar xf qwt.tar.bz2
           cd "qwt-${QWT_VERSION}"
-          echo "QWT_INSTALL_PREFIX = ${{ github.workspace }}/qwt-install" >> qwtconfig.pri
+          sed -i "s|^[[:space:]]*QWT_INSTALL_PREFIX[[:space:]]*=.*|QWT_INSTALL_PREFIX = ${{ github.workspace }}/qwt-install|" qwtconfig.pri
+          sed -i -E "/^[[:space:]]*QWT_CONFIG[[:space:]]*\+=[[:space:]]+Qwt(Examples|Playground|Designer|Tests)[[:space:]]*$/d" qwtconfig.pri
           qmake6 qwt.pro
           make -j"$(nproc)"
           make install
@@ -341,7 +344,7 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: ${{ env.QT_VERSION }}
-          modules: 'qtserialport qtsvg'
+          modules: 'qtserialport'
           cache: true
 
       - name: Restore Qwt cache
@@ -360,7 +363,8 @@ jobs:
           tar xf qwt.tar.bz2
           cd "qwt-${QWT_VERSION}"
           # Use BSD sed in-place form
-          echo "QWT_INSTALL_PREFIX = ${{ github.workspace }}/qwt-install" >> qwtconfig.pri
+          sed -i '' "s|^[[:space:]]*QWT_INSTALL_PREFIX[[:space:]]*=.*|QWT_INSTALL_PREFIX = ${{ github.workspace }}/qwt-install|" qwtconfig.pri
+          sed -i '' -E "/^[[:space:]]*QWT_CONFIG[[:space:]]*\+=[[:space:]]+Qwt(Examples|Playground|Designer|Tests)[[:space:]]*$/d" qwtconfig.pri
           qmake qwt.pro
           make -j"$(sysctl -n hw.ncpu)"
           make install
@@ -426,7 +430,7 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: ${{ env.QT_VERSION }}
-          modules: 'qtserialport qtsvg'
+          modules: 'qtserialport'
           arch: 'win64_msvc2022_64'
           cache: true
 
@@ -455,7 +459,8 @@ jobs:
           tar xf qwt.tar.bz2
           cd "qwt-$env:QWT_VERSION"
           $prefix = "${{ github.workspace }}/qwt-install".Replace('\','/')
-          "QWT_INSTALL_PREFIX = $prefix" | Add-Content qwtconfig.pri
+          (Get-Content qwtconfig.pri) -replace '^\s*QWT_INSTALL_PREFIX\s*=.*', "QWT_INSTALL_PREFIX = $prefix" | Set-Content qwtconfig.pri
+          (Get-Content qwtconfig.pri) | Where-Object { $_ -notmatch '^\s*QWT_CONFIG\s*\+=\s+Qwt(Examples|Playground|Designer|Tests)\s*$' } | Set-Content qwtconfig.pri
           qmake qwt.pro
           nmake
           nmake install
