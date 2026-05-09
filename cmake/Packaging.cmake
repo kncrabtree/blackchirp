@@ -161,6 +161,23 @@ endif()
 # in source-tree workflows and add nothing useful to a binary package.
 set(CPACK_COMPONENTS_ALL Applications)
 
+# CPACK_COMPONENTS_ALL is silently ignored for DEB/RPM unless component-based
+# packaging is enabled, so without these the binary packages bundle every
+# install rule (headers, static libs, CMake export files) regardless of the
+# Applications-only intent above. Release builds compile with `-O3 -g` for
+# crash-symbol capture, and CPACK_STRIP_FILES strips executables but not the
+# `.a` archives, so an uncomponentized package balloons by tens of MB of
+# debug info from libblackchirp-*.a. Per-component packaging restricts the
+# binary to the Applications component, which is what the doc claims.
+set(CPACK_DEB_COMPONENT_INSTALL ON)
+set(CPACK_RPM_COMPONENT_INSTALL ON)
+
+# Drop the per-component "-Applications" suffix that component-install adds
+# to file names; we only ship one component, so the canonical
+# `Blackchirp-<version>-<system>-<arch>.{deb,rpm}` form is more natural.
+set(CPACK_DEBIAN_APPLICATIONS_FILE_NAME "${CPACK_PACKAGE_FILE_NAME}.deb")
+set(CPACK_RPM_APPLICATIONS_FILE_NAME "${CPACK_PACKAGE_FILE_NAME}.rpm")
+
 # Application component
 set(CPACK_COMPONENT_APPLICATIONS_DISPLAY_NAME "Applications")
 set(CPACK_COMPONENT_APPLICATIONS_DESCRIPTION

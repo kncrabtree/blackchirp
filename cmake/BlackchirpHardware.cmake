@@ -113,7 +113,8 @@ endforeach()
 
 # Install Python runtime files alongside the application
 install(FILES ${PYTHON_RUNTIME_FILES}
-        DESTINATION ${CMAKE_INSTALL_DATADIR}/blackchirp)
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/blackchirp
+        COMPONENT Applications)
 
 # Combine all sources
 set(BLACKCHIRP_HARDWARE_SOURCES

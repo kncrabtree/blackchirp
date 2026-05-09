@@ -5,7 +5,7 @@
 
 #include <data/analysis/ft.h>
 
-#include <eigen3/Eigen/Core>
+#include <Eigen/Core>
 
 class PeakFinder : public QObject
 {

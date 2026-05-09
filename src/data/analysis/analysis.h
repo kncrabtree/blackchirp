@@ -8,7 +8,7 @@
 #include <QPair>
 #include <QVector>
 
-#include <eigen3/Eigen/SVD>
+#include <Eigen/SVD>
 
 namespace Analysis {
 

@@ -304,7 +304,10 @@ jobs:
       - name: Build AppImage
         env:
           QML_SOURCES_PATHS: ${{ github.workspace }}/src
-          LD_LIBRARY_PATH: ${{ github.workspace }}/qwt-install/lib
+          # linuxdeploy resolves the binary's dependency closure via ldd, so
+          # Qt and Qwt lib dirs must be on LD_LIBRARY_PATH or it reports the
+          # libs as "not found" and refuses to bundle them.
+          LD_LIBRARY_PATH: ${{ github.workspace }}/qwt-install/lib:${{ env.QT_ROOT_DIR }}/lib
         run: |
           set -euxo pipefail
           ./tools/linuxdeploy-x86_64.AppImage \
@@ -447,7 +450,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/qwt-install
-          key: qwt-${{ env.QWT_VERSION }}-windows-qt${{ env.QT_VERSION }}-msvc-v2
+          key: qwt-${{ env.QWT_VERSION }}-windows-qt${{ env.QT_VERSION }}-msvc-v3
 
       - name: Build Qwt from source
         if: steps.qwt-cache.outputs.cache-hit != 'true'
@@ -464,7 +467,11 @@ jobs:
           cd "qwt-$env:QWT_VERSION"
           $prefix = "${{ github.workspace }}/qwt-install".Replace('\','/')
           (Get-Content qwtconfig.pri) -replace '^\s*QWT_INSTALL_PREFIX\s*=.*', "QWT_INSTALL_PREFIX = $prefix" | Set-Content qwtconfig.pri
-          (Get-Content qwtconfig.pri) -replace '^\s*QWT_INSTALL_HEADERS\s*=.*', 'QWT_INSTALL_HEADERS = $${QWT_INSTALL_PREFIX}/include/qwt6' | Set-Content qwtconfig.pri
+          # PowerShell -replace runs through .NET regex substitution, where $$
+          # collapses to a single literal $. To emit qmake's $${VAR} syntax
+          # verbatim into qwtconfig.pri we need $$$$ here, which substitutes
+          # to $$ in the output.
+          (Get-Content qwtconfig.pri) -replace '^\s*QWT_INSTALL_HEADERS\s*=.*', 'QWT_INSTALL_HEADERS = $$$${QWT_INSTALL_PREFIX}/include/qwt6' | Set-Content qwtconfig.pri
           (Get-Content qwtconfig.pri) | Where-Object { $_ -notmatch '^\s*QWT_CONFIG\s*\+=\s+Qwt(Examples|Playground|Designer|Tests|Framework)\s*$' } | Set-Content qwtconfig.pri
           qmake qwt.pro
           nmake
