@@ -73,12 +73,4 @@ locations using the build identifier embedded in the report header.
 If the same crash recurs reproducibly, attach the most recent report
 and a description of the steps that trigger it.
 
-Disabling the Notification
---------------------------
-
-There is no preference to disable the startup notification. To stop
-the notification from appearing, delete the report files from
-``<savePath>/log/crashes/`` (or move them elsewhere for safekeeping)
-before the next launch.
-
 .. _Blackchirp issue tracker: https://github.com/kncrabtree/blackchirp/issues
