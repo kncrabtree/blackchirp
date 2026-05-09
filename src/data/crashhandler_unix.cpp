@@ -211,7 +211,7 @@ void installPlatformHandlers()
     struct sigaction sa{};
     sa.sa_sigaction = crashHandler;
     sa.sa_flags = SA_SIGINFO | SA_ONSTACK | SA_RESETHAND;
-    ::sigemptyset(&sa.sa_mask);
+    sigemptyset(&sa.sa_mask);
 
     for(int sig : { SIGSEGV, SIGABRT, SIGFPE, SIGILL, SIGBUS })
         ::sigaction(sig, &sa, nullptr);

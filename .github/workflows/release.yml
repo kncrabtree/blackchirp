@@ -57,23 +57,19 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential cmake ninja-build pkg-config \
+            qt6-base-dev libqt6serialport6-dev \
             libgsl-dev libeigen3-dev \
             libudev-dev \
             file dpkg-dev fakeroot
-
-      - name: Install Qt6
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: ${{ env.QT_VERSION }}
-          modules: 'qtserialport'
-          cache: true
 
       - name: Restore Qwt cache
         id: qwt-cache
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/qwt-install
-          key: qwt-${{ env.QWT_VERSION }}-linux-qt${{ env.QT_VERSION }}-v2
+          # Qt version no longer in the key: system Qt is pinned to the
+          # runner's distro Qt, not install-qt-action's QT_VERSION.
+          key: qwt-${{ env.QWT_VERSION }}-ubuntu-noble-sysqt-v1
 
       - name: Build Qwt from source
         if: steps.qwt-cache.outputs.cache-hit != 'true'
@@ -95,6 +91,8 @@ jobs:
           cmake -S . -B build \
             -G Ninja \
             -DCMAKE_BUILD_TYPE=${{ env.CMAKE_BUILD_TYPE }} \
+            -DCMAKE_INSTALL_PREFIX=/usr \
+            -DBC_BUNDLE_QWT=ON \
             -DQWT_ROOT="${{ github.workspace }}/qwt-install" \
             -DCMAKE_PREFIX_PATH="${{ github.workspace }}/qwt-install"
 
@@ -144,41 +142,18 @@ jobs:
             gcc-c++ cmake ninja make pkgconf-pkg-config \
             qt6-base-devel qt6-serialport-devel qt6-tools-devel qt6-svg-devel \
             qt6-base-private-devel \
+            libqwt6-qt6-6_3 qwt6-qt6-devel \
             gsl-devel eigen3-devel \
             libudev-devel \
             rpm-build
 
       - uses: actions/checkout@v5
 
-      - name: Restore Qwt cache
-        id: qwt-cache
-        uses: actions/cache@v5
-        with:
-          path: ${{ github.workspace }}/qwt-install
-          key: qwt-${{ env.QWT_VERSION }}-leap16-qt6-v2
-
-      - name: Build Qwt from source
-        if: steps.qwt-cache.outputs.cache-hit != 'true'
-        run: |
-          set -euxo pipefail
-          curl -L -o qwt.tar.bz2 \
-            "https://sourceforge.net/projects/qwt/files/qwt/${QWT_VERSION}/qwt-${QWT_VERSION}.tar.bz2/download"
-          tar xf qwt.tar.bz2
-          cd "qwt-${QWT_VERSION}"
-          sed -i "s|^[[:space:]]*QWT_INSTALL_PREFIX[[:space:]]*=.*|QWT_INSTALL_PREFIX = ${{ github.workspace }}/qwt-install|" qwtconfig.pri
-          sed -i 's|^[[:space:]]*QWT_INSTALL_HEADERS[[:space:]]*=.*|QWT_INSTALL_HEADERS = $${QWT_INSTALL_PREFIX}/include/qwt6|' qwtconfig.pri
-          sed -i -E "/^[[:space:]]*QWT_CONFIG[[:space:]]*\+=[[:space:]]+Qwt(Examples|Playground|Designer|Tests|Framework)[[:space:]]*$/d" qwtconfig.pri
-          qmake6 qwt.pro
-          make -j"$(nproc)"
-          make install
-
       - name: Configure
         run: |
           cmake -S . -B build \
             -G Ninja \
-            -DCMAKE_BUILD_TYPE=${{ env.CMAKE_BUILD_TYPE }} \
-            -DQWT_ROOT="${{ github.workspace }}/qwt-install" \
-            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/qwt-install"
+            -DCMAKE_BUILD_TYPE=${{ env.CMAKE_BUILD_TYPE }}
 
       - name: Build
         run: cmake --build build -j"$(nproc)"
@@ -186,13 +161,10 @@ jobs:
       - name: Test
         env:
           QT_QPA_PLATFORM: offscreen
-          LD_LIBRARY_PATH: ${{ github.workspace }}/qwt-install/lib
         run: ctest --test-dir build --output-on-failure
 
       - name: Package
         working-directory: build
-        env:
-          LD_LIBRARY_PATH: ${{ github.workspace }}/qwt-install/lib
         run: cpack -G RPM
 
       - name: Upload artifact
@@ -314,7 +286,7 @@ jobs:
             --appdir AppDir \
             --plugin qt \
             --desktop-file AppDir/usr/share/applications/blackchirp.desktop \
-            --icon-file AppDir/usr/share/pixmaps/blackchirp.png \
+            --icon-file AppDir/usr/share/icons/hicolor/256x256/apps/blackchirp.png \
             --output appimage
           mkdir -p dist
           mv Blackchirp*.AppImage dist/

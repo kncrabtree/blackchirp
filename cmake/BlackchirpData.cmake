@@ -239,7 +239,12 @@ target_include_directories(blackchirp-data
 # Dependencies and Linking
 # ============================================================================
 
-# Qt6 dependencies
+# Qt6 dependencies. GSL is PUBLIC because ftworker.h (a public header
+# of blackchirp-data) exposes <gsl/gsl_fft_real.h>, <gsl/gsl_interp.h>,
+# and <gsl/gsl_spline.h>. Linking PRIVATE was invisible on Linux, where
+# GSL lives in /usr/include and resolves through the compiler's default
+# search path, but breaks on Windows with vcpkg, where the include dir
+# only propagates via the IMPORTED target's INTERFACE_INCLUDE_DIRECTORIES.
 target_link_libraries(blackchirp-data
     PUBLIC
         Qt6::Core
@@ -247,7 +252,6 @@ target_link_libraries(blackchirp-data
         Qt6::Network
         Qt6::Concurrent
         Eigen3::Eigen
-    PRIVATE
         GSL::gsl
         GSL::gslcblas
 )

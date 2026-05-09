@@ -236,6 +236,69 @@ set(CPACK_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 set(CPACK_RPM_PACKAGE_AUTOREQ ON)
 
+# ============================================================================
+# Optional: bundle Qwt's shared library inside the package
+# ============================================================================
+
+# No Linux distribution currently ships a Qt6-built Qwt 6.x in its main
+# repos that Ubuntu/Debian deb tooling can resolve (Ubuntu has only the
+# Qt5-era qwt 6.1.4). When BC_BUNDLE_QWT is ON, the package ships
+# libqwt.so* in a private subdir of the libdir and the executables get
+# an RPATH so they find it at runtime. Off by default; enabled by the
+# CI deb job and by anyone packaging on a distro without a Qt6 Qwt
+# package. openSUSE has libqwt6-qt6-6_3 in its standard repos, so the
+# rpm job leaves this off and links against the system Qwt instead.
+option(BC_BUNDLE_QWT
+    "Install Qwt's shared library inside the package and add an RPATH \
+to the executables so they find it. Use on Linux distros that lack a \
+Qt6-compatible Qwt package."
+    OFF)
+
+if(BC_BUNDLE_QWT)
+    if(NOT QWT_LIBRARY)
+        message(FATAL_ERROR
+            "BC_BUNDLE_QWT=ON requires Qwt to have been found "
+            "(QWT_LIBRARY is unset).")
+    endif()
+    if(NOT (UNIX AND NOT APPLE))
+        message(FATAL_ERROR
+            "BC_BUNDLE_QWT is only meaningful on Linux package generators.")
+    endif()
+
+    # Install the realfile and every SONAME symlink. dpkg-shlibdeps and
+    # ld.so look at the binary's NEEDED entry (libqwt.so.<v>), not at the
+    # bare libqwt.so, so the symlinks must travel with the realfile.
+    # Derive the lib basename from QWT_LIBRARY rather than hard-coding
+    # `libqwt`: the from-source qmake build produces libqwt.so* but
+    # distros ship distinct Qt5/Qt6 libs (e.g., openSUSE's libqwt-qt6.so).
+    get_filename_component(_bc_qwt_lib_dir "${QWT_LIBRARY}" DIRECTORY)
+    get_filename_component(_bc_qwt_lib_name "${QWT_LIBRARY}" NAME)
+    string(REGEX REPLACE "\\.so.*$" "" _bc_qwt_lib_base "${_bc_qwt_lib_name}")
+    file(GLOB _bc_qwt_lib_files
+        "${_bc_qwt_lib_dir}/${_bc_qwt_lib_base}.so"
+        "${_bc_qwt_lib_dir}/${_bc_qwt_lib_base}.so.*")
+    if(NOT _bc_qwt_lib_files)
+        message(FATAL_ERROR
+            "BC_BUNDLE_QWT=ON but no ${_bc_qwt_lib_base}.so* found "
+            "under ${_bc_qwt_lib_dir}.")
+    endif()
+    install(FILES ${_bc_qwt_lib_files}
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/blackchirp"
+        COMPONENT Applications)
+
+    # RPATH so the executables resolve the bundled libqwt at runtime.
+    # $ORIGIN is interpreted by ld.so as the directory containing the
+    # binary, so the relative jump out of bin/ and into the libdir is
+    # what reaches the bundle from /usr/bin/blackchirp.
+    foreach(_bc_app blackchirp blackchirp-viewer)
+        if(TARGET ${_bc_app})
+            set_target_properties(${_bc_app} PROPERTIES
+                INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}/blackchirp"
+                BUILD_WITH_INSTALL_RPATH OFF)
+        endif()
+    endforeach()
+endif()
+
 # Include CPack
 include(CPack)
 
