@@ -63,7 +63,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # so the crash-handler stacktraces can be resolved with addr2line / atos
 # / WinDbg against companion .debug / .dSYM / .pdb files captured in
 # CI. Stripping happens at install time in cmake/Packaging.cmake.
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+if(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
     add_compile_options(-Wall -Wextra)
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
         add_compile_options(-O3 -g)

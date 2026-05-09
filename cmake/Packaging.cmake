@@ -100,6 +100,18 @@ elseif(APPLE)
     set(CPACK_DMG_VOLUME_NAME "Blackchirp")
     set(CPACK_DMG_FORMAT "UDZO")
 
+    # Skip the DMG software-license agreement. The DragNDrop generator
+    # turns CPACK_RESOURCE_FILE_LICENSE (set globally above) into an SLA
+    # resource that hdiutil prompts the user to accept on every mount.
+    # That blocks non-interactive CI smoke tests — hdiutil prints the
+    # license, fails to read a Y/N answer from a runner with no TTY, and
+    # returns `attach canceled` — and is unusual for permissively-
+    # licensed macOS apps where the license lives inside the .app bundle
+    # already. The deb/rpm/NSIS packages keep their license dialog via
+    # the generic CPACK_RESOURCE_FILE_LICENSE; CPACK_DMG_SLA_USE_RESOURCE_FILE_LICENSE
+    # is the per-generator opt-in that the DragNDrop generator gates on.
+    set(CPACK_DMG_SLA_USE_RESOURCE_FILE_LICENSE OFF)
+
     # Bundle metadata is set on the executable targets via MACOSX_BUNDLE_*
     # properties (see BlackchirpApplication.cmake / BlackchirpViewerApplication.cmake).
     # The DragNDrop generator picks those up automatically; no CPACK_BUNDLE_*

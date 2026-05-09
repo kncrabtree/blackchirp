@@ -642,14 +642,15 @@ jobs:
       - name: Capture symbols
         shell: pwsh
         # MSVC's /Zi + /DEBUG (set in CMakeLists.txt for Release builds)
-        # writes a .pdb alongside each .exe. Rename to drop the version
-        # suffix so the manifest's `name` matches the binary the user
-        # actually invokes.
+        # writes a .pdb alongside each .exe. CMake's VERSION target
+        # property suffixes the executable name on Linux and the macOS
+        # bundle binary, but is a no-op for Windows .exe / .pdb output —
+        # so the file is just `blackchirp.pdb`, not `blackchirp-X.Y.Z.pdb`.
         run: |
           $ErrorActionPreference = 'Stop'
           New-Item -ItemType Directory -Path symbols -Force | Out-Null
-          Copy-Item "build/blackchirp-${{ env.BC_VERSION }}.pdb" symbols/blackchirp.pdb
-          Copy-Item "build/blackchirp-viewer-${{ env.BC_VERSION }}.pdb" symbols/blackchirp-viewer.pdb
+          Copy-Item "build/blackchirp.pdb" symbols/blackchirp.pdb
+          Copy-Item "build/blackchirp-viewer.pdb" symbols/blackchirp-viewer.pdb
           $files = @()
           foreach ($f in Get-ChildItem symbols/*.pdb) {
               $sha = (Get-FileHash -Algorithm SHA256 $f.FullName).Hash.ToLower()
@@ -766,7 +767,14 @@ jobs:
           sudo apt-get update
           # libfuse2 is the AppImage runtime requirement; without it the
           # AppImage can't self-mount and falls back to extract-and-run.
-          sudo apt-get install -y --no-install-recommends libfuse2
+          # libopengl0 / libegl1 / libgl1 cover libglvnd's vendor-neutral
+          # GL stack — linuxdeploy treats them as "core" distro libs and
+          # excludes them from the bundle on the assumption that every
+          # target system has them, which is not true for headless CI
+          # runners. The dynamic linker fails before main() runs without
+          # them, regardless of whether the invocation needs OpenGL.
+          sudo apt-get install -y --no-install-recommends \
+            libfuse2 libopengl0 libegl1 libgl1
       - name: Run --version
         run: |
           AI=$(ls Blackchirp-*.AppImage | head -1)
@@ -789,9 +797,14 @@ jobs:
           DMG=$(ls Blackchirp-*.dmg | head -1)
           # -nobrowse keeps the volume out of Finder; -mountpoint pins the
           # path so we don't have to scrape `hdiutil info` for it.
+          # `yes |` defensively answers any DMG software-license agreement
+          # prompt; the SLA itself is suppressed in cmake/Packaging.cmake
+          # via CPACK_DMG_SLA_USE_RESOURCE_FILE_LICENSE=OFF, but pipe the
+          # `Y` stream anyway so the smoke test stays robust if the SLA
+          # mechanism comes back.
           MNT=/tmp/bc-mount
           mkdir -p "$MNT"
-          hdiutil attach "$DMG" -nobrowse -mountpoint "$MNT"
+          yes | hdiutil attach "$DMG" -nobrowse -mountpoint "$MNT"
           cp -R "$MNT/blackchirp.app" /tmp/
           cp -R "$MNT/blackchirp-viewer.app" /tmp/
           hdiutil detach "$MNT"

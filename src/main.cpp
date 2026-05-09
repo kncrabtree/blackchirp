@@ -11,10 +11,11 @@
 #include <data/processing/parsers/xiamparser.h>
 #include <data/processing/parsers/genericxyparser.h>
 
+#include <cstdio>
+#include <cstring>
 #include <memory>
 
 #include <QApplication>
-#include <QCommandLineParser>
 #include <QMessageBox>
 #include <QDir>
 #include <QSharedMemory>
@@ -34,7 +35,6 @@
 #endif
 
 #ifdef Q_OS_WIN
-#include <cstdio>
 #include <windows.h>
 #endif
 
@@ -43,9 +43,6 @@
 
 int main(int argc, char *argv[])
 {
-#ifdef Q_OS_UNIX
-    signal(SIGPIPE,SIG_IGN);
-#endif
 #ifdef Q_OS_WIN
     // GUI-subsystem binaries don't inherit a console, so stdout from
     // --version / --help disappears unless we reattach to the parent
@@ -58,30 +55,41 @@ int main(int argc, char *argv[])
     }
 #endif
 
+    // Handle --version / --help before constructing QApplication. The
+    // QApplication ctor loads a Qt platform plugin (xcb on Linux), which
+    // aborts on a display-less host — the early return lets users run
+    // `blackchirp --version` from a deb postinst script, an SSH session,
+    // or a CI container without setting QT_QPA_PLATFORM=offscreen. The
+    // version string embeds BC_BUILD_VERSION (git SHA at compile time)
+    // so users can quote it in bug reports and CI smoke tests can match
+    // it against the symbol-artifact manifests.
+    for (int i = 1; i < argc; ++i) {
+        const char *arg = argv[i];
+        if (std::strcmp(arg, "--version") == 0 || std::strcmp(arg, "-v") == 0) {
+            std::printf("blackchirp %d.%d.%d-%s (build %s)\n",
+                        BC_MAJOR_VERSION, BC_MINOR_VERSION, BC_PATCH_VERSION,
+                        BC_STRINGIFY(BC_RELEASE_VERSION), BC_BUILD_VERSION);
+            return 0;
+        }
+        if (std::strcmp(arg, "--help") == 0 || std::strcmp(arg, "-h") == 0) {
+            std::printf(
+                "Usage: blackchirp [options]\n"
+                "CP-FTMW spectroscopy data acquisition\n\n"
+                "Options:\n"
+                "  -h, --help     Display this help.\n"
+                "  -v, --version  Display version information.\n");
+            return 0;
+        }
+    }
+
+#ifdef Q_OS_UNIX
+    signal(SIGPIPE,SIG_IGN);
+#endif
+
     QApplication a(argc, argv);
 #if QT_VERSION <= 0x060000
     QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
 #endif
-
-    // Handle --version / --help before any setup runs (crash handler,
-    // QSharedMemory single-instance lock, first-run config dialog) so
-    // informational invocations never touch persistent state. The version
-    // string embeds BC_BUILD_VERSION (git SHA at compile time) so users
-    // can quote it in bug reports and CI smoke tests can confirm the
-    // binary launches without crashing.
-    QCoreApplication::setApplicationVersion(QString::fromLatin1(
-        "%1.%2.%3-%4 (build %5)")
-        .arg(BC_MAJOR_VERSION).arg(BC_MINOR_VERSION).arg(BC_PATCH_VERSION)
-        .arg(QLatin1StringView(BC_STRINGIFY(BC_RELEASE_VERSION)))
-        .arg(QLatin1StringView(BC_BUILD_VERSION)));
-    {
-        QCommandLineParser parser;
-        parser.setApplicationDescription(
-            QStringLiteral("CP-FTMW spectroscopy data acquisition"));
-        parser.addHelpOption();
-        parser.addVersionOption();
-        parser.process(a);
-    }
 
     CrashHandler::install();
 
