@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'release' || inputs.run_linux_deb
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install system dependencies
         run: |
@@ -65,12 +65,12 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: ${{ env.QT_VERSION }}
-          modules: 'qtserialport'
+          modules: 'qtserialport qtsvg'
           cache: true
 
       - name: Restore Qwt cache
         id: qwt-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/qwt-install
           key: qwt-${{ env.QWT_VERSION }}-linux-qt${{ env.QT_VERSION }}
@@ -83,7 +83,7 @@ jobs:
             "https://sourceforge.net/projects/qwt/files/qwt/${QWT_VERSION}/qwt-${QWT_VERSION}.tar.bz2/download"
           tar xf qwt.tar.bz2
           cd "qwt-${QWT_VERSION}"
-          sed -i "s|^QWT_INSTALL_PREFIX.*=.*|QWT_INSTALL_PREFIX=${{ github.workspace }}/qwt-install|" qwtconfig.pri
+          echo "QWT_INSTALL_PREFIX = ${{ github.workspace }}/qwt-install" >> qwtconfig.pri
           qmake6 qwt.pro
           make -j"$(nproc)"
           make install
@@ -140,17 +140,17 @@ jobs:
           zypper -n install -y \
             git tar gzip bzip2 curl gawk sed grep \
             gcc-c++ cmake ninja make pkgconf-pkg-config \
-            qt6-base-devel qt6-serialport-devel qt6-tools-devel \
+            qt6-base-devel qt6-serialport-devel qt6-tools-devel qt6-svg-devel \
             qt6-base-private-devel \
             gsl-devel eigen3-devel \
             libudev-devel \
             rpm-build
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Restore Qwt cache
         id: qwt-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/qwt-install
           key: qwt-${{ env.QWT_VERSION }}-leap16-qt6
@@ -163,7 +163,7 @@ jobs:
             "https://sourceforge.net/projects/qwt/files/qwt/${QWT_VERSION}/qwt-${QWT_VERSION}.tar.bz2/download"
           tar xf qwt.tar.bz2
           cd "qwt-${QWT_VERSION}"
-          sed -i "s|^QWT_INSTALL_PREFIX.*=.*|QWT_INSTALL_PREFIX=${{ github.workspace }}/qwt-install|" qwtconfig.pri
+          echo "QWT_INSTALL_PREFIX = ${{ github.workspace }}/qwt-install" >> qwtconfig.pri
           qmake6 qwt.pro
           make -j"$(nproc)"
           make install
@@ -228,7 +228,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'release' || inputs.run_linux_appimage
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install system dependencies
         run: |
@@ -242,12 +242,12 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: ${{ env.QT_VERSION }}
-          modules: 'qtserialport'
+          modules: 'qtserialport qtsvg'
           cache: true
 
       - name: Restore Qwt cache
         id: qwt-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/qwt-install
           key: qwt-${{ env.QWT_VERSION }}-linux-qt${{ env.QT_VERSION }}
@@ -260,7 +260,7 @@ jobs:
             "https://sourceforge.net/projects/qwt/files/qwt/${QWT_VERSION}/qwt-${QWT_VERSION}.tar.bz2/download"
           tar xf qwt.tar.bz2
           cd "qwt-${QWT_VERSION}"
-          sed -i "s|^QWT_INSTALL_PREFIX.*=.*|QWT_INSTALL_PREFIX=${{ github.workspace }}/qwt-install|" qwtconfig.pri
+          echo "QWT_INSTALL_PREFIX = ${{ github.workspace }}/qwt-install" >> qwtconfig.pri
           qmake6 qwt.pro
           make -j"$(nproc)"
           make install
@@ -330,7 +330,7 @@ jobs:
     runs-on: macos-latest
     if: github.event_name == 'release' || inputs.run_macos
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install system dependencies
         run: |
@@ -341,12 +341,12 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: ${{ env.QT_VERSION }}
-          modules: 'qtserialport'
+          modules: 'qtserialport qtsvg'
           cache: true
 
       - name: Restore Qwt cache
         id: qwt-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/qwt-install
           key: qwt-${{ env.QWT_VERSION }}-macos-qt${{ env.QT_VERSION }}
@@ -360,7 +360,7 @@ jobs:
           tar xf qwt.tar.bz2
           cd "qwt-${QWT_VERSION}"
           # Use BSD sed in-place form
-          sed -i '' "s|^QWT_INSTALL_PREFIX.*=.*|QWT_INSTALL_PREFIX=${{ github.workspace }}/qwt-install|" qwtconfig.pri
+          echo "QWT_INSTALL_PREFIX = ${{ github.workspace }}/qwt-install" >> qwtconfig.pri
           qmake qwt.pro
           make -j"$(sysctl -n hw.ncpu)"
           make install
@@ -411,7 +411,7 @@ jobs:
     runs-on: windows-latest
     if: github.event_name == 'release' || inputs.run_windows
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up MSVC environment
         uses: ilammy/msvc-dev-cmd@v1
@@ -426,7 +426,7 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: ${{ env.QT_VERSION }}
-          modules: 'qtserialport'
+          modules: 'qtserialport qtsvg'
           arch: 'win64_msvc2022_64'
           cache: true
 
@@ -436,7 +436,7 @@ jobs:
 
       - name: Restore Qwt cache
         id: qwt-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/qwt-install
           key: qwt-${{ env.QWT_VERSION }}-windows-qt${{ env.QT_VERSION }}-msvc
@@ -446,11 +446,16 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          Invoke-WebRequest -Uri "https://sourceforge.net/projects/qwt/files/qwt/$env:QWT_VERSION/qwt-$env:QWT_VERSION.tar.bz2/download" -OutFile qwt.tar.bz2
+          curl.exe -L -o qwt.tar.bz2 "https://sourceforge.net/projects/qwt/files/qwt/$env:QWT_VERSION/qwt-$env:QWT_VERSION.tar.bz2/download"
+          $size = (Get-Item qwt.tar.bz2).Length
+          if ($size -lt 1MB) {
+            Write-Error "Qwt download is $size bytes - likely a SourceForge HTML interstitial, not the archive"
+            exit 1
+          }
           tar xf qwt.tar.bz2
           cd "qwt-$env:QWT_VERSION"
           $prefix = "${{ github.workspace }}/qwt-install".Replace('\','/')
-          (Get-Content qwtconfig.pri) -replace '^QWT_INSTALL_PREFIX.*=.*', "QWT_INSTALL_PREFIX=$prefix" | Set-Content qwtconfig.pri
+          "QWT_INSTALL_PREFIX = $prefix" | Add-Content qwtconfig.pri
           qmake qwt.pro
           nmake
           nmake install
