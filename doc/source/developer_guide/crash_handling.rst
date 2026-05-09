@@ -180,3 +180,45 @@ tree:
 
 The freshly-built unstripped ``blackchirp`` binary in ``build/`` can
 then be passed to ``addr2line`` to resolve the crash report.
+
+Fetching CI symbol artifacts
+----------------------------
+
+Each CI run that produces a release binary also captures companion
+debug-info files into a separate ``blackchirp-symbols-<platform>``
+workflow artifact. This is the preferred symbol source for crashes
+against shipped builds: the artifact is built from the same commit
+the user is running, with the same compiler and flags, so the
+addresses in the crash log line up exactly.
+
+Symbol artifacts are workflow artifacts, **not** release assets:
+they are bulky and contain enough information to reverse-engineer
+the application internals. Retention is 90 days from the workflow
+run date.
+
+The release-build workflow is ``.github/workflows/release.yml`` in
+the source repository. Each platform job adds a ``Capture symbols``
+step after ``cmake --build`` that runs the platform-appropriate
+extraction tool — ``objcopy --only-keep-debug`` (Linux),
+``dsymutil`` (macOS), or copies the ``.pdb`` files MSVC has already
+written alongside the ``.exe`` (Windows) — and uploads the result
+as a separate artifact. Each artifact also contains a
+``symbols-manifest.json`` listing the platform tag, the workflow's
+git SHA, the run ID, and a list of ``{name, sha256}`` entries so a
+triager can verify they downloaded the right artifact.
+
+To fetch:
+
+.. code-block:: console
+
+   $ git_sha=$(sed -n 's/.*(build \([a-f0-9]\+\)).*/\1/p' crash.log | head -1)
+   $ run_id=$(gh run list --workflow=release.yml --commit=$git_sha \
+                          --json databaseId --jq '.[0].databaseId')
+   $ gh run download $run_id --name blackchirp-symbols-<platform>
+
+Where ``<platform>`` is one of ``linux-deb``, ``linux-rpm``,
+``linux-appimage``, ``macos``, or ``windows-nsis``. The downloaded
+files plug directly into the resolution steps above (Linux:
+``addr2line -e <basename>.debug``; macOS: ``atos -o
+<basename>.dSYM/Contents/Resources/DWARF/<binary>``; Windows: open
+the ``.dmp`` in WinDbg with ``<basename>.pdb`` on the symbol path).

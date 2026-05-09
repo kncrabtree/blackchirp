@@ -97,45 +97,19 @@ needs async), or evidence in production that the QPointer guard in
 
 ## Pre-Release
 
-### [Crash Reporting](crash-reporting.md)
-
-End-user crash diagnostics for stripped release builds. POSIX (Linux +
-macOS) installs `sigaction` handlers that capture a `std::stacktrace`
-and write a text crash log under `<savePath>/log/crashes/`; Windows
-installs `SetUnhandledExceptionFilter` and emits a minidump via
-`MiniDumpWriteDump`. Symbols (`.debug`, `.dSYM`, `.pdb`) are kept
-developer-side as 90-day GitHub Actions workflow artifacts — never
-shipped to users — and resolved against a crash log's embedded git
-SHA via `addr2line` / `atos` / WinDbg.
-
-In-process pieces have landed: `src/data/crashhandler.{h,cpp}` plus
-the `_unix.cpp` and `_win.cpp` per-platform implementations; install
-+ reopen + setActiveExperiment wired through `main.cpp`,
-`BCSavePathWidget`, and `AcquisitionManager`; startup detection of
-prior crashes via `CrashReportDialog`; and Sphinx user-guide and
-developer-triage pages (`user_guide/crash_reports.rst`,
-`developer_guide/crash_handling.rst`). Release builds now keep `-g`
-/ `/Zi` so the captured frames resolve. Verified on Linux against a
-null-pointer deref triggered from the About dialog.
-
-The remaining piece is the CI symbol-capture step in
-`.github/workflows/release.yml` (Phase 3 of `crash-reporting.md`).
-That step lands after the packaging-and-ci verification settles since
-it edits the same workflow file. See `crash-reporting.md` for the
-phase table and triage runbook.
-
 ### [Packaging and Binary Generation (Github Actions)](packaging-and-ci.md)
 
-CMake-side work is complete: `cmake/Packaging.cmake` produces release-only DEB,
-RPM, DMG, NSIS, and TGZ/ZIP packages via CPack; `cmake/QtDeployment.cmake` wires
-`windeployqt`/`macdeployqt` as install hooks; and `.github/workflows/release.yml`
-defines five jobs (linux-deb, linux-rpm, linux-appimage, macos-dmg, windows-nsis)
-triggered by `workflow_dispatch` and `release: published`. **Remaining work is
-testing and verification**: dispatch the workflow per-platform, iterate on
-first-run issues (likely candidates: linuxdeploy library paths, macdeployqt's
-Qwt resolution, windeployqt's runtime DLLs), and confirm the resulting packages
-launch on clean VMs. See `packaging-and-ci.md` for the full strategy reference,
-file map, and acceptance criteria.
+`.github/workflows/release.yml` produces release-only DEB, RPM,
+AppImage, DMG, and NSIS packages via CPack + linuxdeploy. Five
+`*-smoke` jobs install each artifact in a clean container or fresh
+runner and verify `--version` exits cleanly. CI symbol capture
+(`.debug` / `.dSYM` / `.pdb` per platform, with a per-platform
+`symbols-manifest.json`) ships as separate 90-day workflow artifacts
+keyed on the build's git SHA. **Remaining work** is the manual
+clean-VM acceptance pass on each artifact (the smoke tests cover
+`--version` only; full UI launch on a fresh OS install is still
+worth the spot-check before alpha tag). See `packaging-and-ci.md` for
+the strategy reference and per-round debugging history.
 
 ## Cleanups
 
@@ -170,6 +144,15 @@ The same Ubuntu-noble apt-Qt 6.4.2 ceiling that forces the
 `hwLog`-family workaround is what forces this one. When the deb-job
 Qt rolls forward to >= 6.5, drop the `.toString()` call and remove
 the inline comment.
+
+### Long-tail symbol storage
+
+GitHub workflow artifacts cap at ~90 days. Crashes against older
+releases lose easy symbol access once that window closes. If
+long-tail support matters post-alpha, publish the symbol artifacts
+to a private S3 bucket on every release-tag run, or attach them to
+the release as password-protected ZIPs. Tracked here so the
+decision surfaces if a triager hits a stale-symbols wall.
 
 ### MSVC cosmetic warnings
 

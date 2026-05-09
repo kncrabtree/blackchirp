@@ -681,17 +681,41 @@ inflate the package size.
 
 The Qt redistribution path differs by platform:
 
-* **Linux** — Qt comes from the system package manager; the
-  shlibdeps/AUTOREQ machinery records the dependency.
+* **Linux deb / rpm** — Qt comes from the system package manager;
+  ``dpkg-shlibdeps`` (deb) and RPM ``AUTOREQ`` (rpm) record the
+  dependency from the linked ``.so`` references.
 * **Windows / macOS** — ``cmake/QtDeployment.cmake`` provides
   ``blackchirp_deploy_qt(<target>)``, an ``install(CODE)`` hook that
   locates ``windeployqt`` or ``macdeployqt`` from
   ``Qt6::qmake``'s ``IMPORTED_LOCATION`` and runs it against the
   staged binary at install time. Each application module calls this
-  function once after its ``install(TARGETS ...)`` rule.
+  function once after its ``install(TARGETS ...)`` rule. On macOS the
+  hook additionally derives ``-libpath=`` from ``QWT_LIBRARY`` so
+  ``macdeployqt`` can locate a from-source libqwt and bundle it into
+  ``Contents/Frameworks/`` — qmake's macOS build leaves the dylib's
+  install_name pointing at ``/usr/lib/...`` which doesn't exist on
+  the build host.
 * **AppImage** — built outside CPack with ``linuxdeploy`` plus the
   ``linuxdeploy-plugin-qt`` plugin, which walks the executable's
   shared-library closure and bundles everything needed.
+
+The ``BC_BUNDLE_QWT`` option
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``cmake/Packaging.cmake`` defines a ``BC_BUNDLE_QWT`` option (default
+``OFF``). When enabled, the package ships ``libqwt.so*`` inside its
+private ``${CMAKE_INSTALL_LIBDIR}/blackchirp/`` directory and the
+executables get an ``$ORIGIN/../<libdir>/blackchirp`` ``INSTALL_RPATH``
+so they find the bundled lib at runtime. Use this on Linux distros
+that lack a Qt6-compatible Qwt package — currently Debian/Ubuntu;
+openSUSE has ``libqwt6-qt6`` in its standard repos.
+
+The library's basename is derived from ``QWT_LIBRARY`` rather than
+hard-coded as ``libqwt.so``, so distributions that rename the Qt6
+build (such as openSUSE's ``libqwt-qt6.so``) work without further
+configuration. The realfile and every SONAME symlink are installed
+together because ``dpkg-shlibdeps`` and ``ld.so`` look up the
+binary's ``NEEDED`` entry, which references the SONAME.
 
 CPack convenience targets exposed by ``Packaging.cmake``:
 
@@ -737,7 +761,41 @@ a single platform can be re-run in isolation while iterating on a CI
 issue) and ``release: published`` (every job builds and uploads its
 artifact, then ``gh release upload --clobber`` attaches it to the
 release). Each job follows the same shape: install system dependencies,
-install Qt 6.9.1 via ``jurplel/install-qt-action@v4``, restore-or-build
-Qwt 6.3.0 from the SourceForge tarball (cached per-OS by Qt and Qwt
-version), then ``cmake → cmake --build → ctest → cpack`` (or
+install Qt (see below), restore-or-build Qwt 6.3.0 from the SourceForge
+tarball (cached per-OS by Qt and Qwt version), then
+``cmake → cmake --build → ctest → cpack`` (or
 ``linuxdeploy`` for the AppImage), then upload.
+
+Qt and Qwt sourcing differ across jobs because the package generators
+have different visibility constraints. ``dpkg-shlibdeps`` reads
+Debian's ``*.shlibs`` database, which only contains entries for libs
+installed from apt — so the deb job uses apt's ``qt6-base-dev``
+(currently Qt 6.4.2 on ubuntu-noble) rather than
+``install-qt-action``'s Qt 6.9.1. Because Ubuntu has no Qt6-compatible
+Qwt package, the deb job builds Qwt from source and ships it inside
+the package via ``BC_BUNDLE_QWT=ON``. The rpm job uses openSUSE's
+``qt6-base-devel`` and ``qwt6-qt6-devel`` from the standard repos, so
+RPM ``AUTOREQ`` derives both Qt and Qwt requirements without any
+bundling. The other three jobs use ``install-qt-action``'s Qt 6.9.1
+and from-source Qwt because no system Qwt is reliable on Homebrew,
+vcpkg, or older Ubuntu LTS.
+
+Symbol capture and smoke tests
+""""""""""""""""""""""""""""""
+
+After ``cmake --build`` and before ``cpack``, each build job extracts
+debug info into a ``symbols/`` directory and uploads it as a separate
+``blackchirp-symbols-<platform>`` artifact (90-day retention). See
+:doc:`crash_handling` for the per-platform extraction tools and the
+triage flow for downloading the right artifact set against a crash
+log's embedded build SHA.
+
+Five companion ``*-smoke`` jobs depend on the build jobs. Each
+downloads the just-built artifact, installs it in a clean container or
+fresh runner (``ubuntu:noble`` for deb, ``opensuse/tumbleweed:latest``
+for rpm, ``ubuntu-latest`` for AppImage, fresh ``macos-latest`` and
+``windows-latest`` for the bundled apps), and runs ``--version`` on
+both ``blackchirp`` and ``blackchirp-viewer``. A failure here means
+the package is missing a bundled lib, has a broken RPATH, or
+otherwise can't launch on a clean machine — ahead of the artifact
+reaching a user.
