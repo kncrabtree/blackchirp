@@ -1,4 +1,7 @@
 #include "experimenttypepage.h"
+
+#include <climits>
+
 #include <hardware/core/runtimehardwareconfig.h>
 #include <hardware/core/ftmwdigitizer/ftmwscope.h>
 
@@ -62,7 +65,7 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
 
 
     p_ftmwShotsBox = new QSpinBox(this);
-    p_ftmwShotsBox->setRange(1,__INT_MAX__);
+    p_ftmwShotsBox->setRange(1,INT_MAX);
     p_ftmwShotsBox->setToolTip(QString("Number of FIDs to average.\n"
                                        "When this number is reached, the experiment ends in Target Shots mode, while an exponentially weighted moving average engages in Peak Up mode.\n\n"
                                        "If this box is disabled, it is either irrelevant or will be configured on a later page (e.g. in LO/DR Scan mode)."));
@@ -86,7 +89,7 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     durl->setSpacing(6);
 
     p_ftmwTargetDurationBox = new QSpinBox(this);
-    p_ftmwTargetDurationBox->setRange(1,__INT_MAX__);
+    p_ftmwTargetDurationBox->setRange(1,INT_MAX);
     p_ftmwTargetDurationBox->setSingleStep(30);
     p_ftmwTargetDurationBox->setSuffix(" min");
     p_ftmwTargetDurationBox->setToolTip(QString("Duration of experiment in Target Duration mode."));
@@ -172,7 +175,7 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
 
     auto *sgb = new QGroupBox(QString("Common Settings"));
     p_auxDataIntervalBox = new QSpinBox(this);
-    p_auxDataIntervalBox->setRange(5,__INT_MAX__);
+    p_auxDataIntervalBox->setRange(5,INT_MAX);
     p_auxDataIntervalBox->setSingleStep(300);
     p_auxDataIntervalBox->setSuffix(QString(" s"));
     p_auxDataIntervalBox->setToolTip(QString("Interval for auxilliary data readings (e.g., flows, pressure, etc.)"));

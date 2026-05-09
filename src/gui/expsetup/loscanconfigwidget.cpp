@@ -1,5 +1,7 @@
 #include "loscanconfigwidget.h"
 
+#include <climits>
+
 using namespace BC::Key::WizLoScan;
 
 #include <QGroupBox>
@@ -169,7 +171,7 @@ LOScanConfigWidget::LOScanConfigWidget(Experiment *exp, QWidget *parent)
     auto *fl = new QFormLayout;
 
     p_shotsPerStepBox = new QSpinBox;
-    p_shotsPerStepBox->setRange(1,__INT_MAX__);
+    p_shotsPerStepBox->setRange(1,INT_MAX);
     p_shotsPerStepBox->setSingleStep(1000);
     p_shotsPerStepBox->setValue(get(shots,1000));
     p_shotsPerStepBox->setToolTip(QString("Number of shots to acquire at each step (major and minor)."));
@@ -180,7 +182,7 @@ LOScanConfigWidget::LOScanConfigWidget(Experiment *exp, QWidget *parent)
     fl->addRow(lbl,p_shotsPerStepBox);
 
     p_targetSweepsBox = new QSpinBox;
-    p_targetSweepsBox->setRange(1,__INT_MAX__);
+    p_targetSweepsBox->setRange(1,INT_MAX);
     p_targetSweepsBox->setValue(get(sweeps,1));
     p_targetSweepsBox->setToolTip(QString("Number of sweeps through the total LO range.\nExperiment will end when this number is reached."));
     lbl = new QLabel(QString("Target Sweeps"));

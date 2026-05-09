@@ -1,5 +1,7 @@
 #include "digitizerconfigwidget.h"
 
+#include <climits>
+
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QFormLayout>
@@ -133,7 +135,7 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
     auto hfl = new QFormLayout;
 
     p_recLengthBox = new QSpinBox;
-    p_recLengthBox->setRange(1,s.get(maxRecordLength,__INT_MAX__));
+    p_recLengthBox->setRange(1,s.get(maxRecordLength,INT_MAX));
     p_recLengthBox->setValue(s.get(recLen,1));
 
     p_sampleRateBox = new QComboBox;
@@ -246,7 +248,7 @@ On Tektronix scopes, this will be done using FastFrame with a summary frame.
 For most scopes, this option is mutually exclusive with "Multiple Records" mode, which returns each individual record without averaging.)"));
 
     p_numAveragesBox = new QSpinBox;
-    p_numAveragesBox->setRange(1,s.get(maxAverages,__INT_MAX__));
+    p_numAveragesBox->setRange(1,s.get(maxAverages,INT_MAX));
     p_numAveragesBox->setValue(s.get(numAvg,1));
     p_numAveragesBox->setEnabled(false);
     p_numAveragesBox->setToolTip(QString(R"(Number of records to average. If 1, averaging will be disabled.
@@ -259,7 +261,7 @@ For most scopes, this option is mutually exclusive with "Block Average" mode, wh
 
 
     p_numRecordsBox = new QSpinBox;
-    p_numRecordsBox->setRange(1,s.get(maxRecords,__INT_MAX__));
+    p_numRecordsBox->setRange(1,s.get(maxRecords,INT_MAX));
     p_numRecordsBox->setValue(s.get(multiRecNum,1));
     p_numRecordsBox->setEnabled(false);
     p_numRecordsBox->setToolTip(QString(R"(Number of records to acquire. If 1, this feature will be disabled.

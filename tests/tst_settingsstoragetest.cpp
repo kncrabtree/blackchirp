@@ -1,5 +1,6 @@
 #include <QtTest>
 #include <QCoreApplication>
+#include <QSettings>
 
 #include <src/data/storage/settingsstorage.h>
 
@@ -67,7 +68,10 @@ private:
 class DestructorTest : public SettingsStorage
 {
 public:
-    DestructorTest() : SettingsStorage("CrabtreeLab","BlackchirpTest",{},General) {
+    // Use the explicit-org/app SettingsStorage ctor with a test-only
+    // organization name so the test never reads or writes the user's
+    // real Blackchirp settings, regardless of platform.
+    DestructorTest() : SettingsStorage("CrabtreeLabTest","BlackchirpTest",{},General) {
         registerGetter("destructTest",this,&DestructorTest::desructGetter);
     }
     virtual ~DestructorTest(){};
@@ -80,11 +84,17 @@ private:
 
 Q_DECLARE_METATYPE(SettingsStorageTest::TestEnum)
 
-SettingsStorageTest::SettingsStorageTest() : SettingsStorage("CrabtreeLab","BlackchirpTest",{},General)
+// All QSettings instances in the test target the "CrabtreeLabTest"
+// organization, so the test never reads or writes the user's real
+// Blackchirp settings under "CrabtreeLab". The QCoreApplication
+// globals are set to match so any 0-arg QSettings() constructed
+// during the test (e.g., inside SettingsStorage's helpers) resolves
+// to the same domain on every platform.
+SettingsStorageTest::SettingsStorageTest() : SettingsStorage("CrabtreeLabTest","BlackchirpTest",{},General)
 {
     QCoreApplication::setApplicationName("BlackchirpTest");
-    QCoreApplication::setOrganizationName("CrabtreeLab");
-    QCoreApplication::setOrganizationDomain("crabtreelab.ucdavis.edu");
+    QCoreApplication::setOrganizationName("CrabtreeLabTest");
+    QCoreApplication::setOrganizationDomain("test.crabtreelab.ucdavis.edu");
 
 }
 
@@ -100,7 +110,13 @@ void SettingsStorageTest::initTestCase()
 
 void SettingsStorageTest::cleanupTestCase()
 {
-
+    // Wipe the test organization's settings so subsequent runs start
+    // from a clean state. This stays inside "CrabtreeLabTest" and
+    // never touches the user's real Blackchirp config.
+    QSettings cleanup("CrabtreeLabTest","BlackchirpTest");
+    cleanup.setFallbacksEnabled(false);
+    cleanup.clear();
+    cleanup.sync();
 }
 
 void SettingsStorageTest::testBaseRead()
@@ -338,8 +354,13 @@ void SettingsStorageTest::testDestruction()
 
 void SettingsStorageTest::initSettingsFile()
 {
-    //clear out any existing settings
-    QSettings s;
+    // Construct with the same explicit org/app as the test class's own
+    // d_settings so both QSettings instances resolve to the same domain
+    // on every platform — mixing the 0-arg form here with the 2-arg
+    // form inside SettingsStorage produced two different CFPreferences
+    // domains on macOS (Qt's 0-arg ctor prefers organizationDomain
+    // there, while 2-arg uses the literal arg).
+    QSettings s("CrabtreeLabTest","BlackchirpTest");
     s.setFallbacksEnabled(false);
     s.clear();
     s.sync();

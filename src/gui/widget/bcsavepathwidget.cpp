@@ -1,4 +1,7 @@
 #include "bcsavepathwidget.h"
+
+#include <climits>
+
 #include <gui/style/themecolors.h>
 #include <data/crashhandler.h>
 
@@ -55,7 +58,7 @@ When "Apply" is pressed, the directory you have chosen will be created if it doe
     elbl->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
 
     p_expBox = new QSpinBox;
-    p_expBox->setRange(1, __INT_MAX__);
+    p_expBox->setRange(1, INT_MAX);
     p_expBox->setValue(get(BC::Key::exptNum, 0) + 1);
 
     auto hbl2 = new QHBoxLayout;

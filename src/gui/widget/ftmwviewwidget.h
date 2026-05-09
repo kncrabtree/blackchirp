@@ -1,6 +1,8 @@
 #ifndef FTMWVIEWWIDGET_H
 #define FTMWVIEWWIDGET_H
 
+#include <climits>
+
 #include <QWidget>
 #include <QtCore/QVariant>
 #include <QAction>
@@ -325,7 +327,7 @@ public:
         auto peakupWidget = new QWidget;
         auto peakupFl = new QFormLayout;
         averagesSpinbox = new QSpinBox;
-        averagesSpinbox->setRange(1,__INT_MAX__);
+        averagesSpinbox->setRange(1,INT_MAX);
         averagesSpinbox->setEnabled(false);
         averagesSpinbox->setSingleStep(25);
         averagesSpinbox->setKeyboardTracking(false);

@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     a.setFont(f);
 
     {
-        QSettings vset{QCoreApplication::organizationName(), QCoreApplication::applicationName()};
+        QSettings vset;
         vset.setFallbacksEnabled(false);
         vset.beginGroup(BC::Key::BC);
         vset.setValue(BC::Key::versionMajor, BC_MAJOR_VERSION);

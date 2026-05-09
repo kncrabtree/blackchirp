@@ -57,7 +57,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential cmake ninja-build pkg-config \
-            qt6-base-dev libqt6serialport6-dev \
+            qt6-base-dev libqt6serialport6-dev libqt6svg6-dev \
             libgsl-dev libeigen3-dev \
             libudev-dev \
             file dpkg-dev fakeroot

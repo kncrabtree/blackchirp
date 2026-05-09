@@ -243,7 +243,7 @@ void AddProfileDialog::accept()
     // Write the selected communication protocol to settings before hardware
     // object construction so the constructor finds the correct value.
     {
-        QSettings s(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+        QSettings s;
         s.beginGroup(settingsKey);
         s.setValue(BC::Key::HW::commType, static_cast<int>(selectedProtocol));
         s.endGroup();

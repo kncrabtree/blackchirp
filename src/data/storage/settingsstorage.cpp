@@ -1,6 +1,13 @@
 #include "settingsstorage.h"
 
-SettingsStorage::SettingsStorage(const QStringList keys, Type /*type*/) : d_settings{QCoreApplication::organizationName(),QCoreApplication::applicationName()}
+// Production uses the 0-arg QSettings ctor, which derives organization
+// and application names from QCoreApplication's already-configured
+// state. Linux resolves this through organizationName, macOS through
+// organizationDomain (when set) — both consistent with every other
+// 0-arg call site in the application. The 2-arg form below is reserved
+// for tests that need to override org/app at construction time, before
+// QCoreApplication's globals are populated.
+SettingsStorage::SettingsStorage(const QStringList keys, Type /*type*/)
 {
     d_settings.setFallbacksEnabled(false);
 
@@ -15,7 +22,8 @@ SettingsStorage::SettingsStorage(const QStringList keys, Type /*type*/) : d_sett
     readAll();
 }
 
-SettingsStorage::SettingsStorage(QAnyStringView orgName, QAnyStringView appName, const QStringList keys, Type /*type*/) : d_settings{orgName.toString(),appName.toString()}
+SettingsStorage::SettingsStorage(QAnyStringView orgName, QAnyStringView appName, const QStringList keys, Type /*type*/)
+    : d_settings{orgName.toString(), appName.toString()}
 {
     d_settings.setFallbacksEnabled(false);
 
@@ -467,7 +475,7 @@ void SettingsStorage::purge()
 
 void SettingsStorage::purgeGroup(const QStringList& keys)
 {
-    QSettings s(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    QSettings s;
     s.setFallbacksEnabled(false);
     for (const auto& k : keys)
         s.beginGroup(k);
@@ -477,7 +485,7 @@ void SettingsStorage::purgeGroup(const QStringList& keys)
 
 void SettingsStorage::purgeGroupsBySuffix(QAnyStringView suffix)
 {
-    QSettings s(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    QSettings s;
     s.setFallbacksEnabled(false);
     const QString dotSuffix = QString(".") + suffix.toString();
     const QStringList groups = s.childGroups();

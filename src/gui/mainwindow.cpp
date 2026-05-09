@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "mainwindow_ui.h"
 
+#include <climits>
+
 #include <QThread>
 #include <QDialogButtonBox>
 #include <QPushButton>
@@ -1371,7 +1373,7 @@ void MainWindow::viewExperiment()
 
     if(lastCompletedExperiment < 1)
     {
-        numBox->setRange(0,__INT_MAX__);
+        numBox->setRange(0,INT_MAX);
         numBox->setSpecialValueText(QString("Select..."));
         numBox->setEnabled(false);
         pathBox->setChecked(true);

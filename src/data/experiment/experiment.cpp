@@ -325,7 +325,7 @@ bool Experiment::initialize()
 
         //here we've created the directory, so update expt number even if something goes wrong
         //one of the few cases where direct usage of QSettings is needed
-        QSettings set{QCoreApplication::organizationName(),QCoreApplication::applicationName()};
+        QSettings set;
         set.setFallbacksEnabled(false);
         set.beginGroup(BC::Key::BC);
         set.setValue(BC::Key::exptNum,num);

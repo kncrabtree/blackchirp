@@ -1,5 +1,7 @@
 #include "drscanconfigwidget.h"
 
+#include <climits>
+
 using namespace BC::Key::WizDR;
 
 #include <QDoubleSpinBox>
@@ -34,7 +36,7 @@ DRScanConfigWidget::DRScanConfigWidget(Experiment *exp, QWidget *parent)
     p_stepSizeBox->setKeyboardTracking(false);
 
     p_numStepsBox = new QSpinBox;
-    p_numStepsBox->setRange(2,__INT_MAX__);
+    p_numStepsBox->setRange(2,INT_MAX);
     p_numStepsBox->setToolTip(QString("Number of steps to take."));
     p_numStepsBox->setValue(get<int>(numSteps,100));
     p_numStepsBox->setKeyboardTracking(false);
@@ -47,7 +49,7 @@ DRScanConfigWidget::DRScanConfigWidget(Experiment *exp, QWidget *parent)
     p_endBox->setEnabled(false);
 
     p_shotsBox = new QSpinBox;
-    p_shotsBox->setRange(0,__INT_MAX__);
+    p_shotsBox->setRange(0,INT_MAX);
     p_shotsBox->setSingleStep(100);
     p_shotsBox->setValue(get<int>(shots,100));
     p_shotsBox->setToolTip(QString("Number of shots to acquire at each DR point."));
