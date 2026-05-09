@@ -280,7 +280,7 @@ MainWindow::MainWindow(QWidget *parent) :
                 QDesktopServices::openUrl(QUrl(QLatin1StringView(url)));
             });
         };
-        addUrl("&Documentation"_L1, "https://blackchirp.readthedocs.io/en/latest/index.html");
+        addUrl("&Documentation"_L1, "https://blackchirp.readthedocs.io/");
         addUrl("&GitHub Repository"_L1, "https://github.com/kncrabtree/blackchirp");
         addUrl("Di&scord Server"_L1, "https://discord.gg/88CkbAKUZY");
         ui->helpMenu->addSeparator();

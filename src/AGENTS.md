@@ -11,7 +11,7 @@ project-root `AGENTS.md`.
 
 The canonical reference is
 `doc/source/developer_guide/conventions.rst` (rendered at
-https://blackchirp.readthedocs.io/en/latest/developer_guide/conventions.html).
+https://blackchirp.readthedocs.io/page/developer_guide/conventions.html).
 Read it before authoring or modifying C++ code. Highlights so the
 agent does not omit them at the point of use:
 

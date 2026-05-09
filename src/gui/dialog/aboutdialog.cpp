@@ -22,7 +22,7 @@ using namespace Qt::Literals::StringLiterals;
 
 namespace {
 constexpr auto k_githubUrl  = "https://github.com/kncrabtree/blackchirp";
-constexpr auto k_docsUrl    = "https://blackchirp.readthedocs.io/en/latest/index.html";
+constexpr auto k_docsUrl    = "https://blackchirp.readthedocs.io/";
 constexpr auto k_discordUrl = "https://discord.gg/88CkbAKUZY";
 }
 

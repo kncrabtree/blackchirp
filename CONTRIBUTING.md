@@ -86,7 +86,7 @@ will not be merged.
 
 The single canonical reference for all three trees is
 `doc/source/developer_guide/conventions.rst` (rendered at
-https://blackchirp.readthedocs.io/en/latest/developer_guide/conventions.html),
+https://blackchirp.readthedocs.io/page/developer_guide/conventions.html),
 which carries the C++, Python, and documentation conventions side by
 side. Read the relevant section before contributing.
 

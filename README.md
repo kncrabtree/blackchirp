@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://blackchirp.readthedocs.io/en/latest/"><img src="https://readthedocs.org/projects/blackchirp/badge/?version=latest" alt="Documentation status"></a>
+  <a href="https://blackchirp.readthedocs.io/"><img src="https://readthedocs.org/projects/blackchirp/badge/?version=latest" alt="Documentation status"></a>
   <a href="https://github.com/kncrabtree/blackchirp/releases"><img src="https://img.shields.io/github/v/release/kncrabtree/blackchirp?include_prereleases" alt="Latest release"></a>
   <a href="COPYING"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
   <a href="https://pypi.org/project/blackchirp/"><img src="https://img.shields.io/pypi/v/blackchirp.svg?label=blackchirp%20on%20PyPI" alt="blackchirp on PyPI"></a>
@@ -43,22 +43,22 @@ the live application.
 ## Install
 
 - **Binary packages (recommended):** Windows, macOS, and Linux installers (DEB, RPM, AppImage, DMG, NSIS) are built by CPack and attached to each [GitHub release](https://github.com/kncrabtree/blackchirp/releases).
-- **Build from source:** see [Installation](https://blackchirp.readthedocs.io/en/latest/user_guide/installation.html) in the user guide.
+- **Build from source:** see [Installation](https://blackchirp.readthedocs.io/page/user_guide/installation.html) in the user guide.
 - **Python analysis module:** `pip install blackchirp` ([PyPI](https://pypi.org/project/blackchirp/)).
 
 For upgrade notes from Blackchirp 1.x, see the
-[migration guide](https://blackchirp.readthedocs.io/en/latest/migration.html).
+[migration guide](https://blackchirp.readthedocs.io/page/migration.html).
 Release-by-release detail is in the
-[changelog](https://blackchirp.readthedocs.io/en/latest/changelog.html).
+[changelog](https://blackchirp.readthedocs.io/page/changelog.html).
 
 ## Documentation
 
-- [User Guide](https://blackchirp.readthedocs.io/en/latest/user_guide.html) — installation, configuration, and day-to-day use.
-- [Developer Guide](https://blackchirp.readthedocs.io/en/latest/developer_guide.html) — architecture, conventions, build system, Python module, and contribution workflow.
-- [Migration Guide](https://blackchirp.readthedocs.io/en/latest/migration.html) — upgrading from 1.x.
-- [Changelog](https://blackchirp.readthedocs.io/en/latest/changelog.html).
-- [API Reference](https://blackchirp.readthedocs.io/en/latest/classes.html).
-- [Python Module Documentation](https://blackchirp.readthedocs.io/en/latest/python.html).
+- [User Guide](https://blackchirp.readthedocs.io/page/user_guide.html) — installation, configuration, and day-to-day use.
+- [Developer Guide](https://blackchirp.readthedocs.io/page/developer_guide.html) — architecture, conventions, build system, Python module, and contribution workflow.
+- [Migration Guide](https://blackchirp.readthedocs.io/page/migration.html) — upgrading from 1.x.
+- [Changelog](https://blackchirp.readthedocs.io/page/changelog.html).
+- [API Reference](https://blackchirp.readthedocs.io/page/classes.html).
+- [Python Module Documentation](https://blackchirp.readthedocs.io/page/python.html).
 
 ## Community
 

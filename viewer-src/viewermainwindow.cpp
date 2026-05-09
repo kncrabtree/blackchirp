@@ -131,7 +131,7 @@ void ViewerMainWindow::setupMenuBar()
             QDesktopServices::openUrl(QUrl(QLatin1StringView(url)));
         });
     };
-    addUrl(QString("&Documentation"),   "https://blackchirp.readthedocs.io/en/latest/index.html");
+    addUrl(QString("&Documentation"),   "https://blackchirp.readthedocs.io/");
     addUrl(QString("&GitHub Repository"), "https://github.com/kncrabtree/blackchirp");
     addUrl(QString("Di&scord Server"),  "https://discord.gg/88CkbAKUZY");
     helpMenu->addSeparator();
