@@ -399,14 +399,22 @@ protected:
     bool d_enabledForExperiment;   /*!< Whether the device is active in the current experiment. */
     CommunicationProtocol *p_comm; /*!< Active communication protocol; built by buildCommunication(). */
 
+    // text.toString() forces QAnyStringView -> QString before reaching
+    // QString::arg's variadic template. Qt 6.4 (the apt qt6-base-dev
+    // ceiling on the deb job's Ubuntu runner) does not include
+    // QAnyStringView in is_convertible_to_view_or_qstring, so the
+    // multi-arg arg() form rejects QAnyStringView inputs there. Qt 6.5
+    // and later accept QAnyStringView directly, but the conversion is
+    // a no-op when the view already wraps a QString and a one-shot
+    // copy otherwise — cheap relative to the log path.
     /// Log a message to the global LogHandler with this device's d_key prepended.
-    void hwLog(QAnyStringView text)   { bcLog(u"%1: %2"_s.arg(d_key, text));   }
+    void hwLog(QAnyStringView text)   { bcLog(u"%1: %2"_s.arg(d_key, text.toString()));   }
     /// Log a warning to the global LogHandler with this device's d_key prepended.
-    void hwWarn(QAnyStringView text)  { bcWarn(u"%1: %2"_s.arg(d_key, text));  }
+    void hwWarn(QAnyStringView text)  { bcWarn(u"%1: %2"_s.arg(d_key, text.toString()));  }
     /// Log an error to the global LogHandler with this device's d_key prepended.
-    void hwError(QAnyStringView text) { bcError(u"%1: %2"_s.arg(d_key, text)); }
+    void hwError(QAnyStringView text) { bcError(u"%1: %2"_s.arg(d_key, text.toString())); }
     /// Log a debug message to the global LogHandler with this device's d_key prepended.
-    void hwDebug(QAnyStringView text) { bcDebug(u"%1: %2"_s.arg(d_key, text)); }
+    void hwDebug(QAnyStringView text) { bcDebug(u"%1: %2"_s.arg(d_key, text.toString())); }
 
     /*!
      * \brief Validate and stage per-experiment settings.

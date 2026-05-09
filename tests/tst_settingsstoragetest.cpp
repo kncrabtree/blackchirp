@@ -89,12 +89,20 @@ Q_DECLARE_METATYPE(SettingsStorageTest::TestEnum)
 // Blackchirp settings under "CrabtreeLab". The QCoreApplication
 // globals are set to match so any 0-arg QSettings() constructed
 // during the test (e.g., inside SettingsStorage's helpers) resolves
-// to the same domain on every platform.
+// to the same plist on every platform.
+//
+// organizationDomain is deliberately *not* set: on macOS, Qt's 0-arg
+// QSettings ctor prefers organizationDomain over organizationName for
+// the plist filename, while the 2-arg QSettings(orgName, appName)
+// form always uses the literal orgName argument. Setting both pulls
+// 0-arg readOnly instances and 2-arg d_settings into different plist
+// files (CrabtreeLabTest.BlackchirpTest.plist vs the reversed-domain
+// form), silently splitting reads and writes. Linux ignores the
+// domain in both ctor forms, which is why the bug was macOS-only.
 SettingsStorageTest::SettingsStorageTest() : SettingsStorage("CrabtreeLabTest","BlackchirpTest",{},General)
 {
     QCoreApplication::setApplicationName("BlackchirpTest");
     QCoreApplication::setOrganizationName("CrabtreeLabTest");
-    QCoreApplication::setOrganizationDomain("test.crabtreelab.ucdavis.edu");
 
 }
 

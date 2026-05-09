@@ -136,3 +136,67 @@ first-run issues (likely candidates: linuxdeploy library paths, macdeployqt's
 Qwt resolution, windeployqt's runtime DLLs), and confirm the resulting packages
 launch on clean VMs. See `packaging-and-ci.md` for the full strategy reference,
 file map, and acceptance criteria.
+
+## Cleanups
+
+Low-priority code-debt items, none release-blocking. Each is gated on
+an external trigger; revisit when the trigger fires.
+
+### Drop the `QAnyStringView` -> `QString` workaround in `hwLog/hwWarn/hwError/hwDebug`
+
+`src/hardware/core/hardwareobject.h` calls `text.toString()` on the
+`QAnyStringView` parameter before passing it to
+`QString::arg(d_key, ...)` (the four `hwLog`-family one-liners around
+line 403). Qt 6.4's `QString::arg` variadic-template trait
+(`is_convertible_to_view_or_qstring`) does not accept
+`QAnyStringView`; Qt 6.5 added it. The deb job's Ubuntu runner pins
+to apt's `qt6-base-dev`, which on the current `ubuntu-latest`
+(noble, 6.4.2) is the version that forces the workaround.
+
+When the GitHub-hosted `ubuntu-latest` image rolls forward to an
+Ubuntu release whose `qt6-base-dev` is >= 6.5, drop the
+`.toString()` calls in those four lines and remove the explanatory
+comment. No other call site is affected — `loghandler.cpp` already
+pins its `QAnyStringView` entry point through a
+`text.toString()` conversion before any `arg()` reaches it, and no
+multi-arg `arg()` elsewhere in the tree consumes a `QAnyStringView`.
+
+### MSVC cosmetic warnings
+
+The Windows release build emits ~50 unique non-vendor warnings.
+The three warnings with cross-platform behavior or correctness implications
+(C4701 uninitialized `ChirpSegment`, C4702 dead `return`, C4804
+`bool > 0`) are fixed. The remaining warnings produce identical,
+well-defined behavior on MSVC and GCC; they're left as a future
+clean-up pass when there's appetite for `-Wall`/MSVC-W4 hygiene work.
+
+Categories, all platform-consistent (no Linux-vs-Windows divergence):
+
+- **C4267** (size_t -> int truncation) — ~11 sites in
+  `digitizerconfig.cpp`, `overlaystorage.cpp`, `settingsstorage.cpp`,
+  `clock.cpp`, the AWG drivers, `temperaturecontrollerconfig.h`,
+  `pulsestatusbox.cpp`. Channel/segment/array sizes that comfortably
+  fit in `int`. Fix by switching the receiving locals to
+  `qsizetype` / `std::size_t` or adding a `static_cast<int>` at the
+  use site.
+- **C4456 / C4457 / C4458 / C4459** (name shadowing) — ~17 sites,
+  mostly inner `key` / `i` / `obj` locals shadowing globals or outer
+  scopes. Inner scope wins identically on both compilers; rename
+  the inner locals to silence.
+- **C4101** (unused `e` in `catch`) — `xiamparser.cpp:371,497`,
+  `catalogoverlaywidget.cpp:547`. Drop the binding (`catch (...)`)
+  or `[[maybe_unused]]` it.
+- **C4334** `ftworker.cpp:475` — `1 << zeroPadFactor` where
+  `zeroPadFactor <= 2`; the int-shift result is then promoted to
+  `size_t` for the surrounding multiplication. Cast the `1` to
+  `size_t` to silence.
+- **C4305** `ftmwconfig.cpp:429` — `float thresh = 1.15;` literal is
+  `double`. Append `f` (`1.15f`) to silence.
+- **C4309** `tst_waveformbuffertest.cpp:708` — `QByteArray(size, 0xAB)`
+  truncates to `signed char`. `static_cast<char>(0xAB)` silences.
+- **C4005** `crashhandler_win.cpp:10` —
+  `WIN32_LEAN_AND_MEAN` already defined by Qt headers; guard the
+  redefinition with `#ifndef`.
+- **C4996** `main.cpp:94` — MSVC's "use `sprintf_s`" deprecation
+  notice. Switch to `snprintf` (already available on both platforms)
+  to silence without per-platform code.

@@ -118,11 +118,11 @@ class ChirpConfig : public HeaderStorage
 public:
     /// \brief Single frequency-sweep or gap segment within a chirp.
     struct ChirpSegment {
-        double startFreqMHz; ///< Start frequency in MHz; ignored when \c empty is true.
-        double endFreqMHz;   ///< End frequency in MHz; ignored when \c empty is true.
-        double durationUs;   ///< Segment duration in microseconds.
-        double alphaUs;      ///< Chirp rate in MHz/µs, computed as (endFreqMHz - startFreqMHz) / durationUs.
-        bool empty;          ///< When true the segment generates zero-amplitude samples (a gap).
+        double startFreqMHz{0.0}; ///< Start frequency in MHz; ignored when \c empty is true.
+        double endFreqMHz{0.0};   ///< End frequency in MHz; ignored when \c empty is true.
+        double durationUs{0.0};   ///< Segment duration in microseconds.
+        double alphaUs{0.0};      ///< Chirp rate in MHz/µs, computed as (endFreqMHz - startFreqMHz) / durationUs.
+        bool empty{false};        ///< When true the segment generates zero-amplitude samples (a gap).
     };
 
     /// \brief Constructs a default \c ChirpConfig with no segments and no marker channels.

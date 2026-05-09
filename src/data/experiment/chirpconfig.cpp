@@ -709,9 +709,6 @@ double ChirpConfig::calculateEndingPhaseRadians(const ChirpSegment segment, cons
         return gsl_sf_angle_restrict_pos(GSL_REAL(gsl_complex_arcsin_real(sinVal)));
     else
         return gsl_sf_angle_restrict_pos(M_PI - GSL_REAL(gsl_complex_arcsin_real(sinVal)));
-
-    //NOT REACHED
-    return 0.0;
 }
 
 

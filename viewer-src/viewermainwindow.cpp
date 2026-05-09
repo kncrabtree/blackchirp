@@ -1,4 +1,6 @@
 #include "viewermainwindow.h"
+#include <climits>
+
 #include <QApplication>
 #include <QDesktopServices>
 #include <QDialogButtonBox>
@@ -172,7 +174,7 @@ void ViewerMainWindow::openExperiment()
         numBox->setRange(1, lastExptNum);
         numBox->setValue(lastExptNum);
     } else {
-        numBox->setRange(1, __INT_MAX__);
+        numBox->setRange(1, INT_MAX);
         numBox->setValue(1);
     }
     

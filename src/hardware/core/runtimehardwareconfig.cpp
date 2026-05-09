@@ -421,7 +421,7 @@ bool RuntimeHardwareConfig::removeHardwareSelection(const QString& hardwareType,
     }
     
     QString key = BC::Key::hwKey(hardwareType, label);
-    bool removed = d_activeHardware.remove(key) > 0;
+    bool removed = d_activeHardware.remove(key);
     
     if (removed) {
         bcDebug(u"Removed hardware selection for: %1"_s.arg(key));
