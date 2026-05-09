@@ -40,6 +40,10 @@ env:
   QT_VERSION: '6.9.1'
   QWT_VERSION: '6.3.0'
   CMAKE_BUILD_TYPE: Release
+  # Blackchirp version (matches BC_MAJOR/MINOR/PATCH in CMakeLists.txt). The
+  # built executables are version-suffixed (e.g., blackchirp-2.0.0) and the
+  # CPack output filename embeds it. Bump in sync with CMakeLists.txt.
+  BC_VERSION: '2.0.0'
 
 jobs:
   # ============================================================================
@@ -119,6 +123,34 @@ jobs:
         # in one log beats one workflow_dispatch per fix.
         run: cmake --build build -j"$(nproc)" -- -k 0
 
+      - name: Capture symbols
+        # Extract debug info from the unstripped binaries before cpack
+        # strips the packaged copies. The crash handler embeds BC_BUILD_VERSION
+        # (= ${{ github.sha }}) in the crash log; the symbols-manifest.json
+        # lets a triager verify they downloaded the right artifact.
+        run: |
+          set -euo pipefail
+          mkdir -p symbols
+          for exe in $(ls build/blackchirp-[0-9]* build/blackchirp-viewer-[0-9]*); do
+            base=$(basename "$exe" | sed 's/-[0-9].*$//')
+            objcopy --only-keep-debug "$exe" "symbols/${base}.debug"
+          done
+          (
+            cd symbols
+            jq -n \
+              --arg platform "linux-deb" \
+              --arg git_sha "${{ github.sha }}" \
+              --arg run_id "${{ github.run_id }}" \
+              '{platform:$platform, git_sha:$git_sha, run_id:$run_id, files:[]}' \
+              > symbols-manifest.json
+            for f in *.debug; do
+              sha=$(sha256sum "$f" | awk '{print $1}')
+              jq --arg n "$f" --arg s "$sha" \
+                 '.files += [{name:$n, sha256:$s}]' \
+                 symbols-manifest.json > .m && mv .m symbols-manifest.json
+            done
+          )
+
       - name: Test
         env:
           QT_QPA_PLATFORM: offscreen
@@ -136,6 +168,13 @@ jobs:
         with:
           name: blackchirp-deb
           path: build/Blackchirp-*.deb
+
+      - name: Upload symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: blackchirp-symbols-linux-deb
+          path: symbols/
+          retention-days: 90
 
       - name: Attach to release
         if: github.event_name == 'release'
@@ -158,7 +197,7 @@ jobs:
           set -eux
           zypper -n refresh
           zypper -n install -y \
-            git tar gzip bzip2 curl gawk sed grep \
+            git tar gzip bzip2 curl gawk sed grep jq \
             gcc-c++ cmake ninja make pkgconf-pkg-config \
             qt6-base-devel qt6-serialport-devel qt6-tools-devel qt6-svg-devel \
             qt6-base-private-devel \
@@ -178,6 +217,30 @@ jobs:
       - name: Build
         run: cmake --build build -j"$(nproc)"
 
+      - name: Capture symbols
+        run: |
+          set -euo pipefail
+          mkdir -p symbols
+          for exe in $(ls build/blackchirp-[0-9]* build/blackchirp-viewer-[0-9]*); do
+            base=$(basename "$exe" | sed 's/-[0-9].*$//')
+            objcopy --only-keep-debug "$exe" "symbols/${base}.debug"
+          done
+          (
+            cd symbols
+            jq -n \
+              --arg platform "linux-rpm" \
+              --arg git_sha "${{ github.sha }}" \
+              --arg run_id "${{ github.run_id }}" \
+              '{platform:$platform, git_sha:$git_sha, run_id:$run_id, files:[]}' \
+              > symbols-manifest.json
+            for f in *.debug; do
+              sha=$(sha256sum "$f" | awk '{print $1}')
+              jq --arg n "$f" --arg s "$sha" \
+                 '.files += [{name:$n, sha256:$s}]' \
+                 symbols-manifest.json > .m && mv .m symbols-manifest.json
+            done
+          )
+
       - name: Test
         env:
           QT_QPA_PLATFORM: offscreen
@@ -192,6 +255,13 @@ jobs:
         with:
           name: blackchirp-rpm
           path: build/Blackchirp-*.rpm
+
+      - name: Upload symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: blackchirp-symbols-linux-rpm
+          path: symbols/
+          retention-days: 90
 
       - name: Attach to release
         if: github.event_name == 'release'
@@ -280,6 +350,30 @@ jobs:
             -DCMAKE_PREFIX_PATH="${{ github.workspace }}/qwt-install"
           cmake --build build -j"$(nproc)"
 
+      - name: Capture symbols
+        run: |
+          set -euo pipefail
+          mkdir -p symbols
+          for exe in $(ls build/blackchirp-[0-9]* build/blackchirp-viewer-[0-9]*); do
+            base=$(basename "$exe" | sed 's/-[0-9].*$//')
+            objcopy --only-keep-debug "$exe" "symbols/${base}.debug"
+          done
+          (
+            cd symbols
+            jq -n \
+              --arg platform "linux-appimage" \
+              --arg git_sha "${{ github.sha }}" \
+              --arg run_id "${{ github.run_id }}" \
+              '{platform:$platform, git_sha:$git_sha, run_id:$run_id, files:[]}' \
+              > symbols-manifest.json
+            for f in *.debug; do
+              sha=$(sha256sum "$f" | awk '{print $1}')
+              jq --arg n "$f" --arg s "$sha" \
+                 '.files += [{name:$n, sha256:$s}]' \
+                 symbols-manifest.json > .m && mv .m symbols-manifest.json
+            done
+          )
+
       - name: Test
         env:
           QT_QPA_PLATFORM: offscreen
@@ -323,6 +417,13 @@ jobs:
         with:
           name: blackchirp-appimage
           path: dist/Blackchirp*.AppImage
+
+      - name: Upload symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: blackchirp-symbols-linux-appimage
+          path: symbols/
+          retention-days: 90
 
       - name: Attach to release
         if: github.event_name == 'release'
@@ -393,6 +494,32 @@ jobs:
       - name: Build
         run: cmake --build build -j"$(sysctl -n hw.ncpu)"
 
+      - name: Capture symbols
+        run: |
+          set -euo pipefail
+          mkdir -p symbols
+          dsymutil "build/blackchirp.app/Contents/MacOS/blackchirp-${{ env.BC_VERSION }}" \
+            -o "symbols/blackchirp.dSYM"
+          dsymutil "build/blackchirp-viewer.app/Contents/MacOS/blackchirp-viewer-${{ env.BC_VERSION }}" \
+            -o "symbols/blackchirp-viewer.dSYM"
+          (
+            cd symbols
+            jq -n \
+              --arg platform "macos" \
+              --arg git_sha "${{ github.sha }}" \
+              --arg run_id "${{ github.run_id }}" \
+              '{platform:$platform, git_sha:$git_sha, run_id:$run_id, files:[]}' \
+              > symbols-manifest.json
+            for dsym in *.dSYM; do
+              # Hash the DWARF blob inside the bundle (the load-bearing file).
+              dwarf=$(find "$dsym/Contents/Resources/DWARF" -type f | head -1)
+              sha=$(shasum -a 256 "$dwarf" | awk '{print $1}')
+              jq --arg n "$dsym" --arg s "$sha" \
+                 '.files += [{name:$n, sha256:$s}]' \
+                 symbols-manifest.json > .m && mv .m symbols-manifest.json
+            done
+          )
+
       - name: Test
         env:
           QT_QPA_PLATFORM: offscreen
@@ -411,6 +538,13 @@ jobs:
           path: |
             build/Blackchirp-*.dmg
             build/Blackchirp-*.tar.gz
+
+      - name: Upload symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: blackchirp-symbols-macos
+          path: symbols/
+          retention-days: 90
 
       - name: Attach to release
         if: github.event_name == 'release'
@@ -505,6 +639,30 @@ jobs:
         shell: pwsh
         run: cmake --build build
 
+      - name: Capture symbols
+        shell: pwsh
+        # MSVC's /Zi + /DEBUG (set in CMakeLists.txt for Release builds)
+        # writes a .pdb alongside each .exe. Rename to drop the version
+        # suffix so the manifest's `name` matches the binary the user
+        # actually invokes.
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Path symbols -Force | Out-Null
+          Copy-Item "build/blackchirp-${{ env.BC_VERSION }}.pdb" symbols/blackchirp.pdb
+          Copy-Item "build/blackchirp-viewer-${{ env.BC_VERSION }}.pdb" symbols/blackchirp-viewer.pdb
+          $files = @()
+          foreach ($f in Get-ChildItem symbols/*.pdb) {
+              $sha = (Get-FileHash -Algorithm SHA256 $f.FullName).Hash.ToLower()
+              $files += @{ name = $f.Name; sha256 = $sha }
+          }
+          $manifest = [ordered]@{
+              platform = 'windows-nsis'
+              git_sha  = '${{ github.sha }}'
+              run_id   = '${{ github.run_id }}'
+              files    = $files
+          }
+          $manifest | ConvertTo-Json -Depth 5 | Set-Content symbols/symbols-manifest.json
+
       - name: Test
         shell: pwsh
         env:
@@ -526,6 +684,13 @@ jobs:
             build/Blackchirp-*.exe
             build/Blackchirp-*.zip
 
+      - name: Upload symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: blackchirp-symbols-windows
+          path: symbols/
+          retention-days: 90
+
       - name: Attach to release
         if: github.event_name == 'release'
         shell: pwsh
@@ -535,3 +700,128 @@ jobs:
           gh release upload "${{ github.event.release.tag_name }}" `
             (Get-ChildItem build/Blackchirp-*.exe).FullName `
             (Get-ChildItem build/Blackchirp-*.zip).FullName --clobber
+
+  # ============================================================================
+  # Smoke tests: install each artifact in a clean-ish environment and verify
+  # the binaries launch (`--version` exits 0 with no crash). Catches missing
+  # bundled libs, broken RPATHs, and packaging-step regressions before the
+  # artifact reaches users. Each smoke job needs its build job to succeed.
+  # ============================================================================
+
+  linux-deb-smoke:
+    name: Linux DEB smoke
+    needs: linux-deb
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' || inputs.run_linux_deb
+    container:
+      image: ubuntu:noble
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: blackchirp-deb
+      - name: Install package and dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get update
+          # apt resolves the .deb's Depends from the noble repos automatically.
+          apt-get install -y --no-install-recommends ./Blackchirp-*.deb
+      - name: Run --version
+        run: |
+          blackchirp --version
+          blackchirp-viewer --version
+
+  linux-rpm-smoke:
+    name: Linux RPM smoke
+    needs: linux-rpm
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' || inputs.run_linux_rpm
+    container:
+      image: opensuse/tumbleweed:latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: blackchirp-rpm
+      - name: Install package
+        run: |
+          zypper -n refresh
+          # --allow-unsigned-rpm: CPack RPMs aren't signed at build time.
+          zypper -n install -y --allow-unsigned-rpm ./Blackchirp-*.rpm
+      - name: Run --version
+        run: |
+          blackchirp --version
+          blackchirp-viewer --version
+
+  linux-appimage-smoke:
+    name: Linux AppImage smoke
+    needs: linux-appimage
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' || inputs.run_linux_appimage
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: blackchirp-appimage
+      - name: Install AppImage runtime
+        run: |
+          sudo apt-get update
+          # libfuse2 is the AppImage runtime requirement; without it the
+          # AppImage can't self-mount and falls back to extract-and-run.
+          sudo apt-get install -y --no-install-recommends libfuse2
+      - name: Run --version
+        run: |
+          AI=$(ls Blackchirp-*.AppImage | head -1)
+          chmod +x "$AI"
+          # AppImage's AppRun forwards args to the embedded blackchirp binary.
+          "./$AI" --version
+
+  macos-smoke:
+    name: macOS smoke
+    needs: macos-dmg
+    runs-on: macos-latest
+    if: github.event_name == 'release' || inputs.run_macos
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: blackchirp-macos
+      - name: Mount, install, and run --version
+        run: |
+          set -euxo pipefail
+          DMG=$(ls Blackchirp-*.dmg | head -1)
+          # -nobrowse keeps the volume out of Finder; -mountpoint pins the
+          # path so we don't have to scrape `hdiutil info` for it.
+          MNT=/tmp/bc-mount
+          mkdir -p "$MNT"
+          hdiutil attach "$DMG" -nobrowse -mountpoint "$MNT"
+          cp -R "$MNT/blackchirp.app" /tmp/
+          cp -R "$MNT/blackchirp-viewer.app" /tmp/
+          hdiutil detach "$MNT"
+          /tmp/blackchirp.app/Contents/MacOS/blackchirp --version
+          /tmp/blackchirp-viewer.app/Contents/MacOS/blackchirp-viewer --version
+
+  windows-smoke:
+    name: Windows smoke
+    needs: windows-nsis
+    runs-on: windows-latest
+    if: github.event_name == 'release' || inputs.run_windows
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: blackchirp-windows
+      - name: Silent install and run --version
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exe = (Get-ChildItem Blackchirp-*.exe | Select-Object -First 1).FullName
+          # NSIS: /S = silent install, /D=<path> overrides install dir and
+          # MUST be the final argument. C:\Blackchirp avoids the localized
+          # `C:\Program Files\Blackchirp <ver>` path so we don't have to
+          # quote spaces or scrape the version from CPACK_PACKAGE_FILE_NAME.
+          Start-Process -FilePath $exe -ArgumentList '/S','/D=C:\Blackchirp' -Wait
+          $bin = 'C:\Blackchirp\bin\blackchirp.exe'
+          $viewer = 'C:\Blackchirp\bin\blackchirp-viewer.exe'
+          if (-not (Test-Path $bin))   { throw "Install did not produce $bin" }
+          if (-not (Test-Path $viewer)) { throw "Install did not produce $viewer" }
+          & $bin --version
+          if ($LASTEXITCODE -ne 0) { throw "blackchirp --version exited $LASTEXITCODE" }
+          & $viewer --version
+          if ($LASTEXITCODE -ne 0) { throw "blackchirp-viewer --version exited $LASTEXITCODE" }

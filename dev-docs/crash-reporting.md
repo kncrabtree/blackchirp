@@ -47,31 +47,40 @@ dereference triggered from the About dialog: the resulting log
 resolved cleanly via `addr2line -e blackchirp -f -C -i 0x<pc>` to the
 expected source-line locations.
 
-## Remaining work — CI symbol capture
+## CI symbol capture
 
-In `.github/workflows/release.yml`, after `cmake --build` and before
-`cpack`:
+`.github/workflows/release.yml` has a `Capture symbols` step in each
+build job that runs immediately after `cmake --build`, before
+stripping happens during `cpack`:
 
-- Linux: `objcopy --only-keep-debug blackchirp blackchirp.debug` then
-  upload `*.debug` via `actions/upload-artifact` with the maximum
-  retention period (90 days minimum). Same for `blackchirp-viewer`.
-- macOS: `dsymutil blackchirp -o blackchirp.dSYM` then upload the
-  `.dSYM` bundles.
-- Windows: the `.pdb` files are produced alongside the `.exe` by MSVC;
-  upload them directly.
+- **Linux** (deb, rpm, appimage): `objcopy --only-keep-debug` extracts
+  per-binary `.debug` files into `symbols/`.
+- **macOS**: `dsymutil` produces `.dSYM` bundles (the inner DWARF blob
+  is what's hashed in the manifest).
+- **Windows**: MSVC writes `.pdb` files alongside `.exe` because
+  `CMakeLists.txt` adds `/Zi /DEBUG` for Release builds. The capture
+  step renames them from `blackchirp-<ver>.pdb` to `blackchirp.pdb` so
+  the manifest's `name` matches the binary the user invokes.
 
-Symbol artifacts are workflow artifacts, **not** release assets — they
-contain enough to reverse-engineer internals and are bulky. Developers
-fetch them via `gh run download <run-id>` when triaging.
+Each job also writes a `symbols-manifest.json` in the same `symbols/`
+dir containing the platform tag, the workflow's git SHA, the run ID,
+and a list of `{name, sha256}` entries. Symbols + manifest upload as
+a separate `blackchirp-symbols-<platform>` artifact with 90-day
+retention.
 
-The release job should also write a small `symbols-manifest.json`
-listing artifact name / SHA-256 / git SHA so a developer with a crash
-log's embedded SHA can identify the right artifact run without
-browsing the Actions UI.
+Triage flow: a crash log embeds `BC_BUILD_VERSION` (the git SHA at
+build time). To resolve a crash:
 
-This work edits the same workflow file as `packaging-and-ci.md`'s
-remaining verification, so it should land afterward to avoid merge
-churn.
+```bash
+git_sha=$(awk '/BuildVersion:/{print $2; exit}' crash.log)
+run_id=$(gh run list --workflow=release.yml --commit=$git_sha \
+                      --json databaseId --jq '.[0].databaseId')
+gh run download $run_id --name blackchirp-symbols-<platform>
+```
+
+Then resolve frames against the downloaded `.debug` / `.dSYM` / `.pdb`
+files. Symbol artifacts are intentionally NOT release assets — they're
+bulky and enable reverse engineering of internals.
 
 ## Open questions
 

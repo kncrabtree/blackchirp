@@ -9,6 +9,7 @@
 #include <memory>
 
 #include <QApplication>
+#include <QCommandLineParser>
 #include <QMessageBox>
 #include <QDir>
 #include <QtGlobal>
@@ -23,6 +24,11 @@
 #include <signal.h>
 #endif
 
+#ifdef Q_OS_WIN
+#include <cstdio>
+#include <windows.h>
+#endif
+
 #define _BC_STR(x) #x
 #define BC_STRINGIFY(x) _BC_STR(x)
 
@@ -31,11 +37,36 @@ int main(int argc, char *argv[])
 #ifdef Q_OS_UNIX
     signal(SIGPIPE,SIG_IGN);
 #endif
+#ifdef Q_OS_WIN
+    // GUI-subsystem binaries don't inherit a console; reattach to the
+    // parent shell's so --version / --help can write to stdout.
+    if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+        freopen("CONOUT$", "w", stdout);
+        freopen("CONOUT$", "w", stderr);
+    }
+#endif
 
     QApplication a(argc, argv);
 #if QT_VERSION <= 0x060000
     QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
 #endif
+
+    // Handle --version / --help before any setup runs. Version string
+    // embeds BCV_BUILD_VERSION (git SHA at compile time) so it can be
+    // matched against the symbol artifacts captured in CI.
+    QCoreApplication::setApplicationVersion(QString::fromLatin1(
+        "%1.%2.%3-%4 (build %5)")
+        .arg(BCV_MAJOR_VERSION).arg(BCV_MINOR_VERSION).arg(BCV_PATCH_VERSION)
+        .arg(QLatin1StringView(BC_STRINGIFY(BCV_RELEASE_VERSION)))
+        .arg(QLatin1StringView(BCV_BUILD_VERSION)));
+    {
+        QCommandLineParser parser;
+        parser.setApplicationDescription(
+            QStringLiteral("Blackchirp data viewer"));
+        parser.addHelpOption();
+        parser.addVersionOption();
+        parser.process(a);
+    }
 
     const QString appName = QString("Blackchirp Viewer");
 
