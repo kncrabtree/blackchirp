@@ -535,7 +535,7 @@ void HardwareManager::storeAllOptHw(Experiment *exp, std::map<QString, bool, std
             continue;
 
         if(obj->thread() != QThread::currentThread())
-            QMetaObject::invokeMethod(obj,&HardwareObject::storeOptHwConfig,Qt::BlockingQueuedConnection,exp);
+            QMetaObject::invokeMethod(obj,[obj,exp](){ obj->storeOptHwConfig(exp); },Qt::BlockingQueuedConnection);
         else
             obj->storeOptHwConfig(exp);
     }

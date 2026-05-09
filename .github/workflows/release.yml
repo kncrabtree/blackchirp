@@ -112,7 +112,12 @@ jobs:
             -DCMAKE_PREFIX_PATH="${{ github.workspace }}/qwt-install"
 
       - name: Build
-        run: cmake --build build -j"$(nproc)"
+        # `-- -k 0` passes through to ninja's keep-going flag (0 = unlimited)
+        # so a single compilation failure doesn't mask other failures further
+        # down the source tree. Useful here because apt-Qt's 6.4.2 ceiling
+        # surfaces a slow drip of Qt 6.5+-only call sites — finding them all
+        # in one log beats one workflow_dispatch per fix.
+        run: cmake --build build -j"$(nproc)" -- -k 0
 
       - name: Test
         env:

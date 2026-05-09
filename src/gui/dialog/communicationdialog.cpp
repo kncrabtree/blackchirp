@@ -381,9 +381,14 @@ void CommunicationDialog::onTestDevice()
     }
 
     // Apply protocol to the live hardware object (rebuilds comm if protocol changed)
-    QMetaObject::invokeMethod(p_hardwareManager, &HardwareManager::setHardwareProtocol,
-                             Qt::QueuedConnection,
-                             d_currentDeviceKey, selectedProtocol, gpibController);
+    QMetaObject::invokeMethod(p_hardwareManager,
+        [hwm=p_hardwareManager,
+         key=d_currentDeviceKey,
+         proto=selectedProtocol,
+         ctrl=gpibController]() {
+            hwm->setHardwareProtocol(key, proto, ctrl);
+        },
+        Qt::QueuedConnection);
 
     // Test the connection (runs after setHardwareProtocol completes in the HW thread)
     QMetaObject::invokeMethod(p_hardwareManager, "testObjectConnection",
