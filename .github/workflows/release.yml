@@ -73,7 +73,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/qwt-install
-          key: qwt-${{ env.QWT_VERSION }}-linux-qt${{ env.QT_VERSION }}
+          key: qwt-${{ env.QWT_VERSION }}-linux-qt${{ env.QT_VERSION }}-v2
 
       - name: Build Qwt from source
         if: steps.qwt-cache.outputs.cache-hit != 'true'
@@ -84,7 +84,8 @@ jobs:
           tar xf qwt.tar.bz2
           cd "qwt-${QWT_VERSION}"
           sed -i "s|^[[:space:]]*QWT_INSTALL_PREFIX[[:space:]]*=.*|QWT_INSTALL_PREFIX = ${{ github.workspace }}/qwt-install|" qwtconfig.pri
-          sed -i -E "/^[[:space:]]*QWT_CONFIG[[:space:]]*\+=[[:space:]]+Qwt(Examples|Playground|Designer|Tests)[[:space:]]*$/d" qwtconfig.pri
+          sed -i 's|^[[:space:]]*QWT_INSTALL_HEADERS[[:space:]]*=.*|QWT_INSTALL_HEADERS = $${QWT_INSTALL_PREFIX}/include/qwt6|' qwtconfig.pri
+          sed -i -E "/^[[:space:]]*QWT_CONFIG[[:space:]]*\+=[[:space:]]+Qwt(Examples|Playground|Designer|Tests|Framework)[[:space:]]*$/d" qwtconfig.pri
           qmake6 qwt.pro
           make -j"$(nproc)"
           make install
@@ -154,7 +155,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/qwt-install
-          key: qwt-${{ env.QWT_VERSION }}-leap16-qt6
+          key: qwt-${{ env.QWT_VERSION }}-leap16-qt6-v2
 
       - name: Build Qwt from source
         if: steps.qwt-cache.outputs.cache-hit != 'true'
@@ -165,7 +166,8 @@ jobs:
           tar xf qwt.tar.bz2
           cd "qwt-${QWT_VERSION}"
           sed -i "s|^[[:space:]]*QWT_INSTALL_PREFIX[[:space:]]*=.*|QWT_INSTALL_PREFIX = ${{ github.workspace }}/qwt-install|" qwtconfig.pri
-          sed -i -E "/^[[:space:]]*QWT_CONFIG[[:space:]]*\+=[[:space:]]+Qwt(Examples|Playground|Designer|Tests)[[:space:]]*$/d" qwtconfig.pri
+          sed -i 's|^[[:space:]]*QWT_INSTALL_HEADERS[[:space:]]*=.*|QWT_INSTALL_HEADERS = $${QWT_INSTALL_PREFIX}/include/qwt6|' qwtconfig.pri
+          sed -i -E "/^[[:space:]]*QWT_CONFIG[[:space:]]*\+=[[:space:]]+Qwt(Examples|Playground|Designer|Tests|Framework)[[:space:]]*$/d" qwtconfig.pri
           qmake6 qwt.pro
           make -j"$(nproc)"
           make install
@@ -252,7 +254,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/qwt-install
-          key: qwt-${{ env.QWT_VERSION }}-linux-qt${{ env.QT_VERSION }}
+          key: qwt-${{ env.QWT_VERSION }}-linux-qt${{ env.QT_VERSION }}-v2
 
       - name: Build Qwt from source
         if: steps.qwt-cache.outputs.cache-hit != 'true'
@@ -263,7 +265,8 @@ jobs:
           tar xf qwt.tar.bz2
           cd "qwt-${QWT_VERSION}"
           sed -i "s|^[[:space:]]*QWT_INSTALL_PREFIX[[:space:]]*=.*|QWT_INSTALL_PREFIX = ${{ github.workspace }}/qwt-install|" qwtconfig.pri
-          sed -i -E "/^[[:space:]]*QWT_CONFIG[[:space:]]*\+=[[:space:]]+Qwt(Examples|Playground|Designer|Tests)[[:space:]]*$/d" qwtconfig.pri
+          sed -i 's|^[[:space:]]*QWT_INSTALL_HEADERS[[:space:]]*=.*|QWT_INSTALL_HEADERS = $${QWT_INSTALL_PREFIX}/include/qwt6|' qwtconfig.pri
+          sed -i -E "/^[[:space:]]*QWT_CONFIG[[:space:]]*\+=[[:space:]]+Qwt(Examples|Playground|Designer|Tests|Framework)[[:space:]]*$/d" qwtconfig.pri
           qmake6 qwt.pro
           make -j"$(nproc)"
           make install
@@ -352,7 +355,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/qwt-install
-          key: qwt-${{ env.QWT_VERSION }}-macos-qt${{ env.QT_VERSION }}
+          key: qwt-${{ env.QWT_VERSION }}-macos-qt${{ env.QT_VERSION }}-v2
 
       - name: Build Qwt from source
         if: steps.qwt-cache.outputs.cache-hit != 'true'
@@ -364,7 +367,8 @@ jobs:
           cd "qwt-${QWT_VERSION}"
           # Use BSD sed in-place form
           sed -i '' "s|^[[:space:]]*QWT_INSTALL_PREFIX[[:space:]]*=.*|QWT_INSTALL_PREFIX = ${{ github.workspace }}/qwt-install|" qwtconfig.pri
-          sed -i '' -E "/^[[:space:]]*QWT_CONFIG[[:space:]]*\+=[[:space:]]+Qwt(Examples|Playground|Designer|Tests)[[:space:]]*$/d" qwtconfig.pri
+          sed -i '' 's|^[[:space:]]*QWT_INSTALL_HEADERS[[:space:]]*=.*|QWT_INSTALL_HEADERS = $${QWT_INSTALL_PREFIX}/include/qwt6|' qwtconfig.pri
+          sed -i '' -E "/^[[:space:]]*QWT_CONFIG[[:space:]]*\+=[[:space:]]+Qwt(Examples|Playground|Designer|Tests|Framework)[[:space:]]*$/d" qwtconfig.pri
           qmake qwt.pro
           make -j"$(sysctl -n hw.ncpu)"
           make install
@@ -443,7 +447,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/qwt-install
-          key: qwt-${{ env.QWT_VERSION }}-windows-qt${{ env.QT_VERSION }}-msvc
+          key: qwt-${{ env.QWT_VERSION }}-windows-qt${{ env.QT_VERSION }}-msvc-v2
 
       - name: Build Qwt from source
         if: steps.qwt-cache.outputs.cache-hit != 'true'
@@ -460,7 +464,8 @@ jobs:
           cd "qwt-$env:QWT_VERSION"
           $prefix = "${{ github.workspace }}/qwt-install".Replace('\','/')
           (Get-Content qwtconfig.pri) -replace '^\s*QWT_INSTALL_PREFIX\s*=.*', "QWT_INSTALL_PREFIX = $prefix" | Set-Content qwtconfig.pri
-          (Get-Content qwtconfig.pri) | Where-Object { $_ -notmatch '^\s*QWT_CONFIG\s*\+=\s+Qwt(Examples|Playground|Designer|Tests)\s*$' } | Set-Content qwtconfig.pri
+          (Get-Content qwtconfig.pri) -replace '^\s*QWT_INSTALL_HEADERS\s*=.*', 'QWT_INSTALL_HEADERS = $${QWT_INSTALL_PREFIX}/include/qwt6' | Set-Content qwtconfig.pri
+          (Get-Content qwtconfig.pri) | Where-Object { $_ -notmatch '^\s*QWT_CONFIG\s*\+=\s+Qwt(Examples|Playground|Designer|Tests|Framework)\s*$' } | Set-Content qwtconfig.pri
           qmake qwt.pro
           nmake
           nmake install

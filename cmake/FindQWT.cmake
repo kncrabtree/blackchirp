@@ -17,10 +17,12 @@ endif()
 # Find include directory
 find_path(QWT_INCLUDE_DIR
     NAMES qwt.h
-    HINTS 
+    HINTS
         ${PC_QWT_INCLUDE_DIRS}
         ${QWT_ROOT}/include
+        ${QWT_ROOT}/include/qwt6
         $ENV{QWT_ROOT}/include
+        $ENV{QWT_ROOT}/include/qwt6
     PATHS
         /usr/include/qwt
         /usr/include/qwt-qt6
@@ -35,7 +37,21 @@ find_path(QWT_INCLUDE_DIR
     PATH_SUFFIXES
         qwt
         qwt-qt6
+        qwt6
 )
+
+# Source code uses `#include <qwt6/qwt_plot.h>` (the openSUSE convention).
+# When qwt.h is found inside a qwt/qwt-qt6/qwt6 subdirectory, we expose the
+# parent as a second include path so the prefixed include resolves: e.g.,
+# qwt-install/include/qwt6/qwt.h is found here, but the consumer needs
+# qwt-install/include on its include path so <qwt6/qwt_plot.h> works.
+set(QWT_INCLUDE_DIR_PARENT "")
+if(QWT_INCLUDE_DIR)
+    get_filename_component(_qwt_dirname "${QWT_INCLUDE_DIR}" NAME)
+    if(_qwt_dirname MATCHES "^(qwt|qwt-qt6|qwt6)$")
+        get_filename_component(QWT_INCLUDE_DIR_PARENT "${QWT_INCLUDE_DIR}" DIRECTORY)
+    endif()
+endif()
 
 # Find library
 find_library(QWT_LIBRARY
@@ -83,13 +99,16 @@ find_package_handle_standard_args(QWT
 if(QWT_FOUND)
     set(QWT_LIBRARIES ${QWT_LIBRARY})
     set(QWT_INCLUDE_DIRS ${QWT_INCLUDE_DIR})
-    
+    if(QWT_INCLUDE_DIR_PARENT)
+        list(APPEND QWT_INCLUDE_DIRS "${QWT_INCLUDE_DIR_PARENT}")
+    endif()
+
     # Create imported target
     if(NOT TARGET QWT::QWT)
         add_library(QWT::QWT UNKNOWN IMPORTED)
         set_target_properties(QWT::QWT PROPERTIES
             IMPORTED_LOCATION "${QWT_LIBRARY}"
-            INTERFACE_INCLUDE_DIRECTORIES "${QWT_INCLUDE_DIR}"
+            INTERFACE_INCLUDE_DIRECTORIES "${QWT_INCLUDE_DIRS}"
         )
         
         # QWT requires Qt widgets
