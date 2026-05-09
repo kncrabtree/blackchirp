@@ -116,6 +116,24 @@ if(QWT_FOUND)
         set_target_properties(QWT::QWT PROPERTIES
             INTERFACE_LINK_LIBRARIES "Qt6::Widgets"
         )
+
+        # On Windows, Qwt's qmake build defaults to QWT_CONFIG += QwtDll, so
+        # the .lib paired with a qwt.dll is an import library. Qwt's headers
+        # gate `__declspec(dllimport)` annotations on the QWT_DLL preprocessor
+        # macro; without it, MSVC fails to resolve static data members
+        # imported from the DLL (the canonical symptom is unresolved
+        # `QwtPlot::staticMetaObject` and friends in MOC-generated code).
+        # Detect the DLL build by file presence rather than always defining
+        # QWT_DLL on Windows, so a static-Qwt build still links correctly.
+        if(WIN32)
+            get_filename_component(_qwt_lib_dir "${QWT_LIBRARY}" DIRECTORY)
+            if(EXISTS "${_qwt_lib_dir}/qwt.dll"
+               OR EXISTS "${_qwt_lib_dir}/../bin/qwt.dll")
+                set_property(TARGET QWT::QWT APPEND PROPERTY
+                    INTERFACE_COMPILE_DEFINITIONS "QWT_DLL")
+            endif()
+            unset(_qwt_lib_dir)
+        endif()
     endif()
 endif()
 

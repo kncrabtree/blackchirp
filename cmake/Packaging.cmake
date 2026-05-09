@@ -99,8 +99,15 @@ elseif(APPLE)
     # The DragNDrop generator picks those up automatically; no CPACK_BUNDLE_*
     # variables are needed (those apply to the separate Bundle generator).
 
-    # macOS specific installation
-    set(CPACK_SET_DESTDIR TRUE)
+    # Do NOT set CPACK_SET_DESTDIR here. DESTDIR-style staging is the right
+    # mode for system package generators (DEB/RPM/IFW) where the package
+    # must record `/usr` as the install root. For DragNDrop the .app *is*
+    # the unit of distribution and the package root is the install root;
+    # with DESTDIR=ON, CPack would stage the .app under
+    # `${DESTDIR}/usr/local/blackchirp.app`, the install(CODE) hook in
+    # QtDeployment.cmake would look for `${CMAKE_INSTALL_PREFIX}/blackchirp.app`
+    # (i.e., `/usr/local/blackchirp.app`) and miss it, and the DragNDrop
+    # generator's own file walk would not pick the .app into the dmg.
 
 else()
     # ========================================================================

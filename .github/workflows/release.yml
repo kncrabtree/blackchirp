@@ -64,7 +64,7 @@ jobs:
 
       - name: Restore Qwt cache
         id: qwt-cache
-        uses: actions/cache@v5
+        uses: actions/cache/restore@v5
         with:
           path: ${{ github.workspace }}/qwt-install
           # Qt version no longer in the key: system Qt is pinned to the
@@ -85,6 +85,21 @@ jobs:
           qmake6 qwt.pro
           make -j"$(nproc)"
           make install
+
+      # Save the Qwt build immediately after it succeeds so a failure in
+      # Configure / Build / Test / Package below does not waste the rebuild
+      # on the next workflow_dispatch retry. actions/cache@v5 dropped the
+      # save-always option; the unified action's post-step skips the save
+      # whenever the job fails. The split restore/save pattern with this
+      # step gated on cache-hit avoids that — Build Qwt's success implies
+      # the install dir is good, and the job aborts before reaching here
+      # if Build Qwt failed.
+      - name: Save Qwt cache
+        if: steps.qwt-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: ${{ github.workspace }}/qwt-install
+          key: qwt-${{ env.QWT_VERSION }}-ubuntu-noble-sysqt-v1
 
       - name: Configure
         run: |
@@ -223,7 +238,7 @@ jobs:
 
       - name: Restore Qwt cache
         id: qwt-cache
-        uses: actions/cache@v5
+        uses: actions/cache/restore@v5
         with:
           path: ${{ github.workspace }}/qwt-install
           key: qwt-${{ env.QWT_VERSION }}-linux-qt${{ env.QT_VERSION }}-v2
@@ -242,6 +257,13 @@ jobs:
           qmake6 qwt.pro
           make -j"$(nproc)"
           make install
+
+      - name: Save Qwt cache
+        if: steps.qwt-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: ${{ github.workspace }}/qwt-install
+          key: qwt-${{ env.QWT_VERSION }}-linux-qt${{ env.QT_VERSION }}-v2
 
       - name: Configure & build
         run: |
@@ -327,7 +349,7 @@ jobs:
 
       - name: Restore Qwt cache
         id: qwt-cache
-        uses: actions/cache@v5
+        uses: actions/cache/restore@v5
         with:
           path: ${{ github.workspace }}/qwt-install
           key: qwt-${{ env.QWT_VERSION }}-macos-qt${{ env.QT_VERSION }}-v2
@@ -347,6 +369,13 @@ jobs:
           qmake qwt.pro
           make -j"$(sysctl -n hw.ncpu)"
           make install
+
+      - name: Save Qwt cache
+        if: steps.qwt-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: ${{ github.workspace }}/qwt-install
+          key: qwt-${{ env.QWT_VERSION }}-macos-qt${{ env.QT_VERSION }}-v2
 
       - name: Configure
         run: |
@@ -419,7 +448,7 @@ jobs:
 
       - name: Restore Qwt cache
         id: qwt-cache
-        uses: actions/cache@v5
+        uses: actions/cache/restore@v5
         with:
           path: ${{ github.workspace }}/qwt-install
           key: qwt-${{ env.QWT_VERSION }}-windows-qt${{ env.QT_VERSION }}-msvc-v3
@@ -448,6 +477,13 @@ jobs:
           qmake qwt.pro
           nmake
           nmake install
+
+      - name: Save Qwt cache
+        if: steps.qwt-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: ${{ github.workspace }}/qwt-install
+          key: qwt-${{ env.QWT_VERSION }}-windows-qt${{ env.QT_VERSION }}-msvc-v3
 
       - name: Configure
         shell: pwsh

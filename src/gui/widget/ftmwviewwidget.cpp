@@ -10,6 +10,7 @@
 #include <QWidgetAction>
 #include <QFormLayout>
 #include <QDialog>
+#include <QDialogButtonBox>
 #include <QTreeWidget>
 #include <QtConcurrent/QtConcurrent>
 
