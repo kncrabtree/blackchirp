@@ -1,6 +1,16 @@
 Python Module
 =============
 
+.. important::
+
+   These docs describe the 2.0 pre-release of the ``blackchirp``
+   Python module. The stable release on PyPI (0.0.11) corresponds to
+   the `Blackchirp 1.1.x docs <https://blackchirp.readthedocs.io/1.1.x/>`_,
+   so a plain ``pip install blackchirp`` installs that version. To
+   install the pre-release version that matches these docs, use::
+
+       pip install --pre blackchirp
+
 The companion ``blackchirp`` Python package loads experiment folders
 from disk and reproduces the bulk of Blackchirp's data-processing
 pipeline (FID Fourier transforms, sideband deconvolution, LIF gate

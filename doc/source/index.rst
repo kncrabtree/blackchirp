@@ -15,6 +15,13 @@
 Blackchirp Documentation
 ========================
 
+.. important::
+
+   Blackchirp 2.0 is in pre-release. Documentation for the current
+   v1.1.0 release is at https://blackchirp.readthedocs.io/1.1.x/.
+   For information about accessing the 2.0 pre-release, join the
+   `Discord server`_.
+
 Blackchirp is a cross-platform (Windows, macOS, Linux) data acquisition
 program for chirped-pulse Fourier transform microwave (CP-FTMW)
 spectrometers. It accommodates a wide range of hardware combinations —

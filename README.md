@@ -18,6 +18,13 @@
 
 ---
 
+> [!NOTE]
+> **Blackchirp 2.0 is in pre-release.** Documentation for the current
+> v1.1.0 release is at
+> [https://blackchirp.readthedocs.io/1.1.x/](https://blackchirp.readthedocs.io/1.1.x/).
+> For information about accessing the 2.0 pre-release, join the
+> [Discord server](https://discord.gg/88CkbAKUZY).
+
 Blackchirp drives a CP-FTMW spectrometer end-to-end: it controls the
 chirp source, digitizer, and supporting hardware; displays FIDs and
 their Fourier transforms in real time; and writes plain-text data that
