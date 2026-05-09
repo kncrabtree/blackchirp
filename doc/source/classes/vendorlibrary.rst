@@ -51,7 +51,7 @@ Concrete subclasses
    ``BC::Labjack`` facade in ``labjackdriver.h`` abstracts the platform
    difference and is the preferred entry point for hardware code. The
    cross-platform architecture is described in
-   ``dev-docs/labjack-cross-platform-support.md``.
+   :doc:`/developer_guide/vendor_libraries`.
 
 ``SpectrumLibrary``
    Loads the Spectrum Instrumentation driver (``spcm_linux`` / ``spcm64.dll``).

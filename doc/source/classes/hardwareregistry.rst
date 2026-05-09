@@ -106,8 +106,8 @@ side; ``CommunicationProtocol::Custom`` on such a driver is the explicit
 signal that all connection handling is performed by the ``.py`` script.
 Python-specific documentation is covered in the Python hardware guide.
 
-The settings-registry developer guide (``dev-docs/settings-registry.md``)
-gives worked examples of the full registration pattern. The user-facing
+Worked examples of the full registration pattern are in
+:doc:`/developer_guide/hardware_configuration`. The user-facing
 surfaces — profile creation and the hardware settings dialog — are described
 in :doc:`/user_guide/hardware_config`.
 

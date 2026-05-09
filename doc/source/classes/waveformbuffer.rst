@@ -18,7 +18,7 @@ overflow, and low-latency consumer notification via ``QSemaphore``.
 pointer to it (set via ``setWaveformBuffer()`` during acquisition setup and
 retrieved by ``AcquisitionManager`` via ``waveformBuffer()``). The digitizer
 data-flow design, including the rationale for the ring-buffer approach, is
-described in ``dev-docs/digitizer-data-flow.md``.
+described in :doc:`/developer_guide/ftmw_acquisition`.
 
 Thread-safety discipline
 ------------------------

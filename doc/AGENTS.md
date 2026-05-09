@@ -76,9 +76,10 @@ terms it introduces.
 
 UI screenshots go in `doc/source/_static/user_guide/<page-name>/`.
 Reference them with `.. figure::` directives so they get a caption and
-fit into the page flow. Sizing conventions are in
-`dev-docs/docrev/bundle-14b-screenshot-sizing.md` (until release; the
-final convention is captured in the existing rendered pages).
+fit into the page flow. Sizing convention: native ≤800 px renders 1:1
+(no `:width:`); native >800 px caps at `:width: 800` with `:target:`
+linking to the full-resolution image so users can click through.
+Match the existing rendered pages.
 
 ### API reference
 
