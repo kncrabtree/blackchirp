@@ -66,6 +66,23 @@ function(blackchirp_deploy_qt target)
             )
         " COMPONENT Applications)
     elseif(APPLE)
+        # macdeployqt resolves the binary's load-command closure with otool.
+        # Qwt's qmake build on macOS produces a libqwt.6.dylib whose recorded
+        # install_name does not point at the from-source install dir, so the
+        # binary's LC_LOAD_DYLIB references a file macdeployqt cannot find on
+        # the build host. Without `-libpath`, macdeployqt prints
+        # `ERROR: no file at ...libqwt.6.dylib` and silently leaves the dylib
+        # out of the bundle, producing a .app that fails to launch on a clean
+        # Mac. Passing the directory containing the from-source libqwt lets
+        # macdeployqt locate the library by basename, copy it into
+        # Contents/Frameworks/, and rewrite the load command to point inside
+        # the bundle.
+        set(_macdeployqt_libpath_args)
+        if(QWT_LIBRARY)
+            get_filename_component(_qwt_lib_dir "${QWT_LIBRARY}" DIRECTORY)
+            list(APPEND _macdeployqt_libpath_args "-libpath=${_qwt_lib_dir}")
+        endif()
+
         # Both apps install with BUNDLE DESTINATION `.` so the .app sits at
         # the install-prefix root (matches DragNDrop DMG layout).
         install(CODE "
@@ -77,6 +94,7 @@ function(blackchirp_deploy_qt target)
             execute_process(
                 COMMAND \"${BLACKCHIRP_MACDEPLOYQT_EXECUTABLE}\"
                     \"\${_bundle}\"
+                    ${_macdeployqt_libpath_args}
                     -verbose=1
                 COMMAND_ERROR_IS_FATAL ANY
             )

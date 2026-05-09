@@ -99,7 +99,9 @@ void LifDisplayWidget::prepareForExperiment(const Experiment &e)
     p_procWidget->setEnabled(false);
     d_currentIntegratedData.clear();
 
-    d_dString = QString("Delay: %1 ")+BC::Unit::us;
+    // .toString() is a Qt 6.4 shim — remove in 6.5+ (QString gained a
+    // QStringView operator+ overload in 6.5).
+    d_dString = QString("Delay: %1 ")+BC::Unit::us.toString();
     d_lString = QString("Laser: %1 ");
     // Find LifLaser hardware in the new hardware data container
     QString lifLaserKey;

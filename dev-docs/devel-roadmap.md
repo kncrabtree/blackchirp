@@ -161,6 +161,16 @@ pins its `QAnyStringView` entry point through a
 `text.toString()` conversion before any `arg()` reaches it, and no
 multi-arg `arg()` elsewhere in the tree consumes a `QAnyStringView`.
 
+### Drop the `QStringView` -> `QString` workaround in `lifdisplaywidget.cpp`
+
+`src/gui/lif/gui/lifdisplaywidget.cpp:102` concatenates `QString` with
+`BC::Unit::us` (a `QStringView`) via `operator+`. Qt 6.4's `QString`
+has no `operator+` overload accepting `QStringView`; Qt 6.5 added one.
+The same Ubuntu-noble apt-Qt 6.4.2 ceiling that forces the
+`hwLog`-family workaround is what forces this one. When the deb-job
+Qt rolls forward to >= 6.5, drop the `.toString()` call and remove
+the inline comment.
+
 ### MSVC cosmetic warnings
 
 The Windows release build emits ~50 unique non-vendor warnings.

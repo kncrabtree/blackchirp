@@ -45,19 +45,25 @@ if(WIN32)
     
     list(APPEND CPACK_GENERATOR "NSIS" "ZIP")
 
-    # NSIS specific settings
+    # NSIS specific settings.
+    #
+    # Forward slashes are used in path-shaped values rather than escaped
+    # backslashes. CPack writes these into the auto-generated
+    # CPackConfig.cmake as quoted strings; with backslashes, CMake parses
+    # the resulting `\P` / `\a` / `\b` as invalid escape sequences and
+    # emits CMP0010 dev warnings. NSIS itself accepts forward slashes in
+    # icon and InstallDir contexts, and the install-root value uses
+    # NSIS's `$PROGRAMFILES64` predefined variable rather than a literal
+    # path so it follows the user's localized Program Files location.
     set(CPACK_NSIS_DISPLAY_NAME "Blackchirp")
     set(CPACK_NSIS_PACKAGE_NAME "Blackchirp")
-    set(CPACK_NSIS_INSTALL_ROOT "C:\\Program Files")
+    set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES64")
 
-    # Branding icons. NSIS requires native paths with backslashes.
-    set(_bc_ico_native "${CMAKE_CURRENT_SOURCE_DIR}/icons/blackchirp.ico")
-    file(TO_NATIVE_PATH "${_bc_ico_native}" _bc_ico_native)
-    set(CPACK_NSIS_MUI_ICON "${_bc_ico_native}")
-    set(CPACK_NSIS_MUI_UNIICON "${_bc_ico_native}")
+    set(CPACK_NSIS_MUI_ICON "${CMAKE_CURRENT_SOURCE_DIR}/icons/blackchirp.ico")
+    set(CPACK_NSIS_MUI_UNIICON "${CMAKE_CURRENT_SOURCE_DIR}/icons/blackchirp.ico")
     # Path under the install prefix to the executable whose icon is shown
     # in Windows' "Add or Remove Programs" / "Apps & features" entry.
-    set(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\blackchirp.exe")
+    set(CPACK_NSIS_INSTALLED_ICON_NAME "bin/blackchirp.exe")
     
     # Start menu and desktop shortcuts
     set(CPACK_NSIS_MENU_LINKS
