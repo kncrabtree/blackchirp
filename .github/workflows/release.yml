@@ -487,6 +487,11 @@ jobs:
         run: |
           DESTDIR="${{ github.workspace }}/AppDir" cmake --install build --component Applications
           DESTDIR="${{ github.workspace }}/AppDir" cmake --install build --component Libraries || true
+          # Two AppImages ship per release: the main acquisition app and a
+          # viewer-only entry point. linuxdeploy mutates the AppDir in place
+          # (RPATH patches, AppRun injection, libdir cleanup) so each output
+          # needs its own pristine AppDir tree to start from.
+          cp -a AppDir AppDir-viewer
 
       - name: Fetch linuxdeploy
         run: |
@@ -497,7 +502,7 @@ jobs:
           wget -q https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
           chmod +x linuxdeploy-*.AppImage
 
-      - name: Build AppImage
+      - name: Build AppImages (main and viewer)
         env:
           QML_SOURCES_PATHS: ${{ github.workspace }}/src
           # linuxdeploy resolves the binary's dependency closure via ldd, so
@@ -506,14 +511,31 @@ jobs:
           LD_LIBRARY_PATH: ${{ github.workspace }}/qwt-install/lib:${{ env.QT_ROOT_DIR }}/lib
         run: |
           set -euxo pipefail
+          mkdir -p dist
+
+          # Main AppImage — entry point: blackchirp. linuxdeploy reads the
+          # desktop's Name= for the output filename; "Blackchirp" yields
+          # Blackchirp-x86_64.AppImage cleanly.
           ./tools/linuxdeploy-x86_64.AppImage \
             --appdir AppDir \
             --plugin qt \
             --desktop-file AppDir/usr/share/applications/blackchirp.desktop \
             --icon-file AppDir/usr/share/icons/hicolor/256x256/apps/blackchirp.png \
             --output appimage
-          mkdir -p dist
-          mv Blackchirp*.AppImage dist/
+          mv Blackchirp-x86_64.AppImage dist/
+
+          # Viewer AppImage — entry point: blackchirp-viewer. Without OUTPUT,
+          # appimagetool would produce `Blackchirp_Viewer-x86_64.AppImage`
+          # (Name=Blackchirp Viewer with the space mangled to _); pin the
+          # filename explicitly so docs and signing globs stay deterministic.
+          OUTPUT=Blackchirp-Viewer-x86_64.AppImage \
+            ./tools/linuxdeploy-x86_64.AppImage \
+              --appdir AppDir-viewer \
+              --plugin qt \
+              --desktop-file AppDir-viewer/usr/share/applications/blackchirp-viewer.desktop \
+              --icon-file AppDir-viewer/usr/share/icons/hicolor/256x256/apps/blackchirp-viewer.png \
+              --output appimage
+          mv Blackchirp-Viewer-x86_64.AppImage dist/
 
       - name: Import GPG signing key
         env:
@@ -954,10 +976,16 @@ jobs:
             libfuse2 libopengl0 libegl1 libgl1
       - name: Run --version
         run: |
-          AI=$(ls Blackchirp-*.AppImage | head -1)
-          chmod +x "$AI"
-          # AppImage's AppRun forwards args to the embedded blackchirp binary.
-          "./$AI" --version
+          set -e
+          # Each AppImage's AppRun forwards args to its bound entry-point
+          # binary (blackchirp for the main AppImage, blackchirp-viewer for
+          # the viewer AppImage). Smoke-running both confirms the second
+          # linuxdeploy invocation produced an AppImage that loads its
+          # bundled libraries the same way the main one does.
+          for AI in Blackchirp-*.AppImage; do
+            chmod +x "$AI"
+            "./$AI" --version
+          done
 
   macos-smoke:
     name: macOS smoke

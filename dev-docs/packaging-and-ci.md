@@ -56,6 +56,26 @@ so RPM's AUTOREQ derives `libqwt-qt6.so.*` automatically. The other three
 jobs build Qwt from source because no reliable Qt6 Qwt exists on
 Homebrew, vcpkg, or any LTS apt channel.
 
+### Two AppImages per release
+
+The Linux AppImage job emits both `Blackchirp-x86_64.AppImage` (main
+acquisition app) and `Blackchirp-Viewer-x86_64.AppImage` (viewer-only
+entry point). Each is fully self-contained — bundled Qt/Qwt/GSL is the
+size driver and is duplicated across the two — but the duplication is
+deliberate: AppImage users are exactly the audience without a system
+package manager that pulls in both binaries, so click-and-run
+discoverability beats download efficiency. Users who do care about the
+size run the viewer from inside the main AppImage via
+`--appimage-mount` or `--appimage-extract`; the main AppImage bundles
+both binaries internally.
+
+The build runs `linuxdeploy` twice against two AppDir copies (the
+plugin mutates the AppDir in place — RPATH patches, AppRun injection,
+libdir cleanup — so a single tree cannot be reused). `OUTPUT=` pins
+the viewer AppImage's filename because appimagetool would otherwise
+mangle `Name=Blackchirp Viewer` to `Blackchirp_Viewer-x86_64.AppImage`
+with an underscore, breaking the docs' `Blackchirp-Viewer-…` glob.
+
 ### AppImage glibc floor
 
 The AppImage build pins `runs-on: ubuntu-22.04` rather than `ubuntu-latest`.

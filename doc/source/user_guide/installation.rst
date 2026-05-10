@@ -37,7 +37,7 @@ Each release provides the following artifacts:
      - ``.rpm``
      - Dependencies resolved automatically by ``zypper`` / ``dnf`` / ``yum``
    * - Linux (universal)
-     - ``.AppImage``
+     - ``.AppImage`` (two: main app and viewer)
      - Self-contained; runs on Arch, NixOS, and any other Linux distribution
    * - Linux (generic)
      - ``.tar.gz``
@@ -79,13 +79,56 @@ repositories.
 
 **Linux — AppImage**
 
-Download the ``.AppImage`` file, make it executable, and run it::
+Two AppImages are published for each release:
 
-    chmod +x blackchirp-<version>-x86_64.AppImage
-    ./blackchirp-<version>-x86_64.AppImage
+* ``Blackchirp-x86_64.AppImage`` — main acquisition application.
+* ``Blackchirp-Viewer-x86_64.AppImage`` — standalone viewer for
+  inspecting and analyzing data without launching the full
+  acquisition stack.
 
-The AppImage bundles Qt, Qwt, and all other required libraries; no
-system-level dependencies need to be installed.
+Each is self-contained — Qt, Qwt, and all other required libraries
+are bundled inside, and no system-level dependencies need to be
+installed. Download whichever you need, mark it executable, and run::
+
+    chmod +x Blackchirp-x86_64.AppImage
+    ./Blackchirp-x86_64.AppImage
+
+Users who want both applications without doubling the download size
+can use the main AppImage alone — the viewer binary is bundled inside
+it. See :ref:`installation-appimage-viewer-from-main` below.
+
+.. _installation-appimage-viewer-from-main:
+
+Running the Viewer from the Main AppImage
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The main ``Blackchirp-x86_64.AppImage`` bundles both the
+``blackchirp`` and ``blackchirp-viewer`` binaries internally. The
+AppImage's auto-generated launcher only runs the main application,
+but the viewer binary inside the bundle is launchable directly.
+
+**One-off launch (mounts the AppImage, leaves nothing on disk).**
+Open two terminals. In the first::
+
+    ./Blackchirp-x86_64.AppImage --appimage-mount
+
+The AppImage prints the mount path (similar to
+``/tmp/.mount_BlackcXXXXXX``) and stays in the foreground to keep the
+mount alive. In the second terminal::
+
+    /tmp/.mount_BlackcXXXXXX/usr/bin/blackchirp-viewer
+
+When the viewer exits, return to the first terminal and press Ctrl+C
+to unmount the AppImage.
+
+**Repeated use (extracts once, leaves a directory on disk).**
+A one-time extraction makes both binaries directly launchable::
+
+    ./Blackchirp-x86_64.AppImage --appimage-extract
+    ./squashfs-root/usr/bin/blackchirp-viewer
+
+The bundled libraries resolve correctly from either form because the
+viewer binary is built with ``RUNPATH`` set to ``$ORIGIN/../lib``.
 
 **macOS — DMG**
 
