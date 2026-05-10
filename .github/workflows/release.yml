@@ -358,6 +358,10 @@ jobs:
           set -e
           printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import
           gpg --list-secret-keys "$GPG_KEY_ID" >/dev/null
+          # Populate rpm's own keyring as well — `rpm --checksig` consults
+          # rpm's DB, not gpg's, so without this the post-sign verification
+          # reports "SIGNATURES NOT OK" even on a perfectly-good signature.
+          rpm --import packaging/blackchirp-release.asc
 
       - name: Sign RPM (embedded)
         # `rpmsign --addsign` writes the signature into the RPM lead/header
