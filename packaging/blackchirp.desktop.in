@@ -5,6 +5,7 @@ GenericName=CP-FTMW Spectroscopy
 Comment=Data acquisition for chirped-pulse Fourier transform microwave spectroscopy
 Exec=blackchirp
 Icon=blackchirp
+StartupWMClass=blackchirp
 Terminal=false
 Categories=Science;Education;DataVisualization;
 StartupNotify=true

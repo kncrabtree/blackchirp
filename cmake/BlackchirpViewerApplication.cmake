@@ -97,14 +97,14 @@ if(WIN32)
     set_target_properties(blackchirp-viewer PROPERTIES
         WIN32_EXECUTABLE TRUE
     )
-    set(_bcv_rc "${CMAKE_CURRENT_SOURCE_DIR}/icons/blackchirp.rc")
+    set(_bcv_rc "${CMAKE_CURRENT_SOURCE_DIR}/icons/blackchirp-viewer.rc")
     if(EXISTS ${_bcv_rc})
         target_sources(blackchirp-viewer PRIVATE ${_bcv_rc})
     endif()
 
 elseif(APPLE)
     # macOS bundle configuration
-    set(_bcv_icns "${CMAKE_CURRENT_SOURCE_DIR}/icons/blackchirp.icns")
+    set(_bcv_icns "${CMAKE_CURRENT_SOURCE_DIR}/icons/blackchirp-viewer.icns")
     set_target_properties(blackchirp-viewer PROPERTIES
         MACOSX_BUNDLE TRUE
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/packaging/macos/ViewerInfo.plist"
@@ -112,7 +112,7 @@ elseif(APPLE)
         MACOSX_BUNDLE_BUNDLE_VERSION ${BCV_MAJOR_VERSION}.${BCV_MINOR_VERSION}.${BCV_PATCH_VERSION}
         MACOSX_BUNDLE_SHORT_VERSION_STRING ${BCV_MAJOR_VERSION}.${BCV_MINOR_VERSION}.${BCV_PATCH_VERSION}
         MACOSX_BUNDLE_COPYRIGHT "Copyright © Kyle N. Crabtree"
-        MACOSX_BUNDLE_ICON_FILE "blackchirp.icns"
+        MACOSX_BUNDLE_ICON_FILE "blackchirp-viewer.icns"
     )
     if(EXISTS ${_bcv_icns})
         target_sources(blackchirp-viewer PRIVATE ${_bcv_icns})
@@ -120,10 +120,14 @@ elseif(APPLE)
             MACOSX_PACKAGE_LOCATION "Resources"
         )
     endif()
-    
+
 else()
-    # Linux desktop integration: viewer shares the main application's
-    # hicolor icons (Icon=blackchirp); only the .desktop file is unique.
+    # Linux desktop integration: install the viewer .desktop file plus
+    # its dedicated icon set. The viewer ships an inverted-color version
+    # of the acquisition-app icon (see cmake/regenerate-icons.sh) so the
+    # taskbar/dock distinguishes the two running apps at a glance; the
+    # .desktop file's Icon=blackchirp-viewer routes the lookup to that
+    # tree.
     if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/packaging/blackchirp-viewer.desktop.in)
         configure_file(
             ${CMAKE_CURRENT_SOURCE_DIR}/packaging/blackchirp-viewer.desktop.in
@@ -134,6 +138,32 @@ else()
             DESTINATION share/applications
             COMPONENT Applications
         )
+    endif()
+
+    # Legacy pixmap fallback (older WMs / minimal installs without an
+    # icon-theme cache). The hicolor tree below is what XDG-compliant
+    # desktops render from.
+    set(_bcv_pixmap "${CMAKE_CURRENT_SOURCE_DIR}/icons/blackchirp-viewer.png")
+    if(EXISTS ${_bcv_pixmap})
+        install(FILES ${_bcv_pixmap}
+            DESTINATION share/pixmaps
+            COMPONENT Applications
+        )
+    endif()
+
+    # Hicolor icon theme tree (XDG icon-theme spec).
+    set(_bcv_hicolor_dir "${CMAKE_CURRENT_SOURCE_DIR}/icons/hicolor")
+    if(IS_DIRECTORY ${_bcv_hicolor_dir})
+        foreach(_sz 16 22 24 32 48 64 128 256 512)
+            set(_bcv_hicolor_png
+                "${_bcv_hicolor_dir}/${_sz}x${_sz}/apps/blackchirp-viewer.png")
+            if(EXISTS ${_bcv_hicolor_png})
+                install(FILES ${_bcv_hicolor_png}
+                    DESTINATION share/icons/hicolor/${_sz}x${_sz}/apps
+                    COMPONENT Applications
+                )
+            endif()
+        endforeach()
     endif()
 endif()
 

@@ -97,6 +97,12 @@ int main(int argc, char *argv[])
     QApplication::setOrganizationDomain(QString("crabtreelab.ucdavis.edu"));
     QApplication::setOrganizationName(QString("CrabtreeLab"));
 
+    // Tie the running window to share/applications/blackchirp-viewer.desktop
+    // so Wayland (xdg_toplevel.app_id) and X11 (WM_CLASS) can both look up
+    // the Icon= entry. applicationName is "Blackchirp<major>" — shared with
+    // the acquisition app for QSettings — so it can't drive this lookup.
+    QGuiApplication::setDesktopFileName(QString("blackchirp-viewer"));
+
     SettingsStorage s;
     auto f = s.get(BC::Key::appFont,QFont(QString("sans-serif"),8));
     a.setFont(f);

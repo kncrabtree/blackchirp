@@ -109,6 +109,15 @@ int main(int argc, char *argv[])
     QApplication::setOrganizationDomain(QString("crabtreelab.ucdavis.edu"));
     QApplication::setOrganizationName(QString("CrabtreeLab"));
 
+    // Tie the running window to its installed .desktop file. Wayland
+    // compositors take xdg_toplevel.app_id from this; Qt also feeds it
+    // into WM_CLASS on X11. Without it, the compositor can't correlate
+    // the window to share/applications/blackchirp.desktop and falls back
+    // to a generic taskbar icon. applicationName is "Blackchirp<major>"
+    // (the QSettings storage key — shared with the viewer), so it can't
+    // double as the desktop-file name.
+    QGuiApplication::setDesktopFileName(QString("blackchirp"));
+
     SettingsStorage s;
     auto f = ApplicationConfigManager::instance().getOptionValue(BC::Key::AppConfig::appFont).value<QFont>();
     a.setFont(f);
