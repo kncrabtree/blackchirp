@@ -50,25 +50,51 @@ endif()
 # and `cpack` (which sets CMAKE_INSTALL_PREFIX to a staging directory).
 function(blackchirp_deploy_qt target)
     if(WIN32)
-        # No --no-compiler-runtime: windeployqt's compiler-runtime mode
-        # bundles vcruntime140.dll / msvcp140.dll / vcruntime140_1.dll
-        # alongside the .exe so the package runs on a clean Windows
-        # install without the user having to grab the VC++ Redistributable
-        # separately. Skipping it produces packages that work on the
-        # build host (VS Build Tools in System32) but fail with
-        # STATUS_DLL_NOT_FOUND on a stock Windows machine.
+        # Locate qwt.dll so windeployqt walks its Qt-module imports as
+        # well as the .exe's. Without this, qwt's runtime deps on
+        # Qt6OpenGL.dll / Qt6OpenGLWidgets.dll are missed (the .exe
+        # itself only links Qt6Widgets / Core / Gui), and the installed
+        # package fails with STATUS_DLL_NOT_FOUND. windeployqt accepts
+        # multiple input binaries and unions their dep closures.
+        set(_qwt_dll_arg)
+        if(QWT_LIBRARY)
+            get_filename_component(_qwt_lib_dir "${QWT_LIBRARY}" DIRECTORY)
+            foreach(_candidate "${_qwt_lib_dir}/qwt.dll"
+                               "${_qwt_lib_dir}/../bin/qwt.dll")
+                if(EXISTS "${_candidate}")
+                    get_filename_component(_qwt_dll "${_candidate}" ABSOLUTE)
+                    set(_qwt_dll_arg "${_qwt_dll}")
+                    break()
+                endif()
+            endforeach()
+            unset(_qwt_lib_dir)
+        endif()
+
+        # --no-compiler-runtime: windeployqt's --compiler-runtime mode
+        # ships vc_redist.x64.exe (25 MB installer) rather than the
+        # individual DLLs. The build runner has the VC++ runtime in
+        # System32 from VS Build Tools, so the smoke test doesn't need
+        # them bundled; end-user distribution of the VC++ Redistributable
+        # is a separate decision (NSIS-driven auto-run, or document the
+        # prerequisite) tracked outside this hook.
         install(CODE "
             set(_exe \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/${target}.exe\")
             if(NOT EXISTS \"\${_exe}\")
                 message(FATAL_ERROR \"windeployqt: ${target}.exe not found at \${_exe}\")
             endif()
-            message(STATUS \"Running windeployqt on \${_exe}\")
+            set(_extra_targets)
+            if(\"${_qwt_dll_arg}\" AND EXISTS \"${_qwt_dll_arg}\")
+                list(APPEND _extra_targets \"${_qwt_dll_arg}\")
+            endif()
+            message(STATUS \"Running windeployqt on \${_exe} \${_extra_targets}\")
             execute_process(
                 COMMAND \"${BLACKCHIRP_WINDEPLOYQT_EXECUTABLE}\"
                     --no-translations
-                    --compiler-runtime
+                    --no-compiler-runtime
+                    --dir \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\"
                     --verbose 1
                     \"\${_exe}\"
+                    \${_extra_targets}
                 COMMAND_ERROR_IS_FATAL ANY
             )
         " COMPONENT Applications)
