@@ -46,12 +46,20 @@ int main(int argc, char *argv[])
 #ifdef Q_OS_WIN
     // GUI-subsystem binaries don't inherit a console, so stdout from
     // --version / --help disappears unless we reattach to the parent
-    // shell's console explicitly. AttachConsole returns FALSE when the
-    // process was launched from a non-console parent (e.g., Explorer),
-    // in which case we leave stdout alone and behave as a normal GUI app.
-    if (AttachConsole(ATTACH_PARENT_PROCESS)) {
-        freopen("CONOUT$", "w", stdout);
-        freopen("CONOUT$", "w", stderr);
+    // shell's console explicitly. Only do that when stdout has no real
+    // handle yet — if it does (file/pipe via shell redirection or
+    // `Start-Process -RedirectStandardOutput`), freopen-to-CONOUT$
+    // would clobber the redirection and the caller would see no output.
+    {
+        HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+        DWORD type = (h == NULL || h == INVALID_HANDLE_VALUE)
+                       ? FILE_TYPE_UNKNOWN
+                       : GetFileType(h);
+        if (type == FILE_TYPE_UNKNOWN
+            && AttachConsole(ATTACH_PARENT_PROCESS)) {
+            freopen("CONOUT$", "w", stdout);
+            freopen("CONOUT$", "w", stderr);
+        }
     }
 #endif
 

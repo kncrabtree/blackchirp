@@ -797,14 +797,14 @@ jobs:
           DMG=$(ls Blackchirp-*.dmg | head -1)
           # -nobrowse keeps the volume out of Finder; -mountpoint pins the
           # path so we don't have to scrape `hdiutil info` for it.
-          # `yes |` defensively answers any DMG software-license agreement
-          # prompt; the SLA itself is suppressed in cmake/Packaging.cmake
-          # via CPACK_DMG_SLA_USE_RESOURCE_FILE_LICENSE=OFF, but pipe the
-          # `Y` stream anyway so the smoke test stays robust if the SLA
-          # mechanism comes back.
+          # No `yes |` prefix: with CPACK_DMG_SLA_USE_RESOURCE_FILE_LICENSE
+          # OFF in cmake/Packaging.cmake, hdiutil never reads stdin, so a
+          # piped `yes` gets SIGPIPE on its second write and exits 1 —
+          # which `set -o pipefail` then turns into a step failure even
+          # though the mount itself succeeded.
           MNT=/tmp/bc-mount
           mkdir -p "$MNT"
-          yes | hdiutil attach "$DMG" -nobrowse -mountpoint "$MNT"
+          hdiutil attach "$DMG" -nobrowse -mountpoint "$MNT"
           cp -R "$MNT/blackchirp.app" /tmp/
           cp -R "$MNT/blackchirp-viewer.app" /tmp/
           hdiutil detach "$MNT"
@@ -834,7 +834,23 @@ jobs:
           $viewer = 'C:\Blackchirp\bin\blackchirp-viewer.exe'
           if (-not (Test-Path $bin))   { throw "Install did not produce $bin" }
           if (-not (Test-Path $viewer)) { throw "Install did not produce $viewer" }
-          & $bin --version
-          if ($LASTEXITCODE -ne 0) { throw "blackchirp --version exited $LASTEXITCODE" }
-          & $viewer --version
-          if ($LASTEXITCODE -ne 0) { throw "blackchirp-viewer --version exited $LASTEXITCODE" }
+          # GUI-subsystem .exe + pwsh's `&` operator is a known race —
+          # pwsh doesn't reliably wait, so $LASTEXITCODE comes back null
+          # even when the binary exited cleanly. Start-Process -Wait
+          # blocks on the actual process, $proc.ExitCode is read from
+          # the OS, and -RedirectStandardOutput captures the binary's
+          # stdout to a file (which it can write because main.cpp now
+          # skips AttachConsole when stdout is already a real handle).
+          function Invoke-Smoke($path, $label) {
+              $out = Join-Path $env:RUNNER_TEMP "$label.out"
+              $err = Join-Path $env:RUNNER_TEMP "$label.err"
+              $p = Start-Process -FilePath $path -ArgumentList '--version' `
+                  -Wait -PassThru -NoNewWindow `
+                  -RedirectStandardOutput $out -RedirectStandardError $err
+              Get-Content $out, $err | Write-Host
+              if ($p.ExitCode -ne 0) {
+                  throw "$label --version exited $($p.ExitCode)"
+              }
+          }
+          Invoke-Smoke $bin    'blackchirp'
+          Invoke-Smoke $viewer 'blackchirp-viewer'

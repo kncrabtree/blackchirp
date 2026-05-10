@@ -36,10 +36,19 @@ int main(int argc, char *argv[])
 {
 #ifdef Q_OS_WIN
     // GUI-subsystem binaries don't inherit a console; reattach to the
-    // parent shell's so --version / --help can write to stdout.
-    if (AttachConsole(ATTACH_PARENT_PROCESS)) {
-        freopen("CONOUT$", "w", stdout);
-        freopen("CONOUT$", "w", stderr);
+    // parent shell's so --version / --help can write to stdout — but
+    // only when stdout has no real handle yet, so a `Start-Process
+    // -RedirectStandardOutput` or shell `>` doesn't get clobbered.
+    {
+        HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+        DWORD type = (h == NULL || h == INVALID_HANDLE_VALUE)
+                       ? FILE_TYPE_UNKNOWN
+                       : GetFileType(h);
+        if (type == FILE_TYPE_UNKNOWN
+            && AttachConsole(ATTACH_PARENT_PROCESS)) {
+            freopen("CONOUT$", "w", stdout);
+            freopen("CONOUT$", "w", stderr);
+        }
     }
 #endif
 
