@@ -13,6 +13,41 @@ installation paths are available:
   that the binary distribution does not include, or when you want to
   contribute to development.
 
+.. _installation-supported:
+
+Supported Platforms
+-------------------
+
+The binary artifacts target the following operating-system minimums.
+Source builds may run on older releases provided Qt 6.9 or newer and
+the rest of the build toolchain are available.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Artifact
+     - Minimum OS / distribution
+   * - Linux ``.deb``
+     - Ubuntu 24.04 (Noble Numbat) or newer; Debian 13 (Trixie) or
+       newer. The ``.deb`` depends on the system Qt6 packages, so
+       distributions older than these ship a Qt that is too old to
+       satisfy the package's ``Depends:`` line.
+   * - Linux ``.rpm``
+     - openSUSE Leap 16.0 or newer; openSUSE Tumbleweed; Fedora 41
+       or newer; RHEL 9 or newer and rebuilds (AlmaLinux 9, Rocky
+       Linux 9).
+   * - Linux ``.AppImage``
+     - glibc 2.35 or newer — Ubuntu 22.04+, Debian 12+, RHEL 9+,
+       openSUSE Leap 15.5+. The AppImage bundles its own Qt and Qwt
+       and runs on any distribution at or above this glibc floor.
+   * - macOS ``.dmg``
+     - macOS 13.3 (Ventura 13.3) or newer, on both Apple Silicon
+       (M1/M2/M3/M4) and Intel hardware.
+   * - Windows ``.exe`` / ``.zip``
+     - Windows 10 version 1809 (October 2018 Update) or newer;
+       Windows 11. Built against the MSVC 2022 runtime.
+
 .. _installation-binary:
 
 Binary Distribution

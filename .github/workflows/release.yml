@@ -688,12 +688,16 @@ jobs:
           - arch: x86_64
             runner: macos-15-intel
     env:
-      # Pin the binary's minimum macOS to 11.0 explicitly. Without this,
+      # Pin the binary's minimum macOS to 13.3 explicitly. Without this,
       # CMake picks up the SDK's default (whatever the runner image
       # ships) and the floor drifts upward each time GitHub bumps the
-      # runner image. macOS 11 is the first version that supports
-      # Apple Silicon and is the Qt 6.9 minimum on both architectures.
-      MACOSX_DEPLOYMENT_TARGET: "11.0"
+      # runner image. The 13.3 floor is set by the floating-point
+      # overloads of std::to_chars in Apple's libc++, which carry an
+      # availability attribute introducing them in macOS 13.3; lower
+      # deployment targets fail to compile the scientific-formatting
+      # paths in src/gui/util/numericformat.cpp and
+      # src/gui/widget/scientificspinbox.cpp.
+      MACOSX_DEPLOYMENT_TARGET: "13.3"
     steps:
       - uses: actions/checkout@v5
 

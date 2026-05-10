@@ -50,6 +50,7 @@ the live application.
 ## Install
 
 - **Binary packages (recommended):** Windows, macOS, and Linux installers (DEB, RPM, AppImage, DMG, NSIS) are built by CPack and attached to each [GitHub release](https://github.com/kncrabtree/blackchirp/releases). Linux artifacts are GPG-signed with the project's release key (`898734DF7EDBDE45`, [`packaging/blackchirp-release.asc`](packaging/blackchirp-release.asc)) and every artifact carries a GitHub build-provenance attestation; see [Verifying releases](https://blackchirp.readthedocs.io/page/user_guide/installation.html#verifying-releases).
+- **Supported on:** Windows 10 1809+ / Windows 11; macOS 13.3+ (Apple Silicon and Intel); Ubuntu 24.04+ / Debian 13+ (`.deb`); openSUSE Leap 16+ / Tumbleweed / Fedora 41+ / RHEL 9+ (`.rpm`); any Linux with glibc 2.35+ (AppImage). Per-artifact details: [Supported Platforms](https://blackchirp.readthedocs.io/page/user_guide/installation.html#supported-platforms).
 - **Build from source:** see [Installation](https://blackchirp.readthedocs.io/page/user_guide/installation.html) in the user guide.
 - **Python analysis module:** `pip install blackchirp` ([PyPI](https://pypi.org/project/blackchirp/)).
 
