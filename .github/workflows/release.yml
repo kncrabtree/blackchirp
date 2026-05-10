@@ -275,6 +275,16 @@ jobs:
           key: qwt-${{ env.QWT_VERSION }}-leap16-sysqt-v1
 
       - name: Build Qwt from source
+        # Inside a container job, `${{ github.workspace }}` templates to
+        # the runner host's path (e.g., /home/runner/work/...), which
+        # does not exist on the container's bind mount; only the
+        # `$GITHUB_WORKSPACE` env var (e.g., /__w/blackchirp/blackchirp)
+        # resolves to the mounted workspace. Writes to the host-path
+        # string land inside the container's local filesystem and are
+        # invisible to the host (so the cache save step downstream
+        # cannot find them). All container-side script paths therefore
+        # use $GITHUB_WORKSPACE; only actions running on the host
+        # (actions/cache/*) use the templated host path.
         if: steps.qwt-cache.outputs.cache-hit != 'true'
         run: |
           set -euxo pipefail
@@ -282,7 +292,7 @@ jobs:
             "https://sourceforge.net/projects/qwt/files/qwt/${QWT_VERSION}/qwt-${QWT_VERSION}.tar.bz2/download"
           tar xf qwt.tar.bz2
           cd "qwt-${QWT_VERSION}"
-          sed -i "s|^[[:space:]]*QWT_INSTALL_PREFIX[[:space:]]*=.*|QWT_INSTALL_PREFIX = ${{ github.workspace }}/qwt-install|" qwtconfig.pri
+          sed -i "s|^[[:space:]]*QWT_INSTALL_PREFIX[[:space:]]*=.*|QWT_INSTALL_PREFIX = $GITHUB_WORKSPACE/qwt-install|" qwtconfig.pri
           sed -i 's|^[[:space:]]*QWT_INSTALL_HEADERS[[:space:]]*=.*|QWT_INSTALL_HEADERS = $${QWT_INSTALL_PREFIX}/include/qwt6|' qwtconfig.pri
           sed -i -E "/^[[:space:]]*QWT_CONFIG[[:space:]]*\+=[[:space:]]+Qwt(Examples|Playground|Designer|Tests|Framework)[[:space:]]*$/d" qwtconfig.pri
           qmake6 qwt.pro
@@ -303,8 +313,8 @@ jobs:
             -DCMAKE_BUILD_TYPE=${{ env.CMAKE_BUILD_TYPE }} \
             -DCMAKE_INSTALL_PREFIX=/usr \
             -DBC_BUNDLE_QWT=ON \
-            -DQWT_ROOT="${{ github.workspace }}/qwt-install" \
-            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/qwt-install"
+            -DQWT_ROOT="$GITHUB_WORKSPACE/qwt-install" \
+            -DCMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/qwt-install"
 
       - name: Build
         run: cmake --build build -j"$(nproc)"
@@ -336,19 +346,23 @@ jobs:
       - name: Test
         env:
           QT_QPA_PLATFORM: offscreen
+        run: |
           # The test executables link against the from-source libqwt
           # under qwt-install/lib; the bundled-qwt RPATH is only set on
           # the installed binaries (the install step copies libqwt into
           # the package layout), so ctest needs the build-tree path on
-          # LD_LIBRARY_PATH explicitly.
-          LD_LIBRARY_PATH: ${{ github.workspace }}/qwt-install/lib
-        run: ctest --test-dir build --output-on-failure
+          # LD_LIBRARY_PATH explicitly. Setting it via `export` inside
+          # the shell (rather than the step's `env:` block) so the path
+          # resolves through $GITHUB_WORKSPACE — see the "Build Qwt
+          # from source" step for why the templated host path is wrong.
+          export LD_LIBRARY_PATH="$GITHUB_WORKSPACE/qwt-install/lib"
+          ctest --test-dir build --output-on-failure
 
       - name: Package
         working-directory: build
-        env:
-          LD_LIBRARY_PATH: ${{ github.workspace }}/qwt-install/lib
-        run: cpack -G RPM
+        run: |
+          export LD_LIBRARY_PATH="$GITHUB_WORKSPACE/qwt-install/lib"
+          cpack -G RPM
 
       - name: Import GPG signing key
         env:
