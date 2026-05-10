@@ -50,20 +50,19 @@ endif()
 # and `cpack` (which sets CMAKE_INSTALL_PREFIX to a staging directory).
 function(blackchirp_deploy_qt target)
     if(WIN32)
-        # Locate qwt.dll so windeployqt walks its Qt-module imports as
-        # well as the .exe's. Without this, qwt's runtime deps on
-        # Qt6OpenGL.dll / Qt6OpenGLWidgets.dll are missed (the .exe
-        # itself only links Qt6Widgets / Core / Gui), and the installed
-        # package fails with STATUS_DLL_NOT_FOUND. windeployqt accepts
-        # multiple input binaries and unions their dep closures.
-        set(_qwt_dll_arg)
+        # Locate qwt.dll at configure time. Without baking the resolved
+        # path into the install(CODE) string literally, the deferred
+        # variable-expansion path (set var in install code, splice into
+        # COMMAND args via `\${var}`) silently produced an empty arg
+        # list and windeployqt only saw the .exe — see commit history
+        # for the prior attempt and the diagnostic that surfaced it.
+        set(_qwt_dll "")
         if(QWT_LIBRARY)
             get_filename_component(_qwt_lib_dir "${QWT_LIBRARY}" DIRECTORY)
             foreach(_candidate "${_qwt_lib_dir}/qwt.dll"
                                "${_qwt_lib_dir}/../bin/qwt.dll")
                 if(EXISTS "${_candidate}")
                     get_filename_component(_qwt_dll "${_candidate}" ABSOLUTE)
-                    set(_qwt_dll_arg "${_qwt_dll}")
                     break()
                 endif()
             endforeach()
@@ -82,22 +81,42 @@ function(blackchirp_deploy_qt target)
             if(NOT EXISTS \"\${_exe}\")
                 message(FATAL_ERROR \"windeployqt: ${target}.exe not found at \${_exe}\")
             endif()
-            set(_extra_targets)
-            if(\"${_qwt_dll_arg}\" AND EXISTS \"${_qwt_dll_arg}\")
-                list(APPEND _extra_targets \"${_qwt_dll_arg}\")
-            endif()
-            message(STATUS \"Running windeployqt on \${_exe} \${_extra_targets}\")
+            set(_install_bin \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\")
+            message(STATUS \"Running windeployqt on \${_exe}\")
             execute_process(
                 COMMAND \"${BLACKCHIRP_WINDEPLOYQT_EXECUTABLE}\"
                     --no-translations
                     --no-compiler-runtime
-                    --dir \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\"
+                    --dir \"\${_install_bin}\"
                     --verbose 1
                     \"\${_exe}\"
-                    \${_extra_targets}
                 COMMAND_ERROR_IS_FATAL ANY
             )
         " COMPONENT Applications)
+
+        # Second windeployqt pass against qwt.dll, bundling its Qt
+        # transitive deps (Qt6OpenGL.dll / Qt6OpenGLWidgets.dll) into
+        # the same install bin/. Required because the .exe doesn't
+        # directly import those — only qwt.dll does, and windeployqt
+        # walks only the binaries it is explicitly given. Two distinct
+        # install(CODE) blocks rather than one with conditional args:
+        # the conditional-arg form silently dropped the second binary
+        # under install(CODE)'s deferred-expansion semantics.
+        if(_qwt_dll)
+            install(CODE "
+                set(_install_bin \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\")
+                message(STATUS \"Running windeployqt on ${_qwt_dll}\")
+                execute_process(
+                    COMMAND \"${BLACKCHIRP_WINDEPLOYQT_EXECUTABLE}\"
+                        --no-translations
+                        --no-compiler-runtime
+                        --dir \"\${_install_bin}\"
+                        --verbose 1
+                        \"${_qwt_dll}\"
+                    COMMAND_ERROR_IS_FATAL ANY
+                )
+            " COMPONENT Applications)
+        endif()
     elseif(APPLE)
         # macdeployqt resolves the binary's load-command closure with otool.
         # Qwt's qmake build on macOS produces a libqwt.6.dylib whose recorded
