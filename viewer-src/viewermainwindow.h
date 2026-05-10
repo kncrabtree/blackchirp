@@ -25,6 +25,17 @@
 class QMenu;
 
 namespace BC::Key::Viewer {
+// Group name for every viewer-owned setting in Blackchirp2.conf. The
+// acquisition app owns [Blackchirp]; the viewer owns [BlackchirpViewer].
+// Sharing the .conf file lets the viewer read Blackchirp's savePath on
+// startup with a transient default-ctor SettingsStorage, while keeping
+// the two apps' writeable state physically separate.
+inline constexpr QLatin1StringView viewer{"BlackchirpViewer"};
+
+// User-supplied override of Blackchirp's savePath. Empty (or absent)
+// means follow Blackchirp's value.
+inline constexpr QLatin1StringView dataPath{"dataPath"};
+
 inline constexpr QLatin1StringView recentExperiments{"recentExperiments"};
 inline constexpr QLatin1StringView lastBrowseDir{"lastBrowseDir"};
 inline constexpr QLatin1StringView recentNum{"num"};
@@ -44,10 +55,13 @@ private slots:
     void closeSelectedExperiment();
     void onExperimentWidgetClosing();
     void onListItemDoubleClicked(QListWidgetItem *item);
+    void chooseDataPath();
+    void resetDataPath();
 
 private:
     QWidget *p_centralWidget;
     QListWidget *p_experimentList;
+    QLabel *p_dataPathLabel;
     QLabel *p_statusLabel;
 
     // Shared actions for menu and toolbar
@@ -71,9 +85,12 @@ private:
     void openExperimentByNumPath(int num, const QString &path);
     void addToRecentExperiments(int num, const QString &path);
     void updateRecentMenu();
+    void loadActiveDataPath();
+    void updateDataPathLabel();
 
 protected:
     void closeEvent(QCloseEvent *event) override;
+    bool eventFilter(QObject *watched, QEvent *event) override;
 };
 
 #endif // VIEWERMAINWINDOW_H

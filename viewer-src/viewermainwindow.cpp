@@ -5,9 +5,11 @@
 #include <QDesktopServices>
 #include <QDialogButtonBox>
 #include <QDir>
+#include <QFontMetrics>
 #include <QFormLayout>
 #include <QListWidgetItem>
 #include <QMenu>
+#include <QMouseEvent>
 #include <QPushButton>
 #include <QToolBar>
 #include <QUrl>
@@ -18,28 +20,24 @@
 #define STRINGIFY(x) _STR(x)
 
 ViewerMainWindow::ViewerMainWindow(QWidget *parent)
-    : QMainWindow(parent), SettingsStorage()
+    : QMainWindow(parent), SettingsStorage(BC::Key::Viewer::viewer)
 {
     setWindowTitle(QString("Blackchirp Viewer"));
     setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg", ThemeColors::IconPrimary, this));
-    
-    // Read Blackchirp's data storage path from its settings
-    SettingsStorage blackchirpSettings("CrabtreeLab", "Blackchirp");
-    d_dataPath = blackchirpSettings.get(BC::Key::savePath, QString(""));
 
-    set(BC::Key::savePath,d_dataPath,true);
-    
+    loadActiveDataPath();
+
     if (d_dataPath.isEmpty()) {
-        QMessageBox::warning(this, "Data Path Not Found", 
-            "Could not find Blackchirp's data storage path in settings.\n"
-            "You may need to run Blackchirp first to set up the data path,\n"
-            "or manually specify paths when opening experiments.");
+        QMessageBox::warning(this, "Data Path Not Found",
+            "Could not find a Blackchirp data path. Run Blackchirp first to "
+            "configure one, set an override under Settings → Set Data Path…, "
+            "or specify a path when opening individual experiments.");
     }
-    
+
     setupUI();
     setupMenuBar();
     updateButtonStates();
-    
+
     resize(400, 300);
 }
 
@@ -89,16 +87,22 @@ void ViewerMainWindow::setupUI()
             this, &ViewerMainWindow::updateButtonStates);
     
     mainLayout->addWidget(p_experimentList);
-    
-    
-    // Status label
-    QString statusText;
-    if (d_dataPath.isEmpty()) {
-        statusText = "Ready (No data path configured)";
-    } else {
-        statusText = QString("Ready (Data path: %1)").arg(d_dataPath);
-    }
-    p_statusLabel = new QLabel(statusText, this);
+
+    // Active data-path label. Shows the directory the viewer reads
+    // experiments-by-number from, with a click-to-change affordance
+    // (cursor + underline on hover, MouseButtonRelease handled in
+    // eventFilter). Tooltip carries the full path plus the rule for
+    // when this directory does and doesn't apply.
+    p_dataPathLabel = new QLabel(this);
+    p_dataPathLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    p_dataPathLabel->setCursor(Qt::PointingHandCursor);
+    p_dataPathLabel->installEventFilter(this);
+    mainLayout->addWidget(p_dataPathLabel);
+    updateDataPathLabel();
+
+    // Status label — transient activity messages (Ready / Opened X /
+    // Closed Y). The data-path display moved to p_dataPathLabel above.
+    p_statusLabel = new QLabel(QString("Ready"), this);
     p_statusLabel->setStyleSheet(QString("QLabel { color: %1; font-size: 10px; }")
                                 .arg(ThemeColors::getThemeAwareColor(ThemeColors::SubtleText, this).name()));
     mainLayout->addWidget(p_statusLabel);
@@ -124,7 +128,23 @@ void ViewerMainWindow::setupMenuBar()
 
     expMenu->addSeparator();
     expMenu->addAction(p_closeAction);
-    
+
+    // Settings menu — viewer-specific knobs that don't belong in
+    // Blackchirp's settings file.
+    QMenu *settingsMenu = menuBar->addMenu("&Settings");
+
+    auto *setDataPathAction = settingsMenu->addAction("Set &Data Path…");
+    setDataPathAction->setStatusTip(
+        "Override the directory the viewer reads experiments from");
+    connect(setDataPathAction, &QAction::triggered,
+            this, &ViewerMainWindow::chooseDataPath);
+
+    auto *resetDataPathAction = settingsMenu->addAction("&Reset to Blackchirp Default");
+    resetDataPathAction->setStatusTip(
+        "Drop the override and follow Blackchirp's configured savePath");
+    connect(resetDataPathAction, &QAction::triggered,
+            this, &ViewerMainWindow::resetDataPath);
+
     // Help menu
     QMenu *helpMenu = menuBar->addMenu("&Help");
 
@@ -166,9 +186,12 @@ void ViewerMainWindow::openExperiment()
 
     QSpinBox *numBox = new QSpinBox(&d);
     
-    // Get the last experiment number from Blackchirp's settings each time dialog opens
-    SettingsStorage blackchirpSettings("CrabtreeLab", "Blackchirp");
-    int lastExptNum = blackchirpSettings.get(BC::Key::exptNum, 0);
+    // Read the last experiment number that Blackchirp wrote. Default-ctor
+    // SettingsStorage opens Blackchirp2.conf [Blackchirp], i.e. the same
+    // file the acquisition app writes; QCoreApplication's already-set
+    // organizationName/applicationName drive the path.
+    SettingsStorage blackchirpStore;
+    int lastExptNum = blackchirpStore.get(BC::Key::exptNum, 0);
     
     if (lastExptNum > 0) {
         numBox->setRange(1, lastExptNum);
@@ -287,7 +310,7 @@ void ViewerMainWindow::onExperimentWidgetClosing()
 
     if (!displayTextToRemove.isEmpty()) {
         removeExperimentFromList(displayTextToRemove);
-        p_statusLabel->setText(QString("Closed experiment %1").arg(displayTextToRemove));
+        p_statusLabel->setText(QString("Closed: %1").arg(displayTextToRemove));
         updateButtonStates();
     }
 }
@@ -314,13 +337,76 @@ void ViewerMainWindow::updateButtonStates()
     p_closeAction->setEnabled(hasSelection);
     
     if (d_openExperiments.empty()) {
-        QString statusText;
-        if (d_dataPath.isEmpty()) {
-            statusText = "Ready (No data path configured)";
-        } else {
-            statusText = QString("Ready (Data path: %1)").arg(d_dataPath);
-        }
-        p_statusLabel->setText(statusText);
+        p_statusLabel->setText(QString("Ready"));
+    }
+}
+
+void ViewerMainWindow::updateDataPathLabel()
+{
+    static const QString explanation =
+        QString("Experiments loaded by number are read from this directory. "
+                "Other experiments can always be loaded by browsing to their "
+                "folder explicitly when they live outside a Blackchirp-formatted "
+                "experiments tree.");
+
+    if (d_dataPath.isEmpty()) {
+        p_dataPathLabel->setText(QString("Data Path: (click to choose)"));
+        p_dataPathLabel->setToolTip(
+            QString("No data path configured.\n\n%1").arg(explanation));
+        return;
+    }
+
+    p_dataPathLabel->setToolTip(
+        QString("%1\n\n%2").arg(d_dataPath, explanation));
+
+    const QFontMetrics fm(p_dataPathLabel->font());
+    const int w = p_dataPathLabel->width();
+    const QString prefix(QString("Data Path: "));
+    const int avail = (w > 0 ? w : 200) - fm.horizontalAdvance(prefix);
+    p_dataPathLabel->setText(
+        prefix + fm.elidedText(d_dataPath, Qt::ElideMiddle, std::max(avail, 32)));
+}
+
+void ViewerMainWindow::loadActiveDataPath()
+{
+    // Active data path: the viewer's own override wins; if absent or
+    // empty, fall back to Blackchirp's savePath. Both reads target
+    // Blackchirp2.conf — the override under [BlackchirpViewer], the
+    // fallback under [Blackchirp] — so the viewer never writes into the
+    // acquisition app's group.
+    d_dataPath = get(BC::Key::Viewer::dataPath, QString());
+    if (!d_dataPath.isEmpty())
+        return;
+
+    SettingsStorage blackchirpStore;
+    d_dataPath = blackchirpStore.get(BC::Key::savePath, QString());
+}
+
+void ViewerMainWindow::chooseDataPath()
+{
+    QString startDir = d_dataPath.isEmpty() ? QDir::homePath() : d_dataPath;
+    QString chosen = QFileDialog::getExistingDirectory(this,
+        QString("Select Blackchirp data directory"), startDir);
+    if (chosen.isEmpty())
+        return;
+
+    d_dataPath = chosen;
+    set(BC::Key::Viewer::dataPath, chosen, true);
+    updateDataPathLabel();
+}
+
+void ViewerMainWindow::resetDataPath()
+{
+    clearValue(BC::Key::Viewer::dataPath);
+    loadActiveDataPath();
+    updateDataPathLabel();
+
+    if (d_dataPath.isEmpty()) {
+        QMessageBox::information(this, QString("Data Path"),
+            QString("Blackchirp has no savePath set yet, so the viewer has "
+                    "no active data directory. Run Blackchirp first or use "
+                    "Set Data Path… to point the viewer at an experiment "
+                    "tree manually."));
     }
 }
 
@@ -372,7 +458,7 @@ void ViewerMainWindow::openExperimentByNumPath(int num, const QString &path)
     item->setData(Qt::UserRole, displayText);
     p_experimentList->addItem(item);
 
-    p_statusLabel->setText(QString("Opened experiment %1").arg(displayText));
+    p_statusLabel->setText(QString("Opened: %1").arg(displayText));
     updateButtonStates();
 
     addToRecentExperiments(num, path);
@@ -444,6 +530,41 @@ void ViewerMainWindow::updateRecentMenu()
         setArray(BC::Key::Viewer::recentExperiments, {}, true);
         updateRecentMenu();
     });
+}
+
+bool ViewerMainWindow::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched != p_dataPathLabel)
+        return QMainWindow::eventFilter(watched, event);
+
+    switch (event->type()) {
+    case QEvent::Resize:
+        updateDataPathLabel();
+        break;
+    case QEvent::Enter: {
+        auto f = p_dataPathLabel->font();
+        f.setUnderline(true);
+        p_dataPathLabel->setFont(f);
+        break;
+    }
+    case QEvent::Leave: {
+        auto f = p_dataPathLabel->font();
+        f.setUnderline(false);
+        p_dataPathLabel->setFont(f);
+        break;
+    }
+    case QEvent::MouseButtonRelease: {
+        auto *me = static_cast<QMouseEvent *>(event);
+        if (me->button() == Qt::LeftButton
+            && p_dataPathLabel->rect().contains(me->pos()))
+            chooseDataPath();
+        break;
+    }
+    default:
+        break;
+    }
+
+    return QMainWindow::eventFilter(watched, event);
 }
 
 void ViewerMainWindow::closeEvent(QCloseEvent *event)

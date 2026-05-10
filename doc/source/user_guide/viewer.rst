@@ -1,6 +1,7 @@
 .. index::
    single: blackchirp-viewer
    single: Viewer; standalone application
+   single: Viewer; data directory
    single: Experiments; viewing saved
    single: Data; offline analysis
 
@@ -20,9 +21,11 @@ Building from source produces both via the ``blackchirp`` and
    :align: center
    :alt: Blackchirp Viewer launcher window with a saved experiment opened in a separate experiment view window
 
-   The Blackchirp Viewer launcher (right) lists previously opened experiments;
-   loading one opens it in its own experiment view window (left), with the FID
-   and FT plots, processing controls, overlays, and peak-find tools.
+   The Blackchirp Viewer launcher (right) lists previously opened experiments
+   and shows the active data directory on a clickable label at the bottom of
+   the window; loading an experiment opens it in its own experiment view
+   window (left), with the FID and FT plots, processing controls, overlays,
+   and peak-find tools.
 
 
 Purpose
@@ -48,6 +51,35 @@ the Start menu, depending on your platform. No special arguments are needed.
 The viewer opens to a small launcher window from which you can browse to and
 open a saved experiment; each opened experiment appears in its own experiment
 view window, so several experiments can be compared side by side.
+
+
+.. _viewer-data-directory:
+
+Configuring the Data Directory
+------------------------------
+
+The viewer needs to know where saved experiments live in order to load them
+by experiment number. On startup it picks the active data directory in this
+order:
+
+1. The viewer's own override, if one has been set under the **Settings**
+   menu.
+2. ``blackchirp``'s configured save path, read from the same per-user
+   settings file the acquisition application writes.
+
+The active directory appears on the clickable label at the bottom of the
+launcher window. Clicking the label, or selecting **Settings → Set Data
+Path…**, opens a directory picker that records an override in the viewer's
+own settings without touching ``blackchirp``'s configuration. **Settings →
+Reset to Blackchirp Default** discards the override and re-reads
+``blackchirp``'s save path.
+
+The data directory governs only experiments opened by number — those loaded
+through the **Experiment → Open** dialog with *Specify custom path*
+unchecked, and the **Open Recent** entries. Experiments stored elsewhere
+(for example, an isolated copy shared by a collaborator) can always be
+opened by checking *Specify custom path* in the Open dialog and browsing to
+their folder, regardless of where the active data directory points.
 
 
 Relationship to the Main Program
