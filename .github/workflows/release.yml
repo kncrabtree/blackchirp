@@ -922,15 +922,19 @@ jobs:
         working-directory: build
         run: cpack -G "NSIS;ZIP"
 
+      # The `*-Windows-*` infix is what CPack injects on Windows builds
+      # (Blackchirp-<version>-Windows-AMD64.{exe,zip}); the unanchored
+      # `Blackchirp-*.exe` glob also matches the raw `blackchirp-viewer.exe`
+      # build artifact on Windows's case-insensitive filesystem.
       - name: Attest build provenance
-        # No Authenticode here — code signing certs run $200–$500/yr and
-        # self-signing makes SmartScreen warn harder, not less. Attestation
-        # is OS-independent and is worth doing in either case.
+        # No Authenticode here — OS-level signing on Windows is Authenticode,
+        # which is not configured. Attestation is OS-independent and applies
+        # to the unsigned binaries.
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: |
-            build/Blackchirp-*.exe
-            build/Blackchirp-*.zip
+            build/Blackchirp-*-Windows-*.exe
+            build/Blackchirp-*-Windows-*.zip
             symbols/*.pdb
 
       - name: Upload artifact
@@ -938,8 +942,8 @@ jobs:
         with:
           name: blackchirp-windows
           path: |
-            build/Blackchirp-*.exe
-            build/Blackchirp-*.zip
+            build/Blackchirp-*-Windows-*.exe
+            build/Blackchirp-*-Windows-*.zip
 
       - name: Upload symbols
         uses: actions/upload-artifact@v4
@@ -955,8 +959,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload "${{ github.event.release.tag_name }}" `
-            (Get-ChildItem build/Blackchirp-*.exe).FullName `
-            (Get-ChildItem build/Blackchirp-*.zip).FullName --clobber
+            (Get-ChildItem build/Blackchirp-*-Windows-*.exe).FullName `
+            (Get-ChildItem build/Blackchirp-*-Windows-*.zip).FullName --clobber
 
   # ============================================================================
   # Smoke tests: install each artifact in a clean-ish environment and verify
@@ -1095,7 +1099,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $exe = (Get-ChildItem Blackchirp-*.exe | Select-Object -First 1).FullName
+          $exe = (Get-ChildItem Blackchirp-*-Windows-*.exe | Select-Object -First 1).FullName
           # NSIS: /S = silent install, /D=<path> overrides install dir and
           # MUST be the final argument. C:\Blackchirp avoids the localized
           # `C:\Program Files\Blackchirp <ver>` path so we don't have to
