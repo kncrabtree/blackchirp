@@ -85,10 +85,15 @@ int main(int argc, char *argv[])
     QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
 #endif
 
-    const QString appName = QString("Blackchirp Viewer");
+    // applicationName is the QSettings storage key, so it must match
+    // blackchirp's ("Blackchirp<major>") for the viewer to read settings
+    // that the acquisition app wrote. applicationDisplayName drives the
+    // window-manager / taskbar string, which legitimately differs.
+    const QString settingsName = QString("Blackchirp%1").arg(BC_MAJOR_VERSION);
+    const QString displayName = QString("Blackchirp Viewer");
 
-    //QSettings information
-    QApplication::setApplicationName(appName);
+    QApplication::setApplicationName(settingsName);
+    QApplication::setApplicationDisplayName(displayName);
     QApplication::setOrganizationDomain(QString("crabtreelab.ucdavis.edu"));
     QApplication::setOrganizationName(QString("CrabtreeLab"));
 

@@ -56,6 +56,28 @@ so RPM's AUTOREQ derives `libqwt-qt6.so.*` automatically. The other three
 jobs build Qwt from source because no reliable Qt6 Qwt exists on
 Homebrew, vcpkg, or any LTS apt channel.
 
+### AppImage glibc floor
+
+The AppImage build pins `runs-on: ubuntu-22.04` rather than `ubuntu-latest`.
+AppImages bundle Qt, Qwt, libgsl, and the rest of the executable's library
+closure but **not** glibc / libm — those always come from the host loader.
+Symbol versions picked up by bundled libraries at link time therefore
+become a hard host-glibc minimum at run time: a `libgsl.so.27` built
+against glibc 2.39 references `GLIBC_2.38`-versioned symbols in libm and
+fails to load on any host older than that, defeating the AppImage's
+"universal fallback" purpose. Building on `ubuntu-22.04` (glibc 2.35) caps
+the floor at the LTS distros the AppImage exists to serve — Ubuntu 22.04+,
+RHEL 9+, openSUSE Leap 15.5+, Debian 12+. The Qwt cache key bakes in the
+runner codename (`jammy`) so a future runner upgrade auto-invalidates the
+cache rather than poisoning the new build with stale glibc-2.39-linked
+artifacts.
+
+The companion `linux-appimage-smoke` job intentionally stays on
+`ubuntu-latest` (newer than the build runner) to verify forward
+compatibility. It cannot, by construction, catch backward-incompatibility
+against an *older* host than the build runner — that gap is closed by the
+manual clean-VM pass on a 22.04-class system.
+
 ### Qt redistribution into the package
 
 - **Linux deb / rpm**: distro package manager resolves Qt at install time

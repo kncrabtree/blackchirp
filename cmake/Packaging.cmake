@@ -281,6 +281,15 @@ set(CPACK_DEBIAN_APPLICATIONS_FILE_NAME "${CPACK_PACKAGE_FILE_NAME}.deb")
 set(CPACK_RPM_APPLICATIONS_FILE_NAME "${CPACK_PACKAGE_FILE_NAME}.rpm")
 set(CPACK_ARCHIVE_APPLICATIONS_FILE_NAME "${CPACK_PACKAGE_FILE_NAME}")
 
+# The on-disk filename and the installed-package identity are separate.
+# CPack's per-component default identity is `${CPACK_PACKAGE_NAME}-${COMP}`
+# ("blackchirp-applications" / "Blackchirp-Applications"), which is what
+# `dpkg -l` / `rpm -q` would show. Override to the bare project name —
+# the only component we ship is Applications, so the suffix conveys
+# nothing and confuses package-manager tooling.
+set(CPACK_DEBIAN_APPLICATIONS_PACKAGE_NAME "blackchirp")
+set(CPACK_RPM_APPLICATIONS_PACKAGE_NAME "blackchirp")
+
 # Application component
 set(CPACK_COMPONENT_APPLICATIONS_DISPLAY_NAME "Applications")
 set(CPACK_COMPONENT_APPLICATIONS_DESCRIPTION

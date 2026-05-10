@@ -291,7 +291,12 @@ jobs:
   # ============================================================================
   linux-appimage:
     name: Linux AppImage
-    runs-on: ubuntu-latest
+    # Built on the oldest supported runner to cap the AppImage's effective
+    # glibc floor: AppImages do not bundle glibc/libm, so symbol versions
+    # picked up at link time become a hard host-glibc minimum at run time.
+    # ubuntu-22.04 = glibc 2.35; building on ubuntu-latest (24.04, glibc
+    # 2.39) produces AppImages that fail to load on 22.04 hosts.
+    runs-on: ubuntu-22.04
     if: github.event_name == 'release' || inputs.run_linux_appimage
     steps:
       - uses: actions/checkout@v5
@@ -316,7 +321,7 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: ${{ github.workspace }}/qwt-install
-          key: qwt-${{ env.QWT_VERSION }}-linux-qt${{ env.QT_VERSION }}-v2
+          key: qwt-${{ env.QWT_VERSION }}-linux-qt${{ env.QT_VERSION }}-jammy-v3
 
       - name: Build Qwt from source
         if: steps.qwt-cache.outputs.cache-hit != 'true'
@@ -338,7 +343,7 @@ jobs:
         uses: actions/cache/save@v5
         with:
           path: ${{ github.workspace }}/qwt-install
-          key: qwt-${{ env.QWT_VERSION }}-linux-qt${{ env.QT_VERSION }}-v2
+          key: qwt-${{ env.QWT_VERSION }}-linux-qt${{ env.QT_VERSION }}-jammy-v3
 
       - name: Configure & build
         run: |
