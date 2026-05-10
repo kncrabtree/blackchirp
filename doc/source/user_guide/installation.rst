@@ -168,28 +168,45 @@ a third party.
 The release key
 ~~~~~~~~~~~~~~~
 
-Public key:
+Key ID: ``898734DF7EDBDE45``.
 
-::
+The key is published through three identical channels — pick
+whichever is most convenient:
 
-    Key ID: 898734DF7EDBDE45
-    File:   packaging/blackchirp-release.asc
+* The ``keys.openpgp.org`` keyserver.
+* The ``blackchirp-release.asc`` asset attached to every GitHub
+  release.
+* The file ``packaging/blackchirp-release.asc`` in the project
+  repository.
 
-The same key is attached to every GitHub release as
-``blackchirp-release.asc`` and is also published on the
-``keys.openpgp.org`` keyserver. Either source works.
+Import the key once per system. ``rpm`` and ``gpg`` keep separate
+keyrings, so an import into one does not satisfy the other — the
+commands below cover both paths.
 
-Import the key once per system. For DEB and AppImage verification, the
-simplest path is to fetch the key directly from the keyserver::
+From the keyserver
+^^^^^^^^^^^^^^^^^^
+
+For DEB and AppImage verification (``gpg``)::
 
     gpg --keyserver keys.openpgp.org --recv-keys 898734DF7EDBDE45
 
-Or, if the key file has been downloaded directly from the release page
-or from the project repository, import it from that file::
+For RPM verification, bridge the same key into ``rpm``'s keyring::
+
+    gpg --export --armor 898734DF7EDBDE45 | sudo rpm --import /dev/stdin
+
+From a downloaded file
+^^^^^^^^^^^^^^^^^^^^^^
+
+Fetch the key file directly from the project repository (the GitHub
+release attachment is identical)::
+
+    curl -fLO https://raw.githubusercontent.com/kncrabtree/blackchirp/master/packaging/blackchirp-release.asc
+
+For DEB and AppImage verification (``gpg``)::
 
     gpg --import blackchirp-release.asc
 
-For RPM verification, use ``rpm`` against a downloaded key file::
+For RPM verification (``rpm``)::
 
     sudo rpm --import blackchirp-release.asc
 
