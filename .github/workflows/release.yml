@@ -841,6 +841,10 @@ jobs:
           # the OS, and -RedirectStandardOutput captures the binary's
           # stdout to a file (which it can write because main.cpp now
           # skips AttachConsole when stdout is already a real handle).
+          # On STATUS_DLL_NOT_FOUND (-1073741515), the loader prints
+          # nothing to stderr — print the bin/ contents and the .exe's
+          # PE imports so the missing DLL is identifiable from CI logs
+          # alone, without re-running with a debugger attached.
           function Invoke-Smoke($path, $label) {
               $out = Join-Path $env:RUNNER_TEMP "$label.out"
               $err = Join-Path $env:RUNNER_TEMP "$label.err"
@@ -849,6 +853,14 @@ jobs:
                   -RedirectStandardOutput $out -RedirectStandardError $err
               Get-Content $out, $err | Write-Host
               if ($p.ExitCode -ne 0) {
+                  Write-Host "--- C:\Blackchirp\bin contents ---"
+                  Get-ChildItem -Recurse C:\Blackchirp\bin | `
+                      Select-Object FullName, Length | Format-Table -AutoSize
+                  $dumpbin = Get-Command dumpbin.exe -ErrorAction SilentlyContinue
+                  if ($dumpbin) {
+                      Write-Host "--- $label PE dependents ---"
+                      & $dumpbin.Source /dependents $path 2>&1 | Write-Host
+                  }
                   throw "$label --version exited $($p.ExitCode)"
               }
           }

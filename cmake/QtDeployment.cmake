@@ -50,6 +50,13 @@ endif()
 # and `cpack` (which sets CMAKE_INSTALL_PREFIX to a staging directory).
 function(blackchirp_deploy_qt target)
     if(WIN32)
+        # No --no-compiler-runtime: windeployqt's compiler-runtime mode
+        # bundles vcruntime140.dll / msvcp140.dll / vcruntime140_1.dll
+        # alongside the .exe so the package runs on a clean Windows
+        # install without the user having to grab the VC++ Redistributable
+        # separately. Skipping it produces packages that work on the
+        # build host (VS Build Tools in System32) but fail with
+        # STATUS_DLL_NOT_FOUND on a stock Windows machine.
         install(CODE "
             set(_exe \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/${target}.exe\")
             if(NOT EXISTS \"\${_exe}\")
@@ -59,7 +66,7 @@ function(blackchirp_deploy_qt target)
             execute_process(
                 COMMAND \"${BLACKCHIRP_WINDEPLOYQT_EXECUTABLE}\"
                     --no-translations
-                    --no-compiler-runtime
+                    --compiler-runtime
                     --verbose 1
                     \"\${_exe}\"
                 COMMAND_ERROR_IS_FATAL ANY
