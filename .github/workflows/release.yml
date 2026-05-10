@@ -35,6 +35,11 @@ on:
 
 permissions:
   contents: write
+  # Required by actions/attest-build-provenance: id-token mints the OIDC
+  # token Sigstore signs the attestation with, attestations writes the
+  # resulting bundle into the repo's attestation store.
+  id-token: write
+  attestations: write
 
 env:
   QT_VERSION: '6.9.1'
@@ -163,11 +168,50 @@ jobs:
           LD_LIBRARY_PATH: ${{ github.workspace }}/qwt-install/lib
         run: cpack -G DEB
 
+      - name: Import GPG signing key
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+        run: |
+          set -e
+          printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import
+          gpg --list-secret-keys "$GPG_KEY_ID" >/dev/null
+
+      - name: Sign DEB (detached)
+        # apt does not verify signatures embedded in .deb files (those are a
+        # dpkg-sig artifact most distros never installed); the apt trust model
+        # signs the repository Release file instead. For standalone GitHub-
+        # release downloads, a detached `.asc` users verify manually with
+        # `gpg --verify Blackchirp-*.deb.asc Blackchirp-*.deb` is the most
+        # broadly-supported form.
+        working-directory: build
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+        run: |
+          set -e
+          for f in Blackchirp-*.deb; do
+            printf '%s' "$GPG_PASSPHRASE" | gpg --batch --yes \
+              --pinentry-mode loopback --passphrase-fd 0 \
+              --armor --detach-sign --local-user "$GPG_KEY_ID" \
+              --output "${f}.asc" "$f"
+            gpg --verify "${f}.asc" "$f"
+          done
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            build/Blackchirp-*.deb
+            symbols/*.debug
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: blackchirp-deb
-          path: build/Blackchirp-*.deb
+          path: |
+            build/Blackchirp-*.deb
+            build/Blackchirp-*.deb.asc
 
       - name: Upload symbols
         uses: actions/upload-artifact@v4
@@ -177,10 +221,18 @@ jobs:
           retention-days: 90
 
       - name: Attach to release
+        # The deb job is the first to run on a release event, so it owns the
+        # one-time upload of the project's public key. --clobber means a re-run
+        # is idempotent rather than failing on "asset already exists".
         if: github.event_name == 'release'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ github.event.release.tag_name }}" build/Blackchirp-*.deb --clobber
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" \
+            build/Blackchirp-*.deb \
+            build/Blackchirp-*.deb.asc \
+            packaging/blackchirp-release.asc \
+            --clobber
 
   # ============================================================================
   # Linux .rpm (openSUSE Leap container)
@@ -204,7 +256,7 @@ jobs:
             libqwt6-qt6-6_3 qwt6-qt6-devel \
             gsl-devel eigen3-devel \
             libudev-devel \
-            rpm-build
+            rpm-build rpm-sign gpg2
 
       - uses: actions/checkout@v5
 
@@ -249,6 +301,52 @@ jobs:
       - name: Package
         working-directory: build
         run: cpack -G RPM
+
+      - name: Import GPG signing key
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+        run: |
+          set -e
+          printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import
+          gpg --list-secret-keys "$GPG_KEY_ID" >/dev/null
+
+      - name: Sign RPM (embedded)
+        # `rpmsign --addsign` writes the signature into the RPM lead/header
+        # so `rpm --checksig` and `zypper install` recognize it without a
+        # separate file. Default %__gpg_sign_cmd would open a pinentry; the
+        # loopback + --passphrase-file form below drives gpg non-interactively
+        # from CI. The passphrase file is created with umask 077, used once,
+        # and shredded by the EXIT trap regardless of success or failure.
+        working-directory: build
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+        run: |
+          set -e
+          umask 077
+          PASSFILE="$(mktemp)"
+          trap 'shred -u "$PASSFILE" 2>/dev/null || rm -f "$PASSFILE"' EXIT
+          printf '%s' "$GPG_PASSPHRASE" > "$PASSFILE"
+          cat > "$HOME/.rpmmacros" <<RPMMACROS_EOF
+          %_signature gpg
+          %_gpg_name $GPG_KEY_ID
+          %__gpg_sign_cmd %{__gpg} gpg --batch --no-verbose --no-armor \\
+              --pinentry-mode loopback --passphrase-file $PASSFILE \\
+              --digest-algo sha256 -u "%{_gpg_name}" \\
+              -sbo %{__signature_filename} %{__plaintext_filename}
+          RPMMACROS_EOF
+          for f in Blackchirp-*.rpm; do
+            rpmsign --addsign "$f"
+            rpm --checksig "$f"
+          done
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            build/Blackchirp-*.rpm
+            symbols/*.debug
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -417,11 +515,49 @@ jobs:
           mkdir -p dist
           mv Blackchirp*.AppImage dist/
 
+      - name: Import GPG signing key
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+        run: |
+          set -e
+          printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import
+          gpg --list-secret-keys "$GPG_KEY_ID" >/dev/null
+
+      - name: Sign AppImage (detached)
+        # Detached `.asc` rather than embedded: AppImage's spec defines an
+        # appended-signature scheme via appimagetool's `--sign`, but typical
+        # consumers (AppImageLauncher, manual download) ignore it. A side-
+        # car `.asc` users verify with stock `gpg --verify` is what most
+        # downstream documentation expects.
+        working-directory: dist
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+        run: |
+          set -e
+          for f in Blackchirp*.AppImage; do
+            printf '%s' "$GPG_PASSPHRASE" | gpg --batch --yes \
+              --pinentry-mode loopback --passphrase-fd 0 \
+              --armor --detach-sign --local-user "$GPG_KEY_ID" \
+              --output "${f}.asc" "$f"
+            gpg --verify "${f}.asc" "$f"
+          done
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/Blackchirp*.AppImage
+            symbols/*.debug
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: blackchirp-appimage
-          path: dist/Blackchirp*.AppImage
+          path: |
+            dist/Blackchirp*.AppImage
+            dist/Blackchirp*.AppImage.asc
 
       - name: Upload symbols
         uses: actions/upload-artifact@v4
@@ -434,7 +570,11 @@ jobs:
         if: github.event_name == 'release'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ github.event.release.tag_name }}" dist/Blackchirp*.AppImage --clobber
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" \
+            dist/Blackchirp*.AppImage \
+            dist/Blackchirp*.AppImage.asc \
+            --clobber
 
   # ============================================================================
   # macOS DMG / TGZ
@@ -535,6 +675,18 @@ jobs:
       - name: Package (DMG + TGZ)
         working-directory: build
         run: cpack -G "DragNDrop;TGZ"
+
+      - name: Attest build provenance
+        # No GPG signing here — macOS distribution signing is Apple Developer
+        # ID + notarization, which costs $99/yr and is deferred. Attestation
+        # is independent of OS-level code signing and worth doing regardless.
+        # dSYM bundles are directories so they're omitted; the platform
+        # binaries are what users care about verifying.
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            build/Blackchirp-*.dmg
+            build/Blackchirp-*.tar.gz
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -682,6 +834,17 @@ jobs:
         working-directory: build
         run: cpack -G "NSIS;ZIP"
 
+      - name: Attest build provenance
+        # No Authenticode here — code signing certs run $200–$500/yr and
+        # self-signing makes SmartScreen warn harder, not less. Attestation
+        # is OS-independent and is worth doing in either case.
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            build/Blackchirp-*.exe
+            build/Blackchirp-*.zip
+            symbols/*.pdb
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -745,14 +908,23 @@ jobs:
     container:
       image: opensuse/tumbleweed:latest
     steps:
+      # The committed public key is what end users import too; verifying
+      # against it here closes the loop on the signing job — if rpmsign
+      # produced a signature with the wrong key, this step fails instead
+      # of the user discovering it post-release.
+      - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
         with:
           name: blackchirp-rpm
-      - name: Install package
+      - name: Verify signature and install
         run: |
+          set -e
           zypper -n refresh
-          # --allow-unsigned-rpm: CPack RPMs aren't signed at build time.
-          zypper -n install -y --allow-unsigned-rpm ./Blackchirp-*.rpm
+          rpm --import packaging/blackchirp-release.asc
+          for f in Blackchirp-*.rpm; do
+            rpm --checksig "$f"
+            zypper -n install -y "./$f"
+          done
       - name: Run --version
         run: |
           blackchirp --version

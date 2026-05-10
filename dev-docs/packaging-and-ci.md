@@ -140,6 +140,49 @@ exported static data members.
 | `icons/blackchirp.icns`                 | Multi-resolution macOS bundle icon                  |
 | `src/resources/icons/bc_logo_large.png` | Source logo; used for Linux pixmap install          |
 
+### Signing and provenance
+
+GPG signing covers the Linux artifacts; build-provenance attestations cover
+all five platforms.
+
+| Artifact          | Signature form                  | How users verify                                                                |
+| ----------------- | ------------------------------- | ------------------------------------------------------------------------------- |
+| `.rpm`            | embedded (rpmsign --addsign)    | `rpm --import …blackchirp-release.asc` → `rpm --checksig` / `zypper install`    |
+| `.deb`            | detached `.asc`                 | `gpg --import …blackchirp-release.asc` → `gpg --verify Blackchirp-*.deb.asc`    |
+| AppImage          | detached `.asc`                 | `gpg --verify Blackchirp-*.AppImage.asc Blackchirp-*.AppImage`                  |
+| `.dmg` / `.exe`   | unsigned                        | (see attestation row)                                                           |
+| any of the above  | GitHub build-provenance         | `gh attestation verify <file> --owner kncrabtree`                               |
+
+The signing key is a 4096-bit RSA GPG key, ID `898734DF7EDBDE45`, dedicated
+to release signing (no daily-use mail attached). Public key:
+`packaging/blackchirp-release.asc`, also attached to every GitHub release
+by the deb job. Private key + passphrase live in repo Actions secrets
+(`GPG_PRIVATE_KEY`, `GPG_PASSPHRASE`, `GPG_KEY_ID`); offline backup of the
+secret key is the user's responsibility.
+
+DEB and AppImage use detached `.asc` rather than embedded signing because
+apt does not verify in-`.deb` signatures (the apt trust model signs the
+repository's `Release` file, not individual `.deb`s) and AppImage's
+appended-signature scheme has near-zero downstream consumer support; a
+side-car `.asc` users verify with stock `gpg --verify` is the most
+broadly-supported form. RPM uses embedded signing because that is exactly
+what `rpm --checksig` and `zypper install` consult.
+
+macOS DMG and Windows NSIS are not GPG-signed: the relevant signing for
+those platforms is Apple Developer ID + notarization (~$99/yr) and
+Authenticode (~$200–$500/yr), respectively. Self-signing on Windows makes
+SmartScreen warn harder, not less; ad-hoc signing on macOS does not satisfy
+Gatekeeper. Both are deferred until budget exists. Attestations apply to
+those binaries regardless of OS-level signing.
+
+`actions/attest-build-provenance@v2` produces a Sigstore-signed SLSA
+provenance record proving each artifact was built by a specific workflow
+run on a specific commit. Keyless via OIDC against Sigstore's Fulcio CA;
+no key to manage. Verify with
+`gh attestation verify Blackchirp-2.0.0.deb --owner kncrabtree`. Requires
+top-level `permissions: id-token: write` and `attestations: write` (set in
+the workflow header).
+
 ### `.github/workflows/release.yml`
 
 Five jobs (table above). Triggers: `workflow_dispatch` (with per-platform

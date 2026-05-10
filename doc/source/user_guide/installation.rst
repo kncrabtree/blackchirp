@@ -99,6 +99,118 @@ Download the ``.exe`` installer and run it. The installer copies
 Blackchirp and all required Qt DLLs and platform plugins to the chosen
 directory, adds Start Menu shortcuts, and registers an uninstaller.
 
+.. _installation-verification:
+
+Verifying Releases
+------------------
+
+Linux release artifacts are signed with the project's GPG release key,
+and every release artifact on every supported platform also carries a
+GitHub-issued build-provenance attestation. Verifying either is
+optional, but doing so confirms the file came from the project's CI
+pipeline rather than being tampered with in transit or re-uploaded by
+a third party.
+
+.. _installation-verification-key:
+
+The release key
+~~~~~~~~~~~~~~~
+
+Public key:
+
+::
+
+    Key ID: 898734DF7EDBDE45
+    File:   packaging/blackchirp-release.asc
+
+The same key is attached to every GitHub release as
+``blackchirp-release.asc`` and is also published on the
+``keys.openpgp.org`` keyserver. Either source works.
+
+Import the key once per system. For DEB and AppImage verification, the
+simplest path is to fetch the key directly from the keyserver::
+
+    gpg --keyserver keys.openpgp.org --recv-keys 898734DF7EDBDE45
+
+Or, if the key file has been downloaded directly from the release page
+or from the project repository, import it from that file::
+
+    gpg --import blackchirp-release.asc
+
+For RPM verification, use ``rpm`` against a downloaded key file::
+
+    sudo rpm --import blackchirp-release.asc
+
+.. _installation-verification-rpm:
+
+RPM (openSUSE / Fedora / RHEL)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``.rpm`` package carries an embedded GPG signature. After the key
+is imported, ``zypper install`` and ``dnf install`` verify the
+signature automatically and refuse to install a modified package.
+
+To verify the signature without installing::
+
+    rpm --checksig blackchirp-<version>-Linux.rpm
+
+A successfully-verified package prints ``digests signatures OK``.
+
+.. _installation-verification-deb:
+
+DEB (Debian / Ubuntu)
+~~~~~~~~~~~~~~~~~~~~~
+
+The ``.deb`` package ships with a detached signature
+(``blackchirp-<version>-Linux.deb.asc``) on the same release page.
+Verify both files together::
+
+    gpg --verify blackchirp-<version>-Linux.deb.asc \
+                 blackchirp-<version>-Linux.deb
+
+Successful output starts with ``Good signature from``. The signature
+is detached because ``apt`` does not check signatures inside ``.deb``
+files; the apt trust model signs the repository's ``Release`` file
+instead, which does not apply to standalone GitHub-release downloads.
+
+.. _installation-verification-appimage:
+
+AppImage
+~~~~~~~~
+
+The AppImage ships with a detached signature
+(``blackchirp-<version>-x86_64.AppImage.asc``) on the same release
+page. Verify both files together::
+
+    gpg --verify blackchirp-<version>-x86_64.AppImage.asc \
+                 blackchirp-<version>-x86_64.AppImage
+
+Successful output starts with ``Good signature from``.
+
+.. _installation-verification-attestation:
+
+GitHub build-provenance attestation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Every release artifact — ``.rpm``, ``.deb``, ``.AppImage``,
+``.tar.gz``, ``.dmg``, ``.exe``, ``.zip`` — has a SLSA build-
+provenance attestation issued by the GitHub Actions workflow that
+built it. The attestation is signed by Sigstore using GitHub's OIDC
+identity, recorded in the public Rekor transparency log, and proves
+the artifact was produced from a specific commit by a specific
+workflow run.
+
+Verification requires the `GitHub CLI <https://cli.github.com/>`_::
+
+    gh attestation verify <artifact> --owner kncrabtree
+
+A verified artifact prints ``Loaded digest sha256:…`` followed by the
+workflow identity and ``verified successfully``.
+
+Attestations are particularly useful on macOS and Windows, where
+Apple Developer ID and Authenticode signing are not provided and the
+attestation is the only signature available.
+
 .. _installation-source:
 
 Building from Source
