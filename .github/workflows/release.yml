@@ -255,7 +255,7 @@ jobs:
             qt6-base-private-devel \
             gsl-devel eigen3-devel \
             libudev-devel \
-            rpm-build rpm-sign gpg2
+            rpm-build gpg2
 
       - uses: actions/checkout@v5
 
