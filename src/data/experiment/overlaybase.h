@@ -77,6 +77,18 @@ public:
     OverlayBase(OverlayType type);
 
     /*!
+     * \brief Virtual destructor.
+     *
+     * Required because OverlayBase is an abstract polymorphic base
+     * destroyed through base-class pointers (see the std::shared_ptr
+     * usage in OverlayTableModel and friends — shared_ptr's type
+     * erasure happens to dispatch correctly today, but a future
+     * unique_ptr<OverlayBase> or a raw `delete bp;` would silently
+     * skip the derived destructor without this).
+     */
+    virtual ~OverlayBase() = default;
+
+    /*!
      * \brief Return the transformed and frequency-filtered XY data, using a cached copy when valid.
      *
      * Applies d_xOffset, d_yScale, d_yOffset, and the optional frequency clip

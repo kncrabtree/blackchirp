@@ -190,6 +190,52 @@ Categories, all platform-consistent (no Linux-vs-Windows divergence):
 - **C4005** `crashhandler_win.cpp:10` —
   `WIN32_LEAN_AND_MEAN` already defined by Qt headers; guard the
   redefinition with `#ifndef`.
-- **C4996** `main.cpp:94` — MSVC's "use `sprintf_s`" deprecation
-  notice. Switch to `snprintf` (already available on both platforms)
-  to silence without per-platform code.
+- **C4996** `main.cpp` `sprintf(mem->name, "Blackchirp")` — MSVC's
+  "use `sprintf_s`" deprecation notice (and AppleClang's matching
+  `-Wdeprecated-declarations`; see the AppleClang subsection
+  below). Switch to `snprintf` (available on every platform) to
+  silence both with one edit.
+
+### AppleClang cosmetic warnings
+
+The macOS release build emits ~59 unique non-vendor warnings, all
+pre-existing and platform-discovery rather than regression-driven —
+the same code is silent under GCC because GCC's analogous flags
+aren't on by default with `-Wall -Wextra`. Each is platform-
+consistent (no macOS-vs-Linux behavior divergence); fix when there's
+appetite for a `-Wall` hygiene pass.
+
+The one **non-cosmetic** warning from this set —
+`-Wdelete-non-abstract-non-virtual-dtor` /
+`-Wdelete-abstract-non-virtual-dtor` on `OverlayBase` and its three
+derived types — was fixed at point-of-discovery (added
+`virtual ~OverlayBase() = default;`) because all owning sites use
+`std::shared_ptr<OverlayBase>` and the type-erased deleter happened
+to dispatch correctly, but the moment anyone introduced a
+`unique_ptr<OverlayBase>` or a `delete bp;` it would have been UB.
+Not in this list.
+
+Categories of cosmetic warnings:
+
+- **`-Winconsistent-missing-override`** — ~32 sites across the
+  hardware-driver and overlay/operation hierarchies. `sizeHint`,
+  `loadDifferentialFidList`, `beginAcquisition`, `endAcquisition`,
+  `configure`, etc. Add the `override` keyword; behavior unchanged.
+  A bulk regex pass over `src/hardware/` and `src/data/processing/`
+  catches most of them.
+- **`-Wunused-lambda-capture`** — ~4 sites. Drop the unused capture
+  from the lambda's capture list. Includes the `[this]` capture in
+  `hardwaremanager.cpp:1485` (also flagged by the IDE's clang
+  diagnostic).
+- **`-Wunused-but-set-variable`** — 2 sites (`textColumns`, `i`).
+  Either remove the dead store or `[[maybe_unused]]` if the
+  side-effecting RHS is intentional.
+
+### Windows linker: `ignoring duplicate libraries`
+
+3 sites on the macOS link line (`-lm`, `libblackchirp-data.a`).
+The CMake `target_link_libraries` graph lists the static archive
+both as a transitive dep (via `Blackchirp::Data`) and as an explicit
+dep on the executable target; ld dedupes. Cosmetic, but
+disentangling the duplicate path would also clean up the warning on
+any future linker that doesn't dedupe. Not urgent.
