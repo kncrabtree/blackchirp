@@ -9,8 +9,13 @@ project(Blackchirp
     LANGUAGES CXX
 )
 
-# Set release version
-set(BC_RELEASE_VERSION "alpha" CACHE STRING "Release version string")
+# Release-stage tag baked into the version string and on-disk schema.
+# Plain set(): always reflects the source-tree value at configure time.
+# CACHE STRING was tempting (overridable from `-D...` at configure) but
+# silently sticky across releases — a checkout that switched from
+# `release` back to `alpha` would still emit packages stamped `release`
+# until someone manually cleared the cache.
+set(BC_RELEASE_VERSION "alpha")
 
 # Get git build version
 execute_process(

@@ -168,66 +168,180 @@ The split pattern saves inline regardless of downstream failure.
   `.icns` / `.ico` masters), and linuxdeploy's icon validator caps at
   512×512.
 
-## Status — 2026-05-09
+## Status
 
-All five build jobs and all five smoke jobs are green on master.
-Symbol capture lands in each build job and uploads as a separate
-`blackchirp-symbols-<platform>` artifact (90-day retention). Remaining
-work before the alpha tag is the manual clean-VM acceptance pass — the
-in-CI smoke tests run `--version` only, which catches missing libs and
-broken RPATHs but doesn't exercise the GUI startup path.
+All five build jobs and all five `--version` smoke jobs are green
+on master. Symbol capture lands per platform as a separate
+`blackchirp-symbols-<platform>` artifact (90-day retention).
+Crash-log → symbol-artifact triage is documented in
+`doc/source/developer_guide/crash_handling.rst`; the per-job Qt /
+Qwt sourcing matrix and packaging knobs are in
+`doc/source/developer_guide/build_system.rst`.
 
-### Recent commits (most recent last)
+The smoke layer covers "the dynamic loader resolves every
+`NEEDED` entry and `main()` returns clean," but `--version`
+early-returns before `QApplication` is constructed (added in
+`22e99372` so headless Linux containers and deb-postinst scripts
+could invoke it without `QT_QPA_PLATFORM=offscreen`). Everything
+the `QApplication` ctor and `MainWindow` constructor exercise —
+platform plugin discovery, deferred imageformat / iconengine /
+TLS plugin loads, OpenGL context creation, the first-run
+config-dialog `.ui` form, Gatekeeper / SmartScreen UX,
+`QSettings` on a fresh user profile, the Release-build (-O3)
+codepath through GUI init, the crash handler — is uncovered
+until the manual clean-VM pass runs. See the rationale in **Next
+steps**.
 
-- `1af2d31e` — Eigen3 include / pwsh `$$` / AppImage `LD_LIBRARY_PATH` /
-  CPack component-install for DEB/RPM (so packages don't ship headers and
-  static `.a` archives).
-- `f9e92771` — macOS sigemptyset macro, AppImage icon path, **DEB switched
-  to system Qt + `BC_BUNDLE_QWT`**, **RPM switched to system Qwt**, Windows
-  GSL PUBLIC link.
-- `1ad7bce1` — DEB QtSvg, Windows `INT_MAX`, QSettings ctor consistency
-  across platforms (production now 0-arg, tests 2-arg with isolated org).
-- `35ae1bcf` — `viewer-src/` `INT_MAX` site, macOS `setOrganizationDomain`
-  removal, Qt 6.4 `QString::arg(QAnyStringView)` shim, `ChirpSegment` UB.
-- `9ad298ba` — DEB `<QDialogButtonBox>` include, macOS `CPACK_SET_DESTDIR`
-  drop, Windows `QWT_DLL` define, split Qwt cache restore/save.
-- `f61ae8c8` — macOS `-libpath` for macdeployqt, DEB Qt 6.4
-  `QString::operator+(QStringView)` shim, Windows NSIS forward-slash paths
-  (CMP0010).
-- `f84bf9e2` — DEB ninja `-k 0` keep-going; Qt 6.4 `invokeMethod`
-  member-pointer-with-args sites converted to lambda form.
-- `9307c968` — `--version` / `--help` (with Windows `AttachConsole`),
-  per-platform symbol capture + `symbols-manifest.json`, five companion
-  `*-smoke` jobs running `--version` against the freshly-installed
-  package on a clean container or runner.
+### Selected commits (most recent last)
+
+The current shape of the pipeline came together over the
+following commits. Each commit message has the full per-fix
+detail; this list is just the navigation aid.
+
+- `9307c968` — `--version` / `--help` flags, per-platform symbol
+  capture + `symbols-manifest.json`, five companion `*-smoke`
+  jobs.
+- `22e99372` — five blockers from the first full smoke run: SLA
+  on macOS DMG, `QApplication`-before-argv-parse on Linux,
+  AppImage missing libGL on bare `ubuntu-latest`, Windows PDB
+  filename mismatch (CMake `VERSION` is a no-op for `.exe` /
+  `.pdb`), and AppleClang missing from the compiler-id guard
+  (so macOS Release had no `-g` and dSYMs were 1.4 MB).
+- `1da52d62` — `yes | hdiutil` was actively harmful once the SLA
+  was suppressed; pwsh's `&` operator + GUI-subsystem `.exe`
+  doesn't reliably wait, switched to
+  `Start-Process -Wait -PassThru -RedirectStandardOutput`;
+  `AttachConsole` gated on `GetFileType(stdout) == FILE_TYPE_UNKNOWN`
+  so a parent's `-RedirectStandardOutput` doesn't get clobbered.
+- `def09dc8` — `windeployqt` walks Qt module imports only;
+  manually `install(FILES …)` for `qwt.dll` and the GSL DLLs.
+- `c5d48569` / `2761e645` / `70df7339` — Windows smoke still red
+  after the manual install: turned out `qwt.dll` itself imports
+  `Qt6OpenGL.dll` / `Qt6OpenGLWidgets.dll`. Final form: a second
+  `install(CODE)` block runs `windeployqt` against `qwt.dll`
+  with `--dir` anchored on the install bin. Diagnostic upgrade
+  in the smoke step (recursive listing on non-zero exit) is what
+  made the Qt6OpenGL miss visible from CI logs alone.
+- `e900a006` — `virtual ~OverlayBase = default;`, surfaced by
+  AppleClang's `-Wdelete-non-abstract-non-virtual-dtor`. Currently
+  safe (`shared_ptr` type-erases the deleter) but UB-in-waiting
+  the moment anyone introduces `unique_ptr<OverlayBase>`.
 
 ## Next steps before alpha tag
 
-1. **Manual clean-VM smoke test.** The CI smoke jobs cover
-   `--version`; full UI startup on a fresh OS install is still worth
-   the spot-check.
-   - `.rpm` on openSUSE Tumbleweed; `rpm -qpR` shows auto-derived
+1. **Manual clean-VM smoke test** — the load-bearing item.
+   The in-CI `--version` exercises only `main()` entry and the
+   dynamic loader; the entire Qt runtime + `MainWindow`
+   constructor is uncovered. Per-platform: launch the installed
+   .app/.exe/.AppImage, see the main window draw, dismiss it.
+   ~10 minutes per platform. What the manual pass catches that
+   CI does not:
+   - Qt platform plugin load (`qwindows` / xcb / cocoa) inside
+     the `QApplication` ctor.
+   - Deferred plugin loads on first paint (`imageformats/`,
+     `iconengines/qsvgicon`, `tls/qschannelbackend`,
+     `styles/qmodernwindowsstyle`).
+   - OpenGL context creation when qwt's plot is first
+     instantiated (linking `Qt6OpenGL.dll` ≠ initializing it).
+   - Release-build (-O3) codepath through GUI init —
+     local builds here are Debug, CI Release-builds but doesn't
+     exercise GUI; any UB-at-O3 bug is unobserved.
+   - First-run dialog (`savePath` empty → `ApplicationConfigDialog`
+     + `RuntimeHardwareConfigDialog`); `.ui` forms loaded by uic.
+   - Gatekeeper / SmartScreen UX on unsigned binaries; what the
+     user has to click through after downloading.
+   - `QSettings` against a fresh user profile (HKCU / XDG / plist
+     creation).
+   - The crash handler itself (`CrashHandler::install`,
+     `MiniDumpWriteDump`, signal handlers); never run in Release
+     because `--version` early-returns before it.
+
+   Per-platform target list:
+   - `.rpm` on openSUSE Tumbleweed — `rpm -qpR` shows auto-derived
      requirements (`libQt6*.so.6`, `libgsl.so.*`, `libqwt-qt6.so.*`).
-   - `.deb` on Ubuntu LTS; `dpkg -I` shows non-empty `Depends:`; the
+   - `.deb` on Ubuntu LTS — `dpkg -I` shows non-empty `Depends:`;
      bundled libqwt resolves through the binary RPATH.
-   - AppImage on a distro without Blackchirp's Qt6 packages installed.
-   - `.dmg` on a clean macOS install; both `.app`s launch and find
-     their bundled libqwt (`otool -L` shows `@executable_path/...`).
-   - NSIS `.exe` on a clean Windows install.
-2. **Confirm version strings.** `BC_RELEASE_VERSION` in `CMakeLists.txt`
-   matches the chosen alpha tag string;
-   `python/blackchirp/pyproject.toml` (currently `0.1.0rc2`) aligns
-   with the alpha story.
-3. **Choose the alpha tag.** Existing convention: `v1.0.0-release`,
-   `v1.1.0-beta`, `v1.1.0-release`. Natural extension: `v2.0.0-alpha`.
-4. **Cut the release**, verify all five artifacts attach, then remove
-   the three pre-release notices added in `f0a8596a` (README,
-   `doc/source/index.rst`, `doc/source/python.rst`).
+   - AppImage on a distro without Blackchirp's Qt6 packages.
+   - `.dmg` on a clean macOS install — both `.app`s launch and
+     find bundled libqwt (`otool -L` shows `@executable_path/...`).
+   - NSIS `.exe` on a clean Windows install — main window opens
+     without `STATUS_DLL_NOT_FOUND` from a transitive Qt6OpenGL
+     load.
 
-The published documentation tracks the current shape of CI:
+2. **Verify the Windows ZIP and NSIS now ship only the
+   Applications component on the next CI run.** With
+   `CPACK_ARCHIVE_COMPONENT_INSTALL ON` and
+   `CPACK_NSIS_COMPONENT_INSTALL ON` (committed alongside this
+   doc update), the ZIP should drop from ~88 MB to a fraction of
+   that, and `lib/`, `include/`, `share/blackchirp` Development /
+   Libraries content should disappear from both `.zip` and
+   `.exe`. Locally verified on Linux TGZ (4.3 MB output, only
+   Applications staged); Windows-specific NSIS behavior in
+   component mode needs the CI run to confirm. Smoke step's
+   `Get-ChildItem -Recurse C:\Blackchirp` already catches any
+   regression here for free.
 
-- `doc/source/developer_guide/build_system.rst` covers the per-job Qt
-  and Qwt sourcing matrix, the `BC_BUNDLE_QWT` option, the macOS
-  `-libpath` assumption, and the symbol-capture / smoke-test layout.
-- `doc/source/developer_guide/crash_handling.rst` covers the crash-log
-  → CI symbol-artifact triage flow (`gh run download …`).
+3. **Confirm version strings line up with the alpha tag.**
+   - `BC_RELEASE_VERSION` is plain `set("alpha")` in
+     `CMakeLists.txt` (no longer `CACHE STRING`, so it always
+     reflects source-truth — a stale local cache silently
+     overrode this previously).
+   - `BCV_RELEASE_VERSION` is also `"alpha"`.
+   - `python/blackchirp/pyproject.toml` stays decoupled for
+     alpha / beta / rc; sync to a PEP-440 release at v2.0.0.
+   - `--version` output should read `blackchirp 2.0.0-alpha
+     (build <sha>)` — verify locally before tagging.
+
+4. **Tag scheme.** The historical `v1.0.0-release` /
+   `v1.1.0-release` convention is non-standard SemVer:
+   `-release` is treated as a *pre-release identifier*, so
+   `v1.1.0-release` literally means "a pre-release of 1.1.0,"
+   sorting **before** a bare `v1.1.0`. This works against
+   tooling that auto-detects "the latest stable release" (RTD's
+   `stable` pointer, GitHub's "Latest" badge, package-version
+   checkers) and probably explains why
+   `v1.1.0-release` did not auto-build a documentation version
+   on Read the Docs.
+   - **Recommended scheme:** `vX.Y.Z` for the actual release;
+     `vX.Y.Z-alpha`, `vX.Y.Z-beta`, `vX.Y.Z-rc.1` for
+     pre-releases. The `v` prefix is fine — RTD strips it for
+     display and CMake's `PROJECT_VERSION` accepts the digits-only
+     form.
+   - **For this drop:** `v2.0.0-alpha` (or `v2.0.0-alpha.1` if
+     multiple alphas are anticipated).
+   - **For the eventual stable:** `v2.0.0` — *not*
+     `v2.0.0-release`.
+
+5. **Read the Docs auto-build configuration.** RTD's tag →
+   version mapping is governed by **Automation Rules** in the
+   project admin panel, not `.readthedocs.yaml`. The yaml
+   controls *how* a version builds; *whether* a tag is auto-
+   activated is project-admin only. Without an Activate-version
+   rule, RTD discovers tags as **inactive** versions that must
+   be activated manually — almost certainly why
+   `v1.1.0-release` produced no doc build (the version exists,
+   just hidden).
+   - In RTD admin → Automation Rules, add: type **Activate
+     version**, version type **Tag**, predicate `^v\d+\.\d+\.\d+(-(alpha|beta|rc)(\.\d+)?)?$`
+     (or just `^v` to be permissive).
+   - With SemVer-compliant tags, RTD's `stable` alias maps to
+     the highest non-pre-release tag automatically. The legacy
+     `-release` tags broke this; the recommended scheme above
+     restores it.
+   - One-time admin action; no repo change required.
+
+6. **Cut the alpha release.** Tag `v2.0.0-alpha`, push; the
+   workflow's `release: published` trigger fires across all
+   five platforms and uploads artifacts to the GitHub release.
+   The three pre-release notices added in `f0a8596a` (README,
+   `doc/source/index.rst`, `doc/source/python.rst`) **stay
+   through alpha / beta / rc** — they go away only at the
+   v2.0.0 release.
+
+7. **Follow-up not blocking the alpha** (deferred):
+   - VC++ Redistributable distribution for end users on a stock
+     Windows install. Smoke-runners-with-VS-installed happens
+     to mask this; a clean-VM Windows test (item 1) will surface
+     it. Options: NSIS auto-run of `vc_redist.x64.exe`, or
+     document it as a prerequisite. The clean-VM pass decides
+     which.
