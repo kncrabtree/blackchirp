@@ -41,8 +41,10 @@ ships.
      because `--version` early-returns before it.
 
    Acceptance criteria per platform:
-   - `.dmg` on a clean macOS install — both `.app`s launch and
-     find bundled libqwt (`otool -L` shows `@executable_path/...`).
+   - `.dmg` (arm64) on a clean Apple Silicon Mac — both `.app`s launch
+     and find bundled libqwt (`otool -L` shows `@executable_path/...`).
+   - `.dmg` (x86_64) on a clean Intel Mac — same checks; this one
+     covers Mac users still on pre-2022 hardware.
    - NSIS `.exe` on a clean Windows install — main window opens
      without `STATUS_DLL_NOT_FOUND` from a transitive Qt6OpenGL
      load.

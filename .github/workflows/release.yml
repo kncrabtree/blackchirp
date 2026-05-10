@@ -668,9 +668,32 @@ jobs:
   # macOS DMG / TGZ
   # ============================================================================
   macos-dmg:
-    name: macOS DMG
-    runs-on: macos-latest
+    # Two macOS builds per release: Apple Silicon (arm64) and Intel
+    # (x86_64). CMake does not produce universal binaries by default, so
+    # the host runner's architecture dictates the output slice and CPack
+    # emits Blackchirp-<version>-Darwin-{arm64,x86_64}.{dmg,tar.gz}
+    # accordingly. macos-15-intel is the most recent macOS-15 Intel
+    # runner GitHub publishes; macos-26-intel exists but its newer SDK
+    # would silently raise the deployment-target floor and exclude the
+    # Intel Macs the matrix exists to serve.
+    name: macOS DMG (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
     if: github.event_name == 'release' || inputs.run_macos
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-latest
+          - arch: x86_64
+            runner: macos-15-intel
+    env:
+      # Pin the binary's minimum macOS to 11.0 explicitly. Without this,
+      # CMake picks up the SDK's default (whatever the runner image
+      # ships) and the floor drifts upward each time GitHub bumps the
+      # runner image. macOS 11 is the first version that supports
+      # Apple Silicon and is the Qt 6.9 minimum on both architectures.
+      MACOSX_DEPLOYMENT_TARGET: "11.0"
     steps:
       - uses: actions/checkout@v5
 
@@ -691,7 +714,7 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: ${{ github.workspace }}/qwt-install
-          key: qwt-${{ env.QWT_VERSION }}-macos-qt${{ env.QT_VERSION }}-v2
+          key: qwt-${{ env.QWT_VERSION }}-macos-${{ matrix.arch }}-qt${{ env.QT_VERSION }}-v3
 
       - name: Build Qwt from source
         if: steps.qwt-cache.outputs.cache-hit != 'true'
@@ -714,7 +737,7 @@ jobs:
         uses: actions/cache/save@v5
         with:
           path: ${{ github.workspace }}/qwt-install
-          key: qwt-${{ env.QWT_VERSION }}-macos-qt${{ env.QT_VERSION }}-v2
+          key: qwt-${{ env.QWT_VERSION }}-macos-${{ matrix.arch }}-qt${{ env.QT_VERSION }}-v3
 
       - name: Configure
         run: |
@@ -738,7 +761,7 @@ jobs:
           (
             cd symbols
             jq -n \
-              --arg platform "macos" \
+              --arg platform "macos-${{ matrix.arch }}" \
               --arg git_sha "${{ github.sha }}" \
               --arg run_id "${{ github.run_id }}" \
               '{platform:$platform, git_sha:$git_sha, run_id:$run_id, files:[]}' \
@@ -765,29 +788,29 @@ jobs:
         run: cpack -G "DragNDrop;TGZ"
 
       - name: Attest build provenance
-        # No GPG signing here — macOS distribution signing is Apple Developer
-        # ID + notarization, which costs $99/yr and is deferred. Attestation
-        # is independent of OS-level code signing and worth doing regardless.
-        # dSYM bundles are directories so they're omitted; the platform
-        # binaries are what users care about verifying.
+        # No GPG signing here — OS-level signing on macOS is Apple
+        # Developer ID + notarization, which is not configured. Attestation
+        # is OS-independent and applies to the unsigned binaries. dSYM
+        # bundles are directories so they're omitted from the subject-path;
+        # the platform binaries are what users verify.
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: |
-            build/Blackchirp-*.dmg
-            build/Blackchirp-*.tar.gz
+            build/Blackchirp-*-Darwin-${{ matrix.arch }}.dmg
+            build/Blackchirp-*-Darwin-${{ matrix.arch }}.tar.gz
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: blackchirp-macos
+          name: blackchirp-macos-${{ matrix.arch }}
           path: |
-            build/Blackchirp-*.dmg
-            build/Blackchirp-*.tar.gz
+            build/Blackchirp-*-Darwin-${{ matrix.arch }}.dmg
+            build/Blackchirp-*-Darwin-${{ matrix.arch }}.tar.gz
 
       - name: Upload symbols
         uses: actions/upload-artifact@v4
         with:
-          name: blackchirp-symbols-macos
+          name: blackchirp-symbols-macos-${{ matrix.arch }}
           path: symbols/
           retention-days: 90
 
@@ -797,7 +820,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload "${{ github.event.release.tag_name }}" \
-            build/Blackchirp-*.dmg build/Blackchirp-*.tar.gz --clobber
+            build/Blackchirp-*-Darwin-${{ matrix.arch }}.dmg \
+            build/Blackchirp-*-Darwin-${{ matrix.arch }}.tar.gz --clobber
 
   # ============================================================================
   # Windows NSIS / ZIP
@@ -1058,18 +1082,31 @@ jobs:
           done
 
   macos-smoke:
-    name: macOS smoke
+    # One smoke job per arch, matching the macos-dmg matrix. Each runs on
+    # the same runner family it was built on so the smoke catches
+    # architecture-specific load failures (a binary built x86_64 on an
+    # Intel runner that fails to load on an arm64 host would be a packaging
+    # bug, not a CI bug).
+    name: macOS smoke (${{ matrix.arch }})
     needs: macos-dmg
-    runs-on: macos-latest
+    runs-on: ${{ matrix.runner }}
     if: github.event_name == 'release' || inputs.run_macos
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-latest
+          - arch: x86_64
+            runner: macos-15-intel
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: blackchirp-macos
+          name: blackchirp-macos-${{ matrix.arch }}
       - name: Mount, install, and run --version
         run: |
           set -euxo pipefail
-          DMG=$(ls Blackchirp-*.dmg | head -1)
+          DMG=$(ls Blackchirp-*-Darwin-${{ matrix.arch }}.dmg | head -1)
           # -nobrowse keeps the volume out of Finder; -mountpoint pins the
           # path so we don't have to scrape `hdiutil info` for it.
           # No `yes |` prefix: with CPACK_DMG_SLA_USE_RESOURCE_FILE_LICENSE

@@ -42,9 +42,12 @@ Each release provides the following artifacts:
    * - Linux (generic)
      - ``.tar.gz``
      - Binary tarball; extract and run
-   * - macOS
-     - ``.dmg``
-     - Drag-and-drop application bundle
+   * - macOS (Apple Silicon)
+     - ``.dmg`` (``arm64``)
+     - Drag-and-drop application bundle for M1/M2/M3/M4 Macs
+   * - macOS (Intel)
+     - ``.dmg`` (``x86_64``)
+     - Drag-and-drop application bundle for pre-2022 Intel Macs
    * - Windows
      - ``.exe`` (NSIS installer)
      - Standard Windows installer with shortcuts and uninstall entry
@@ -141,9 +144,18 @@ viewer binary is built with ``RUNPATH`` set to ``$ORIGIN/../lib``.
 
 **macOS — DMG**
 
-Download the ``.dmg`` file, open it, and drag the ``blackchirp.app``
-bundle to your ``Applications`` folder. Qt and Qwt frameworks are
-bundled inside the application.
+Two DMGs are published per release, one per CPU architecture. Pick
+the one that matches your hardware:
+
+* ``Blackchirp-<version>-Darwin-arm64.dmg`` — Apple Silicon
+  (M1/M2/M3/M4).
+* ``Blackchirp-<version>-Darwin-x86_64.dmg`` — Intel (pre-2022
+  Macs).
+
+Open the chosen ``.dmg``, drag the ``blackchirp.app`` bundle to
+your ``Applications`` folder, and (optionally) drag the
+``blackchirp-viewer.app`` bundle alongside it. Qt and Qwt
+frameworks are bundled inside the application.
 
 **Windows — NSIS installer**
 

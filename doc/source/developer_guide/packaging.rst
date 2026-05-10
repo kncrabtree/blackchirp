@@ -68,8 +68,12 @@ Snap and Flatpak are intentionally excluded: their sandbox models
 restrict the serial-port and USB hardware access that Blackchirp
 requires for acquisition.
 
-macOS ships ``.dmg`` (DragNDrop) and ``.tar.gz``. Windows ships an
-NSIS installer (``.exe``) and a ``.zip``.
+macOS ships ``.dmg`` (DragNDrop) and ``.tar.gz`` in two
+architectures — Apple Silicon (``arm64``) and Intel (``x86_64``);
+CMake does not produce universal binaries by default, so each
+``runs-on`` runner emits a single-arch slice and the two together
+cover the installed-Mac base. Windows ships an NSIS installer
+(``.exe``) and a ``.zip``.
 
 Components contain only ``Applications``
 ----------------------------------------
@@ -93,7 +97,7 @@ dropped from ~88 MB to a small fraction of that.
 Qt and Qwt sourcing per job
 ---------------------------
 
-The five jobs source Qt and Qwt differently because each platform
+The build jobs source Qt and Qwt differently because each platform
 imposes different constraints on what can be linked, packaged, and
 deployed.
 
@@ -113,7 +117,7 @@ deployed.
    * - ``linux-appimage``
      - ``install-qt-action`` 6.9.1
      - from-source
-   * - ``macos-dmg``
+   * - ``macos-dmg`` (arm64, x86_64)
      - ``install-qt-action`` 6.9.1
      - from-source
    * - ``windows-nsis``
@@ -392,10 +396,11 @@ Workflow structure
 ------------------
 
 ``.github/workflows/release.yml`` defines five build jobs (one per
-platform) and five companion ``*-smoke`` jobs that install each
-artifact in a clean-ish environment and confirm
-``<binary> --version`` exits zero. The smoke layer catches the
-common packaging-step regressions: missing bundled libs, broken
+platform; the macOS job is a matrix over ``arm64`` and ``x86_64``,
+so six job executions per full run) and the matching ``*-smoke``
+jobs that install each artifact in a clean-ish environment and
+confirm ``<binary> --version`` exits zero. The smoke layer catches
+the common packaging-step regressions: missing bundled libs, broken
 RPATHs, soname mismatches, the wrong Qt module set in the bundle.
 It does *not* exercise GUI initialization — ``--version``
 early-returns before ``QApplication`` is constructed so headless
