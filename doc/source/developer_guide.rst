@@ -48,6 +48,7 @@ Python), and the Sphinx pages that surface them is documented in the
    :caption: Developer Guide
 
    developer_guide/build_system
+   developer_guide/packaging
    developer_guide/conventions
    developer_guide/python_module
    developer_guide/architecture
