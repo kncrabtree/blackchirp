@@ -83,12 +83,84 @@ if(WIN32)
     
     # Uninstaller
     set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
-    
+
     # Registry entries for file associations (optional)
     # set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS
     #     "WriteRegStr HKCR '.bc' '' 'BlackchirpFile'"
     # )
-    
+
+    # ------------------------------------------------------------------
+    # Bundle non-Qt third-party runtime DLLs alongside the executables.
+    # windeployqt walks Qt module imports only; qwt.dll, gsl.dll,
+    # gslcblas.dll, and any other third-party DLL the .exe depends on
+    # are not copied automatically. Without these the installed binary
+    # fails to launch with STATUS_DLL_NOT_FOUND, because the PE loader
+    # search order (.exe directory → CWD → System32 → PATH) does not
+    # include the upstream build trees.
+    # ------------------------------------------------------------------
+    set(_bc_runtime_dlls)
+
+    # Qwt (from-source build via qmake; `nmake install` lays out qwt.dll
+    # under qwt-install/lib/ on Windows rather than the more common bin/
+    # convention).
+    if(QWT_LIBRARY)
+        get_filename_component(_qwt_lib_dir "${QWT_LIBRARY}" DIRECTORY)
+        foreach(_candidate "${_qwt_lib_dir}/qwt.dll"
+                           "${_qwt_lib_dir}/../bin/qwt.dll")
+            if(EXISTS "${_candidate}")
+                get_filename_component(_resolved "${_candidate}" ABSOLUTE)
+                list(APPEND _bc_runtime_dlls "${_resolved}")
+                break()
+            endif()
+        endforeach()
+        unset(_qwt_lib_dir)
+    endif()
+
+    # GSL (vcpkg's x64-windows triplet, dynamic). CMake's FindGSL sets
+    # IMPORTED_LOCATION to the .lib it finds via find_library; the
+    # paired .dll lives in the sibling bin/ under vcpkg's installed
+    # tree. Resolve it by walking back from the import library.
+    foreach(_gsl_target GSL::gsl GSL::gslcblas)
+        if(TARGET ${_gsl_target})
+            get_target_property(_lib ${_gsl_target} IMPORTED_LOCATION_RELEASE)
+            if(NOT _lib)
+                get_target_property(_lib ${_gsl_target} IMPORTED_LOCATION)
+            endif()
+            if(_lib)
+                get_filename_component(_lib_dir "${_lib}" DIRECTORY)
+                get_filename_component(_lib_we  "${_lib}" NAME_WE)
+                foreach(_candidate "${_lib_dir}/${_lib_we}.dll"
+                                   "${_lib_dir}/../bin/${_lib_we}.dll")
+                    if(EXISTS "${_candidate}")
+                        get_filename_component(_resolved "${_candidate}" ABSOLUTE)
+                        list(APPEND _bc_runtime_dlls "${_resolved}")
+                        break()
+                    endif()
+                endforeach()
+            endif()
+            unset(_lib)
+            unset(_lib_dir)
+            unset(_lib_we)
+        endif()
+    endforeach()
+
+    if(_bc_runtime_dlls)
+        list(REMOVE_DUPLICATES _bc_runtime_dlls)
+        install(FILES ${_bc_runtime_dlls}
+            DESTINATION "${CMAKE_INSTALL_BINDIR}"
+            COMPONENT Applications)
+        message(STATUS "Bundling Windows runtime DLLs:")
+        foreach(_dll ${_bc_runtime_dlls})
+            message(STATUS "  ${_dll}")
+        endforeach()
+    else()
+        message(WARNING
+            "No third-party runtime DLLs located for Windows packaging; "
+            "the installed .exe is likely to fail with STATUS_DLL_NOT_FOUND. "
+            "Check QWT_LIBRARY and GSL::gsl IMPORTED_LOCATION.")
+    endif()
+    unset(_bc_runtime_dlls)
+
 elseif(APPLE)
     # ========================================================================
     # macOS Packaging (DragNDrop DMG)
