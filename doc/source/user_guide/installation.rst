@@ -63,8 +63,12 @@ Download the ``.deb`` file and install it with your package manager::
 
     sudo apt install ./blackchirp-<version>-Linux.deb
 
-Qt, Qwt, and GSL are listed as dependencies and will be pulled in
-automatically from your distribution's repositories.
+Qt6 and GSL are listed as dependencies and pulled from your
+distribution's repositories. Qwt is bundled inside the package
+because Ubuntu LTS ships only the Qt5-era qwt 6.1; the bundled
+``libqwt.so*`` lives in a private subdirectory of the package's
+libdir and the executables resolve it through an ``$ORIGIN``-relative
+RPATH.
 
 **Linux — RPM package**
 
@@ -73,9 +77,14 @@ Download the ``.rpm`` file and install it::
     sudo zypper install ./blackchirp-<version>-Linux.rpm   # openSUSE
     sudo dnf install ./blackchirp-<version>-Linux.rpm      # Fedora / RHEL
 
-Required libraries (Qt6, Qwt, GSL) are derived automatically from the
-binary's shared-library references and resolved from your distribution's
-repositories.
+Qt6 and GSL are derived automatically from the binary's shared-library
+references and resolved from your distribution's repositories. Qwt is
+bundled inside the package — different RPM-based distributions
+ABI-track ``libqwt-qt6.so`` differently (openSUSE pins the minor
+version in the SONAME; Fedora and RHEL pin only the major), and a
+single .rpm linked against any one of them would fail to install on
+the others. The bundled libqwt sidesteps the soname-tracking question
+entirely, at the cost of a few MB of additional package size.
 
 **Linux — AppImage**
 

@@ -39,7 +39,7 @@ this yields packages in the 4–9 MB range on Linux.
 | Job              | Qt                              | Qwt                           |
 | ---------------- | ------------------------------- | ----------------------------- |
 | `linux-deb`      | apt `qt6-base-dev` (Ubuntu)     | from-source + `BC_BUNDLE_QWT` |
-| `linux-rpm`      | zypper `qt6-base-devel`         | zypper `qwt6-qt6-devel`       |
+| `linux-rpm`      | zypper `qt6-base-devel`         | from-source + `BC_BUNDLE_QWT` |
 | `linux-appimage` | `install-qt-action` 6.9.1       | from-source                   |
 | `macos-dmg`      | `install-qt-action` 6.9.1       | from-source                   |
 | `windows-nsis`   | `install-qt-action` 6.9.1 MSVC  | from-source                   |
@@ -50,11 +50,17 @@ metadata and the package step would fail. Ubuntu LTS has no Qt6-built Qwt, so
 the deb job builds Qwt from source and bundles `libqwt.so*` inside the
 package via `BC_BUNDLE_QWT=ON` (see `cmake/Packaging.cmake`); the executables
 get an `$ORIGIN/../<libdir>/blackchirp` RPATH and dpkg-shlibdeps follows
-that to the bundled lib while resolving Qt sonames through `/usr/lib`. The
-rpm job uses openSUSE's system Qwt (`libqwt6-qt6-6_3` + `qwt6-qt6-devel`),
-so RPM's AUTOREQ derives `libqwt-qt6.so.*` automatically. The other three
-jobs build Qwt from source because no reliable Qt6 Qwt exists on
-Homebrew, vcpkg, or any LTS apt channel.
+that to the bundled lib while resolving Qt sonames through `/usr/lib`.
+
+The rpm job follows the same bundle-Qwt pattern, but for a different reason.
+openSUSE patches libqwt-qt6.so's SONAME to include the minor version
+(`libqwt-qt6.so.6.3` rather than upstream's `.so.6`); RPM AUTOREQ records
+the linked SONAME verbatim, and `libqwt-qt6.so.6.3` is unsatisfiable on
+Fedora, RHEL, and any other RPM distro that ABI-tracks at the major level.
+Bundling sidesteps the soname mismatch entirely — the resulting RPM has no
+qwt dependency at all and installs cleanly on every RPM distro that has
+Qt6. The other three jobs build Qwt from source because no reliable Qt6
+Qwt exists on Homebrew, vcpkg, or any LTS apt channel.
 
 ### Two AppImages per release
 

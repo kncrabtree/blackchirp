@@ -352,14 +352,18 @@ set(CPACK_RPM_PACKAGE_AUTOREQ ON)
 # Optional: bundle Qwt's shared library inside the package
 # ============================================================================
 
-# No Linux distribution currently ships a Qt6-built Qwt 6.x in its main
-# repos that Ubuntu/Debian deb tooling can resolve (Ubuntu has only the
-# Qt5-era qwt 6.1.4). When BC_BUNDLE_QWT is ON, the package ships
-# libqwt.so* in a private subdir of the libdir and the executables get
-# an RPATH so they find it at runtime. Off by default; enabled by the
-# CI deb job and by anyone packaging on a distro without a Qt6 Qwt
-# package. openSUSE has libqwt6-qt6-6_3 in its standard repos, so the
-# rpm job leaves this off and links against the system Qwt instead.
+# When BC_BUNDLE_QWT is ON, the package ships libqwt.so* in a private
+# subdir of the libdir and the executables get an RPATH so they find
+# it at runtime. Off by default; both the CI deb and rpm jobs turn it
+# on, and anyone packaging Blackchirp for a Linux distro should as
+# well. The deb path is forced because Ubuntu LTS has no Qt6-built
+# Qwt at all (only the Qt5-era qwt 6.1.4). The rpm path is forced
+# because openSUSE patches libqwt-qt6.so's SONAME to include the
+# minor version (libqwt-qt6.so.6.3); RPM AUTOREQ records that
+# verbatim, and the resulting requirement does not match Fedora's or
+# RHEL's qwt6-qt6 packages, which provide only major-versioned
+# libqwt-qt6.so.6. Bundling avoids the soname-tracking question
+# entirely — the resulting package has no qwt dependency at all.
 option(BC_BUNDLE_QWT
     "Install Qwt's shared library inside the package and add an RPATH \
 to the executables so they find it. Use on Linux distros that lack a \

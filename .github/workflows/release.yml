@@ -253,18 +253,58 @@ jobs:
             gcc-c++ cmake ninja make pkgconf-pkg-config \
             qt6-base-devel qt6-serialport-devel qt6-tools-devel qt6-svg-devel \
             qt6-base-private-devel \
-            libqwt6-qt6-6_3 qwt6-qt6-devel \
             gsl-devel eigen3-devel \
             libudev-devel \
             rpm-build rpm-sign gpg2
 
       - uses: actions/checkout@v5
 
+      # Qwt is built from source and bundled into the RPM rather than
+      # linked against the system libqwt6-qt6. openSUSE's qwt SONAME is
+      # patched to libqwt-qt6.so.6.3 (minor-versioned for ABI tracking),
+      # which RPM AUTOREQ records verbatim; that breaks installation on
+      # Fedora/RHEL/etc. whose qwt provides only libqwt-qt6.so.6 (major).
+      # Bundling sidesteps the soname-mismatch entirely — the resulting
+      # RPM has no qwt dependency at all and installs cleanly on every
+      # RPM distro that has Qt6.
+      - name: Restore Qwt cache
+        id: qwt-cache
+        uses: actions/cache/restore@v5
+        with:
+          path: ${{ github.workspace }}/qwt-install
+          key: qwt-${{ env.QWT_VERSION }}-leap16-sysqt-v1
+
+      - name: Build Qwt from source
+        if: steps.qwt-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euxo pipefail
+          curl -L -o qwt.tar.bz2 \
+            "https://sourceforge.net/projects/qwt/files/qwt/${QWT_VERSION}/qwt-${QWT_VERSION}.tar.bz2/download"
+          tar xf qwt.tar.bz2
+          cd "qwt-${QWT_VERSION}"
+          sed -i "s|^[[:space:]]*QWT_INSTALL_PREFIX[[:space:]]*=.*|QWT_INSTALL_PREFIX = ${{ github.workspace }}/qwt-install|" qwtconfig.pri
+          sed -i 's|^[[:space:]]*QWT_INSTALL_HEADERS[[:space:]]*=.*|QWT_INSTALL_HEADERS = $${QWT_INSTALL_PREFIX}/include/qwt6|' qwtconfig.pri
+          sed -i -E "/^[[:space:]]*QWT_CONFIG[[:space:]]*\+=[[:space:]]+Qwt(Examples|Playground|Designer|Tests|Framework)[[:space:]]*$/d" qwtconfig.pri
+          qmake6 qwt.pro
+          make -j"$(nproc)"
+          make install
+
+      - name: Save Qwt cache
+        if: steps.qwt-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: ${{ github.workspace }}/qwt-install
+          key: qwt-${{ env.QWT_VERSION }}-leap16-sysqt-v1
+
       - name: Configure
         run: |
           cmake -S . -B build \
             -G Ninja \
-            -DCMAKE_BUILD_TYPE=${{ env.CMAKE_BUILD_TYPE }}
+            -DCMAKE_BUILD_TYPE=${{ env.CMAKE_BUILD_TYPE }} \
+            -DCMAKE_INSTALL_PREFIX=/usr \
+            -DBC_BUNDLE_QWT=ON \
+            -DQWT_ROOT="${{ github.workspace }}/qwt-install" \
+            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/qwt-install"
 
       - name: Build
         run: cmake --build build -j"$(nproc)"
@@ -296,10 +336,18 @@ jobs:
       - name: Test
         env:
           QT_QPA_PLATFORM: offscreen
+          # The test executables link against the from-source libqwt
+          # under qwt-install/lib; the bundled-qwt RPATH is only set on
+          # the installed binaries (the install step copies libqwt into
+          # the package layout), so ctest needs the build-tree path on
+          # LD_LIBRARY_PATH explicitly.
+          LD_LIBRARY_PATH: ${{ github.workspace }}/qwt-install/lib
         run: ctest --test-dir build --output-on-failure
 
       - name: Package
         working-directory: build
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/qwt-install/lib
         run: cpack -G RPM
 
       - name: Import GPG signing key
