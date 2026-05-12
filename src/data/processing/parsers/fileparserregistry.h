@@ -30,11 +30,8 @@ public:
     /// signal is emitted.
     void registerParser(std::unique_ptr<FileParser> parser);
 
-    /// \brief Find the first registered parser whose ``canParse`` returns
-    /// ``true`` for ``filePath``.
-    ///
-    /// \return Borrowed pointer (registry retains ownership) or
-    ///         ``nullptr`` if no parser claims the file.
+    /// \brief Find the first registered parser whose ``canParse`` returns ``true`` for ``filePath``.
+    /// \return Borrowed pointer (registry retains ownership), or ``nullptr`` if no parser claims the file.
     FileParser* findParser(const QString &filePath) const;
 
     /// \brief Find the first parser of type ``T`` (or a subclass) that

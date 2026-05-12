@@ -131,6 +131,7 @@ public:
     /// \brief Whether the named loadout contains a preset with the given name.
     bool ftmwPresetExists(const QString &loadoutName, const QString &presetName) const;
     /// \brief Names of the FTMW presets owned by the named loadout.
+    /// \param loadoutName Loadout whose preset names should be returned.
     /// \param includeLastUsed If true, the `__LastUsed__` sentinel is included in the returned list.
     QStringList ftmwPresetNames(const QString &loadoutName, bool includeLastUsed = false) const;
     /// \brief Remove every FTMW preset from the named loadout.

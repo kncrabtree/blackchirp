@@ -9,7 +9,7 @@
  *
  * Installs platform-native handlers (POSIX signal handlers on Unix,
  * SetUnhandledExceptionFilter on Windows) and writes a crash artifact
- * under <savePath>/log/crashes/ when the process faults.
+ * under \c \<savePath\>/log/crashes/ when the process faults.
  *
  * The artifact is a text log on POSIX (build identity, signal info, and
  * a std::stacktrace resolved to module+offset pairs) and a minidump
@@ -25,7 +25,7 @@
  *     construction. Sets up signal/exception handlers.
  *   - reopen(savePath) once savePath is known and again whenever the
  *     user changes savePath. Builds and opens the per-run crash log
- *     file inside <savePath>/log/crashes/.
+ *     file inside \c \<savePath\>/log/crashes/.
  *   - setActiveExperiment(num) from the acquisition thread when an
  *     experiment starts (and 0 when it ends). Atomic; safe to call
  *     from any thread.
@@ -70,7 +70,7 @@ QString crashesDirectory();
  *        crash artifact path's filename.
  *
  * Returns an empty string if the path's basename does not match the
- * expected \c crash-yyyyMMdd-HHmmss-<sha>.{log,dmp} pattern. The
+ * expected \c crash-yyyyMMdd-HHmmss-\<sha\>.{log,dmp} pattern. The
  * returned string sorts lexicographically.
  */
 QString artifactTimestamp(const QString &path);

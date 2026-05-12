@@ -39,6 +39,7 @@ public:
     /*!
      * \brief Construct a VendorLibrary with the given settings key
      * \param libraryKey SettingsStorage key used to persist this library's configuration
+     * \param parent Parent QObject for ownership; defaults to none.
      */
     explicit VendorLibrary(const QString& libraryKey, QObject *parent = nullptr);
 

@@ -95,7 +95,7 @@ signals:
     /// \brief Emitted to display a transient message in the status bar.
     /// \param msg The message text.
     /// \param timeout Display duration in milliseconds; 0 means indefinite.
-    void statusMessage(QString,int=0);
+    void statusMessage(QString msg, int timeout = 0);
 
     /// \brief Emitted when all hardware objects have been constructed, threaded,
     /// and their initialization slots invoked — before any connection tests run.
@@ -104,7 +104,7 @@ signals:
     /// \brief Emitted after every connection-test round to report whether all
     /// critical hardware responded successfully.
     /// \param success \c true when every critical HardwareObject is connected.
-    void allHardwareConnected(bool);
+    void allHardwareConnected(bool success);
 
     /*!
      * \brief Unified signal for all connection status changes and test results.
@@ -160,7 +160,7 @@ signals:
     /// \brief Emitted after initializeExperiment() has prepared all hardware and
     /// the Experiment object is ready for the acquisition loop to start.
     /// \param exp The prepared experiment, shared with AcquisitionManager.
-    void experimentInitialized(std::shared_ptr<Experiment>);
+    void experimentInitialized(std::shared_ptr<Experiment> exp);
 
     /// \brief Broadcast to all HardwareObjects to exit acquisition mode.
     void endAcquisition();
@@ -170,17 +170,17 @@ signals:
     /// \brief Emitted when any hardware object reads auxiliary (non-rolling)
     /// data; keys are prefixed with the hardware key of the source object.
     /// \param data Map of keyed scalar values.
-    void auxData(AuxDataStorage::AuxDataMap);
+    void auxData(AuxDataStorage::AuxDataMap data);
 
     /// \brief Emitted with the same data as auxData() for validation tracking.
     /// \param data Map of keyed scalar values.
-    void validationData(AuxDataStorage::AuxDataMap);
+    void validationData(AuxDataStorage::AuxDataMap data);
 
     /// \brief Emitted when any hardware object reads rolling (time-series)
     /// auxiliary data; keys are prefixed with the hardware key of the source.
     /// \param data Map of keyed scalar values.
     /// \param timestamp Acquisition timestamp for the data point.
-    void rollingData(AuxDataStorage::AuxDataMap,QDateTime);
+    void rollingData(AuxDataStorage::AuxDataMap data, QDateTime timestamp);
 
     // Clock signals
 
@@ -188,18 +188,18 @@ signals:
     /// experiment (e.g., a sweep step).
     /// \param type The clock role that changed.
     /// \param freqMHz New frequency in MHz.
-    void clockFrequencyUpdate(RfConfig::ClockType, double);
+    void clockFrequencyUpdate(RfConfig::ClockType type, double freqMHz);
 
     /// \brief Emitted when the hardware assignment for a clock role changes.
     /// \param type The clock role.
     /// \param hwKey Key of the clock hardware now serving this role.
     /// \param output Hardware output index used for this role.
-    void clockHardwareUpdate(RfConfig::ClockType, const QString &hwKey, int output);
+    void clockHardwareUpdate(RfConfig::ClockType type, const QString &hwKey, int output);
 
     /// \brief Emitted by setClocks() after all requested clock frequencies have
     /// been applied and the digitizer ungated.
     /// \param clocks Map of clock roles to their final frequency descriptors.
-    void allClocksReady(QHash<RfConfig::ClockType,RfConfig::ClockFreq>);
+    void allClocksReady(QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks);
 
     // Pulse generator signals
 
@@ -208,12 +208,12 @@ signals:
     /// \param channel Channel index.
     /// \param setting Which setting changed.
     /// \param value New value.
-    void pGenSettingUpdate(QString,int,PulseGenConfig::Setting,QVariant);
+    void pGenSettingUpdate(QString hwKey, int channel, PulseGenConfig::Setting setting, QVariant value);
 
     /// \brief Emitted when the entire pulse generator configuration is updated.
     /// \param hwKey Hardware key of the pulse generator.
     /// \param config New full configuration.
-    void pGenConfigUpdate(QString,PulseGenConfig);
+    void pGenConfigUpdate(QString hwKey, PulseGenConfig config);
 
     // Flow controller signals
 
@@ -221,29 +221,29 @@ signals:
     /// \param hwKey Hardware key of the flow controller.
     /// \param channel Channel index.
     /// \param value Flow reading in the controller's native units.
-    void flowUpdate(QString,int,double);
+    void flowUpdate(QString hwKey, int channel, double value);
 
     /// \brief Emitted when a flow-controller channel setpoint changes.
     /// \param hwKey Hardware key of the flow controller.
     /// \param channel Channel index.
     /// \param value New setpoint in the controller's native units.
-    void flowSetpointUpdate(QString,int,double);
+    void flowSetpointUpdate(QString hwKey, int channel, double value);
 
     /// \brief Emitted when the backing-gas pressure reading from a flow
     /// controller changes.
     /// \param hwKey Hardware key of the flow controller.
     /// \param value Pressure reading.
-    void gasPressureUpdate(QString,double);
+    void gasPressureUpdate(QString hwKey, double value);
 
     /// \brief Emitted when the backing-gas pressure setpoint changes.
     /// \param hwKey Hardware key of the flow controller.
     /// \param value New setpoint.
-    void gasPressureSetpointUpdate(QString,double);
+    void gasPressureSetpointUpdate(QString hwKey, double value);
 
     /// \brief Emitted when the backing-gas pressure control mode changes.
     /// \param hwKey Hardware key of the flow controller.
     /// \param enabled \c true if pressure feedback control is active.
-    void gasPressureControlMode(QString,bool);
+    void gasPressureControlMode(QString hwKey, bool enabled);
 
     // Pressure controller signals
 
@@ -251,23 +251,23 @@ signals:
     /// during an experiment).
     /// \param hwKey Hardware key of the pressure controller.
     /// \param readOnly \c true if write operations are disabled.
-    void pressureControlReadOnly(QString,bool);
+    void pressureControlReadOnly(QString hwKey, bool readOnly);
 
     /// \brief Emitted when the pressure reading from a dedicated pressure
     /// controller changes.
     /// \param hwKey Hardware key of the pressure controller.
     /// \param value Pressure reading.
-    void pressureUpdate(QString,double);
+    void pressureUpdate(QString hwKey, double value);
 
     /// \brief Emitted when the pressure setpoint changes.
     /// \param hwKey Hardware key of the pressure controller.
     /// \param value New setpoint.
-    void pressureSetpointUpdate(QString,double);
+    void pressureSetpointUpdate(QString hwKey, double value);
 
     /// \brief Emitted when the pressure control mode changes.
     /// \param hwKey Hardware key of the pressure controller.
     /// \param enabled \c true if feedback control is active.
-    void pressureControlMode(QString,bool);
+    void pressureControlMode(QString hwKey, bool enabled);
 
     // Temperature controller signals
 
@@ -275,20 +275,20 @@ signals:
     /// \param hwKey Hardware key of the temperature controller.
     /// \param channel Channel index.
     /// \param value Temperature reading.
-    void temperatureUpdate(QString,uint,double);
+    void temperatureUpdate(QString hwKey, uint channel, double value);
 
     /// \brief Emitted when a temperature channel is enabled or disabled.
     /// \param hwKey Hardware key of the temperature controller.
     /// \param channel Channel index.
     /// \param enabled \c true if the channel is active.
-    void temperatureEnableUpdate(QString,uint,bool);
+    void temperatureEnableUpdate(QString hwKey, uint channel, bool enabled);
 
     // LIF signals
 
     /// \brief Emitted when the LIF digitizer acquires a single shot waveform
     /// during configuration acquisition.
     /// \param data Raw 8-bit waveform samples.
-    void lifDigitizerShotAcquired(QVector<qint8>);
+    void lifDigitizerShotAcquired(QVector<qint8> data);
 
     /// \brief Emitted when LIF hardware setup (laser position, pulse delay,
     /// digitizer gate) is complete.
@@ -297,7 +297,7 @@ signals:
 
     /// \brief Emitted when the LIF laser reports a new position.
     /// \param pos Laser position in the controller's native units.
-    void lifLaserPosUpdate(double);
+    void lifLaserPosUpdate(double pos);
 
     /// \brief Emitted when the LIF digitizer completes configuration acquisition
     /// and the system is ready to begin data collection.
@@ -305,7 +305,7 @@ signals:
 
     /// \brief Emitted when the LIF laser flashlamp enable state changes.
     /// \param enabled \c true if the flashlamp is active.
-    void lifLaserFlashlampUpdate(bool);
+    void lifLaserFlashlampUpdate(bool enabled);
 
     // Python hardware signal
 

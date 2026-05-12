@@ -29,6 +29,7 @@ public:
 
     /*!
      * \brief Constructor. Initializes axes and plot options
+     * \param id Plot identifier used as the settings-storage subkey.
      * \param parent Parent widget
      */
     explicit FidPlot(const QString &id, QWidget *parent = 0);

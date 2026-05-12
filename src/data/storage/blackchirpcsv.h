@@ -262,11 +262,11 @@ public:
      * \brief Scans the data path for the highest experiment number on disk.
      * \param basePath Optional base path. When empty, the active
      *        \c savePath from settings is used.
-     * \return Highest experiment number under \c <basePath>/experiments,
+     * \return Highest experiment number under \c \<basePath\>/experiments,
      *         or 0 if no numeric subdirectory was found.
      *
      * Walks the rightmost branch of the
-     * \c <basePath>/experiments/mil/th/num hierarchy. Used to keep the
+     * \c \<basePath\>/experiments/mil/th/num hierarchy. Used to keep the
      * stored \c exptNum reconciled with what is actually on disk so that
      * users who switch acquisition app versions, or modify the data tree
      * outside the program, do not allocate a duplicate experiment number.

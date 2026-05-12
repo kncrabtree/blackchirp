@@ -242,7 +242,7 @@ signals:
     /// \brief Emitted when the user selects "Change plot" for a BlackchirpPlotCurve.
     /// \param curve Curve to move.
     /// \param index Zero-based target plot index.
-    void curveMoveRequested(BlackchirpPlotCurve*, int);
+    void curveMoveRequested(BlackchirpPlotCurve *curve, int index);
 
     /// \brief Emitted after any slot in the curve-management family modifies a curve's appearance or settings.
     /// \param curve The modified curve.
@@ -335,7 +335,7 @@ protected:
     /// \param rect  Target rectangle in plot coordinates.
     /// \param xAx   X axis of the zoomer pair.
     /// \param yAx   Y axis of the zoomer pair.
-    virtual void zoom(const QRectF &rect, QwtPlot::Axis xAx, QwtPlot::Axis yAx);
+    virtual void zoom(const QRectF &rect, Axis xAx, Axis yAx);
 
     /// \brief Zooms a single axis by a scale factor around the current center.
     ///

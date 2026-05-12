@@ -16,13 +16,11 @@ public:
     /// \brief Test whether this parser recognizes the given file.
     ///
     /// Implementations typically combine an extension check
-    /// (\ref hasMatchingExtension) with a structural sniff of the first
-    /// few lines (\ref readFileHeader) to keep the test cheap.
+    /// (hasMatchingExtension()) with a structural sniff of the first few
+    /// lines (readFileHeader()) to keep the test cheap.
     ///
     /// \param filePath Absolute or relative path to the candidate file.
-    /// \param hints Optional format-specific hints (delimiter overrides,
-    ///              column indices, etc.). Each subclass documents which
-    ///              keys it consumes.
+    /// \param hints Optional format-specific hints (delimiter overrides, column indices, etc.). Each subclass documents which keys it consumes.
     /// \return ``true`` when the parser is willing to handle the file.
     virtual bool canParse(const QString &filePath, const QVariantMap &hints = QVariantMap()) const = 0;
 

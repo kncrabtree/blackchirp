@@ -28,6 +28,7 @@ class FtPlot : public ZoomPanPlot
 public:
     /*!
      * \brief Initializes axes, etc. for the FT plot
+     * \param id Plot identifier used as the settings-storage subkey.
      * \param parent Parent widget
      */
     explicit FtPlot(const QString &id, QWidget *parent = 0);
