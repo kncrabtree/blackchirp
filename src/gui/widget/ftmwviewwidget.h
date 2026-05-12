@@ -77,6 +77,13 @@ public:
 signals:
     void externalOverlayDataChanged(std::shared_ptr<OverlayBase> overlay);
 
+    /// \brief Emitted when the user clicks the manual backup toolbar action.
+    ///
+    /// Connected to AcquisitionManager::requestBackup via a queued connection
+    /// (cross-thread). The action is disabled until the next \c updateBackups()
+    /// call so a single click cannot stack multiple requests.
+    void manualBackupRequested();
+
 public slots:
     void setLiveUpdateInterval(int intervalms);
     void updateLiveFidList();
@@ -218,6 +225,7 @@ public:
     QPushButton *resetAveragesButton;
     QAction *peakFindAction;
     QAction *overlayAction;
+    QAction *manualBackupAction;
     SpinBoxWidgetAction *refreshBox;
 
     void setupUi(bool main, QWidget *FtmwViewWidget)
@@ -344,6 +352,11 @@ public:
         peakupMenu->addAction(peakupWa);
         peakupButton->setMenu(peakupMenu);
         peakupButton->setPopupMode(QToolButton::InstantPopup);
+
+        manualBackupAction = toolBar->addAction(QIcon(":/icons/archive-box-arrow-down.svg"),QString("Manual Backup"));
+        manualBackupAction->setEnabled(false);
+        manualBackupAction->setToolTip(QString("Save a backup snapshot of the current FID list"));
+        manualBackupAction->setVisible(main); // hidden entirely in the viewer
 
         peakFindAction = toolBar->addAction(QIcon(":/icons/magnifying-glass-circle.svg"),QString("Peak Find"));
         peakFindAction->setEnabled(false);

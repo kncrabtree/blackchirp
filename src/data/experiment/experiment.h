@@ -93,7 +93,7 @@ public:
     BC::Data::HardwareDataContainer d_hardwareData; ///< Hardware type-to-key map recorded at acquisition time.
     int d_number{0};                  ///< Experiment number; -1 for dummy (Peak Up) experiments.
     QDateTime d_startTime;            ///< Wall-clock time when the experiment started.
-    QDateTime d_lastBackupTime;       ///< Wall-clock time of the most recent periodic backup.
+    QDateTime d_lastBackupTime;       ///< Wall-clock time of the most recent backup (periodic or manual); used to schedule the next periodic backup.
     int d_timeDataInterval{300};      ///< Auxiliary data sampling period in seconds.
     int d_backupIntervalMinutes{0};   ///< Periodic backup interval in minutes; 0 disables backups.
     QString d_errorString;            ///< Human-readable description of the last error, if any.

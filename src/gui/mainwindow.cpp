@@ -201,6 +201,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->abortButton,&QToolButton::clicked,p_am,&AcquisitionManager::abort);
     connect(p_am,&AcquisitionManager::backupComplete,ui->ftViewWidget,&FtmwViewWidget::updateBackups);
     connect(p_am,&AcquisitionManager::experimentComplete,ui->ftViewWidget,&FtmwViewWidget::experimentComplete);
+    connect(ui->ftViewWidget,&FtmwViewWidget::manualBackupRequested,p_am,&AcquisitionManager::requestBackup);
     connect(p_am,&AcquisitionManager::experimentComplete,p_hwm,&HardwareManager::experimentComplete);
 
     QThread *amThread = new QThread(this);

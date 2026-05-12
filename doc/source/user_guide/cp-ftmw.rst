@@ -5,6 +5,7 @@
    single: Segment
    single: Frame
    single: Backup
+   single: Manual Backup
    single: Window Function
    single: Zero Padding
    single: Peak Finding
@@ -87,6 +88,17 @@ Peak Up Options
 ...............
 
 During a peak-up mode acquisition, the number of averages can be changed on-the-fly, and the current average can be reset using the options in this menu.
+
+Manual Backup
+.............
+
+The ``Manual Backup`` toolbar button (identified by the archive-arrow-down icon) writes a snapshot of the current FID list to disk on demand. The button is enabled during a live acquisition in the single-segment, backup-capable modes — ``Target Shots``, ``Target Duration``, and ``Forever`` — and is disabled for ``Peak Up``, ``LO Scan``, and ``DR Scan``, which either do not produce on-disk backups (Peak Up) or write a backup automatically at each segment boundary (LO Scan and DR Scan). The button is not shown at all in the Experiment Viewer, where no acquisition is in progress.
+
+The manual backup uses the same on-disk format and numbering as periodic backups configured via the ``Backup Interval`` setting in :doc:`experiment/acquisition_types` — backups are saved as ``1.csv``, ``2.csv``, etc. in the experiment's ``fid`` directory, with the final FID list saved as ``0.csv`` when the experiment ends. Once written, a manual backup is selectable from the ``Backup`` combobox on the ``Plot Settings`` toolbar, and ``Differential`` mode shows the data accumulated since that checkpoint.
+
+When the button is clicked the status bar briefly displays ``Manual backup requested``. When the write completes — typically within a fraction of a second — the status bar updates to ``Manual backup complete (backup N)`` and a corresponding ``Highlight``-level entry is added to the log so the backup number can be recalled later. After the status-bar message expires, the bar reverts to ``Acquiring`` or ``Paused`` as appropriate.
+
+If a periodic backup is already in flight when the button is clicked, the request is folded into the in-flight write rather than queued — the periodic backup is the same snapshot the manual request would produce, so it is simply relabeled in the completion message.
 
 Peak Find
 .........

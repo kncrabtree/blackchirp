@@ -1,5 +1,7 @@
 #include <acquisition/acquisitionmanager.h>
 
+#include <data/experiment/ftmwconfigtypes.h>
+#include <data/storage/fidstoragebase.h>
 #include <data/storage/waveformbuffer.h>
 #include <data/crashhandler.h>
 
@@ -8,7 +10,7 @@
 AcquisitionManager::AcquisitionManager(QObject *parent) : QObject(parent), d_state(Idle)
 {
     pu_fw = std::make_unique<QFutureWatcher<void>>();
-    connect(pu_fw.get(),&QFutureWatcher<void>::finished,this,&AcquisitionManager::backupComplete);
+    connect(pu_fw.get(),&QFutureWatcher<void>::finished,this,&AcquisitionManager::onBackupFinished);
 }
 
 AcquisitionManager::~AcquisitionManager()
@@ -322,10 +324,77 @@ void AcquisitionManager::checkComplete()
     if(d_state == Acquiring)
     {
         if(ps_currentExperiment->canBackup())
-            pu_fw->setFuture(QtConcurrent::run([this]{ ps_currentExperiment->backup(); }));
+        {
+            d_lastBackupWasManual = false;
+            dispatchBackup();
+        }
         if(ps_currentExperiment->isComplete())
             finishAcquisition();
     }
+}
+
+bool AcquisitionManager::ftmwModeSupportsBackup() const
+{
+    if(!ps_currentExperiment || !ps_currentExperiment->ftmwEnabled())
+        return false;
+    const auto t = ps_currentExperiment->ftmwConfig()->d_type;
+    return t == FtmwConfig::Target_Shots
+            || t == FtmwConfig::Target_Duration
+            || t == FtmwConfig::Forever;
+}
+
+void AcquisitionManager::dispatchBackup()
+{
+    // Stamp d_lastBackupTime on this thread before handing the file write
+    // to the thread pool. The periodic backup check reads d_lastBackupTime
+    // on this thread, so the write/read pair stays thread-confined.
+    ps_currentExperiment->d_lastBackupTime = QDateTime::currentDateTime();
+    pu_fw->setFuture(QtConcurrent::run([this]{ ps_currentExperiment->backup(); }));
+}
+
+void AcquisitionManager::requestBackup()
+{
+    if(d_state == Idle || !ps_currentExperiment || !ftmwModeSupportsBackup())
+        return;
+
+    // Click-time confirmation. The completion message replaces this.
+    emit statusMessage(QString("Manual backup requested"),3000);
+
+    if(pu_fw && pu_fw->isRunning())
+    {
+        // An automatic backup is already saving the current FID list — the
+        // user's manual request is satisfied by that same write. Promote the
+        // in-flight backup so onBackupFinished() reports it as manual.
+        d_lastBackupWasManual = true;
+        return;
+    }
+
+    d_lastBackupWasManual = true;
+    dispatchBackup();
+}
+
+void AcquisitionManager::onBackupFinished()
+{
+    if(d_lastBackupWasManual)
+    {
+        int n = 0;
+        if(ps_currentExperiment && ps_currentExperiment->ftmwEnabled())
+            n = ps_currentExperiment->ftmwConfig()->storage()->numBackups();
+        const auto msg = QString("Manual backup complete (backup %1)").arg(n);
+        bcHighlight(msg);
+        emit statusMessage(msg,5000);
+
+        // Restore the persistent acquisition-state label after the timed
+        // status message expires, so the bar does not stay blank.
+        QTimer::singleShot(5000,this,[this]{
+            if(d_state == Acquiring)
+                emit statusMessage(QString("Acquiring"));
+            else if(d_state == Paused)
+                emit statusMessage(QString("Paused"));
+        });
+    }
+    d_lastBackupWasManual = false;
+    emit backupComplete();
 }
 
 void AcquisitionManager::finishAcquisition()

@@ -204,7 +204,6 @@ HeaderStorage::HeaderStrings Experiment::getSummary()
 
 void Experiment::backup()
 {
-    d_lastBackupTime = QDateTime::currentDateTime();
     if(!ftmwEnabled())
         return;
     ps_ftmwConfig->storage()->backup();

@@ -204,6 +204,17 @@ public slots:
     /// \param success \c true if the LIF delay and frequency were set successfully.
     void lifHardwareReady(bool success);
 
+    /// \brief Requests an immediate backup of the current FID list.
+    ///
+    /// Connected to FtmwViewWidget's manual backup toolbar action via a queued
+    /// signal/slot wire. The request is silently ignored if no experiment is
+    /// active, if the FTMW mode does not support backups (only \c Target_Shots,
+    /// \c Target_Duration, and \c Forever do), or if the experiment is in the
+    /// \c Idle state. If an automatic backup is already in flight, the request
+    /// is folded into that backup — the in-flight write becomes the user's
+    /// manual snapshot for reporting purposes.
+    void requestBackup();
+
 private:
     std::unique_ptr<QFutureWatcher<void>> pu_fw;
     std::unique_ptr<QFutureWatcher<FtmwProcessingResult>> pu_processingWatcher;
@@ -212,12 +223,16 @@ private:
     int d_auxTimerId;
     QTimer *p_drainTimer{nullptr};
     std::atomic<bool> d_abortProcessing{false};
+    bool d_lastBackupWasManual{false}; ///< Set by \c requestBackup() / \c dispatchBackup() so \c onBackupFinished() can pick the right log/status message.
 
     void auxDataTick();
     void checkComplete();
     void finishAcquisition();
     void drainFtmwBuffer();
     void onProcessingComplete();
+    void dispatchBackup();
+    void onBackupFinished();
+    bool ftmwModeSupportsBackup() const;
 
     // QObject interface
 protected:

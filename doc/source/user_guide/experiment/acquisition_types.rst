@@ -194,3 +194,4 @@ More frequent readings increase data storage requirements but provide more regul
 The ``Backup Interval`` box sets how often Blackchirp writes a backup copy of the experiment to disk during a single-segment acquisition.
 Setting the box to its minimum value displays ``Disabled`` and turns backups off.
 Multi-segment acquisition types (LO Scan and DR Scan) write a backup at each segment boundary regardless of this setting.
+In addition to the periodic backup driven by this setting, a single-segment acquisition can be backed up on demand from the CP-FTMW toolbar; see :ref:`user_guide/cp-ftmw:Manual Backup`.

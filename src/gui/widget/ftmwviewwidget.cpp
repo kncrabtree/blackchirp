@@ -107,6 +107,13 @@ FtmwViewWidget::FtmwViewWidget(bool main, QWidget *parent, QString path, bool ov
     connect(ui->peakFindAction,&QAction::triggered,this,&FtmwViewWidget::launchPeakFinder);
     connect(ui->overlayAction,&QAction::triggered,this,&FtmwViewWidget::launchOverlayManager);
 
+    connect(ui->manualBackupAction,&QAction::triggered,this,[this]{
+        // Disable immediately so a single click cannot stack requests; the
+        // action is re-enabled in updateBackups() when the write completes.
+        ui->manualBackupAction->setEnabled(false);
+        emit manualBackupRequested();
+    });
+
     connect(ui->averagesSpinbox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwViewWidget::changeRollingAverageShots,Qt::UniqueConnection);
     connect(ui->resetAveragesButton,&QPushButton::clicked,this,&FtmwViewWidget::resetRollingAverage,Qt::UniqueConnection);
 
@@ -136,6 +143,8 @@ void FtmwViewWidget::setupThemedIcons()
                 action->setIcon(ThemeColors::createThemedIcon(":/icons/squares-plus.svg", ThemeColors::IconSecondary, this));
             } else if (action->text() == "Plot Settings") {
                 action->setIcon(ThemeColors::createThemedIcon(":/icons/presentation-chart-bar.svg", ThemeColors::IconSecondary, this));
+            } else if (action->text() == "Manual Backup") {
+                action->setIcon(ThemeColors::createThemedIcon(":/icons/archive-box-arrow-down.svg", ThemeColors::IconSecondary, this));
             }
         }
     }
@@ -256,7 +265,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
     d_overlaysToCopy.clear();
 
     if(e.ftmwEnabled())
-    {        
+    {
         ui->refreshBox->setEnabled(true);
         connect(ui->refreshBox,&SpinBoxWidgetAction::valueChanged,this,&FtmwViewWidget::setLiveUpdateInterval);
         ps_fidStorage = e.ftmwConfig()->storage();
@@ -278,6 +287,14 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         ui->resetAveragesButton->setEnabled(e.ftmwConfig()->d_type == FtmwConfig::Peak_Up);
         ui->averagesSpinbox->setEnabled(e.ftmwConfig()->d_type == FtmwConfig::Peak_Up);
 
+        // Manual backup is only meaningful for single-segment, backup-capable
+        // FTMW modes. The action is hidden entirely in the viewer (Ui setup).
+        const auto t = e.ftmwConfig()->d_type;
+        ui->manualBackupAction->setEnabled(
+            t == FtmwConfig::Target_Shots
+            || t == FtmwConfig::Target_Duration
+            || t == FtmwConfig::Forever);
+
         d_liveTimerId = startTimer(ui->refreshBox->value());
     }
     else
@@ -287,6 +304,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         ui->exptLabel->setText(QString("Experiment %1").arg(e.d_number));
         ui->resetAveragesButton->setEnabled(false);
         ui->averagesSpinbox->setEnabled(false);
+        ui->manualBackupAction->setEnabled(false);
     }
 
     ui->peakFindAction->setEnabled(false);
@@ -741,6 +759,14 @@ void FtmwViewWidget::updateBackups()
         return;
 
     ui->plotToolBar->newBackup(ps_fidStorage->numBackups());
+
+    // Re-enable the manual backup action now that the write is on disk.
+    // FidSingleStorage is the only backup-capable storage; other types
+    // override numBackups() to return 0 and never reach here from a manual
+    // click in the first place (the action is left disabled in
+    // prepareForExperiment for those modes).
+    if(dynamic_cast<FidSingleStorage*>(ps_fidStorage.get()) != nullptr)
+        ui->manualBackupAction->setEnabled(true);
 }
 
 void FtmwViewWidget::experimentComplete()
@@ -749,7 +775,9 @@ void FtmwViewWidget::experimentComplete()
     ui->refreshBox->setEnabled(false);
     if(d_liveTimerId >= 0)
         killTimer(d_liveTimerId);
-    d_liveTimerId = -1;   
+    d_liveTimerId = -1;
+
+    ui->manualBackupAction->setEnabled(false);
 
     if(ps_fidStorage)
     {
