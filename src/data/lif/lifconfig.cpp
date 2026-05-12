@@ -6,9 +6,9 @@
 #include <cmath>
 
 
-LifConfig::LifConfig(const QString& scopeHwKey) : HeaderStorage(BC::Store::LIF::key)
+LifConfig::LifConfig(const QString& digitizerHwKey) : HeaderStorage(BC::Store::LIF::key)
 {
-    ps_scopeConfig = std::make_shared<LifDigitizerConfig>(scopeHwKey);
+    ps_digitizerConfig = std::make_shared<LifDigitizerConfig>(digitizerHwKey);
 }
 
 void LifConfig::setLaserUnits(const QString& units)
@@ -67,7 +67,7 @@ void LifConfig::addWaveform(const QVector<qint8> d)
     if(d_complete && d_completeMode == StopWhenComplete)
         return;
 
-    LifTrace t(scopeConfig(),d,d_currentDelayIndex,d_currentLaserIndex);
+    LifTrace t(digitizerConfig(),d,d_currentDelayIndex,d_currentLaserIndex);
     ps_storage->addTrace(t);
 }
 
@@ -114,7 +114,7 @@ void LifConfig::retrieveValues()
 
 void LifConfig::prepareChildren()
 {
-    addChild(&scopeConfig());
+    addChild(&digitizerConfig());
 }
 
 

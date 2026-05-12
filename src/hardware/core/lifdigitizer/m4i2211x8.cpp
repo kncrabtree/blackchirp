@@ -46,7 +46,7 @@ static SpectrumLibrary* getSpectrumLibrary()
 }
 
 M4i2211x8::M4i2211x8(const QString& label, QObject *parent) :
-    LifScope(QString(M4i2211x8::staticMetaObject.className()), label, parent),
+    LifDigitizer(QString(M4i2211x8::staticMetaObject.className()), label, parent),
     p_handle(nullptr)
 {
 }

@@ -1,9 +1,9 @@
 key;driver
-LifScope.Default;PythonLifScope
+LifDigitizer.Default;PythonLifDigitizer
 Clock.virtual;FixedClock
 FlowController.Default;PythonFlowController
 TemperatureController.default;VirtualTemperatureController
 PulseGenerator.Default;VirtualPulseGenerator
 AWG.Ka;VirtualAwg
-FtmwScope.virtual;VirtualFtmwScope
+FtmwDigitizer.virtual;VirtualFtmwDigitizer
 LifLaser.virtual;VirtualLifLaser

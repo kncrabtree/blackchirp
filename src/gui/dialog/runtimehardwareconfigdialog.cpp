@@ -29,12 +29,12 @@
 
 using namespace Qt::StringLiterals;
 
-// Returns the set of hwKeys that FTMW presets care about (AWG, FtmwScope, Clock).
+// Returns the set of hwKeys that FTMW presets care about (AWG, FtmwDigitizer, Clock).
 // Implementations are intentionally excluded; only the key identity matters for drift.
 static QSet<QString> ftmwRelevantHwKeys(const std::map<QString, QString, std::less<>> &hwMap)
 {
     static const QSet<QString> relevantTypes {
-        FtmwScope::staticMetaObject.className(),
+        FtmwDigitizer::staticMetaObject.className(),
         AWG::staticMetaObject.className(),
         Clock::staticMetaObject.className()
     };
@@ -1254,10 +1254,10 @@ bool RuntimeHardwareConfigDialog::getTypeDefaultThreaded(const QString& hardware
 {
     // These types default to threaded based on their intermediate class constructors
     static const QSet<QString> threadedTypes = {
-        QString(FtmwScope::staticMetaObject.className()),
+        QString(FtmwDigitizer::staticMetaObject.className()),
         QString(AWG::staticMetaObject.className()),
         QString(IOBoard::staticMetaObject.className()),
-        QString(LifScope::staticMetaObject.className()),
+        QString(LifDigitizer::staticMetaObject.className()),
         QString(LifLaser::staticMetaObject.className()),
         QString(GpibController::staticMetaObject.className())
     };

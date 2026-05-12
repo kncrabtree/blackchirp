@@ -1,7 +1,7 @@
 #ifndef DPO71254B_H
 #define DPO71254B_H
 
-#include <hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/core/ftmwdigitizer/ftmwdigitizer.h>
 
 #include <QTimer>
 #include <QAbstractSocket>
@@ -9,7 +9,7 @@
 class QTcpSocket;
 
 
-class Dpo71254b : public FtmwScope
+class Dpo71254b : public FtmwDigitizer
 {
     Q_OBJECT
 public:

@@ -1,13 +1,13 @@
 #ifndef RIGOLDS2302A_H
 #define RIGOLDS2302A_H
 
-#include "lifscope.h"
+#include "lifdigitizer.h"
 
 namespace BC::Key::LifDigi {
 inline constexpr QLatin1StringView queryIntervalMs{"queryInterval_ms"};
 }
 
-class RigolDS2302A : public LifScope
+class RigolDS2302A : public LifDigitizer
 {
     Q_OBJECT
 public:
@@ -19,7 +19,7 @@ protected:
     bool testConnection() override;
     void timerEvent(QTimerEvent *event) override;
 
-    // LifScope interface
+    // LifDigitizer interface
 public slots:
     void readWaveform() override;
     bool configure(const LifDigitizerConfig &c) override;

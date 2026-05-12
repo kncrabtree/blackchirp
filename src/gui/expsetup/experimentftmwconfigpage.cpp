@@ -12,7 +12,7 @@
 #include <data/loadout/loadoutmanager.h>
 #include <data/settings/hardwarekeys.h>
 #include <hardware/core/runtimehardwareconfig.h>
-#include <hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/core/ftmwdigitizer/ftmwdigitizer.h>
 #include <hardware/optional/chirpsource/awg.h>
 
 #include <gui/widget/chirpconfigwidget.h>
@@ -34,7 +34,7 @@ ExperimentFtmwConfigPage::ExperimentFtmwConfigPage(
         auto [type, label] = BC::Key::parseKey(k);
         if (type == BC::Key::AWG::key)
             awgHwKey = k;
-        else if (type == RuntimeHardwareConfig::hardwareTypeOf<FtmwScope>())
+        else if (type == RuntimeHardwareConfig::hardwareTypeOf<FtmwDigitizer>())
             digiHwKey = k;
     }
 
@@ -156,7 +156,7 @@ bool ExperimentFtmwConfigPage::validate()
     bool mr = digiWidget->multiRecordChecked();
 
     if (numChirps > 1) {
-        auto scopeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<FtmwScope>();
+        auto scopeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<FtmwDigitizer>();
         if (!scopeKeys.isEmpty()) {
             SettingsStorage scopeSettings(scopeKeys.constFirst(), SettingsStorage::Hardware);
             if (!scopeSettings.get(BC::Key::Digi::canMultiRecord, false))
@@ -191,9 +191,9 @@ void ExperimentFtmwConfigPage::apply()
     auto *cfg = p_exp->ftmwConfig();
     p_widget->rfConfigWidget()->toRfConfig(cfg->d_rfConfig);
     cfg->d_rfConfig.setChirpConfig(p_widget->chirpConfigWidget()->getChirps());
-    p_widget->digiWidget()->toConfig(cfg->scopeConfig());
-    if (!cfg->scopeConfig().d_analogChannels.empty())
-        cfg->scopeConfig().d_fidChannel = cfg->scopeConfig().d_analogChannels.cbegin()->first;
+    p_widget->digiWidget()->toConfig(cfg->digitizerConfig());
+    if (!cfg->digitizerConfig().d_analogChannels.empty())
+        cfg->digitizerConfig().d_fidChannel = cfg->digitizerConfig().d_analogChannels.cbegin()->first;
 }
 
 void ExperimentFtmwConfigPage::commitFtmwPreset()

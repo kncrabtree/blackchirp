@@ -5,7 +5,7 @@
 #include <hardware/core/hardwareregistration.h>
 #include <hardware/library/spectrumlibrary.h>
 
-using namespace BC::Key::FtmwScope;
+using namespace BC::Key::FtmwDigitizer;
 using namespace BC::Key::Digi;
 using namespace Spectrum::M4i;
 
@@ -57,7 +57,7 @@ static SpectrumLibrary* getSpectrumLibrary()
 }
 
 M4i2220x8::M4i2220x8(const QString& label, QObject *parent) :
-    FtmwScope(QString(M4i2220x8::staticMetaObject.className()), label, parent), p_handle(nullptr)
+    FtmwDigitizer(QString(M4i2220x8::staticMetaObject.className()), label, parent), p_handle(nullptr)
 {
 }
 
@@ -149,7 +149,7 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
     //first, reset the card so all registers are in default states
     spcmLib->spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_RESET);
 
-    auto &sc = exp.ftmwConfig()->scopeConfig();
+    auto &sc = exp.ftmwConfig()->digitizerConfig();
 
     //this card only has 1 channel, so enable it and disable all others regardless of user's entry
     if(sc.d_fidChannel != 1)

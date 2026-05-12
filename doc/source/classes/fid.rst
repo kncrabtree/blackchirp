@@ -12,7 +12,7 @@ Fid
 co-averaged free-induction decay through Blackchirp's acquisition and
 analysis pipeline.
 
-FTMW digitizer drivers (``FtmwScope`` subclasses) parse raw waveform
+FTMW digitizer drivers (``FtmwDigitizer`` subclasses) parse raw waveform
 bytes into accumulated samples and stage them in a waveform buffer.
 The acquisition layer drains that buffer into a ``FidList``
 (``QVector<Fid>``) — one entry per LO step or sideband channel — and

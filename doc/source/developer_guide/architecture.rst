@@ -351,7 +351,7 @@ Per-device threads
    For each :cpp:class:`HardwareObject` whose ``d_threaded`` flag is
    ``true``, :cpp:class:`HardwareManager` creates a dedicated
    ``QThread`` named ``<key>Thread`` (e.g.,
-   ``FtmwScope.mainThread``), calls ``moveToThread`` on the object,
+   ``FtmwDigitizer.mainThread``), calls ``moveToThread`` on the object,
    and connects the thread's ``started()`` signal to
    :cpp:func:`HardwareObject::bcInitInstrument`. The flag is set in
    the driver's constructor and may be overridden per-profile via

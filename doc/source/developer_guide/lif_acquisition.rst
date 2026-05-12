@@ -9,7 +9,7 @@
    single: LifCompleteMode
    single: AcquisitionManager; nextLifPoint
    single: HardwareManager; setLifParameters
-   single: LifScope; waveformRead
+   single: LifDigitizer; waveformRead
    single: LifLaser; setPosition
    single: integration gate; LIF
    single: LifProcessingWidget
@@ -31,7 +31,7 @@ visualization that slices the same grid two different ways.
 
 The LIF path is signal-based end-to-end because the data volumes and
 trigger rates make signal overhead a non-issue. Each
-:cpp:class:`LifScope` shot is a small ``QVector<qint8>``; trigger rates
+:cpp:class:`LifDigitizer` shot is a small ``QVector<qint8>``; trigger rates
 are bounded by the laser repetition rate (typically ≤ 100 Hz, i.e.
 two to three orders of magnitude slower than the FTMW digitizer).
 At those rates per-shot ``QMetaCallEvent`` allocation is invisible,
@@ -100,7 +100,7 @@ cursor for a LIF acquisition. It inherits
 ``HeaderStorage`` for header serialization. The class owns:
 
 - A :cpp:class:`LifDigitizerConfig` (accessible via
-  :cpp:func:`LifConfig::scopeConfig`) that wraps the digitizer-side
+  :cpp:func:`LifConfig::digitizerConfig`) that wraps the digitizer-side
   parameters: which analog channels carry the LIF signal and the
   optional reference signal, and the digitizer's
   :cpp:enum:`LifDigitizerConfig::ChannelOrder`. The digitizer-shared
@@ -149,13 +149,13 @@ two LIF hardware objects (each on its own ``"<hwKey>Thread"``).
        HM["HardwareManager<br/>(HM thread)"]
        LL["LifLaser<br/>(hw thread)"]
        PG["PulseGenerator<br/>(hw thread)"]
-       LS["LifScope<br/>(hw thread)"]
+       LS["LifDigitizer<br/>(hw thread)"]
        AM -- "nextLifPoint" --> HM
        HM -- "BlockingQueued<br/>setPosition + setLifDelay" --> LL
        HM -- " " --> PG
        HM -- "lifSettingsComplete" --> AM
        LS -- "waveformRead" --> HM
-       HM -- "lifScopeShotAcquired" --> AM
+       HM -- "lifDigitizerShotAcquired" --> AM
 
 The signals on the diagram are the Qt connections installed by
 :cpp:func:`MainWindow::MainWindow` whenever
@@ -165,8 +165,8 @@ The signals on the diagram are the Qt connections installed by
 
    connect(p_hwm, &HardwareManager::lifSettingsComplete,
            p_am,  &AcquisitionManager::lifHardwareReady);
-   connect(p_hwm, &HardwareManager::lifScopeShotAcquired,
-           p_am,  &AcquisitionManager::processLifScopeShot);
+   connect(p_hwm, &HardwareManager::lifDigitizerShotAcquired,
+           p_am,  &AcquisitionManager::processLifDigitizerShot);
    connect(p_am,  &AcquisitionManager::nextLifPoint,
            p_hwm, &HardwareManager::setLifParameters);
 
@@ -176,17 +176,17 @@ The handshake at each grid point runs in five steps:
    :cpp:func:`AcquisitionManager::beginExperiment` fires the first
    one if the experiment has LIF enabled (after FTMW setup, when both
    objectives are active);
-   :cpp:func:`AcquisitionManager::processLifScopeShot` fires every
+   :cpp:func:`AcquisitionManager::processLifDigitizerShot` fires every
    subsequent one. The signal lands queued on the HM.
 
 #. **HM gates the digitizer and reprograms the laser and pulse
    generator.** :cpp:func:`HardwareManager::setLifParameters` calls
-   :cpp:func:`LifScope::setAcquisitionGated` to suppress any in-flight
+   :cpp:func:`LifDigitizer::setAcquisitionGated` to suppress any in-flight
    waveform, then issues blocking-queued
    :cpp:func:`LifLaser::setPosition` and
    :cpp:func:`PulseGenerator::setLifDelay` calls (one per active
    pulse generator). After both return, the digitizer's pre-trigger
-   buffer is flushed via :cpp:func:`LifScope::flushAcquisitionBuffer`
+   buffer is flushed via :cpp:func:`LifDigitizer::flushAcquisitionBuffer`
    and the gate is released. The blocking-queued idiom is what
    guarantees that no shot from the previous grid point can leak into
    the new one.
@@ -199,16 +199,16 @@ The handshake at each grid point runs in five steps:
    :cpp:class:`ExperimentObjective`.
 
 #. **The next laser shot triggers the digitizer.** The
-   :cpp:class:`LifScope` subclass reads its acquired waveform from the
+   :cpp:class:`LifDigitizer` subclass reads its acquired waveform from the
    instrument and emits ``waveformRead(QVector<qint8>)``, which the HM
    has wired (in :cpp:func:`HardwareManager::storeConnection` on the
-   ``LifScope`` branch) to its own
-   :cpp:func:`HardwareManager::lifScopeShotAcquired`. The HM signal
+   ``LifDigitizer`` branch) to its own
+   :cpp:func:`HardwareManager::lifDigitizerShotAcquired`. The HM signal
    relays the same ``QVector<qint8>`` to
-   :cpp:func:`AcquisitionManager::processLifScopeShot`.
+   :cpp:func:`AcquisitionManager::processLifDigitizerShot`.
 
 #. **AM accumulates and advances.**
-   :cpp:func:`processLifScopeShot` checks that the AM is in the
+   :cpp:func:`processLifDigitizerShot` checks that the AM is in the
    ``Acquiring`` state and that ``d_processingPaused`` is clear, then:
 
    - Calls :cpp:func:`LifConfig::addWaveform`, which constructs a
@@ -230,7 +230,7 @@ The handshake at each grid point runs in five steps:
    - Emits ``lifShotAcquired(perMilComplete)`` to drive the main
      window's LIF progress bar.
 
-The gate inside :cpp:func:`processLifScopeShot` —
+The gate inside :cpp:func:`processLifDigitizerShot` —
 ``d_processingPaused`` — is what protects step 4's
 ``waveformRead`` from being mis-attributed to the previous grid
 point: the AM ignores any shot that arrives before the matching
@@ -497,11 +497,11 @@ point, processing gate).
    Configuration** dialog (see :cpp:func:`MainWindow::launchLifConfigDialog`)
    and hosts: the live :cpp:class:`LifTracePlot`, a
    :cpp:class:`DigitizerConfigWidget` keyed against the active
-   :cpp:class:`LifScope`, the laser control
+   :cpp:class:`LifDigitizer`, the laser control
    (:cpp:class:`LifLaserWidget`), a shots-per-point spin,
    :cpp:class:`LifProcessingWidget`, and Start / Stop / Reset
    buttons. :cpp:func:`LifControlWidget::toConfig` writes
-   ``d_shotsPerPoint``, ``d_procSettings``, and the scope
+   ``d_shotsPerPoint``, ``d_procSettings``, and the digitizer
    configuration onto :cpp:class:`LifConfig`;
    :cpp:func:`LifControlWidget::setFromConfig` is the inverse for
    loading a saved experiment.
@@ -511,7 +511,7 @@ The Hardware → LIF Configuration dialog uses the same
 laser and digitizer manually. The **Start Acquisition** button emits
 ``startSignal(LifConfig)`` which the HM converts to
 :cpp:func:`HardwareManager::startLifConfigAcq`; incoming
-``lifScopeShotAcquired`` shots flow into the embedded
+``lifDigitizerShotAcquired`` shots flow into the embedded
 :cpp:class:`LifTracePlot` for live alignment work, with no
 :cpp:class:`LifStorage` constructed.
 

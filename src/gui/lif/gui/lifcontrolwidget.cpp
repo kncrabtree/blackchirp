@@ -13,9 +13,9 @@
 #include <QLabel>
 #include <QSpinBox>
 
-LifControlWidget::LifControlWidget(const QString& scopeHwKey, const QString& laserHwKey, QWidget *parent) :
+LifControlWidget::LifControlWidget(const QString& digitizerHwKey, const QString& laserHwKey, QWidget *parent) :
     QWidget(parent), SettingsStorage(BC::Key::LifControl::key),
-    ps_cfg(std::make_shared<LifConfig>(scopeHwKey)), d_laserHwKey(laserHwKey)
+    ps_cfg(std::make_shared<LifConfig>(digitizerHwKey)), d_laserHwKey(laserHwKey)
 {
     initializeWidget();
 }
@@ -38,7 +38,7 @@ void LifControlWidget::initializeWidget()
     vbl2->addWidget(dl);
 
     p_digWidget = new DigitizerConfigWidget(BC::Key::LifControl::lifDigWidget,
-                                            ps_cfg->scopeConfig().headerKey(),dgb);
+                                            ps_cfg->digitizerConfig().headerKey(),dgb);
     vbl2->addWidget(p_digWidget);
 
     auto hbl2 = new QHBoxLayout;
@@ -112,7 +112,7 @@ LifControlWidget::~LifControlWidget()
 void LifControlWidget::startAcquisition()
 {
 
-    auto &cfg = ps_cfg->scopeConfig();
+    auto &cfg = ps_cfg->digitizerConfig();
     p_digWidget->toConfig(cfg);
     auto it = cfg.d_analogChannels.find(cfg.d_refChannel);
     if(it != cfg.d_analogChannels.end())
@@ -156,7 +156,7 @@ void LifControlWidget::newWaveform(const QVector<qint8> b)
     if(d_acquiring)
     {
         //set bitShift to 8 to provide extra bits for rolling average
-        LifTrace l(ps_cfg->scopeConfig(),b,0,0,8);
+        LifTrace l(ps_cfg->digitizerConfig(),b,0,0,8);
         p_lifTracePlot->processTrace(l);
     }
 }
@@ -173,7 +173,7 @@ void LifControlWidget::setFlashlamp(bool en)
 
 void LifControlWidget::setFromConfig(const LifConfig &cfg)
 {
-    p_digWidget->setFromConfig(cfg.scopeConfig());
+    p_digWidget->setFromConfig(cfg.digitizerConfig());
     p_avgBox->setValue(cfg.d_shotsPerPoint);
     p_procWidget->setAll(cfg.d_procSettings);
     *ps_cfg = cfg;
@@ -181,14 +181,14 @@ void LifControlWidget::setFromConfig(const LifConfig &cfg)
 
 void LifControlWidget::toConfig(LifConfig &cfg)
 {
-    p_digWidget->toConfig(cfg.scopeConfig());
+    p_digWidget->toConfig(cfg.digitizerConfig());
     cfg.d_shotsPerPoint = p_avgBox->value();
     cfg.d_procSettings = p_procWidget->getSettings();
-    auto it = cfg.scopeConfig().d_analogChannels.find(cfg.scopeConfig().d_refChannel);
-    if(it != cfg.scopeConfig().d_analogChannels.end())
-        cfg.scopeConfig().d_refEnabled = it->second.enabled;
+    auto it = cfg.digitizerConfig().d_analogChannels.find(cfg.digitizerConfig().d_refChannel);
+    if(it != cfg.digitizerConfig().d_analogChannels.end())
+        cfg.digitizerConfig().d_refEnabled = it->second.enabled;
     else
-        cfg.scopeConfig().d_refEnabled = false;
+        cfg.digitizerConfig().d_refEnabled = false;
 }
 
 

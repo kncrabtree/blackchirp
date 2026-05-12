@@ -194,7 +194,7 @@ public slots:
     /// Calls checkComplete() to detect overall experiment completion.
     ///
     /// \param b Raw 8-bit waveform bytes from the LIF digitizer.
-    void processLifScopeShot(const QVector<qint8> b);
+    void processLifDigitizerShot(const QVector<qint8> b);
 
     /// \brief Notifies the manager of the outcome of a LIF hardware configuration step.
     ///

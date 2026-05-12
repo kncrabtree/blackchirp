@@ -62,7 +62,7 @@ Rigol DS2302A
 
 The `Rigol DS2302A <https://www.testequity.com/product/31591-1-DS2302A>`_
 is a 2-channel, 300 MHz oscilloscope with a maximum sampling rate of
-2 GSa/s. Unlike most scopes Blackchirp supports, the sample rate
+2 GSa/s. Unlike most digitizers Blackchirp supports, the sample rate
 cannot be set directly; the instrument chooses a rate based on the
 total record duration. The driver takes the user's requested
 sample rate and record length, computes the corresponding time

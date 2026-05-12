@@ -11,7 +11,7 @@ LifConfig
 a Laser-Induced Fluorescence (LIF) acquisition.  It inherits
 :cpp:class:`ExperimentObjective` for the acquisition lifecycle interface and
 ``HeaderStorage`` for configuration persistence.  The class owns a
-``LifDigitizerConfig`` (accessible through ``scopeConfig()``) and a
+``LifDigitizerConfig`` (accessible through ``digitizerConfig()``) and a
 ``LifStorage`` instance that persists raw LIF traces and processing-gate
 settings alongside the experiment.
 

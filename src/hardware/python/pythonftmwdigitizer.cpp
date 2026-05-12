@@ -1,61 +1,51 @@
-#include "pythonlifscope.h"
+#include "pythonftmwdigitizer.h"
 
+#include <QJsonArray>
 #include <QJsonObject>
 
 #include <hardware/core/hardwareregistration.h>
 #include <data/bcglobals.h>
 #include <data/settings/hardwarekeys.h>
 
+using namespace BC::Key::FtmwDigitizer;
+using namespace BC::Key::Digi;
+
 // ============================================================================
 // Registration
 // ============================================================================
-REGISTER_HARDWARE_META(PythonLifScope, "Python LIF Digitizer (user-defined Python script)")
-REGISTER_HARDWARE_PROTOCOLS(PythonLifScope, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Gpib, CommunicationProtocol::Custom, CommunicationProtocol::Virtual)
-REGISTER_HARDWARE_SETTINGS(PythonLifScope,
-    {BC::Key::Digi::canBlockAverage, "Block Average", "Supports block averaging mode", true,  QVariant{}, QVariant{}, HwSettingPriority::Optional},
-    {BC::Key::Digi::maxAverages,     "Max Averages",  "Maximum number of block averages", 100, QVariant{}, QVariant{}, HwSettingPriority::Optional}
-)
-REGISTER_HARDWARE_ARRAY(PythonLifScope, BC::Key::Digi::sampleRates,
-    "Sample Rates", "Available digitizer sample rates", HwSettingPriority::Important)
-REGISTER_HARDWARE_ARRAY_ENTRY(PythonLifScope, BC::Key::Digi::sampleRates,
-    {{BC::Key::Digi::srText, "78.125 MSa/s"}, {BC::Key::Digi::srValue, 2.5e9/32}})
-REGISTER_HARDWARE_ARRAY_ENTRY(PythonLifScope, BC::Key::Digi::sampleRates,
-    {{BC::Key::Digi::srText, "156.25 MSa/s"}, {BC::Key::Digi::srValue, 2.5e9/16}})
-REGISTER_HARDWARE_ARRAY_ENTRY(PythonLifScope, BC::Key::Digi::sampleRates,
-    {{BC::Key::Digi::srText, "312.5 MSa/s"}, {BC::Key::Digi::srValue, 2.5e9/8}})
-REGISTER_HARDWARE_ARRAY_ENTRY(PythonLifScope, BC::Key::Digi::sampleRates,
-    {{BC::Key::Digi::srText, "625 MSa/s"}, {BC::Key::Digi::srValue, 2.5e9/4}})
-REGISTER_HARDWARE_ARRAY_ENTRY(PythonLifScope, BC::Key::Digi::sampleRates,
-    {{BC::Key::Digi::srText, "1250 MSa/s"}, {BC::Key::Digi::srValue, 2.5e9/2}})
+REGISTER_HARDWARE_META(PythonFtmwDigitizer, "Python FTMW Digitizer (user-defined Python script)")
+REGISTER_HARDWARE_PROTOCOLS(PythonFtmwDigitizer, CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, CommunicationProtocol::Gpib, CommunicationProtocol::Custom, CommunicationProtocol::Virtual)
+
+REGISTER_HARDWARE_ARRAY(PythonFtmwDigitizer, sampleRates,
+    "Sample Rates", "Available digitizer sample rates",
+    HwSettingPriority::Important)
+REGISTER_HARDWARE_ARRAY_ENTRY(PythonFtmwDigitizer, sampleRates,
+    {{srText, "2 GSa/s"}, {srValue, 2e9}})
+REGISTER_HARDWARE_ARRAY_ENTRY(PythonFtmwDigitizer, sampleRates,
+    {{srText, "5 GSa/s"}, {srValue, 5e9}})
+REGISTER_HARDWARE_ARRAY_ENTRY(PythonFtmwDigitizer, sampleRates,
+    {{srText, "10 GSa/s"}, {srValue, 10e9}})
+REGISTER_HARDWARE_ARRAY_ENTRY(PythonFtmwDigitizer, sampleRates,
+    {{srText, "20 GSa/s"}, {srValue, 20e9}})
+REGISTER_HARDWARE_ARRAY_ENTRY(PythonFtmwDigitizer, sampleRates,
+    {{srText, "50 GSa/s"}, {srValue, 50e9}})
+REGISTER_HARDWARE_ARRAY_ENTRY(PythonFtmwDigitizer, sampleRates,
+    {{srText, "100 GSa/s"}, {srValue, 100e9}})
 
 // ============================================================================
 // Constructor
 // ============================================================================
-PythonLifScope::PythonLifScope(const QString &label, QObject *parent) :
-    LifScope(QString(PythonLifScope::staticMetaObject.className()), label, parent),
+PythonFtmwDigitizer::PythonFtmwDigitizer(const QString &label, QObject *parent) :
+    FtmwDigitizer(QString(PythonFtmwDigitizer::staticMetaObject.className()), label, parent),
     PythonHardwareBase(d_key, d_model)
 {
     d_threaded = true;
-
-    using namespace BC::Key::Digi;
-    setDefault(canMultiRecord, false);
-
-    if(!containsArray(sampleRates))
-        setArray(sampleRates,{
-                     {{srText,"78.125 MSa/s"},{srValue,2.5e9/32}},
-                     {{srText,"156.25 MSa/s"},{srValue,2.5e9/16}},
-                     {{srText,"312.5 MSa/s"},{srValue,2.5e9/8}},
-                     {{srText,"625 MSa/s"},{srValue,2.5e9/4}},
-                     {{srText,"1250 MSa/s"},{srValue,2.5e9/2}},
-                 });
-
-    save();
 }
 
 // ============================================================================
 // initialize()
 // ============================================================================
-void PythonLifScope::initialize()
+void PythonFtmwDigitizer::initialize()
 {
     initPythonProcess(p_comm,
         [this](const QString &key, const QVariant &defaultVal) -> QVariant {
@@ -66,16 +56,16 @@ void PythonLifScope::initialize()
         }
     );
 
-    pu_process->setEnabledProxies({"scope"_L1});
+    pu_process->setEnabledProxies({"digi"_L1});
 
     connect(pu_process.get(), &PythonProcess::waveformReceived,
-            this, &PythonLifScope::onWaveformReceived);
+            this, &PythonFtmwDigitizer::onWaveformReceived);
 }
 
 // ============================================================================
 // testConnection()
 // ============================================================================
-bool PythonLifScope::testConnection()
+bool PythonFtmwDigitizer::testConnection()
 {
     if (!testPythonConnection(p_comm)) {
         d_errorString = pythonErrorString();
@@ -83,7 +73,7 @@ bool PythonLifScope::testConnection()
     }
 
     // Send current config to Python so it knows the initial state
-    QJsonObject req = configToJson(static_cast<const LifDigitizerConfig&>(*this));
+    QJsonObject req = configToJson(static_cast<const FtmwDigitizerConfig&>(*this));
     req["method"_L1] = "configure"_L1;
     auto resp = pu_process->sendRequest(req);
 
@@ -99,22 +89,20 @@ bool PythonLifScope::testConnection()
         return false;
     }
 
-    if (resultObj.contains("config"_L1))
-        jsonToConfig(resultObj["config"_L1].toObject(),
-                     static_cast<LifDigitizerConfig&>(*this));
-
     return true;
 }
 
 // ============================================================================
-// configure()
+// prepareForExperiment()
 // ============================================================================
-bool PythonLifScope::configure(const LifDigitizerConfig &c)
+bool PythonFtmwDigitizer::prepareForExperiment(Experiment &exp)
 {
-    if (!pu_process || !pu_process->isRunning())
-        return false;
+    if (!exp.ftmwEnabled())
+        return true;
 
-    QJsonObject req = configToJson(c);
+    auto desiredConfig = exp.ftmwConfig()->digitizerConfig();
+
+    QJsonObject req = configToJson(desiredConfig);
     req["method"_L1] = "configure"_L1;
     auto resp = pu_process->sendRequest(req);
 
@@ -129,13 +117,11 @@ bool PythonLifScope::configure(const LifDigitizerConfig &c)
         return false;
     }
 
-    // Apply validated config returned from Python into *this so the base
-    // class can write it back to the experiment and settings storage.
+    // Apply validated config returned from Python
     if (resultObj.contains("config"_L1))
-        jsonToConfig(resultObj["config"_L1].toObject(),
-                     static_cast<LifDigitizerConfig&>(*this));
-    else
-        static_cast<LifDigitizerConfig&>(*this) = c;
+        jsonToConfig(resultObj["config"_L1].toObject(), desiredConfig);
+
+    static_cast<FtmwDigitizerConfig&>(*this) = desiredConfig;
 
     return true;
 }
@@ -143,7 +129,7 @@ bool PythonLifScope::configure(const LifDigitizerConfig &c)
 // ============================================================================
 // beginAcquisition()
 // ============================================================================
-void PythonLifScope::beginAcquisition()
+void PythonFtmwDigitizer::beginAcquisition()
 {
     if (pu_process && pu_process->isRunning()) {
         QJsonObject req;
@@ -155,7 +141,7 @@ void PythonLifScope::beginAcquisition()
 // ============================================================================
 // endAcquisition()
 // ============================================================================
-void PythonLifScope::endAcquisition()
+void PythonFtmwDigitizer::endAcquisition()
 {
     if (pu_process && pu_process->isRunning()) {
         QJsonObject req;
@@ -167,17 +153,15 @@ void PythonLifScope::endAcquisition()
 // ============================================================================
 // onWaveformReceived()
 // ============================================================================
-void PythonLifScope::onWaveformReceived(const QByteArray &data, quint64 /*shotCount*/)
+void PythonFtmwDigitizer::onWaveformReceived(const QByteArray &data, quint64 /*shotCount*/)
 {
-    QVector<qint8> vec(data.size());
-    memcpy(vec.data(), data.constData(), static_cast<std::size_t>(data.size()));
-    emitWaveform(vec);
+    emitShot(data);
 }
 
 // ============================================================================
-// lifScopeReadSettings()
+// ftmwReadSettings()
 // ============================================================================
-void PythonLifScope::lifScopeReadSettings()
+void PythonFtmwDigitizer::ftmwReadSettings()
 {
     pythonReadSettings();
 }
@@ -185,7 +169,7 @@ void PythonLifScope::lifScopeReadSettings()
 // ============================================================================
 // sleep()
 // ============================================================================
-void PythonLifScope::sleep(bool b)
+void PythonFtmwDigitizer::sleep(bool b)
 {
     pythonSleep(b);
 }
@@ -193,7 +177,7 @@ void PythonLifScope::sleep(bool b)
 // ============================================================================
 // configToJson()
 // ============================================================================
-QJsonObject PythonLifScope::configToJson(const LifDigitizerConfig &config) const
+QJsonObject PythonFtmwDigitizer::configToJson(const FtmwDigitizerConfig &config) const
 {
     QJsonObject obj;
 
@@ -241,11 +225,8 @@ QJsonObject PythonLifScope::configToJson(const LifDigitizerConfig &config) const
     obj["multi_record"_L1] = config.d_multiRecord;
     obj["num_records"_L1]  = config.d_numRecords;
 
-    // LifDigitizerConfig extra fields
-    obj["lif_channel"_L1]    = config.d_lifChannel;
-    obj["ref_channel"_L1]    = config.d_refChannel;
-    obj["ref_enabled"_L1]    = config.d_refEnabled;
-    obj["channel_order"_L1]  = static_cast<int>(config.d_channelOrder);
+    // FtmwDigitizerConfig extra field
+    obj["fid_channel"_L1] = config.d_fidChannel;
 
     return obj;
 }
@@ -253,7 +234,7 @@ QJsonObject PythonLifScope::configToJson(const LifDigitizerConfig &config) const
 // ============================================================================
 // jsonToConfig()
 // ============================================================================
-bool PythonLifScope::jsonToConfig(const QJsonObject &obj, LifDigitizerConfig &config) const
+bool PythonFtmwDigitizer::jsonToConfig(const QJsonObject &obj, FtmwDigitizerConfig &config) const
 {
     // Analog channels
     if (obj.contains("analog_channels"_L1)) {
@@ -318,16 +299,9 @@ bool PythonLifScope::jsonToConfig(const QJsonObject &obj, LifDigitizerConfig &co
     if (obj.contains("num_records"_L1))
         config.d_numRecords = obj["num_records"_L1].toInt();
 
-    // LifDigitizerConfig extra fields
-    if (obj.contains("lif_channel"_L1))
-        config.d_lifChannel = obj["lif_channel"_L1].toInt();
-    if (obj.contains("ref_channel"_L1))
-        config.d_refChannel = obj["ref_channel"_L1].toInt();
-    if (obj.contains("ref_enabled"_L1))
-        config.d_refEnabled = obj["ref_enabled"_L1].toBool();
-    if (obj.contains("channel_order"_L1))
-        config.d_channelOrder = static_cast<LifDigitizerConfig::ChannelOrder>(
-                                    obj["channel_order"_L1].toInt());
+    // FtmwDigitizerConfig extra field
+    if (obj.contains("fid_channel"_L1))
+        config.d_fidChannel = obj["fid_channel"_L1].toInt();
 
     return true;
 }

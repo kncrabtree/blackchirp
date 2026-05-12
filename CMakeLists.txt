@@ -506,7 +506,7 @@ if(BC_BUILD_TESTS)
         src/hardware/core/communication/custominstrument.cpp
         src/hardware/core/hardwareobject.cpp
         src/hardware/core/clock/clock.cpp
-        src/hardware/core/ftmwdigitizer/ftmwscope.cpp
+        src/hardware/core/ftmwdigitizer/ftmwdigitizer.cpp
         src/hardware/optional/chirpsource/awg.cpp
         src/hardware/optional/pulsegenerator/pulsegenerator.cpp
         src/hardware/optional/flowcontroller/flowcontroller.cpp
@@ -523,7 +523,7 @@ if(BC_BUILD_TESTS)
         src/hardware/optional/ioboard/virtualioboard.cpp
         src/hardware/optional/pressurecontroller/virtualpressurecontroller.cpp
         src/hardware/optional/tempcontroller/virtualtempcontroller.cpp
-        src/hardware/core/ftmwdigitizer/virtualftmwscope.cpp
+        src/hardware/core/ftmwdigitizer/virtualftmwdigitizer.cpp
         src/hardware/core/clock/fixedclock.cpp
     )
     

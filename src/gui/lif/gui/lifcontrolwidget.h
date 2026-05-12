@@ -29,7 +29,7 @@ class LifControlWidget : public QWidget, public SettingsStorage
     Q_OBJECT
 
 public:
-    explicit LifControlWidget(const QString& scopeHwKey, const QString& laserHwKey, QWidget *parent = nullptr);
+    explicit LifControlWidget(const QString& digitizerHwKey, const QString& laserHwKey, QWidget *parent = nullptr);
     ~LifControlWidget() override;
 
     void startAcquisition();

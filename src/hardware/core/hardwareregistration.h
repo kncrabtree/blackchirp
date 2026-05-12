@@ -27,7 +27,7 @@ class HardwareAutoRegistration
 public:
     /*!
      * \brief Register hardware with the HardwareRegistry at construction time
-     * \param key Hardware type key (e.g., "FtmwScope")
+     * \param key Hardware type key (e.g., "FtmwDigitizer")
      * \param subKey Implementation key (e.g., "m4i2220x8")
      * \param description Human-readable description of the hardware
      * \param factory Factory function that creates an instance given a label

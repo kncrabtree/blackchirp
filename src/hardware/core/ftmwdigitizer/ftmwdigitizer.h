@@ -1,5 +1,5 @@
-#ifndef FTMWSCOPE_H
-#define FTMWSCOPE_H
+#ifndef FTMWDIGITIZER_H
+#define FTMWDIGITIZER_H
 
 #include <hardware/core/hardwareobject.h>
 #include <data/settings/hardwarekeys.h>
@@ -13,12 +13,12 @@
 #include <data/storage/waveformbuffer.h>
 #include <memory>
 
-class FtmwScope : public HardwareObject, protected FtmwDigitizerConfig
+class FtmwDigitizer : public HardwareObject, protected FtmwDigitizerConfig
 {
     Q_OBJECT
 public:
-    explicit FtmwScope(const QString& impl, const QString& label, QObject *parent = nullptr);
-    virtual ~FtmwScope();
+    explicit FtmwDigitizer(const QString& impl, const QString& label, QObject *parent = nullptr);
+    virtual ~FtmwDigitizer();
 
 signals:
     void shotAcquired(const QByteArray data);
@@ -35,7 +35,7 @@ public:
 protected:
     void hwReadSettings() override final;
     /*!
-     * \brief Driver hook called after FtmwScope base settings are refreshed. Default is a no-op.
+     * \brief Driver hook called after FtmwDigitizer base settings are refreshed. Default is a no-op.
      */
     virtual void ftmwReadSettings() {}
 
@@ -59,4 +59,4 @@ private:
     void writeSettings();
 };
 
-#endif // FTMWSCOPE_H
+#endif // FTMWDIGITIZER_H

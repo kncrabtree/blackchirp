@@ -195,7 +195,7 @@ void AcquisitionManager::onProcessingComplete()
         p_drainTimer->start();
 }
 
-void AcquisitionManager::processLifScopeShot(const QVector<qint8> b)
+void AcquisitionManager::processLifDigitizerShot(const QVector<qint8> b)
 {
     if(d_state == Acquiring
             && ps_currentExperiment->lifEnabled()

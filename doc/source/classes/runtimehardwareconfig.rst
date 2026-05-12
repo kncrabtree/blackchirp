@@ -9,7 +9,7 @@ RuntimeHardwareConfig
 ``RuntimeHardwareConfig`` is the singleton that records which hardware
 drivers are *active* at any given moment. It maps each
 ``"<Type>.<label>"`` key to a driver key (e.g.,
-``"FtmwScope.default"`` → ``"m4i2220x8"``), validates those selections
+``"FtmwDigitizer.default"`` → ``"m4i2220x8"``), validates those selections
 against the :cpp:class:`HardwareRegistry`, and exposes the configuration to
 the rest of Blackchirp for experiment setup.
 
@@ -24,9 +24,9 @@ key at compile time, so callers avoid raw string keys:
 
 .. code-block:: cpp
 
-   auto labels = RuntimeHardwareConfig::constInstance().getActiveLabels<FtmwScope>();
+   auto labels = RuntimeHardwareConfig::constInstance().getActiveLabels<FtmwDigitizer>();
    QString impl = RuntimeHardwareConfig::constInstance()
-                      .getHardwareImplementation<FtmwScope>("default");
+                      .getHardwareImplementation<FtmwDigitizer>("default");
 
 Validation
 ----------

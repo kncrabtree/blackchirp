@@ -177,10 +177,10 @@ class LogProxy:
         _send_json({"log": str(msg), "level": "Highlight"})
 
 
-class ScopeProxy:
+class DigitizerProxy:
     """Proxy for pushing waveform data to C++ emitShot().
 
-    Injected as self.scope during _init. Safe to call from any thread —
+    Injected as self.digi during _init. Safe to call from any thread —
     _send_json is protected by _stdout_lock.
     """
 
@@ -254,7 +254,7 @@ def dispatch(user_obj, request):
 
         # Inject optional proxies based on hardware type
         _OPTIONAL_PROXY_FACTORIES = {
-            "scope": ScopeProxy,
+            "digi": DigitizerProxy,
         }
         for name in request.get("proxies", []):
             factory = _OPTIONAL_PROXY_FACTORIES.get(name)

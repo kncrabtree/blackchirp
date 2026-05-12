@@ -25,7 +25,7 @@
  * \brief Abstract base class for all hardware connected to the instrument.
  *
  * Identity: an instance carries a hardware type (e.g. \c "AWG",
- * \c "FtmwScope") and a label distinguishing multiple instances of
+ * \c "FtmwDigitizer") and a label distinguishing multiple instances of
  * the same type. They combine to form \c d_key (e.g.
  * \c "PulseGenerator.main"), which is also the SettingsStorage group
  * holding the instance's persistent settings. The key cannot be
@@ -98,9 +98,9 @@ public:
      * defaults.
      *
      * \param hwType Hardware type, by convention the interface class's
-     * metaobject name (e.g., \c "FtmwScope").
+     * metaobject name (e.g., \c "FtmwDigitizer").
      * \param hwImpl Driver class name, stored in d_model for display
-     * (e.g., \c "VirtualFtmwScope").
+     * (e.g., \c "VirtualFtmwDigitizer").
      * \param label User-supplied label distinguishing instances of the
      * same type.
      * \param parent QObject parent. Must be \c nullptr if the driver
@@ -470,7 +470,7 @@ private:
      * Uses setDefault() for scalar settings (preserves existing values)
      * and setArray() for array settings (only if array doesn't exist yet).
      *
-     * \param hwType Hardware type key (e.g., "FtmwScope", "AWG")
+     * \param hwType Hardware type key (e.g., "FtmwDigitizer", "AWG")
      */
     void applyRegisteredSettings(const QString& hwType);
 

@@ -59,9 +59,9 @@ namespace GPIB {
     inline constexpr QLatin1StringView gpibController{"controller"}; // Future support for multiple controllers
 }
 
-// FTMW digitizer keys (from FtmwScope)
-namespace FtmwScope {
-    inline constexpr QLatin1StringView ftmwScope{"FtmwDigitizer"}; /*!< FTMW digitizer hardware type key */
+// FTMW digitizer keys (from FtmwDigitizer)
+namespace FtmwDigitizer {
+    inline constexpr QLatin1StringView ftmwDigitizer{"FtmwDigitizer"}; /*!< FTMW digitizer hardware type key */
     inline constexpr QLatin1StringView bandwidth{"bandwidthMHz"}; /*!< Analog bandwidth in MHz */
     inline constexpr QLatin1StringView fidCh{"fidChannel"}; /*!< FID recording channel */
 }

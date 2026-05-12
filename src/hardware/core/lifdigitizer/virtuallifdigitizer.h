@@ -1,21 +1,21 @@
 #pragma once
-#ifndef VIRTUALLIFSCOPE_H
-#define VIRTUALLIFSCOPE_H
+#ifndef VIRTUALLIFDIGITIZER_H
+#define VIRTUALLIFDIGITIZER_H
 
-#include <hardware/core/lifdigitizer/lifscope.h>
+#include <hardware/core/lifdigitizer/lifdigitizer.h>
 
 class QTimer;
 
-class VirtualLifScope : public LifScope
+class VirtualLifDigitizer : public LifDigitizer
 {
     Q_OBJECT
 public:
-    VirtualLifScope(const QString& label, QObject *parent = nullptr);
-    ~VirtualLifScope();
+    VirtualLifDigitizer(const QString& label, QObject *parent = nullptr);
+    ~VirtualLifDigitizer();
 
 
 public slots:
-    // LifScope interface
+    // LifDigitizer interface
     void readWaveform() override;
     virtual bool configure(const LifDigitizerConfig &c) override;
 
@@ -31,4 +31,4 @@ public slots:
     void endAcquisition() override;
 };
 
-#endif // VIRTUALLIFSCOPE_H
+#endif // VIRTUALLIFDIGITIZER_H

@@ -1,14 +1,14 @@
 #ifndef DSA71604C_H
 #define DSA71604C_H
 
-#include <hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/core/ftmwdigitizer/ftmwdigitizer.h>
 
 #include <QTimer>
 #include <QAbstractSocket>
 
 class QTcpSocket;
 
-class Dsa71604c : public FtmwScope
+class Dsa71604c : public FtmwDigitizer
 {
     Q_OBJECT
 public:

@@ -68,7 +68,7 @@ void HardwareKeysTest::initTestCase()
 
 void HardwareKeysTest::hwKeyLabelBased()
 {
-    QCOMPARE(BC::Key::hwKey("FtmwScope", "main"), QString("FtmwScope.main"));
+    QCOMPARE(BC::Key::hwKey("FtmwDigitizer", "main"), QString("FtmwDigitizer.main"));
     QCOMPARE(BC::Key::hwKey("FlowController", "frontPanel"), QString("FlowController.frontPanel"));
     QCOMPARE(BC::Key::hwKey("Clock", "reference"), QString("Clock.reference"));
 }
@@ -83,25 +83,25 @@ void HardwareKeysTest::hwKeyIndexBased()
 
 void HardwareKeysTest::parseKeyValid()
 {
-    auto [type, label] = BC::Key::parseKey("FtmwScope.main");
-    QCOMPARE(type, QString("FtmwScope"));
+    auto [type, label] = BC::Key::parseKey("FtmwDigitizer.main");
+    QCOMPARE(type, QString("FtmwDigitizer"));
     QCOMPARE(label, QString("main"));
 }
 
 void HardwareKeysTest::parseKeyNoSeparator()
 {
-    auto [type, label] = BC::Key::parseKey("FtmwScope");
-    QCOMPARE(type, QString("FtmwScope"));
+    auto [type, label] = BC::Key::parseKey("FtmwDigitizer");
+    QCOMPARE(type, QString("FtmwDigitizer"));
     QVERIFY(label.isEmpty());
 }
 
 void HardwareKeysTest::parseKeyMultipleSeparators()
 {
-    // "Widget.FtmwScope.main" — split on first dot only
-    auto [type, label] = BC::Key::parseKey("Widget.FtmwScope.main");
+    // "Widget.FtmwDigitizer.main" — split on first dot only
+    auto [type, label] = BC::Key::parseKey("Widget.FtmwDigitizer.main");
     QCOMPARE(type, QString("Widget"));
-    // Implementation splits on ".", second element is "FtmwScope"
-    QCOMPARE(label, QString("FtmwScope"));
+    // Implementation splits on ".", second element is "FtmwDigitizer"
+    QCOMPARE(label, QString("FtmwDigitizer"));
 }
 
 // --- parseIndexKey ---
@@ -119,15 +119,15 @@ void HardwareKeysTest::parseIndexKeyValid()
 
 void HardwareKeysTest::parseIndexKeyNonInteger()
 {
-    auto [type, index] = BC::Key::parseIndexKey("FtmwScope.main");
-    QCOMPARE(type, QString("FtmwScope"));
+    auto [type, index] = BC::Key::parseIndexKey("FtmwDigitizer.main");
+    QCOMPARE(type, QString("FtmwDigitizer"));
     QCOMPARE(index, -1);
 }
 
 void HardwareKeysTest::parseIndexKeyNoSeparator()
 {
-    auto [type, index] = BC::Key::parseIndexKey("FtmwScope");
-    QCOMPARE(type, QString("FtmwScope"));
+    auto [type, index] = BC::Key::parseIndexKey("FtmwDigitizer");
+    QCOMPARE(type, QString("FtmwDigitizer"));
     QCOMPARE(index, -1);
 }
 
@@ -141,8 +141,8 @@ void HardwareKeysTest::isIndexKeyTrue()
 
 void HardwareKeysTest::isIndexKeyFalse()
 {
-    QVERIFY(!BC::Key::isIndexKey("FtmwScope.main"));
-    QVERIFY(!BC::Key::isIndexKey("FtmwScope"));
+    QVERIFY(!BC::Key::isIndexKey("FtmwDigitizer.main"));
+    QVERIFY(!BC::Key::isIndexKey("FtmwDigitizer"));
     QVERIFY(!BC::Key::isIndexKey("Clock.reference"));
 }
 
@@ -172,8 +172,8 @@ void HardwareKeysTest::hwKeyParseIndexKeyRoundTrip()
 
 void HardwareKeysTest::widgetKeyBasic()
 {
-    auto wk = BC::Key::widgetKey("ControlWidget", "FtmwScope.main");
-    QCOMPARE(wk, QString("ControlWidget.FtmwScope.main"));
+    auto wk = BC::Key::widgetKey("ControlWidget", "FtmwDigitizer.main");
+    QCOMPARE(wk, QString("ControlWidget.FtmwDigitizer.main"));
 }
 
 // --- migrateIndexKey ---
@@ -238,17 +238,17 @@ void HardwareKeysTest::legacyStringToHardwareTypeKnown()
     QCOMPARE(HardwareDataContainer::legacyStringToHardwareType("FlowController"), HardwareType::FlowController);
     QCOMPARE(HardwareDataContainer::legacyStringToHardwareType("PressureController"), HardwareType::PressureController);
     QCOMPARE(HardwareDataContainer::legacyStringToHardwareType("TemperatureController"), HardwareType::TemperatureController);
-    QCOMPARE(HardwareDataContainer::legacyStringToHardwareType("FtmwScope"), HardwareType::FtmwScope);
+    QCOMPARE(HardwareDataContainer::legacyStringToHardwareType("FtmwDigitizer"), HardwareType::FtmwDigitizer);
     QCOMPARE(HardwareDataContainer::legacyStringToHardwareType("Clock"), HardwareType::Clock);
     QCOMPARE(HardwareDataContainer::legacyStringToHardwareType("AWG"), HardwareType::AWG);
-    QCOMPARE(HardwareDataContainer::legacyStringToHardwareType("LifScope"), HardwareType::LifScope);
+    QCOMPARE(HardwareDataContainer::legacyStringToHardwareType("LifDigitizer"), HardwareType::LifDigitizer);
     QCOMPARE(HardwareDataContainer::legacyStringToHardwareType("LifLaser"), HardwareType::LifLaser);
 }
 
 void HardwareKeysTest::legacyStringToHardwareTypeAliases()
 {
-    // "FtmwDigitizer" is a pre-label-era name for FtmwScope
-    QCOMPARE(HardwareDataContainer::legacyStringToHardwareType("FtmwDigitizer"), HardwareType::FtmwScope);
+    // "FtmwDigitizer" is a pre-label-era name for FtmwDigitizer
+    QCOMPARE(HardwareDataContainer::legacyStringToHardwareType("FtmwDigitizer"), HardwareType::FtmwDigitizer);
     // "GpibController" maps to GPIBController enum
     QCOMPARE(HardwareDataContainer::legacyStringToHardwareType("GpibController"), HardwareType::GPIBController);
     QCOMPARE(HardwareDataContainer::legacyStringToHardwareType("GPIBController"), HardwareType::GPIBController);
@@ -263,7 +263,7 @@ void HardwareKeysTest::legacyStringToHardwareTypeUnknown()
 void HardwareKeysTest::extractHardwareTypeFromKey()
 {
     QCOMPARE(HardwareDataContainer::extractHardwareType("FlowController.frontPanel"), HardwareType::FlowController);
-    QCOMPARE(HardwareDataContainer::extractHardwareType("FtmwDigitizer.0"), HardwareType::FtmwScope);
+    QCOMPARE(HardwareDataContainer::extractHardwareType("FtmwDigitizer.0"), HardwareType::FtmwDigitizer);
     QCOMPARE(HardwareDataContainer::extractHardwareType("Clock.reference"), HardwareType::Clock);
     QCOMPARE(HardwareDataContainer::extractHardwareType("UnknownType.foo"), HardwareType::Unknown);
 }

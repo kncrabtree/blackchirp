@@ -181,7 +181,7 @@ class BCFid:
         return name == "LowerSideband"
 
     def apply_lo(self, freqMHz: np.ndarray) -> np.ndarray:
-        """Compute molecular frequency from scope frequency.
+        """Compute molecular frequency from digitizer frequency.
 
         If the downconversion mixer is the lower sideband, then the molecular
         frequency is the Downconversion LO frequency - scope frequency. Otherwise,

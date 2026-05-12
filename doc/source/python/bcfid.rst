@@ -24,7 +24,7 @@ zero-padding factor, FT units). Any of those settings may be overridden
 per call via keyword argument; ``frame=N`` restricts the FT to a single
 frame, and ``freq_units=`` rescales the returned frequency axis to Hz,
 kHz, MHz (default), GHz, or THz. ``apply_lo`` and ``is_lower_sideband``
-expose the sideband-aware mapping from scope frequency to molecular
+expose the sideband-aware mapping from detected frequency to molecular
 frequency that ``ft`` and the BCFTMW deconvolution path both use
 internally.
 

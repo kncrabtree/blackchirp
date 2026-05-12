@@ -1,11 +1,11 @@
-#include <hardware/core/lifdigitizer/lifscope.h>
+#include <hardware/core/lifdigitizer/lifdigitizer.h>
 
 #include <data/bcglobals.h>
 #include <hardware/core/hardwareregistration.h>
 
 using namespace BC::Key::Digi;
 
-REGISTER_HARDWARE_BASE(LifScope,
+REGISTER_HARDWARE_BASE(LifDigitizer,
     {numAnalogChannels,    "Analog Channels",        "Number of analog input channels",           2,      1,         128,       HwSettingPriority::Required},
     {numDigitalChannels,   "Digital Channels",       "Number of digital input channels",          0,      0,         128,       HwSettingPriority::Required},
     {hasAuxTriggerChannel, "Aux Trigger Channel",    "Has auxiliary trigger input",               true,   QVariant{}, QVariant{}, HwSettingPriority::Optional},
@@ -23,12 +23,12 @@ REGISTER_HARDWARE_BASE(LifScope,
     {maxRecordLength,      "Max Record Length",      "Maximum record length in samples",          100000000, QVariant{}, QVariant{}, HwSettingPriority::Optional},
     {maxAverages,          "Max Averages",           "Maximum number of block averages",          10000,  QVariant{}, QVariant{}, HwSettingPriority::Optional}
 )
-REGISTER_HARDWARE_BASE_ARRAY(LifScope, sampleRates,
+REGISTER_HARDWARE_BASE_ARRAY(LifDigitizer, sampleRates,
     "Sample Rates", "Available digitizer sample rates", HwSettingPriority::Important)
 
-LifScope::LifScope(const QString& impl, const QString& label, QObject *parent) :
-    HardwareObject(QString(LifScope::staticMetaObject.className()), impl, label, parent),
-    LifDigitizerConfig(BC::Key::hwKey(QString(LifScope::staticMetaObject.className()), label))
+LifDigitizer::LifDigitizer(const QString& impl, const QString& label, QObject *parent) :
+    HardwareObject(QString(LifDigitizer::staticMetaObject.className()), impl, label, parent),
+    LifDigitizerConfig(BC::Key::hwKey(QString(LifDigitizer::staticMetaObject.className()), label))
 {
     d_threaded = true;
 
@@ -72,25 +72,25 @@ LifScope::LifScope(const QString& impl, const QString& label, QObject *parent) :
 
 }
 
-LifScope::~LifScope()
+LifDigitizer::~LifDigitizer()
 {
 
 }
 
-void LifScope::hwReadSettings()
+void LifDigitizer::hwReadSettings()
 {
-    lifScopeReadSettings();
+    lifDigitizerReadSettings();
 }
 
-bool LifScope::prepareForExperiment(Experiment &exp)
+bool LifDigitizer::prepareForExperiment(Experiment &exp)
 {
     d_enabledForExperiment = exp.lifEnabled();
     if(!d_enabledForExperiment)
         return true;
 
-    if(configure(exp.lifConfig()->scopeConfig()))
+    if(configure(exp.lifConfig()->digitizerConfig()))
     {
-        exp.lifConfig()->scopeConfig() = static_cast<LifDigitizerConfig&>(*this);
+        exp.lifConfig()->digitizerConfig() = static_cast<LifDigitizerConfig&>(*this);
         writeSettings();
         save();
         return true;
@@ -98,9 +98,9 @@ bool LifScope::prepareForExperiment(Experiment &exp)
     return false;
 }
 
-void LifScope::startConfigurationAcquisition(const LifConfig &c)
+void LifDigitizer::startConfigurationAcquisition(const LifConfig &c)
 {
-    if(configure(c.scopeConfig()))
+    if(configure(c.digitizerConfig()))
     {
         writeSettings();
         save();
@@ -109,14 +109,14 @@ void LifScope::startConfigurationAcquisition(const LifConfig &c)
     }
 }
 
-void LifScope::setAcquisitionGated(bool gated)
+void LifDigitizer::setAcquisitionGated(bool gated)
 {
     d_acquisitionGated = gated;
     if(!gated)
         d_discardCount = 1;
 }
 
-void LifScope::emitWaveform(const QVector<qint8> &data)
+void LifDigitizer::emitWaveform(const QVector<qint8> &data)
 {
     if(d_acquisitionGated)
         return;
@@ -128,7 +128,7 @@ void LifScope::emitWaveform(const QVector<qint8> &data)
     emit waveformRead(data);
 }
 
-void LifScope::writeSettings()
+void LifDigitizer::writeSettings()
 {
     using namespace BC::Key::Digi;
     using namespace BC::Store::Digi;

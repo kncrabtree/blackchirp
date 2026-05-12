@@ -55,11 +55,11 @@ play:
      - RF/microwave synthesizer used as a tunable LO, AWG reference,
        or DR clock.
      - ``src/hardware/core/clock/``
-   * - :cpp:class:`FtmwScope`
+   * - :cpp:class:`FtmwDigitizer`
      - FTMW digitizer: the high-bandwidth oscilloscope or transient
        recorder that captures FIDs.
      - ``src/hardware/core/ftmwdigitizer/``
-   * - :cpp:class:`LifScope`
+   * - :cpp:class:`LifDigitizer`
      - LIF digitizer: the slower oscilloscope that records
        laser-induced-fluorescence transients.
      - ``src/hardware/core/lifdigitizer/``
@@ -215,7 +215,7 @@ A few non-obvious points:
   ``QSettings`` group root.
 - **No child** ``QObject``. If the interface class sets
   ``d_threaded = true`` in its constructor (most do — :cpp:class:`AWG`,
-  :cpp:class:`FtmwScope`, and others enable threading because their
+  :cpp:class:`FtmwDigitizer`, and others enable threading because their
   I/O is expensive), the driver constructor must not have a
   ``QObject`` parent that lives on a different thread, and must not
   construct child ``QObject``\ s. Construct children inside
@@ -264,8 +264,8 @@ complex config object — a :cpp:class:`DigitizerConfig` with channel
 maps, trigger settings, sample rates, multi-record state, and so on —
 and exposes a ``configure(config&)`` virtual. The experiment hands the
 driver a desired config, and the driver applies it in one shot.
-:cpp:class:`IOBoard` and :cpp:class:`LifScope` follow this pattern.
-:cpp:class:`FtmwScope` is shaped similarly but exposes the per-experiment
+:cpp:class:`IOBoard` and :cpp:class:`LifDigitizer` follow this pattern.
+:cpp:class:`FtmwDigitizer` is shaped similarly but exposes the per-experiment
 hook directly as :cpp:func:`HardwareObject::prepareForExperiment` rather
 than a separate ``configure`` virtual.
 
@@ -548,7 +548,7 @@ the auxiliary-data pipeline:
   Pattern B types (``FlowController``, ``PressureController``,
   ``TemperatureController``) implement this for you out of the
   config-object state, so a typical driver of those types does not
-  need its own override; for AWG, FtmwScope, IOBoard, or a custom
+  need its own override; for AWG, FtmwDigitizer, IOBoard, or a custom
   type, override it when there are device-specific readings worth
   recording. The default returns an empty map.
 - :cpp:func:`HardwareObject::readValidationData` returns the subset of

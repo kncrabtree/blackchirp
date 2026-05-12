@@ -1,12 +1,12 @@
 #ifndef DSOX92004A_H
 #define DSOX92004A_H
 
-#include <hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/core/ftmwdigitizer/ftmwdigitizer.h>
 
 class QTcpSocket;
 
 
-class DSOx92004A : public FtmwScope
+class DSOx92004A : public FtmwDigitizer
 {
     Q_OBJECT
 public:
@@ -18,7 +18,7 @@ public slots:
     void beginAcquisition() override;
     void endAcquisition() override;
 
-    // FtmwScope interface
+    // FtmwDigitizer interface
     void readWaveform() override;
 
 protected:

@@ -1,48 +1,48 @@
-#include "virtualftmwscope.h"
+#include "virtualftmwdigitizer.h"
 
 #include <QRandomGenerator>
 #include <math.h>
 #include <hardware/core/hardwareregistration.h>
 
-using namespace BC::Key::FtmwScope;
+using namespace BC::Key::FtmwDigitizer;
 using namespace BC::Key::Digi;
 
 // Register this hardware implementation
-REGISTER_HARDWARE_META(VirtualFtmwScope, "Virtual FTMW digitizer for testing and development")
-REGISTER_HARDWARE_PROTOCOLS(VirtualFtmwScope, CommunicationProtocol::Virtual,
+REGISTER_HARDWARE_META(VirtualFtmwDigitizer, "Virtual FTMW digitizer for testing and development")
+REGISTER_HARDWARE_PROTOCOLS(VirtualFtmwDigitizer, CommunicationProtocol::Virtual,
     CommunicationProtocol::Rs232, CommunicationProtocol::Tcp,
     CommunicationProtocol::Gpib, CommunicationProtocol::Custom)
-REGISTER_HARDWARE_SETTINGS(VirtualFtmwScope,
-    {interval,           "Sim Interval (ms)",   "Simulated data interval for virtual scope",
+REGISTER_HARDWARE_SETTINGS(VirtualFtmwDigitizer,
+    {interval,           "Sim Interval (ms)",   "Simulated data interval for virtual digitizer",
      200, 1, QVariant{}, HwSettingPriority::Optional}
 )
-REGISTER_HARDWARE_ARRAY(VirtualFtmwScope, sampleRates,
+REGISTER_HARDWARE_ARRAY(VirtualFtmwDigitizer, sampleRates,
     "Sample Rates", "Available digitizer sample rates",
     HwSettingPriority::Important)
-REGISTER_HARDWARE_ARRAY_ENTRY(VirtualFtmwScope, sampleRates,
+REGISTER_HARDWARE_ARRAY_ENTRY(VirtualFtmwDigitizer, sampleRates,
     {{srText, "2 GSa/s"}, {srValue, 2e9}})
-REGISTER_HARDWARE_ARRAY_ENTRY(VirtualFtmwScope, sampleRates,
+REGISTER_HARDWARE_ARRAY_ENTRY(VirtualFtmwDigitizer, sampleRates,
     {{srText, "5 GSa/s"}, {srValue, 5e9}})
-REGISTER_HARDWARE_ARRAY_ENTRY(VirtualFtmwScope, sampleRates,
+REGISTER_HARDWARE_ARRAY_ENTRY(VirtualFtmwDigitizer, sampleRates,
     {{srText, "10 GSa/s"}, {srValue, 10e9}})
-REGISTER_HARDWARE_ARRAY_ENTRY(VirtualFtmwScope, sampleRates,
+REGISTER_HARDWARE_ARRAY_ENTRY(VirtualFtmwDigitizer, sampleRates,
     {{srText, "20 GSa/s"}, {srValue, 20e9}})
-REGISTER_HARDWARE_ARRAY_ENTRY(VirtualFtmwScope, sampleRates,
+REGISTER_HARDWARE_ARRAY_ENTRY(VirtualFtmwDigitizer, sampleRates,
     {{srText, "50 GSa/s"}, {srValue, 50e9}})
-REGISTER_HARDWARE_ARRAY_ENTRY(VirtualFtmwScope, sampleRates,
+REGISTER_HARDWARE_ARRAY_ENTRY(VirtualFtmwDigitizer, sampleRates,
     {{srText, "100 GSa/s"}, {srValue, 100e9}})
 
-VirtualFtmwScope::VirtualFtmwScope(const QString& label, QObject *parent) :
-    FtmwScope(QString(VirtualFtmwScope::staticMetaObject.className()), label, parent)
+VirtualFtmwDigitizer::VirtualFtmwDigitizer(const QString& label, QObject *parent) :
+    FtmwDigitizer(QString(VirtualFtmwDigitizer::staticMetaObject.className()), label, parent)
 {
 }
 
-VirtualFtmwScope::~VirtualFtmwScope()
+VirtualFtmwDigitizer::~VirtualFtmwDigitizer()
 {
 
 }
 
-bool VirtualFtmwScope::testConnection()
+bool VirtualFtmwDigitizer::testConnection()
 {
     d_simulatedTimer->stop();
     d_simulatedTimer->setInterval(get(interval,200));
@@ -50,22 +50,22 @@ bool VirtualFtmwScope::testConnection()
     return true;
 }
 
-void VirtualFtmwScope::initialize()
+void VirtualFtmwDigitizer::initialize()
 {
     // Initialize simulated data as empty - will be populated in prepareForExperiment
     d_simulatedData.clear();
 
     d_simulatedTimer = new QTimer(this);
-    connect(d_simulatedTimer,&QTimer::timeout,this,&FtmwScope::readWaveform, Qt::UniqueConnection);
+    connect(d_simulatedTimer,&QTimer::timeout,this,&FtmwDigitizer::readWaveform, Qt::UniqueConnection);
 }
 
-bool VirtualFtmwScope::prepareForExperiment(Experiment &exp)
+bool VirtualFtmwDigitizer::prepareForExperiment(Experiment &exp)
 {
     //make a copy of the configuration in which to store settings
     if(!exp.ftmwEnabled())
         return true;
 
-    static_cast<FtmwDigitizerConfig&>(*this) = exp.ftmwConfig()->scopeConfig();
+    static_cast<FtmwDigitizerConfig&>(*this) = exp.ftmwConfig()->digitizerConfig();
     
     // Generate simulated FID data based on experiment configuration
     generateSimulatedFid();
@@ -74,17 +74,17 @@ bool VirtualFtmwScope::prepareForExperiment(Experiment &exp)
 
 }
 
-void VirtualFtmwScope::beginAcquisition()
+void VirtualFtmwDigitizer::beginAcquisition()
 {
     d_simulatedTimer->start();
 }
 
-void VirtualFtmwScope::endAcquisition()
+void VirtualFtmwDigitizer::endAcquisition()
 {
     d_simulatedTimer->stop();
 }
 
-void VirtualFtmwScope::readWaveform()
+void VirtualFtmwDigitizer::readWaveform()
 {
     //    d_testTime.restart();
         QByteArray out;
@@ -140,7 +140,7 @@ void VirtualFtmwScope::readWaveform()
 }
 
 
-void VirtualFtmwScope::generateSimulatedFid()
+void VirtualFtmwDigitizer::generateSimulatedFid()
 {
     // Clear any existing data
     d_simulatedData.clear();

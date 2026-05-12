@@ -58,7 +58,7 @@ Registration runs once per process, at static-initialization time, before
 
 ``REGISTER_HARDWARE_BASE(CLASS, ...)``
    Registers setting definitions for a non-instantiable base class
-   (e.g., ``Clock``, ``FtmwScope``). No prior ``REGISTER_HARDWARE_META``
+   (e.g., ``Clock``, ``FtmwDigitizer``). No prior ``REGISTER_HARDWARE_META``
    call is required. Settings are merged into any driver whose
    inheritance chain contains the base class name. A driver can
    override a base-class default by registering the same key with

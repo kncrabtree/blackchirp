@@ -65,7 +65,7 @@ class BCExperiment:
                                           key                       driver
             0                          AWG.Ka                   VirtualAwg
             1                    Clock.virtual                   FixedClock
-            2                  FtmwScope.virtual           VirtualFtmwScope
+            2          FtmwDigitizer.virtual       VirtualFtmwDigitizer
             3       FlowController.Default       PythonFlowController
             4   PulseGenerator.Default       VirtualPulseGenerator
 

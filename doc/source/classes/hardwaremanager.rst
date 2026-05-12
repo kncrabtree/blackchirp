@@ -115,7 +115,7 @@ signal ``AcquisitionManager`` waits for before resuming the acquisition loop.
 **LIF**
 
 ``lifSettingsComplete(success)`` confirms that laser position and pulse delay
-have been applied atomically. ``lifScopeShotAcquired(data)`` delivers raw
+have been applied atomically. ``lifDigitizerShotAcquired(data)`` delivers raw
 waveform samples from the LIF digitizer during configuration acquisition.
 ``lifLaserPosUpdate(pos)`` and ``lifLaserFlashlampUpdate(enabled)`` relay
 device state changes from the active LIF laser.

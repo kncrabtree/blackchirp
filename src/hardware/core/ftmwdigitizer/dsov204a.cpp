@@ -4,7 +4,7 @@
 #include <QTimer>
 #include <hardware/core/hardwareregistration.h>
 
-using namespace BC::Key::FtmwScope;
+using namespace BC::Key::FtmwDigitizer;
 using namespace BC::Key::Digi;
 
 // Register this hardware implementation
@@ -39,7 +39,7 @@ REGISTER_HARDWARE_ARRAY_ENTRY(DSOv204A, sampleRates,
     {{srText, "80 GSa/s"}, {srValue, 80e9}})
 
 DSOv204A::DSOv204A(const QString& label, QObject *parent)
-    : FtmwScope{QString(DSOv204A::staticMetaObject.className()), label, parent}
+    : FtmwDigitizer{QString(DSOv204A::staticMetaObject.className()), label, parent}
 {
 
     // Communication defaults
@@ -55,7 +55,7 @@ bool DSOv204A::prepareForExperiment(Experiment &exp)
     if(!d_enabledForExperiment)
         return true;
 
-    auto &config = exp.ftmwConfig()->scopeConfig();
+    auto &config = exp.ftmwConfig()->digitizerConfig();
 
     //disable ugly headers
     if(!scopeCommand(QString("*RST;:SYSTEM:HEADER OFF")))

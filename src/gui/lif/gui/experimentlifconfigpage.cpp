@@ -11,17 +11,17 @@ ExperimentLifConfigPage::ExperimentLifConfigPage(Experiment *exp, QWidget *paren
     ExperimentConfigPage(key,title,exp,parent)
 {
     // Look up LIF scope and laser hardware keys from experiment's hardware data
-    QString scopeHwKey;
+    QString digitizerHwKey;
     QString laserHwKey;
     for (auto it = exp->d_hardwareData.hardwareMap.cbegin();
          it != exp->d_hardwareData.hardwareMap.cend(); ++it) {
-        if (it.value().type == BC::Data::HardwareType::LifScope)
-            scopeHwKey = it.key();
+        if (it.value().type == BC::Data::HardwareType::LifDigitizer)
+            digitizerHwKey = it.key();
         else if (it.value().type == BC::Data::HardwareType::LifLaser)
             laserHwKey = it.key();
     }
 
-    p_lcw = new LifControlWidget(scopeHwKey, laserHwKey);
+    p_lcw = new LifControlWidget(digitizerHwKey, laserHwKey);
 
     auto vbl = new QVBoxLayout;
     vbl->addWidget(p_lcw);

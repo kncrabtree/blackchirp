@@ -5,7 +5,7 @@
 #include <math.h>
 #include <hardware/core/hardwareregistration.h>
 
-using namespace BC::Key::FtmwScope;
+using namespace BC::Key::FtmwDigitizer;
 using namespace BC::Key::Digi;
 
 // Register this hardware implementation
@@ -32,7 +32,7 @@ REGISTER_HARDWARE_ARRAY_ENTRY(MSO72004C, sampleRates,
     {{srText, "100 GSa/s"}, {srValue, 100e9}})
 
 MSO72004C::MSO72004C(const QString& label, QObject *parent) :
-    FtmwScope(QString(MSO72004C::staticMetaObject.className()), label, parent),
+    FtmwDigitizer(QString(MSO72004C::staticMetaObject.className()), label, parent),
     d_waitingForReply(false), d_foundHeader(false),
     d_headerNumBytes(0), d_waveformBytes(0)
 {
@@ -95,7 +95,7 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
     if(!d_enabledForExperiment)
         return true;
 
-    auto &config = exp.ftmwConfig()->scopeConfig();
+    auto &config = exp.ftmwConfig()->digitizerConfig();
 
     disconnect(p_socket,&QTcpSocket::readyRead,this,&MSO72004C::readWaveform);
 

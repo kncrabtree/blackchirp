@@ -315,7 +315,7 @@ example, ``awg70002a`` or ``valon5009``).
 ``key`` and ``driver``. The ``key`` field now uses the user-assigned
 label from the runtime hardware configuration in place of the
 numeric index, so you might see entries like
-``FlowController.frontPanel`` or ``FtmwScope.virtual``. The
+``FlowController.frontPanel`` or ``FtmwDigitizer.virtual``. The
 ``driver`` field records the driver class identifier (the same
 information the v1.x ``subKey`` column carried). The hardware-type
 discriminator is recovered from the key prefix; an interim 2.0

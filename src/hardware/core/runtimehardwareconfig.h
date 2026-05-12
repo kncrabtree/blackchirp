@@ -14,7 +14,7 @@
 
 // Include all hardware headers so template methods work properly
 #include <hardware/core/clock/clock.h>
-#include <hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/core/ftmwdigitizer/ftmwdigitizer.h>
 #include <hardware/optional/chirpsource/awg.h>
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 #include <hardware/optional/flowcontroller/flowcontroller.h>
@@ -23,7 +23,7 @@
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
-#include <hardware/core/lifdigitizer/lifscope.h>
+#include <hardware/core/lifdigitizer/lifdigitizer.h>
 #include <hardware/core/liflaser/liflaser.h>
 
 // Forward declarations for friend classes
@@ -87,11 +87,11 @@ public:
      * Extracts the hardware type string from the class name using Qt's meta-object system.
      * This provides compile-time type safety and automatic updates when classes are renamed.
      * 
-     * \tparam T Hardware class type (e.g., VirtualFtmwScope, FixedClock)
+     * \tparam T Hardware class type (e.g., VirtualFtmwDigitizer, FixedClock)
      * \return Hardware type string for use with RuntimeHardwareConfig
      * 
      * \example
-     * auto labels = RuntimeHardwareConfig::constInstance().getActiveLabels(hardwareTypeOf<VirtualFtmwScope>());
+     * auto labels = RuntimeHardwareConfig::constInstance().getActiveLabels(hardwareTypeOf<VirtualFtmwDigitizer>());
      */
     template<typename T>
     static QString hardwareTypeOf() {
@@ -104,7 +104,7 @@ public:
     
     /*!
      * \brief Get hardware implementation for a specific label (type-safe)
-     * \tparam T Hardware class type (e.g., FtmwScope, PulseGenerator)
+     * \tparam T Hardware class type (e.g., FtmwDigitizer, PulseGenerator)
      * \param label Hardware label (e.g., "frontPanel", "backup")
      * \return Implementation key, or empty string if not set or disabled
      */
@@ -115,7 +115,7 @@ public:
     
     /*!
      * \brief Get all active labels for a hardware type (type-safe)
-     * \tparam T Hardware class type (e.g., FtmwScope, PulseGenerator)
+     * \tparam T Hardware class type (e.g., FtmwDigitizer, PulseGenerator)
      * \return List of labels for currently active hardware devices
      */
     template<typename T>
@@ -125,7 +125,7 @@ public:
     
     /*!
      * \brief Get all active hardware keys for a hardware type (type-safe)
-     * \tparam T Hardware class type (e.g., FtmwScope, PulseGenerator)
+     * \tparam T Hardware class type (e.g., FtmwDigitizer, PulseGenerator)
      * \return List of full hwType.label keys for currently active hardware devices
      */
     template<typename T>
@@ -231,7 +231,7 @@ public:
     /*!
      * \brief Check if hardware type is a LIF hardware type
      *
-     * Returns true for hardware types associated with LIF (LifScope, LifLaser).
+     * Returns true for hardware types associated with LIF (LifDigitizer, LifLaser).
      * Used to filter LIF hardware from the runtime config when LIF is disabled.
      *
      * \param hardwareType Hardware type key
@@ -267,7 +267,7 @@ public:
 
     /*!
      * \brief Get the threading override for a hardware key
-     * \param hwKey Full hardware key (e.g., "FtmwScope.virtual")
+     * \param hwKey Full hardware key (e.g., "FtmwDigitizer.virtual")
      * \return Threading override, or nullopt if none stored (use type-level default from constructor)
      */
     std::optional<bool> getThreaded(const QString& hwKey) const;
@@ -365,7 +365,7 @@ private:
 
     /*!
      * \brief Set threading override for a hardware key
-     * \param hwKey Full hardware key (e.g., "FtmwScope.virtual")
+     * \param hwKey Full hardware key (e.g., "FtmwDigitizer.virtual")
      * \param threaded Threading override value
      */
     void setThreaded(const QString& hwKey, bool threaded);

@@ -115,7 +115,7 @@ signals:
      * object is removed from the map. Consumers can use this single signal to
      * maintain a current connection-status view across the entire hardware set.
      *
-     * \param hwKey Hardware key (e.g., \c "FtmwScope.mainScope").
+     * \param hwKey Hardware key (e.g., \c "FtmwDigitizer.main").
      * \param success \c true if the connection is now active.
      * \param msg Human-readable status or error message; may be empty.
      */
@@ -288,7 +288,7 @@ signals:
     /// \brief Emitted when the LIF digitizer acquires a single shot waveform
     /// during configuration acquisition.
     /// \param data Raw 8-bit waveform samples.
-    void lifScopeShotAcquired(QVector<qint8>);
+    void lifDigitizerShotAcquired(QVector<qint8>);
 
     /// \brief Emitted when LIF hardware setup (laser position, pulse delay,
     /// digitizer gate) is complete.

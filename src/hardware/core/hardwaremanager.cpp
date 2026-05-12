@@ -293,8 +293,8 @@ void HardwareManager::configureClocks(QHash<RfConfig::ClockType, RfConfig::Clock
 
 void HardwareManager::setClocks(QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks)
 {
-    auto ftmwKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<FtmwScope>();
-    auto fsc = ftmwKeys.isEmpty() ? nullptr : findHardware<FtmwScope>(ftmwKeys.first());
+    auto ftmwKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<FtmwDigitizer>();
+    auto fsc = ftmwKeys.isEmpty() ? nullptr : findHardware<FtmwDigitizer>(ftmwKeys.first());
 
     // Gate the digitizer so no waveforms are emitted while clock frequencies change
     if(fsc)
@@ -595,8 +595,8 @@ void HardwareManager::finalizeConnectionTesting()
 
 void HardwareManager::setLifParameters(double delay, double pos)
 {
-    auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifScope>();
-    auto lsc = findHardware<LifScope>(activeKeys.first());
+    auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifDigitizer>();
+    auto lsc = findHardware<LifDigitizer>(activeKeys.first());
 
     // Gate the digitizer so no waveforms are emitted while hardware parameters change
     if(lsc)
@@ -680,13 +680,13 @@ bool HardwareManager::setLifLaserPos(double pos)
 
 void HardwareManager::startLifConfigAcq(const LifConfig &c)
 {
-    auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifScope>();
+    auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifDigitizer>();
     if (activeKeys.isEmpty()) {
         bcError("Could not initialize LIF acquisition because no LIF digitizer is configured."_L1);
         return;
     }
     
-    auto ld = findHardware<LifScope>(activeKeys.first());
+    auto ld = findHardware<LifDigitizer>(activeKeys.first());
     if(!ld)
     {
         bcError("Could not initialize LIF acquisition because no digitizer was found."_L1);
@@ -701,13 +701,13 @@ void HardwareManager::startLifConfigAcq(const LifConfig &c)
 
 void HardwareManager::stopLifConfigAcq()
 {
-    auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifScope>();
+    auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifDigitizer>();
     if (activeKeys.isEmpty()) {
         bcError("Could not stop LIF acquisition because no LIF digitizer is configured."_L1);
         return;
     }
     
-    auto ld = findHardware<LifScope>(activeKeys.first());
+    auto ld = findHardware<LifDigitizer>(activeKeys.first());
     if(!ld)
     {
         bcError("Could not stop LIF acquisition because no digitizer was found."_L1);
@@ -717,7 +717,7 @@ void HardwareManager::stopLifConfigAcq()
     if(ld->thread() == QThread::currentThread())
         ld->endAcquisition();
     else
-        QMetaObject::invokeMethod(ld,&LifScope::endAcquisition);
+        QMetaObject::invokeMethod(ld,&LifDigitizer::endAcquisition);
 }
 
 double HardwareManager::lifLaserPos()
@@ -1027,9 +1027,9 @@ void HardwareManager::setupHardwareSpecificConnectionsWithTracking(HardwareObjec
             emit temperatureUpdate(k, i, t);
         }));
     }
-    else if (auto lifScope = qobject_cast<LifScope*>(obj)) {
-        storeConnection(hwKey, connect(lifScope, &LifScope::waveformRead, this, &HardwareManager::lifScopeShotAcquired));
-        storeConnection(hwKey, connect(lifScope, &LifScope::configAcqComplete, this, &HardwareManager::lifConfigAcqStarted));
+    else if (auto lifDigitizer = qobject_cast<LifDigitizer*>(obj)) {
+        storeConnection(hwKey, connect(lifDigitizer, &LifDigitizer::waveformRead, this, &HardwareManager::lifDigitizerShotAcquired));
+        storeConnection(hwKey, connect(lifDigitizer, &LifDigitizer::configAcqComplete, this, &HardwareManager::lifConfigAcqStarted));
     }
     else if (auto lifLaser = qobject_cast<LifLaser*>(obj)) {
         storeConnection(hwKey, connect(lifLaser, &LifLaser::laserPosUpdate, this, &HardwareManager::lifLaserPosUpdate));

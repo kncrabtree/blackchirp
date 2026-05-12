@@ -9,8 +9,8 @@
    single: PressureControllerDriver
    single: IOBoardDriver
    single: PulseGeneratorDriver
-   single: FtmwScopeDriver
-   single: LifScopeDriver
+   single: FtmwDigitizerDriver
+   single: LifDigitizerDriver
    single: GpibControllerDriver
    single: LifLaserDriver
 
@@ -68,10 +68,10 @@ which determine the shape of the Python interface:
    hardware with that data. There are no granular setters for the
    driver to implement.
 
-Digitizer trampolines (FtmwScope, LifScope) combine Pattern A
+Digitizer trampolines (FtmwDigitizer, LifDigitizer) combine Pattern A
 configuration with a **push** acquisition model: the driver runs an
 acquisition loop on its own thread and pushes waveforms back through
-``self.scope.emit_shot``. See :ref:`python-hardware-scope-proxy`.
+``self.digi.emit_shot``. See :ref:`python-hardware-digi-proxy`.
 
 .. _python-hardware-trampoline-overview:
 
@@ -86,26 +86,26 @@ Trampoline Overview
      - Default class
      - Pattern
      - Driver entry points
-   * - PythonFtmwScope
-     - ``FtmwScopeDriver``
+   * - PythonFtmwDigitizer
+     - ``FtmwDigitizerDriver``
      - A + push
      - :meth:`configure`,
        :meth:`begin_acquisition`,
        :meth:`end_acquisition`,
-       ``self.scope.emit_shot``
+       ``self.digi.emit_shot``
    * - PythonIOBoard
      - ``IOBoardDriver``
      - A
      - :meth:`configure`,
        :meth:`read_analog_channels`,
        :meth:`read_digital_channels`
-   * - PythonLifScope
-     - ``LifScopeDriver``
+   * - PythonLifDigitizer
+     - ``LifDigitizerDriver``
      - A + push
      - :meth:`configure`,
        :meth:`begin_acquisition`,
        :meth:`end_acquisition`,
-       ``self.scope.emit_shot``
+       ``self.digi.emit_shot``
    * - PythonFlowController
      - ``FlowControllerDriver``
      - B
@@ -168,7 +168,7 @@ the hardware clamped or substituted are reflected in subsequent
 operations. Omitted keys leave the C++ value unchanged.
 
 The shape of the input keywords and the validated dict is the same
-between FtmwScope and LifScope; LifScope adds LIF-specific keys
+between FtmwDigitizer and LifDigitizer; LifDigitizer adds LIF-specific keys
 (``lif_channel``, ``ref_channel``, ``ref_enabled``,
 ``channel_order``). Refer to the corresponding template script for
 the complete keyword list.
@@ -193,10 +193,10 @@ channels that are not enabled is harmless but wasteful; omitting an
 enabled channel leaves a gap in the aux-data row for that polling
 tick.
 
-.. _python-hardware-ftmwscope:
+.. _python-hardware-ftmwdigitizer:
 
-FTMW Scope (``FtmwScopeDriver``)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+FTMW Digitizer (``FtmwDigitizerDriver``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -209,7 +209,7 @@ FTMW Scope (``FtmwScopeDriver``)
 
 ``begin_acquisition`` should start the acquisition loop; the
 recommended pattern is a daemon thread that calls
-``self.scope.emit_shot(raw_bytes)`` for each waveform.
+``self.digi.emit_shot(raw_bytes)`` for each waveform.
 ``end_acquisition`` signals the thread to stop and joins it.
 
 The byte layout of the data passed to ``emit_shot`` must match the
@@ -224,15 +224,15 @@ hardware — is reported through the ``shots`` argument:
 
 .. code-block:: python
 
-   self.scope.emit_shot(raw_bytes, shots=num_averages)
+   self.digi.emit_shot(raw_bytes, shots=num_averages)
 
 ``readWaveform`` is **not** dispatched. The acquisition is
 push-driven from Python.
 
-.. _python-hardware-lifscope:
+.. _python-hardware-lifdigitizer:
 
-LIF Scope (``LifScopeDriver``)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+LIF Digitizer (``LifDigitizerDriver``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -244,9 +244,9 @@ LIF Scope (``LifScopeDriver``)
                  lif_channel=1, ref_channel=2, ref_enabled=False,
                  channel_order=0, **kwargs) -> dict: ...
 
-The acquisition pattern is identical to the FTMW Scope: start a
+The acquisition pattern is identical to the FTMW Digitizer: start a
 daemon thread in ``begin_acquisition``, push waveforms with
-``self.scope.emit_shot``, and stop the thread in
+``self.digi.emit_shot``, and stop the thread in
 ``end_acquisition``. The byte layout depends on ``channel_order``:
 sequential layout writes the LIF record followed by the reference
 record (when enabled); interleaved layout writes alternating LIF and

@@ -1,12 +1,12 @@
 #ifndef DSOV204A_H
 #define DSOV204A_H
 
-#include "ftmwscope.h"
+#include "ftmwdigitizer.h"
 
 class QTcpSocket;
 
 
-class DSOv204A : public FtmwScope
+class DSOv204A : public FtmwDigitizer
 {
     Q_OBJECT
 public:
@@ -22,7 +22,7 @@ protected:
     void initialize() override;
     bool testConnection() override;
 
-    // FtmwScope interface
+    // FtmwDigitizer interface
 public slots:
     void readWaveform() override;
 

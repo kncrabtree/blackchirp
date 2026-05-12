@@ -1,39 +1,39 @@
 """
 Blackchirp Python LIF Digitizer Driver Template
 
-This script is loaded by the PythonLifScope C++ trampoline class. It provides
+This script is loaded by the PythonLifDigitizer C++ trampoline class. It provides
 a complete virtual LIF digitizer implementation that you can customize for
 your hardware.
 
 The LIF digitizer in Blackchirp captures laser-induced fluorescence waveforms.
-The C++ LifScope base class handles:
+The C++ LifDigitizer base class handles:
   - Acquisition gating and discard logic (setAcquisitionGated / discardCount)
   - Waveform dispatching via the waveformRead signal to the LIF processing chain
   - Experiment configuration (calls configure() via prepareForExperiment())
 
 Your Python script implements configure() to apply/validate settings and
 begin_acquisition() / end_acquisition() to control a background acquisition
-thread that pushes waveforms via self.scope.emit_shot().
+thread that pushes waveforms via self.digi.emit_shot().
 
 Class name must match the Python Class setting in the Hardware Configuration
-dialog (default: "LifScopeDriver").
+dialog (default: "LifDigitizerDriver").
 
 Available proxies (injected automatically):
     self.comm     -- communicate with hardware via the configured protocol
     self.settings -- read/write persistent settings (stored in Blackchirp)
     self.log      -- send log messages to the Blackchirp log panel
-    self.scope    -- push waveform data to C++ (call self.scope.emit_shot())
+    self.digi    -- push waveform data to C++ (call self.digi.emit_shot())
 
 Configuration lifecycle:
     configure() is called after a successful connection and before each
-    experiment (via LifScope::prepareForExperiment()). Your script should
+    experiment (via LifDigitizer::prepareForExperiment()). Your script should
     apply settings to the hardware and return a dict with 'success' (bool)
     and 'config' (the validated configuration). The config dict is
     deserialized back into C++ LifDigitizerConfig, so any adjustments
     (e.g., clamped record length) are reflected in the application.
 
 Waveform data format:
-    self.scope.emit_shot(raw_bytes) must be called with raw bytes where each
+    self.digi.emit_shot(raw_bytes) must be called with raw bytes where each
     element is a signed integer (qint8 / int8). The byte layout depends on
     the channel_order setting:
 
@@ -57,7 +57,7 @@ import threading
 import time
 
 
-class LifScopeDriver:
+class LifDigitizerDriver:
     """Python LIF Digitizer hardware driver.
 
     You must implement:
@@ -74,7 +74,7 @@ class LifScopeDriver:
 
     def initialize(self):
         """Called once when the hardware object is first created."""
-        self.log.log("LIF Scope driver initialized")
+        self.log.log("LIF Digitizer driver initialized")
 
         # Internal config state (populated by configure())
         self._record_length   = 1000
@@ -96,7 +96,7 @@ class LifScopeDriver:
         Returns:
             bool: True if communication is working, False otherwise.
         """
-        self.log.log("Testing LIF Scope connection")
+        self.log.log("Testing LIF Digitizer connection")
         return True
 
     def configure(self, analog_channels=None, digital_channels=None,
@@ -186,10 +186,10 @@ class LifScopeDriver:
         """Start the acquisition loop.
 
         Launches a background thread that reads waveforms and pushes them
-        to C++ via self.scope.emit_shot(). The main thread remains free
+        to C++ via self.digi.emit_shot(). The main thread remains free
         to handle IPC messages (e.g., end_acquisition).
         """
-        self.log.debug("LIF Scope beginning acquisition")
+        self.log.debug("LIF Digitizer beginning acquisition")
         self._acquiring  = True
         self._acq_thread = threading.Thread(target=self._acquisition_loop,
                                             daemon=True)
@@ -197,7 +197,7 @@ class LifScopeDriver:
 
     def end_acquisition(self):
         """Stop the acquisition loop."""
-        self.log.debug("LIF Scope ending acquisition")
+        self.log.debug("LIF Digitizer ending acquisition")
         self._acquiring = False
         if self._acq_thread is not None:
             self._acq_thread.join(timeout=5.0)
@@ -207,7 +207,7 @@ class LifScopeDriver:
         """Background thread: read waveforms and push them to C++."""
         while self._acquiring:
             raw = self._generate_virtual_waveform()
-            self.scope.emit_shot(raw)
+            self.digi.emit_shot(raw)
             time.sleep(0.2)  # virtual mode: ~5 Hz
 
     def _generate_virtual_waveform(self):
@@ -231,10 +231,10 @@ class LifScopeDriver:
     def sleep(self, sleeping):
         """Called when hardware enters or exits standby mode."""
         if sleeping:
-            self.log.debug("LIF Scope entering sleep mode")
+            self.log.debug("LIF Digitizer entering sleep mode")
         else:
-            self.log.debug("LIF Scope waking from sleep mode")
+            self.log.debug("LIF Digitizer waking from sleep mode")
 
     def read_settings(self):
         """Reload settings from Blackchirp without restarting the process."""
-        self.log.debug("LIF Scope reloading settings")
+        self.log.debug("LIF Digitizer reloading settings")

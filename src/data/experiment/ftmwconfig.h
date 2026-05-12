@@ -55,7 +55,7 @@ class WaveformBuffer;
  * below a configurable threshold.
  *
  * FtmwConfig holds a non-owning pointer to the experiment's WaveformBuffer.
- * The buffer is created and owned by the FtmwScope hardware object; FtmwConfig
+ * The buffer is created and owned by the FtmwDigitizer hardware object; FtmwConfig
  * receives the pointer at acquisition setup time and must not free it.
  *
  * \sa RfConfig, FtmwDigitizerConfig, FidStorageBase
@@ -80,9 +80,9 @@ public:
 
     /*!
      * \brief Construct with the hardware key of the FtmwDigitizer to use.
-     * \param scopeHwKey Hardware key string identifying the digitizer.
+     * \param digitizerHwKey Hardware key string identifying the digitizer.
      */
-    FtmwConfig(const QString& scopeHwKey);
+    FtmwConfig(const QString& digitizerHwKey);
     FtmwConfig(const FtmwConfig &) =default;
     FtmwConfig &operator=(const FtmwConfig &) =default;
     virtual ~FtmwConfig();
@@ -97,11 +97,11 @@ public:
     /*!
      * \brief Return a mutable reference to the digitizer configuration.
      */
-    FtmwDigitizerConfig &scopeConfig() { return *ps_scopeConfig; }
+    FtmwDigitizerConfig &digitizerConfig() { return *ps_digitizerConfig; }
     /*!
      * \brief Return a const reference to the digitizer configuration.
      */
-    const FtmwDigitizerConfig &scopeConfig() const { return std::as_const(*ps_scopeConfig); }
+    const FtmwDigitizerConfig &digitizerConfig() const { return std::as_const(*ps_digitizerConfig); }
 
     RfConfig d_rfConfig; ///< RF chain and chirp configuration for this acquisition.
 
@@ -269,7 +269,7 @@ public:
     /*!
      * \brief Set the non-owning pointer to the experiment's WaveformBuffer.
      *
-     * The buffer is created and owned by the FtmwScope hardware object.
+     * The buffer is created and owned by the FtmwDigitizer hardware object.
      * FtmwConfig stores the pointer so that AcquisitionManager can retrieve
      * it via waveformBuffer() without accessing the hardware object directly.
      * FtmwConfig does \b not take ownership and must not delete the pointer.
@@ -282,7 +282,7 @@ public:
      * \brief Return the non-owning pointer to the experiment's WaveformBuffer.
      *
      * May be \c nullptr before acquisition setup or after cleanup.
-     * The pointed-to object is owned by the FtmwScope hardware object.
+     * The pointed-to object is owned by the FtmwDigitizer hardware object.
      * \sa setWaveformBuffer
      */
     WaveformBuffer* waveformBuffer() const;
@@ -297,7 +297,7 @@ public:
 
 private:
     WaveformBuffer *p_waveformBuffer{nullptr};
-    std::shared_ptr<FtmwDigitizerConfig> ps_scopeConfig;
+    std::shared_ptr<FtmwDigitizerConfig> ps_digitizerConfig;
     std::shared_ptr<FidStorageBase> p_fidStorage;
     Fid d_fidTemplate;
     QDateTime d_lastAutosaveTime;

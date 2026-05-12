@@ -13,7 +13,7 @@ Blackchirp identifies and manages hardware through three layered concepts:
 *profiles*, *loadouts*, and *FTMW presets*.
 
 **Profiles** identify a single physical (or virtual) instrument.
-Each profile binds a hardware type (for example, FTMW Scope or AWG), a
+Each profile binds a hardware type (for example, FTMW Digitizer or AWG), a
 human-readable label, and a driver. Profile settings — such
 as the number of digitizer channels or the AWG output sample rate table —
 are stored persistently and survive application restarts.

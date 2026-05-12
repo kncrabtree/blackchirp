@@ -14,7 +14,7 @@ acquisition manager thread. It provides bounded memory usage, drop-newest
 overflow, and low-latency consumer notification via ``QSemaphore``.
 
 ``WaveformBuffer`` does not inherit ``QObject``. It is created and owned by the
-``FtmwScope`` hardware object; :cpp:class:`FtmwConfig` holds a non-owning
+``FtmwDigitizer`` hardware object; :cpp:class:`FtmwConfig` holds a non-owning
 pointer to it (set via ``setWaveformBuffer()`` during acquisition setup and
 retrieved by ``AcquisitionManager`` via ``waveformBuffer()``). The digitizer
 data-flow design, including the rationale for the ring-buffer approach, is

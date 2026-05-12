@@ -1,13 +1,13 @@
 #ifndef M4I2211X8_H
 #define M4I2211X8_H
 
-#include <hardware/core/lifdigitizer/lifscope.h>
+#include <hardware/core/lifdigitizer/lifdigitizer.h>
 #include <hardware/library/spectrumlibrary.h>
 #include <hardware/library/spectrumconstants.h>
 
 class QTimer;
 
-class M4i2211x8 : public LifScope
+class M4i2211x8 : public LifDigitizer
 {
     Q_OBJECT
 public:
@@ -20,7 +20,7 @@ protected:
     bool testConnection() override;
 
 
-    // LifScope interface
+    // LifDigitizer interface
 public slots:
     void readWaveform() override;
 
@@ -35,7 +35,7 @@ private:
     void startCard();
     void stopCard();
 
-    // LifScope interface
+    // LifDigitizer interface
 public slots:
     bool configure(const LifDigitizerConfig &c);
 

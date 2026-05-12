@@ -10,7 +10,7 @@ HardwareLoadout
 ``HardwareLoadout`` is the value-typed record that represents one named
 set of member profiles and the FTMW operating points associated with
 it. A loadout records each member profile's identity
-(``"<Type>.<label>"`` — for example, ``"FtmwScope.default"`` or
+(``"<Type>.<label>"`` — for example, ``"FtmwDigitizer.default"`` or
 ``"AWG.frontPanel"``) together with the driver key the profile
 carried at the time the loadout was last saved, and owns a collection
 of named :cpp:struct:`FtmwPreset` records that capture full FTMW

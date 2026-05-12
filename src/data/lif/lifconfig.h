@@ -70,9 +70,9 @@ public:
 
     /*!
      * \brief Construct with the hardware key of the LIF digitizer.
-     * \param scopeHwKey Hardware key string identifying the LIF digitizer.
+     * \param digitizerHwKey Hardware key string identifying the LIF digitizer.
      */
-    LifConfig(const QString& scopeHwKey);
+    LifConfig(const QString& digitizerHwKey);
     ~LifConfig() = default;
 
     bool d_complete{false};                         ///< Set to \c true once the first full sweep is complete.
@@ -98,12 +98,12 @@ public:
     /*!
      * \brief Return a mutable reference to the LIF digitizer configuration.
      */
-    LifDigitizerConfig &scopeConfig() { return *ps_scopeConfig; }
+    LifDigitizerConfig &digitizerConfig() { return *ps_digitizerConfig; }
 
     /*!
      * \brief Return a const reference to the LIF digitizer configuration.
      */
-    const LifDigitizerConfig &scopeConfig() const { return std::as_const(*ps_scopeConfig); }
+    const LifDigitizerConfig &digitizerConfig() const { return std::as_const(*ps_digitizerConfig); }
 
     /*!
      * \brief Return \c true when d_complete is set and (if ContinueAveraging) once at 1000 per-mille.
@@ -179,7 +179,7 @@ public:
 
 private:
     std::shared_ptr<LifStorage> ps_storage;
-    std::shared_ptr<LifDigitizerConfig> ps_scopeConfig;
+    std::shared_ptr<LifDigitizerConfig> ps_digitizerConfig;
     QString d_laserUnits{"nm"};
     int d_currentDelayIndex{0};
     int d_currentLaserIndex{0};

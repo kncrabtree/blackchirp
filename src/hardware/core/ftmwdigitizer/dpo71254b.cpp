@@ -6,7 +6,7 @@
 #include <math.h>
 #include <hardware/core/hardwareregistration.h>
 
-using namespace BC::Key::FtmwScope;
+using namespace BC::Key::FtmwDigitizer;
 using namespace BC::Key::Digi;
 
 // Register this hardware implementation
@@ -33,7 +33,7 @@ REGISTER_HARDWARE_ARRAY_ENTRY(Dpo71254b, sampleRates,
     {{srText, "50 GSa/s"}, {srValue, 50e9}})
 
 Dpo71254b::Dpo71254b(const QString& label, QObject *parent) :
-    FtmwScope(QString(Dpo71254b::staticMetaObject.className()), label, parent),
+    FtmwDigitizer(QString(Dpo71254b::staticMetaObject.className()), label, parent),
     d_waitingForReply(false), d_foundHeader(false),
     d_headerNumBytes(0), d_waveformBytes(0)
 {
@@ -98,7 +98,7 @@ bool Dpo71254b::prepareForExperiment(Experiment &exp)
     if(!d_enabledForExperiment)
         return true;
 
-    auto &config = exp.ftmwConfig()->scopeConfig();
+    auto &config = exp.ftmwConfig()->digitizerConfig();
 
     disconnect(p_socket,&QTcpSocket::readyRead,this,&Dpo71254b::readWaveform);
 

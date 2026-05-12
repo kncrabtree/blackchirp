@@ -181,12 +181,12 @@ HardwareLoadout LoadoutManagerTest::makeWithPresets()
     lo.hardwareMap = {
         {u"Clock.ref"_s,      u"VirtualClock"_s},
         {u"AWG.main"_s,       u"VirtualAwg"_s},
-        {u"FtmwScope.main"_s, u"VirtualScope"_s},
+        {u"FtmwDigitizer.main"_s, u"VirtualDigitizer"_s},
     };
 
-    lo.ftmwPresets[u"Primary"_s]   = makeFtmwPreset(u"FtmwScope.main"_s);
-    lo.ftmwPresets[u"Secondary"_s] = makeFtmwPreset(u"FtmwScope.main"_s);
-    lo.ftmwPresets[lastUsedFtmwPresetName.toString()] = makeFtmwPreset(u"FtmwScope.main"_s);
+    lo.ftmwPresets[u"Primary"_s]   = makeFtmwPreset(u"FtmwDigitizer.main"_s);
+    lo.ftmwPresets[u"Secondary"_s] = makeFtmwPreset(u"FtmwDigitizer.main"_s);
+    lo.ftmwPresets[lastUsedFtmwPresetName.toString()] = makeFtmwPreset(u"FtmwDigitizer.main"_s);
 
     lo.currentFtmwPresetName = u"Secondary"_s;
 
@@ -397,7 +397,7 @@ void LoadoutManagerTest::testDigitizerChannelArrayRoundTrip()
 {
     using namespace Qt::StringLiterals;
 
-    FtmwDigitizerConfig cfg(u"FtmwScope.test"_s);
+    FtmwDigitizerConfig cfg(u"FtmwDigitizer.test"_s);
     cfg.d_analogChannels[0]  = {true,  0.05, -0.01};
     cfg.d_analogChannels[1]  = {false, 0.5,   0.0};
     cfg.d_digitalChannels[0] = {true,  true,  2};
@@ -408,7 +408,7 @@ void LoadoutManagerTest::testDigitizerChannelArrayRoundTrip()
     const auto digital  = digitizerDigitalArray(cfg);
     const auto scalars  = digitizerScalarsMap(cfg);
     const FtmwDigitizerConfig back = ftmwDigitizerFromMaps(
-        u"FtmwScope.test"_s, scalars, analog, digital);
+        u"FtmwDigitizer.test"_s, scalars, analog, digital);
 
     QCOMPARE(back.d_analogChannels.size(),  cfg.d_analogChannels.size());
     for (const auto &[idx, ch] : cfg.d_analogChannels) {
@@ -456,7 +456,7 @@ void LoadoutManagerTest::testLoadoutsMatchingHwKey()
     QVERIFY(!clockMatches.contains(u"B"_s));
     QVERIFY(clockMatches.contains(u"C"_s));
 
-    const QStringList noMatches = lm->loadoutsMatchingHwKey(u"FtmwScope.main"_s);
+    const QStringList noMatches = lm->loadoutsMatchingHwKey(u"FtmwDigitizer.main"_s);
     QVERIFY(noMatches.isEmpty());
 }
 
@@ -522,13 +522,13 @@ void LoadoutManagerTest::testFtmwPresetCrud()
 
     HardwareLoadout lo;
     lo.name = u"CrudTest"_s;
-    lo.hardwareMap = {{u"FtmwScope.main"_s, u"VirtualScope"_s}};
+    lo.hardwareMap = {{u"FtmwDigitizer.main"_s, u"VirtualDigitizer"_s}};
 
     std::unique_ptr<LoadoutManager> lm(makeLm());
     lm->putLoadout(lo);
 
     // put and get
-    const FtmwPreset p1 = makeFtmwPreset(u"FtmwScope.main"_s);
+    const FtmwPreset p1 = makeFtmwPreset(u"FtmwDigitizer.main"_s);
     QVERIFY(lm->putFtmwPreset(u"CrudTest"_s, u"Alpha"_s, p1));
     QVERIFY(lm->ftmwPresetExists(u"CrudTest"_s, u"Alpha"_s));
 
@@ -578,12 +578,12 @@ void LoadoutManagerTest::testCurrentFtmwPresetPointers()
 
     HardwareLoadout lo;
     lo.name = u"PointerTest"_s;
-    lo.hardwareMap = {{u"FtmwScope.main"_s, u"VirtualScope"_s}};
+    lo.hardwareMap = {{u"FtmwDigitizer.main"_s, u"VirtualDigitizer"_s}};
 
     std::unique_ptr<LoadoutManager> lm(makeLm());
     lm->putLoadout(lo);
 
-    const FtmwPreset p = makeFtmwPreset(u"FtmwScope.main"_s);
+    const FtmwPreset p = makeFtmwPreset(u"FtmwDigitizer.main"_s);
     lm->putFtmwPreset(u"PointerTest"_s, u"A"_s, p);
     lm->putFtmwPreset(u"PointerTest"_s, u"B"_s, p);
 
@@ -623,12 +623,12 @@ void LoadoutManagerTest::testRenameFtmwPresetRewritesPointers()
 
     HardwareLoadout lo;
     lo.name = u"RenameTest"_s;
-    lo.hardwareMap = {{u"FtmwScope.main"_s, u"VirtualScope"_s}};
+    lo.hardwareMap = {{u"FtmwDigitizer.main"_s, u"VirtualDigitizer"_s}};
 
     std::unique_ptr<LoadoutManager> lm(makeLm());
     lm->putLoadout(lo);
 
-    const FtmwPreset p = makeFtmwPreset(u"FtmwScope.main"_s);
+    const FtmwPreset p = makeFtmwPreset(u"FtmwDigitizer.main"_s);
     lm->putFtmwPreset(u"RenameTest"_s, u"OldName"_s, p);
     lm->setCurrentFtmwPresetName(u"RenameTest"_s, u"OldName"_s);
 
@@ -665,12 +665,12 @@ void LoadoutManagerTest::testRemoveLoadoutCascadesFtmwPresets()
 
     HardwareLoadout lo;
     lo.name = u"CascadeTest"_s;
-    lo.hardwareMap = {{u"FtmwScope.main"_s, u"VirtualScope"_s}};
+    lo.hardwareMap = {{u"FtmwDigitizer.main"_s, u"VirtualDigitizer"_s}};
 
     std::unique_ptr<LoadoutManager> lm(makeLm());
     lm->putLoadout(lo);
-    lm->putFtmwPreset(u"CascadeTest"_s, u"P1"_s, makeFtmwPreset(u"FtmwScope.main"_s));
-    lm->putFtmwPreset(u"CascadeTest"_s, u"P2"_s, makeFtmwPreset(u"FtmwScope.main"_s));
+    lm->putFtmwPreset(u"CascadeTest"_s, u"P1"_s, makeFtmwPreset(u"FtmwDigitizer.main"_s));
+    lm->putFtmwPreset(u"CascadeTest"_s, u"P2"_s, makeFtmwPreset(u"FtmwDigitizer.main"_s));
     QCOMPARE(lm->ftmwPresetNames(u"CascadeTest"_s).size(), 2);
 
     QVERIFY(lm->removeLoadout(u"CascadeTest"_s));

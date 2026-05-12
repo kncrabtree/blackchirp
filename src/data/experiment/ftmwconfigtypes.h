@@ -17,9 +17,9 @@ class FtmwConfigSingle : public FtmwConfig
 public:
     /*!
      * \brief Construct with the hardware key of the FtmwDigitizer.
-     * \param scopeHwKey Hardware key string identifying the digitizer.
+     * \param digitizerHwKey Hardware key string identifying the digitizer.
      */
-    FtmwConfigSingle(const QString& scopeHwKey);
+    FtmwConfigSingle(const QString& digitizerHwKey);
 
     /*!
      * \brief Construct from a deserialized FtmwConfig value object.
@@ -62,9 +62,9 @@ class FtmwConfigPeakUp : public FtmwConfig
 public:
     /*!
      * \brief Construct with the hardware key of the FtmwDigitizer.
-     * \param scopeHwKey Hardware key string identifying the digitizer.
+     * \param digitizerHwKey Hardware key string identifying the digitizer.
      */
-    FtmwConfigPeakUp(const QString& scopeHwKey);
+    FtmwConfigPeakUp(const QString& digitizerHwKey);
 
     /*!
      * \brief Construct from a deserialized FtmwConfig value object.
@@ -109,9 +109,9 @@ class FtmwConfigDuration : public FtmwConfig
 public:
     /*!
      * \brief Construct with the hardware key of the FtmwDigitizer.
-     * \param scopeHwKey Hardware key string identifying the digitizer.
+     * \param digitizerHwKey Hardware key string identifying the digitizer.
      */
-    FtmwConfigDuration(const QString& scopeHwKey);
+    FtmwConfigDuration(const QString& digitizerHwKey);
 
     /*!
      * \brief Construct from a deserialized FtmwConfig value object.
@@ -156,9 +156,9 @@ class FtmwConfigForever : public FtmwConfig
 public:
     /*!
      * \brief Construct with the hardware key of the FtmwDigitizer.
-     * \param scopeHwKey Hardware key string identifying the digitizer.
+     * \param digitizerHwKey Hardware key string identifying the digitizer.
      */
-    FtmwConfigForever(const QString& scopeHwKey);
+    FtmwConfigForever(const QString& digitizerHwKey);
 
     /*!
      * \brief Construct from a deserialized FtmwConfig value object.
@@ -214,9 +214,9 @@ class FtmwConfigLOScan : public FtmwConfig
 public:
     /*!
      * \brief Construct with the hardware key of the FtmwDigitizer.
-     * \param scopeHwKey Hardware key string identifying the digitizer.
+     * \param digitizerHwKey Hardware key string identifying the digitizer.
      */
-    FtmwConfigLOScan(const QString& scopeHwKey);
+    FtmwConfigLOScan(const QString& digitizerHwKey);
 
     /*!
      * \brief Construct from a deserialized FtmwConfig value object.
@@ -273,9 +273,9 @@ class FtmwConfigDRScan : public FtmwConfig
 public:
     /*!
      * \brief Construct with the hardware key of the FtmwDigitizer.
-     * \param scopeHwKey Hardware key string identifying the digitizer.
+     * \param digitizerHwKey Hardware key string identifying the digitizer.
      */
-    FtmwConfigDRScan(const QString& scopeHwKey);
+    FtmwConfigDRScan(const QString& digitizerHwKey);
 
     /*!
      * \brief Construct from a deserialized FtmwConfig value object.

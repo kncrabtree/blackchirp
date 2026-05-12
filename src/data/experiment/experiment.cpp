@@ -12,7 +12,7 @@
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
-#include <hardware/core/lifdigitizer/lifscope.h>
+#include <hardware/core/lifdigitizer/lifdigitizer.h>
 
 #include <QFile>
 #include <QSaveFile>
@@ -217,11 +217,11 @@ void Experiment::initOptHwFromData()
                 addOptHwConfig(TemperatureControllerConfig(key));
                 break;
             case BC::Data::HardwareType::Unknown:
-            case BC::Data::HardwareType::FtmwScope:
+            case BC::Data::HardwareType::FtmwDigitizer:
             case BC::Data::HardwareType::Clock:
             case BC::Data::HardwareType::AWG:
             case BC::Data::HardwareType::GPIBController:
-            case BC::Data::HardwareType::LifScope:
+            case BC::Data::HardwareType::LifDigitizer:
             case BC::Data::HardwareType::LifLaser:
                 break;
         }
@@ -233,33 +233,33 @@ FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)
 
     disableFtmw();
 
-    // Find FTMW scope key from hardware map
-    QString scopeHwKey;
+    // Find FTMW digitizer key from hardware map
+    QString digitizerHwKey;
     for (auto it = d_hardwareData.hardwareMap.cbegin(); it != d_hardwareData.hardwareMap.cend(); ++it) {
-        if (it.value().type == BC::Data::HardwareType::FtmwScope) {
-            scopeHwKey = it.key();
+        if (it.value().type == BC::Data::HardwareType::FtmwDigitizer) {
+            digitizerHwKey = it.key();
             break;
         }
     }
 
     switch(type) {
     case FtmwConfig::Target_Shots:
-        ps_ftmwConfig = std::make_shared<FtmwConfigSingle>(scopeHwKey);
+        ps_ftmwConfig = std::make_shared<FtmwConfigSingle>(digitizerHwKey);
         break;
     case FtmwConfig::Target_Duration:
-        ps_ftmwConfig = std::make_shared<FtmwConfigDuration>(scopeHwKey);
+        ps_ftmwConfig = std::make_shared<FtmwConfigDuration>(digitizerHwKey);
         break;
     case FtmwConfig::Peak_Up:
-        ps_ftmwConfig = std::make_shared<FtmwConfigPeakUp>(scopeHwKey);
+        ps_ftmwConfig = std::make_shared<FtmwConfigPeakUp>(digitizerHwKey);
         break;
     case FtmwConfig::Forever:
-        ps_ftmwConfig = std::make_shared<FtmwConfigForever>(scopeHwKey);
+        ps_ftmwConfig = std::make_shared<FtmwConfigForever>(digitizerHwKey);
         break;
     case FtmwConfig::LO_Scan:
-        ps_ftmwConfig = std::make_shared<FtmwConfigLOScan>(scopeHwKey);
+        ps_ftmwConfig = std::make_shared<FtmwConfigLOScan>(digitizerHwKey);
         break;
     case FtmwConfig::DR_Scan:
-        ps_ftmwConfig = std::make_shared<FtmwConfigDRScan>(scopeHwKey);
+        ps_ftmwConfig = std::make_shared<FtmwConfigDRScan>(digitizerHwKey);
         break;
     default:
         break;
@@ -475,16 +475,16 @@ LifConfig *Experiment::enableLif()
 {
     disableLif();
 
-    // Look for LIF scope in hardware map using robust type identification
-    QString scopeHwKey;
+    // Look for LIF digitizer in hardware map using robust type identification
+    QString digitizerHwKey;
     for (auto it = d_hardwareData.hardwareMap.cbegin(); it != d_hardwareData.hardwareMap.cend(); ++it) {
-        if (it.value().type == BC::Data::HardwareType::LifScope) {
-            scopeHwKey = it.key();
+        if (it.value().type == BC::Data::HardwareType::LifDigitizer) {
+            digitizerHwKey = it.key();
             break;
         }
     }
 
-    ps_lifCfg = std::make_shared<LifConfig>(scopeHwKey);
+    ps_lifCfg = std::make_shared<LifConfig>(digitizerHwKey);
     
     // Look for LIF laser to get units information
     for (auto it = d_hardwareData.hardwareMap.cbegin(); it != d_hardwareData.hardwareMap.cend(); ++it) {

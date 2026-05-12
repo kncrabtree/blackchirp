@@ -7,7 +7,7 @@
    single: trampoline; Python
    single: relay request
    single: proxy injection
-   single: scope proxy
+   single: digi proxy
    single: waveform push
    single: state-management patterns; A/B/C
    single: hot reload; Python script
@@ -21,7 +21,7 @@ Python without modifying or recompiling the application. From the
 contributor's side, a Python driver is a *trampoline*: a C++
 class that inherits from one of the hardware base classes
 (:cpp:class:`AWG`, :cpp:class:`Clock`, :cpp:class:`FlowController`,
-:cpp:class:`FtmwScope`, …) and from :cpp:class:`PythonHardwareBase`
+:cpp:class:`FtmwDigitizer`, …) and from :cpp:class:`PythonHardwareBase`
 via multiple inheritance. The hardware base supplies the Qt
 slot/signal API the rest of Blackchirp consumes; the mixin owns a
 child Python interpreter, a :cpp:class:`PythonProcess` that talks to
@@ -132,8 +132,8 @@ appears.
 ``waveformReceived`` from inside ``sendRequest``. The trampoline's
 slot must therefore not re-enter ``sendRequest``: the only safe
 operation is to forward the bytes into the
-:cpp:class:`WaveformBuffer`. ``PythonFtmwScope::onWaveformReceived``
-calls :cpp:func:`FtmwScope::emitShot` and returns; that is the
+:cpp:class:`WaveformBuffer`. ``PythonFtmwDigitizer::onWaveformReceived``
+calls :cpp:func:`FtmwDigitizer::emitShot` and returns; that is the
 shape every push-style handler must follow. Reentering
 ``sendRequest`` from a slot the nested loop has dispatched
 serializes incorrectly with the in-flight call and is undefined.
@@ -156,7 +156,7 @@ the ``_init`` payload:
 .. code-block:: json
 
    {"method": "_init", "key": "...", "model": "...",
-    "proxies": ["scope"]}
+    "proxies": ["digi"]}
 
 On the Python side, the host script keeps a factory map and only
 instantiates the proxies the C++ side requested:
@@ -164,19 +164,19 @@ instantiates the proxies the C++ side requested:
 .. code-block:: python
 
    _OPTIONAL_PROXY_FACTORIES = {
-       "scope": ScopeProxy,
+       "digi": DigitizerProxy,
    }
    for name in request.get("proxies", []):
        factory = _OPTIONAL_PROXY_FACTORIES.get(name)
        if factory:
            setattr(user_obj, name, factory())
 
-The single optional proxy that ships today is ``ScopeProxy``, which
+The single optional proxy that ships today is ``DigitizerProxy``, which
 push-streams base64-encoded waveforms to C++:
 
 .. code-block:: python
 
-   class ScopeProxy:
+   class DigitizerProxy:
        def emit_shot(self, raw_bytes, shots=1):
            b64 = base64.b64encode(bytes(raw_bytes)).decode('ascii')
            _send_json({"waveform": b64, "shots": shots})
@@ -220,7 +220,7 @@ or the per-base variant on the intermediate bases that
 ``pcReadSettings``, ``tcReadSettings``, ``pgReadSettings``,
 ``awgReadSettings``, ``clockReadSettings``, ``ftmwReadSettings``,
 ``gpibReadSettings``, ``ioReadSettings``, ``lifLaserReadSettings``,
-``lifScopeReadSettings``) into
+``lifDigitizerReadSettings``) into
 IPC dispatches, and the static helpers that find the host script
 and resolve a Python interpreter. The mixin's constructor takes the hardware key and
 model strings and stores them; it does not need a back-pointer to
@@ -272,7 +272,7 @@ The members the mixin owns and exposes to subclasses:
   ``fcReadSettings``, ``pcReadSettings``, ``tcReadSettings``,
   ``pgReadSettings``, ``awgReadSettings``, ``clockReadSettings``,
   ``ftmwReadSettings``, ``gpibReadSettings``, ``ioReadSettings``,
-  ``lifLaserReadSettings``, or ``lifScopeReadSettings`` — when the
+  ``lifLaserReadSettings``, or ``lifDigitizerReadSettings`` — when the
   parent base ``final``-overrides ``hwReadSettings``) delegate to these helpers.
   ``pythonReadSettings`` deliberately sends ``read_settings`` over
   IPC rather than restarting the subprocess, because a restart
@@ -308,7 +308,7 @@ The base class **inherits** from a complex config class (a
 sample rates, multi-record state, and so on). Per-call setters do
 not exist; the experiment hands the trampoline a desired config,
 and the trampoline applies it in one shot via a virtual
-``configure`` (or, for :cpp:class:`FtmwScope`, an override of
+``configure`` (or, for :cpp:class:`FtmwDigitizer`, an override of
 :cpp:func:`HardwareObject::prepareForExperiment`). The trampoline
 serializes the full config to JSON, sends a ``configure`` IPC call,
 parses a validated config back from the response, and copies it
@@ -317,14 +317,14 @@ The Python side decides which keys to clamp.
 
 Examples: :cpp:class:`PythonIOBoard` overriding
 :cpp:func:`IOBoard::configure`,
-:cpp:class:`PythonLifScope` overriding
-:cpp:func:`LifScope::configure`. :cpp:class:`FtmwScope` does **not**
+:cpp:class:`PythonLifDigitizer` overriding
+:cpp:func:`LifDigitizer::configure`. :cpp:class:`FtmwDigitizer` does **not**
 expose a ``configure`` virtual; each subclass overrides
 :cpp:func:`HardwareObject::prepareForExperiment` directly.
-:cpp:class:`PythonFtmwScope` follows that convention: it overrides
+:cpp:class:`PythonFtmwDigitizer` follows that convention: it overrides
 ``prepareForExperiment`` to serialize the
 :cpp:class:`FtmwDigitizerConfig` over JSON IPC, then leaves the
-final ``hwPrepareForExperiment`` in :cpp:class:`FtmwScope` to
+final ``hwPrepareForExperiment`` in :cpp:class:`FtmwDigitizer` to
 construct the :cpp:class:`WaveformBuffer` from the validated
 config in the usual way. No bespoke buffer wiring is needed in
 the trampoline.
@@ -446,7 +446,7 @@ A new ``Python<Type>`` trampoline follows a fixed recipe.
    variant (``fcReadSettings``, ``pcReadSettings``, ``tcReadSettings``,
    ``pgReadSettings``, ``awgReadSettings``, ``clockReadSettings``,
    ``ftmwReadSettings``, ``gpibReadSettings``, ``ioReadSettings``,
-   ``lifLaserReadSettings``, or ``lifScopeReadSettings``) for the
+   ``lifLaserReadSettings``, or ``lifDigitizerReadSettings``) for the
    intermediate bases that do.
 
 5. **Implement the hardware-specific virtuals as IPC dispatches.**
@@ -457,9 +457,9 @@ A new ``Python<Type>`` trampoline follows a fixed recipe.
      Serialize the full config to JSON, send a ``configure``
      IPC call, deserialize the validated dict from
      ``result.config`` back onto the C++ side.
-     :cpp:class:`PythonFtmwScope` overrides
+     :cpp:class:`PythonFtmwDigitizer` overrides
      :cpp:func:`HardwareObject::prepareForExperiment` directly
-     because :cpp:class:`FtmwScope` does not expose a
+     because :cpp:class:`FtmwDigitizer` does not expose a
      ``configure`` virtual.
    - **Pattern B** — implement each ``hw*`` pure virtual as a
      standalone :cpp:func:`PythonProcess::sendRequest` call.
@@ -477,14 +477,14 @@ A new ``Python<Type>`` trampoline follows a fixed recipe.
 
    .. code-block:: cpp
 
-      pu_process->setEnabledProxies({"scope"_L1});
+      pu_process->setEnabledProxies({"digi"_L1});
       connect(pu_process.get(), &PythonProcess::waveformReceived,
-              this, &PythonFtmwScope::onWaveformReceived);
+              this, &PythonFtmwDigitizer::onWaveformReceived);
 
    The handler slot honors the reentrancy contract from
    :ref:`python-hw-push-reentrancy` — it forwards the bytes to
-   :cpp:func:`FtmwScope::emitShot` (FTMW) or to
-   :cpp:func:`LifScope::emitWaveform` (LIF) and returns.
+   :cpp:func:`FtmwDigitizer::emitShot` (FTMW) or to
+   :cpp:func:`LifDigitizer::emitWaveform` (LIF) and returns.
 
 7. **Register the class.** :cpp:any:`REGISTER_HARDWARE_META`,
    :cpp:any:`REGISTER_HARDWARE_PROTOCOLS`, and any
@@ -505,7 +505,7 @@ A new ``Python<Type>`` trampoline follows a fixed recipe.
 8. **Ship a template script.** Add
    ``python_<type>_template.py`` next to the trampoline source.
    The template defines a single class — ``AwgDriver``,
-   ``FtmwScopeDriver``, etc. — that works out of the box on the
+   ``FtmwDigitizerDriver``, etc. — that works out of the box on the
    ``Virtual`` protocol and documents every method. The host
    script's generic-keyword dispatch means the template is the
    contract the user code must satisfy; no host-side change is

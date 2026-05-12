@@ -1,21 +1,21 @@
-#ifndef VIRTUALFTMWSCOPE_H
-#define VIRTUALFTMWSCOPE_H
+#ifndef VIRTUALFTMWDIGITIZER_H
+#define VIRTUALFTMWDIGITIZER_H
 
-#include <hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/core/ftmwdigitizer/ftmwdigitizer.h>
 
 #include <QVector>
 #include <QTimer>
 
-namespace BC::Key::FtmwScope {
+namespace BC::Key::FtmwDigitizer {
 inline constexpr QLatin1StringView interval{"shotIntervalMs"};
 }
 
-class VirtualFtmwScope : public FtmwScope
+class VirtualFtmwDigitizer : public FtmwDigitizer
 {
     Q_OBJECT
 public:
-    explicit VirtualFtmwScope(const QString& label, QObject *parent = nullptr);
-    ~VirtualFtmwScope();
+    explicit VirtualFtmwDigitizer(const QString& label, QObject *parent = nullptr);
+    ~VirtualFtmwDigitizer();
 
     // HardwareObject interface
 public slots:
@@ -37,4 +37,4 @@ private:
     void generateSimulatedFid();
 };
 
-#endif // VIRTUALFTMWSCOPE_H
+#endif // VIRTUALFTMWDIGITIZER_H

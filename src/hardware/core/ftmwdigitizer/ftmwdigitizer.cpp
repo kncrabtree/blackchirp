@@ -1,4 +1,4 @@
-#include <hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/core/ftmwdigitizer/ftmwdigitizer.h>
 
 #include <cstring>
 
@@ -7,7 +7,7 @@
 
 using namespace BC::Key::Digi;
 
-REGISTER_HARDWARE_BASE(FtmwScope,
+REGISTER_HARDWARE_BASE(FtmwDigitizer,
     {numAnalogChannels,  "Analog Channels",  "Number of analog inputs",
      4, 1, 32, HwSettingPriority::Required},
     {numDigitalChannels, "Digital Channels",  "Number of digital inputs",
@@ -46,15 +46,15 @@ REGISTER_HARDWARE_BASE(FtmwScope,
      false, QVariant{}, QVariant{}, HwSettingPriority::Optional},
     {maxBytes,           "Max Bytes/Point",     "Maximum bytes per data point",
      2, 1, 8, HwSettingPriority::Optional},
-    {BC::Key::FtmwScope::bandwidth, "Bandwidth (MHz)", "Analog bandwidth",
+    {BC::Key::FtmwDigitizer::bandwidth, "Bandwidth (MHz)", "Analog bandwidth",
      16000.0, QVariant{}, QVariant{}, HwSettingPriority::Important}
 )
-REGISTER_HARDWARE_BASE_ARRAY(FtmwScope, sampleRates,
+REGISTER_HARDWARE_BASE_ARRAY(FtmwDigitizer, sampleRates,
     "Sample Rates", "Available digitizer sample rates", HwSettingPriority::Important)
 
-FtmwScope::FtmwScope(const QString& impl, const QString& label, QObject *parent) :
-    HardwareObject(QString(FtmwScope::staticMetaObject.className()), impl, label, parent),
-    FtmwDigitizerConfig(BC::Key::hwKey(QString(FtmwScope::staticMetaObject.className()), label))
+FtmwDigitizer::FtmwDigitizer(const QString& impl, const QString& label, QObject *parent) :
+    HardwareObject(QString(FtmwDigitizer::staticMetaObject.className()), impl, label, parent),
+    FtmwDigitizerConfig(BC::Key::hwKey(QString(FtmwDigitizer::staticMetaObject.className()), label))
 {
     d_threaded = true;
 
@@ -94,12 +94,12 @@ FtmwScope::FtmwScope(const QString& impl, const QString& label, QObject *parent)
     d_fidChannel = get(fidCh,0);
 }
 
-FtmwScope::~FtmwScope()
+FtmwDigitizer::~FtmwDigitizer()
 {
 
 }
 
-bool FtmwScope::hwPrepareForExperiment(Experiment &exp)
+bool FtmwDigitizer::hwPrepareForExperiment(Experiment &exp)
 {
     auto out = HardwareObject::hwPrepareForExperiment(exp);
     if(out)
@@ -127,12 +127,12 @@ bool FtmwScope::hwPrepareForExperiment(Experiment &exp)
 
 
 
-void FtmwScope::hwReadSettings()
+void FtmwDigitizer::hwReadSettings()
 {
     ftmwReadSettings();
 }
 
-void FtmwScope::setAcquisitionGated(bool gated)
+void FtmwDigitizer::setAcquisitionGated(bool gated)
 {
     d_acquisitionGated = gated;
     if(gated)
@@ -141,7 +141,7 @@ void FtmwScope::setAcquisitionGated(bool gated)
         d_discardCount = 1;
 }
 
-void FtmwScope::emitShot(const QByteArray &data)
+void FtmwDigitizer::emitShot(const QByteArray &data)
 {
     if(d_acquisitionGated)
         return;
@@ -176,7 +176,7 @@ void FtmwScope::emitShot(const QByteArray &data)
     }
 }
 
-void FtmwScope::parseAndAccumulate(const QByteArray &data)
+void FtmwDigitizer::parseAndAccumulate(const QByteArray &data)
 {
     quint64 shots = d_blockAverage ? d_numAverages : 1;
 
@@ -189,7 +189,7 @@ void FtmwScope::parseAndAccumulate(const QByteArray &data)
     d_preAccumShots += shots;
 }
 
-bool FtmwScope::flushPreAccumulated()
+bool FtmwDigitizer::flushPreAccumulated()
 {
     if(d_preAccumShots == 0)
     {
@@ -210,14 +210,14 @@ bool FtmwScope::flushPreAccumulated()
     return true;
 }
 
-void FtmwScope::resetPreAccumulation()
+void FtmwDigitizer::resetPreAccumulation()
 {
     d_preAccumData.fill(0);
     d_preAccumShots = 0;
     d_preAccumulating = false;
 }
 
-void FtmwScope::writeSettings()
+void FtmwDigitizer::writeSettings()
 {
     using namespace BC::Key::Digi;
     using namespace BC::Store::Digi;

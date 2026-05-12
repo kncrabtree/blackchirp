@@ -6,7 +6,7 @@
 #include <QSpinBox>
 #include <QInputDialog>
 
-#include <hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/core/ftmwdigitizer/ftmwdigitizer.h>
 #include <hardware/optional/chirpsource/awg.h>
 
 ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :

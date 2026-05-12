@@ -65,7 +65,7 @@ operations via the buttons below the list:
 **Save As**
     Save the current preview configuration as a new loadout with a name
     you supply. If the source loadout has named FTMW presets and the
-    FTMW-relevant hardware (AWG, FTMW Scope, Clocks) is unchanged,
+    FTMW-relevant hardware (AWG, FTMW Digitizer, Clocks) is unchanged,
     Blackchirp asks whether to copy those presets into the new loadout.
     Otherwise the new loadout starts empty.
 
@@ -146,7 +146,7 @@ Drift-Detection Prompt
 -----------------------
 
 When you save a loadout whose hardware map has changed in a way that affects
-FTMW configuration — specifically, when the set of active AWG, FTMW Scope,
+FTMW configuration — specifically, when the set of active AWG, FTMW Digitizer,
 or Clock profiles is different from what was previously saved — Blackchirp
 detects that the existing FTMW presets may no longer be compatible with the
 new hardware. This is called *hardware drift*.

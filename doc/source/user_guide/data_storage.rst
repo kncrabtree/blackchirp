@@ -99,16 +99,16 @@ hardware.csv
 This file contains the list of hardware compiled into Blackchirp when the experiment was performed. It is used in the program to determine whether it is possible to perform a Quick Experiment, which can be done only if the same hardware configuration is available. Example::
 
   key;driver
-  LifScope.Default;PythonLifScope
+  LifDigitizer.Default;PythonLifDigitizer
   PulseGenerator.Default;VirtualPulseGenerator
   LifLaser.virtual;VirtualLifLaser
   TemperatureController.default;VirtualTemperatureController
   FlowController.Main;VirtualFlowController
   Clock.virtual;FixedClock
   AWG.Ka;VirtualAwg
-  FtmwScope.virtual;VirtualFtmwScope
+  FtmwDigitizer.virtual;VirtualFtmwDigitizer
 
-The ``key`` field uses the format ``HardwareClass.Label``, where the label is the user-assigned name configured at setup time (for example, ``FtmwScope.virtual``, ``PulseGenerator.Default``, ``FlowController.Main``). The ``driver`` field records which specific hardware driver was used. The number of items in this list may vary depending on your configuration. Older experiments may carry the historical ``subKey`` header label in place of ``driver``, and a third ``hardwareType`` column carrying the integer enum value; the loader accepts either header label and silently ignores the redundant third column when present.
+The ``key`` field uses the format ``HardwareClass.Label``, where the label is the user-assigned name configured at setup time (for example, ``FtmwDigitizer.virtual``, ``PulseGenerator.Default``, ``FlowController.Main``). The ``driver`` field records which specific hardware driver was used. The number of items in this list may vary depending on your configuration. Older experiments may carry the historical ``subKey`` header label in place of ``driver``, and a third ``hardwareType`` column carrying the integer enum value; the loader accepts either header label and silently ignores the redundant third column when present.
 
 header.csv
 ..........
@@ -132,10 +132,10 @@ This file contains the vast majority of the program, acquisition, and hardware s
   FtmwConfig;;;PhaseCorrectionEnabled;false;
   FtmwConfig;;;TargetShots;100;
   FtmwConfig;;;Type;Target_Shots;
-  FtmwScope.virtual;;;RecordLength;750000;
-  FtmwScope.virtual;;;SampleRate;5e+10;Hz
+  FtmwDigitizer.virtual;;;RecordLength;750000;
+  FtmwDigitizer.virtual;;;SampleRate;5e+10;Hz
 
-There are 6 columns in total. ``ObjKey`` identifies the "object" associated with an entry. This is a concept internal to Blackchirp, but the object names are usually sufficiently descriptive. Hardware objects use the label-based key format (e.g. ``FtmwScope.virtual``, ``PulseGenerator.Default``, ``FlowController.Main``). In the example above, the ``FtmwConfig`` entries are associated with the settings pertaining to the CP-FTMW acquisition. ``ValueKey``, ``Value``, and ``Units`` together record the value and any associated units for the particular entry being made.
+There are 6 columns in total. ``ObjKey`` identifies the "object" associated with an entry. This is a concept internal to Blackchirp, but the object names are usually sufficiently descriptive. Hardware objects use the label-based key format (e.g. ``FtmwDigitizer.virtual``, ``PulseGenerator.Default``, ``FlowController.Main``). In the example above, the ``FtmwConfig`` entries are associated with the settings pertaining to the CP-FTMW acquisition. ``ValueKey``, ``Value``, and ``Units`` together record the value and any associated units for the particular entry being made.
 
 ``ArrayKey`` and ``ArrayIndex`` are used when there are multiple instances of data that would otherwise have the same ``ValueKey``. For example, a PulseGenerator object may have several channels, each one of which has an associated delay, width, etc. An example of such a situation is::
 

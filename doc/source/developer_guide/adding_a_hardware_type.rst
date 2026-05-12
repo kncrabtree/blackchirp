@@ -18,7 +18,7 @@ Adding a New Hardware Type
 
 Adding a new abstract *hardware type* — a new interface class that no
 existing driver matches, alongside :cpp:class:`AWG`,
-:cpp:class:`Clock`, :cpp:class:`FtmwScope`, :cpp:class:`FlowController`,
+:cpp:class:`Clock`, :cpp:class:`FtmwDigitizer`, :cpp:class:`FlowController`,
 and the eight other types Blackchirp ships — is the rarer and broader
 contributor task. It is a coordinated change across ``hardware/``,
 ``data/experiment/``, and ``gui/`` rather than a self-contained file
@@ -95,7 +95,7 @@ also decides what its Python side will look like.
   formed configuration in one shot. The interface class typically
   inherits its config object via multiple inheritance (the way
   :cpp:class:`IOBoard` inherits from :cpp:class:`IOBoardConfig`,
-  and :cpp:class:`FtmwScope` from
+  and :cpp:class:`FtmwDigitizer` from
   :cpp:class:`FtmwDigitizerConfig`), final-overrides
   :cpp:func:`HardwareObject::hwPrepareForExperiment` to pull the
   desired config out of the experiment, dispatch a pure-virtual
@@ -138,7 +138,7 @@ profile threading at profile creation time
 (:doc:`/developer_guide/hardware_runtime` covers the runtime side).
 The same is true for ``d_critical``, which defaults to ``true``;
 override only when the device is non-essential by nature (the
-existing :cpp:class:`Clock` / :cpp:class:`FtmwScope` types use the
+existing :cpp:class:`Clock` / :cpp:class:`FtmwDigitizer` types use the
 default; an instrument whose absence should never abort an
 experiment is the rare exception).
 
@@ -198,7 +198,7 @@ travel with the experiment record, plan a dedicated
 :cpp:class:`HeaderStorage` subclass — the role
 :cpp:class:`FlowConfig` plays for :cpp:class:`FlowController`,
 :cpp:class:`IOBoardConfig` for :cpp:class:`IOBoard`,
-:cpp:class:`LifDigitizerConfig` for :cpp:class:`LifScope`. The
+:cpp:class:`LifDigitizerConfig` for :cpp:class:`LifDigitizer`. The
 config object owns the storeValues / retrieveValues / prepareChildren
 contract from :doc:`/developer_guide/persistence`; the interface
 class registers the validated config with
@@ -319,7 +319,7 @@ in detail; the points specific to a new type are:
 
 1. **Place the interface source files.** Pick whether the type is
    *core* (required to run an FTMW experiment, like
-   :cpp:class:`Clock` or :cpp:class:`FtmwScope`) or *optional*
+   :cpp:class:`Clock` or :cpp:class:`FtmwDigitizer`) or *optional*
    (everything else). Put the interface ``.cpp``/``.h`` in a new
    subdirectory under ``src/hardware/core/<type>/`` or
    ``src/hardware/optional/<type>/``. Drivers of the
@@ -446,7 +446,7 @@ overrides land. Most types do **not** need to override every hook
   ``fcReadSettings``, ``pcReadSettings``, ``tcReadSettings``,
   ``pgReadSettings``, ``awgReadSettings``, ``clockReadSettings``,
   ``ftmwReadSettings``, ``gpibReadSettings``, ``ioReadSettings``,
-  ``lifLaserReadSettings``, ``lifScopeReadSettings``); pick the matching
+  ``lifLaserReadSettings``, ``lifDigitizerReadSettings``); pick the matching
   prefix for the new type. The ``final`` on
   ``hwReadSettings`` makes it impossible for a derived driver — most
   importantly a Python trampoline — to silently skip the type-level
@@ -669,7 +669,7 @@ Conventions for the virtual driver:
   alongside the interface class. Class name ``Virtual<TypeName>``
   (matching the existing :cpp:class:`VirtualAwg`,
   :cpp:class:`VirtualFlowController`,
-  :cpp:class:`VirtualIOBoard`, :cpp:class:`VirtualFtmwScope`
+  :cpp:class:`VirtualIOBoard`, :cpp:class:`VirtualFtmwDigitizer`
   pattern).
 - Inherits from the new interface class. Implements every pure
   virtual the interface declares — the ``hw*`` slots for Pattern

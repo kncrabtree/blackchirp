@@ -12,9 +12,9 @@
 #include <QReadLocker>
 #include <QWriteLocker>
 
-#include <hardware/core/ftmwdigitizer/virtualftmwscope.h>
+#include <hardware/core/ftmwdigitizer/virtualftmwdigitizer.h>
 #include <hardware/core/clock/fixedclock.h>
-#include <hardware/core/lifdigitizer/virtuallifscope.h>
+#include <hardware/core/lifdigitizer/virtuallifdigitizer.h>
 #include <hardware/core/liflaser/virtualliflaser.h>
 #include <data/storage/applicationconfigmanager.h>
 
@@ -900,21 +900,21 @@ void HardwareProfileManager::ensureSystemProfiles()
 {
     // Build the required-type -> virtual-impl map
     QMap<QString, QString> requiredVirtualMap;
-    requiredVirtualMap[QString(VirtualFtmwScope::staticMetaObject.className())] =
-        QString(VirtualFtmwScope::staticMetaObject.className());
+    requiredVirtualMap[QString(VirtualFtmwDigitizer::staticMetaObject.className())] =
+        QString(VirtualFtmwDigitizer::staticMetaObject.className());
     requiredVirtualMap[QString(FixedClock::staticMetaObject.className())] =
         QString(FixedClock::staticMetaObject.className());
 
     if (ApplicationConfigManager::instance().isLifEnabled()) {
-        requiredVirtualMap[QString(VirtualLifScope::staticMetaObject.className())] =
-            QString(VirtualLifScope::staticMetaObject.className());
+        requiredVirtualMap[QString(VirtualLifDigitizer::staticMetaObject.className())] =
+            QString(VirtualLifDigitizer::staticMetaObject.className());
         requiredVirtualMap[QString(VirtualLifLaser::staticMetaObject.className())] =
             QString(VirtualLifLaser::staticMetaObject.className());
     }
 
     // The map keys above are the implementation class names, but the hardware type keys
     // are the BASE class names. We need to look them up from the registry.
-    // FtmwScope, Clock, LifScope, LifLaser are the base type names.
+    // FtmwDigitizer, Clock, LifDigitizer, LifLaser are the base type names.
     // Build a map from hwType -> virtualImpl using RuntimeHardwareConfig::isHardwareRequired
     // and the registry to find the type each virtual class belongs to.
     HardwareRegistry& registry = HardwareRegistry::instance();

@@ -145,8 +145,8 @@ void FtmwPlotToolBar::prepareForExperiment(const Experiment &e)
         p_sbMaxBox->blockSignals(false);
 
         p_frameBox->blockSignals(true);
-        p_frameBox->setRange(1,e.ftmwConfig()->scopeConfig().d_numRecords);
-        if(e.ftmwConfig()->scopeConfig().d_numRecords > 1)
+        p_frameBox->setRange(1,e.ftmwConfig()->digitizerConfig().d_numRecords);
+        if(e.ftmwConfig()->digitizerConfig().d_numRecords > 1)
             p_frameBox->setMinimum(0);
         p_frameBox->blockSignals(false);
 
@@ -159,8 +159,8 @@ void FtmwPlotToolBar::prepareForExperiment(const Experiment &e)
         for(auto it = d_frame.begin(); it != d_frame.end(); ++it)
         {
             it->second->blockSignals(true);
-            it->second->setRange(1,e.ftmwConfig()->scopeConfig().d_numRecords);
-            if(e.ftmwConfig()->scopeConfig().d_numRecords > 1)
+            it->second->setRange(1,e.ftmwConfig()->digitizerConfig().d_numRecords);
+            if(e.ftmwConfig()->digitizerConfig().d_numRecords > 1)
                 it->second->setMinimum(0);
             it->second->blockSignals(false);
         }

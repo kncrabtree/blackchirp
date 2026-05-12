@@ -68,7 +68,7 @@
 #include <hardware/core/hardwaremanager.h>
 #include <hardware/core/hardwareprofilemanager.h>
 #include <hardware/core/runtimehardwareconfig.h>
-#include <hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/core/ftmwdigitizer/ftmwdigitizer.h>
 #include <data/loadout/loadoutmanager.h>
 #include <data/settings/hardwarekeys.h>
 #include <hardware/core/clock/fixedclock.h>
@@ -265,7 +265,7 @@ MainWindow::MainWindow(QWidget *parent) :
     if(ApplicationConfigManager::instance().isLifEnabled())
     {
         connect(p_hwm,&HardwareManager::lifSettingsComplete,p_am,&AcquisitionManager::lifHardwareReady);
-        connect(p_hwm,&HardwareManager::lifScopeShotAcquired,p_am,&AcquisitionManager::processLifScopeShot);
+        connect(p_hwm,&HardwareManager::lifDigitizerShotAcquired,p_am,&AcquisitionManager::processLifDigitizerShot);
         connect(p_am,&AcquisitionManager::nextLifPoint,p_hwm,&HardwareManager::setLifParameters);
         connect(p_am,&AcquisitionManager::lifShotAcquired,ui->lifProgressBar,&QProgressBar::setValue);
         connect(p_am,&AcquisitionManager::lifPointUpdate,ui->lifDisplayWidget,&LifDisplayWidget::updatePoint);
@@ -955,7 +955,7 @@ void MainWindow::launchFtmwConfigDialog()
         auto [type, label] = BC::Key::parseKey(k);
         if(type == BC::Key::AWG::key)
             awgHwKey = k;
-        else if(type == RuntimeHardwareConfig::hardwareTypeOf<FtmwScope>())
+        else if(type == RuntimeHardwareConfig::hardwareTypeOf<FtmwDigitizer>())
             digiHwKey = k;
     }
 
@@ -1141,7 +1141,7 @@ void MainWindow::launchLifConfigDialog()
 
     // Check if LIF hardware is available before creating dialog
     auto& runtimeConfig = RuntimeHardwareConfig::constInstance();
-    auto activeLabels = runtimeConfig.getActiveLabels<LifScope>();
+    auto activeLabels = runtimeConfig.getActiveLabels<LifDigitizer>();
     auto activeLabels2 = runtimeConfig.getActiveLabels<LifLaser>();
     if (activeLabels.isEmpty() || activeLabels2.isEmpty()) {
         QMessageBox::warning(this, "LIF Configuration", "Please configure LIF hardware before opening this dialog.");
@@ -1152,10 +1152,10 @@ void MainWindow::launchLifConfigDialog()
     d->setWindowTitle("LIF Configuration");
 
     // Create LifControlWidget with hardware keys
-    auto scopeKeys = runtimeConfig.getActiveKeys<LifScope>();
+    auto digitizerKeys = runtimeConfig.getActiveKeys<LifDigitizer>();
     auto laserKeys = runtimeConfig.getActiveKeys<LifLaser>();
 
-    auto w = new LifControlWidget(scopeKeys.first(), laserKeys.first(), d);
+    auto w = new LifControlWidget(digitizerKeys.first(), laserKeys.first(), d);
     configureLifWidget(w);
 
     auto vbl = new QVBoxLayout;
@@ -1255,7 +1255,7 @@ void MainWindow::configureLifWidget(LifControlWidget *w)
         connect(w,&LifControlWidget::startSignal,p_hwm,&HardwareManager::startLifConfigAcq);
         connect(p_hwm,&HardwareManager::lifConfigAcqStarted,w,&LifControlWidget::acquisitionStarted);
         connect(w,&LifControlWidget::stopSignal,p_hwm,&HardwareManager::stopLifConfigAcq);
-        connect(p_hwm,&HardwareManager::lifScopeShotAcquired,w,&LifControlWidget::newWaveform);
+        connect(p_hwm,&HardwareManager::lifDigitizerShotAcquired,w,&LifControlWidget::newWaveform);
         connect(w,&LifControlWidget::changeLaserPosSignal,p_hwm,&HardwareManager::setLifLaserPos);
         connect(p_hwm,&HardwareManager::lifLaserPosUpdate,w,&LifControlWidget::setLaserPosition);
         connect(w,&LifControlWidget::changeLaserFlashlampSignal,p_hwm,&HardwareManager::setLifLaserFlashlampEnabled);

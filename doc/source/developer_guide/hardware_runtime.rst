@@ -70,7 +70,7 @@ The manager owns three things outright:
 
 - The **hardware map**, ``d_hardwareMap``, a
   ``std::map<QString, HardwareObject*>`` keyed by ``"<Type>.<label>"``
-  (for example ``"FtmwScope.frontPanel"``). Read access is concurrent —
+  (for example ``"FtmwDigitizer.frontPanel"``). Read access is concurrent —
   any thread can take a read lock on ``d_hardwareMapLock`` and look up
   a device — while writes are serialized. The static accessor
   :cpp:func:`HardwareManager::constInstance` returns a const reference
@@ -135,7 +135,7 @@ On :cpp:func:`HardwareManager::initialize` the manager:
 
 1. Calls :cpp:func:`HardwareProfileManager::ensureSystemProfiles` and
    :cpp:func:`RuntimeHardwareConfig::activateMissingSystemProfiles` so
-   every required hardware type (``FtmwScope``, ``Clock``, plus the
+   every required hardware type (``FtmwDigitizer``, ``Clock``, plus the
    LIF types when LIF is enabled) has at least one active profile —
    the virtual driver when no real device is configured.
 2. Calls :cpp:func:`HardwareManager::syncWithRuntimeConfig` to
@@ -459,7 +459,7 @@ bases that ``final``-override it, the per-base hook —
 ``fcReadSettings``, ``pcReadSettings``, ``tcReadSettings``,
 ``pgReadSettings``, ``awgReadSettings``, ``clockReadSettings``,
 ``ftmwReadSettings``, ``gpibReadSettings``, ``ioReadSettings``,
-``lifLaserReadSettings``, or ``lifScopeReadSettings`` — described in
+``lifLaserReadSettings``, or ``lifDigitizerReadSettings`` — described in
 :doc:`/developer_guide/adding_a_hardware_type`). For Python-backed
 drivers this triggers an IPC ``read_settings`` message rather than
 restarting the subprocess; that path is on

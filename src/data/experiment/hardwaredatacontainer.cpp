@@ -75,7 +75,7 @@ HardwareDataContainer HardwareDataContainer::loadFromFile(const QString& filePat
         // The hardware type is fully recoverable from the key prefix in every
         // historical key shape: bare "hwType" (oldest), "hwType.index"
         // (mid-life), and "hwType.label" (current). legacyStringToHardwareType
-        // already covers known aliases (e.g. "FtmwDigitizer" -> FtmwScope).
+        // already covers known aliases (e.g. "FtmwDigitizer" -> FtmwDigitizer).
         auto keyParts = key.split('.');
         QString typeString = keyParts.isEmpty() ? key : keyParts.first();
         HardwareType hwType = HardwareDataContainer::legacyStringToHardwareType(typeString);

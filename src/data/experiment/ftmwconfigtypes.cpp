@@ -11,7 +11,7 @@
  *
  * ****************************************/
 
-FtmwConfigSingle::FtmwConfigSingle(const QString& scopeHwKey) : FtmwConfig(scopeHwKey)
+FtmwConfigSingle::FtmwConfigSingle(const QString& digitizerHwKey) : FtmwConfig(digitizerHwKey)
 {
 }
 
@@ -50,7 +50,7 @@ void FtmwConfigSingle::_loadComplete()
 
 std::shared_ptr<FidStorageBase> FtmwConfigSingle::createStorage(int num, QString path)
 {
-    return std::make_shared<FidSingleStorage>(scopeConfig().d_numRecords,num,path);
+    return std::make_shared<FidSingleStorage>(digitizerConfig().d_numRecords,num,path);
 }
 
 /******************************************
@@ -60,7 +60,7 @@ std::shared_ptr<FidStorageBase> FtmwConfigSingle::createStorage(int num, QString
  * ****************************************/
 
 
-FtmwConfigPeakUp::FtmwConfigPeakUp(const QString& scopeHwKey) : FtmwConfig(scopeHwKey)
+FtmwConfigPeakUp::FtmwConfigPeakUp(const QString& digitizerHwKey) : FtmwConfig(digitizerHwKey)
 {
 
 }
@@ -108,7 +108,7 @@ std::shared_ptr<FidStorageBase> FtmwConfigPeakUp::createStorage(int num, QString
 {
     Q_UNUSED(num)
     Q_UNUSED(path)
-    return std::make_shared<FidPeakUpStorage>(scopeConfig().d_numRecords);
+    return std::make_shared<FidPeakUpStorage>(digitizerConfig().d_numRecords);
 }
 
 
@@ -119,7 +119,7 @@ std::shared_ptr<FidStorageBase> FtmwConfigPeakUp::createStorage(int num, QString
  * ****************************************/
 
 
-FtmwConfigDuration::FtmwConfigDuration(const QString& scopeHwKey) : FtmwConfig(scopeHwKey)
+FtmwConfigDuration::FtmwConfigDuration(const QString& digitizerHwKey) : FtmwConfig(digitizerHwKey)
 {
 
 }
@@ -171,11 +171,11 @@ void FtmwConfigDuration::_loadComplete()
 
 std::shared_ptr<FidStorageBase> FtmwConfigDuration::createStorage(int num, QString path)
 {
-    return std::make_shared<FidSingleStorage>(scopeConfig().d_numRecords,num,path);
+    return std::make_shared<FidSingleStorage>(digitizerConfig().d_numRecords,num,path);
 }
 
 
-FtmwConfigForever::FtmwConfigForever(const QString& scopeHwKey) : FtmwConfig(scopeHwKey)
+FtmwConfigForever::FtmwConfigForever(const QString& digitizerHwKey) : FtmwConfig(digitizerHwKey)
 {
 
 }
@@ -219,10 +219,10 @@ void FtmwConfigForever::_loadComplete()
 
 std::shared_ptr<FidStorageBase> FtmwConfigForever::createStorage(int num, QString path)
 {
-    return std::make_shared<FidSingleStorage>(scopeConfig().d_numRecords,num,path);
+    return std::make_shared<FidSingleStorage>(digitizerConfig().d_numRecords,num,path);
 }
 
-FtmwConfigLOScan::FtmwConfigLOScan(const QString& scopeHwKey) : FtmwConfig(scopeHwKey)
+FtmwConfigLOScan::FtmwConfigLOScan(const QString& digitizerHwKey) : FtmwConfig(digitizerHwKey)
 {
 }
 
@@ -295,12 +295,12 @@ void FtmwConfigLOScan::_loadComplete()
 
 std::shared_ptr<FidStorageBase> FtmwConfigLOScan::createStorage(int num, QString path)
 {
-    auto out = std::make_shared<FidMultiStorage>(scopeConfig().d_numRecords,num,path);
+    auto out = std::make_shared<FidMultiStorage>(digitizerConfig().d_numRecords,num,path);
     out->setNumSegments(d_rfConfig.numSegments());
     return out;
 }
 
-FtmwConfigDRScan::FtmwConfigDRScan(const QString& scopeHwKey) : FtmwConfig(scopeHwKey)
+FtmwConfigDRScan::FtmwConfigDRScan(const QString& digitizerHwKey) : FtmwConfig(digitizerHwKey)
 {
 }
 
@@ -356,7 +356,7 @@ void FtmwConfigDRScan::_loadComplete()
 
 std::shared_ptr<FidStorageBase> FtmwConfigDRScan::createStorage(int num, QString path)
 {
-    auto out = std::make_shared<FidMultiStorage>(scopeConfig().d_numRecords,num,path);
+    auto out = std::make_shared<FidMultiStorage>(digitizerConfig().d_numRecords,num,path);
     out->setNumSegments(d_rfConfig.numSegments());
     return out;
 }

@@ -135,7 +135,7 @@ public:
      *
      * The three standard proxies (\c comm, \c settings, \c log) are
      * always injected. Optional proxies are hardware-type-specific
-     * push channels, currently \c "scope" for digitizer waveform
+     * push channels, currently \c "digi" for digitizer waveform
      * push. Names not registered in the host script's factory map are
      * ignored. Must be called before start(); typically invoked from
      * the trampoline's initialize override, immediately after

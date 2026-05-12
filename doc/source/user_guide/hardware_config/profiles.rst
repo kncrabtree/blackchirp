@@ -16,7 +16,7 @@ Hardware Profiles
 A **hardware profile** is a persistent record that binds three pieces of
 information:
 
-- **Type** — the hardware role (e.g., ``FtmwScope``, ``AWG``,
+- **Type** — the hardware role (e.g., ``FtmwDigitizer``, ``AWG``,
   ``PulseGenerator``, ``FlowController``). The type categorizes which kind
   of hardware this profile represents.
 - **Label** — a short, user-chosen name that distinguishes profiles of the
@@ -87,7 +87,7 @@ organized into priority sections.
    :alt: Add Profile dialog showing the Driver, Label, and Required and Important Settings sections
    :align: center
 
-   The Add Profile dialog (here shown for an FtmwScope profile). The
+   The Add Profile dialog (here shown for an FtmwDigitizer profile). The
    **Settings** tab contains the **Required Settings** and **Important
    Settings** sections; the **Advanced** tab (if present) hosts optional
    settings.
@@ -154,8 +154,8 @@ it from the active loadout's hardware map without deleting the profile. The
 profile's settings are preserved and it can be re-enabled at any time.
 
 Some hardware types are *single-instance*: only one profile of that type
-may be active in a loadout simultaneously. These are **FTMW Scope**,
-**AWG**, **LIF Scope**, and **LIF Laser**. Enabling a second profile of a
+may be active in a loadout simultaneously. These are **FTMW Digitizer**,
+**AWG**, **LIF Digitizer**, and **LIF Laser**. Enabling a second profile of a
 single-instance type automatically disables the first.
 
 All other hardware types are *multi-instance*: you may enable several

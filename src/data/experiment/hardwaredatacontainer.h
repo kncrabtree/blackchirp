@@ -32,11 +32,11 @@ enum class HardwareType {
     FlowController,
     PressureController,
     TemperatureController,
-    FtmwScope,
+    FtmwDigitizer,
     Clock,
     AWG,
     GPIBController,
-    LifScope,
+    LifDigitizer,
     LifLaser
     // Add other types as needed during migration
 };
@@ -75,7 +75,7 @@ struct HardwareDataContainer {
      * these remain empty and hardwareMap is accessed directly.
      */
     struct TypeKeys {
-        QString ftmwScope;              /*!< FTMW digitizer type key (e.g., "FtmwScope") */
+        QString ftmwDigitizer;              /*!< FTMW digitizer type key (e.g., "FtmwDigitizer") */
         QString clock;                  /*!< Clock type key (e.g., "Clock") */
         QString awg;                    /*!< AWG type key (e.g., "AWG") */
         QString pulseGenerator;         /*!< Pulse generator type key (e.g., "PulseGenerator") */
@@ -84,7 +84,7 @@ struct HardwareDataContainer {
         QString gpibController;         /*!< GPIB controller type key (e.g., "GPIBController") */
         QString pressureController;     /*!< Pressure controller type key (e.g., "PressureController") */
         QString temperatureController;  /*!< Temperature controller type key (e.g., "TemperatureController") */
-        QString lifScope;               /*!< LIF digitizer type key (e.g., "LifScope") */
+        QString lifDigitizer;           /*!< LIF digitizer type key (e.g., "LifDigitizer") */
         QString lifLaser;               /*!< LIF laser type key (e.g., "LifLaser") */
         
         /*!
@@ -92,10 +92,10 @@ struct HardwareDataContainer {
          * \return True if at least some type keys are set (indicates new experiment)
          */
         bool isPopulated() const {
-            return !ftmwScope.isEmpty() || !clock.isEmpty() || !awg.isEmpty() ||
+            return !ftmwDigitizer.isEmpty() || !clock.isEmpty() || !awg.isEmpty() ||
                    !pulseGenerator.isEmpty() || !flowController.isEmpty() || !ioBoard.isEmpty() ||
                    !gpibController.isEmpty() || !pressureController.isEmpty() || !temperatureController.isEmpty() ||
-                   !lifScope.isEmpty() || !lifLaser.isEmpty();
+                   !lifDigitizer.isEmpty() || !lifLaser.isEmpty();
         }
         
         /*!
@@ -104,7 +104,7 @@ struct HardwareDataContainer {
          */
         QStringList getAllTypeKeys() const {
             QStringList keys;
-            if (!ftmwScope.isEmpty()) keys << ftmwScope;
+            if (!ftmwDigitizer.isEmpty()) keys << ftmwDigitizer;
             if (!clock.isEmpty()) keys << clock;
             if (!awg.isEmpty()) keys << awg;
             if (!pulseGenerator.isEmpty()) keys << pulseGenerator;
@@ -139,7 +139,7 @@ struct HardwareDataContainer {
      * Format: "type.label" -> HardwareEntry{implementation, type_enum}
      * Examples:
      * - "FlowController.frontPanel" -> {"mks647c", HardwareType::FlowController}
-     * - "FtmwScope.main" -> {"virtualftmwscope", HardwareType::FtmwScope}
+     * - "FtmwDigitizer.main" -> {"VirtualFtmwDigitizer", HardwareType::FtmwDigitizer}
      * - "Clock.reference" -> {"fixedclock", HardwareType::Clock}
      */
     QHash<QString, HardwareEntry> hardwareMap;
@@ -162,13 +162,14 @@ struct HardwareDataContainer {
             {"FlowController", HardwareType::FlowController},
             {"PressureController", HardwareType::PressureController},
             {"TemperatureController", HardwareType::TemperatureController},
-            {"FtmwScope", HardwareType::FtmwScope},
-            {"FtmwDigitizer", HardwareType::FtmwScope},  // pre-label-era name
+            {"FtmwDigitizer", HardwareType::FtmwDigitizer},   // canonical
+            {"FtmwScope", HardwareType::FtmwDigitizer},       // pre-rename alias (pre-1.0.0 and devel-era data)
             {"Clock", HardwareType::Clock},
             {"AWG", HardwareType::AWG},
             {"GPIBController", HardwareType::GPIBController},
-            {"GpibController", HardwareType::GPIBController},  // current className
-            {"LifScope", HardwareType::LifScope},
+            {"GpibController", HardwareType::GPIBController}, // current className
+            {"LifDigitizer", HardwareType::LifDigitizer},     // canonical
+            {"LifScope", HardwareType::LifDigitizer},         // pre-rename alias (devel-era data)
             {"LifLaser", HardwareType::LifLaser}
         };
         return legacyTypeMap.value(legacyTypeString, HardwareType::Unknown);
@@ -235,8 +236,8 @@ struct HardwareDataContainer {
      * \brief Get FTMW scope selections (convenience method)
      * \return Map of label -> implementation for FTMW scopes
      */
-    QHash<QString, QString> getFtmwScopeSelections() const {
-        return getSelectionsForType(typeKeys.ftmwScope);
+    QHash<QString, QString> getFtmwDigitizerSelections() const {
+        return getSelectionsForType(typeKeys.ftmwDigitizer);
     }
     
     /*!

@@ -57,7 +57,7 @@ Communication
 .. figure:: /_static/user_guide/hardware_menu/communication.png
    :width: 800
    :alt: Communication Settings dialog with TCP protocol selected for an
-         FtmwScope device.
+         FtmwDigitizer device.
 
    The Communication Settings dialog. The left panel lists every device in
    the active hardware map with a connection-status indicator; the right

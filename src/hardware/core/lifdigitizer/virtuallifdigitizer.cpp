@@ -1,4 +1,4 @@
-#include "virtuallifscope.h"
+#include "virtuallifdigitizer.h"
 #include <hardware/core/hardwareregistration.h>
 
 #include <QTimer>
@@ -6,24 +6,24 @@
 #include <QRandomGenerator>
 
 // Register hardware implementation
-REGISTER_HARDWARE_META(VirtualLifScope, "Virtual LIF Scope for Testing")
-REGISTER_HARDWARE_ARRAY(VirtualLifScope, BC::Key::Digi::sampleRates,
+REGISTER_HARDWARE_META(VirtualLifDigitizer, "Virtual LIF Scope for Testing")
+REGISTER_HARDWARE_ARRAY(VirtualLifDigitizer, BC::Key::Digi::sampleRates,
     "Sample Rates", "Available digitizer sample rates", HwSettingPriority::Important)
-REGISTER_HARDWARE_ARRAY_ENTRY(VirtualLifScope, BC::Key::Digi::sampleRates,
+REGISTER_HARDWARE_ARRAY_ENTRY(VirtualLifDigitizer, BC::Key::Digi::sampleRates,
     {{BC::Key::Digi::srText, "78.125 MSa/s"}, {BC::Key::Digi::srValue, 2.5e9/32}})
-REGISTER_HARDWARE_ARRAY_ENTRY(VirtualLifScope, BC::Key::Digi::sampleRates,
+REGISTER_HARDWARE_ARRAY_ENTRY(VirtualLifDigitizer, BC::Key::Digi::sampleRates,
     {{BC::Key::Digi::srText, "156.25 MSa/s"}, {BC::Key::Digi::srValue, 2.5e9/16}})
-REGISTER_HARDWARE_ARRAY_ENTRY(VirtualLifScope, BC::Key::Digi::sampleRates,
+REGISTER_HARDWARE_ARRAY_ENTRY(VirtualLifDigitizer, BC::Key::Digi::sampleRates,
     {{BC::Key::Digi::srText, "312.5 MSa/s"}, {BC::Key::Digi::srValue, 2.5e9/8}})
-REGISTER_HARDWARE_ARRAY_ENTRY(VirtualLifScope, BC::Key::Digi::sampleRates,
+REGISTER_HARDWARE_ARRAY_ENTRY(VirtualLifDigitizer, BC::Key::Digi::sampleRates,
     {{BC::Key::Digi::srText, "625 MSa/s"}, {BC::Key::Digi::srValue, 2.5e9/4}})
-REGISTER_HARDWARE_ARRAY_ENTRY(VirtualLifScope, BC::Key::Digi::sampleRates,
+REGISTER_HARDWARE_ARRAY_ENTRY(VirtualLifDigitizer, BC::Key::Digi::sampleRates,
     {{BC::Key::Digi::srText, "1250 MSa/s"}, {BC::Key::Digi::srValue, 2.5e9/2}})
-REGISTER_HARDWARE_ARRAY_ENTRY(VirtualLifScope, BC::Key::Digi::sampleRates,
+REGISTER_HARDWARE_ARRAY_ENTRY(VirtualLifDigitizer, BC::Key::Digi::sampleRates,
     {{BC::Key::Digi::srText, "2500 MSa/s"}, {BC::Key::Digi::srValue, 2.5e9}})
 
-VirtualLifScope::VirtualLifScope(const QString& label, QObject *parent) :
-    LifScope(QString(VirtualLifScope::staticMetaObject.className()), label, parent)
+VirtualLifDigitizer::VirtualLifDigitizer(const QString& label, QObject *parent) :
+    LifDigitizer(QString(VirtualLifDigitizer::staticMetaObject.className()), label, parent)
 {
     using namespace BC::Key::Digi;
 
@@ -43,17 +43,17 @@ VirtualLifScope::VirtualLifScope(const QString& label, QObject *parent) :
     save();
 }
 
-VirtualLifScope::~VirtualLifScope()
+VirtualLifDigitizer::~VirtualLifDigitizer()
 {
 
 }
 
-bool VirtualLifScope::testConnection()
+bool VirtualLifDigitizer::testConnection()
 {
     return true;
 }
 
-void VirtualLifScope::initialize()
+void VirtualLifDigitizer::initialize()
 {
 
     p_timer = new QTimer(this);
@@ -61,7 +61,7 @@ void VirtualLifScope::initialize()
 }
 
 
-void VirtualLifScope::readWaveform()
+void VirtualLifDigitizer::readWaveform()
 {
     QVector<qint8> out;
     auto qr = QRandomGenerator::global();
@@ -128,21 +128,21 @@ void VirtualLifScope::readWaveform()
 
 }
 
-bool VirtualLifScope::configure(const LifDigitizerConfig &c)
+bool VirtualLifDigitizer::configure(const LifDigitizerConfig &c)
 {
     static_cast<LifDigitizerConfig&>(*this) = c;
     d_channelOrder = Sequential;
     return true;
 }
 
-void VirtualLifScope::beginAcquisition()
+void VirtualLifDigitizer::beginAcquisition()
 {
-    connect(p_timer,&QTimer::timeout,this,&VirtualLifScope::readWaveform);
+    connect(p_timer,&QTimer::timeout,this,&VirtualLifDigitizer::readWaveform);
     p_timer->start();
 }
 
-void VirtualLifScope::endAcquisition()
+void VirtualLifDigitizer::endAcquisition()
 {
     p_timer->stop();
-    disconnect(p_timer,&QTimer::timeout,this,&VirtualLifScope::readWaveform);
+    disconnect(p_timer,&QTimer::timeout,this,&VirtualLifDigitizer::readWaveform);
 }

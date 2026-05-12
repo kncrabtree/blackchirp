@@ -15,7 +15,7 @@ class CommunicationProtocol;
  * Python subprocess.
  *
  * A trampoline is a C++ class that inherits from both a hardware base
- * (e.g. \c AWG, \c Clock, \c FlowController, \c FtmwScope) and
+ * (e.g. \c AWG, \c Clock, \c FlowController, \c FtmwDigitizer) and
  * PythonHardwareBase via multiple inheritance. The hardware base
  * supplies the Qt slot/signal API; this mixin owns the subprocess and
  * IPC plumbing. Subclasses initialize the mixin with \c d_key and
@@ -26,7 +26,7 @@ class CommunicationProtocol;
  * \c fcReadSettings, \c pcReadSettings, \c tcReadSettings,
  * \c pgReadSettings, \c awgReadSettings, \c clockReadSettings,
  * \c ftmwReadSettings, \c gpibReadSettings, \c ioReadSettings,
- * \c lifLaserReadSettings, \c lifScopeReadSettings) to
+ * \c lifLaserReadSettings, \c lifDigitizerReadSettings) to
  * \c pythonSleep() and \c pythonReadSettings(), and translate
  * hardware-specific virtuals into \c pu_process->sendRequest()
  * dispatches with snake_case method names matching the user script.

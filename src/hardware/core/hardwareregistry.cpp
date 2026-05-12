@@ -8,10 +8,10 @@
 #include <data/loghandler.h>
 
 // Include base hardware classes for type-safe hardware type determination
-#include <hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/core/ftmwdigitizer/ftmwdigitizer.h>
 #include <hardware/optional/chirpsource/awg.h>
 #include <hardware/core/liflaser/liflaser.h>
-#include <hardware/core/lifdigitizer/lifscope.h>
+#include <hardware/core/lifdigitizer/lifdigitizer.h>
 
 HardwareRegistry* HardwareRegistry::s_instance = nullptr;
 
@@ -166,10 +166,10 @@ bool HardwareRegistry::isMultiInstanceType(const QString& hardwareType)
     
     // Single-instance hardware types (only one instance allowed)
     static const QStringList singleInstanceTypes = {
-        hardwareTypeOf(static_cast<FtmwScope*>(nullptr)),
+        hardwareTypeOf(static_cast<FtmwDigitizer*>(nullptr)),
         hardwareTypeOf(static_cast<AWG*>(nullptr)),
         hardwareTypeOf(static_cast<LifLaser*>(nullptr)),
-        hardwareTypeOf(static_cast<LifScope*>(nullptr))
+        hardwareTypeOf(static_cast<LifDigitizer*>(nullptr))
     };
     
     // If hardware type is in the single-instance list, return false

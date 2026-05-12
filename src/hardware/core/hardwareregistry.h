@@ -229,10 +229,10 @@ public:
 
     /*!
      * \brief Check if hardware type supports multiple instances
-     * \param hardwareType Hardware type key (e.g., "Clock", "FtmwScope")
+     * \param hardwareType Hardware type key (e.g., "Clock", "FtmwDigitizer")
      * \return True if hardware type can have multiple labeled instances, false for single-instance types
      * 
-     * Single-instance types: FtmwScope, Awg, LifLaser, LifScope
+     * Single-instance types: FtmwDigitizer, Awg, LifLaser, LifDigitizer
      * Multi-instance types: Clock, PulseGenerator, FlowController, PressureController, TemperatureController, IOBoard, GPIBController
      */
     static bool isMultiInstanceType(const QString& hardwareType);

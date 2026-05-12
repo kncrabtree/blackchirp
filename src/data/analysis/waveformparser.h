@@ -23,7 +23,7 @@ enum class ParseMode {
  * \brief Parse raw digitizer bytes into qint64 values.
  *
  * This is the single implementation of the byte-unpacking loop used by both
- * FtmwConfig::parseWaveform (Write mode) and FtmwScope pre-accumulation
+ * FtmwConfig::parseWaveform (Write mode) and FtmwDigitizer pre-accumulation
  * (Accumulate mode).
  *
  * The function processes \a numRecords records of \a recordLength samples each,

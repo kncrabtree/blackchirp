@@ -22,7 +22,7 @@ to register itself with the framework are documented on
 Identity
 --------
 
-Each instance has a *hardware type* (e.g. ``"AWG"``, ``"FtmwScope"``,
+Each instance has a *hardware type* (e.g. ``"AWG"``, ``"FtmwDigitizer"``,
 ``"PulseGenerator"``) naming the abstract role and a *label* — a
 free-form, user-supplied string distinguishing multiple instances of
 the same type (e.g. ``"main"``, ``"secondary"``). The hardware type

@@ -1,7 +1,7 @@
 #ifndef MSO72004C_H
 #define MSO72004C_H
 
-#include <hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/core/ftmwdigitizer/ftmwdigitizer.h>
 
 #include <QTimer>
 #include <QAbstractSocket>
@@ -9,7 +9,7 @@
 class QTcpSocket;
 
 
-class MSO72004C : public FtmwScope
+class MSO72004C : public FtmwDigitizer
 {
     Q_OBJECT
 public:

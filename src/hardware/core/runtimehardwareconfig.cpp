@@ -124,7 +124,7 @@ BC::Data::HardwareDataContainer RuntimeHardwareConfig::createHardwareDataContain
     
     // Populate type keys using hardwareTypeOf template method for type safety
     // All hardware types are always compiled in with runtime hardware configuration
-    container.typeKeys.ftmwScope = hardwareTypeOf<FtmwScope>();
+    container.typeKeys.ftmwDigitizer = hardwareTypeOf<FtmwDigitizer>();
     container.typeKeys.clock = hardwareTypeOf<Clock>();
     container.typeKeys.awg = hardwareTypeOf<AWG>();
     container.typeKeys.pulseGenerator = hardwareTypeOf<PulseGenerator>();
@@ -133,7 +133,7 @@ BC::Data::HardwareDataContainer RuntimeHardwareConfig::createHardwareDataContain
     container.typeKeys.gpibController = hardwareTypeOf<GpibController>();
     container.typeKeys.pressureController = hardwareTypeOf<PressureController>();
     container.typeKeys.temperatureController = hardwareTypeOf<TemperatureController>();
-    container.typeKeys.lifScope = hardwareTypeOf<LifScope>();
+    container.typeKeys.lifDigitizer = hardwareTypeOf<LifDigitizer>();
     container.typeKeys.lifLaser = hardwareTypeOf<LifLaser>();
     
     return container;
@@ -286,7 +286,7 @@ bool RuntimeHardwareConfig::isHardwareRequired(const QString& hardwareType)
     // Define required hardware types using type-safe hardwareTypeOf<T>()
     // These are hardware types that must be configured for the system to operate
     static const QStringList coreRequiredTypes = {
-        hardwareTypeOf<FtmwScope>(),  // Required for FTMW spectroscopy
+        hardwareTypeOf<FtmwDigitizer>(),  // Required for FTMW spectroscopy
         hardwareTypeOf<Clock>()       // Required for timing
     };
     
@@ -298,7 +298,7 @@ bool RuntimeHardwareConfig::isHardwareRequired(const QString& hardwareType)
     // Check LIF-specific required types if LIF is enabled
     if (ApplicationConfigManager::instance().isLifEnabled()) {
         static const QStringList lifRequiredTypes = {
-            hardwareTypeOf<LifScope>(),   // Required for LIF data acquisition
+            hardwareTypeOf<LifDigitizer>(),   // Required for LIF data acquisition
             hardwareTypeOf<LifLaser>()    // Required for LIF laser control
         };
         
@@ -328,7 +328,7 @@ bool RuntimeHardwareConfig::isDirectControlType(const QString& hardwareType)
 bool RuntimeHardwareConfig::isLifHardwareType(const QString& hardwareType)
 {
     static const QStringList lifTypes = {
-        hardwareTypeOf<LifScope>(),
+        hardwareTypeOf<LifDigitizer>(),
         hardwareTypeOf<LifLaser>()
     };
     return lifTypes.contains(hardwareType);

@@ -35,7 +35,7 @@ file(GLOB COMMUNICATION_SOURCES
 set(HARDWARE_TYPES_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/clock/clockmanager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/clock/clock.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/ftmwdigitizer/ftmwscope.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/ftmwdigitizer/ftmwdigitizer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/chirpsource/awg.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/pulsegenerator/pulsegenerator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/flowcontroller/flowcontroller.cpp
@@ -43,7 +43,7 @@ set(HARDWARE_TYPES_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/ioboard/ioboard.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/pressurecontroller/pressurecontroller.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/tempcontroller/temperaturecontroller.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/lifdigitizer/lifscope.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/lifdigitizer/lifdigitizer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/liflaser.cpp
 )
 
@@ -128,7 +128,7 @@ set(BLACKCHIRP_HARDWARE_SOURCES
 # Generate hw_h.h with all hardware headers (types and implementations)
 set(HARDWARE_TYPE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/clock/clock.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/ftmwdigitizer/ftmwscope.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/ftmwdigitizer/ftmwdigitizer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/chirpsource/awg.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/pulsegenerator/pulsegenerator.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/flowcontroller/flowcontroller.h
@@ -136,7 +136,7 @@ set(HARDWARE_TYPE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/ioboard/ioboard.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/pressurecontroller/pressurecontroller.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/tempcontroller/temperaturecontroller.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/lifdigitizer/lifscope.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/lifdigitizer/lifdigitizer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/liflaser.h
 )
 

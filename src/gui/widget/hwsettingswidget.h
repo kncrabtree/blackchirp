@@ -42,7 +42,7 @@ public:
     /*!
      * \brief Construct the settings widget
      * \param hwType     Hardware type key (e.g., "FtmwDigitizer")
-     * \param impl       Implementation key (e.g., "VirtualFtmwScope")
+     * \param impl       Implementation key (e.g., "VirtualFtmwDigitizer")
      * \param mode       Create or Edit mode (controls Required section editability)
      * \param storageKey SettingsStorage key to pre-populate current values from.
      *                   Pass an empty string in Create mode to use registry defaults.

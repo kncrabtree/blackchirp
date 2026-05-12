@@ -1,19 +1,19 @@
 """
 Blackchirp Python FTMW Digitizer Driver Template
 
-This script is loaded by the PythonFtmwScope C++ trampoline class. It provides
+This script is loaded by the PythonFtmwDigitizer C++ trampoline class. It provides
 a complete virtual FTMW digitizer implementation that you can customize for
 your hardware.
 
 The FTMW digitizer in Blackchirp captures free-induction decay (FID) waveforms
-following each chirped-pulse excitation. The C++ FtmwScope base class handles:
+following each chirped-pulse excitation. The C++ FtmwDigitizer base class handles:
   - Waveform buffering and pre-accumulation
   - Shot dispatching to AcquisitionManager
   - Experiment configuration (applies digitizer config at start via
     prepareForExperiment)
 
 Acquisition is push-driven: your script runs its own acquisition loop in a
-background thread and calls self.scope.emit_shot(raw_bytes) when data is ready.
+background thread and calls self.digi.emit_shot(raw_bytes) when data is ready.
 The main thread must remain free to receive C++ IPC messages (e.g.,
 end_acquisition, sleep, read_settings).
 
@@ -22,13 +22,13 @@ begin_acquisition() to start the acquisition loop, and end_acquisition() to
 stop it.
 
 Class name must match the Python Class setting in the Hardware Configuration
-dialog (default: "FtmwScopeDriver").
+dialog (default: "FtmwDigitizerDriver").
 
 Available proxies (injected automatically):
     self.comm     -- communicate with hardware via the configured protocol
     self.settings -- read/write persistent settings (stored in Blackchirp)
     self.log      -- send log messages to the Blackchirp log panel
-    self.scope    -- push waveform data to C++ (call self.scope.emit_shot())
+    self.digi    -- push waveform data to C++ (call self.digi.emit_shot())
 
 Configuration lifecycle:
     After a successful connection and before each experiment, the C++ side
@@ -40,7 +40,7 @@ Configuration lifecycle:
     length) are reflected in the application.
 
 Waveform data format:
-    ``self.scope.emit_shot(raw_bytes)`` must be called with raw waveform
+    ``self.digi.emit_shot(raw_bytes)`` must be called with raw waveform
     bytes. The byte layout must match the configured digitizer parameters:
 
     - Size = record_length × bytes_per_point × num_records (multi-record)
@@ -85,7 +85,7 @@ SPCM_DEVICE = "/dev/spcm0"
 SPCM_TIMEOUT_MS = 5000
 
 
-class FtmwScopeDriver:
+class FtmwDigitizerDriver:
     """Python FTMW Digitizer hardware driver.
 
     You must implement:
@@ -106,7 +106,7 @@ class FtmwScopeDriver:
         Use this to set up internal state. The comm proxy is available
         but the connection has not been tested yet.
         """
-        self.log.log("FTMW Scope driver initialized")
+        self.log.log("FTMW Digitizer driver initialized")
 
         # Internal config state (populated by configure())
         self._record_length = 1000
@@ -126,7 +126,7 @@ class FtmwScopeDriver:
     def test_connection(self):
         """Verify communication with the digitizer.
 
-        Called from PythonFtmwScope::testConnection(). If this returns True,
+        Called from PythonFtmwDigitizer::testConnection(). If this returns True,
         the C++ side will send a configure() call with the current config.
 
         Returns:
@@ -148,7 +148,7 @@ class FtmwScopeDriver:
             #     self.log.error(f"Spectrum card open failed: {exc}")
             #     return False
         """
-        self.log.log("Testing FTMW Scope connection")
+        self.log.log("Testing FTMW Digitizer connection")
         return True
 
     def configure(self, analog_channels=None, digital_channels=None,
@@ -260,14 +260,14 @@ class FtmwScopeDriver:
 
         Called when a Blackchirp experiment starts. Launches a background
         thread that reads waveforms from hardware and pushes them to C++
-        via self.scope.emit_shot(). The main thread remains free to handle
+        via self.digi.emit_shot(). The main thread remains free to handle
         IPC messages (e.g., end_acquisition).
 
         Examples:
             # Arm the digitizer before starting the loop:
             # self.comm.write("ARM\\n")
         """
-        self.log.debug("FTMW Scope beginning acquisition")
+        self.log.debug("FTMW Digitizer beginning acquisition")
         self._acquiring = True
         self._acq_thread = threading.Thread(target=self._acquisition_loop,
                                             daemon=True)
@@ -283,7 +283,7 @@ class FtmwScopeDriver:
             # Disarm the digitizer:
             # self.comm.write("STOP\\n")
         """
-        self.log.debug("FTMW Scope ending acquisition")
+        self.log.debug("FTMW Digitizer ending acquisition")
         self._acquiring = False
         if self._acq_thread is not None:
             self._acq_thread.join(timeout=5.0)
@@ -298,7 +298,7 @@ class FtmwScopeDriver:
         while self._acquiring:
             raw = self._generate_virtual_waveform()
             # For real hardware: raw = self.comm.read_bytes(total_bytes)
-            self.scope.emit_shot(raw)
+            self.digi.emit_shot(raw)
             time.sleep(0.2)  # virtual mode: ~5 Hz
 
     def _generate_virtual_waveform(self):
@@ -326,18 +326,18 @@ class FtmwScopeDriver:
             sleeping (bool): True = entering sleep, False = waking up.
         """
         if sleeping:
-            self.log.debug("FTMW Scope entering sleep mode")
+            self.log.debug("FTMW Digitizer entering sleep mode")
         else:
-            self.log.debug("FTMW Scope waking from sleep mode")
+            self.log.debug("FTMW Digitizer waking from sleep mode")
 
     def read_settings(self):
         """Reload settings from Blackchirp without restarting the process.
 
-        Called by PythonFtmwScope::ftmwReadSettings() when the user changes
+        Called by PythonFtmwDigitizer::ftmwReadSettings() when the user changes
         hardware settings in the GUI. Use self.settings.get() to re-read
         any configuration values that affect operation.
 
         Examples:
             # self._timeout_ms = self.settings.get("timeoutMs", 5000)
         """
-        self.log.debug("FTMW Scope reloading settings")
+        self.log.debug("FTMW Digitizer reloading settings")

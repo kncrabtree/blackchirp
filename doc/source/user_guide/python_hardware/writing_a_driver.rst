@@ -5,7 +5,7 @@
    single: Python hardware; self.comm
    single: Python hardware; self.settings
    single: Python hardware; self.log
-   single: Python hardware; self.scope
+   single: Python hardware; self.digi
    single: Driver class name
    single: Driver template
 
@@ -135,17 +135,17 @@ Log messages are buffered and delivered out-of-band, so they do not
 block other IPC traffic. They are safe to call from any thread,
 including a digitizer acquisition thread.
 
-.. _python-hardware-scope-proxy:
+.. _python-hardware-digi-proxy:
 
-``self.scope`` — push-style waveforms
+``self.digi`` — push-style waveforms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The optional ``self.scope`` proxy is injected only for digitizer
-trampolines (FTMW Scope and LIF Scope). It exposes one method:
+The optional ``self.digi`` proxy is injected only for digitizer
+trampolines (FTMW Digitizer and LIF Digitizer). It exposes one method:
 
 .. code-block:: python
 
-   self.scope.emit_shot(raw_bytes: bytes, shots: int = 1)
+   self.digi.emit_shot(raw_bytes: bytes, shots: int = 1)
 
 ``emit_shot`` pushes a single record (or pre-accumulated block) of
 waveform bytes to the C++ side, which forwards them to the appropriate
@@ -198,7 +198,7 @@ below.
    ``True`` to proceed, ``False`` to abort the experiment with an
    error.
 
-   For some hardware types (IOBoard, FtmwScope, LifScope), the C++
+   For some hardware types (IOBoard, FtmwDigitizer, LifDigitizer), the C++
    trampoline calls a separate ``configure(config: dict) -> dict``
    method instead, with a ``{"success": bool, "config": dict}`` return
    value that lets the driver report values clamped or substituted by
@@ -312,7 +312,7 @@ and return the documented sentinel value.
 
 Method calls are dispatched serially on the subprocess's main thread.
 A long-running method blocks subsequent calls. For acquisition loops,
-use a background thread (see :ref:`python-hardware-scope-proxy`).
+use a background thread (see :ref:`python-hardware-digi-proxy`).
 
 .. _python-hardware-driver-skeleton:
 

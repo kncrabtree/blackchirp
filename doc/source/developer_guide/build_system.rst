@@ -218,10 +218,10 @@ Hardware aggregator headers
 ``src/hardware/core/`` at configure time:
 
 * ``hw_base.h`` — every hardware *base type*: ``clock.h``,
-  ``ftmwscope.h``, ``awg.h``, ``pulsegenerator.h``,
+  ``ftmwdigitizer.h``, ``awg.h``, ``pulsegenerator.h``,
   ``flowcontroller.h``, ``gpibcontroller.h``, ``ioboard.h``,
   ``pressurecontroller.h``, ``temperaturecontroller.h``,
-  ``lifscope.h``, ``liflaser.h``.
+  ``lifdigitizer.h``, ``liflaser.h``.
 * ``hw_impl.h`` — every concrete driver header that the
   configure-time ``file(GLOB)`` calls find under
   ``src/hardware/core/<type>/`` and ``src/hardware/optional/<type>/``,

@@ -121,7 +121,7 @@ Hardware configuration
   ``HwSettingsWidget`` with priority-grouped layout. All hardware
   classes (flow controllers, pressure controllers, temperature
   controllers, IO boards, GPIB controllers, LIF lasers and
-  scopes, FTMW scopes, clocks, chirp sources, and pulse
+  digitizers, FTMW digitizers, clocks, chirp sources, and pulse
   generators) were migrated onto the registry. See
   :doc:`/user_guide/hwdialog`.
 - Added per-object hardware threading configuration to the
@@ -138,7 +138,7 @@ Hardware drivers
   JSON-IPC bridge, with hot reload from the per-device dialog
   and per-type trampolines for AWGs, flow controllers, IO
   boards, clocks, pressure controllers, temperature controllers,
-  FTMW scopes, LIF scopes, pulse generators, GPIB controllers,
+  FTMW digitizers, LIF digitizers, pulse generators, GPIB controllers,
   and LIF lasers. See :doc:`/user_guide/python_hardware`.
 - Python drivers expose RS232, TCP, GPIB, and Custom protocols.
   See
@@ -178,7 +178,7 @@ Acquisition and data flow
   (``WaveformBuffer``) and a worker-thread parse/accumulate
   stage. See :doc:`/user_guide/cp-ftmw`.
 - Added backpressure-triggered pre-accumulation in
-  ``FtmwScope`` so the worker thread keeps up under bursty
+  ``FtmwDigitizer`` so the worker thread keeps up under bursty
   load. See :doc:`/user_guide/cp-ftmw`.
 - Added parallel batched parse and accumulate in
   ``AcquisitionManager``. See :doc:`/user_guide/cp-ftmw`.
@@ -386,7 +386,7 @@ Bug fixes
   hook (``fcReadSettings``, ``pcReadSettings``, ``tcReadSettings``,
   ``pgReadSettings``, ``awgReadSettings``, ``clockReadSettings``,
   ``ftmwReadSettings``, ``gpibReadSettings``, ``ioReadSettings``,
-  ``lifLaserReadSettings``, ``lifScopeReadSettings``) — so a
+  ``lifLaserReadSettings``, ``lifDigitizerReadSettings``) — so a
   derived driver that forgets to chain becomes a compile error
   rather than a silent runtime omission (:commit:`d512ee5e`).
 

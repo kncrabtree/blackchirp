@@ -27,6 +27,7 @@ private slots:
     void hardwareSaveLoadRoundTrip();
     void hardwareReaderAcceptsBothHeaderLabels();
     void hardwareReaderIgnoresThirdColumn();
+    void hardwareReaderRecognisesLegacyTypeAliases();
 
     // Full experiment loading - oldest format (exp 200)
     void loadExperiment200_hardware();
@@ -79,10 +80,10 @@ void ExperimentLoadingTest::loadHardwareOldestFormat()
     QCOMPARE(container.hardwareMap["AWG"].implementation, QString("awg70002a"));
     QCOMPARE(container.hardwareMap["AWG"].type, HardwareType::AWG);
 
-    // "FtmwDigitizer" — legacy name, should map to FtmwScope type
+    // "FtmwDigitizer" — legacy 2-column key, canonical name maps to FtmwDigitizer type
     QVERIFY(container.hardwareMap.contains("FtmwDigitizer"));
     QCOMPARE(container.hardwareMap["FtmwDigitizer"].implementation, QString("dsa71604c"));
-    QCOMPARE(container.hardwareMap["FtmwDigitizer"].type, HardwareType::FtmwScope);
+    QCOMPARE(container.hardwareMap["FtmwDigitizer"].type, HardwareType::FtmwDigitizer);
 
     // "Clock0" — no dot separator, type extraction gets "Clock0"
     // which won't match legacyStringToHardwareType → Unknown
@@ -111,7 +112,7 @@ void ExperimentLoadingTest::loadHardwareLegacyFormat()
 
     QVERIFY(container.hardwareMap.contains("FtmwDigitizer.0"));
     QCOMPARE(container.hardwareMap["FtmwDigitizer.0"].implementation, QString("dsa71604c"));
-    QCOMPARE(container.hardwareMap["FtmwDigitizer.0"].type, HardwareType::FtmwScope);
+    QCOMPARE(container.hardwareMap["FtmwDigitizer.0"].type, HardwareType::FtmwDigitizer);
 
     QVERIFY(container.hardwareMap.contains("Clock.0"));
     QCOMPARE(container.hardwareMap["Clock.0"].implementation, QString("valon5009"));
@@ -138,9 +139,9 @@ void ExperimentLoadingTest::loadHardwareNewFormat()
     QCOMPARE(container.hardwareMap["LifLaser.default"].implementation, QString("VirtualLifLaser"));
     QCOMPARE(container.hardwareMap["LifLaser.default"].type, HardwareType::LifLaser);
 
-    QVERIFY(container.hardwareMap.contains("FtmwScope.default"));
-    QCOMPARE(container.hardwareMap["FtmwScope.default"].implementation, QString("VirtualFtmwScope"));
-    QCOMPARE(container.hardwareMap["FtmwScope.default"].type, HardwareType::FtmwScope);
+    QVERIFY(container.hardwareMap.contains("FtmwDigitizer.default"));
+    QCOMPARE(container.hardwareMap["FtmwDigitizer.default"].implementation, QString("VirtualFtmwDigitizer"));
+    QCOMPARE(container.hardwareMap["FtmwDigitizer.default"].type, HardwareType::FtmwDigitizer);
 
     QVERIFY(container.hardwareMap.contains("PulseGenerator.default"));
     QCOMPARE(container.hardwareMap["PulseGenerator.default"].implementation, QString("VirtualPulseGenerator"));
@@ -150,9 +151,9 @@ void ExperimentLoadingTest::loadHardwareNewFormat()
     QCOMPARE(container.hardwareMap["Clock.default"].implementation, QString("FixedClock"));
     QCOMPARE(container.hardwareMap["Clock.default"].type, HardwareType::Clock);
 
-    QVERIFY(container.hardwareMap.contains("LifScope.default"));
-    QCOMPARE(container.hardwareMap["LifScope.default"].implementation, QString("VirtualLifScope"));
-    QCOMPARE(container.hardwareMap["LifScope.default"].type, HardwareType::LifScope);
+    QVERIFY(container.hardwareMap.contains("LifDigitizer.default"));
+    QCOMPARE(container.hardwareMap["LifDigitizer.default"].implementation, QString("VirtualLifDigitizer"));
+    QCOMPARE(container.hardwareMap["LifDigitizer.default"].type, HardwareType::LifDigitizer);
 }
 
 void ExperimentLoadingTest::loadHardwareNonExistentFile()
@@ -166,7 +167,7 @@ void ExperimentLoadingTest::hardwareSaveLoadRoundTrip()
 {
     // Create a container with known data
     HardwareDataContainer original;
-    original.hardwareMap["FtmwScope.main"] = HardwareDataContainer::HardwareEntry("VirtualFtmwScope", HardwareType::FtmwScope);
+    original.hardwareMap["FtmwDigitizer.main"] = HardwareDataContainer::HardwareEntry("VirtualFtmwDigitizer", HardwareType::FtmwDigitizer);
     original.hardwareMap["Clock.reference"] = HardwareDataContainer::HardwareEntry("FixedClock", HardwareType::Clock);
     original.hardwareMap["PulseGenerator.primary"] = HardwareDataContainer::HardwareEntry("VirtualPulseGenerator", HardwareType::PulseGenerator);
 
@@ -209,7 +210,7 @@ void ExperimentLoadingTest::hardwareReaderAcceptsBothHeaderLabels()
         {
             QTextStream t(&tmp);
             t << "key;" << headerLabel << "\n";
-            t << "FtmwScope.main;VirtualFtmwScope\n";
+            t << "FtmwDigitizer.main;VirtualFtmwDigitizer\n";
             t << "Clock.reference;FixedClock\n";
         }
         QString tmpPath = tmp.fileName();
@@ -217,9 +218,9 @@ void ExperimentLoadingTest::hardwareReaderAcceptsBothHeaderLabels()
 
         auto c = HardwareDataContainer::loadFromFile(tmpPath);
         QCOMPARE(c.hardwareMap.size(), 2);
-        QVERIFY(c.hardwareMap.contains("FtmwScope.main"));
-        QCOMPARE(c.hardwareMap["FtmwScope.main"].type, HardwareType::FtmwScope);
-        QCOMPARE(c.hardwareMap["FtmwScope.main"].implementation, QString("VirtualFtmwScope"));
+        QVERIFY(c.hardwareMap.contains("FtmwDigitizer.main"));
+        QCOMPARE(c.hardwareMap["FtmwDigitizer.main"].type, HardwareType::FtmwDigitizer);
+        QCOMPARE(c.hardwareMap["FtmwDigitizer.main"].implementation, QString("VirtualFtmwDigitizer"));
         QVERIFY(c.hardwareMap.contains("Clock.reference"));
         QCOMPARE(c.hardwareMap["Clock.reference"].type, HardwareType::Clock);
     };
@@ -240,7 +241,7 @@ void ExperimentLoadingTest::hardwareReaderIgnoresThirdColumn()
         QTextStream t(&tmp);
         t << "key;subKey;hardwareType\n";
         t << "LifLaser.default;VirtualLifLaser;11\n";
-        t << "FtmwScope.default;VirtualFtmwScope;6\n";
+        t << "FtmwDigitizer.default;VirtualFtmwDigitizer;6\n";
     }
     QString tmpPath = tmp.fileName();
     tmp.close();
@@ -248,7 +249,34 @@ void ExperimentLoadingTest::hardwareReaderIgnoresThirdColumn()
     auto c = HardwareDataContainer::loadFromFile(tmpPath);
     QCOMPARE(c.hardwareMap.size(), 2);
     QCOMPARE(c.hardwareMap["LifLaser.default"].type, HardwareType::LifLaser);
-    QCOMPARE(c.hardwareMap["FtmwScope.default"].type, HardwareType::FtmwScope);
+    QCOMPARE(c.hardwareMap["FtmwDigitizer.default"].type, HardwareType::FtmwDigitizer);
+}
+
+void ExperimentLoadingTest::hardwareReaderRecognisesLegacyTypeAliases()
+{
+    // The pre-rename class names (FtmwScope, LifScope) are retained as
+    // legacy aliases in legacyStringToHardwareType so on-disk fixtures
+    // captured before the digitizer rename still resolve to the
+    // canonical FtmwDigitizer / LifDigitizer enum values. Pre-1.0.0
+    // experiments use FtmwScope; devel-period experiments may use
+    // LifScope. Both must round-trip without HardwareType::Unknown.
+    QTemporaryFile tmp;
+    QVERIFY(tmp.open());
+    {
+        QTextStream t(&tmp);
+        t << "key;driver\n";
+        t << "FtmwScope.main;VirtualFtmwDigitizer\n";
+        t << "LifScope.main;VirtualLifDigitizer\n";
+    }
+    QString tmpPath = tmp.fileName();
+    tmp.close();
+
+    auto c = HardwareDataContainer::loadFromFile(tmpPath);
+    QCOMPARE(c.hardwareMap.size(), 2);
+    QVERIFY(c.hardwareMap.contains("FtmwScope.main"));
+    QCOMPARE(c.hardwareMap["FtmwScope.main"].type, HardwareType::FtmwDigitizer);
+    QVERIFY(c.hardwareMap.contains("LifScope.main"));
+    QCOMPARE(c.hardwareMap["LifScope.main"].type, HardwareType::LifDigitizer);
 }
 
 // ============================================================
@@ -318,8 +346,8 @@ void ExperimentLoadingTest::loadExperiment27_hardware()
     QCOMPARE(exp.d_hardwareData.hardwareMap.size(), 5);
 
     // Verify specific hardware types were parsed correctly
-    QVERIFY(exp.d_hardwareData.hardwareMap.contains("FtmwScope.default"));
-    QVERIFY(exp.d_hardwareData.hardwareMap.contains("LifScope.default"));
+    QVERIFY(exp.d_hardwareData.hardwareMap.contains("FtmwDigitizer.default"));
+    QVERIFY(exp.d_hardwareData.hardwareMap.contains("LifDigitizer.default"));
 }
 
 void ExperimentLoadingTest::loadExperiment27_header()

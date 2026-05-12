@@ -220,7 +220,7 @@ point for the loop. It runs in this order:
    on the GUI thread by :cpp:func:`MainWindow::clockPrompt` (see the
    *Clock settings round-trip* note below); the GUI ultimately calls
    :cpp:func:`HardwareManager::setClocks`, which gates the
-   :cpp:class:`FtmwScope` while the clock frequencies change, walks
+   :cpp:class:`FtmwDigitizer` while the clock frequencies change, walks
    :cpp:class:`ClockManager` to apply each value, ungates the scope,
    and emits :cpp:func:`HardwareManager::allClocksReady`. That signal
    is wired statically to
@@ -313,9 +313,9 @@ visible to the rest of the system:
   :cpp:func:`FtmwConfig::hwReady` after ``allClocksReady``. A
   ``success = false`` is treated as a fatal hardware error and
   triggers the abort path described below.
-- :cpp:func:`HardwareManager::lifScopeShotAcquired` →
-  :cpp:func:`AcquisitionManager::processLifScopeShot`. Each
-  digitized waveform from :cpp:class:`LifScope` is added to the
+- :cpp:func:`HardwareManager::lifDigitizerShotAcquired` →
+  :cpp:func:`AcquisitionManager::processLifDigitizerShot`. Each
+  digitized waveform from :cpp:class:`LifDigitizer` is added to the
   active scan point through :cpp:func:`LifConfig::addWaveform`; when
   the point completes, ``advance`` returns true and the AM emits a
   fresh :cpp:func:`AcquisitionManager::nextLifPoint` for the next
@@ -453,7 +453,7 @@ The full single-experiment round-trip, from the moment
        HM-->>AM: allClocksReady -> clockSettingsComplete
        AM-->>HM: beginAcquisition (broadcast to HOs)
        loop steady state
-           AM->>AM: drainFtmwBuffer / processLifScopeShot
+           AM->>AM: drainFtmwBuffer / processLifDigitizerShot
            AM-->>HM: auxDataSignal -> getAuxData
            HM-->>AM: auxData / validationData
            AM->>AM: checkComplete

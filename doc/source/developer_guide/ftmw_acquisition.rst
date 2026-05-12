@@ -1,7 +1,7 @@
 .. index::
    single: FTMW pipeline
    single: WaveformBuffer; producer/consumer
-   single: FtmwScope; emitShot
+   single: FtmwDigitizer; emitShot
    single: pre-accumulation
    single: flush marker; segment boundary
    single: drain timer
@@ -21,7 +21,7 @@ FTMW Acquisition and Visualization
 The FTMW pipeline carries waveform data from the digitizer hardware
 thread to the on-screen FT spectrum without ever pinning either of
 those threads to the other's pace. The producer side is
-:cpp:class:`FtmwScope` running on its own ``"<hwKey>Thread"``; the
+:cpp:class:`FtmwDigitizer` running on its own ``"<hwKey>Thread"``; the
 consumer side is :cpp:class:`AcquisitionManager` running on
 ``AcquisitionManagerThread``; the visualization side is
 ``FtmwViewWidget`` and ``FtWorker`` straddling the GUI thread and the
@@ -43,7 +43,7 @@ The end-to-end picture
 .. mermaid::
 
    flowchart LR
-       A["FtmwScope<br/>(digitizer thread)<br/>emitShot()"]
+       A["FtmwDigitizer<br/>(digitizer thread)<br/>emitShot()"]
        B["WaveformBuffer<br/>(SPSC ring, drop-newest)"]
        C["AcquisitionManager<br/>(AM thread)<br/>drainFtmwBuffer()"]
        D["QtConcurrent worker<br/>(thread pool)<br/>addBatchFids()"]
@@ -75,12 +75,12 @@ described below) when the consumer falls behind. See
 :doc:`/classes/waveformbuffer` for the SPSC discipline, the overflow
 counter, and the ``WaveformEntry`` struct layout.
 
-Producer: FtmwScope::emitShot
------------------------------
+Producer: FtmwDigitizer::emitShot
+---------------------------------
 
-Each :cpp:class:`FtmwScope` subclass produces raw waveform bytes on
+Each :cpp:class:`FtmwDigitizer` subclass produces raw waveform bytes on
 its hardware thread and calls the base-class
-``FtmwScope::emitShot(data)``. The base class handles four cases in
+``FtmwDigitizer::emitShot(data)``. The base class handles four cases in
 order:
 
 #. **Acquisition is gated.** ``setAcquisitionGated(true)`` short-circuits
@@ -118,10 +118,10 @@ Buffer ownership and the ``FtmwConfig`` pointer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The :cpp:class:`WaveformBuffer` is created in
-:cpp:func:`FtmwScope::hwPrepareForExperiment` (sized at 10 slots, with
+:cpp:func:`FtmwDigitizer::hwPrepareForExperiment` (sized at 10 slots, with
 each slot pre-reserved to ``recordLength × bytesPerPoint × numRecords``
 bytes to avoid per-shot heap allocation) and destroyed when the
-``FtmwScope`` is torn down. A non-owning pointer is stashed on
+``FtmwDigitizer`` is torn down. A non-owning pointer is stashed on
 :cpp:class:`FtmwConfig` via ``setWaveformBuffer``; the AM retrieves it
 via ``exp->ftmwConfig()->waveformBuffer()`` rather than reaching across
 to the hardware object directly.

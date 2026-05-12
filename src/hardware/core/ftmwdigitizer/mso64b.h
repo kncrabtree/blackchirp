@@ -1,7 +1,7 @@
 #ifndef MSO64B_H
 #define MSO64B_H
 
-#include "ftmwscope.h"
+#include "ftmwdigitizer.h"
 
 #include <QTimer>
 #include <QAbstractSocket>
@@ -9,7 +9,7 @@
 
 class QTcpSocket;
 
-class MSO64B : public FtmwScope
+class MSO64B : public FtmwDigitizer
 {
     Q_OBJECT
 public:

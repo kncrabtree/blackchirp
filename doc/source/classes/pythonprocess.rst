@@ -28,7 +28,7 @@ trampolines to drain into the WaveformBuffer.
 
 The standard ``self.comm``, ``self.settings``, and ``self.log``
 proxies are injected on every subprocess start. Optional,
-hardware-type-specific proxies — currently ``self.scope`` for
+hardware-type-specific proxies — currently ``self.digi`` for
 digitizer push — are gated by ``setEnabledProxies()``: trampolines
 that need them call it between ``initPythonProcess()`` and the
 first ``sendRequest()``.

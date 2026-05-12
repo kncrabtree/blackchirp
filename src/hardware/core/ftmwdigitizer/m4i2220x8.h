@@ -1,13 +1,13 @@
 #ifndef M412220X8_H
 #define M412220X8_H
 
-#include <hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/core/ftmwdigitizer/ftmwdigitizer.h>
 #include <hardware/library/spectrumlibrary.h>
 #include <hardware/library/spectrumconstants.h>
 
 #include <QTimer>
 
-class M4i2220x8 : public FtmwScope
+class M4i2220x8 : public FtmwDigitizer
 {
     Q_OBJECT
 public:
@@ -20,7 +20,7 @@ public slots:
     void beginAcquisition() override;
     void endAcquisition() override;
 
-    // FtmwScope interface
+    // FtmwDigitizer interface
     void readWaveform() override;
 
 protected:

@@ -225,7 +225,7 @@ void FtmwConfigWidget::initializeFromExperiment(const FtmwConfig &cfg)
     d_suppressDirty = true;
     p_rfWidget->setFromRfConfig(cfg.d_rfConfig);
     p_chirpWidget->setFromRfConfig(cfg.d_rfConfig);
-    p_digiWidget->setFromConfig(cfg.scopeConfig());
+    p_digiWidget->setFromConfig(cfg.digitizerConfig());
     d_suppressDirty = false;
 }
 

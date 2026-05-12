@@ -129,7 +129,7 @@ configured. The dialog uses a four-panel horizontal layout:
 
 Some hardware types are *single-instance*: only one profile of that type
 may be active in a loadout at a time. Single-instance types are
-**FTMW Scope**, **AWG**, **LIF Scope**, and **LIF Laser**. All other types
+**FTMW Digitizer**, **AWG**, **LIF Digitizer**, and **LIF Laser**. All other types
 are *multi-instance*: a loadout may enable several profiles of the same
 type simultaneously (for example, multiple flow controllers or
 pulse generators).

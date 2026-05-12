@@ -282,7 +282,7 @@ private:
     
     // Common test hardware types and implementations
     QString d_testTypeFlow = "FlowController";
-    QString d_testTypeScope = "FtmwDigitizer";
+    QString d_testTypeDigitizer = "FtmwDigitizer";
     QString d_testTypeAWG = "ChirpSource";
     
     QString d_testImplVirtual = "virtual";
@@ -503,7 +503,7 @@ void HardwareProfileManagerTest::testLabelReuseAcrossTypes()
     
     // Create profiles with same label for different hardware types
     QString label1 = manager.createHardwareProfile(d_testTypeFlow, d_testImplVirtual, sameLabel);
-    QString label2 = manager.createHardwareProfile(d_testTypeScope, d_testImplM4i, sameLabel);
+    QString label2 = manager.createHardwareProfile(d_testTypeDigitizer, d_testImplM4i, sameLabel);
     
     // Both should succeed with same label
     QCOMPARE(label1, sameLabel);
@@ -511,11 +511,11 @@ void HardwareProfileManagerTest::testLabelReuseAcrossTypes()
     
     // Verify both profiles exist independently
     QVERIFY(manager.profileExists(d_testTypeFlow, sameLabel));
-    QVERIFY(manager.profileExists(d_testTypeScope, sameLabel));
+    QVERIFY(manager.profileExists(d_testTypeDigitizer, sameLabel));
     
     // Verify different implementations
     QCOMPARE(manager.getImplementation(d_testTypeFlow, sameLabel), d_testImplVirtual);
-    QCOMPARE(manager.getImplementation(d_testTypeScope, sameLabel), d_testImplM4i);
+    QCOMPARE(manager.getImplementation(d_testTypeDigitizer, sameLabel), d_testImplM4i);
 }
 
 void HardwareProfileManagerTest::testDefaultLabelGeneration()
@@ -582,7 +582,7 @@ void HardwareProfileManagerTest::testLabelAvailability()
     QVERIFY(!manager.isLabelAvailable(d_testTypeFlow, testLabel));
     
     // But should still be available for different type
-    QVERIFY(manager.isLabelAvailable(d_testTypeScope, testLabel));
+    QVERIFY(manager.isLabelAvailable(d_testTypeDigitizer, testLabel));
 }
 
 void HardwareProfileManagerTest::testGetExistingLabels()
@@ -595,7 +595,7 @@ void HardwareProfileManagerTest::testGetExistingLabels()
     // Create several profiles
     manager.createHardwareProfile(d_testTypeFlow, d_testImplVirtual, "label1");
     manager.createHardwareProfile(d_testTypeFlow, d_testImplMks647c, "label2");
-    manager.createHardwareProfile(d_testTypeScope, d_testImplM4i, "label3"); // Different type
+    manager.createHardwareProfile(d_testTypeDigitizer, d_testImplM4i, "label3"); // Different type
     
     QStringList flowLabels = manager.getExistingLabels(d_testTypeFlow);
     QCOMPARE(flowLabels.size(), 2);
@@ -603,9 +603,9 @@ void HardwareProfileManagerTest::testGetExistingLabels()
     QVERIFY(flowLabels.contains("label2"));
     QVERIFY(!flowLabels.contains("label3")); // Different type
     
-    QStringList scopeLabels = manager.getExistingLabels(d_testTypeScope);
-    QCOMPARE(scopeLabels.size(), 1);
-    QVERIFY(scopeLabels.contains("label3"));
+    QStringList digitizerLabels = manager.getExistingLabels(d_testTypeDigitizer);
+    QCOMPARE(digitizerLabels.size(), 1);
+    QVERIFY(digitizerLabels.contains("label3"));
 }
 
 // ========================================================================
@@ -862,17 +862,17 @@ void HardwareProfileManagerTest::testGetAllProfiles()
     // Create profiles in different types
     manager.createHardwareProfile(d_testTypeFlow, d_testImplVirtual, "all1");
     manager.createHardwareProfile(d_testTypeFlow, d_testImplMks647c, "all2");
-    manager.createHardwareProfile(d_testTypeScope, d_testImplM4i, "all3");
+    manager.createHardwareProfile(d_testTypeDigitizer, d_testImplM4i, "all3");
     
     QStringList allFlow = manager.getAllProfiles(d_testTypeFlow);
-    QStringList allScope = manager.getAllProfiles(d_testTypeScope);
+    QStringList allDigitizer = manager.getAllProfiles(d_testTypeDigitizer);
     
     QCOMPARE(allFlow.size(), 2);
     QVERIFY(allFlow.contains("all1"));
     QVERIFY(allFlow.contains("all2"));
     
-    QCOMPARE(allScope.size(), 1);
-    QVERIFY(allScope.contains("all3"));
+    QCOMPARE(allDigitizer.size(), 1);
+    QVERIFY(allDigitizer.contains("all3"));
 }
 
 void HardwareProfileManagerTest::testProfileExists()
@@ -1171,7 +1171,7 @@ void HardwareProfileManagerTest::testProfileImportExport()
     // Create test profiles
     manager.createHardwareProfile(d_testTypeFlow, d_testImplVirtual, "export1");
     manager.createHardwareProfile(d_testTypeFlow, d_testImplMks647c, "export2");
-    manager.createHardwareProfile(d_testTypeScope, d_testImplM4i, "export3");
+    manager.createHardwareProfile(d_testTypeDigitizer, d_testImplM4i, "export3");
     
     // Export profiles
     QByteArray exportData = manager.exportProfiles();
@@ -1188,11 +1188,11 @@ void HardwareProfileManagerTest::testProfileImportExport()
     // Verify profiles were restored
     QVERIFY(manager.profileExists(d_testTypeFlow, "export1"));
     QVERIFY(manager.profileExists(d_testTypeFlow, "export2"));
-    QVERIFY(manager.profileExists(d_testTypeScope, "export3"));
+    QVERIFY(manager.profileExists(d_testTypeDigitizer, "export3"));
     
     QCOMPARE(manager.getImplementation(d_testTypeFlow, "export1"), d_testImplVirtual);
     QCOMPARE(manager.getImplementation(d_testTypeFlow, "export2"), d_testImplMks647c);
-    QCOMPARE(manager.getImplementation(d_testTypeScope, "export3"), d_testImplM4i);
+    QCOMPARE(manager.getImplementation(d_testTypeDigitizer, "export3"), d_testImplM4i);
 }
 
 void HardwareProfileManagerTest::testBulkOperations()

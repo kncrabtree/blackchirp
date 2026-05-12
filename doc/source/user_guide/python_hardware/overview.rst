@@ -112,9 +112,9 @@ can be used in your own scripts.
    * - ``PythonFlowController``
      - ``FlowControllerDriver``
      - ``python_flowcontroller_template.py``
-   * - ``PythonFtmwScope``
-     - ``FtmwScopeDriver``
-     - ``python_ftmwscope_template.py``
+   * - ``PythonFtmwDigitizer``
+     - ``FtmwDigitizerDriver``
+     - ``python_ftmwdigitizer_template.py``
    * - ``PythonGpibController``
      - ``GpibControllerDriver``
      - ``python_gpibcontroller_template.py``
@@ -124,9 +124,9 @@ can be used in your own scripts.
    * - ``PythonLifLaser``
      - ``LifLaserDriver``
      - ``python_liflaser_template.py``
-   * - ``PythonLifScope``
-     - ``LifScopeDriver``
-     - ``python_lifscope_template.py``
+   * - ``PythonLifDigitizer``
+     - ``LifDigitizerDriver``
+     - ``python_lifdigitizer_template.py``
    * - ``PythonPressureController``
      - ``PressureControllerDriver``
      - ``python_pressurecontroller_template.py``

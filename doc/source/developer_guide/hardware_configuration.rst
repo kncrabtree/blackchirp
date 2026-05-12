@@ -71,7 +71,7 @@ compile-time outward:
    creation time — together with its persisted settings and, for
    Python drivers, a script path / class name / environment path. The
    ``hardwareType`` and ``label`` together form the profile's identity
-   (``"FtmwScope.frontPanel"``, ``"FlowController.backup"``); the
+   (``"FtmwDigitizer.frontPanel"``, ``"FlowController.backup"``); the
    driver is immutable, so changing drivers means
    creating a new profile rather than re-pointing an existing one.
 
@@ -154,7 +154,7 @@ static-initialization. Eight macros cover the registration surface:
 
 ``REGISTER_HARDWARE_BASE(CLASS, ...)``
    Same shape as ``REGISTER_HARDWARE_SETTINGS``, but for a
-   non-instantiable base class (``Clock``, ``FtmwScope``,
+   non-instantiable base class (``Clock``, ``FtmwDigitizer``,
    ``HardwareObject`` itself). Settings are merged into every
    driver whose inheritance chain contains the base class.
 
@@ -184,7 +184,7 @@ static-initialization. Eight macros cover the registration surface:
 Hardware-type and driver keys are derived from Qt's
 ``staticMetaObject`` rather than passed by hand. ``REGISTER_HARDWARE_META``
 walks the metaobject ``superClass()`` chain to find the direct child of
-:cpp:class:`HardwareObject` (the *type* key — ``Clock``, ``FtmwScope``,
+:cpp:class:`HardwareObject` (the *type* key — ``Clock``, ``FtmwDigitizer``,
 ``Awg``, …), and uses ``CLASS::staticMetaObject.className()`` for the
 *driver* key (the class name itself — ``Valon5009``,
 ``M4i2220x8``). Renaming a class therefore renames its registry key for
@@ -312,7 +312,7 @@ System profiles
 ~~~~~~~~~~~~~~~
 
 Some hardware types are required for Blackchirp to operate
-(``FtmwScope``, ``Clock``, plus the LIF types when LIF is enabled). The
+(``FtmwDigitizer``, ``Clock``, plus the LIF types when LIF is enabled). The
 manager guarantees a *system profile* — a profile labeled ``virtual``
 backed by the corresponding virtual driver — for each required type via
 :cpp:func:`HardwareProfileManager::ensureSystemProfiles`. System
@@ -349,8 +349,8 @@ prefer the templates when the hardware type is statically known:
 .. code-block:: cpp
 
    const auto &cfg = RuntimeHardwareConfig::constInstance();
-   QStringList labels = cfg.getActiveLabels<FtmwScope>();
-   QString impl      = cfg.getHardwareImplementation<FtmwScope>("default");
+   QStringList labels = cfg.getActiveLabels<FtmwDigitizer>();
+   QString impl      = cfg.getHardwareImplementation<FtmwDigitizer>("default");
 
 The template variants resolve the type key from
 ``T::staticMetaObject.className()`` so callers never spell raw strings.

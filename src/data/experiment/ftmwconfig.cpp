@@ -11,9 +11,9 @@
 #include <data/storage/waveformbuffer.h>
 #include <data/storage/fidpeakupstorage.h>
 
-FtmwConfig::FtmwConfig(const QString& scopeHwKey) : HeaderStorage(BC::Store::FTMW::key)
+FtmwConfig::FtmwConfig(const QString& digitizerHwKey) : HeaderStorage(BC::Store::FTMW::key)
 {
-    ps_scopeConfig = std::make_shared<FtmwDigitizerConfig>(scopeHwKey);
+    ps_digitizerConfig = std::make_shared<FtmwDigitizerConfig>(digitizerHwKey);
 }
 
 FtmwConfig::~FtmwConfig()
@@ -24,22 +24,22 @@ FtmwConfig::~FtmwConfig()
 quint64 FtmwConfig::shotIncrement() const
 {
     quint64 increment = 1;
-    if(ps_scopeConfig->d_blockAverage)
-        increment *= ps_scopeConfig->d_numAverages;
+    if(ps_digitizerConfig->d_blockAverage)
+        increment *= ps_digitizerConfig->d_numAverages;
 
     return increment;
 }
 
 FidList FtmwConfig::parseWaveform(const QByteArray b) const
 {
-    int np = ps_scopeConfig->d_recordLength;
-    int numRec = ps_scopeConfig->d_numRecords;
+    int np = ps_digitizerConfig->d_recordLength;
+    int numRec = ps_digitizerConfig->d_numRecords;
 
     QVector<qint64> buf(np * numRec);
     BC::Analysis::parseWaveform(b.constData(), buf.data(),
                                 np, numRec,
-                                ps_scopeConfig->d_bytesPerPoint,
-                                ps_scopeConfig->d_byteOrder,
+                                ps_digitizerConfig->d_bytesPerPoint,
+                                ps_digitizerConfig->d_byteOrder,
                                 shotIncrement(), bitShift());
 
     FidList out;
@@ -60,13 +60,13 @@ FidList FtmwConfig::parseWaveform(const QByteArray b) const
 
 FidList FtmwConfig::parseBatchFids(const std::vector<WaveformEntry> &entries) const
 {
-    int np = ps_scopeConfig->d_recordLength;
-    int numRec = ps_scopeConfig->d_numRecords;
+    int np = ps_digitizerConfig->d_recordLength;
+    int numRec = ps_digitizerConfig->d_numRecords;
 
     QVector<qint64> buf(np * numRec, 0);
     BC::Analysis::parseBatchParallel(entries, buf.data(), np, numRec,
-                                     ps_scopeConfig->d_bytesPerPoint,
-                                     ps_scopeConfig->d_byteOrder,
+                                     ps_digitizerConfig->d_bytesPerPoint,
+                                     ps_digitizerConfig->d_byteOrder,
                                      shotIncrement(), bitShift());
 
     quint64 totalShots = 0;
@@ -131,13 +131,13 @@ double FtmwConfig::ftMaxMHz() const
 
 double FtmwConfig::ftNyquistMHz() const
 {
-    return ps_scopeConfig->d_sampleRate/(1e6*2.0);
+    return ps_digitizerConfig->d_sampleRate/(1e6*2.0);
 }
 
 double FtmwConfig::fidDurationUs() const
 {
-    double sr = ps_scopeConfig->d_sampleRate;
-    double rl = static_cast<double>(ps_scopeConfig->d_recordLength);
+    double sr = ps_digitizerConfig->d_sampleRate;
+    double rl = static_cast<double>(ps_digitizerConfig->d_recordLength);
 
     return rl/sr*1e6;
 }
@@ -146,10 +146,10 @@ QPair<int, int> FtmwConfig::chirpRange() const
 {
     //compute chirp duration in samples (only use first chirp if there are multiple)
     auto dur = d_rfConfig.d_chirpConfig.chirpDurationUs(0);
-    if(ps_scopeConfig->d_sampleRate <= 0.0)
+    if(ps_digitizerConfig->d_sampleRate <= 0.0)
         return {0,0};
 
-    int samples = dur*1e-6*ps_scopeConfig->d_sampleRate;
+    int samples = dur*1e-6*ps_digitizerConfig->d_sampleRate;
 
     //compute where the chirp starts in the digitizer's time frame.
     //if a Trigger marker is active, use its start time (negative = before chirp start,
@@ -162,15 +162,15 @@ QPair<int, int> FtmwConfig::chirpRange() const
         auto cc = d_rfConfig.d_chirpConfig;
         auto *trig = cc.findEnabledMarkerByRole(MarkerRole::Trigger);
         if(trig)
-            startUs = -trig->startTime - ps_scopeConfig->d_triggerDelayUSec;
+            startUs = -trig->startTime - ps_digitizerConfig->d_triggerDelayUSec;
         else
-            startUs = cc.leadTimeUs() - ps_scopeConfig->d_triggerDelayUSec;
+            startUs = cc.leadTimeUs() - ps_digitizerConfig->d_triggerDelayUSec;
     }
     else
         startUs = d_chirpOffsetUs;
 
-    int startSample = startUs*1e-6*ps_scopeConfig->d_sampleRate;
-    if(startSample >=0 && startSample < ps_scopeConfig->d_recordLength)
+    int startSample = startUs*1e-6*ps_digitizerConfig->d_sampleRate;
+    if(startSample >=0 && startSample < ps_digitizerConfig->d_recordLength)
         return {startSample,samples};
     else
         return {0,0};
@@ -185,11 +185,11 @@ bool FtmwConfig::initialize()
     auto sb = d_rfConfig.d_downMixSideband;
 
     Fid f;
-    f.setSpacing(ps_scopeConfig->xIncr());
+    f.setSpacing(ps_digitizerConfig->xIncr());
     f.setSideband(sb);
     f.setProbeFreq(df);
     //divide Vmult by 2^bitShift in case extra padding bits are added
-    f.setVMult(ps_scopeConfig->yMult(ps_scopeConfig->d_fidChannel)/pow(2,bitShift()));
+    f.setVMult(ps_digitizerConfig->yMult(ps_digitizerConfig->d_fidChannel)/pow(2,bitShift()));
 
     d_fidTemplate = f;
     d_processingPaused = true;
@@ -206,7 +206,7 @@ bool FtmwConfig::initialize()
 
 #ifdef BC_CUDA
     ps_gpu = std::make_shared<GpuAverager>();
-    if(!ps_gpu->initialize(&d_scopeConfig))
+    if(!ps_gpu->initialize(&d_digitizerConfig))
     {
         d_errorString = ps_gpu->getErrorString();
         return false;
@@ -303,8 +303,8 @@ bool FtmwConfig::addPreAccumulatedFids(const QByteArray &data, quint64 shotCount
 {
     d_errorString.clear();
 
-    int np = ps_scopeConfig->d_recordLength;
-    int numRec = ps_scopeConfig->d_numRecords;
+    int np = ps_digitizerConfig->d_recordLength;
+    int numRec = ps_digitizerConfig->d_numRecords;
     int totalSamples = np * numRec;
 
     if(data.size() != totalSamples * static_cast<int>(sizeof(qint64)))
@@ -388,7 +388,7 @@ bool FtmwConfig::preprocessChirp(const FidList l)
 {
     if(l.isEmpty())
     {
-        d_errorString = "Could not parse scope response for preprocessing chirp.";
+        d_errorString = "Could not parse digitizer response for preprocessing chirp.";
         return false;
     }
 
@@ -565,7 +565,7 @@ void FtmwConfig::retrieveValues()
 void FtmwConfig::prepareChildren()
 {
     addChild(&d_rfConfig);
-    addChild(ps_scopeConfig.get());
+    addChild(ps_digitizerConfig.get());
 }
 
 QString FtmwConfig::objectiveKey() const

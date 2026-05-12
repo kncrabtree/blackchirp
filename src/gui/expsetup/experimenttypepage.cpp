@@ -3,7 +3,7 @@
 #include <climits>
 
 #include <hardware/core/runtimehardwareconfig.h>
-#include <hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/core/ftmwdigitizer/ftmwdigitizer.h>
 
 #include <data/experiment/experiment.h>
 
@@ -21,7 +21,7 @@
 #include <QMessageBox>
 #include <QStackedWidget>
 
-#include <hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/core/ftmwdigitizer/ftmwdigitizer.h>
 
 #include <hardware/core/hardwaremanager.h>
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
@@ -557,13 +557,13 @@ void ExperimentTypePage::apply()
 
          // Use RuntimeHardwareConfig to find the currently active FTMW scope
          const auto& config = RuntimeHardwareConfig::constInstance();
-         auto ftmwKeys = config.getActiveKeys<FtmwScope>();
+         auto ftmwKeys = config.getActiveKeys<FtmwDigitizer>();
 
          FtmwDigitizerConfig ftc(ftmwKeys.isEmpty()
-             ? BC::Key::hwKey(RuntimeHardwareConfig::hardwareTypeOf<FtmwScope>(), QStringLiteral("default"))
+             ? BC::Key::hwKey(RuntimeHardwareConfig::hardwareTypeOf<FtmwDigitizer>(), QStringLiteral("default"))
              : ftmwKeys.first());
 
-         // Preserve rfConfig and scopeConfig before enableFtmw destroys and
+         // Preserve rfConfig and digitizerConfig before enableFtmw destroys and
          // recreates the FtmwConfig. This is needed for both new and repeat
          // experiments because the RF config page may have already applied
          // sideband, clock, and chirp settings.
@@ -571,7 +571,7 @@ void ExperimentTypePage::apply()
          if(hadFtmw)
          {
              cfg = e->ftmwConfig()->d_rfConfig;
-             ftc = e->ftmwConfig()->scopeConfig();
+             ftc = e->ftmwConfig()->digitizerConfig();
          }
 
          auto type = p_ftmwTypeBox->currentData().value<FtmwConfig::FtmwType>();
@@ -586,7 +586,7 @@ void ExperimentTypePage::apply()
          if(hadFtmw)
          {
              ftmw->d_rfConfig = cfg;
-             ftmw->scopeConfig() = ftc;
+             ftmw->digitizerConfig() = ftc;
          }
          if(p_chirpOffsetBox->value() >= 0.0)
              ftmw->d_chirpOffsetUs = p_chirpOffsetBox->value();

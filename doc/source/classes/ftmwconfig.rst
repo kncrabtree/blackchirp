@@ -25,7 +25,7 @@ experiment data.  A concrete subclass is selected at setup time based on the
 RF and chirp settings are held by :cpp:class:`RfConfig` (see
 :doc:`rfconfig`), accessible through the public member ``d_rfConfig``.
 Digitizer settings are encapsulated in an
-``FtmwDigitizerConfig`` shared instance (accessible via ``scopeConfig()``).
+``FtmwDigitizerConfig`` shared instance (accessible via ``digitizerConfig()``).
 The FTMW configuration dialog and the user-facing setup workflow are covered in
 :doc:`/user_guide/ftmw_configuration`; digitizer setup specifics appear in
 :doc:`/user_guide/ftmw_configuration/digitizer_setup`.
@@ -34,7 +34,7 @@ WaveformBuffer integration
 --------------------------
 
 ``FtmwConfig`` holds a *non-owning* pointer to a :cpp:class:`WaveformBuffer` object.
-The buffer is created and owned by the ``FtmwScope`` hardware object, which
+The buffer is created and owned by the ``FtmwDigitizer`` hardware object, which
 calls ``setWaveformBuffer()`` during acquisition setup; ``FtmwConfig`` must
 not free or outlive this pointer.  ``AcquisitionManager`` retrieves the buffer
 through ``waveformBuffer()`` and drains it in a worker thread, calling

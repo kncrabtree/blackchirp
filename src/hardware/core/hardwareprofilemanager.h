@@ -493,9 +493,9 @@ public:
      * each required hardware type that does not already have one.
      *
      * Required type -> virtual implementation mapping:
-     *   FtmwScope  -> VirtualFtmwScope
+     *   FtmwDigitizer  -> VirtualFtmwDigitizer
      *   Clock      -> FixedClock
-     *   LifScope   -> VirtualLifScope   (when LIF enabled)
+     *   LifDigitizer   -> VirtualLifDigitizer   (when LIF enabled)
      *   LifLaser   -> VirtualLifLaser   (when LIF enabled)
      */
     void ensureSystemProfiles();

@@ -31,7 +31,7 @@ REGISTER_HARDWARE_ARRAY_ENTRY(RigolDS2302A, BC::Key::Digi::sampleRates,
     {{BC::Key::Digi::srText, "1000 MSa/s"}, {BC::Key::Digi::srValue, 1e9}})
 
 RigolDS2302A::RigolDS2302A(const QString& label, QObject *parent)
-    : LifScope(QString(RigolDS2302A::staticMetaObject.className()), label, parent)
+    : LifDigitizer(QString(RigolDS2302A::staticMetaObject.className()), label, parent)
 {
     using namespace BC::Key::Digi;
 

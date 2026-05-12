@@ -40,9 +40,9 @@ digitizer configuration can be recovered from the experiment's
 
 - **LifConfig** — the scan parameters set on the wizard's LIF group (see
   :doc:`experiment_setup`).
-- **LifScope.<key>** — the digitizer settings set on the
+- **LifDigitizer.<key>** — the digitizer settings set on the
   :doc:`configuration` (the section name embeds the configured digitizer
-  hardware key, e.g. ``LifScope.Default``).
+  hardware key, e.g. ``LifDigitizer.Default``).
 
 For example, an experiment with a 6×6 (delay × laser) grid, 10 shots per
 point, randomized delay order, and a single-channel LIF acquisition writes
@@ -59,29 +59,29 @@ the following ``LifConfig`` section to ``header.csv``::
    LifConfig;;;ScanOrder;DelayFirst;
    LifConfig;;;ShotsPerPoint;10;
 
-The companion ``LifScope.Default`` section captures the digitizer
+The companion ``LifDigitizer.Default`` section captures the digitizer
 configuration that produced the trace files::
 
-   LifScope.Default;;;BlockAverageEnabled;false;
-   LifScope.Default;;;ByteOrder;LittleEndian;
-   LifScope.Default;;;BytesPerPoint;1;
-   LifScope.Default;;;LifChannel;1;
-   LifScope.Default;;;LifRefChannel;2;
-   LifScope.Default;;;LifRefEnabled;false;
-   LifScope.Default;;;RecordLength;10000;
-   LifScope.Default;;;SampleRate;1.25e+09;Hz
-   LifScope.Default;;;TriggerChannel;0;
-   LifScope.Default;;;TriggerDelay;0;μs
-   LifScope.Default;;;TriggerEdge;RisingEdge;
-   LifScope.Default;;;TriggerLevel;0.3;V
-   LifScope.Default;AnalogChannel;0;Enabled;true;
-   LifScope.Default;AnalogChannel;0;FullScale;0.05;V
-   LifScope.Default;AnalogChannel;0;Index;1;
-   LifScope.Default;AnalogChannel;0;VerticalOffset;0;V
-   LifScope.Default;AnalogChannel;1;Enabled;false;
-   LifScope.Default;AnalogChannel;1;FullScale;0.05;V
-   LifScope.Default;AnalogChannel;1;Index;2;
-   LifScope.Default;AnalogChannel;1;VerticalOffset;0;V
+   LifDigitizer.Default;;;BlockAverageEnabled;false;
+   LifDigitizer.Default;;;ByteOrder;LittleEndian;
+   LifDigitizer.Default;;;BytesPerPoint;1;
+   LifDigitizer.Default;;;LifChannel;1;
+   LifDigitizer.Default;;;LifRefChannel;2;
+   LifDigitizer.Default;;;LifRefEnabled;false;
+   LifDigitizer.Default;;;RecordLength;10000;
+   LifDigitizer.Default;;;SampleRate;1.25e+09;Hz
+   LifDigitizer.Default;;;TriggerChannel;0;
+   LifDigitizer.Default;;;TriggerDelay;0;μs
+   LifDigitizer.Default;;;TriggerEdge;RisingEdge;
+   LifDigitizer.Default;;;TriggerLevel;0.3;V
+   LifDigitizer.Default;AnalogChannel;0;Enabled;true;
+   LifDigitizer.Default;AnalogChannel;0;FullScale;0.05;V
+   LifDigitizer.Default;AnalogChannel;0;Index;1;
+   LifDigitizer.Default;AnalogChannel;0;VerticalOffset;0;V
+   LifDigitizer.Default;AnalogChannel;1;Enabled;false;
+   LifDigitizer.Default;AnalogChannel;1;FullScale;0.05;V
+   LifDigitizer.Default;AnalogChannel;1;Index;2;
+   LifDigitizer.Default;AnalogChannel;1;VerticalOffset;0;V
 
 Together these sections fully describe how the trace files in ``lif/``
 were acquired. ``ShotsPerPoint`` is needed to convert the on-disk

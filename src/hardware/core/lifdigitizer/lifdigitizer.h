@@ -1,16 +1,16 @@
-#ifndef LIFSCOPE_H
-#define LIFSCOPE_H
+#ifndef LIFDIGITIZER_H
+#define LIFDIGITIZER_H
 
 #include <hardware/core/hardwareobject.h>
 #include <data/lif/lifdigitizerconfig.h>
 #include <data/lif/lifconfig.h>
 
-class LifScope : public HardwareObject, protected LifDigitizerConfig
+class LifDigitizer : public HardwareObject, protected LifDigitizerConfig
 {
     Q_OBJECT
 public:
-    LifScope(const QString& impl, const QString& label, QObject *parent = nullptr);
-    virtual ~LifScope();
+    LifDigitizer(const QString& impl, const QString& label, QObject *parent = nullptr);
+    virtual ~LifDigitizer();
 
 signals:
     void waveformRead(QVector<qint8>);
@@ -28,9 +28,9 @@ public slots:
 protected:
     void hwReadSettings() override final;
     /*!
-     * \brief Driver hook called after LifScope base settings are refreshed. Default is a no-op.
+     * \brief Driver hook called after LifDigitizer base settings are refreshed. Default is a no-op.
      */
-    virtual void lifScopeReadSettings() {}
+    virtual void lifDigitizerReadSettings() {}
 
     void emitWaveform(const QVector<qint8> &data);
     bool d_acquisitionGated{false};
@@ -41,4 +41,4 @@ private:
 
 };
 
-#endif // LIFSCOPE_H
+#endif // LIFDIGITIZER_H
