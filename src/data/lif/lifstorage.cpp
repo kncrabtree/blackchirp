@@ -160,19 +160,21 @@ LifTrace LifStorage::getLifTrace(int di, int li)
     return LifTrace();
 }
 
-LifTrace LifStorage::loadLifTrace(int di, int li)
+void LifStorage::ensureLifParamsLoaded()
 {
-    LifTrace out;
+    QMutexLocker lock(pu_mutex.get());
+    if(d_lifParamsLoaded)
+        return;
+
+    d_lifParamsLoaded = true;
+
     QDir d{BlackchirpCSV::exptDir(d_number,d_path)};
-    d.cd(BC::CSV::lifDir);
+    if(!d.cd(BC::CSV::lifDir))
+        return;
 
     QFile hdr(d.absoluteFilePath(BC::CSV::lifparams));
     if(!hdr.open(QIODevice::ReadOnly|QIODevice::Text))
-        return out;
-
-    bool found = false;
-    int lsize{0}, rsize{0}, shots{0};
-    double xsp{1.0}, lym{0.0}, rym{0.0};
+        return;
 
     while(!hdr.atEnd())
     {
@@ -182,45 +184,58 @@ LifTrace LifStorage::loadLifTrace(int di, int li)
 
         bool ok = false;
         int lli = l.constFirst().toInt(&ok);
-        if(ok)
-        {
-            int ddi = l.at(1).toInt(&ok);
-            if(ok)
-            {
-                if(lli == li && ddi == di)
-                {
-                    found = true;
-                    shots = l.at(2).toInt();
-                    lsize = l.at(3).toInt();
-                    rsize = l.at(4).toInt();
-                    xsp = l.at(5).toDouble();
-                    lym = l.at(6).toDouble();
-                    rym = l.at(7).toDouble();
-                    break;
-                }
-            }
-        }
+        if(!ok)
+            continue;
+        int ddi = l.at(1).toInt(&ok);
+        if(!ok)
+            continue;
+
+        LifParamsRow row;
+        row.shots    = l.at(2).toInt();
+        row.lifSize  = l.at(3).toInt();
+        row.refSize  = l.at(4).toInt();
+        row.spacing  = l.at(5).toDouble();
+        row.lifYMult = l.at(6).toDouble();
+        row.refYMult = l.at(7).toDouble();
+        d_lifParamsCache.emplace(index(ddi,lli), row);
+    }
+}
+
+LifTrace LifStorage::loadLifTrace(int di, int li)
+{
+    ensureLifParamsLoaded();
+
+    const auto idx = index(di,li);
+
+    LifParamsRow params;
+    {
+        QMutexLocker lock(pu_mutex.get());
+        auto it = d_lifParamsCache.find(idx);
+        if(it == d_lifParamsCache.end())
+            return {};
+        params = it->second;
     }
 
-    if(!found)
-        return out;
+    QDir d{BlackchirpCSV::exptDir(d_number,d_path)};
+    if(!d.cd(BC::CSV::lifDir))
+        return {};
 
-    auto idx = index(di,li);
     QFile dat(d.absoluteFilePath("%1.csv").arg(idx));
     if(!dat.open(QIODevice::ReadOnly|QIODevice::Text))
-        return out;
+        return {};
 
-    QVector<qint64> lifData(lsize), refData(rsize);
+    QVector<qint64> lifData(params.lifSize), refData(params.refSize);
     auto l = pu_csv->readLine(dat); //read first line which contains titles
-    for(int i=0; i<lsize; i++)
+    for(int i=0; i<params.lifSize; i++)
     {
         l = pu_csv->readLine(dat);
         lifData[i] = l.constFirst().toString().toLongLong(nullptr,36);
-        if(i<rsize && l.size() == 2)
+        if(i<params.refSize && l.size() == 2)
             refData[i] = l.at(1).toString().toLongLong(nullptr,36);
     }
 
-    out = LifTrace(di,li,lifData,refData,shots,xsp,lym,rym);
+    LifTrace out(di,li,lifData,refData,params.shots,
+                 params.spacing,params.lifYMult,params.refYMult);
     QMutexLocker lock(pu_mutex.get());
     d_data.emplace(idx,out);
     return out;

@@ -148,6 +148,36 @@ private:
     LifTrace d_currentTrace;         ///< Trace being accumulated for the current cell.
 
     /*!
+     \brief Per-cell summary row parsed from \c lif/lifparams.csv.
+
+     Mirrors the on-disk row layout (shots, payload sizes, sample
+     spacing, vertical multipliers) so \c loadLifTrace can look up a
+     cell's parameters by flat grid index without rescanning the file.
+    */
+    struct LifParamsRow {
+        int shots{0};
+        int lifSize{0};
+        int refSize{0};
+        double spacing{1.0};
+        double lifYMult{0.0};
+        double refYMult{0.0};
+    };
+
+    /*!
+     \brief Lazily parse \c lif/lifparams.csv into \c d_lifParamsCache.
+
+     The first call walks the file end-to-end and populates the map
+     keyed by \c index(dIndex,lIndex); subsequent calls are no-ops.
+     Without the cache, \c loadLifTrace performs an O(N) scan per call,
+     turning a full \c LifDisplayWidget::reprocess() into an O(N²) walk
+     on a grid with N cells.
+    */
+    void ensureLifParamsLoaded();
+
+    std::map<int,LifParamsRow> d_lifParamsCache;
+    bool d_lifParamsLoaded{false};
+
+    /*!
      \brief Convert a (delay, laser) pair to a flat grid index.
      \param dp Delay index.
      \param lp Laser index.

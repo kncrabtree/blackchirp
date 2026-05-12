@@ -3,6 +3,7 @@
 
 #include <QWidget>
 
+#include <QFutureWatcher>
 #include <QVector>
 #include <memory.h>
 
@@ -49,6 +50,7 @@ private:
     std::shared_ptr<LifStorage> ps_lifStorage;
     bool d_delayReverse{false}, d_laserReverse{false};
     QVector<double> d_currentIntegratedData;
+    QFutureWatcher<QVector<double>> *p_reprocessWatcher{nullptr};
 
     LifSlicePlot *p_delaySlicePlot, *p_laserSlicePlot;
     LifTracePlot *p_lifTracePlot;

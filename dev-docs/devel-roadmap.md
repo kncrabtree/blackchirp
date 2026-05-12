@@ -95,6 +95,55 @@ work, or a new "remote hardware proxy" driver type that genuinely
 needs async), or evidence in production that the QPointer guard in
 `sendRequest` is being hit.
 
+### Cross-experiment memory budget
+
+In-memory data caches in the viewer (and the acquisition app) are
+currently unbounded and owned per-experiment, with no awareness of
+each other. Two concrete instances today:
+
+- `LifStorage::d_data` retains every `LifTrace` ever loaded
+  (raw `qint64` samples per cell). For a 100×100 grid with 8192
+  samples per cell on two channels, that is ~130 MB just for the
+  raw data of one open experiment.
+- A filtered-trace cache adjacent to `d_data` would roughly
+  double the per-cell cost (8192 × 2 channels × `double` =
+  128 KB filtered, vs 128 KB raw `qint64`). An attempt at a
+  per-`LifStorage` byte budget was prototyped and reverted
+  because the worst-case sample count is a guess that papers over
+  the absence of a real policy — see the `lif-progress-dialog`
+  / async-reprocess thread for context.
+
+FTMW has its own caching semantics that aren't accounted for in
+either of the above and would need to participate in any
+process-wide budget.
+
+Direction (not chosen):
+
+1. **Static registry**: each cache class registers itself (with
+   accessors for current bytes used, an `evict(bytes)` callback,
+   and a category tag — "lif raw", "lif filtered", "ftmw …") at
+   construction. A central `MemoryBudget` singleton tracks
+   totals, applies a configurable cap, and drives LRU eviction
+   across all registered caches when the cap is exceeded.
+2. **Settings**: one user-facing knob (`BC::Key::MemoryBudgetBytes`,
+   say), with sensible default sized to typical workstations.
+3. **Instrumentation**: a status-bar widget or dev menu surface
+   showing per-category usage and giving the user a "purge"
+   button.
+
+Rough scope: a few hundred LOC for the registry + a per-cache
+adapter for each existing in-memory cache, plus the policy and
+UI. Trigger to pick it up: actual user reports of memory
+pressure with multiple open experiments, or a deliberate move to
+keep filtered traces / spectrogram bitmaps / FTMW intermediates
+warm across reprocesses.
+
+In the meantime: the LIF viewer's reprocess path runs on a worker
+thread with a cancelable progress dialog
+(`LifDisplayWidget::reprocess`), which is enough to keep the UI
+responsive even when the SG-filter convolution runs from scratch
+on every gate adjustment.
+
 ## Pre-Release
 
 ### [Packaging and Binary Generation (Github Actions)](packaging-and-ci.md)

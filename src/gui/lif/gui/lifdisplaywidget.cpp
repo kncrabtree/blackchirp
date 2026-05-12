@@ -4,8 +4,10 @@
 #include <QVBoxLayout>
 #include <QFormLayout>
 #include <QGroupBox>
+#include <QProgressDialog>
 #include <QSpinBox>
 #include <QTimerEvent>
+#include <QtConcurrent/QtConcurrent>
 
 #include <data/storage/settingsstorage.h>
 #include <gui/lif/gui/lifsliceplot.h>
@@ -236,43 +238,103 @@ void LifDisplayWidget::changeDelaySlice(int li)
 
 void LifDisplayWidget::reprocess()
 {
-    auto lp = ps_lifStorage->d_laserPoints;
-    auto dp = ps_lifStorage->d_delayPoints;
-    d_currentIntegratedData = QVector<double>(dp*lp);
+    // Re-entrant guard. A reprocess pass can take seconds on a
+    // sweep with thousands of traces; ignore additional triggers
+    // while one is in flight. The active watcher resets itself
+    // when the finished slot fires, so subsequent reprocess
+    // requests proceed normally.
+    if(p_reprocessWatcher)
+        return;
 
-    auto ps = p_procWidget->getSettings();
-    for(int li=0; li<lp; li++)
+    if(!ps_lifStorage)
+        return;
+
+    const int lp = ps_lifStorage->d_laserPoints;
+    const int dp = ps_lifStorage->d_delayPoints;
+    const int total = dp * lp;
+    if(total <= 0)
+        return;
+
+    const bool delayRev = d_delayReverse;
+    const bool laserRev = d_laserReverse;
+    auto storage = ps_lifStorage; // shared_ptr copy keeps storage alive
+    const auto procSettings = p_procWidget->getSettings();
+
+    // Worker: integrate every (di, li) cell off the main thread.
+    // QPromise carries cancel state both directions: the watcher's
+    // cancel() flips isCanceled() inside the lambda so the loop can
+    // bail; the lambda's setProgressValue drives the dialog.
+    auto worker = [storage, procSettings, dp, lp, delayRev, laserRev]
+                  (QPromise<QVector<double>> &promise)
     {
-        auto mli = li;
-        if(d_laserReverse)
-            mli = lp-li-1;
-        for(int di=0; di<dp; di++)
+        promise.setProgressRange(0, dp * lp);
+        QVector<double> data(dp * lp);
+        int progress = 0;
+        for(int li = 0; li < lp; ++li)
         {
-            auto mdi = di;
-            if(d_delayReverse)
-                mdi = dp-di-1;
-
-            auto t = ps_lifStorage->getLifTrace(di,li);
-            auto d = t.integrate(ps);
-            d_currentIntegratedData[mli+mdi*lp] = d;
+            const int mli = laserRev ? lp - li - 1 : li;
+            for(int di = 0; di < dp; ++di)
+            {
+                if(promise.isCanceled())
+                    return;
+                const int mdi = delayRev ? dp - di - 1 : di;
+                auto t = storage->getLifTrace(di, li);
+                data[mli + mdi * lp] = t.integrate(procSettings);
+                promise.setProgressValue(++progress);
+            }
         }
-    }
+        promise.addResult(data);
+    };
 
-    p_spectrogramPlot->updateData(d_currentIntegratedData,lp);
+    p_reprocessWatcher = new QFutureWatcher<QVector<double>>(this);
 
-    auto cdi = p_spectrogramPlot->currentDelayIndex();
-    auto cli = p_spectrogramPlot->currentLaserIndex();
+    auto *dlg = new QProgressDialog(QString("Loading LIF traces…"),
+                                    QString("Cancel"),
+                                    0, total, this);
+    dlg->setWindowTitle(QString("Processing LIF data"));
+    dlg->setWindowModality(Qt::WindowModal);
+    // Suppress the dialog for fast loads (small grids land in tens of
+    // milliseconds even on cold cache).
+    dlg->setMinimumDuration(200);
 
-    p_laserSlicePlot->setData(laserSlice(cdi),d_dString.arg(p_spectrogramPlot->delayVal(cdi),0,'f',3));
-    p_delaySlicePlot->setData(delaySlice(cli),d_lString.arg(p_spectrogramPlot->laserVal(cli),0,'f',d_lDec));
+    connect(p_reprocessWatcher, &QFutureWatcher<QVector<double>>::progressRangeChanged,
+            dlg, &QProgressDialog::setRange);
+    connect(p_reprocessWatcher, &QFutureWatcher<QVector<double>>::progressValueChanged,
+            dlg, &QProgressDialog::setValue);
+    connect(dlg, &QProgressDialog::canceled,
+            p_reprocessWatcher, &QFutureWatcher<QVector<double>>::cancel);
 
-    if(d_delayReverse)
-        cdi = dp - cdi -1;
-    if(d_laserReverse)
-        cli = lp - cli -1;
-    auto lt = ps_lifStorage->getLifTrace(cdi,cli);
-    p_lifTracePlot->setTrace(lt);
+    connect(p_reprocessWatcher, &QFutureWatcher<QVector<double>>::finished,
+            this, [this, dlg, lp, dp]()
+    {
+        if(!p_reprocessWatcher->isCanceled())
+        {
+            d_currentIntegratedData = p_reprocessWatcher->result();
+            p_spectrogramPlot->updateData(d_currentIntegratedData, lp);
 
+            auto cdi = p_spectrogramPlot->currentDelayIndex();
+            auto cli = p_spectrogramPlot->currentLaserIndex();
+
+            p_laserSlicePlot->setData(laserSlice(cdi),
+                d_dString.arg(p_spectrogramPlot->delayVal(cdi), 0, 'f', 3));
+            p_delaySlicePlot->setData(delaySlice(cli),
+                d_lString.arg(p_spectrogramPlot->laserVal(cli), 0, 'f', d_lDec));
+
+            if(d_delayReverse)
+                cdi = dp - cdi - 1;
+            if(d_laserReverse)
+                cli = lp - cli - 1;
+            auto lt = ps_lifStorage->getLifTrace(cdi, cli);
+            p_lifTracePlot->setTrace(lt);
+        }
+
+        dlg->close();
+        dlg->deleteLater();
+        p_reprocessWatcher->deleteLater();
+        p_reprocessWatcher = nullptr;
+    });
+
+    p_reprocessWatcher->setFuture(QtConcurrent::run(worker));
 }
 
 void LifDisplayWidget::resetProc()
