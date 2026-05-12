@@ -32,6 +32,7 @@ class LifControlWidget;
 class RfConfigWidget;
 class ExperimentViewWidget;
 class CommunicationDialog;
+class UpdateChecker;
 
 namespace Ui {
 class MainWindow;
@@ -90,6 +91,7 @@ public slots:
     void setLogIcon(LogHandler::MessageCode c);
     void sleep(bool s);
     void viewExperiment();
+    void onCheckForUpdatesTriggered();
 
     bool isDialogOpen(const QString key);
     HWDialog *createHWDialog(const QString key, QWidget *controlWidget = nullptr,
@@ -133,6 +135,7 @@ private:
     QWidget *wrapWithPythonWidget(const QString &hwKey, QWidget *typeWidget);
 
     QPointer<CommunicationDialog> p_communicationDialog;
+    UpdateChecker *p_updateChecker{nullptr};
     QActionGroup *p_loadoutActionGroup{nullptr};
     QActionGroup *p_ftmwPresetActionGroup{nullptr};
     ProgramState d_state{Idle};

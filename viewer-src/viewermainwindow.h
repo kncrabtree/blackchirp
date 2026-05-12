@@ -23,6 +23,7 @@
 #include <data/storage/settingsstorage.h>
 
 class QMenu;
+class UpdateChecker;
 
 namespace BC::Key::Viewer {
 // Group name for every viewer-owned setting in Blackchirp2.conf. The
@@ -57,6 +58,7 @@ private slots:
     void onListItemDoubleClicked(QListWidgetItem *item);
     void chooseDataPath();
     void resetDataPath();
+    void onCheckForUpdatesTriggered();
 
 private:
     QWidget *p_centralWidget;
@@ -68,6 +70,7 @@ private:
     QAction *p_openAction;
     QAction *p_closeAction;
     QMenu *p_recentMenu;
+    UpdateChecker *p_updateChecker{nullptr};
 
     // Track open experiment view widgets by their display text
     std::map<QString, std::unique_ptr<ExperimentViewWidget>> d_openExperiments;

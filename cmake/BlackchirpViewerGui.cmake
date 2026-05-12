@@ -54,6 +54,7 @@ set(BLACKCHIRP_VIEWER_GUI_SOURCES
     # Dialogs (viewer-safe)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/aboutdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/peaklistexportdialog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/updateavailabledialog.cpp
     
     # Basic widgets (no hardware dependencies)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/experimentsummarywidget.cpp
@@ -118,6 +119,7 @@ set(BLACKCHIRP_VIEWER_GUI_HEADERS
     # Dialogs (viewer-safe)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/aboutdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/peaklistexportdialog.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/updateavailabledialog.h
     
     # Basic widgets (no hardware dependencies)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/enumcombobox.h

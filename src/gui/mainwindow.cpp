@@ -48,12 +48,14 @@
 #include <gui/dialog/batchsequencedialog.h>
 #include <gui/dialog/ftmwconfigdialog.h>
 #include <gui/dialog/runtimehardwareconfigdialog.h>
+#include <gui/dialog/updateavailabledialog.h>
 
 // #include <gui/wizard/experimentwizard.h>
 #include <gui/expsetup/experimentsetupdialog.h>
 
 #include <data/loghandler.h>
 #include <data/storage/blackchirpcsv.h>
+#include <data/updatechecker.h>
 #include <acquisition/acquisitionmanager.h>
 #include <acquisition/batch/batchmanager.h>
 #include <acquisition/batch/batchsingle.h>
@@ -285,6 +287,10 @@ MainWindow::MainWindow(QWidget *parent) :
         addUrl("&Documentation"_L1, "https://blackchirp.readthedocs.io/");
         addUrl("&GitHub Repository"_L1, "https://github.com/kncrabtree/blackchirp");
         addUrl("Di&scord Server"_L1, "https://discord.gg/88CkbAKUZY");
+        ui->helpMenu->addSeparator();
+        p_updateChecker = new UpdateChecker(this);
+        ui->helpMenu->addAction("Check for &Updates..."_L1, this,
+                                &MainWindow::onCheckForUpdatesTriggered);
         ui->helpMenu->addSeparator();
         ui->helpMenu->addAction("&About Blackchirp"_L1, this, [this]() {
             using namespace Qt::Literals::StringLiterals;
@@ -1529,6 +1535,11 @@ HWDialog *MainWindow::createHWDialog(const QString key, QWidget *controlWidget, 
 
     out->show();
     return out;
+}
+
+void MainWindow::onCheckForUpdatesTriggered()
+{
+    UpdateAvailableDialog::triggerManualCheck(p_updateChecker, this);
 }
 
 void MainWindow::configureUi(MainWindow::ProgramState s)

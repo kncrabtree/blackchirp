@@ -12,7 +12,18 @@ ApplicationConfigManager* ApplicationConfigManager::s_instance = nullptr;
 ApplicationConfigManager::ApplicationConfigManager(QObject *parent)
     : QObject(parent)
 {
-    // Register declarative option entries
+    // Register declarative option entries. The order here drives the order
+    // the options appear in the ApplicationConfigDialog. Boolean toggles are
+    // grouped first; non-boolean editors (font picker, etc.) come last.
+    d_options.append({
+        BC::Key::AppConfig::updateCheckEnabled,
+        QStringLiteral("Check for Updates"),
+        QStringLiteral("Check GitHub for new releases on startup (no more than once per day). "
+                       "The application contacts api.github.com only; uncheck to disable all "
+                       "outbound network traffic for update checks."),
+        QVariant(true),
+        false
+    });
     d_options.append({
         BC::Key::AppConfig::lifEnabled,
         QStringLiteral("LIF Module"),
@@ -40,6 +51,7 @@ ApplicationConfigManager::ApplicationConfigManager(QObject *parent)
     s.beginGroup(BC::Key::AppConfig::appConfig);
     d_currentConfig.lifEnabled = s.value(BC::Key::AppConfig::lifEnabled, true).toBool();
     d_currentConfig.debugLogging = s.value(BC::Key::AppConfig::debugLogging, false).toBool();
+    d_currentConfig.updateCheckEnabled = s.value(BC::Key::AppConfig::updateCheckEnabled, true).toBool();
     s.endGroup();
 
     // Font migration: copy from old location if new key is absent
@@ -125,6 +137,30 @@ void ApplicationConfigManager::setDebugLogging(bool enabled)
     emit configurationChanged(d_currentConfig);
 }
 
+bool ApplicationConfigManager::isUpdateCheckEnabled() const
+{
+    QMutexLocker locker(&d_configMutex);
+    return d_currentConfig.updateCheckEnabled;
+}
+
+void ApplicationConfigManager::setUpdateCheckEnabled(bool enabled)
+{
+    {
+        QMutexLocker locker(&d_configMutex);
+        if(d_currentConfig.updateCheckEnabled == enabled)
+            return;
+        d_currentConfig.updateCheckEnabled = enabled;
+    }
+
+    QSettings s;
+    s.beginGroup(BC::Key::AppConfig::appConfig);
+    s.setValue(BC::Key::AppConfig::updateCheckEnabled, enabled);
+    s.endGroup();
+
+    emit updateCheckEnabledChanged(enabled);
+    emit configurationChanged(d_currentConfig);
+}
+
 void ApplicationConfigManager::setLifEnabled(bool enabled)
 {
     {
@@ -193,5 +229,9 @@ void ApplicationConfigManager::setOptionValue(const QString& key, const QVariant
     else if(key == BC::Key::AppConfig::appFont)
     {
         emit fontChanged(value.value<QFont>());
+    }
+    else if(key == BC::Key::AppConfig::updateCheckEnabled)
+    {
+        setUpdateCheckEnabled(value.toBool());
     }
 }

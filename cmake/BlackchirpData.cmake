@@ -22,6 +22,7 @@ set(BLACKCHIRP_DATA_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loghandler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/bcglobals.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/crashhandler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/updatechecker.cpp
     
     # Analysis and signal processing
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/analysis/analysis.cpp
@@ -96,6 +97,7 @@ set(BLACKCHIRP_DATA_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/bcglobals.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/crashhandler.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/crashhandler_p.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/updatechecker.h
     
     # Analysis and signal processing
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/analysis/analysis.h

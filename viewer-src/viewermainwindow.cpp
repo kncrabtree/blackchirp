@@ -15,6 +15,8 @@
 #include <QUrl>
 
 #include <gui/dialog/aboutdialog.h>
+#include <gui/dialog/updateavailabledialog.h>
+#include <data/updatechecker.h>
 
 #define _STR(x) #x
 #define STRINGIFY(x) _STR(x)
@@ -156,6 +158,11 @@ void ViewerMainWindow::setupMenuBar()
     addUrl(QString("&Documentation"),   "https://blackchirp.readthedocs.io/");
     addUrl(QString("&GitHub Repository"), "https://github.com/kncrabtree/blackchirp");
     addUrl(QString("Di&scord Server"),  "https://discord.gg/88CkbAKUZY");
+    helpMenu->addSeparator();
+
+    p_updateChecker = new UpdateChecker(this);
+    helpMenu->addAction(QString("Check for &Updates..."), this,
+                        &ViewerMainWindow::onCheckForUpdatesTriggered);
     helpMenu->addSeparator();
 
     auto *aboutAction = helpMenu->addAction("&About Blackchirp Viewer");
@@ -408,6 +415,11 @@ void ViewerMainWindow::resetDataPath()
                     "Set Data Path… to point the viewer at an experiment "
                     "tree manually."));
     }
+}
+
+void ViewerMainWindow::onCheckForUpdatesTriggered()
+{
+    UpdateAvailableDialog::triggerManualCheck(p_updateChecker, this);
 }
 
 void ViewerMainWindow::removeExperimentFromList(const QString& displayText)

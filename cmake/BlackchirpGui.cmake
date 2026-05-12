@@ -38,6 +38,7 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/ftmwconfigdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwconfigwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/runtimehardwareconfigdialog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/updateavailabledialog.cpp
 
     # Experiment setup pages
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/drscanconfigwidget.cpp
@@ -152,6 +153,7 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/peaklistexportdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/ftmwconfigdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/quickexptdialog.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/updateavailabledialog.h
 
     # Experiment setup pages
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/drscanconfigwidget.h

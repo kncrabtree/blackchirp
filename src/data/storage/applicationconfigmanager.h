@@ -48,9 +48,10 @@ public:
      * \brief Application configuration structure
      */
     struct ApplicationConfig {
-        bool lifEnabled{false};     /*!< LIF module enabled state */
-        bool cudaEnabled{false};    /*!< CUDA module enabled state */
-        bool debugLogging{false};   /*!< Debug log messages enabled state */
+        bool lifEnabled{false};        /*!< LIF module enabled state */
+        bool cudaEnabled{false};       /*!< CUDA module enabled state */
+        bool debugLogging{false};      /*!< Debug log messages enabled state */
+        bool updateCheckEnabled{true}; /*!< Check GitHub for new releases on startup */
     };
 
     /*!
@@ -95,6 +96,18 @@ public:
     void setDebugLogging(bool enabled);
 
     /*!
+     * \brief Check if startup update checking is enabled
+     * \return True if the application checks GitHub for new releases on startup
+     */
+    bool isUpdateCheckEnabled() const;
+
+    /*!
+     * \brief Enable or disable startup update checks and persist the setting
+     * \param enabled True to enable the daily-throttled startup check
+     */
+    void setUpdateCheckEnabled(bool enabled);
+
+    /*!
      * \brief Enable or disable LIF module and persist the setting
      * \param enabled True to enable LIF hardware and UI components
      */
@@ -134,6 +147,7 @@ signals:
     void debugLoggingChanged(bool enabled);
     void fontChanged(QFont font);
     void lifEnabledChanged(bool enabled);
+    void updateCheckEnabledChanged(bool enabled);
 
 private:
     explicit ApplicationConfigManager(QObject *parent = nullptr);
@@ -152,11 +166,12 @@ private:
  * \brief Settings keys for application configuration
  */
 namespace BC::Key::AppConfig {
-    inline constexpr QLatin1StringView appConfig{"applicationConfig"};     /*!< Base settings key */
-    inline constexpr QLatin1StringView lifEnabled{"lifEnabled"};           /*!< LIF enabled state */
-    inline constexpr QLatin1StringView cudaEnabled{"cudaEnabled"};         /*!< CUDA enabled state */
-    inline constexpr QLatin1StringView debugLogging{"debugLogging"};       /*!< Debug logging enabled state */
-    inline constexpr QLatin1StringView appFont{"appFont"};                 /*!< Application font */
+    inline constexpr QLatin1StringView appConfig{"applicationConfig"};               /*!< Base settings key */
+    inline constexpr QLatin1StringView lifEnabled{"lifEnabled"};                     /*!< LIF enabled state */
+    inline constexpr QLatin1StringView cudaEnabled{"cudaEnabled"};                   /*!< CUDA enabled state */
+    inline constexpr QLatin1StringView debugLogging{"debugLogging"};                 /*!< Debug logging enabled state */
+    inline constexpr QLatin1StringView appFont{"appFont"};                           /*!< Application font */
+    inline constexpr QLatin1StringView updateCheckEnabled{"updateCheckEnabled"};     /*!< Check GitHub for new releases on startup */
 }
 
 #endif // APPLICATIONCONFIGMANAGER_H
