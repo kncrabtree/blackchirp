@@ -259,6 +259,42 @@ public:
     static bool exptDirExists(int num);
 
     /*!
+     * \brief Scans the data path for the highest experiment number on disk.
+     * \param basePath Optional base path. When empty, the active
+     *        \c savePath from settings is used.
+     * \return Highest experiment number under \c <basePath>/experiments,
+     *         or 0 if no numeric subdirectory was found.
+     *
+     * Walks the rightmost branch of the
+     * \c <basePath>/experiments/mil/th/num hierarchy. Used to keep the
+     * stored \c exptNum reconciled with what is actually on disk so that
+     * users who switch acquisition app versions, or modify the data tree
+     * outside the program, do not allocate a duplicate experiment number.
+     */
+    static int scanMaxExptNumOnDisk(const QString &basePath = QString());
+
+    /*!
+     * \brief Mirrors the next-experiment counter into the v1.x settings store.
+     * \param num Experiment number that v2.x has just allocated.
+     *
+     * Temporary cross-version coupling for the v2.x pre-release window:
+     * users who hit a regression may need to fall back to the v1.x
+     * acquisition app, which predates the per-major-version
+     * \c applicationName convention and so reads the unsuffixed
+     * \c Blackchirp.conf rather than v2.x's \c Blackchirp2.conf.
+     * Mirroring the counter prevents v1.x from allocating a number
+     * that already exists on disk.
+     *
+     * The mirror is a no-op when v1.x's \c savePath differs from
+     * v2.x's, since \c exptNum is per-tree — writing v2.x's counter
+     * into v1.x's settings would corrupt v1.x's own counter for its
+     * own data tree.
+     *
+     * \note Safe to remove once v1.x is no longer a supported fallback.
+     */
+    static void mirrorExptNumToV1Settings(int num);
+
+    /*!
      * \brief Creates the directory hierarchy for the given experiment.
      * \param num Experiment number.
      * \return \c true if the directory was created or already existed.

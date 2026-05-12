@@ -82,6 +82,37 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 endif()
 
 # ============================================================================
+# Build Configuration (loaded early so local hooks can affect package discovery)
+# ============================================================================
+
+# Check for user build configuration file
+set(BUILD_CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/BuildConfig.cmake")
+set(BUILD_CONFIG_TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/BuildConfig.cmake.template")
+
+if(NOT EXISTS ${BUILD_CONFIG_FILE})
+    message(STATUS "")
+    message(STATUS "=== BUILD CONFIGURATION SETUP ===")
+    message(STATUS "")
+    message(STATUS "No build configuration file found. Creating default configuration...")
+    message(STATUS "")
+    message(STATUS "The following file has been created with default build settings:")
+    message(STATUS "  ${BUILD_CONFIG_FILE}")
+    message(STATUS "")
+    message(STATUS "You can edit this file to customize build options, enable optional")
+    message(STATUS "modules (LIF, CUDA), or change development settings. Most users")
+    message(STATUS "can use the default settings without modification.")
+    message(STATUS "")
+
+    # Copy template to create user config file
+    configure_file(${BUILD_CONFIG_TEMPLATE} ${BUILD_CONFIG_FILE} COPYONLY)
+endif()
+
+# Include user build configuration. Loaded before find_package() so local
+# customizations (CMAKE_PREFIX_PATH tweaks, conda shielding, vendor SDK
+# paths, etc.) can influence dependency discovery.
+include(${BUILD_CONFIG_FILE})
+
+# ============================================================================
 # Qt Configuration
 # ============================================================================
 
@@ -167,36 +198,6 @@ endif()
 
 # Global include directory
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
-
-# ============================================================================
-# Build Configuration
-# ============================================================================
-
-# Check for user build configuration file
-set(BUILD_CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/BuildConfig.cmake")
-set(BUILD_CONFIG_TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/BuildConfig.cmake.template")
-
-if(NOT EXISTS ${BUILD_CONFIG_FILE})
-    message(STATUS "")
-    message(STATUS "=== BUILD CONFIGURATION SETUP ===")
-    message(STATUS "")
-    message(STATUS "No build configuration file found. Creating default configuration...")
-    message(STATUS "")
-    message(STATUS "The following file has been created with default build settings:")
-    message(STATUS "  ${BUILD_CONFIG_FILE}")
-    message(STATUS "")
-    message(STATUS "You can edit this file to customize build options, enable optional")
-    message(STATUS "modules (LIF, CUDA), or change development settings. Most users")
-    message(STATUS "can use the default settings without modification.")
-    message(STATUS "")
-    
-    # Copy template to create user config file
-    configure_file(${BUILD_CONFIG_TEMPLATE} ${BUILD_CONFIG_FILE} COPYONLY)
-endif()
-
-# Include user build configuration
-include(${BUILD_CONFIG_FILE})
-
 
 # ============================================================================
 # Version and Configuration Definitions

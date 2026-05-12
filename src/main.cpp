@@ -1,5 +1,6 @@
 #include <data/storage/settingsstorage.h>
 #include <data/storage/applicationconfigmanager.h>
+#include <data/storage/blackchirpcsv.h>
 #include <data/crashhandler.h>
 #include <gui/mainwindow.h>
 #include <gui/dialog/applicationconfigdialog.h>
@@ -132,6 +133,25 @@ int main(int argc, char *argv[])
         vset.setValue(BC::Key::versionRelease, QLatin1StringView(BC_STRINGIFY(BC_RELEASE_VERSION)));
         vset.endGroup();
         vset.sync();
+    }
+
+    // Reconcile the stored exptNum against disk before any UI uses it.
+    // A different acquisition app version (notably v1.x, which users may
+    // fall back to during the v2.x pre-release) may have created
+    // experiments while v2.x was not running, leaving our counter stale.
+    {
+        int stored = s.get(BC::Key::exptNum, 0);
+        int diskMax = BlackchirpCSV::scanMaxExptNumOnDisk();
+        if(diskMax > stored)
+        {
+            QSettings set;
+            set.setFallbacksEnabled(false);
+            set.beginGroup(BC::Key::BC);
+            set.setValue(BC::Key::exptNum, diskMax);
+            set.endGroup();
+            set.sync();
+            BlackchirpCSV::mirrorExptNumToV1Settings(diskMax);
+        }
     }
 
     std::unique_ptr<QSharedMemory> m;

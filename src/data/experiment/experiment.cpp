@@ -308,7 +308,13 @@ bool Experiment::initialize()
 
 
     SettingsStorage s;
-    num = s.get(BC::Key::exptNum,0)+1;
+    // Disk is the source of truth for the next experiment number: the
+    // stored counter can lag behind disk if a different acquisition app
+    // version (or anything else outside this process) has written to the
+    // tree since v2.x last ran.
+    int stored = s.get(BC::Key::exptNum, 0);
+    int diskMax = BlackchirpCSV::scanMaxExptNumOnDisk();
+    num = qMax(stored, diskMax) + 1;
     d_number = num;
 
     if(ftmwEnabled() && ps_ftmwConfig->d_type == FtmwConfig::Peak_Up && !lifEnabled())
@@ -346,6 +352,7 @@ bool Experiment::initialize()
         set.setValue(BC::Key::exptNum,num);
         set.endGroup();
         set.sync();
+        BlackchirpCSV::mirrorExptNumToV1Settings(num);
     }
 
     ps_auxData->d_number = d_number;

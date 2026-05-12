@@ -1,5 +1,8 @@
 #include "blackchirpcsv.h"
 
+#include <QCoreApplication>
+#include <QSettings>
+
 //#include <gui/plot/blackchirpplotcurve.h>
 #include <data/storage/settingsstorage.h>
 
@@ -263,6 +266,74 @@ bool BlackchirpCSV::exptDirExists(int num)
         return false;
 
     return true;
+}
+
+int BlackchirpCSV::scanMaxExptNumOnDisk(const QString &basePath)
+{
+    QString root = basePath;
+    if(root.isEmpty())
+    {
+        SettingsStorage s;
+        root = s.get(BC::Key::savePath, QString(""));
+    }
+
+    QDir base(root);
+    if(root.isEmpty() || !base.cd(BC::Key::exptDir))
+        return 0;
+
+    auto rightmostNumericChild = [](const QDir &dir) -> int {
+        int best = -1;
+        const auto entries = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+        for(const auto &e : entries)
+        {
+            bool ok = false;
+            int n = e.toInt(&ok);
+            if(ok && n > best)
+                best = n;
+        }
+        return best;
+    };
+
+    int mil = rightmostNumericChild(base);
+    if(mil < 0 || !base.cd(QString::number(mil)))
+        return 0;
+
+    int th = rightmostNumericChild(base);
+    if(th < 0 || !base.cd(QString::number(th)))
+        return 0;
+
+    int num = rightmostNumericChild(base);
+    return num > 0 ? num : 0;
+}
+
+void BlackchirpCSV::mirrorExptNumToV1Settings(int num)
+{
+    // v1.x predates the per-major-version applicationName convention
+    // introduced in v2.x, so its QSettings store is the unsuffixed
+    // "Blackchirp" file alongside v2.x's "Blackchirp2".
+    SettingsStorage s;
+    const QString v2Path = QDir::cleanPath(s.get(BC::Key::savePath, QString("")));
+
+    QSettings v1(QCoreApplication::organizationName(), QLatin1StringView("Blackchirp"));
+    v1.setFallbacksEnabled(false);
+    v1.beginGroup(BC::Key::BC);
+    const QString v1Path = QDir::cleanPath(v1.value(BC::Key::savePath, QString("")).toString());
+
+    // exptNum is coupled to savePath: each data tree has its own
+    // counter. Only mirror when v1.x and v2.x point at the same tree,
+    // otherwise we would clobber v1.x's counter with a value drawn from
+    // an unrelated disk and reintroduce the duplicate-number problem.
+    // If v1.x has no recorded savePath (user never installed v1.x, or
+    // never configured it), there is nothing to keep in sync.
+    if(v1Path.isEmpty() || v2Path.isEmpty() || v1Path != v2Path)
+    {
+        v1.endGroup();
+        return;
+    }
+
+    v1.setValue(BC::Key::exptNum, num);
+    v1.endGroup();
+    v1.sync();
 }
 
 bool BlackchirpCSV::createExptDir(int num)

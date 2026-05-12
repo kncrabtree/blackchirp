@@ -7,6 +7,23 @@
 # features. It does not select hardware: every hardware implementation is
 # always compiled in, and the active set is chosen at run time via the
 # registry/profile system.
+#
+# BuildConfig.cmake is included before find_package() runs, so it is also
+# the right place for local hooks that influence dependency discovery —
+# extra CMAKE_PREFIX_PATH entries, vendor SDK paths, environment shields,
+# etc.
+#
+# ----------------------------------------------------------------------------
+# Example: shield package discovery from an active conda environment.
+# ----------------------------------------------------------------------------
+# Conda's activation hooks inject $CONDA_PREFIX into CMake's search paths
+# even when the env lacks the components we need (e.g. base envs without
+# Qt6 SerialPort). Uncomment to skip the conda tree for find_*() calls.
+#
+# if(DEFINED ENV{CONDA_PREFIX})
+#     set(CMAKE_IGNORE_PREFIX_PATH "$ENV{CONDA_PREFIX}")
+#     list(APPEND CMAKE_IGNORE_PATH "$ENV{CONDA_PREFIX}/lib" "$ENV{CONDA_PREFIX}/include")
+# endif()
 
 # ============================================================================
 # Build Configuration Instructions
