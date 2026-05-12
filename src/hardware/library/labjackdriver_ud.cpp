@@ -1,5 +1,3 @@
-#ifdef Q_OS_WIN
-
 #include "labjackdriver.h"
 #include <hardware/library/labjacklibrary.h>
 #include <data/loghandler.h>
@@ -172,5 +170,3 @@ bool readTimers(DeviceHandle *dh,
 }
 
 } // namespace BC::Labjack
-
-#endif // Q_OS_WIN
