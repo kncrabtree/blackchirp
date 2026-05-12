@@ -608,6 +608,7 @@ if(BC_BUILD_TESTS)
         tst_genericxyparser
         tst_operation_capability_only
         tst_overlayoperations_simple
+        tst_zoompanplotthreadsafety
         tst_spcatparser
         tst_xiamparser
         tst_hardwareregistrytest
