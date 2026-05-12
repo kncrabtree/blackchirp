@@ -12,7 +12,6 @@
 #include <gui/lif/gui/liftraceplot.h>
 #include <gui/lif/gui/lifspectrogramplot.h>
 #include <gui/lif/gui/lifprocessingwidget.h>
-#include <hardware/core/liflaser/liflaser.h>
 #include <math.h>
 
 #include <qwt6/qwt_matrix_raster_data.h>
@@ -103,24 +102,16 @@ void LifDisplayWidget::prepareForExperiment(const Experiment &e)
     // QStringView operator+ overload in 6.5).
     d_dString = QString("Delay: %1 ")+BC::Unit::us.toString();
     d_lString = QString("Laser: %1 ");
-    // Find LifLaser hardware in the new hardware data container
-    QString lifLaserKey;
-    for (auto it = e.d_hardwareData.hardwareMap.cbegin(); it != e.d_hardwareData.hardwareMap.cend(); ++it) {
-        if (it.value().type == BC::Data::HardwareType::LifLaser) {
-            lifLaserKey = it.key();
-            break;
-        }
-    }
-    
-    if (!lifLaserKey.isEmpty())
-    {
-        SettingsStorage s(lifLaserKey,SettingsStorage::Hardware);
-        d_lString.append(s.get(BC::Key::LifLaser::units,QString("nm")));
-        d_lDec = s.get(BC::Key::LifLaser::decimals,2);
-    }
 
     if(e.lifEnabled())
     {
+        // Laser display metadata follows the on-disk experiment record
+        // (units from column 6 of the LaserStart header row, decimals
+        // inferred from its formatted value string) rather than the
+        // viewing machine's local LifLaser settings.
+        d_lString.append(e.lifConfig()->laserUnits());
+        d_lDec = e.lifConfig()->laserDecimals();
+
         ps_lifStorage = e.lifConfig()->storage();
         p_spectrogramPlot->prepareForExperiment(*e.lifConfig());
         p_procWidget->initialize(e.lifConfig()->digitizerConfig().d_recordLength,e.lifConfig()->digitizerConfig().d_refEnabled);

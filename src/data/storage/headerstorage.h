@@ -196,6 +196,28 @@ protected:
     }
 
     /*!
+     * \brief Read the unit cell of a cached scalar row without consuming it.
+     *
+     * Returns column 6 of the row matching \a key. Does not erase the
+     * cache entry, so a subsequent retrieve() with the same key still
+     * returns the value as usual. Returns an empty QString if the key
+     * is absent or its unit cell was empty on disk.
+     */
+    QString peekUnit(QAnyStringView key) const;
+
+    /*!
+     * \brief Read the literal value-cell string of a cached scalar row
+     * without consuming it.
+     *
+     * Returns column 5 of the row matching \a key as the QString form
+     * the CSV reader stuffed into the QVariant. Useful for inspecting
+     * the on-disk numeric formatting (e.g., counting fractional digits)
+     * before letting retrieve() convert to a typed value. Returns an
+     * empty QString if the key is absent or the value cell was empty.
+     */
+    QString peekValueString(QAnyStringView key) const;
+
+    /*!
      * \brief Number of entries in a cached array.
      *
      * Use this from retrieveValues() to size your loop before pulling

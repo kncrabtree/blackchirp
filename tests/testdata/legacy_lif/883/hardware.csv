@@ -1,0 +1,7 @@
+key;subKey
+Clock.0;fixed
+FtmwDigitizer.0;virtual
+LifDigitizer.0;m4i2211x8
+LifLaser.0;opolette
+PressureController.0;IntellisysIQPlus
+PulseGenerator.0;qc9528

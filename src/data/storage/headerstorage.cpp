@@ -43,6 +43,22 @@ std::size_t HeaderStorage::arrayStoreSize(QAnyStringView key) const
     return 0;
 }
 
+QString HeaderStorage::peekUnit(QAnyStringView key) const
+{
+    auto it = d_values.find(key);
+    if(it != d_values.end())
+        return it->second.second;
+    return {};
+}
+
+QString HeaderStorage::peekValueString(QAnyStringView key) const
+{
+    auto it = d_values.find(key);
+    if(it != d_values.end())
+        return it->second.first.toString();
+    return {};
+}
+
 HeaderStorage::HeaderStrings HeaderStorage::getStrings()
 {
 

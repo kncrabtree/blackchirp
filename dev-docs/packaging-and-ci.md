@@ -393,12 +393,18 @@ confirmation pass rather than the primary detector.
 
 ## Legacy LIF experiment viewer regression (blocks alpha)
 
-**Status:** Part A resolved by the digitizer rename (commit
-`9291461f`). Remaining work: Part B (regression test using a pruned
-`883` fixture under `tests/testdata/legacy_lif/`) and the
-`LifDisplayWidget` settings-vs-data violations. The "Root cause"
+**Status:** Resolved on Linux; Windows clean-VM viewer pass still
+required. Part A (digitizer rename, commit `9291461f`) and Part B
+(`loadLegacyLif883_*` regression cases in
+`tests/tst_experimentloading.cpp` against
+`tests/testdata/legacy_lif/883/`) are landed. Settings-vs-data
+violations resolved by reading laser units from column 6 of the
+`LaserStart` header row and inferring fractional digits from the
+on-disk value strings (no schema field added) — see
+`LifConfig::retrieveValues` and the matching
+`LifDisplayWidget::prepareForExperiment` rewire. The "Root cause"
 section below describes the pre-rename code path; left in place
-as historical context for Part B's assertions.
+as historical context for the regression cases' assertions.
 
 ### Symptom
 

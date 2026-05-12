@@ -16,6 +16,32 @@ void LifConfig::setLaserUnits(const QString& units)
     d_laserUnits = units;
 }
 
+void LifConfig::setLaserDecimals(int decimals)
+{
+    d_laserDecimals = qMax(0, decimals);
+}
+
+namespace {
+int countFractionalDigits(const QString& cell)
+{
+    const auto dot = cell.indexOf(QLatin1Char('.'));
+    if(dot < 0)
+        return 0;
+    auto tail = cell.mid(dot + 1);
+    // Stop at the first non-digit; scientific-notation exponents and
+    // stray characters don't count toward display precision.
+    int n = 0;
+    for(QChar c : tail)
+    {
+        if(c.isDigit())
+            ++n;
+        else
+            break;
+    }
+    return n;
+}
+}
+
 bool LifConfig::isComplete() const
 {
     return d_complete;
@@ -88,8 +114,12 @@ void LifConfig::storeValues()
     store(dStart,d_delayStartUs,BC::Unit::us);
     store(dStep,d_delayStepUs,BC::Unit::us);
     store(dPoints,d_delayPoints);
-    store(lStart,d_laserPosStart,d_laserUnits);
-    store(lStep,d_laserPosStep,d_laserUnits);
+    // Serialize laser positions with locked fractional-digit count so a
+    // future reader can recover the display precision via peekValueString
+    // / countFractionalDigits without a dedicated header field. The unit
+    // sits in column 6 of the same row and is read back the same way.
+    store(lStart,QString::number(d_laserPosStart,'f',d_laserDecimals),d_laserUnits);
+    store(lStep,QString::number(d_laserPosStep,'f',d_laserDecimals),d_laserUnits);
     store(dRandom,d_delayRandom);
     store(lPoints,d_laserPosPoints);
     store(shotsPerPoint,d_shotsPerPoint);
@@ -105,6 +135,18 @@ void LifConfig::retrieveValues()
     d_delayStepUs = retrieve(dStep,0.0);
     d_delayPoints = retrieve(dPoints,0);
     d_delayRandom = retrieve(dRandom,false);
+    // Peek the laser unit cell and the raw value strings before
+    // retrieve() consumes the row. Units come from column 6 of the
+    // LaserStart row; decimals are inferred from the maximum fractional
+    // digit count across LaserStart and LaserStep.
+    const auto laserUnitCell = peekUnit(lStart);
+    if(!laserUnitCell.isEmpty())
+        d_laserUnits = laserUnitCell;
+    const int startDecimals = countFractionalDigits(peekValueString(lStart));
+    const int stepDecimals  = countFractionalDigits(peekValueString(lStep));
+    const int inferred = qMax(startDecimals, stepDecimals);
+    if(inferred > 0)
+        d_laserDecimals = inferred;
     d_laserPosStart = retrieve(lStart,0.0);
     d_laserPosStep = retrieve(lStep,0.0);
     d_laserPosPoints = retrieve(lPoints,0);

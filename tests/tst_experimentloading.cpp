@@ -44,6 +44,13 @@ private slots:
     void loadExperiment27_header();
     void loadExperiment27_lifConfig();
 
+    // Legacy LIF experiment captured pre-rename (digitizer key
+    // recovered via the FtmwScope/LifScope alias map; laser units +
+    // decimals plumbed through the on-disk LaserStart row rather than
+    // the loading machine's local hardware settings).
+    void loadLegacyLif883_digitizerAndGates();
+    void loadLegacyLif883_laserAxisMetadata();
+
 private:
     QString testDataDir() const;
 };
@@ -437,6 +444,62 @@ void ExperimentLoadingTest::loadExperiment27_lifConfig()
     QCOMPARE(lif->d_laserPosStart, 250.0);
     QCOMPARE(lif->d_laserPosStep, 1.0);
     QCOMPARE(lif->d_shotsPerPoint, 10);
+}
+
+void ExperimentLoadingTest::loadLegacyLif883_digitizerAndGates()
+{
+    // Guards the pre-rename LIF load path documented in
+    // dev-docs/packaging-and-ci.md ("Legacy LIF experiment viewer
+    // regression"). Before the FtmwScope/LifScope → FtmwDigitizer/
+    // LifDigitizer rename and the LegacyTypeAlias map fix, the
+    // LifDigitizer row tagged as HardwareType::Unknown and the
+    // digitizer header rows never reached LifDigitizerConfig, so
+    // d_recordLength loaded as zero and the LifProcessingWidget
+    // gate spin-boxes clamped to [0,0]/[1,1], silently overwriting
+    // the persisted gate values on the widget setAll() call.
+
+    Experiment exp(883, testDataDir() + "/legacy_lif/883", true);
+
+    QVERIFY(exp.lifEnabled());
+    auto *lif = exp.lifConfig();
+    QVERIFY(lif != nullptr);
+
+    // Digitizer header rows reach LifDigitizerConfig via the canonical
+    // LifDigitizer.0 key recovered from the legacy hardware.csv row.
+    QCOMPARE(lif->digitizerConfig().d_recordLength, 8192);
+
+    // LifConfig scan grid: 1 delay × 201 laser points from the field
+    // report fixture.
+    QCOMPARE(lif->d_delayPoints, 1);
+    QCOMPARE(lif->d_laserPosPoints, 201);
+
+    // Gate positions persisted in lif/processing.csv survive the load —
+    // before the rename fix, LifProcessingWidget clamped these to 0/0.
+    QCOMPARE(lif->d_procSettings.lifGateStart, 290);
+    QCOMPARE(lif->d_procSettings.lifGateEnd, 6130);
+}
+
+void ExperimentLoadingTest::loadLegacyLif883_laserAxisMetadata()
+{
+    // Guards the on-disk laser units / decimals plumbing. The 883
+    // header.csv records `LifConfig;;;LaserStart;280;nm` and
+    // `LifConfig;;;LaserStep;0.01;nm`; LifConfig::retrieveValues()
+    // pulls the unit cell from column 6 of the LaserStart row and
+    // infers decimals from the max fractional-digit count across both
+    // value strings. Without that wiring, the viewer falls back to
+    // the loading machine's local LifLaser hardware settings and
+    // mislabels the axis when those differ from the recorded values.
+
+    Experiment exp(883, testDataDir() + "/legacy_lif/883", true);
+
+    QVERIFY(exp.lifEnabled());
+    auto *lif = exp.lifConfig();
+    QVERIFY(lif != nullptr);
+
+    QCOMPARE(lif->laserUnits(), QString("nm"));
+    // LaserStep is "0.01" → 2 fractional digits; LaserStart is "280"
+    // → 0 digits; max(0, 2) = 2.
+    QCOMPARE(lif->laserDecimals(), 2);
 }
 
 QTEST_MAIN(ExperimentLoadingTest)

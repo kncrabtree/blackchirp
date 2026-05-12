@@ -13,6 +13,7 @@
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
 #include <hardware/core/lifdigitizer/lifdigitizer.h>
+#include <hardware/core/liflaser/liflaser.h>
 
 #include <QFile>
 #include <QSaveFile>
@@ -485,14 +486,17 @@ LifConfig *Experiment::enableLif()
     }
 
     ps_lifCfg = std::make_shared<LifConfig>(digitizerHwKey);
-    
-    // Look for LIF laser to get units information
+
+    // Seed laser display metadata from the local hardware profile. On
+    // experiment load, LifConfig::retrieveValues() overwrites both
+    // fields from the on-disk LaserStart row (units cell + inferred
+    // fractional digits), so this read only takes effect for fresh
+    // acquisitions whose header.csv has not been written yet.
     for (auto it = d_hardwareData.hardwareMap.cbegin(); it != d_hardwareData.hardwareMap.cend(); ++it) {
         if (it.value().type == BC::Data::HardwareType::LifLaser) {
-            // Get laser units from hardware settings
             SettingsStorage s(it.key(), SettingsStorage::Hardware);
-            QString units = s.get("units", QString("nm"));
-            ps_lifCfg->setLaserUnits(units);
+            ps_lifCfg->setLaserUnits(s.get(BC::Key::LifLaser::units, QString("nm")));
+            ps_lifCfg->setLaserDecimals(s.get(BC::Key::LifLaser::decimals, 2));
             break;
         }
     }

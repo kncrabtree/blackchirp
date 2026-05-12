@@ -175,12 +175,42 @@ public:
      */
     void setLaserUnits(const QString& units);
 
+    /*!
+     * \brief Set the decimal-precision hint used when serializing the laser position axis.
+     *
+     * Controls how LaserStart/LaserStep are formatted in header.csv so the
+     * column-width of fractional digits is preserved on disk. Callers
+     * normally seed this from the LIF laser hardware's display-decimals
+     * setting at acquisition time; on load it is inferred from the
+     * on-disk formatting of LaserStart/LaserStep.
+     */
+    void setLaserDecimals(int decimals);
+
+    /*!
+     * \brief Return the laser position units (e.g. "nm").
+     *
+     * Populated from the column-6 unit cell of the LaserStart header
+     * row on load, or from the laser hardware setting at acquisition.
+     */
+    QString laserUnits() const { return d_laserUnits; }
+
+    /*!
+     * \brief Return the laser-position display precision in fractional digits.
+     *
+     * Inferred at load time from the on-disk strings of LaserStart and
+     * LaserStep (max fractional digits across both), and seeded from
+     * the laser hardware setting at acquisition time. Used by display
+     * widgets for axis-label formatting; not persisted as its own row.
+     */
+    int laserDecimals() const { return d_laserDecimals; }
+
 
 
 private:
     std::shared_ptr<LifStorage> ps_storage;
     std::shared_ptr<LifDigitizerConfig> ps_digitizerConfig;
     QString d_laserUnits{"nm"};
+    int d_laserDecimals{2};
     int d_currentDelayIndex{0};
     int d_currentLaserIndex{0};
     int d_completedSweeps{0};
