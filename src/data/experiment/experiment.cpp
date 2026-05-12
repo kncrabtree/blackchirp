@@ -29,17 +29,31 @@ Experiment::Experiment() : HeaderStorage(BC::Store::Exp::key)
 
 Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : HeaderStorage(BC::Store::Exp::key)
 {
+    // Always initialize the shared sub-storage objects before any early
+    // return so callers can safely dereference auxData()/overlayStorage()
+    // even when the requested experiment does not exist or fails to load.
+    ps_auxData = std::make_shared<AuxDataStorage>();
+    ps_validator = std::make_shared<ExperimentValidator>();
+    ps_overlayStorage = std::make_shared<OverlayStorage>(-1, "");
+
     QDir d(BlackchirpCSV::exptDir(num,exptPath));
     if(!d.exists())
         return;
+
+    // When loading by number, BlackchirpCSV::exptDir silently leaves QDir
+    // pointing at a parent if any cd() step fails, so d.exists() alone is
+    // not sufficient. Confirm the experiment directory itself is present.
+    if(exptPath.isEmpty() && !BlackchirpCSV::exptDirExists(num))
+    {
+        d_errorString = QString("No experiment numbered %1 was found in the active data path.").arg(num);
+        return;
+    }
 
     d_number = num;
     d_path = exptPath;
 
     //initialize CSV reader
     auto csv = std::make_shared<BlackchirpCSV>(d_number,exptPath);
-
-    ps_validator = std::make_shared<ExperimentValidator>();
 
     //load hardware list using HardwareDataContainer
     d_hardwareData = BC::Data::HardwareDataContainer::loadFromFile(d.absoluteFilePath(BC::CSV::hwFile));

@@ -1475,8 +1475,8 @@ void MainWindow::viewExperiment()
             }
         }
 
-        int num = numBox->value();
-        if(num < 1)
+        int num = pathBox->isChecked() ? 0 : numBox->value();
+        if(!pathBox->isChecked() && num < 1)
         {
             QMessageBox::critical(this,QString("Load error"),QString("Cannot open an experiment numbered below 1. (You chose %1)").arg(num),QMessageBox::Ok);
             return;

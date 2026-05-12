@@ -17,6 +17,7 @@
 #include <gui/dialog/aboutdialog.h>
 #include <gui/dialog/updateavailabledialog.h>
 #include <data/storage/applicationconfigmanager.h>
+#include <data/storage/blackchirpcsv.h>
 #include <data/updatechecker.h>
 #include <QTimer>
 
@@ -235,17 +236,21 @@ void ViewerMainWindow::openExperiment()
     SettingsStorage blackchirpStore;
     int lastExptNum = blackchirpStore.get(BC::Key::exptNum, 0);
     
+    QCheckBox *pathBox = new QCheckBox(QString("Specify custom path"), &d);
+
     if (lastExptNum > 0) {
         numBox->setRange(1, lastExptNum);
         numBox->setValue(lastExptNum);
     } else {
-        numBox->setRange(1, INT_MAX);
-        numBox->setValue(1);
+        // No experiment has been recorded in this data path yet. Disable
+        // the number control and force path mode, matching the main app.
+        numBox->setRange(0, INT_MAX);
+        numBox->setSpecialValueText(QString("Select..."));
+        numBox->setEnabled(false);
+        pathBox->setChecked(true);
     }
-    
-    fl->addRow(QString("Experiment Number"), numBox);
 
-    QCheckBox *pathBox = new QCheckBox(QString("Specify custom path"), &d);
+    fl->addRow(QString("Experiment Number"), numBox);
     fl->addRow(pathBox);
 
     QLineEdit *pathEdit = new QLineEdit(&d);
@@ -261,9 +266,9 @@ void ViewerMainWindow::openExperiment()
         }
     });
 
-    // Initially disable path controls
-    pathEdit->setEnabled(false);
-    browseButton->setEnabled(false);
+    // Initially path controls follow the pathBox state set above.
+    pathEdit->setEnabled(pathBox->isChecked());
+    browseButton->setEnabled(pathBox->isChecked());
 
     connect(pathBox, &QCheckBox::toggled, [=](bool checked) {
         if (checked) {
@@ -306,10 +311,16 @@ void ViewerMainWindow::openExperiment()
             }
         }
 
-        int num = numBox->value();
-        if (num < 1) {
-            QMessageBox::critical(this, QString("Load error"), QString("Cannot open an experiment numbered below 1. (You chose %1)").arg(num), QMessageBox::Ok);
-            return;
+        int num = pathBox->isChecked() ? 0 : numBox->value();
+        if (!pathBox->isChecked()) {
+            if (num < 1) {
+                QMessageBox::critical(this, QString("Load error"), QString("Cannot open an experiment numbered below 1. (You chose %1)").arg(num), QMessageBox::Ok);
+                return;
+            }
+            if (!BlackchirpCSV::exptDirExists(num)) {
+                QMessageBox::critical(this, QString("Load error"), QString("No experiment numbered %1 was found in the active data path. Verify the number or use \"Specify custom path\" to select a directory directly.").arg(num), QMessageBox::Ok);
+                return;
+            }
         }
 
         openExperimentByNumPath(num, path);
@@ -508,7 +519,10 @@ void ViewerMainWindow::openExperimentByNumPath(int num, const QString &path)
     p_statusLabel->setText(QString("Opened: %1").arg(displayText));
     updateButtonStates();
 
-    addToRecentExperiments(num, path);
+    // In path mode the caller passes num == 0; the real number lives in the
+    // header file that ExperimentViewWidget just loaded.
+    int recentNum = num > 0 ? num : evwPtr->experimentNumber();
+    addToRecentExperiments(recentNum, path);
 }
 
 void ViewerMainWindow::addToRecentExperiments(int num, const QString &path)

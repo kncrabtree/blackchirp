@@ -22,6 +22,8 @@ public:
     Ft getMainPlotFt() const;
     void setCurrentTab(const QString &tabName);
 
+    inline int experimentNumber() const { return pu_experiment ? pu_experiment->d_number : 0; }
+
     void notifyAlreadyOpen();
 
 signals:
