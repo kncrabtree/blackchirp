@@ -150,6 +150,21 @@ function(blackchirp_deploy_qt target)
         # Notarization still requires a Developer ID; this pass only
         # makes the bundle launchable once the user clears the
         # com.apple.quarantine xattr (see installation.rst).
+        #
+        # The VERSION target property places the linked binary at
+        # Contents/MacOS/${target}-<version> and creates a bare-name
+        # symlink alongside it. Info.plist's CFBundleExecutable resolves
+        # to the bare name, so codesign sees the bundle's main executable
+        # as a symlink and refuses to sign with "the main executable or
+        # Info.plist must be a regular file (no symlinks, etc.)" — a
+        # constraint --deep does not relax on the outer bundle. Rename
+        # the versioned binary over the symlink before codesigning so
+        # the path Info.plist names is a regular file. macdeployqt's
+        # load-command rewrites land on the versioned binary (the kernel
+        # resolves the symlink for it), so the post-rename binary is the
+        # one that carries the corrected LC_LOAD_DYLIB entries; the
+        # smoke test's Contents/MacOS/${target} --version invocation
+        # then exec's the regular file directly.
         install(CODE "
             set(_bundle \"\${CMAKE_INSTALL_PREFIX}/${target}.app\")
             if(NOT IS_DIRECTORY \"\${_bundle}\")
@@ -163,6 +178,19 @@ function(blackchirp_deploy_qt target)
                     -verbose=1
                 COMMAND_ERROR_IS_FATAL ANY
             )
+            set(_main \"\${_bundle}/Contents/MacOS/${target}\")
+            if(IS_SYMLINK \"\${_main}\")
+                file(READ_SYMLINK \"\${_main}\" _link_target)
+                if(NOT IS_ABSOLUTE \"\${_link_target}\")
+                    get_filename_component(_main_dir \"\${_main}\" DIRECTORY)
+                    set(_versioned \"\${_main_dir}/\${_link_target}\")
+                else()
+                    set(_versioned \"\${_link_target}\")
+                endif()
+                message(STATUS \"Collapsing VERSION symlink: \${_main} -> \${_versioned}\")
+                file(REMOVE \"\${_main}\")
+                file(RENAME \"\${_versioned}\" \"\${_main}\")
+            endif()
             message(STATUS \"Ad-hoc codesigning \${_bundle}\")
             execute_process(
                 COMMAND codesign --force --deep --sign - \"\${_bundle}\"
