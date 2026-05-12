@@ -137,6 +137,19 @@ function(blackchirp_deploy_qt target)
 
         # Both apps install with BUNDLE DESTINATION `.` so the .app sits at
         # the install-prefix root (matches DragNDrop DMG layout).
+        #
+        # Ad-hoc codesign pass after macdeployqt: arm64 binaries carry an
+        # ad-hoc signature applied by the linker, but macdeployqt rewrites
+        # LC_LOAD_DYLIB / install_name entries in the main executable and
+        # copies in framework dylibs whose original signatures no longer
+        # match their on-disk layout. The kernel rejects (SIGKILL on
+        # arm64) or Gatekeeper flags any component whose signature does
+        # not validate against its current bytes. `codesign --force
+        # --deep --sign -` re-signs every executable and dylib inside
+        # the bundle with an ad-hoc identity, restoring validity.
+        # Notarization still requires a Developer ID; this pass only
+        # makes the bundle launchable once the user clears the
+        # com.apple.quarantine xattr (see installation.rst).
         install(CODE "
             set(_bundle \"\${CMAKE_INSTALL_PREFIX}/${target}.app\")
             if(NOT IS_DIRECTORY \"\${_bundle}\")
@@ -148,6 +161,11 @@ function(blackchirp_deploy_qt target)
                     \"\${_bundle}\"
                     ${_macdeployqt_libpath_args}
                     -verbose=1
+                COMMAND_ERROR_IS_FATAL ANY
+            )
+            message(STATUS \"Ad-hoc codesigning \${_bundle}\")
+            execute_process(
+                COMMAND codesign --force --deep --sign - \"\${_bundle}\"
                 COMMAND_ERROR_IS_FATAL ANY
             )
         " COMPONENT Applications)

@@ -1124,6 +1124,19 @@ jobs:
           cp -R "$MNT/blackchirp.app" /tmp/
           cp -R "$MNT/blackchirp-viewer.app" /tmp/
           hdiutil detach "$MNT"
+          # Validate the ad-hoc signature on every nested executable,
+          # framework, and plugin. --version on arm64 exercises the main
+          # executable's signature (kernel refuses to exec an invalid
+          # one) but does not load the Qt platform plugin, imageformats,
+          # styles, etc., so a bad signature deeper in the bundle would
+          # survive --version and surface only on a clean-Mac GUI launch.
+          # --verify --deep --strict walks the whole bundle and exits
+          # non-zero on any invalid component.
+          for app in /tmp/blackchirp.app /tmp/blackchirp-viewer.app; do
+              codesign --verify --deep --strict --verbose=2 "$app"
+              codesign -dv "$app" 2>&1 \
+                  | grep -E '^(Signature|Identifier|Format)='
+          done
           /tmp/blackchirp.app/Contents/MacOS/blackchirp --version
           /tmp/blackchirp-viewer.app/Contents/MacOS/blackchirp-viewer --version
 

@@ -192,6 +192,22 @@ your ``Applications`` folder, and (optionally) drag the
 ``blackchirp-viewer.app`` bundle alongside it. Qt and Qwt
 frameworks are bundled inside the application.
 
+On first launch macOS may refuse to open the application with the
+message *"blackchirp.app is damaged and can't be opened. You should
+move it to the Trash."* The bundle is not damaged. The message
+appears because the application is not signed with an Apple
+Developer ID, and Gatekeeper rejects the ``com.apple.quarantine``
+extended attribute that the browser attached to the file on
+download. To clear the attribute after installing::
+
+    xattr -d com.apple.quarantine /Applications/blackchirp.app
+    xattr -d com.apple.quarantine /Applications/blackchirp-viewer.app
+
+After running these commands the applications launch normally. The
+:ref:`installation-verification-attestation` step above is the
+recommended way to confirm the downloaded ``.dmg`` came from the
+project's CI pipeline before clearing the quarantine attribute.
+
 **Windows — NSIS installer**
 
 Download the ``.exe`` installer and run it. The installer copies
