@@ -1161,11 +1161,14 @@ void RuntimeHardwareConfigDialog::onDialogAccepted()
 
 void RuntimeHardwareConfigDialog::onDialogRejected()
 {
-    // Restore original runtime configuration
     auto& runtimeConfig = RuntimeHardwareConfig::instance();
 
-    // Apply the original configuration (which may have fewer profiles due to deletions)
-    runtimeConfig.applyConfiguration(d_originalRuntimeConfig);
+    // Apply the original configuration to undo preview changes. Skip when the
+    // originals are empty (e.g. first-run cancel): applying an empty map would
+    // deactivate every profile in HardwareProfileManager and override the
+    // virtual-defaults fallback in activateMissingSystemProfiles().
+    if (!d_originalRuntimeConfig.empty())
+        runtimeConfig.applyConfiguration(d_originalRuntimeConfig);
 
     // Revert all library staged changes
     p_libraryStatusWidget->revertAllChanges();
