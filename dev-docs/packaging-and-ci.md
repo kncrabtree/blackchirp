@@ -70,9 +70,11 @@ ships.
 
 ## Windows hardware-registry truncation (blocks alpha)
 
-**Status:** Open. Part 1 (`/WHOLEARCHIVE` link option on
-`blackchirp-hardware`) and Part 2 (registry regression test) both
-pending.
+**Status:** Part 1 (`/WHOLEARCHIVE` / `--whole-archive` / `-force_load`
+INTERFACE link options on `blackchirp-hardware`) and Part 2
+(`testAllExpectedImplementationsRegistered` in
+`tests/tst_hardwareregistrytest.cpp`) implemented and passing on
+Linux. Awaiting Windows CI verification per the flow below.
 
 ### Symptom
 

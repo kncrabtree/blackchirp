@@ -62,6 +62,7 @@ private slots:
     void testGetImplementations();
     void testGetRegistration();
     void testIsRegistered();
+    void testAllExpectedImplementationsRegistered();
     
     // Thread safety tests
     void testConcurrentRegistration();
@@ -289,6 +290,62 @@ void HardwareRegistryTest::testIsRegistered()
     
     // Non-existent
     QVERIFY(!d_registry->isRegistered("NonExistent", "none"));
+}
+
+void HardwareRegistryTest::testAllExpectedImplementationsRegistered()
+{
+    // Guards against the MSVC static-archive drop documented in
+    // dev-docs/packaging-and-ci.md ("Windows hardware-registry truncation").
+    // Hardware implementations register themselves with the HardwareRegistry
+    // via namespace-scope static initializers in their .cpp files
+    // (REGISTER_HARDWARE_META and friends, see hardwareregistration.h).
+    // A symbol-driven archive extractor drops .obj files whose only use is
+    // a static-init side effect, silently removing those implementations
+    // from the registry. cmake/BlackchirpHardware.cmake attaches
+    // /WHOLEARCHIVE (or --whole-archive / -force_load) to blackchirp-hardware
+    // as an INTERFACE link option so every consumer — production binary and
+    // this test alike — keeps all .obj members. This case asserts the
+    // baseline so a regression surfaces in ctest output rather than during
+    // a manual clean-VM smoke pass.
+    //
+    // Update this table when a virtual implementation is added or renamed.
+    struct Expect { const char *type; const char *impl; };
+    static constexpr Expect required[] = {
+        {"FtmwDigitizer",         "VirtualFtmwDigitizer"},
+        {"Clock",                 "FixedClock"},
+        {"AWG",                   "VirtualAwg"},
+        {"PulseGenerator",        "VirtualPulseGenerator"},
+        {"FlowController",        "VirtualFlowController"},
+        {"GpibController",        "VirtualGpibController"},
+        {"IOBoard",               "VirtualIOBoard"},
+        {"PressureController",    "VirtualPressureController"},
+        {"TemperatureController", "VirtualTemperatureController"},
+        {"LifDigitizer",          "VirtualLifDigitizer"},
+        {"LifLaser",              "VirtualLifLaser"},
+    };
+
+    const QStringList types = d_registry->getHardwareTypes();
+    for (const auto& e : required) {
+        const QLatin1String type(e.type);
+        const QLatin1String impl(e.impl);
+
+        QVERIFY2(types.contains(type),
+                 qPrintable(QString::fromLatin1(
+                     "Hardware type '%1' missing from registry — "
+                     "almost certainly a static-init drop in the "
+                     "blackchirp-hardware static library. See "
+                     "dev-docs/packaging-and-ci.md → \"Windows "
+                     "hardware-registry truncation\".").arg(type)));
+
+        const QStringList impls = d_registry->getImplementations(type);
+        QVERIFY2(impls.contains(impl),
+                 qPrintable(QString::fromLatin1(
+                     "Hardware implementation '%2' missing from "
+                     "registry under type '%1' — same root cause as "
+                     "above. See dev-docs/packaging-and-ci.md → "
+                     "\"Windows hardware-registry truncation\".")
+                     .arg(type, impl)));
+    }
 }
 
 void HardwareRegistryTest::testConcurrentRegistration()

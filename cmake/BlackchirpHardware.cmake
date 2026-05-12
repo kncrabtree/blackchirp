@@ -209,6 +209,36 @@ file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/hw_h.h "${HW_H_CONTENT}
 add_library(blackchirp-hardware STATIC ${BLACKCHIRP_HARDWARE_SOURCES})
 add_library(Blackchirp::Hardware ALIAS blackchirp-hardware)
 
+# Hardware implementations register themselves via namespace-scope static
+# initializers (see src/hardware/core/hardwareregistration.h —
+# REGISTER_HARDWARE_META and friends). The implementation .cpp files
+# define no externally-referenced symbols, so a symbol-driven archive
+# extractor will drop them and their registration constructors never
+# run, silently disabling most of the hardware registry.
+#
+# MSVC link.exe always behaves this way for static libraries. GNU ld
+# and ld64 happen to keep the .o files alive today because they treat
+# .init_array / .mod_init_func entries as roots, but a future switch
+# to lld or a --gc-sections pass would regress that. Force every .obj
+# in blackchirp-hardware to be retained on all toolchains.
+#
+# INTERFACE so every consumer — the blackchirp executable and the
+# tests that link blackchirp-hardware — inherits the flag; otherwise
+# the registry regression test would not exercise the same link path
+# as the production binary.
+if(MSVC)
+    target_link_options(blackchirp-hardware INTERFACE
+        "/WHOLEARCHIVE:$<TARGET_FILE_NAME:blackchirp-hardware>")
+elseif(APPLE)
+    target_link_options(blackchirp-hardware INTERFACE
+        "LINKER:-force_load,$<TARGET_FILE:blackchirp-hardware>")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang)$")
+    target_link_options(blackchirp-hardware INTERFACE
+        "LINKER:--whole-archive"
+        "$<TARGET_FILE:blackchirp-hardware>"
+        "LINKER:--no-whole-archive")
+endif()
+
 target_include_directories(blackchirp-hardware PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
