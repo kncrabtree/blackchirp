@@ -52,13 +52,14 @@ private:
     QString extractMoleculeName(const QStringList &lines, const QString &filePath) const;
 
     /// \brief Parse a single transition line in ``ints=2`` mode.
-    /// \param line Raw transition line from the XIAM output.
-    /// \param blockNumber Block label appended to the quantum-number string when the file contains multiple blocks.
+    /// \param blockNumber Block label appended to the quantum-number
+    ///                    string when the file contains multiple blocks.
     TransitionData parseInts2Line(const QString &line, const QString &blockNumber = QString()) const;
 
     /// \brief Parse a single transition line in ``ints=3`` mode.
-    /// \param line Raw transition line from the XIAM output.
-    /// \param groupQuantumNumbers Quantum numbers carried over from the block start so split lines inherit the parent assignment.
+    /// \param groupQuantumNumbers Quantum numbers carried over from the
+    ///                            block start so split lines inherit
+    ///                            the parent assignment.
     TransitionData parseInts3Line(const QString &line, const QString &groupQuantumNumbers = QString()) const;
 
     /// \brief Reconstruct a high-precision intensity from XIAM's
