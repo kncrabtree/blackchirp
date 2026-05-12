@@ -136,6 +136,7 @@ private:
 
     QPointer<CommunicationDialog> p_communicationDialog;
     UpdateChecker *p_updateChecker{nullptr};
+    QAction *p_checkForUpdatesAction{nullptr};
     QActionGroup *p_loadoutActionGroup{nullptr};
     QActionGroup *p_ftmwPresetActionGroup{nullptr};
     ProgramState d_state{Idle};

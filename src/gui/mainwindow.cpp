@@ -289,8 +289,33 @@ MainWindow::MainWindow(QWidget *parent) :
         addUrl("Di&scord Server"_L1, "https://discord.gg/88CkbAKUZY");
         ui->helpMenu->addSeparator();
         p_updateChecker = new UpdateChecker(this);
-        ui->helpMenu->addAction("Check for &Updates..."_L1, this,
-                                &MainWindow::onCheckForUpdatesTriggered);
+        p_checkForUpdatesAction = ui->helpMenu->addAction(
+            "Check for &Updates..."_L1, this,
+            &MainWindow::onCheckForUpdatesTriggered);
+        // Persistent badge: whenever a check fires, decorate both the
+        // toolbar Help button (StatusInfo tint on the label) and the
+        // menu action (themed sparkles icon + version-in-text) so the
+        // user sees an indicator at both the toolbar level (for
+        // discoverability without expanding the menu) and inside the
+        // menu (for the version number). Cleared on upToDate.
+        connect(p_updateChecker, &UpdateChecker::updateAvailable, this,
+                [this](const UpdateChecker::Version &remote, const QUrl &,
+                       const QString &) {
+            p_checkForUpdatesAction->setIcon(ThemeColors::createThemedIcon(
+                ":/icons/sparkles.svg", ThemeColors::StatusInfo, this));
+            p_checkForUpdatesAction->setText(
+                u"Check for &Updates... %1 available"_s
+                    .arg(remote.toString()));
+            ui->helpButton->setStyleSheet(
+                u"QToolButton { color: %1; }"_s
+                    .arg(ThemeColors::getCSSColor(
+                        ThemeColors::StatusInfo, this)));
+        });
+        connect(p_updateChecker, &UpdateChecker::upToDate, this, [this]() {
+            p_checkForUpdatesAction->setIcon(QIcon());
+            p_checkForUpdatesAction->setText("Check for &Updates..."_L1);
+            ui->helpButton->setStyleSheet(QString());
+        });
         ui->helpMenu->addSeparator();
         ui->helpMenu->addAction("&About Blackchirp"_L1, this, [this]() {
             using namespace Qt::Literals::StringLiterals;
@@ -321,6 +346,16 @@ MainWindow::MainWindow(QWidget *parent) :
     // Defer UI configuration until after the widget is fully rendered
     // This prevents LIF widgets from briefly appearing on wrong tabs during initialization
     QTimer::singleShot(0, this, [this]() { configureUi(Idle); });
+
+    // Throttled startup check. The 2s delay keeps the network round-trip
+    // off the first-paint path; triggerStartupCheck internally gates on
+    // lastCheckedAt so a repeat launch within 24h does not hit GitHub.
+    if(ApplicationConfigManager::instance().isUpdateCheckEnabled())
+    {
+        QTimer::singleShot(2000, this, [this]() {
+            UpdateAvailableDialog::triggerStartupCheck(p_updateChecker, this);
+        });
+    }
 }
 
 void MainWindow::buildHardwareUI()

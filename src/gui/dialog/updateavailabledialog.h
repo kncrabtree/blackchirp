@@ -56,6 +56,23 @@ public:
      */
     static void triggerManualCheck(UpdateChecker *checker, QWidget *parent);
 
+    /*!
+     * \brief Trigger an unobtrusive startup update check.
+     *
+     * Performs the once-per-day throttle and skip-version filtering that
+     * the manual path omits:
+     * - Returns immediately if \c lastCheckedAt() is less than 24h old.
+     * - On \c updateAvailable, suppresses the dialog when the remote tag
+     *   matches \c skippedVersion(). Otherwise shows the same modal as the
+     *   manual path.
+     * - \c upToDate and \c checkFailed are silent (only the receiver is
+     *   cleaned up). \c bcDebug entries inside UpdateChecker remain.
+     *
+     * Like \c triggerManualCheck, uses a per-call receiver scoped to
+     * \a parent so connections do not accumulate.
+     */
+    static void triggerStartupCheck(UpdateChecker *checker, QWidget *parent);
+
 private:
     Outcome d_outcome{Dismissed};
 };

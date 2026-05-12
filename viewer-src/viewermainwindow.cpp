@@ -16,7 +16,9 @@
 
 #include <gui/dialog/aboutdialog.h>
 #include <gui/dialog/updateavailabledialog.h>
+#include <data/storage/applicationconfigmanager.h>
 #include <data/updatechecker.h>
+#include <QTimer>
 
 #define _STR(x) #x
 #define STRINGIFY(x) _STR(x)
@@ -41,6 +43,18 @@ ViewerMainWindow::ViewerMainWindow(QWidget *parent)
     updateButtonStates();
 
     resize(400, 300);
+
+    // Throttled startup check. The updateCheckEnabled toggle is owned by
+    // the acquisition app's ApplicationConfigManager (read here from the
+    // same Blackchirp2.conf), so the viewer and main app share a single
+    // user preference. UpdateChecker's lastRun/skipVersion are shared the
+    // same way, so a recent check from either app suppresses the next.
+    if(ApplicationConfigManager::instance().isUpdateCheckEnabled())
+    {
+        QTimer::singleShot(2000, this, [this]() {
+            UpdateAvailableDialog::triggerStartupCheck(p_updateChecker, this);
+        });
+    }
 }
 
 ViewerMainWindow::~ViewerMainWindow()
@@ -147,8 +161,10 @@ void ViewerMainWindow::setupMenuBar()
     connect(resetDataPathAction, &QAction::triggered,
             this, &ViewerMainWindow::resetDataPath);
 
-    // Help menu
-    QMenu *helpMenu = menuBar->addMenu("&Help");
+    // Help menu — kept as a member so the update-check badge can mutate
+    // its title from the persistent UpdateChecker connections below.
+    p_helpMenu = menuBar->addMenu("&Help");
+    QMenu *helpMenu = p_helpMenu;
 
     auto addUrl = [helpMenu, this](const QString &text, const char *url) {
         helpMenu->addAction(text, this, [url]() {
@@ -161,8 +177,27 @@ void ViewerMainWindow::setupMenuBar()
     helpMenu->addSeparator();
 
     p_updateChecker = new UpdateChecker(this);
-    helpMenu->addAction(QString("Check for &Updates..."), this,
-                        &ViewerMainWindow::onCheckForUpdatesTriggered);
+    p_checkForUpdatesAction = helpMenu->addAction(
+        QString("Check for &Updates..."), this,
+        &ViewerMainWindow::onCheckForUpdatesTriggered);
+    // Persistent badge: themed sparkles icon on the menu action plus a
+    // ★ on the Help menu title so the user notices the indicator from
+    // the menu bar without opening the menu. Cleared on upToDate.
+    connect(p_updateChecker, &UpdateChecker::updateAvailable, this,
+            [this](const UpdateChecker::Version &remote, const QUrl &,
+                   const QString &) {
+        p_checkForUpdatesAction->setIcon(ThemeColors::createThemedIcon(
+            ":/icons/sparkles.svg", ThemeColors::StatusInfo, this));
+        p_checkForUpdatesAction->setText(
+            QString("Check for &Updates... %1 available")
+                .arg(remote.toString()));
+        p_helpMenu->setTitle(QString("&Help ★"));
+    });
+    connect(p_updateChecker, &UpdateChecker::upToDate, this, [this]() {
+        p_checkForUpdatesAction->setIcon(QIcon());
+        p_checkForUpdatesAction->setText(QString("Check for &Updates..."));
+        p_helpMenu->setTitle(QString("&Help"));
+    });
     helpMenu->addSeparator();
 
     auto *aboutAction = helpMenu->addAction("&About Blackchirp Viewer");

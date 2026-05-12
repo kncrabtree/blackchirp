@@ -1,6 +1,8 @@
 .. index::
    single: Application Configuration
    single: Settings; application
+   single: Check for Updates
+   single: Updates; checking for
    single: LIF Module; runtime toggle
    single: Debug Logging
    single: Application Font
@@ -30,6 +32,50 @@ when you click **OK**.
 
 Application Settings
 --------------------
+
+.. _app-config-update-check:
+
+Check for Updates
+^^^^^^^^^^^^^^^^^
+
+*Takes effect immediately.*
+
+When enabled, Blackchirp contacts the GitHub release API once per day at
+startup to check whether a newer stable release is available. The check
+queries only ``api.github.com`` and downloads nothing — release artifacts
+are never installed automatically. Network failures (offline machines,
+restricted networks, TLS errors) are silent and logged at debug level
+only; the application starts normally either way.
+
+Default: **enabled**.
+
+Disable this option on air-gapped or policy-restricted systems where any
+outbound HTTPS traffic is unwanted. The toggle controls only the
+automatic startup check; the manual **Help → Check for Updates...**
+action issues a check regardless of this setting.
+
+Pre-releases (``alpha``, ``beta``, ``rc``) are never reported. When a
+newer stable release is found, a dialog offers three choices:
+
+- **Download** opens the release page in the system browser. Installation
+  is manual; Blackchirp does not auto-update.
+- **Skip This Version** suppresses further startup notifications for that
+  specific version. Later versions still trigger the dialog. The manual
+  action ignores the skip list, so it can be used to revisit a release
+  the user previously skipped.
+- **Remind Me Later** dismisses the dialog. The startup check fires again
+  the next time Blackchirp launches more than 24 hours after the last
+  successful check.
+
+When a newer release is known to be available, the **Help** toolbar
+button is tinted with the informational palette color and the **Check
+for Updates...** action inside the menu shows a sparkles icon and the
+available version number. The indicator clears when a subsequent check
+confirms the local build is up to date.
+
+The Blackchirp Viewer shares this setting and the once-per-day throttle
+with the acquisition application: a recent check from either app
+suppresses the next from the other.
 
 LIF Module
 ^^^^^^^^^^

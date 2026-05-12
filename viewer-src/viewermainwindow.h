@@ -71,6 +71,8 @@ private:
     QAction *p_closeAction;
     QMenu *p_recentMenu;
     UpdateChecker *p_updateChecker{nullptr};
+    QAction *p_checkForUpdatesAction{nullptr};
+    QMenu *p_helpMenu{nullptr};
 
     // Track open experiment view widgets by their display text
     std::map<QString, std::unique_ptr<ExperimentViewWidget>> d_openExperiments;

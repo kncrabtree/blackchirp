@@ -81,6 +81,10 @@ Configuration*; the same dialog is available later via
 See :doc:`application_config` for a complete reference. On first run, the
 most relevant options are:
 
+- **Check for Updates** — enabled by default. Blackchirp contacts the GitHub
+  release API once per day at startup to check for newer stable releases.
+  Uncheck this on air-gapped or policy-restricted systems where any
+  outbound HTTPS traffic is unwanted. See :ref:`app-config-update-check`.
 - **LIF Module** — enable or disable the Laser-Induced Fluorescence hardware
   and UI components. Change this only if your instrument has LIF, REMPI, or other laser-based detection capabilities. This setting requires a restart to take effect.
 - **Debug Logging** — enable verbose debug messages written to a dated log

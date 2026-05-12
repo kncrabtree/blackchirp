@@ -75,6 +75,47 @@ UpdateAvailableDialog::UpdateAvailableDialog(const QString &remoteVersion,
     layout->addWidget(buttons);
 }
 
+void UpdateAvailableDialog::triggerStartupCheck(UpdateChecker *checker, QWidget *parent)
+{
+    if(!checker)
+        return;
+
+    const QDateTime last = checker->lastCheckedAt();
+    if(last.isValid()
+       && last.secsTo(QDateTime::currentDateTimeUtc()) < 24 * 60 * 60)
+        return;
+
+    auto *r = new QObject(parent);
+
+    QObject::connect(checker, &UpdateChecker::updateAvailable, r,
+                     [checker, parent, r](const UpdateChecker::Version &remote,
+                                          const QUrl &url, const QString &name) {
+        // Respect a user-set skipVersion on the unobtrusive startup path.
+        // The manual path deliberately ignores it so the user can re-open
+        // the dialog for a version they had previously dismissed.
+        if(remote.toString() == checker->skippedVersion())
+        {
+            r->deleteLater();
+            return;
+        }
+        UpdateAvailableDialog dlg(remote.toString(),
+                                  UpdateChecker::localVersion().toString(),
+                                  url, name, parent);
+        dlg.exec();
+        if(dlg.outcome() == UpdateAvailableDialog::SkippedVersion)
+            checker->setSkippedVersion(remote.toString());
+        r->deleteLater();
+    });
+
+    // Silent on the startup path; UpdateChecker still logs via bcDebug.
+    QObject::connect(checker, &UpdateChecker::upToDate, r,
+                     [r]() { r->deleteLater(); });
+    QObject::connect(checker, &UpdateChecker::checkFailed, r,
+                     [r](const QString &) { r->deleteLater(); });
+
+    checker->checkNow();
+}
+
 void UpdateAvailableDialog::triggerManualCheck(UpdateChecker *checker, QWidget *parent)
 {
     if(!checker)

@@ -11,6 +11,7 @@
    single: LIF Laser Status Box
    single: Help Menu
    single: About Dialog
+   single: Check for Updates; Help menu action
 
 User Interface Overview
 =======================
@@ -153,6 +154,19 @@ Three links open the corresponding page in the system web browser:
 - **GitHub Repository** — the Blackchirp source repository at
   ``https://github.com/kncrabtree/blackchirp``.
 - **Discord Server** — the Blackchirp community Discord server.
+
+Check for Updates
+~~~~~~~~~~~~~~~~~
+
+**Check for Updates...** issues an immediate query to the GitHub release
+API and shows the result regardless of whether a previous version was
+skipped or how recently the last check ran. When a newer release is
+known to be available — whether from this manual action or the daily
+startup check — the **Help** toolbar button is tinted with the
+informational palette color and this action shows a sparkles icon and
+the available version. See :ref:`app-config-update-check` for the
+underlying behavior and the user-facing toggle that controls the
+automatic startup check.
 
 About Blackchirp
 ~~~~~~~~~~~~~~~~
