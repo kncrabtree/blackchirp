@@ -7,6 +7,7 @@
 #include <gui/dialog/crashreportdialog.h>
 #include <gui/dialog/runtimehardwareconfigdialog.h>
 #include <gui/plot/curveappearancepresetmanager.h>
+#include <gui/style/themecolors.h>
 #include <data/processing/parsers/fileparserregistry.h>
 #include <data/processing/parsers/spcatparser.h>
 #include <data/processing/parsers/xiamparser.h>
@@ -203,12 +204,16 @@ int main(int argc, char *argv[])
         if(configDialog.exec() == QDialog::Rejected)
             return 0;
 
-        QMessageBox::information(nullptr, QString("Hardware Selection"),
-                                 QString(
+        QMessageBox hwIntro(QMessageBox::Information, QString("Hardware Selection"),
+                            QString(
 R"000(Next, select the instrument models connected to your system. For each hardware type, you can add a profile for your instrument model and activate it.
 
 If you are unsure which hardware to select, you can leave the defaults (virtual instruments) and configure this later from the Hardware > Configure Hardware menu.
-)000"));
+)000"),
+                            QMessageBox::Ok);
+        hwIntro.setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg",
+                                                            ThemeColors::IconPrimary));
+        hwIntro.exec();
 
         RuntimeHardwareConfigDialog hwDialog;
         hwDialog.exec();

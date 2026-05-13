@@ -207,7 +207,7 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
 
 
     auto *hbl = new QHBoxLayout();
-    hbl->addWidget(p_ftmw);
+    hbl->addWidget(p_ftmw,1);
 
     if(!ApplicationConfigManager::instance().isLifEnabled())
     {
@@ -388,7 +388,7 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
         connect(p_lStepBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&ExperimentTypePage::updateLifRanges);
         connect(p_lNumStepsBox,qOverload<int>(&QSpinBox::valueChanged),this,&ExperimentTypePage::updateLifRanges);
 
-        hbl->addWidget(p_lif);
+        hbl->addWidget(p_lif,1);
     }
 
     auto *vbl = new QVBoxLayout();

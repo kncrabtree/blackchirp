@@ -50,9 +50,8 @@ public slots:
     
 private:
     struct DeviceInfo {
-        QString hwKey;
-        QString subKey;
-        QString name;
+        QString hwKey;   // "hwType.label", the canonical identifier shown to the user
+        QString driver;  // Registered driver/implementation key (e.g. "AWG70002a")
         CommunicationProtocol::CommType currentProtocol;
         QVector<CommunicationProtocol::CommType> supportedProtocols;
         bool connected = false;
@@ -72,6 +71,7 @@ private:
     void loadReadOptions(CommunicationProtocol::CommType protocolType);
     
     QString getDeviceDisplayText(const DeviceInfo& info);
+    QString getDeviceTooltipText(const DeviceInfo& info);
     QIcon getStatusIcon(const DeviceInfo& info);
     
     // Left panel - device list
@@ -80,6 +80,7 @@ private:
     // Right panel - device configuration
     QGroupBox *p_deviceConfigGroup;
     QLabel *p_deviceNameLabel;
+    QLabel *p_driverLabel;
     QComboBox *p_protocolCombo;
     QStackedWidget *p_protocolStack;
     

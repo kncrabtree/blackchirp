@@ -72,8 +72,8 @@ void CommunicationDialog::setupUI()
     
     splitter->addWidget(p_deviceList);
     splitter->addWidget(p_deviceConfigGroup);
-    splitter->setStretchFactor(0, 1); // Device list gets 1/3
-    splitter->setStretchFactor(1, 2); // Config panel gets 2/3
+    splitter->setStretchFactor(0, 1);
+    splitter->setStretchFactor(1, 1);
     
     mainLayout->addWidget(splitter);
     
@@ -111,7 +111,11 @@ void CommunicationDialog::setupRightPanel()
     p_deviceNameLabel = new QLabel("No device selected", this);
     p_deviceNameLabel->setStyleSheet("font-weight: bold; font-size: 12pt;");
     layout->addWidget(p_deviceNameLabel);
-    
+
+    p_driverLabel = new QLabel(this);
+    p_driverLabel->hide();
+    layout->addWidget(p_driverLabel);
+
     // Protocol selection
     auto protocolLayout = new QFormLayout;
     p_protocolCombo = new QComboBox(this);
@@ -174,15 +178,11 @@ void CommunicationDialog::loadDeviceInfo()
     
     for(const auto& [hwKey, implementation] : currentHardware) {
         DeviceInfo info;
-        info.hwKey = hwKey;               // hwKey is in "type.label" format
-        info.subKey = implementation;     // implementation is the subKey (e.g., "AWG70002a")
+        info.hwKey = hwKey;             // "hwType.label" — canonical identifier
+        info.driver = implementation;   // Registered driver key (e.g. "AWG70002a")
 
-        // Extract hwType from hwKey (format is "type.label")
         auto [hwType, label] = BC::Key::parseKey(hwKey);
-
-        // Load display name from SettingsStorage
         SettingsStorage hwSettings(info.hwKey, SettingsStorage::Hardware);
-        info.name = hwSettings.get(BC::Key::HW::name, info.hwKey);
 
         // Populate supported protocols directly from registry (synchronous, no round-trip needed)
         info.supportedProtocols = HardwareRegistry::instance().getSupportedProtocols(hwType, implementation);
@@ -217,8 +217,9 @@ void CommunicationDialog::populateDeviceList()
         
         auto item = new QListWidgetItem(getDeviceDisplayText(info));
         item->setIcon(getStatusIcon(info));
+        item->setToolTip(getDeviceTooltipText(info));
         item->setData(Qt::UserRole, info.hwKey);
-        
+
         p_deviceList->addItem(item);
     }
 }
@@ -227,8 +228,12 @@ QString CommunicationDialog::getDeviceDisplayText(const DeviceInfo& info)
 {
     auto protocolEnum = QMetaEnum::fromType<CommunicationProtocol::CommType>();
     QString protocolName = protocolEnum.valueToKey(static_cast<int>(info.currentProtocol));
-    
-    return QString("%1 [%2]").arg(info.name).arg(protocolName);
+    return QString("%1 [%2]").arg(info.hwKey, protocolName);
+}
+
+QString CommunicationDialog::getDeviceTooltipText(const DeviceInfo& info)
+{
+    return QString("Driver: %1").arg(info.driver);
 }
 
 QIcon CommunicationDialog::getStatusIcon(const DeviceInfo& info)
@@ -266,8 +271,9 @@ void CommunicationDialog::updateRightPanel()
 
     const auto& info = d_deviceInfo[d_currentDeviceKey];
 
-    // Update device name
-    p_deviceNameLabel->setText(QString("Configuring: %1").arg(info.name));
+    p_deviceNameLabel->setText(QString("Configuring: %1").arg(info.hwKey));
+    p_driverLabel->setText(QString("Driver: %1").arg(info.driver));
+    p_driverLabel->show();
     
     // Update protocol combo
     p_protocolCombo->blockSignals(true);
@@ -492,6 +498,7 @@ void CommunicationDialog::updateDeviceListItem(const QString& hwKey)
         if(item->data(Qt::UserRole).toString() == hwKey) {
             item->setText(getDeviceDisplayText(info));
             item->setIcon(getStatusIcon(info));
+            item->setToolTip(getDeviceTooltipText(info));
             break;
         }
     }
@@ -512,14 +519,11 @@ void CommunicationDialog::selectDevice(const QString &hwKey)
 
 void CommunicationDialog::onConnectionResult(const QString& hwKey, bool success, const QString& msg)
 {
-    // Find device by hwKey and update status
-    for(auto it = d_deviceInfo.begin(); it != d_deviceInfo.end(); ++it) {
-        if(it.key() == hwKey || it.value().name == hwKey) {
-            it.value().tested = true;
-            it.value().connected = success;
-            updateDeviceListItem(it.key());
-            break;
-        }
+    auto it = d_deviceInfo.find(hwKey);
+    if (it != d_deviceInfo.end()) {
+        it.value().tested = true;
+        it.value().connected = success;
+        updateDeviceListItem(hwKey);
     }
     
     if(!success && !msg.isEmpty()) {

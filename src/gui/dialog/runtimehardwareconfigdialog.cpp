@@ -54,6 +54,8 @@ RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
 {
     pu_ui->setupUi(this);
 
+    setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg", ThemeColors::IconPrimary, this));
+
     // Apply theme-aware styling to validation status label
     pu_ui->applyValidationStatusStyling(this);
 
