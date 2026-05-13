@@ -232,6 +232,14 @@ private:
     void onProcessingComplete();
     void dispatchBackup();
     void onBackupFinished();
+
+    /// \brief Emits a timed status message and queues the persistent
+    /// "Acquiring"/"Paused" label to be restored when it expires.
+    ///
+    /// Use for transient notifications (e.g. backup completions) that should
+    /// briefly replace the acquisition-state label without leaving the bar
+    /// blank afterward.
+    void temporaryStatusMessage(const QString &msg, int msecs);
     bool ftmwModeSupportsBackup() const;
 
     // QObject interface

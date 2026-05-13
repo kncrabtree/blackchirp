@@ -48,6 +48,13 @@ void AcquisitionManager::beginExperiment(std::shared_ptr<Experiment> exp)
     if(ps_currentExperiment->ftmwEnabled())
         emit newClockSettings(ps_currentExperiment->ftmwConfig()->d_rfConfig.getClocks());
 
+    if(ftmwModeSupportsBackup() && ps_currentExperiment->d_backupIntervalMinutes >= 1)
+    {
+        const auto next = ps_currentExperiment->d_startTime
+                              .addSecs(60*ps_currentExperiment->d_backupIntervalMinutes);
+        bcLog(QString("Backup scheduled for %1").arg(next.toString("hh:mm:ss")));
+    }
+
     emit beginAcquisition();
 
     if(ps_currentExperiment->ftmwEnabled() && ps_currentExperiment->ftmwConfig()->waveformBuffer())
@@ -382,19 +389,35 @@ void AcquisitionManager::onBackupFinished()
             n = ps_currentExperiment->ftmwConfig()->storage()->numBackups();
         const auto msg = QString("Manual backup complete (backup %1)").arg(n);
         bcHighlight(msg);
-        emit statusMessage(msg,5000);
-
-        // Restore the persistent acquisition-state label after the timed
-        // status message expires, so the bar does not stay blank.
-        QTimer::singleShot(5000,this,[this]{
-            if(d_state == Acquiring)
-                emit statusMessage(QString("Acquiring"));
-            else if(d_state == Paused)
-                emit statusMessage(QString("Paused"));
-        });
+        temporaryStatusMessage(msg,5000);
+    }
+    else if(ps_currentExperiment && ps_currentExperiment->ftmwEnabled())
+    {
+        const int n = ps_currentExperiment->ftmwConfig()->storage()->numBackups();
+        QString logMsg = QString("Backup %1 complete.").arg(n);
+        if(!ps_currentExperiment->isComplete()
+                && ps_currentExperiment->d_backupIntervalMinutes >= 1)
+        {
+            const auto next = ps_currentExperiment->d_lastBackupTime
+                                  .addSecs(60*ps_currentExperiment->d_backupIntervalMinutes);
+            logMsg.append(QString(" Next backup scheduled for %1").arg(next.toString("hh:mm:ss")));
+        }
+        bcLog(logMsg);
+        temporaryStatusMessage(QString("Backup %1 complete").arg(n),5000);
     }
     d_lastBackupWasManual = false;
     emit backupComplete();
+}
+
+void AcquisitionManager::temporaryStatusMessage(const QString &msg, int msecs)
+{
+    emit statusMessage(msg,msecs);
+    QTimer::singleShot(msecs,this,[this]{
+        if(d_state == Acquiring)
+            emit statusMessage(QString("Acquiring"));
+        else if(d_state == Paused)
+            emit statusMessage(QString("Paused"));
+    });
 }
 
 void AcquisitionManager::finishAcquisition()
