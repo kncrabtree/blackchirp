@@ -317,6 +317,19 @@ signals:
     /// \param msg Diagnostic message; empty on success.
     void pythonScriptReloadResult(const QString &hwKey, bool success, const QString &msg);
 
+public:
+    /// \brief Creates any missing required-type system profiles and activates
+    /// them in the runtime hardware config.
+    ///
+    /// Safe to call from the main thread before the manager has been moved to
+    /// its worker thread. Idempotent: \c initialize() invokes the same two
+    /// operations when the worker thread starts. The main-thread call exists
+    /// so that GUI code which reads RuntimeHardwareConfig synchronously during
+    /// startup (e.g. MainWindow::buildHardwareUI()) sees a healthy active map
+    /// even when on-disk state was left in a stale "all deactivated" form by
+    /// an older cancel-on-first-run path.
+    void ensureRequiredSystemProfiles();
+
 public slots:
     /// \brief Loads hardware from RuntimeHardwareConfig, starts per-hardware
     /// threads, and emits hwInitializationComplete() when the map is populated.

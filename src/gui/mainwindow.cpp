@@ -180,6 +180,13 @@ MainWindow::MainWindow(QWidget *parent) :
         }
     });
 
+    // Activate required-type system profiles before the first UI build reads
+    // the runtime config. HardwareManager::initialize() repeats this on the HW
+    // thread; the call here protects against a stale on-disk "active = false"
+    // flag (left by an older cancel-on-first-run path) silently dropping the
+    // affected status box from the layout.
+    p_hwm->ensureRequiredSystemProfiles();
+
     // Build hardware UI dynamically - can now be called when hardware configuration changes
     buildHardwareUI();
 

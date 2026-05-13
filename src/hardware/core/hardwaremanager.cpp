@@ -85,11 +85,16 @@ QString HardwareManager::getHwName(const QString key)
     return QString();
 }
 
+void HardwareManager::ensureRequiredSystemProfiles()
+{
+    HardwareProfileManager::instance().ensureSystemProfiles();
+    RuntimeHardwareConfig::instance().activateMissingSystemProfiles();
+}
+
 void HardwareManager::initialize()
 {
     // Ensure system profiles exist and activate them for required types with no config
-    HardwareProfileManager::instance().ensureSystemProfiles();
-    RuntimeHardwareConfig::instance().activateMissingSystemProfiles();
+    ensureRequiredSystemProfiles();
 
     // Phase 3.3.6: Load hardware from runtime configuration before starting threads
     bcLog("Loading hardware configuration from runtime profiles..."_L1);
