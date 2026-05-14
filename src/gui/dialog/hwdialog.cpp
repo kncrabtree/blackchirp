@@ -114,7 +114,20 @@ void HWDialog::accept()
 
 QSize HWDialog::sizeHint() const
 {
-    return {600, 550};
+    QSize hint(600, 550);
+    if (p_controlWidget)
+    {
+        // Honor the control widget's preferred size when it exceeds the
+        // baseline so that wide tables (e.g., the pulse-channel grid) open
+        // with all columns visible. Add a modest allowance for the dialog
+        // chrome (button row, status row, model-info row, margins).
+        constexpr int chromeW = 24;
+        constexpr int chromeH = 160;
+        const QSize cwHint = p_controlWidget->sizeHint();
+        hint.setWidth(std::max(hint.width(), cwHint.width() + chromeW));
+        hint.setHeight(std::max(hint.height(), cwHint.height() + chromeH));
+    }
+    return hint;
 }
 
 void HWDialog::setControlWidgetEnabled(bool enabled)

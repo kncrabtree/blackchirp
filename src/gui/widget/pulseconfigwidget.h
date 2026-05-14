@@ -11,14 +11,15 @@
 
 #include <data/lif/lifconfig.h>
 
-class QLabel;
-class QDoubleSpinBox;
-class QPushButton;
-class QToolButton;
-class QLineEdit;
+class QCheckBox;
 class QComboBox;
-class PulsePlot;
+class QDoubleSpinBox;
+class QGroupBox;
+class QPushButton;
 class QSpinBox;
+class QTableWidget;
+class QToolButton;
+class PulsePlot;
 
 namespace BC::Key::PulseWidget {
 inline constexpr QLatin1StringView key{"PulseWidget"};
@@ -32,20 +33,17 @@ class PulseConfigWidget : public QWidget, public SettingsStorage
     Q_OBJECT
 
 public:
-    explicit PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent = 0);
+    explicit PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent = nullptr);
     ~PulseConfigWidget();
 
     struct ChWidgets {
-        QLabel *label;
         QComboBox *syncBox;
         QDoubleSpinBox *delayBox;
         QDoubleSpinBox *widthBox;
         EnumComboBox<PulseGenConfig::ChannelMode> *modeBox;
-        QPushButton *onButton;
-        QToolButton *cfgButton;
-        QLineEdit *nameEdit;
+        QToolButton *onButton;
         EnumComboBox<PulseGenConfig::Role> *roleBox;
-        EnumComboBox<PulseGenConfig::ActiveLevel> *levelBox;
+        QCheckBox *invBox;
         QSpinBox *dutyOnBox;
         QSpinBox *dutyOffBox;
         QDoubleSpinBox *delayStepBox;
@@ -61,19 +59,26 @@ signals:
     void changeSetting(const QString&, int, PulseGenConfig::Setting, QVariant);
 
 public slots:
-    void launchChannelConfig(int ch);
     void setFromConfig(const QString &key, const PulseGenConfig &c);
     void newSetting(const QString &key, int index, PulseGenConfig::Setting s, QVariant val);
     void updateFromSettings();
+
+public:
+    QSize sizeHint() const override;
 
 private:
     QString d_key;
     bool d_wizardMode{false};
     QList<ChWidgets> d_widgetList;
-    PulsePlot *p_pulsePlot;
+    QGroupBox *p_mainGb{nullptr};
+    QTableWidget *p_standardTable{nullptr};
+    QTableWidget *p_advancedTable{nullptr};
+    PulsePlot *p_pulsePlot{nullptr};
     QDoubleSpinBox *p_repRateBox;
     QPushButton *p_sysOnOffButton;
     EnumComboBox<PulseGenConfig::PGenMode> *p_sysModeBox;
+
+    void applyChannelName(int ch, const QString &name);
 
     std::shared_ptr<PulseGenConfig> ps_config;
 };

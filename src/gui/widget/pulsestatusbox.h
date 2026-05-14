@@ -22,11 +22,14 @@ signals:
 
 private:
     std::vector<std::pair<QLabel*,Led*>> d_ledList;
+    std::vector<QString> d_channelFullNames;
+    int d_labelMaxWidth{0};
     QLabel *p_repLabel;
     Led *p_enLed;
 
     void updateAll();
     void updateChannelTooltip(int ch);
+    void setChannelLabel(int ch, const QString &fullName);
     PulseGenConfig d_config;
 
 };
