@@ -3,39 +3,54 @@
 #include <QSpinBox>
 #include <QDoubleSpinBox>
 #include <QPushButton>
-#include <QCheckBox>
+#include <QGroupBox>
+#include <QLabel>
 #include <QFormLayout>
+#include <QGridLayout>
+#include <QHBoxLayout>
+#include <QVBoxLayout>
 
 LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
     : QWidget{parent}, SettingsStorage(BC::Key::LifProcessing::key)
 {
     using namespace BC::Key::LifProcessing;
-    auto fl = new QFormLayout(this);
 
     auto tt = QString("Gate position in units of points. Hold Ctrl to adjust in steps of 10");
     p_lgStartBox = new QSpinBox(this);
     p_lgStartBox->setToolTip(tt);
     p_lgStartBox->setRange(0,1000000000);
     p_lgStartBox->setValue(get(lgStart,0));
-    fl->addRow("LIF Gate Start",p_lgStartBox);
 
     p_lgEndBox = new QSpinBox(this);
     p_lgEndBox->setToolTip(tt);
     p_lgEndBox->setRange(1,1000000000);
     p_lgEndBox->setValue(get(lgEnd,1));
-    fl->addRow("LIF Gate End",p_lgEndBox);
 
     p_rgStartBox = new QSpinBox(this);
     p_rgStartBox->setToolTip(tt);
     p_rgStartBox->setRange(0,1000000000);
     p_rgStartBox->setValue(get(rgStart,0));
-    fl->addRow("Reference Gate Start",p_rgStartBox);
 
     p_rgEndBox = new QSpinBox(this);
     p_rgEndBox->setToolTip(tt);
     p_rgEndBox->setRange(1,1000000000);
     p_rgEndBox->setValue(get(rgEnd,1));
-    fl->addRow("Reference Gate End",p_rgEndBox);
+
+    auto gateBox = new QGroupBox("Gates",this);
+    auto gateGrid = new QGridLayout;
+    auto startHdr = new QLabel("Start",this);
+    auto endHdr = new QLabel("End",this);
+    startHdr->setAlignment(Qt::AlignCenter);
+    endHdr->setAlignment(Qt::AlignCenter);
+    gateGrid->addWidget(startHdr,0,1);
+    gateGrid->addWidget(endHdr,0,2);
+    gateGrid->addWidget(new QLabel("LIF",this),1,0,Qt::AlignRight);
+    gateGrid->addWidget(p_lgStartBox,1,1);
+    gateGrid->addWidget(p_lgEndBox,1,2);
+    gateGrid->addWidget(new QLabel("Reference",this),2,0,Qt::AlignRight);
+    gateGrid->addWidget(p_rgStartBox,2,1);
+    gateGrid->addWidget(p_rgEndBox,2,2);
+    gateBox->setLayout(gateGrid);
 
     p_lpAlphaBox = new QDoubleSpinBox(this);
     p_lpAlphaBox->setDecimals(4);
@@ -44,27 +59,58 @@ LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
     p_lpAlphaBox->setSpecialValueText(QString("Disabled"));
     p_lpAlphaBox->setToolTip("Low pass filter: x_n = alpha*x_{n-1} + (1-alpha)*x_n");
     p_lpAlphaBox->setValue(get(lpAlpha,0.0));
-    fl->addRow("Low Pass Filter Alpha",p_lpAlphaBox);
 
-    p_sgEnBox = new QCheckBox(this);
-    p_sgEnBox->setToolTip("Enable/disable Savitsky-Golay smoothing");
-    fl->addRow("Savitzky-Golay Filter Enabled",p_sgEnBox);
+    auto lpForm = new QFormLayout;
+    lpForm->addRow("Low pass α",p_lpAlphaBox);
+
+    p_sgGroupBox = new QGroupBox("Savitzky-Golay smoothing",this);
+    p_sgGroupBox->setCheckable(true);
+    p_sgGroupBox->setToolTip("Enable/disable Savitzky-Golay smoothing");
 
     p_sgWinBox = new QSpinBox(this);
     p_sgWinBox->setToolTip("Savitzky-Golay window size. Must be odd");
     p_sgWinBox->setMinimum(3);
     p_sgWinBox->setSingleStep(2);
-    p_sgWinBox->setEnabled(false);
-    fl->addRow("Savitzky-Golay Window",p_sgWinBox);
 
     p_sgPolyBox = new QSpinBox(this);
     p_sgPolyBox->setToolTip("Savitzky-Golay polynomial order. Must be between 2 and window size - 1");
     p_sgPolyBox->setMinimum(2);
-    p_sgPolyBox->setEnabled(false);
-    fl->addRow("Savitzky-Golay Polynomial Order",p_sgPolyBox);
 
-    connect(p_sgEnBox,&QCheckBox::toggled,p_sgWinBox,&QSpinBox::setEnabled);
-    connect(p_sgEnBox,&QCheckBox::toggled,p_sgPolyBox,&QSpinBox::setEnabled);
+    auto sgHbl = new QHBoxLayout;
+    sgHbl->addWidget(new QLabel("Window",this));
+    sgHbl->addWidget(p_sgWinBox,1);
+    sgHbl->addSpacing(8);
+    sgHbl->addWidget(new QLabel("Order",this));
+    sgHbl->addWidget(p_sgPolyBox,1);
+    p_sgGroupBox->setLayout(sgHbl);
+
+    p_reprocessButton = new QPushButton(QString("Reprocess All"),this);
+    p_reprocessButton->setEnabled(false);
+    connect(p_reprocessButton,&QPushButton::clicked,this,&LifProcessingWidget::reprocessSignal);
+
+    p_resetButton = new QPushButton(QString("Reset"),this);
+    p_resetButton->setToolTip("Reset to most recently saved values");
+    p_resetButton->setEnabled(false);
+    connect(p_resetButton,&QPushButton::clicked,this,&LifProcessingWidget::resetSignal);
+
+    p_saveButton = new QPushButton(QString("Save"),this);
+    p_saveButton->setToolTip("Save the current values. They will be the new defaults if this experiment is viewed again.");
+    p_saveButton->setEnabled(false);
+    connect(p_saveButton,&QPushButton::clicked,this,&LifProcessingWidget::saveSignal);
+
+    auto btnHbl = new QHBoxLayout;
+    btnHbl->addWidget(p_reprocessButton,1);
+    btnHbl->addWidget(p_resetButton,1);
+    btnHbl->addWidget(p_saveButton,1);
+
+    auto vbl = new QVBoxLayout;
+    vbl->addWidget(gateBox);
+    vbl->addLayout(lpForm);
+    vbl->addWidget(p_sgGroupBox);
+    vbl->addLayout(btnHbl);
+    vbl->addStretch(1);
+    setLayout(vbl);
+
     connect(p_lgStartBox,qOverload<int>(&QSpinBox::valueChanged),this,[this](int n){
         auto v = p_lgEndBox->value();
         if(n >= v)
@@ -102,34 +148,13 @@ LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
     connect(p_rgStartBox,qOverload<int>(&QSpinBox::valueChanged),this,&LifProcessingWidget::settingChanged);
     connect(p_rgEndBox,qOverload<int>(&QSpinBox::valueChanged),this,&LifProcessingWidget::settingChanged);
     connect(p_lpAlphaBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&LifProcessingWidget::settingChanged);
-    connect(p_sgEnBox,&QAbstractButton::toggled,this,&LifProcessingWidget::settingChanged);
+    connect(p_sgGroupBox,&QGroupBox::toggled,this,&LifProcessingWidget::settingChanged);
     connect(p_sgWinBox,qOverload<int>(&QSpinBox::valueChanged),this,&LifProcessingWidget::settingChanged);
     connect(p_sgPolyBox,qOverload<int>(&QSpinBox::valueChanged),this,&LifProcessingWidget::settingChanged);
 
-
-    p_sgEnBox->setChecked(get(sgEn,false));
+    p_sgGroupBox->setChecked(get(sgEn,false));
     p_sgWinBox->setValue(get(sgWin,11));
     p_sgPolyBox->setValue(get(sgPoly,3));
-
-    p_reprocessButton = new QPushButton(QString("Reprocess All"),this);
-    p_reprocessButton->setEnabled(false);
-    connect(p_reprocessButton,&QPushButton::clicked,this,&LifProcessingWidget::reprocessSignal);
-
-    fl->addRow("",p_reprocessButton);
-
-    p_resetButton = new QPushButton(QString("Reset"),this);
-    p_resetButton->setToolTip("Reset to most recently saved values");
-    p_resetButton->setEnabled(false);
-    connect(p_resetButton,&QPushButton::clicked,this,&LifProcessingWidget::resetSignal);
-    fl->addRow("",p_resetButton);
-
-    p_saveButton = new QPushButton(QString("Save"),this);
-    p_saveButton->setToolTip("Save the current values. They will be the new defaults if this experiment is viewed again.");
-    p_saveButton->setEnabled(false);
-    connect(p_saveButton,&QPushButton::clicked,this,&LifProcessingWidget::saveSignal);
-    fl->addRow("",p_saveButton);
-
-    setLayout(fl);
 
     if(store)
     {
@@ -138,7 +163,7 @@ LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
         registerGetter(rgStart,p_rgStartBox,&QSpinBox::value);
         registerGetter(rgEnd,p_rgEndBox,&QSpinBox::value);
         registerGetter(lpAlpha,p_lpAlphaBox,&QDoubleSpinBox::value);
-        registerGetter(sgEn,static_cast<QAbstractButton*>(p_sgEnBox),&QAbstractButton::isChecked);
+        registerGetter(sgEn,p_sgGroupBox,&QGroupBox::isChecked);
         registerGetter(sgWin,p_sgWinBox,&QSpinBox::value);
         registerGetter(sgPoly,p_sgPolyBox,&QSpinBox::value);
     }
@@ -163,7 +188,7 @@ void LifProcessingWidget::setAll(const LifTrace::LifProcSettings &lc)
     p_rgStartBox->setValue(lc.refGateStart);
     p_rgEndBox->setValue(lc.refGateEnd);
     p_lpAlphaBox->setValue(lc.lowPassAlpha);
-    p_sgEnBox->setChecked(lc.savGolEnabled);
+    p_sgGroupBox->setChecked(lc.savGolEnabled);
     p_sgWinBox->setValue(lc.savGolWin);
     p_sgPolyBox->setValue(lc.savGolPoly);
     blockSignals(false);
@@ -177,7 +202,7 @@ LifTrace::LifProcSettings LifProcessingWidget::getSettings() const
                 p_rgStartBox->value(),
                 p_rgEndBox->value(),
                 p_lpAlphaBox->value(),
-                p_sgEnBox->isChecked(),
+                p_sgGroupBox->isChecked(),
                 p_sgWinBox->value(),
                 p_sgPolyBox->value()
     };

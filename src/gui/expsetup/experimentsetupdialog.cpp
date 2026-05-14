@@ -8,7 +8,6 @@
 #include <QVBoxLayout>
 #include <QDialogButtonBox>
 
-#include <gui/widget/experimentsummarywidget.h>
 #include <gui/style/themecolors.h>
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 #include <hardware/optional/flowcontroller/flowcontroller.h>
@@ -25,6 +24,7 @@
 #include "experimentpressurecontrollerconfigpage.h"
 #include "experimentioboardconfigpage.h"
 #include "experimentvalidatorconfigpage.h"
+#include "experimentsummarypage.h"
 
 #include <gui/lif/gui/experimentlifconfigpage.h>
 #include <data/storage/applicationconfigmanager.h>
@@ -41,31 +41,26 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const QHash<RfConf
 
     auto hbl = new QHBoxLayout;
 
+    auto leftVbl = new QVBoxLayout;
+
     p_navTree = new QTreeWidget(this);
     p_navTree->setColumnCount(1);
     p_navTree->setMinimumWidth(200);
     p_navTree->setHeaderHidden(true);
-
-    hbl->addWidget(p_navTree);
-
-    p_configWidget = new QStackedWidget(this);
-    hbl->addWidget(p_configWidget,1);
-
-    auto vbl = new QVBoxLayout;
-
-    p_summaryWidget = new ExperimentSummaryWidget(this);
-    vbl->addWidget(p_summaryWidget,3);
-    p_summaryWidget->setMinimumWidth(300);
+    leftVbl->addWidget(p_navTree,3);
 
     p_statusTextEdit = new QTextEdit(this);
     p_statusTextEdit->setReadOnly(true);
-    vbl->addWidget(p_statusTextEdit,1);
+    leftVbl->addWidget(p_statusTextEdit,1);
 
     p_validateButton = new QPushButton(QString("Validate"),this);
     connect(p_validateButton,&QPushButton::clicked,this,&ExperimentSetupDialog::validateAll);
-    vbl->addWidget(p_validateButton,0);
+    leftVbl->addWidget(p_validateButton,0);
 
-    hbl->addLayout(vbl,0);
+    hbl->addLayout(leftVbl,0);
+
+    p_configWidget = new QStackedWidget(this);
+    hbl->addWidget(p_configWidget,1);
 
     mainLayout->addLayout(hbl,1);
     auto bb = new QDialogButtonBox(QDialogButtonBox::Cancel,this);
@@ -79,7 +74,7 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const QHash<RfConf
 
     setLayout(mainLayout);
     mainLayout->setSizeConstraint(QLayout::SetNoConstraint);
-    setMinimumSize(1400, 950);
+    setMinimumSize(1100, 850);
 
     p_exp = exp;
 
@@ -134,6 +129,14 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const QHash<RfConf
     auto valItem = new QTreeWidgetItem(expTypeItem,{valp->d_title});
     valItem->setData(0,Qt::UserRole,k);
 
+    auto sumP = new ExperimentSummaryPage(p_exp);
+    k = BC::Key::WizSummary::key;
+    i = p_configWidget->addWidget(sumP);
+    d_pages.insert({k,{i,k,sumP,true}});
+    auto sumItem = new QTreeWidgetItem({sumP->d_title});
+    sumItem->setData(0,Qt::UserRole,k);
+    p_navTree->addTopLevelItem(sumItem);
+
 
     connect(sp,&ExperimentTypePage::typeChanged,[=,this](){
         sp->apply();
@@ -170,7 +173,6 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const QHash<RfConf
 
     p_navTree->expandAll();
     validate(p_navTree->invisibleRootItem(),true);
-    p_summaryWidget->setExperiment(exp);
 
     connect(p_navTree,&QTreeWidget::currentItemChanged,this,&ExperimentSetupDialog::pageChanged);
 }
@@ -215,7 +217,6 @@ void ExperimentSetupDialog::pageChanged(QTreeWidgetItem *newItem, QTreeWidgetIte
             {
                 it->second.page->apply();
                 prevItem->setBackground(0,QBrush());
-                p_summaryWidget->setExperiment(p_exp);
             }
             else
                 prevItem->setBackground(0,QBrush(ThemeColors::getThemeAwareColor(ThemeColors::StatusError,this)));

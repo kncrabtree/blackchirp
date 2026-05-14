@@ -6,7 +6,6 @@
 #include <data/storage/settingsstorage.h>
 #include <data/experiment/digitizerconfig.h>
 
-class QGroupBox;
 class QDoubleSpinBox;
 class QSpinBox;
 class QComboBox;
@@ -20,7 +19,7 @@ public:
     virtual ~DigitizerConfigWidget();
 
     struct AnalogChannelWidgets {
-        QGroupBox *channelBox;
+        QCheckBox *channelBox;
         QDoubleSpinBox *fullScaleBox;
         QDoubleSpinBox *vOffsetBox;
     };

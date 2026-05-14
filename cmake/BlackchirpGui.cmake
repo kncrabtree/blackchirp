@@ -50,6 +50,7 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentpressurecontrollerconfigpage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentpulsegenconfigpage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentsetupdialog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentsummarypage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimenttemperaturecontrollerconfigpage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimenttypepage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentvalidatorconfigpage.cpp
@@ -165,6 +166,7 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentpressurecontrollerconfigpage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentpulsegenconfigpage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentsetupdialog.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentsummarypage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimenttemperaturecontrollerconfigpage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimenttypepage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/expsetup/experimentvalidatorconfigpage.h

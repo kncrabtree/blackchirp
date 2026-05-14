@@ -13,7 +13,6 @@
 class QTreeWidget;
 class QStackedWidget;
 class QTextEdit;
-class ExperimentSummaryWidget;
 class QPushButton;
 class Experiment;
 class ExperimentConfigPage;
@@ -52,7 +51,6 @@ private:
 
     QTreeWidget *p_navTree;
     QStackedWidget *p_configWidget;
-    ExperimentSummaryWidget *p_summaryWidget;
     QTextEdit *p_statusTextEdit;
     QPushButton *p_validateButton, *p_startButton;
 

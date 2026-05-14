@@ -20,7 +20,7 @@ const QString sgPoly("savGolPoly");
 
 class QSpinBox;
 class QDoubleSpinBox;
-class QCheckBox;
+class QGroupBox;
 class QPushButton;
 
 class LifProcessingWidget : public QWidget, public SettingsStorage
@@ -44,7 +44,7 @@ signals:
 private:
     QSpinBox *p_lgStartBox, *p_lgEndBox, *p_rgStartBox, *p_rgEndBox, *p_sgWinBox, *p_sgPolyBox;
     QDoubleSpinBox *p_lpAlphaBox;
-    QCheckBox *p_sgEnBox;
+    QGroupBox *p_sgGroupBox;
     QPushButton *p_reprocessButton, *p_saveButton, *p_resetButton;
 };
 

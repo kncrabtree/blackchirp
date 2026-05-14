@@ -5,13 +5,15 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QFormLayout>
+#include <QGridLayout>
 #include <QGroupBox>
 #include <QComboBox>
 #include <QSpinBox>
 #include <QDoubleSpinBox>
 #include <QCheckBox>
 #include <QLabel>
-#include <QScrollArea>
+#include <QTableWidget>
+#include <QHeaderView>
 
 #include <data/experiment/digitizerconfig.h>
 #include <data/settings/hardwarekeys.h>
@@ -19,24 +21,39 @@
 using namespace BC::Key::Digi;
 using namespace BC::Store::Digi;
 
+namespace {
+void centerCellWidget(QTableWidget *table, int row, int col, QWidget *w)
+{
+    auto wrap = new QWidget;
+    auto h = new QHBoxLayout(wrap);
+    h->setContentsMargins(0,0,0,0);
+    h->addWidget(w);
+    h->setAlignment(Qt::AlignCenter);
+    table->setCellWidget(row,col,wrap);
+}
+}
+
 DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QString digHwKey, QWidget *parent) :
     QWidget(parent), SettingsStorage(widgetKey+"."+digHwKey), d_hwKey(digHwKey)
 {
-
-    auto hbl = new QHBoxLayout;
-
     SettingsStorage s(d_hwKey,Hardware);
 
-    auto sa = new QScrollArea;
-    auto anContainer = new QWidget;
-    auto chvbl = new QVBoxLayout;
+    auto numAn = s.get(numAnalogChannels,4);
+    auto anTable = new QTableWidget(numAn,3,this);
+    anTable->setHorizontalHeaderLabels({"Enable","Full Scale","Offset"});
+    anTable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    anTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    anTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    anTable->setSelectionMode(QAbstractItemView::NoSelection);
+    anTable->setFocusPolicy(Qt::NoFocus);
+    QStringList anRowLabels;
 
-    for(int i=0; i<s.get(numAnalogChannels,4); ++i)
+    for(int i=0; i<numAn; ++i)
     {
-        auto chBox = new QGroupBox(QString("Analog Ch ")+QString::number(i+1));
-        chBox->setCheckable(true);
+        anRowLabels << QString("Ch %1").arg(i+1);
 
-        auto fl = new QFormLayout;
+        auto chBox = new QCheckBox;
+        chBox->setChecked(s.getArrayValue(dwAnChannels,i,en,false));
 
         auto fsBox = new QDoubleSpinBox;
         fsBox->setDecimals(3);
@@ -52,84 +69,75 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
         voBox->setSuffix(" V");
         voBox->setSingleStep((voBox->maximum() - voBox->minimum())/100.0);
         voBox->setValue(s.getArrayValue(dwAnChannels,i,offset,0.0));
-        chBox->setLayout(fl);
 
-        connect(chBox,&QGroupBox::toggled,fsBox,&QDoubleSpinBox::setEnabled);
-        connect(chBox,&QGroupBox::toggled,voBox,&QDoubleSpinBox::setEnabled);
-        connect(chBox,&QGroupBox::toggled,this,&DigitizerConfigWidget::configureAnalogBoxes);
-        connect(chBox,&QGroupBox::toggled,this,&DigitizerConfigWidget::edited);
+        connect(chBox,&QCheckBox::toggled,fsBox,&QDoubleSpinBox::setEnabled);
+        connect(chBox,&QCheckBox::toggled,voBox,&QDoubleSpinBox::setEnabled);
+        connect(chBox,&QCheckBox::toggled,this,&DigitizerConfigWidget::configureAnalogBoxes);
+        connect(chBox,&QCheckBox::toggled,this,&DigitizerConfigWidget::edited);
         connect(fsBox,&QDoubleSpinBox::valueChanged,this,&DigitizerConfigWidget::edited);
         connect(voBox,&QDoubleSpinBox::valueChanged,this,&DigitizerConfigWidget::edited);
-        chBox->setChecked(s.getArrayValue(dwAnChannels,i,en,false));
 
-        fl->addRow("Full Scale",fsBox);
-        fl->addRow("Offset",voBox);
+        fsBox->setEnabled(chBox->isChecked());
+        voBox->setEnabled(chBox->isChecked());
 
-        for(int i=0; i<fl->rowCount(); ++i)
-        {
-            auto l = static_cast<QLabel*>(fl->itemAt(i,QFormLayout::LabelRole)->widget());
-            l->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
-            l->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
-        }
+        centerCellWidget(anTable,i,0,chBox);
+        anTable->setCellWidget(i,1,fsBox);
+        anTable->setCellWidget(i,2,voBox);
 
-        chBox->setLayout(fl);
         d_anChannelWidgets.insert({i+1,{chBox,fsBox,voBox}});
-        chvbl->addWidget(chBox,1);
     }
+    anTable->setVerticalHeaderLabels(anRowLabels);
+    anTable->resizeColumnsToContents();
 
-    chvbl->addSpacerItem(new QSpacerItem(1,1,QSizePolicy::Minimum,QSizePolicy::Expanding));
-    anContainer->setLayout(chvbl);
-    sa->setWidget(anContainer);
-    sa->setWidgetResizable(true);
-    hbl->addWidget(sa,1);
+    auto anBox = new QGroupBox("Analog Channels",this);
+    auto anLayout = new QVBoxLayout;
+    anLayout->addWidget(anTable);
+    anBox->setLayout(anLayout);
+
+    auto channelsHbl = new QHBoxLayout;
+    channelsHbl->addWidget(anBox,1);
 
     int dch = s.get(numDigitalChannels,0);
     if(dch > 0)
     {
-        auto dchvbl = new QVBoxLayout;
-        auto digBox = new QGroupBox("Digital Channels");
-        auto innervlb = new QVBoxLayout;
-        auto dgl = new QGridLayout;
-        dgl->addWidget(new QLabel("Channel"),0,0,1,1,Qt::AlignCenter);
-        dgl->addWidget(new QLabel("Read?"),0,1,1,1,Qt::AlignCenter);
-        dgl->addWidget(new QLabel("Role"),0,2,1,1,Qt::AlignCenter);
+        auto digTable = new QTableWidget(dch,2,this);
+        digTable->setHorizontalHeaderLabels({"Read","Role"});
+        digTable->horizontalHeader()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
+        digTable->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
+        digTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+        digTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        digTable->setSelectionMode(QAbstractItemView::NoSelection);
+        digTable->setFocusPolicy(Qt::NoFocus);
+        QStringList digRowLabels;
 
         for(int i=0; i<dch; ++i)
         {
-            auto lbl = new QLabel(QString::number(i+1));
-            lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
-            lbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
-            dgl->addWidget(lbl,i+1,0,1,1,Qt::AlignCenter);
+            digRowLabels << QString("Ch %1").arg(i+1);
 
             auto readBox = new QCheckBox;
             readBox->setChecked(s.getArrayValue(dwDigChannels,i,digInp,false));
-            dgl->addWidget(readBox,i+1,1,1,1,Qt::AlignCenter);
 
             auto roleBox = new QComboBox;
-            if(readBox->isChecked())
-                roleBox->setEnabled(false);
-            dgl->addWidget(roleBox,i+1,2,1,1,Qt::AlignCenter);
+            roleBox->setEnabled(!readBox->isChecked());
 
             connect(readBox,&QCheckBox::toggled,roleBox,&QComboBox::setDisabled);
             connect(readBox,&QCheckBox::toggled,this,&DigitizerConfigWidget::edited);
 
+            centerCellWidget(digTable,i,0,readBox);
+            digTable->setCellWidget(i,1,roleBox);
+
             d_digChannelWidgets.insert({i+1,{readBox,roleBox}});
         }
+        digTable->setVerticalHeaderLabels(digRowLabels);
 
-        dgl->setColumnStretch(0,0);
-        dgl->setColumnStretch(1,0);
-        dgl->setColumnStretch(2,1);
-
-        innervlb->addLayout(dgl,0);
-        innervlb->addSpacerItem(new QSpacerItem(1,1,QSizePolicy::Minimum,QSizePolicy::Expanding));
-
-        digBox->setLayout(innervlb);
-        dchvbl->addWidget(digBox);
-        hbl->addWidget(digBox);
+        auto digBox = new QGroupBox("Digital Channels",this);
+        auto digLayout = new QVBoxLayout;
+        digLayout->addWidget(digTable);
+        digBox->setLayout(digLayout);
+        channelsHbl->addWidget(digBox,1);
     }
 
-
-    auto vl = new QVBoxLayout;
+    auto bottomHbl = new QHBoxLayout;
 
     auto horBox = new QGroupBox("Data Transfer");
     auto hfl = new QFormLayout;
@@ -189,7 +197,7 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
         l->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
     }
     horBox->setLayout(hfl);
-    vl->addWidget(horBox,1);
+    bottomHbl->addWidget(horBox,1);
 
     auto tBox = new QGroupBox("Trigger");
     auto tfl = new QFormLayout;
@@ -234,15 +242,15 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
     }
 
     tBox->setLayout(tfl);
-    vl->addWidget(tBox,1);
+    bottomHbl->addWidget(tBox,1);
 
     if(!s.get(isTriggered,true))
         tBox->setEnabled(false);
 
     auto aBox = new QGroupBox("Acquisition Setup");
-    auto afl = new QFormLayout;
+    auto agl = new QGridLayout;
 
-    p_blockAverageBox = new QCheckBox;
+    p_blockAverageBox = new QCheckBox("Block average");
     p_blockAverageBox->setToolTip(QString(R"(If checked, the scope will acquire multiple records and return a single record containing the average.
 On Tektronix scopes, this will be done using FastFrame with a summary frame.
 For most scopes, this option is mutually exclusive with "Multiple Records" mode, which returns each individual record without averaging.)"));
@@ -251,10 +259,11 @@ For most scopes, this option is mutually exclusive with "Multiple Records" mode,
     p_numAveragesBox->setRange(1,s.get(maxAverages,INT_MAX));
     p_numAveragesBox->setValue(s.get(numAvg,1));
     p_numAveragesBox->setEnabled(false);
+    p_numAveragesBox->setPrefix("# ");
     p_numAveragesBox->setToolTip(QString(R"(Number of records to average. If 1, averaging will be disabled.
 The actual number of records able to be averaged may be limited by the record length or data size.)"));
 
-    p_multiRecordBox = new QCheckBox;
+    p_multiRecordBox = new QCheckBox("Multiple records");
     p_multiRecordBox->setToolTip(QString(R"(If checked, the scope will acquire multiple records and return all of them at once.
 On Tektronix scipes, this will be done using FastFrame mode with no summary frame.
 For most scopes, this option is mutually exclusive with "Block Average" mode, which averages the individual records.)"));
@@ -264,6 +273,7 @@ For most scopes, this option is mutually exclusive with "Block Average" mode, wh
     p_numRecordsBox->setRange(1,s.get(maxRecords,INT_MAX));
     p_numRecordsBox->setValue(s.get(multiRecNum,1));
     p_numRecordsBox->setEnabled(false);
+    p_numRecordsBox->setPrefix("# ");
     p_numRecordsBox->setToolTip(QString(R"(Number of records to acquire. If 1, this feature will be disabled.
 The actual number of records able to be acquired may be limited by the record length or data size.)"));
 
@@ -311,25 +321,22 @@ The actual number of records able to be acquired may be limited by the record le
     if(s.get(multiRec,false))
         p_multiRecordBox->setChecked(true);
 
-    afl->addRow("Block Average",p_blockAverageBox);
-    afl->addRow("# Averages",p_numAveragesBox);
-    afl->addRow("Multiple Records",p_multiRecordBox);
-    afl->addRow("# Records",p_numRecordsBox);
+    agl->addWidget(p_blockAverageBox,0,0);
+    agl->addWidget(p_numAveragesBox,0,1);
+    agl->addWidget(p_multiRecordBox,1,0);
+    agl->addWidget(p_numRecordsBox,1,1);
+    agl->setColumnStretch(0,1);
+    agl->setColumnStretch(1,1);
 
-    for(int i=0; i<afl->rowCount(); ++i)
-    {
-        auto l = static_cast<QLabel*>(afl->itemAt(i,QFormLayout::LabelRole)->widget());
-        l->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
-        l->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
-    }
+    aBox->setLayout(agl);
 
-    aBox->setLayout(afl);
-
-    vl->addWidget(aBox);
+    bottomHbl->addWidget(aBox,1);
     if(!s.get(canBlockAverage,false) && !s.get(canMultiRecord,false))
         aBox->hide();
-    vl->addSpacerItem(new QSpacerItem(1,1,QSizePolicy::Minimum,QSizePolicy::Expanding));
-    hbl->addLayout(vl,1);
+
+    auto outerVbl = new QVBoxLayout;
+    outerVbl->addLayout(channelsHbl,0);
+    outerVbl->addLayout(bottomHbl,1);
 
     connect(p_recLengthBox,&QSpinBox::valueChanged,this,&DigitizerConfigWidget::edited);
     connect(p_sampleRateBox,&QComboBox::currentIndexChanged,this,&DigitizerConfigWidget::edited);
@@ -344,7 +351,7 @@ The actual number of records able to be acquired may be limited by the record le
     connect(p_multiRecordBox,&QCheckBox::toggled,this,&DigitizerConfigWidget::edited);
     connect(p_numRecordsBox,&QSpinBox::valueChanged,this,&DigitizerConfigWidget::edited);
 
-    setLayout(hbl);
+    setLayout(outerVbl);
     configureAnalogBoxes();
 }
 
