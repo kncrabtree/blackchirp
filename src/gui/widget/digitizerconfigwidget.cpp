@@ -17,21 +17,11 @@
 
 #include <data/experiment/digitizerconfig.h>
 #include <data/settings/hardwarekeys.h>
+#include <gui/widget/cellwidgethelpers.h>
 
 using namespace BC::Key::Digi;
 using namespace BC::Store::Digi;
-
-namespace {
-void centerCellWidget(QTableWidget *table, int row, int col, QWidget *w)
-{
-    auto wrap = new QWidget;
-    auto h = new QHBoxLayout(wrap);
-    h->setContentsMargins(0,0,0,0);
-    h->addWidget(w);
-    h->setAlignment(Qt::AlignCenter);
-    table->setCellWidget(row,col,wrap);
-}
-}
+using BC::Gui::centerCellWidget;
 
 DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QString digHwKey, bool withChannelNames, QWidget *parent) :
     QWidget(parent), SettingsStorage(widgetKey+"."+digHwKey), d_namesEnabled(withChannelNames), d_hwKey(digHwKey)

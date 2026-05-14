@@ -85,6 +85,7 @@ set(BLACKCHIRP_GUI_SOURCES
     
     # Custom widgets
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/auxdataviewwidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/cellwidgethelpers.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/chirpconfigwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/clockdisplaybox.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/digitizerconfigwidget.cpp
@@ -201,6 +202,7 @@ set(BLACKCHIRP_GUI_HEADERS
     
     # Custom widgets
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/auxdataviewwidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/cellwidgethelpers.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/chirpconfigwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/clockdisplaybox.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/digitizerconfigwidget.h

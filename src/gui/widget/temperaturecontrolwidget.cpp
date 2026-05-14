@@ -1,49 +1,64 @@
 #include "temperaturecontrolwidget.h"
 
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
+#include <gui/widget/cellwidgethelpers.h>
 
-#include <QLineEdit>
-#include <QLabel>
-#include <QPushButton>
-#include <QGridLayout>
+#include <QCheckBox>
+#include <QHeaderView>
+#include <QTableWidget>
+#include <QVBoxLayout>
+
+using BC::Gui::centerCellWidget;
+
+namespace {
+constexpr int NameCol = 0;
+constexpr int EnabledCol = 1;
+}
 
 TemperatureControlWidget::TemperatureControlWidget(const TemperatureControllerConfig &cfg, QWidget *parent) :
     QWidget(parent),
     SettingsStorage(BC::Key::widgetKey(BC::Key::TCW::key,cfg.headerKey())),
     d_config{cfg}
 {
-    auto gl = new QGridLayout(this);
+    const auto numChannels = cfg.numChannels();
 
-    gl->addWidget(new QLabel("Ch"),0,0);
-    gl->addWidget(new QLabel("Name"),0,1);
-    gl->addWidget(new QLabel("Enabled"),0,2);
-    gl->setColumnStretch(0,0);
-    gl->setColumnStretch(1,1);
-    gl->setColumnStretch(2,0);
-    gl->setSpacing(3);
+    p_table = new QTableWidget(static_cast<int>(numChannels), 2, this);
+    p_table->setHorizontalHeaderLabels({"Name", "Enabled"});
+    p_table->horizontalHeader()->setSectionResizeMode(NameCol, QHeaderView::Stretch);
+    p_table->horizontalHeader()->setSectionResizeMode(EnabledCol, QHeaderView::ResizeToContents);
+    p_table->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    p_table->setSelectionMode(QAbstractItemView::NoSelection);
+    p_table->setFocusPolicy(Qt::NoFocus);
 
-    auto numChannels = cfg.numChannels();
+    QStringList rowLabels;
     for(uint i=0; i<numChannels; ++i)
     {
-        auto le = new QLineEdit(this);
-        le->setText(cfg.channelName(i));
-        connect(le,&QLineEdit::editingFinished,[this,le,i]{
-            emit channelNameChanged(d_config.headerKey(),i,le->text());
+        rowLabels << QString("Ch %1").arg(i+1);
+
+        auto nameItem = new QTableWidgetItem(cfg.channelName(i));
+        p_table->setItem(static_cast<int>(i), NameCol, nameItem);
+
+        auto cb = new QCheckBox(this);
+        connect(cb, &QCheckBox::toggled, this, [this,i](bool en){
+            emit channelEnableChanged(d_config.headerKey(), i, en);
         });
+        centerCellWidget(p_table, static_cast<int>(i), EnabledCol, cb);
 
-        auto b = new QPushButton("Off",this);
-        b->setCheckable(true);
-        b->setChecked(false);
-        connect(b,&QPushButton::toggled,[this,i](bool en){
-            emit channelEnableChanged(d_config.headerKey(),i,en);
-        });
-
-        gl->addWidget(new QLabel(QString::number(i+1)),i+1,0);
-        gl->addWidget(le,i+1,1);
-        gl->addWidget(b,i+1,2);
-
-        d_channelWidgets.push_back({le,b});
+        d_channelWidgets.push_back({cb});
     }
+    p_table->setVerticalHeaderLabels(rowLabels);
+
+    connect(p_table, &QTableWidget::itemChanged, this, [this](QTableWidgetItem *item){
+        if(!item || item->column() != NameCol)
+            return;
+        emit channelNameChanged(d_config.headerKey(),
+                                static_cast<uint>(item->row()),
+                                item->text());
+    });
+
+    auto vbl = new QVBoxLayout(this);
+    vbl->setContentsMargins(0,0,0,0);
+    vbl->addWidget(p_table);
 
     setFromConfig(cfg);
 }
@@ -56,10 +71,11 @@ TemperatureControllerConfig &TemperatureControlWidget::toConfig()
 {
     for(uint i=0; i<d_config.numChannels(); i++)
     {
-        if( (std::size_t)i < d_channelWidgets.size())
+        if((std::size_t)i < d_channelWidgets.size())
         {
-            d_config.setName(i,d_channelWidgets.at(i).le->text());
-            d_config.setEnabled(i,d_channelWidgets.at(i).button->isChecked());
+            auto item = p_table->item(static_cast<int>(i), NameCol);
+            d_config.setName(i, item ? item->text() : QString());
+            d_config.setEnabled(i, d_channelWidgets.at(i).checkBox->isChecked());
         }
     }
 
@@ -73,13 +89,14 @@ void TemperatureControlWidget::setFromConfig(const TemperatureControllerConfig &
 
     for(uint i=0; i<cfg.numChannels(); ++i)
     {
-        if( (std::size_t)i < d_channelWidgets.size())
+        if((std::size_t)i < d_channelWidgets.size())
         {
-            d_channelWidgets.at(i).le->blockSignals(true);
-            d_channelWidgets.at(i).le->setText(cfg.channelName(i));
-            d_channelWidgets.at(i).le->blockSignals(false);
+            p_table->blockSignals(true);
+            if(auto item = p_table->item(static_cast<int>(i), NameCol))
+                item->setText(cfg.channelName(i));
+            p_table->blockSignals(false);
 
-            setChannelEnabled(cfg.headerKey(),i,cfg.channelEnabled(i));
+            setChannelEnabled(cfg.headerKey(), i, cfg.channelEnabled(i));
         }
     }
 
@@ -94,12 +111,8 @@ void TemperatureControlWidget::setChannelEnabled(const QString key, uint ch, boo
     if(ch >= d_channelWidgets.size())
         return;
 
-    auto b = d_channelWidgets[ch].button;
-    if(en)
-        b->setText("On");
-    else
-        b->setText("Off");
-    b->blockSignals(true);
-    b->setChecked(en);
-    b->blockSignals(false);
+    auto cb = d_channelWidgets[ch].checkBox;
+    cb->blockSignals(true);
+    cb->setChecked(en);
+    cb->blockSignals(false);
 }
