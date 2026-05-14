@@ -13,7 +13,6 @@ a spectrometer for the first time.
    user_guide/installation
    user_guide/first_run
    user_guide/application_config
-   user_guide/library_status
    user_guide/ui_overview
 
 .. toctree::

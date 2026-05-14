@@ -114,7 +114,7 @@ Hardware configuration
 - Added a ``VendorLibrary`` staging system and a Library
   Configuration interface for managing externally-supplied
   drivers, with platform-specific installation guidance. See
-  :doc:`/user_guide/library_status` and
+  :doc:`/user_guide/hardware_config/library_status` and
   :doc:`/user_guide/installation`.
 - Added the hardware settings registry: per-device settings are
   declared once and rendered into the per-device dialog by the
@@ -164,11 +164,11 @@ Hardware drivers
 - Added the LabJack vendor-library wrapper with platform-
   specific backends (Linux/macOS exodriver, Windows UD), so
   LabJack support no longer requires the exodriver at compile
-  time. See :doc:`/user_guide/library_status` and
+  time. See :doc:`/user_guide/hardware_config/library_status` and
   :doc:`/user_guide/installation`.
 - Added the Spectrum vendor-library wrapper with dynamic loading
   for both Spectrum digitizer families. See
-  :doc:`/user_guide/library_status`.
+  :doc:`/user_guide/hardware_config/library_status`.
 
 Acquisition and data flow
 -------------------------

@@ -1,505 +1,273 @@
+.. index::
+   single: installation
+   single: binary packages
+   single: AppImage
+   single: DMG
+   single: NSIS installer
+   single: signing; verifying downloads
+   single: attestation; verifying downloads
+   single: Gatekeeper; quarantine attribute
+
 Installation
 ============
 
-Blackchirp is a cross-platform data acquisition application for
-CP-FTMW spectrometers. It runs on Windows, macOS, and Linux. Two
-installation paths are available:
+Blackchirp ships pre-built packages for Windows, macOS, and Linux. The
+recommended path is to download a binary release for your platform
+from the project's
+`Releases page <https://github.com/kncrabtree/blackchirp/releases>`_;
+no compiler, CMake, or Qt installation is required.
 
-* **Binary packages** — pre-built installers and packages distributed
-  through GitHub Releases. This is the recommended path for most
-  users.
-* **Source build** — compile Blackchirp from source using CMake. This
-  path is appropriate when you need to enable a hardware driver
-  that the binary distribution does not include, or when you want to
-  contribute to development.
-
-.. _installation-supported:
-
-Supported Platforms
--------------------
-
-The binary artifacts target the following operating-system minimums.
-Source builds may run on older releases provided Qt 6.9 or newer and
-the rest of the build toolchain are available.
-
-.. list-table::
-   :header-rows: 1
-   :widths: 30 70
-
-   * - Artifact
-     - Minimum OS / distribution
-   * - Linux ``.deb``
-     - Ubuntu 24.04 (Noble Numbat) or newer; Debian 13 (Trixie) or
-       newer. The ``.deb`` depends on the system Qt6 packages, so
-       distributions older than these ship a Qt that is too old to
-       satisfy the package's ``Depends:`` line.
-   * - Linux ``.rpm``
-     - openSUSE Leap 16.0 or newer; openSUSE Tumbleweed; Fedora 41
-       or newer; RHEL 9 or newer and rebuilds (AlmaLinux 9, Rocky
-       Linux 9).
-   * - Linux ``.AppImage``
-     - glibc 2.35 or newer — Ubuntu 22.04+, Debian 12+, RHEL 9+,
-       openSUSE Leap 15.5+. The AppImage bundles its own Qt and Qwt
-       and runs on any distribution at or above this glibc floor.
-   * - macOS ``.dmg``
-     - macOS 13.3 (Ventura 13.3) or newer, on both Apple Silicon
-       (M1/M2/M3/M4) and Intel hardware.
-   * - Windows ``.exe`` / ``.zip``
-     - Windows 10 version 1809 (October 2018 Update) or newer;
-       Windows 11. Built against the MSVC 2022 runtime.
+Source builds are documented separately for contributors and for
+users who need a hardware module that is not bundled into the
+published binaries — see :ref:`installation-source` below.
 
 .. _installation-binary:
 
-Binary Distribution
--------------------
+Choose a package
+----------------
 
-Pre-built packages for all supported platforms are published on the
-`Blackchirp Releases page <https://github.com/kncrabtree/blackchirp/releases>`_.
+Pick the artifact that matches your operating system from the latest
+release.
 
-Each release provides the following artifacts:
+Linux — Debian / Ubuntu
+   ``Blackchirp-<version>-Linux.deb``. Installs on Ubuntu 24.04
+   (Noble) or newer, Debian 13 (Trixie) or newer, and downstream
+   derivatives.
 
-.. list-table::
-   :header-rows: 1
-   :widths: 20 30 50
+Linux — openSUSE / Fedora / RHEL
+   ``Blackchirp-<version>-Linux.rpm``. Installs on openSUSE Leap
+   16.0 or newer, openSUSE Tumbleweed, Fedora 41 or newer, RHEL 9
+   (incl. AlmaLinux 9, Rocky Linux 9), and similar.
 
-   * - Platform
-     - Artifact
-     - Notes
-   * - Linux (Debian/Ubuntu)
-     - ``.deb``
-     - Dependencies resolved automatically by ``apt`` / ``dpkg``
-   * - Linux (openSUSE/Fedora/RHEL)
-     - ``.rpm``
-     - Dependencies resolved automatically by ``zypper`` / ``dnf`` / ``yum``
-   * - Linux (universal)
-     - ``.AppImage`` (two: main app and viewer)
-     - Self-contained; runs on Arch, NixOS, and any other Linux distribution
-   * - Linux (generic)
-     - ``.tar.gz``
-     - Binary tarball; extract and run
-   * - macOS (Apple Silicon)
-     - ``.dmg`` (``arm64``)
-     - Drag-and-drop application bundle for M1/M2/M3/M4 Macs
-   * - macOS (Intel)
-     - ``.dmg`` (``x86_64``)
-     - Drag-and-drop application bundle for pre-2022 Intel Macs
-   * - Windows
-     - ``.exe`` (NSIS installer)
-     - Standard Windows installer with shortcuts and uninstall entry
+Linux — any other distribution
+   ``Blackchirp-x86_64.AppImage`` (main acquisition app) and
+   ``Blackchirp-Viewer-x86_64.AppImage`` (standalone viewer).
+   Self-contained — runs on Arch, NixOS, and any glibc 2.35-or-newer
+   Linux system without installing system dependencies.
+
+macOS
+   ``Blackchirp-<version>-Darwin-arm64.dmg`` for Apple Silicon
+   (M1/M2/M3/M4) and
+   ``Blackchirp-<version>-Darwin-x86_64.dmg`` for pre-2022 Intel
+   Macs. Requires macOS 13.3 (Ventura) or newer.
+
+Windows
+   ``Blackchirp-<version>-Windows-AMD64.exe`` (NSIS installer).
+   Requires Windows 10 version 1809 or newer, or Windows 11.
 
 .. note::
-   Snap and Flatpak packages are intentionally not provided. Their
-   sandbox models restrict the serial-port and USB access that
-   Blackchirp requires for hardware communication.
+   Snap and Flatpak packages are not provided: their sandbox models
+   restrict the serial-port and USB access that Blackchirp needs to
+   communicate with instruments.
 
-Per-Platform Install Instructions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _installation-installing:
 
-**Linux — DEB package**
+Installing
+----------
 
-Download the ``.deb`` file and install it with your package manager::
+Linux DEB
+~~~~~~~~~
 
-    sudo apt install ./blackchirp-<version>-Linux.deb
+.. code-block:: console
 
-Qt6 and GSL are listed as dependencies and pulled from your
-distribution's repositories. Qwt is bundled inside the package
-because Ubuntu LTS ships only the Qt5-era qwt 6.1; the bundled
-``libqwt.so*`` lives in a private subdirectory of the package's
-libdir and the executables resolve it through an ``$ORIGIN``-relative
-RPATH.
+    $ sudo apt install ./Blackchirp-<version>-Linux.deb
 
-**Linux — RPM package**
+The package declares its Qt6 and GSL dependencies and ``apt`` pulls
+them from your distribution's repositories.
 
-Download the ``.rpm`` file and install it::
+Linux RPM
+~~~~~~~~~
 
-    sudo zypper install ./blackchirp-<version>-Linux.rpm   # openSUSE
-    sudo dnf install ./blackchirp-<version>-Linux.rpm      # Fedora / RHEL
+.. code-block:: console
 
-Qt6 and GSL are derived automatically from the binary's shared-library
-references and resolved from your distribution's repositories. Qwt is
-bundled inside the package — different RPM-based distributions
-ABI-track ``libqwt-qt6.so`` differently (openSUSE pins the minor
-version in the SONAME; Fedora and RHEL pin only the major), and a
-single .rpm linked against any one of them would fail to install on
-the others. The bundled libqwt sidesteps the soname-tracking question
-entirely, at the cost of a few MB of additional package size.
+    $ sudo zypper install ./Blackchirp-<version>-Linux.rpm   # openSUSE
+    $ sudo dnf install ./Blackchirp-<version>-Linux.rpm      # Fedora / RHEL
 
-**Linux — AppImage**
+Qt6 and GSL dependencies are resolved automatically from your
+distribution's repositories.
 
-Two AppImages are published for each release:
+Linux AppImage
+~~~~~~~~~~~~~~
 
-* ``Blackchirp-x86_64.AppImage`` — main acquisition application.
-* ``Blackchirp-Viewer-x86_64.AppImage`` — standalone viewer for
-  inspecting and analyzing data without launching the full
-  acquisition stack.
+Mark the file executable and run it directly:
 
-Each is self-contained — Qt, Qwt, and all other required libraries
-are bundled inside, and no system-level dependencies need to be
-installed. Download whichever you need, mark it executable, and run::
+.. code-block:: console
 
-    chmod +x Blackchirp-x86_64.AppImage
-    ./Blackchirp-x86_64.AppImage
+    $ chmod +x Blackchirp-x86_64.AppImage
+    $ ./Blackchirp-x86_64.AppImage
 
-Users who want both applications without doubling the download size
-can use the main AppImage alone — the viewer binary is bundled inside
-it. See :ref:`installation-appimage-viewer-from-main` below.
+Each AppImage is self-contained — Qt, Qwt, GSL, and every other
+runtime dependency is bundled inside.
+
+The main ``Blackchirp-x86_64.AppImage`` also bundles
+``blackchirp-viewer`` internally, so the separate
+``Blackchirp-Viewer-x86_64.AppImage`` is needed only when the viewer
+is the *only* application you want to keep on disk. To run the bundled
+viewer from the main AppImage, see
+:ref:`installation-appimage-viewer-from-main`.
+
+macOS DMG
+~~~~~~~~~
+
+Open the ``.dmg`` that matches your hardware and drag
+``blackchirp.app`` (and, optionally, ``blackchirp-viewer.app``) into
+``/Applications``. Qt and Qwt frameworks are bundled inside each
+application package.
+
+The first launch may fail with the message
+*"blackchirp.app is damaged and can't be opened. You should move it
+to the Trash."* The bundle is not damaged. The message appears
+because Blackchirp is not signed with a paid Apple Developer ID, so
+macOS's Gatekeeper rejects the ``com.apple.quarantine`` extended
+attribute the browser attached to the downloaded ``.dmg``. Clear the
+attribute once after installing:
+
+.. code-block:: console
+
+    $ xattr -d com.apple.quarantine /Applications/blackchirp.app
+    $ xattr -d com.apple.quarantine /Applications/blackchirp-viewer.app
+
+After running these commands the applications launch normally.
+Verifying the build-provenance attestation
+(:ref:`installation-verify-attestation`) before clearing the
+quarantine is the recommended way to confirm the download came from
+the project's CI pipeline.
+
+Windows
+~~~~~~~
+
+Run the downloaded ``.exe`` installer. It copies Blackchirp, the
+Qt DLLs, and the platform plugins to a directory of your choosing,
+adds Start-menu shortcuts, and registers an uninstall entry.
 
 .. _installation-appimage-viewer-from-main:
 
-Running the Viewer from the Main AppImage
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Launching the viewer from the main AppImage
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The main ``Blackchirp-x86_64.AppImage`` bundles both the
-``blackchirp`` and ``blackchirp-viewer`` binaries internally. The
-AppImage's auto-generated launcher only runs the main application,
-but the viewer binary inside the bundle is launchable directly.
+The main AppImage bundles both ``blackchirp`` and ``blackchirp-viewer``
+internally. The AppImage launcher runs the main application by default,
+but the viewer can be invoked directly through one of two recipes.
 
-**One-off launch (mounts the AppImage, leaves nothing on disk).**
-Open two terminals. In the first::
+**One-off launch.** Open two terminals. In the first, mount the
+AppImage:
 
-    ./Blackchirp-x86_64.AppImage --appimage-mount
+.. code-block:: console
 
-The AppImage prints the mount path (similar to
+    $ ./Blackchirp-x86_64.AppImage --appimage-mount
+
+The AppImage prints a mount path (similar to
 ``/tmp/.mount_BlackcXXXXXX``) and stays in the foreground to keep the
-mount alive. In the second terminal::
+mount alive. In the second terminal:
 
-    /tmp/.mount_BlackcXXXXXX/usr/bin/blackchirp-viewer
+.. code-block:: console
 
-When the viewer exits, return to the first terminal and press Ctrl+C
-to unmount the AppImage.
+    $ /tmp/.mount_BlackcXXXXXX/usr/bin/blackchirp-viewer
 
-**Repeated use (extracts once, leaves a directory on disk).**
-A one-time extraction makes both binaries directly launchable::
+When the viewer exits, return to the first terminal and press
+:kbd:`Ctrl+C` to unmount.
 
-    ./Blackchirp-x86_64.AppImage --appimage-extract
-    ./squashfs-root/usr/bin/blackchirp-viewer
+**Repeated use.** A one-time extraction makes both binaries directly
+launchable:
 
-The bundled libraries resolve correctly from either form because the
-viewer binary is built with ``RUNPATH`` set to ``$ORIGIN/../lib``.
+.. code-block:: console
 
-**macOS — DMG**
+    $ ./Blackchirp-x86_64.AppImage --appimage-extract
+    $ ./squashfs-root/usr/bin/blackchirp-viewer
 
-Two DMGs are published per release, one per CPU architecture. Pick
-the one that matches your hardware:
+.. _installation-verify:
 
-* ``Blackchirp-<version>-Darwin-arm64.dmg`` — Apple Silicon
-  (M1/M2/M3/M4).
-* ``Blackchirp-<version>-Darwin-x86_64.dmg`` — Intel (pre-2022
-  Macs).
+Verifying downloads
+-------------------
 
-Open the chosen ``.dmg``, drag the ``blackchirp.app`` bundle to
-your ``Applications`` folder, and (optionally) drag the
-``blackchirp-viewer.app`` bundle alongside it. Qt and Qwt
-frameworks are bundled inside the application.
+Verifying a download confirms the file was produced by the project's
+CI pipeline rather than tampered with in transit or substituted by a
+third party. Two independent mechanisms are available:
 
-On first launch macOS may refuse to open the application with the
-message *"blackchirp.app is damaged and can't be opened. You should
-move it to the Trash."* The bundle is not damaged. The message
-appears because the application is not signed with an Apple
-Developer ID, and Gatekeeper rejects the ``com.apple.quarantine``
-extended attribute that the browser attached to the file on
-download. To clear the attribute after installing::
+* **GPG signatures** cover the Linux artifacts (``.deb``, ``.rpm``,
+  AppImage).
+* **GitHub build-provenance attestations** cover every artifact on
+  every platform — including macOS and Windows, which are not
+  OS-level signed.
 
-    xattr -d com.apple.quarantine /Applications/blackchirp.app
-    xattr -d com.apple.quarantine /Applications/blackchirp-viewer.app
+Verification is optional but recommended on first install, especially
+on macOS and Windows where the attestation is the only authentication
+signal available.
 
-After running these commands the applications launch normally. The
-:ref:`installation-verification-attestation` step above is the
-recommended way to confirm the downloaded ``.dmg`` came from the
-project's CI pipeline before clearing the quarantine attribute.
+GPG signatures (Linux)
+~~~~~~~~~~~~~~~~~~~~~~
 
-**Windows — NSIS installer**
+The release key ID is ``898734DF7EDBDE45``. It is published in three
+identical channels — pick whichever is convenient:
 
-Download the ``.exe`` installer and run it. The installer copies
-Blackchirp and all required Qt DLLs and platform plugins to the chosen
-directory, adds Start Menu shortcuts, and registers an uninstaller.
-
-.. _installation-verification:
-
-Verifying Releases
-------------------
-
-Linux release artifacts are signed with the project's GPG release key,
-and every release artifact on every supported platform also carries a
-GitHub-issued build-provenance attestation. Verifying either is
-optional, but doing so confirms the file came from the project's CI
-pipeline rather than being tampered with in transit or re-uploaded by
-a third party.
-
-.. _installation-verification-key:
-
-The release key
-~~~~~~~~~~~~~~~
-
-Key ID: ``898734DF7EDBDE45``.
-
-The key is published through three identical channels — pick
-whichever is most convenient:
-
-* The ``keys.openpgp.org`` keyserver.
-* The ``blackchirp-release.asc`` asset attached to every GitHub
-  release.
-* The file ``packaging/blackchirp-release.asc`` in the project
-  repository.
+* the ``keys.openpgp.org`` keyserver,
+* the ``blackchirp-release.asc`` file attached to every GitHub
+  release, or
+* ``packaging/blackchirp-release.asc`` in the source repository.
 
 Import the key once per system. ``rpm`` and ``gpg`` keep separate
-keyrings, so an import into one does not satisfy the other — the
-commands below cover both paths.
+keyrings, so import into both if you plan to verify both formats:
 
-From the keyserver
-^^^^^^^^^^^^^^^^^^
+.. code-block:: console
 
-For DEB and AppImage verification (``gpg``)::
+    $ gpg --keyserver keys.openpgp.org --recv-keys 898734DF7EDBDE45
+    $ gpg --export --armor 898734DF7EDBDE45 | sudo rpm --import /dev/stdin
 
-    gpg --keyserver keys.openpgp.org --recv-keys 898734DF7EDBDE45
+For an RPM, the signature is embedded — ``zypper install`` and
+``dnf install`` verify it automatically once the key is imported, and
+``rpm --checksig <file>`` verifies without installing.
 
-For RPM verification, bridge the same key into ``rpm``'s keyring::
+For a DEB or AppImage, download the matching ``.asc`` next to the
+artifact and verify the pair together:
 
-    gpg --export --armor 898734DF7EDBDE45 | sudo rpm --import /dev/stdin
+.. code-block:: console
 
-From a downloaded file
-^^^^^^^^^^^^^^^^^^^^^^
+    $ gpg --verify Blackchirp-<version>-Linux.deb.asc \
+                   Blackchirp-<version>-Linux.deb
 
-Fetch the key file directly from the project repository (the GitHub
-release attachment is identical)::
+A successful check starts with ``Good signature from``.
 
-    curl -fLO https://raw.githubusercontent.com/kncrabtree/blackchirp/master/packaging/blackchirp-release.asc
+.. _installation-verify-attestation:
 
-For DEB and AppImage verification (``gpg``)::
+Build-provenance attestation (all platforms)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    gpg --import blackchirp-release.asc
+Every release artifact carries a SLSA build-provenance attestation
+signed by Sigstore through GitHub's OIDC identity and recorded in the
+public Rekor transparency log. Verifying it proves the artifact was
+produced from a specific commit by a specific CI workflow run.
 
-For RPM verification (``rpm``)::
+Install the `GitHub CLI <https://cli.github.com/>`_ and run:
 
-    sudo rpm --import blackchirp-release.asc
+.. code-block:: console
 
-.. _installation-verification-rpm:
-
-RPM (openSUSE / Fedora / RHEL)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The ``.rpm`` package carries an embedded GPG signature. After the key
-is imported, ``zypper install`` and ``dnf install`` verify the
-signature automatically and refuse to install a modified package.
-
-To verify the signature without installing::
-
-    rpm --checksig blackchirp-<version>-Linux.rpm
-
-A successfully-verified package prints ``digests signatures OK``.
-
-.. _installation-verification-deb:
-
-DEB (Debian / Ubuntu)
-~~~~~~~~~~~~~~~~~~~~~
-
-The ``.deb`` package ships with a detached signature
-(``blackchirp-<version>-Linux.deb.asc``) on the same release page.
-Verify both files together::
-
-    gpg --verify blackchirp-<version>-Linux.deb.asc \
-                 blackchirp-<version>-Linux.deb
-
-Successful output starts with ``Good signature from``. The signature
-is detached because ``apt`` does not check signatures inside ``.deb``
-files; the apt trust model signs the repository's ``Release`` file
-instead, which does not apply to standalone GitHub-release downloads.
-
-.. _installation-verification-appimage:
-
-AppImage
-~~~~~~~~
-
-The AppImage ships with a detached signature
-(``blackchirp-<version>-x86_64.AppImage.asc``) on the same release
-page. Verify both files together::
-
-    gpg --verify blackchirp-<version>-x86_64.AppImage.asc \
-                 blackchirp-<version>-x86_64.AppImage
-
-Successful output starts with ``Good signature from``.
-
-.. _installation-verification-attestation:
-
-GitHub build-provenance attestation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Every release artifact — ``.rpm``, ``.deb``, ``.AppImage``,
-``.tar.gz``, ``.dmg``, ``.exe``, ``.zip`` — has a SLSA build-
-provenance attestation issued by the GitHub Actions workflow that
-built it. The attestation is signed by Sigstore using GitHub's OIDC
-identity, recorded in the public Rekor transparency log, and proves
-the artifact was produced from a specific commit by a specific
-workflow run.
-
-Verification requires the `GitHub CLI <https://cli.github.com/>`_::
-
-    gh attestation verify <artifact> --owner kncrabtree
+    $ gh attestation verify <artifact> --owner kncrabtree
 
 A verified artifact prints ``Loaded digest sha256:…`` followed by the
 workflow identity and ``verified successfully``.
 
-Attestations are particularly useful on macOS and Windows, where
-Apple Developer ID and Authenticode signing are not provided and the
-attestation is the only signature available.
-
 .. _installation-source:
 
-Building from Source
+Building from source
 --------------------
 
-Prerequisites
-~~~~~~~~~~~~~
+The published binaries cover the standard set of supported devices.
+Building from source is only necessary when a vendor SDK module
+needs to be enabled at compile time, or when you are working on
+Blackchirp itself.
 
-Install the following before configuring the build:
-
-* A C++ compiler with C++23 support (GCC 13+, Clang 16+, MSVC 19.35+)
-* `CMake <https://cmake.org/>`_ 3.25 or later
-* `Qt 6 <https://www.qt.io/download-qt-installer-oss>`_ — Core, GUI,
-  Widgets, Network, SerialPort, Concurrent, Test
-* `Qwt <https://qwt.sourceforge.io/>`_ 6.2 or later (Qt6 build)
-* `GNU Scientific Library (GSL) <https://www.gnu.org/software/gsl/>`_
-  2.1 or later
-* `Eigen3 <https://eigen.tuxfamily.org/>`_ 3.3 or later (header-only)
-
-Optional:
-
-* NVIDIA CUDA Toolkit — required only when ``BC_ENABLE_CUDA=ON``
-* `Doxygen <https://www.doxygen.nl/>`_ and a Python environment with the
-  packages listed in ``doc/source/requirements.txt`` — required only
-  when ``BC_BUILD_DOCUMENTATION=ON``. See
-  :ref:`installation-source-docs` below for setup details.
-
-Configuring and Building
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-Clone the repository and build in the ``build/`` subdirectory. Two
-configurations are supported:
-
-**Debug** (includes debugging symbols; ``QDEBUG`` output enabled)::
-
-    cmake . -B build/Desktop-Debug/
-    cmake --build build/Desktop-Debug/ -j$(nproc)
-
-**Release** (optimized; ``QDEBUG`` output suppressed)::
-
-    cmake . -B build/Desktop-Release/ -DCMAKE_BUILD_TYPE=Release
-    cmake --build build/Desktop-Release/ -j$(nproc)
-
-After a successful build, the ``blackchirp`` and ``blackchirp-viewer``
-executables are located inside the build directory.
-
-To build a specific target only::
-
-    cmake --build build/Desktop-Debug/ --target blackchirp -j$(nproc)
-    cmake --build build/Desktop-Debug/ --target blackchirp-viewer -j$(nproc)
-
-Tunable Build Options
-~~~~~~~~~~~~~~~~~~~~~
-
-On the first CMake configure, a file named ``cmake/BuildConfig.cmake``
-is created from the template ``cmake/BuildConfig.cmake.template``. Edit
-this file to change the options below. Re-run the configure step after
-saving changes.
-
-.. list-table::
-   :header-rows: 1
-   :widths: 30 10 60
-
-   * - Option
-     - Default
-     - Description
-   * - ``BC_BUILD_DOCUMENTATION``
-     - ``OFF``
-     - Build HTML documentation and C++ API reference. Requires
-       Doxygen and the Python packages listed in
-       ``doc/source/requirements.txt`` (see
-       :ref:`installation-source-docs` below).
-   * - ``BC_ENABLE_CUDA``
-     - ``OFF``
-     - Enable NVIDIA CUDA GPU acceleration for FID averaging and other
-       compute-intensive operations. Requires the CUDA Toolkit.
-   * - ``BC_BUILD_VIEWER_ONLY``
-     - ``OFF``
-     - Build only the ``blackchirp-viewer`` data-analysis application,
-       omitting all hardware dependencies. Useful on systems without
-       laboratory hardware attached.
-   * - ``BC_BUILD_TESTS``
-     - ``ON``
-     - Build unit-test executables.
-
-**LIF module** — Laser-Induced Fluorescence is a runtime toggle
-controlled through the application's experiment-configuration interface.
-There is no separate build flag for LIF; it is always compiled in.
-
-.. _installation-source-docs:
-
-Building Documentation
-~~~~~~~~~~~~~~~~~~~~~~
-
-Generating the HTML documentation and C++ API reference requires two
-external tools:
-
-* **Doxygen** (system package) — used to extract API reference data
-  from the C++ source. Install through your distribution's package
-  manager (``apt install doxygen``, ``dnf install doxygen``,
-  ``zypper install doxygen``, ``brew install doxygen``) or download
-  from `<https://www.doxygen.nl/>`_.
-* **Sphinx and supporting Python packages** — pinned in
-  ``doc/source/requirements.txt`` (Sphinx, ``sphinx_rtd_theme``,
-  ``breathe``, ``nbsphinx``, ``nbsphinx-link``, ``ipython``).
-
-Install the Python packages directly into your system Python or, if
-you prefer to keep them isolated, into a dedicated environment.
-
-**Using ``pip`` and a virtual environment**::
-
-    python -m venv .venv-docs
-    source .venv-docs/bin/activate          # Windows: .venv-docs\Scripts\activate
-    pip install -r doc/source/requirements.txt
-
-**Using Conda**::
-
-    conda create -n blackchirp-docs python pip
-    conda activate blackchirp-docs
-    pip install -r doc/source/requirements.txt
-
-With Doxygen on your ``PATH`` and the Python dependencies available
-(either from your active environment or system Python), configure and
-build the docs::
-
-    cmake . -B build -DBC_BUILD_DOCUMENTATION=ON
-    cmake --build build --target docs       # HTML + API
-    cmake --build build --target doxygen    # API only
-
-If you used an isolated Python environment, activate it before each
-``cmake`` invocation so the Sphinx executables on your ``PATH`` come
-from that environment.
-
-Output is written to ``build/docs/html/`` (HTML) and
-``build/docs/doxygen/`` (API). Open ``build/docs/html/index.html`` in
-a browser to view the rendered documentation.
-
-Running Tests
-~~~~~~~~~~~~~
-
-::
-
-    cmake . -B build/tests/
-    cmake --build build/tests/ --target tests -j$(nproc)
-    ctest --test-dir build/tests/
+The full build procedure — prerequisites, CMake invocation, the
+tunable ``BC_*`` options, the test target, and the documentation
+target — is documented in :doc:`/developer_guide/build_system`.
 
 .. _installation-hardware:
 
-Hardware Configuration
-----------------------
+Next: configure hardware
+------------------------
 
-Hardware selection in Blackchirp is performed at runtime through the
-application's hardware-configuration interface — no hardware-specific
-recompilation is required for the standard set of supported devices.
-After installing or building Blackchirp, open the application and use
-the Hardware menu to select and configure the devices connected to your
-system.
-
-For a full walkthrough of the hardware-configuration workflow, see
-:doc:`hardware_config`.
+Hardware selection happens at runtime through the application's
+hardware-configuration interface; no driver-specific recompilation is
+required for any device in the standard set. After installing,
+launch Blackchirp and follow :doc:`first_run` to complete the initial
+setup, then see :doc:`hardware_config` for the full
+hardware-configuration workflow.

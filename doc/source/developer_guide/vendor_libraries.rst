@@ -31,7 +31,7 @@ drivers and libraries, the two concrete subclasses, the LabJack
 ``exo``/``UD`` cross-platform split as a worked example, and a recipe for
 adding a new ``VendorLibrary`` subclass. Per-class API detail lives on
 :doc:`/classes/vendorlibrary` and :doc:`/classes/hardwareregistry`; the
-user-facing surface is :doc:`/user_guide/library_status`.
+user-facing surface is :doc:`/user_guide/hardware_config/library_status`.
 
 Why dynamic loading
 -------------------
@@ -168,7 +168,7 @@ holding references into it: a stale function pointer becomes a crash. The
    which re-binds the freshly resolved function pointers.
 
 The user-facing flow — opening the dialog, browsing for a path, clicking
-Apply — is documented in :doc:`/user_guide/library_status`. The
+Apply — is documented in :doc:`/user_guide/hardware_config/library_status`. The
 :cpp:class:`LibraryStatusWidget` source under ``src/gui/widget/`` is a
 worked example of a UI consumer of the staging API; it also exposes a
 **Test Load** action that temporarily applies staged changes, reports

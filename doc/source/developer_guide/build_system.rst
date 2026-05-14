@@ -31,10 +31,10 @@ user-facing build options, the auto-generated hardware aggregator
 headers that hold the runtime registration model together, the test
 infrastructure, the documentation targets, and the CPack-based
 packaging path — but the documentation pipeline and the Python module
-have their own sections below for the pieces CMake does not own. The
-user-facing source-build steps live on :doc:`/user_guide/installation`;
-this page is one level deeper and assumes you are reading the build
-files alongside it.
+have their own sections below for the pieces CMake does not own.
+:doc:`/user_guide/installation` covers the binary-package install
+path; this page covers the from-source build that the installation
+page links to.
 
 Blackchirp produces three independently-buildable deliverables. The
 **C++ application** (``blackchirp`` and ``blackchirp-viewer``) is
@@ -118,6 +118,36 @@ one library or executable target.
    Config file ships with most distributions, so this module probes a
    list of common include and lib paths, falls back to ``pkg-config``,
    and exposes ``QWT::QWT``.
+
+Prerequisites
+-------------
+
+Install the following before configuring a build:
+
+* A C++23-capable compiler (GCC 13+, Clang 16+, MSVC 19.35+).
+* `CMake <https://cmake.org/>`_ 3.16 or later.
+* `Qt 6 <https://www.qt.io/download-qt-installer-oss>`_ 6.4 or later
+  with the Core, Gui, Widgets, Network, SerialPort, Concurrent, and
+  Test modules. The Linux DEB release is built against the Qt that
+  Ubuntu 24.04 (Noble) ships in ``qt6-base-dev`` (6.4.2); the other
+  jobs build against newer Qt releases. The C++ code is kept
+  compatible with the 6.4 baseline.
+* `Qwt <https://qwt.sourceforge.io/>`_ 6.2 or later (Qt6 build).
+  Distributions without a Qt6-compatible Qwt package require an
+  in-tree build; see ``BC_BUNDLE_QWT`` in
+  :doc:`packaging`.
+* `GNU Scientific Library (GSL) <https://www.gnu.org/software/gsl/>`_
+  2.1 or later.
+* `Eigen3 <https://eigen.tuxfamily.org/>`_ 3.3 or later (header-only).
+
+Optional:
+
+* NVIDIA CUDA Toolkit — required only when ``BC_ENABLE_CUDA=ON``.
+  See the warning under ``BC_ENABLE_CUDA`` below before turning this
+  on.
+* `Doxygen <https://www.doxygen.nl/>`_ plus a Python environment that
+  satisfies ``doc/source/requirements.txt`` — required only when
+  ``BC_BUILD_DOCUMENTATION=ON``. See *Documentation build* below.
 
 Configuring a build
 -------------------

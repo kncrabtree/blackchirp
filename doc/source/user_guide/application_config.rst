@@ -135,26 +135,21 @@ it only creates the four standard subdirectories if they are absent.
 
 .. _app-config-settings-isolation:
 
-Configuration File and Version Isolation
------------------------------------------
+Configuration File
+------------------
 
-Blackchirp stores its settings using the Qt ``QSettings`` framework. On each
-platform the settings are written to a system-standard location:
+Blackchirp stores its settings in a system-standard location:
 
 - **Linux** — ``~/.config/CrabtreeLab/Blackchirp2.conf``
 - **macOS** — ``~/Library/Preferences/CrabtreeLab.Blackchirp2.plist``
 - **Windows** — registry key ``HKCU\Software\CrabtreeLab\Blackchirp2``
 
-The application name embedded in the path (``Blackchirp2``) includes the
-major version number. This is intentional: settings written by one major
-version of Blackchirp are not read by a different major version. If you have
-configuration files from a previous major version (stored under a name such
-as ``Blackchirp`` or ``Blackchirp1``), Blackchirp 2 will not pick them up
-automatically. You must reconfigure hardware profiles, the data path, and
-application settings from scratch when upgrading between major versions.
-This isolation prevents stale or incompatible settings from silently affecting
-behavior after an upgrade.
+The ``Blackchirp2`` portion of the path is versioned to the major
+release, so each major version maintains its own settings independent
+of any other major version installed on the same machine.
 
-Blackchirp records the current version numbers in the settings file on every
-startup, which allows future tooling to detect the version that last wrote the
-file if migration assistance is ever added.
+.. note::
+
+   If you are upgrading from Blackchirp 1.x, the 1.x settings file is
+   not read by Blackchirp 2. See :doc:`/migration/v1_to_v2` for the
+   recommended workflow for moving an existing instrument over.

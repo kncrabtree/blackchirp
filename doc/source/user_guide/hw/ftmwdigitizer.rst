@@ -145,10 +145,10 @@ driver requires the device to have the block-averaging
 firmware module enabled; with that module, sustained acquisition
 rates of 50,000 FIDs/s have been achieved.
 
-This driver requires the Spectrum Instrumentation ``spcm``
-driver to be installed and linked at compile time. See
-:doc:`/user_guide/library_status` for installation details and to
-verify that the library is detected by the running Blackchirp build.
+This driver requires the Spectrum Instrumentation ``spcm`` library
+to be installed on the host. See
+:doc:`/user_guide/hardware_config/library_status` for installation
+details and to confirm that Blackchirp has located the library.
 
 Tektronix DPO71254B
 ...............................

@@ -532,7 +532,7 @@ Where to Go Next
   to end. New chapters that have no v1.x analogue include
   :doc:`/user_guide/python_hardware`,
   :doc:`/user_guide/overlays`, and
-  :doc:`/user_guide/library_status`; chapters such as
+  :doc:`/user_guide/hardware_config/library_status`; chapters such as
   :doc:`/user_guide/hardware_config` and
   :doc:`/user_guide/hwdialog` describe the runtime model
   introduced in this release.
