@@ -43,8 +43,13 @@ int FlowConfig::size() const
 
 void FlowConfig::addCh(double set, QString name)
 {
+    addCh(set, name, !qFuzzyCompare(1.0+set,1.0));
+}
+
+void FlowConfig::addCh(double set, QString name, bool enabled)
+{
     FlowChannel cc;
-    cc.enabled = !qFuzzyCompare(1.0+set,1.0);
+    cc.enabled = enabled;
     cc.name = name;
     cc.setpoint = set;
     cc.flow = 0.0;
@@ -58,14 +63,10 @@ void FlowConfig::setCh(int index, FlowChSetting s, QVariant val)
 
     switch(s) {
     case Enabled:
-        //this is handled automatically by the setpoint case
+        d_configList[index].enabled = val.toBool();
         break;
     case Setpoint:
         d_configList[index].setpoint = val.toDouble();
-        if(qFuzzyCompare(1.0+d_configList.at(index).setpoint,1.0))
-            d_configList[index].enabled = false;
-        else
-            d_configList[index].enabled = true;
         break;
     case Flow:
         d_configList[index].flow = val.toDouble();
@@ -106,9 +107,12 @@ void FlowConfig::retrieveValues()
     d_configList.reserve(n);
     for(std::size_t i=0; i<n; ++i)
     {
+        // Retrieve setpoint first so the enabled fallback for files
+        // predating the explicit Enabled column derives from it.
+        auto sp = retrieveArrayValue(channel,i,setPoint,0.0);
         FlowChannel cc {
-            retrieveArrayValue(channel,i,enabled,false),
-            retrieveArrayValue(channel,i,setPoint,0.0),
+            retrieveArrayValue(channel,i,enabled,!qFuzzyCompare(1.0+sp,1.0)),
+            sp,
             0.0,
             retrieveArrayValue(channel,i,name,QString(""))
         };

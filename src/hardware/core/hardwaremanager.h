@@ -229,6 +229,12 @@ signals:
     /// \param value New setpoint in the controller's native units.
     void flowSetpointUpdate(QString hwKey, int channel, double value);
 
+    /// \brief Emitted when a flow-controller channel is enabled or disabled.
+    /// \param hwKey Hardware key of the flow controller.
+    /// \param channel Channel index.
+    /// \param enabled \c true if the channel is active.
+    void flowChannelEnableUpdate(QString hwKey, int channel, bool enabled);
+
     /// \brief Emitted when the backing-gas pressure reading from a flow
     /// controller changes.
     /// \param hwKey Hardware key of the flow controller.
@@ -449,6 +455,12 @@ public slots:
     /// \param index Channel index.
     /// \param name New channel name.
     void setFlowChannelName(const QString key, int index, QString name);
+
+    /// \brief Enables or disables a flow-controller channel.
+    /// \param key Hardware key of the flow controller.
+    /// \param index Channel index.
+    /// \param en \c true to enable the channel.
+    void setFlowChannelEnabled(const QString key, int index, bool en);
 
     /// \brief Sets the backing-gas pressure setpoint on a flow controller.
     /// \param key Hardware key of the flow controller.

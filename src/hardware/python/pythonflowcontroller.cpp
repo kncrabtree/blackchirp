@@ -103,6 +103,18 @@ void PythonFlowController::hwSetFlowSetpoint(const int ch, const double val)
     pu_process->sendRequest(req);
 }
 
+void PythonFlowController::hwSetChannelEnabled(const int ch, const bool en)
+{
+    if (!pu_process || !pu_process->isRunning())
+        return;
+
+    QJsonObject req;
+    req["method"_L1]  = "hw_set_channel_enabled"_L1;
+    req["channel"_L1] = ch;
+    req["enabled"_L1] = en;
+    pu_process->sendRequest(req);
+}
+
 void PythonFlowController::hwSetPressureSetpoint(const double val)
 {
     if (!pu_process || !pu_process->isRunning())

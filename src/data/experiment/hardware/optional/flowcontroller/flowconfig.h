@@ -48,6 +48,7 @@ public:
     int size() const;
 
     void addCh(double set = 0.0, QString name = QString(""));
+    void addCh(double set, QString name, bool enabled);
     void setCh(int index, FlowChSetting s, QVariant val);
 
 private:

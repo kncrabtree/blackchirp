@@ -70,8 +70,9 @@ double VirtualFlowController::hwReadFlow(const int ch)
         return -1.0;
 
     double sp = d_config.setting(ch,FlowConfig::Setpoint).toDouble();
+    bool enabled = d_config.setting(ch,FlowConfig::Enabled).toBool();
     double flow;
-    if(sp > 0.0)
+    if(enabled && sp > 0.0)
     {
         std::normal_distribution<double> dist(sp, sp * 0.01);
         flow = dist(d_rng);

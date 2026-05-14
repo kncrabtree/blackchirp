@@ -392,6 +392,13 @@ void HardwareManager::setFlowChannelName(const QString key, int index, QString n
         QMetaObject::invokeMethod(flow,[flow,index,name](){flow->setChannelName(index,name);});
 }
 
+void HardwareManager::setFlowChannelEnabled(const QString key, int index, bool en)
+{
+    auto flow = findHardware<FlowController>(key);
+    if(flow)
+        QMetaObject::invokeMethod(flow,[flow,index,en](){flow->setChannelEnabled(index,en);});
+}
+
 void HardwareManager::setGasPressureSetpoint(const QString key, double val)
 {
     auto flow = findHardware<FlowController>(key);
@@ -1000,6 +1007,9 @@ void HardwareManager::setupHardwareSpecificConnectionsWithTracking(HardwareObjec
         }));
         storeConnection(hwKey, connect(flowController, &FlowController::flowSetpointUpdate, [this, k](int i, double d){
             emit flowSetpointUpdate(k, i, d);
+        }));
+        storeConnection(hwKey, connect(flowController, &FlowController::channelEnableUpdate, [this, k](int i, bool b){
+            emit flowChannelEnableUpdate(k, i, b);
         }));
         storeConnection(hwKey, connect(flowController, &FlowController::pressureUpdate, [this, k](double d){
             emit gasPressureUpdate(k, d);

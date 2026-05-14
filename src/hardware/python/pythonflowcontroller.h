@@ -36,6 +36,7 @@ private:
     void hwSetPressureControlMode(bool enabled) override;
     void hwSetFlowSetpoint(const int ch, const double val) override;
     void hwSetPressureSetpoint(const double val) override;
+    void hwSetChannelEnabled(const int ch, const bool en) override;
     double hwReadFlowSetpoint(const int ch) override;
     double hwReadPressureSetpoint() override;
     double hwReadFlow(const int ch) override;

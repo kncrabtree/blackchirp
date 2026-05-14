@@ -393,6 +393,7 @@ void MainWindow::buildHardwareUI()
 
             elements.connections.append(connect(p_hwm,&HardwareManager::flowUpdate,w,&GasFlowDisplayBox::updateFlow));
             elements.connections.append(connect(p_hwm,&HardwareManager::flowSetpointUpdate,w,&GasFlowDisplayBox::updateFlowSetpoint));
+            elements.connections.append(connect(p_hwm,&HardwareManager::flowChannelEnableUpdate,w,&GasFlowDisplayBox::updateChannelEnabled));
             elements.connections.append(connect(p_hwm,&HardwareManager::gasPressureUpdate,w,&GasFlowDisplayBox::updatePressure));
             elements.connections.append(connect(p_hwm,&HardwareManager::gasPressureControlMode,w,&GasFlowDisplayBox::updatePressureControl));
 
@@ -404,11 +405,13 @@ void MainWindow::buildHardwareUI()
                 auto fc = p_hwm->getFlowConfig(key);
                 auto gcw = new GasControlWidget(fc);
                 connect(p_hwm,&HardwareManager::flowSetpointUpdate,gcw,&GasControlWidget::updateGasSetpoint);
+                connect(p_hwm,&HardwareManager::flowChannelEnableUpdate,gcw,&GasControlWidget::updateChannelEnabled);
                 connect(p_hwm,&HardwareManager::gasPressureSetpointUpdate,gcw,&GasControlWidget::updatePressureSetpoint);
                 connect(p_hwm,&HardwareManager::gasPressureControlMode,gcw,&GasControlWidget::updatePressureControl);
                 connect(gcw,&GasControlWidget::pressureControlUpdate,p_hwm,&HardwareManager::setGasPressureControlMode);
                 connect(gcw,&GasControlWidget::pressureSetpointUpdate,p_hwm,&HardwareManager::setGasPressureSetpoint);
                 connect(gcw,&GasControlWidget::gasSetpointUpdate,p_hwm,&HardwareManager::setFlowSetpoint);
+                connect(gcw,&GasControlWidget::enableUpdate,p_hwm,&HardwareManager::setFlowChannelEnabled);
                 connect(gcw,&GasControlWidget::nameUpdate,w,&GasFlowDisplayBox::updateFlowName);
                 connect(gcw,&GasControlWidget::nameUpdate,p_hwm,&HardwareManager::setFlowChannelName);
 

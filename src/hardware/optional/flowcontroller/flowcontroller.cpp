@@ -79,9 +79,10 @@ void FlowController::hwReadSettings()
         {
             if (i < preserve)
                 newConfig.addCh(d_config.setting(i, FlowConfig::Setpoint).toDouble(),
-                                d_config.setting(i, FlowConfig::Name).toString());
+                                d_config.setting(i, FlowConfig::Name).toString(),
+                                d_config.setting(i, FlowConfig::Enabled).toBool());
             else
-                newConfig.addCh(0.0, getArrayValue(channels, i, chName, QString("Ch%1").arg(i+1)));
+                newConfig.addCh(0.0, getArrayValue(channels, i, chName, QString("Ch%1").arg(i+1)), false);
         }
         d_config = newConfig;
         d_numChannels = newCount;
@@ -98,6 +99,7 @@ void FlowController::setAll(const FlowConfig &c)
     for(int i=0; i<c.size(); ++i)
     {
         setChannelName(i,c.setting(i,FlowConfig::Name).toString());
+        setChannelEnabled(i,c.setting(i,FlowConfig::Enabled).toBool());
         setFlowSetpoint(i,c.setting(i,FlowConfig::Setpoint).toDouble());
     }
     setPressureSetpoint(c.d_pressureSetpoint);
@@ -163,6 +165,27 @@ void FlowController::setChannelName(const int ch, const QString name)
 {
     if(ch < d_numChannels)
         d_config.setCh(ch,FlowConfig::Name,name);
+}
+
+void FlowController::setChannelEnabled(const int ch, const bool en)
+{
+    if(ch < 0 || ch >= d_numChannels)
+        return;
+
+    d_config.setCh(ch, FlowConfig::Enabled, en);
+    hwSetChannelEnabled(ch, en);
+    // Re-issue the setpoint so drivers without a separate hardware
+    // enable command can close (or re-open) the valve based on the
+    // new enabled state via their hwSetFlowSetpoint override.
+    setFlowSetpoint(ch, d_config.setting(ch, FlowConfig::Setpoint).toDouble());
+    emit channelEnableUpdate(ch, en, QPrivateSignal());
+}
+
+bool FlowController::isChannelEnabled(const int ch) const
+{
+    if(ch < 0 || ch >= d_numChannels)
+        return false;
+    return d_config.setting(ch, FlowConfig::Enabled).toBool();
 }
 
 void FlowController::setPressureControlMode(bool enabled)

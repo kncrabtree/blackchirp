@@ -46,6 +46,7 @@ GasFlowDisplayBox::GasFlowDisplayBox(const QString key, QWidget *parent) : Hardw
         d_channelDecimals.append(2);
         d_channelSuffix.append(QString());
         d_setpoints.append(0.0);
+        d_channelEnabled.append(false);
         d_channelNames.append(name);
     }
 
@@ -90,6 +91,7 @@ void GasFlowDisplayBox::rebuild()
     // Preserve live state; resize to match new channel count
     d_channelNames.resize(n);
     d_setpoints.resize(n);
+    d_channelEnabled.resize(n);
 
     for (int i = 0; i < n; ++i)
     {
@@ -101,7 +103,7 @@ void GasFlowDisplayBox::rebuild()
         valueLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
         auto led = new Led;
-        led->setState(!qFuzzyCompare(1.0, d_setpoints.at(i) + 1.0));
+        led->setState(d_channelEnabled.at(i));
 
         d_flowWidgets.append({nameLabel, valueLabel, led});
         d_channelDecimals.append(2);
@@ -128,7 +130,7 @@ void GasFlowDisplayBox::applySettings()
 
 void GasFlowDisplayBox::updateChannelVisibility(int ch)
 {
-    bool visible = !qFuzzyCompare(1.0, d_setpoints.at(ch) + 1.0) || !d_channelNames.at(ch).isEmpty();
+    bool visible = d_channelEnabled.at(ch) || !d_channelNames.at(ch).isEmpty();
     auto [nameLabel, valueLabel, led] = d_flowWidgets.at(ch);
     nameLabel->setVisible(visible);
     valueLabel->setVisible(visible);
@@ -185,9 +187,18 @@ void GasFlowDisplayBox::updateFlowSetpoint(const QString key, int ch, double val
 
     d_setpoints[ch] = val;
     updateSetpointTooltip(ch);
+}
 
-    bool active = !qFuzzyCompare(1.0, val + 1.0);
-    std::get<2>(d_flowWidgets.at(ch))->setState(active);
+void GasFlowDisplayBox::updateChannelEnabled(const QString key, int ch, bool en)
+{
+    if (key != d_key)
+        return;
+
+    if (ch < 0 || ch >= d_flowWidgets.size())
+        return;
+
+    d_channelEnabled[ch] = en;
+    std::get<2>(d_flowWidgets.at(ch))->setState(en);
     updateChannelVisibility(ch);
 }
 

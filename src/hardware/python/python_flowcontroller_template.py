@@ -43,6 +43,14 @@ class FlowControllerDriver:
         hw_set_flow_setpoint(channel, value) -> None
         hw_set_pressure_setpoint(value)      -> None
         hw_set_pressure_control_mode(enabled) -> None
+        hw_set_channel_enabled(channel, enabled) -> None
+
+    Channel enable is independent of setpoint: a channel can be disabled
+    while retaining a non-zero setpoint, or enabled with a setpoint of 0.
+    Controllers that have no separate enable command should treat
+    `enabled=False` as "force the hardware setpoint to 0" inside
+    hw_set_flow_setpoint() (the base class re-issues the setpoint after
+    every enable toggle, so honoring the flag there is sufficient).
 
     Lifecycle methods (called by base class):
         initialize()      -- called once on startup (via fcInitialize)
@@ -63,6 +71,7 @@ class FlowControllerDriver:
         # Internal state for virtual mode
         self._flows = {}
         self._flow_setpoints = {}
+        self._enabled = {}
         self._pressure = 0.0
         self._pressure_setpoint = 0.0
         self._pressure_control = False
@@ -92,6 +101,7 @@ class FlowControllerDriver:
         for ch in range(num_channels):
             self._flows[ch] = 0.0
             self._flow_setpoints[ch] = 0.0
+            self._enabled[ch] = False
 
         return True
 
@@ -117,9 +127,12 @@ class FlowControllerDriver:
             # response = self.comm.query(f"FLOW{channel+1}?\\n")
             # return float(response.strip())
         """
-        # Virtual: simulate flow near setpoint with noise
+        # Virtual: simulate flow near setpoint with noise. A disabled
+        # channel reads as background noise around 0 regardless of its
+        # stored setpoint.
         sp = self._flow_setpoints.get(channel, 0.0)
-        if sp > 0:
+        en = self._enabled.get(channel, False)
+        if en and sp > 0:
             flow = sp + random.gauss(0, sp * 0.01)
         else:
             flow = abs(random.gauss(0, 0.1))
@@ -144,18 +157,48 @@ class FlowControllerDriver:
         """Set the flow setpoint for a channel.
 
         Called when the user changes a flow setpoint in the GUI or when
-        an experiment configures flows.
+        an experiment configures flows. Also re-issued by the base class
+        whenever a channel's enable state toggles, so controllers without
+        a separate enable command can implement disable here by checking
+        self._enabled and forwarding 0 to the hardware when False.
 
         Args:
             channel (int): 0-based channel index.
             value (float): Desired flow setpoint in the channel's units.
 
         Examples:
-            # Send to hardware:
-            # self.comm.write(f"FLOW{channel+1}:SP {value}\\n")
+            # Send to hardware (no separate enable command):
+            # effective = value if self._enabled.get(channel, False) else 0.0
+            # self.comm.write(f"FLOW{channel+1}:SP {effective}\\n")
         """
         self.log.debug(f"Setting flow ch{channel} setpoint to {value}")
         self._flow_setpoints[channel] = value
+
+    def hw_set_channel_enabled(self, channel, enabled):
+        """Set the enabled/disabled state of a flow channel.
+
+        Called when the user toggles the per-channel enable checkbox or
+        when an experiment configuration is applied. Setpoint and enable
+        are independent: a disabled channel may retain a non-zero
+        setpoint for later use, and an enabled channel may have a
+        setpoint of 0.
+
+        Controllers with a hardware enable/disable command (separate
+        from setpoint) should issue it here. Controllers without one can
+        leave the body empty: the base class re-issues the channel's
+        setpoint after every enable toggle, so honoring the flag inside
+        hw_set_flow_setpoint() is sufficient.
+
+        Args:
+            channel (int): 0-based channel index.
+            enabled (bool): True to enable the channel, False to disable.
+
+        Examples:
+            # Hardware with a dedicated enable command:
+            # self.comm.write(f"FLOW{channel+1}:EN {'ON' if enabled else 'OFF'}\\n")
+        """
+        self.log.debug(f"Setting flow ch{channel} enabled to {enabled}")
+        self._enabled[channel] = bool(enabled)
 
     # =========================================================================
     # Pressure Methods

@@ -23,6 +23,7 @@ public slots:
     void updateFlow(const QString key, int ch, double val);
     void updateFlowName(const QString key, int ch, const QString name);
     void updateFlowSetpoint(const QString key, int ch, double val);
+    void updateChannelEnabled(const QString key, int ch, bool en);
     void updatePressureControl(const QString key, bool en);
     void updatePressure(const QString key, double p);
 
@@ -33,6 +34,7 @@ private:
     QVector<int> d_channelDecimals;
     QVector<QString> d_channelSuffix;
     QVector<double> d_setpoints;
+    QVector<bool> d_channelEnabled;
     QVector<QString> d_channelNames;
 
     QLabel *p_pressureLabel;
