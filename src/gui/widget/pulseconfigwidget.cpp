@@ -147,7 +147,6 @@ PulseConfigWidget::PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent)
     for(int c=0; c<StdNumCols; ++c)
         p_standardTable->horizontalHeader()->setSectionResizeMode(c,
             (c == StdNameCol) ? QHeaderView::Stretch : QHeaderView::ResizeToContents);
-    p_standardTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     p_standardTable->setVerticalHeaderLabels(channelRowLabels(numChannels));
     p_standardTable->setSelectionMode(QAbstractItemView::NoSelection);
     p_standardTable->setFocusPolicy(Qt::NoFocus);
@@ -157,7 +156,6 @@ PulseConfigWidget::PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent)
         {"Sync", "Mode", "Duty On", "Duty Off", "Delay Step", "Width Step"});
     for(int c=0; c<AdvNumCols; ++c)
         p_advancedTable->horizontalHeader()->setSectionResizeMode(c, QHeaderView::ResizeToContents);
-    p_advancedTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     p_advancedTable->setVerticalHeaderLabels(channelRowLabels(numChannels));
     p_advancedTable->setSelectionMode(QAbstractItemView::NoSelection);
     p_advancedTable->setFocusPolicy(Qt::NoFocus);
@@ -346,6 +344,27 @@ PulseConfigWidget::PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent)
 
         d_widgetList.append(ch);
         lastFocusWidget = ch.onButton;
+    }
+
+    // Both tables share a fixed row height so channel rows line up
+    // across tabs. Without this the QToolButton in the Standard tab is
+    // a few pixels taller than the QComboBox in the Advanced tab and
+    // each table's ResizeToContents picks a different per-row height.
+    int rowHeight = 0;
+    if(!d_widgetList.isEmpty())
+    {
+        const auto &first = d_widgetList.first();
+        rowHeight = std::max({first.onButton->sizeHint().height(),
+                              first.delayBox->sizeHint().height(),
+                              first.syncBox->sizeHint().height()});
+    }
+    if(rowHeight < 28)
+        rowHeight = 28;
+    for(auto *table : {p_standardTable, p_advancedTable})
+    {
+        auto *vh = table->verticalHeader();
+        vh->setSectionResizeMode(QHeaderView::Fixed);
+        vh->setDefaultSectionSize(rowHeight);
     }
 
     // Name-cell direct edits propagate as a NameSetting change. The
