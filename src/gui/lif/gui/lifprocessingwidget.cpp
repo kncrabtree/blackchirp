@@ -5,7 +5,6 @@
 #include <QPushButton>
 #include <QGroupBox>
 #include <QLabel>
-#include <QFormLayout>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -60,8 +59,11 @@ LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
     p_lpAlphaBox->setToolTip("Low pass filter: x_n = alpha*x_{n-1} + (1-alpha)*x_n");
     p_lpAlphaBox->setValue(get(lpAlpha,0.0));
 
-    auto lpForm = new QFormLayout;
-    lpForm->addRow("Low pass α",p_lpAlphaBox);
+    auto lpGroupBox = new QGroupBox("Low pass filter",this);
+    auto lpHbl = new QHBoxLayout;
+    lpHbl->addWidget(new QLabel("α",this));
+    lpHbl->addWidget(p_lpAlphaBox,1);
+    lpGroupBox->setLayout(lpHbl);
 
     p_sgGroupBox = new QGroupBox("Savitzky-Golay smoothing",this);
     p_sgGroupBox->setCheckable(true);
@@ -103,10 +105,13 @@ LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
     btnHbl->addWidget(p_resetButton,1);
     btnHbl->addWidget(p_saveButton,1);
 
+    auto filtersHbl = new QHBoxLayout;
+    filtersHbl->addWidget(lpGroupBox,1);
+    filtersHbl->addWidget(p_sgGroupBox,1);
+
     auto vbl = new QVBoxLayout;
     vbl->addWidget(gateBox);
-    vbl->addLayout(lpForm);
-    vbl->addWidget(p_sgGroupBox);
+    vbl->addLayout(filtersHbl);
     vbl->addLayout(btnHbl);
     vbl->addStretch(1);
     setLayout(vbl);

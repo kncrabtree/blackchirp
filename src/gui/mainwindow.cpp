@@ -1199,6 +1199,7 @@ void MainWindow::launchLifConfigDialog()
 
     auto d = new QDialog;
     d->setWindowTitle("LIF Configuration");
+    d->setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg", ThemeColors::IconPrimary, d));
 
     // Create LifControlWidget with hardware keys
     auto digitizerKeys = runtimeConfig.getActiveKeys<LifDigitizer>();

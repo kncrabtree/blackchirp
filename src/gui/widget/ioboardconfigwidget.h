@@ -4,12 +4,6 @@
 #include <gui/widget/digitizerconfigwidget.h>
 #include <data/experiment/hardware/optional/ioboard/ioboardconfig.h>
 
-namespace BC::Key::DigiWidget {
-inline constexpr QLatin1StringView channelName{"name"};
-}
-
-class QTableWidget;
-
 class IOBoardConfigWidget : public DigitizerConfigWidget
 {
     Q_OBJECT
@@ -26,7 +20,6 @@ public:
 signals:
 
 private:
-    QTableWidget *p_analogNameWidget{nullptr}, *p_digitalNameWidget{nullptr};
     QString d_key;
 
 };

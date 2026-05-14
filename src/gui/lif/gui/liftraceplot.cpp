@@ -1,5 +1,6 @@
 #include "liftraceplot.h"
 #include <gui/plot/curvefactory.h>
+#include <gui/style/themecolors.h>
 
 #include <QApplication>
 #include <QMenu>
@@ -13,11 +14,32 @@
 
 #include <qwt6/qwt_plot_curve.h>
 #include <qwt6/qwt_plot_zoneitem.h>
-#include <qwt6/qwt_legend.h>
-#include <qwt6/qwt_legend_label.h>
+#include <qwt6/qwt_plot_legenditem.h>
 #include <qwt6/qwt_plot_textlabel.h>
+#include <qwt6/qwt_legend_data.h>
+#include <qwt6/qwt_text.h>
 
 #include <gui/plot/blackchirpplotcurve.h>
+
+namespace {
+class CurveColoredLegend : public QwtPlotLegendItem
+{
+public:
+    using QwtPlotLegendItem::QwtPlotLegendItem;
+
+protected:
+    void drawLegendData(QPainter *painter, const QwtPlotItem *plotItem,
+                        const QwtLegendData &data, const QRectF &rect) const override
+    {
+        QwtLegendData modData = data;
+        QwtText title = qvariant_cast<QwtText>(modData.value(QwtLegendData::TitleRole));
+        if (auto curve = dynamic_cast<const QwtPlotCurve *>(plotItem))
+            title.setColor(curve->pen().color());
+        modData.setValue(QwtLegendData::TitleRole, QVariant::fromValue(title));
+        QwtPlotLegendItem::drawLegendData(painter, plotItem, modData, rect);
+    }
+};
+}
 
 
 LifTracePlot::LifTracePlot(QWidget *parent) :
@@ -52,7 +74,15 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
     p_refZone->setItemAttribute(QwtPlotItem::AutoScale,false);
 
 
-    insertLegend( new QwtLegend(this),QwtPlot::BottomLegend);
+    auto legendItem = new CurveColoredLegend;
+    legendItem->setAlignmentInCanvas(Qt::AlignBottom | Qt::AlignRight);
+    legendItem->setMaxColumns(2);
+    legendItem->setBackgroundMode(QwtPlotLegendItem::LegendBackground);
+    legendItem->setBackgroundBrush(palette().window().color());
+    legendItem->setBorderPen(QPen(palette().mid().color()));
+    legendItem->setBorderRadius(4);
+    legendItem->setTextPen(QPen(ThemeColors::getThemeAwareColor(ThemeColors::EmphasisText,this)));
+    legendItem->attach(this);
 
     connect(this,&LifTracePlot::integralUpdate,this,&LifTracePlot::setIntegralText);
 }
@@ -233,4 +263,9 @@ void LifTracePlot::replot()
 QSize LifTracePlot::sizeHint() const
 {
     return {400,300};
+}
+
+QSize LifTracePlot::minimumSizeHint() const
+{
+    return {200,180};
 }

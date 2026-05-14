@@ -25,11 +25,13 @@ void LifControlWidget::initializeWidget()
     auto vbl = new QVBoxLayout;
 
     p_lifTracePlot = new LifTracePlot(this);
+    p_lifTracePlot->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     vbl->addWidget(p_lifTracePlot,1);
 
 
     auto hbl = new QHBoxLayout;
     auto dgb = new QGroupBox("LIF Digitizer",this);
+    dgb->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Minimum);
 
     auto vbl2 = new QVBoxLayout;
 
@@ -38,7 +40,7 @@ void LifControlWidget::initializeWidget()
     vbl2->addWidget(dl);
 
     p_digWidget = new DigitizerConfigWidget(BC::Key::LifControl::lifDigWidget,
-                                            ps_cfg->digitizerConfig().headerKey(),dgb);
+                                            ps_cfg->digitizerConfig().headerKey(),false,dgb);
     vbl2->addWidget(p_digWidget);
 
     auto hbl2 = new QHBoxLayout;
@@ -72,6 +74,7 @@ void LifControlWidget::initializeWidget()
     auto rightvbl = new QVBoxLayout;
 
     auto lgb = new QGroupBox("Laser",this);
+    lgb->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Minimum);
     auto vbl3 = new QVBoxLayout;
     p_laserWidget = new LifLaserWidget(d_laserHwKey, lgb);
     vbl3->addWidget(p_laserWidget);
@@ -79,6 +82,7 @@ void LifControlWidget::initializeWidget()
     rightvbl->addWidget(lgb,0);
 
     auto pgb = new QGroupBox("Processing",this);
+    pgb->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Minimum);
     auto pvbl = new QVBoxLayout;
     p_procWidget = new LifProcessingWidget(true,pgb);
     pvbl->addWidget(p_procWidget);
@@ -89,7 +93,7 @@ void LifControlWidget::initializeWidget()
 
     hbl->addLayout(rightvbl,1);
 
-    vbl->addLayout(hbl,1);
+    vbl->addLayout(hbl,0);
     setLayout(vbl);
 
     connect(p_startAcqButton,&QPushButton::clicked,this,&LifControlWidget::startAcquisition);
@@ -194,5 +198,5 @@ void LifControlWidget::toConfig(LifConfig &cfg)
 
 QSize LifControlWidget::sizeHint() const
 {
-    return {1000,800};
+    return {1000,900};
 }

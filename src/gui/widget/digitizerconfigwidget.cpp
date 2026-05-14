@@ -33,19 +33,35 @@ void centerCellWidget(QTableWidget *table, int row, int col, QWidget *w)
 }
 }
 
-DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QString digHwKey, QWidget *parent) :
-    QWidget(parent), SettingsStorage(widgetKey+"."+digHwKey), d_hwKey(digHwKey)
+DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QString digHwKey, bool withChannelNames, QWidget *parent) :
+    QWidget(parent), SettingsStorage(widgetKey+"."+digHwKey), d_namesEnabled(withChannelNames), d_hwKey(digHwKey)
 {
+    using namespace BC::Key::DigiWidget;
+
     SettingsStorage s(d_hwKey,Hardware);
 
     auto numAn = s.get(numAnalogChannels,4);
-    auto anTable = new QTableWidget(numAn,3,this);
-    anTable->setHorizontalHeaderLabels({"Enable","Full Scale","Offset"});
-    anTable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    anTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    anTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    anTable->setSelectionMode(QAbstractItemView::NoSelection);
-    anTable->setFocusPolicy(Qt::NoFocus);
+    const int anCols = d_namesEnabled ? 4 : 3;
+    const int anNameCol = 3;
+    p_anTable = new QTableWidget(numAn,anCols,this);
+    QStringList anHeaders{"Enable","Full Scale","Offset"};
+    if(d_namesEnabled) anHeaders << "Name";
+    p_anTable->setHorizontalHeaderLabels(anHeaders);
+    p_anTable->horizontalHeader()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
+    if(d_namesEnabled)
+    {
+        p_anTable->horizontalHeader()->setSectionResizeMode(1,QHeaderView::ResizeToContents);
+        p_anTable->horizontalHeader()->setSectionResizeMode(2,QHeaderView::ResizeToContents);
+        p_anTable->horizontalHeader()->setSectionResizeMode(anNameCol,QHeaderView::Stretch);
+    }
+    else
+    {
+        p_anTable->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
+        p_anTable->horizontalHeader()->setSectionResizeMode(2,QHeaderView::Stretch);
+    }
+    p_anTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    p_anTable->setSelectionMode(QAbstractItemView::NoSelection);
+    p_anTable->setFocusPolicy(Qt::NoFocus);
     QStringList anRowLabels;
 
     for(int i=0; i<numAn; ++i)
@@ -62,6 +78,8 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
         fsBox->setSuffix(" V");
         fsBox->setSingleStep(fsBox->minimum());
         fsBox->setValue(s.getArrayValue(dwAnChannels,i,fs,fsBox->minimum()));
+        if(!d_namesEnabled)
+            fsBox->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
 
         auto voBox = new QDoubleSpinBox;
         voBox->setDecimals(3);
@@ -69,6 +87,8 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
         voBox->setSuffix(" V");
         voBox->setSingleStep((voBox->maximum() - voBox->minimum())/100.0);
         voBox->setValue(s.getArrayValue(dwAnChannels,i,offset,0.0));
+        if(!d_namesEnabled)
+            voBox->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
 
         connect(chBox,&QCheckBox::toggled,fsBox,&QDoubleSpinBox::setEnabled);
         connect(chBox,&QCheckBox::toggled,voBox,&QDoubleSpinBox::setEnabled);
@@ -80,18 +100,23 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
         fsBox->setEnabled(chBox->isChecked());
         voBox->setEnabled(chBox->isChecked());
 
-        centerCellWidget(anTable,i,0,chBox);
-        anTable->setCellWidget(i,1,fsBox);
-        anTable->setCellWidget(i,2,voBox);
+        centerCellWidget(p_anTable,i,0,chBox);
+        p_anTable->setCellWidget(i,1,fsBox);
+        p_anTable->setCellWidget(i,2,voBox);
+
+        if(d_namesEnabled)
+        {
+            auto nameItem = new QTableWidgetItem(getArrayValue(dwAnChannels,i,channelName,QString("")));
+            p_anTable->setItem(i,anNameCol,nameItem);
+        }
 
         d_anChannelWidgets.insert({i+1,{chBox,fsBox,voBox}});
     }
-    anTable->setVerticalHeaderLabels(anRowLabels);
-    anTable->resizeColumnsToContents();
+    p_anTable->setVerticalHeaderLabels(anRowLabels);
 
     auto anBox = new QGroupBox("Analog Channels",this);
     auto anLayout = new QVBoxLayout;
-    anLayout->addWidget(anTable);
+    anLayout->addWidget(p_anTable);
     anBox->setLayout(anLayout);
 
     auto channelsHbl = new QHBoxLayout;
@@ -100,14 +125,23 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
     int dch = s.get(numDigitalChannels,0);
     if(dch > 0)
     {
-        auto digTable = new QTableWidget(dch,2,this);
-        digTable->setHorizontalHeaderLabels({"Read","Role"});
-        digTable->horizontalHeader()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
-        digTable->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
-        digTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-        digTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
-        digTable->setSelectionMode(QAbstractItemView::NoSelection);
-        digTable->setFocusPolicy(Qt::NoFocus);
+        const int digCols = d_namesEnabled ? 3 : 2;
+        const int digNameCol = 2;
+        p_digTable = new QTableWidget(dch,digCols,this);
+        QStringList digHeaders{"Read","Role"};
+        if(d_namesEnabled) digHeaders << "Name";
+        p_digTable->setHorizontalHeaderLabels(digHeaders);
+        p_digTable->horizontalHeader()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
+        if(d_namesEnabled)
+        {
+            p_digTable->horizontalHeader()->setSectionResizeMode(1,QHeaderView::ResizeToContents);
+            p_digTable->horizontalHeader()->setSectionResizeMode(digNameCol,QHeaderView::Stretch);
+        }
+        else
+            p_digTable->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
+        p_digTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+        p_digTable->setSelectionMode(QAbstractItemView::NoSelection);
+        p_digTable->setFocusPolicy(Qt::NoFocus);
         QStringList digRowLabels;
 
         for(int i=0; i<dch; ++i)
@@ -123,16 +157,22 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
             connect(readBox,&QCheckBox::toggled,roleBox,&QComboBox::setDisabled);
             connect(readBox,&QCheckBox::toggled,this,&DigitizerConfigWidget::edited);
 
-            centerCellWidget(digTable,i,0,readBox);
-            digTable->setCellWidget(i,1,roleBox);
+            centerCellWidget(p_digTable,i,0,readBox);
+            p_digTable->setCellWidget(i,1,roleBox);
+
+            if(d_namesEnabled)
+            {
+                auto nameItem = new QTableWidgetItem(getArrayValue(dwDigChannels,i,channelName,QString("")));
+                p_digTable->setItem(i,digNameCol,nameItem);
+            }
 
             d_digChannelWidgets.insert({i+1,{readBox,roleBox}});
         }
-        digTable->setVerticalHeaderLabels(digRowLabels);
+        p_digTable->setVerticalHeaderLabels(digRowLabels);
 
         auto digBox = new QGroupBox("Digital Channels",this);
         auto digLayout = new QVBoxLayout;
-        digLayout->addWidget(digTable);
+        digLayout->addWidget(p_digTable);
         digBox->setLayout(digLayout);
         channelsHbl->addWidget(digBox,1);
     }
@@ -335,8 +375,8 @@ The actual number of records able to be acquired may be limited by the record le
         aBox->hide();
 
     auto outerVbl = new QVBoxLayout;
-    outerVbl->addLayout(channelsHbl,0);
-    outerVbl->addLayout(bottomHbl,1);
+    outerVbl->addLayout(channelsHbl,1);
+    outerVbl->addLayout(bottomHbl,0);
 
     connect(p_recLengthBox,&QSpinBox::valueChanged,this,&DigitizerConfigWidget::edited);
     connect(p_sampleRateBox,&QComboBox::currentIndexChanged,this,&DigitizerConfigWidget::edited);
@@ -357,7 +397,82 @@ The actual number of records able to be acquired may be limited by the record le
 
 DigitizerConfigWidget::~DigitizerConfigWidget()
 {
+    if(!d_namesEnabled)
+        return;
 
+    using namespace BC::Key::DigiWidget;
+
+    if(p_anTable)
+    {
+        const int col = p_anTable->columnCount() - 1;
+        for(int i=0; i<p_anTable->rowCount(); ++i)
+        {
+            auto text = p_anTable->item(i,col)->text();
+            if((std::size_t) i == getArraySize(dwAnChannels))
+                appendArrayMap(dwAnChannels,{{channelName,text}});
+            else
+                setArrayValue(dwAnChannels,i,channelName,text);
+        }
+    }
+
+    if(p_digTable)
+    {
+        const int col = p_digTable->columnCount() - 1;
+        for(int i=0; i<p_digTable->rowCount(); ++i)
+        {
+            auto text = p_digTable->item(i,col)->text();
+            if((std::size_t) i == getArraySize(dwDigChannels))
+                appendArrayMap(dwDigChannels,{{channelName,text}});
+            else
+                setArrayValue(dwDigChannels,i,channelName,text);
+        }
+    }
+}
+
+QString DigitizerConfigWidget::analogChannelName(int channel) const
+{
+    if(!d_namesEnabled || !p_anTable)
+        return {};
+    const int row = channel - 1;
+    if(row < 0 || row >= p_anTable->rowCount())
+        return {};
+    auto item = p_anTable->item(row,p_anTable->columnCount()-1);
+    return item ? item->text() : QString();
+}
+
+void DigitizerConfigWidget::setAnalogChannelName(int channel, const QString &name)
+{
+    if(!d_namesEnabled || !p_anTable)
+        return;
+    const int row = channel - 1;
+    if(row < 0 || row >= p_anTable->rowCount())
+        return;
+    auto item = p_anTable->item(row,p_anTable->columnCount()-1);
+    if(item)
+        item->setText(name);
+}
+
+QString DigitizerConfigWidget::digitalChannelName(int channel) const
+{
+    if(!d_namesEnabled || !p_digTable)
+        return {};
+    const int row = channel - 1;
+    if(row < 0 || row >= p_digTable->rowCount())
+        return {};
+    auto item = p_digTable->item(row,p_digTable->columnCount()-1);
+    return item ? item->text() : QString();
+}
+
+void DigitizerConfigWidget::setDigitalChannelName(int channel, const QString &name)
+{
+    if(!d_namesEnabled || !p_digTable)
+        return;
+    const int row = channel - 1;
+    if(row < 0 || row >= p_digTable->rowCount())
+        return;
+    auto item = p_digTable->item(row,p_digTable->columnCount()-1);
+    if(item)
+        item->setText(name);
 }
 
 int DigitizerConfigWidget::numAnalogChecked() const

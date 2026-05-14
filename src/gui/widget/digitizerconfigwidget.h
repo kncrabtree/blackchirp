@@ -10,12 +10,17 @@ class QDoubleSpinBox;
 class QSpinBox;
 class QComboBox;
 class QCheckBox;
+class QTableWidget;
+
+namespace BC::Key::DigiWidget {
+inline constexpr QLatin1StringView channelName{"name"};
+}
 
 class DigitizerConfigWidget : public QWidget, public SettingsStorage
 {
     Q_OBJECT
 public:
-    explicit DigitizerConfigWidget(const QString widgetKey, const QString digHwKey, QWidget *parent = nullptr);
+    explicit DigitizerConfigWidget(const QString widgetKey, const QString digHwKey, bool withChannelNames = false, QWidget *parent = nullptr);
     virtual ~DigitizerConfigWidget();
 
     struct AnalogChannelWidgets {
@@ -42,6 +47,12 @@ public:
     void setFromConfig(const DigitizerConfig &c);
     void toConfig(DigitizerConfig &c);
 
+    bool channelNamesEnabled() const { return d_namesEnabled; }
+    QString analogChannelName(int channel) const;
+    void setAnalogChannelName(int channel, const QString &name);
+    QString digitalChannelName(int channel) const;
+    void setDigitalChannelName(int channel, const QString &name);
+
 signals:
     void edited();
 
@@ -51,6 +62,10 @@ public slots:
 protected:
     std::map<int,AnalogChannelWidgets> d_anChannelWidgets;
     std::map<int,DigitalChannelWidgets> d_digChannelWidgets;
+
+    QTableWidget *p_anTable{nullptr};
+    QTableWidget *p_digTable{nullptr};
+    bool d_namesEnabled{false};
 
     QSpinBox *p_triggerSourceBox;
     QComboBox *p_triggerSlopeBox;

@@ -65,6 +65,7 @@ protected:
     // QWidget interface
 public:
     QSize sizeHint() const override;
+    QSize minimumSizeHint() const override;
 };
 
 #endif // LIFTRACEPLOT_H

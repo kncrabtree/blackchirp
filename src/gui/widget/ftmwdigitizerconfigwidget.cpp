@@ -9,6 +9,7 @@
 FtmwDigitizerConfigWidget::FtmwDigitizerConfigWidget(QWidget *parent) :
     DigitizerConfigWidget("FtmwDigitizerConfigWidget",
                           RuntimeHardwareConfig::constInstance().getActiveKeys<FtmwDigitizer>().value(0),
+                          false,
                           parent)
 {
 }
