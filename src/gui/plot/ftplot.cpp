@@ -195,7 +195,12 @@ void FtPlot::removeOverlay(std::shared_ptr<OverlayBase> overlay)
     // Find and remove the overlay curve (compare by label since it's unique)
     for (auto it = d_overlayCurves.begin(); it != d_overlayCurves.end(); ++it) {
         if (it->first->getLabel() == overlay->getLabel()) {
-            // Curve will be automatically detached when unique_ptr is destroyed
+            // Drain any in-flight filter pass and unregister the curve while
+            // it is still fully-typed. Relying on ~BlackchirpPlotCurveBase to
+            // do this is too late: the derived destructor (and its _filter
+            // override) is gone by the time the base destructor drains the
+            // worker, so a concurrent pass would call a pure virtual.
+            detachCurve(it->second.get());
             d_overlayCurves.erase(it);
             replot();
             return;
