@@ -15,13 +15,17 @@ Select the desired experiment to repeat using the number field; the details of t
 .. note::
    Blackchirp only supports repeating experiments stored in the current Data Storage Location.
 
-**Hardware compatibility check.** Blackchirp compares the hardware map (loadout) of the selected experiment against the runtime hardware map of the running instance.
-Each entry in the map records the hardware key and the specific driver that was active at the time the experiment was saved.
-If the two maps differ in any way — a device missing, added, or replaced with a different driver — the ``Configure Experiment`` and ``Start Experiment`` buttons are disabled and an error message is shown.
-This check is loadout-based: it uses the runtime profile saved with the experiment, not a compile-time hardware list.
+**Hardware compatibility check.** Blackchirp compares the hardware
+map (loadout) of the selected experiment against the active hardware
+map. Each map entry records the hardware key and the driver that was
+active at save time. If the two maps differ — a device missing,
+added, or replaced with a different driver — the ``Configure
+Experiment`` and ``Start Experiment`` buttons are disabled and an
+error message is shown.
 
-A major-version mismatch also blocks repeating an experiment.
-A minor-version mismatch produces a warning and strongly recommends configuring the experiment manually before starting.
+A major-version mismatch also blocks repeating an experiment. A
+minor-version mismatch produces a warning and strongly recommends
+configuring the experiment manually before starting.
 
 **Use Current Settings.** The panel on the right side of the dialog lists each optional hardware device (Pulse Generators, Flow Controllers, Pressure Controllers, IO Boards, and Temperature Controllers) with a checkbox labeled ``Use Current Settings``.
 When a box is checked, the experiment uses the live settings for that device rather than the values saved with the original experiment.

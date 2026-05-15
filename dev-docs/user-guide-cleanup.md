@@ -196,7 +196,7 @@ Hardware Setup:
 
 Running Experiments:
 
-- [ ] `experiment_setup.rst` and `experiment/` sub-pages
+- [x] `experiment_setup.rst` and `experiment/` sub-pages
 - [ ] `ftmw_configuration.rst`
 - [ ] `ftmw_configuration/rf_configuration.rst` (moved from the
   user-guide root)
@@ -206,7 +206,7 @@ Running Experiments:
   `hardware_config/ftmw_presets.rst`; cleanup landed in same pass)
 - [ ] `lif/configuration.rst` (LIF Configuration dialog, sibling of
   `ftmw_configuration`)
-- [ ] `lif/experiment_setup.rst` (folded into `experiment_setup`'s
+- [x] `lif/experiment_setup.rst` (folded into `experiment_setup`'s
   toctree)
 
 Inspecting Data:
@@ -274,8 +274,7 @@ actually visible at the capture frame:
   status sidebar.
 - [ ] `cp-ftmw-peakfind.png` — peak-find panel; status sidebar may
   be in frame.
-- [ ] `experiment-startpage.png`, `experiment-loscan.png`,
-  `experiment-drscan.png`, `experiment-validation.png`,
+- [ ] `experiment-loscan.png`, `experiment-drscan.png`,
   `experiment-quickexpt_1.png`, `experiment-quickexpt_2.png`,
   `experiment-sequence.png`, `lif-lif_exp_setup.png` — all live
   inside ExperimentSetupDialog; dialog chrome (nav tree, status

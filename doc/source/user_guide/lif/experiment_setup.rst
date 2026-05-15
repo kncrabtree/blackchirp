@@ -100,19 +100,15 @@ The **Options** panel controls the order and behavior of the scan.
      is needed; the experiment ends when the user clicks **Abort**.
 
 **Auto Disable Flashlamp**
-   When checked, Blackchirp automatically disables the laser flashlamp when
-   the acquisition ends. The purpose is to preserve the flashlamp itself,
-   which has a finite firing lifetime; leaving it running between
-   acquisitions consumes lifetime that could otherwise be spent collecting
-   data.
+   When checked, the laser flashlamp is disabled when the acquisition
+   ends, extending its firing lifetime.
 
 **Randomize Delay Order**
-   When checked, the delay points are visited in a randomized order within
-   each sweep rather than sequentially from start to end. Randomizing the
-   delay order is useful when the sample or background signal drifts slowly
-   with time, because it decorrelates systematic drift from the delay
-   coordinate. The laser axis is always stepped sequentially; only the delay
-   ordering is randomized.
+   When checked, the delay points within each sweep are visited in
+   randomized order rather than sequentially. Useful when the sample
+   or background drifts slowly, since it decorrelates systematic drift
+   from the delay coordinate. Only the delay ordering is randomized;
+   the laser axis is always stepped sequentially.
 
 Initializing from a previous experiment
 ---------------------------------------
