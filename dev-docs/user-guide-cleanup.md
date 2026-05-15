@@ -261,22 +261,35 @@ Running Experiments:
   from ``data_storage.rst``, ``changelog/2.0.0.rst``,
   ``migration/v1_to_v2.rst``). `ftmw_configuration-segments.png` and
   `ftmw_configuration-markers.png` need refresh after the UI pass.
-- [ ] `ftmw_configuration/digitizer_setup.rst` — **initial pass
-  landed; awaiting UI cleanup + screenshot refresh.** Heading
-  structure (five flat H2s using ``...``) already satisfied the
-  no-orphan check. Removed the second intro paragraph that re-stated
-  the "tab also accessible in the Experiment Setup dialog"
-  access-pattern claim already made on the main page. Trimmed the
-  preset-storage explainer in the first paragraph that duplicated
-  `presets.rst`. Replaced "Blackchirp sets a sensible default for
-  each supported digitizer" with a neutral statement about per-device
-  defaults. Rewrote the "Maximizing Transfer Efficiency" opening
-  paragraph to drop the "Blackchirp is designed to receive independent
-  records … not the primary intended mode of operation" author-side
-  rationale, keeping the factual co-averaging behavior and the
-  math-waveform caveat. `ftmw_configuration-digitizer.png` already
-  flagged in the screenshot-refresh tracking; UI cleanup may invalidate
-  it further.
+- [x] `ftmw_configuration/digitizer_setup.rst` — UI cleanup landed
+  (Data Transfer, Trigger, and Acquisition Setup group boxes
+  converted from QFormLayout/QGridLayout to embedded QTableWidgets;
+  Acquisition Setup is a 2x2 table with vertical headers
+  "Block Average"/"Multiple Records" and horizontal headers
+  "On"/"Count"; Sample Rate's editable+validator fallback removed
+  since the registry-driven picker is the only path). Screenshot
+  refreshed and prose rewritten to match: figure caption describes
+  Analog Channels on top with the three side-by-side groups below;
+  Analog Channels prose references the **Enable**/**Full Scale**/
+  **Offset** column headers; Data Transfer prose uses "Bytes Per
+  Point" capitalization matching the row header and notes the
+  Sample Rate picker is a fixed list (no free-text entry); Trigger
+  prose lists rows by their row-header labels (Source/Slope/Delay/
+  Level) and explains the Aux special value; Acquisition Setup
+  prose references the On and Count columns instead of "**# Averages**"
+  / "**# Records**" labels that no longer exist. Initial pass:
+  Heading structure (five flat H2s using ``...``) already satisfied
+  the no-orphan check. Removed the second intro paragraph that
+  re-stated the "tab also accessible in the Experiment Setup
+  dialog" access-pattern claim already made on the main page.
+  Trimmed the preset-storage explainer in the first paragraph that
+  duplicated `presets.rst`. Replaced "Blackchirp sets a sensible
+  default for each supported digitizer" with a neutral statement
+  about per-device defaults. Rewrote the "Maximizing Transfer
+  Efficiency" opening paragraph to drop the "Blackchirp is designed
+  to receive independent records … not the primary intended mode of
+  operation" author-side rationale, keeping the factual co-averaging
+  behavior and the math-waveform caveat.
 - [x] `ftmw_configuration/presets.rst` (moved from
   `hardware_config/ftmw_presets.rst`; cleanup landed in same pass)
 - [ ] `lif/configuration.rst` (LIF Configuration dialog, sibling of
@@ -336,8 +349,8 @@ page:
 
 - [ ] `ui_overview-window.png` — main UI; shows the updated
   PulseStatusBox.
-- [ ] `ftmw_configuration-digitizer.png` — Digitizer Config tab;
-  layout change is substantial.
+- [x] `ftmw_configuration-digitizer.png` — refreshed alongside the
+  Data Transfer / Trigger / Acquisition Setup QTableWidget refactor.
 - [ ] `lif-lif_config.png` — LIF Configuration dialog.
 - [ ] `lif-lif_tab.png` — LIF Display tab (processing panel and
   in-canvas legend).

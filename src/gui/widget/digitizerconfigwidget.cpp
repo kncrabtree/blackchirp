@@ -4,14 +4,12 @@
 
 #include <QHBoxLayout>
 #include <QVBoxLayout>
-#include <QFormLayout>
-#include <QGridLayout>
 #include <QGroupBox>
 #include <QComboBox>
 #include <QSpinBox>
 #include <QDoubleSpinBox>
 #include <QCheckBox>
-#include <QLabel>
+#include <QLineEdit>
 #include <QTableWidget>
 #include <QHeaderView>
 
@@ -29,6 +27,17 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
     using namespace BC::Key::DigiWidget;
 
     SettingsStorage s(d_hwKey,Hardware);
+
+    auto centerCombo = [](QComboBox *cb) {
+        if(!cb->isEditable())
+        {
+            cb->setEditable(true);
+            cb->lineEdit()->setReadOnly(true);
+        }
+        cb->lineEdit()->setAlignment(Qt::AlignCenter);
+        for(int i=0; i<cb->count(); ++i)
+            cb->setItemData(i,Qt::AlignCenter,Qt::TextAlignmentRole);
+    };
 
     auto numAn = s.get(numAnalogChannels,4);
     const int anCols = d_namesEnabled ? 4 : 3;
@@ -68,6 +77,7 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
         fsBox->setSuffix(" V");
         fsBox->setSingleStep(fsBox->minimum());
         fsBox->setValue(s.getArrayValue(dwAnChannels,i,fs,fsBox->minimum()));
+        fsBox->setAlignment(Qt::AlignCenter);
         if(!d_namesEnabled)
             fsBox->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
 
@@ -77,6 +87,7 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
         voBox->setSuffix(" V");
         voBox->setSingleStep((voBox->maximum() - voBox->minimum())/100.0);
         voBox->setValue(s.getArrayValue(dwAnChannels,i,offset,0.0));
+        voBox->setAlignment(Qt::AlignCenter);
         if(!d_namesEnabled)
             voBox->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
 
@@ -143,6 +154,7 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
 
             auto roleBox = new QComboBox;
             roleBox->setEnabled(!readBox->isChecked());
+            centerCombo(roleBox);
 
             connect(readBox,&QCheckBox::toggled,roleBox,&QComboBox::setDisabled);
             connect(readBox,&QCheckBox::toggled,this,&DigitizerConfigWidget::edited);
@@ -170,67 +182,61 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
     auto bottomHbl = new QHBoxLayout;
 
     auto horBox = new QGroupBox("Data Transfer");
-    auto hfl = new QFormLayout;
 
     p_recLengthBox = new QSpinBox;
     p_recLengthBox->setRange(1,s.get(maxRecordLength,INT_MAX));
     p_recLengthBox->setValue(s.get(recLen,1));
+    p_recLengthBox->setAlignment(Qt::AlignCenter);
 
     p_sampleRateBox = new QComboBox;
     auto sr = s.getArray(sampleRates);
     double samp = s.get(sRate,0.0);
     int idx = -1;
-    if(sr.size() > 0)
+    for(auto m : sr)
     {
-        for(auto m : sr)
+        auto txt = m.find(srText);
+        auto val = m.find(srValue);
+        if(txt != m.end() && val != m.end())
         {
-            auto txt = m.find(srText);
-            auto val = m.find(srValue);
-            if(txt != m.end() && val != m.end())
-            {
-                p_sampleRateBox->addItem(txt->second.toString(),val->second);
-                if(qFuzzyCompare(val->second.toDouble(),samp))
-                    idx = p_sampleRateBox->count()-1;
-            }
+            p_sampleRateBox->addItem(txt->second.toString(),val->second);
+            if(qFuzzyCompare(val->second.toDouble(),samp))
+                idx = p_sampleRateBox->count()-1;
         }
-    }
-    else
-    {
-        //this code is not tested!
-        p_sampleRateBox->setEditable(true);
-        auto v = new QDoubleValidator(this);
-        v->setRange(1,1e11,0);
-        v->setNotation(QDoubleValidator::ScientificNotation);
-        p_sampleRateBox->setValidator(v);
     }
     p_sampleRateBox->setCurrentIndex(idx);
 
     p_bytesPerPointBox = new QSpinBox;
     p_bytesPerPointBox->setRange(1,s.get(maxBytes,2));
     p_bytesPerPointBox->setValue(s.get(bpp,1));
+    p_bytesPerPointBox->setAlignment(Qt::AlignCenter);
 
     p_byteOrderBox = new QComboBox;
     p_byteOrderBox->addItem("Little Endian",DigitizerConfig::LittleEndian);
     p_byteOrderBox->addItem("Big Endian",DigitizerConfig::BigEndian);
     p_byteOrderBox->setCurrentIndex(p_byteOrderBox->findData(s.get(bo)));
 
-    hfl->addRow("Record Length",p_recLengthBox);
-    hfl->addRow("Sample Rate",p_sampleRateBox);
-    hfl->addRow("Bytes Per Point",p_bytesPerPointBox);
-    hfl->addRow("Byte Order",p_byteOrderBox);
+    centerCombo(p_sampleRateBox);
+    centerCombo(p_byteOrderBox);
 
+    auto dtTable = new QTableWidget(4,1,this);
+    dtTable->setVerticalHeaderLabels({"Record Length","Sample Rate",
+                                      "Bytes Per Point","Byte Order"});
+    dtTable->horizontalHeader()->setVisible(false);
+    dtTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    dtTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    dtTable->setSelectionMode(QAbstractItemView::NoSelection);
+    dtTable->setFocusPolicy(Qt::NoFocus);
+    dtTable->setCellWidget(0,0,p_recLengthBox);
+    dtTable->setCellWidget(1,0,p_sampleRateBox);
+    dtTable->setCellWidget(2,0,p_bytesPerPointBox);
+    dtTable->setCellWidget(3,0,p_byteOrderBox);
 
-    for(int i=0; i<hfl->rowCount(); ++i)
-    {
-        auto l = static_cast<QLabel*>(hfl->itemAt(i,QFormLayout::LabelRole)->widget());
-        l->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
-        l->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
-    }
-    horBox->setLayout(hfl);
+    auto horLayout = new QVBoxLayout;
+    horLayout->addWidget(dtTable);
+    horBox->setLayout(horLayout);
     bottomHbl->addWidget(horBox,1);
 
     auto tBox = new QGroupBox("Trigger");
-    auto tfl = new QFormLayout;
 
     p_triggerSourceBox = new QSpinBox;
     if(s.get(hasAuxTriggerChannel,true))
@@ -241,17 +247,20 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
     else
         p_triggerSourceBox->setRange(1,s.get(numAnalogChannels,4));
     p_triggerSourceBox->setValue(s.get(trigCh,0));
+    p_triggerSourceBox->setAlignment(Qt::AlignCenter);
 
     p_triggerSlopeBox = new QComboBox;
     p_triggerSlopeBox->addItem("Rising Edge",DigitizerConfig::RisingEdge);
     p_triggerSlopeBox->addItem("Falling Edge",DigitizerConfig::FallingEdge);
     p_triggerSlopeBox->setCurrentIndex(p_triggerSlopeBox->findData(s.get(trigSlope)));
+    centerCombo(p_triggerSlopeBox);
 
     p_triggerDelayBox = new QDoubleSpinBox;
     p_triggerDelayBox->setDecimals(6);
     p_triggerDelayBox->setSuffix(QString::fromUtf16(u" μs"));
     p_triggerDelayBox->setRange(s.get(minTrigDelay,-10.),s.get(maxTrigDelay,10.));
     p_triggerDelayBox->setValue(s.get(trigDelay,0.0));
+    p_triggerDelayBox->setAlignment(Qt::AlignCenter);
 
     p_triggerLevelBox = new QDoubleSpinBox;
     p_triggerLevelBox->setDecimals(3);
@@ -259,28 +268,31 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
     p_triggerLevelBox->setRange(s.get(minTrigLevel,-5.),s.get(maxTrigLevel,5.));
     p_triggerLevelBox->setValue(s.get(trigLevel,0.0));
     p_triggerLevelBox->setSingleStep((p_triggerLevelBox->maximum()-p_triggerLevelBox->minimum())/100.0);
+    p_triggerLevelBox->setAlignment(Qt::AlignCenter);
 
-    tfl->addRow("Source",p_triggerSourceBox);
-    tfl->addRow("Slope",p_triggerSlopeBox);
-    tfl->addRow("Delay",p_triggerDelayBox);
-    tfl->addRow("Level",p_triggerLevelBox);
-    for(int i=0; i<tfl->rowCount(); ++i)
-    {
-        auto l = static_cast<QLabel*>(tfl->itemAt(i,QFormLayout::LabelRole)->widget());
-        l->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
-        l->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
-    }
+    auto trigTable = new QTableWidget(4,1,this);
+    trigTable->setVerticalHeaderLabels({"Source","Slope","Delay","Level"});
+    trigTable->horizontalHeader()->setVisible(false);
+    trigTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    trigTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    trigTable->setSelectionMode(QAbstractItemView::NoSelection);
+    trigTable->setFocusPolicy(Qt::NoFocus);
+    trigTable->setCellWidget(0,0,p_triggerSourceBox);
+    trigTable->setCellWidget(1,0,p_triggerSlopeBox);
+    trigTable->setCellWidget(2,0,p_triggerDelayBox);
+    trigTable->setCellWidget(3,0,p_triggerLevelBox);
 
-    tBox->setLayout(tfl);
+    auto tLayout = new QVBoxLayout;
+    tLayout->addWidget(trigTable);
+    tBox->setLayout(tLayout);
     bottomHbl->addWidget(tBox,1);
 
     if(!s.get(isTriggered,true))
         tBox->setEnabled(false);
 
     auto aBox = new QGroupBox("Acquisition Setup");
-    auto agl = new QGridLayout;
 
-    p_blockAverageBox = new QCheckBox("Block average");
+    p_blockAverageBox = new QCheckBox;
     p_blockAverageBox->setToolTip(QString(R"(If checked, the scope will acquire multiple records and return a single record containing the average.
 On Tektronix scopes, this will be done using FastFrame with a summary frame.
 For most scopes, this option is mutually exclusive with "Multiple Records" mode, which returns each individual record without averaging.)"));
@@ -289,11 +301,11 @@ For most scopes, this option is mutually exclusive with "Multiple Records" mode,
     p_numAveragesBox->setRange(1,s.get(maxAverages,INT_MAX));
     p_numAveragesBox->setValue(s.get(numAvg,1));
     p_numAveragesBox->setEnabled(false);
-    p_numAveragesBox->setPrefix("# ");
+    p_numAveragesBox->setAlignment(Qt::AlignCenter);
     p_numAveragesBox->setToolTip(QString(R"(Number of records to average. If 1, averaging will be disabled.
 The actual number of records able to be averaged may be limited by the record length or data size.)"));
 
-    p_multiRecordBox = new QCheckBox("Multiple records");
+    p_multiRecordBox = new QCheckBox;
     p_multiRecordBox->setToolTip(QString(R"(If checked, the scope will acquire multiple records and return all of them at once.
 On Tektronix scipes, this will be done using FastFrame mode with no summary frame.
 For most scopes, this option is mutually exclusive with "Block Average" mode, which averages the individual records.)"));
@@ -303,7 +315,7 @@ For most scopes, this option is mutually exclusive with "Block Average" mode, wh
     p_numRecordsBox->setRange(1,s.get(maxRecords,INT_MAX));
     p_numRecordsBox->setValue(s.get(multiRecNum,1));
     p_numRecordsBox->setEnabled(false);
-    p_numRecordsBox->setPrefix("# ");
+    p_numRecordsBox->setAlignment(Qt::AlignCenter);
     p_numRecordsBox->setToolTip(QString(R"(Number of records to acquire. If 1, this feature will be disabled.
 The actual number of records able to be acquired may be limited by the record length or data size.)"));
 
@@ -351,14 +363,22 @@ The actual number of records able to be acquired may be limited by the record le
     if(s.get(multiRec,false))
         p_multiRecordBox->setChecked(true);
 
-    agl->addWidget(p_blockAverageBox,0,0);
-    agl->addWidget(p_numAveragesBox,0,1);
-    agl->addWidget(p_multiRecordBox,1,0);
-    agl->addWidget(p_numRecordsBox,1,1);
-    agl->setColumnStretch(0,1);
-    agl->setColumnStretch(1,1);
+    auto aTable = new QTableWidget(2,2,this);
+    aTable->setHorizontalHeaderLabels({"On","Count"});
+    aTable->setVerticalHeaderLabels({"Block Average","Multiple Records"});
+    aTable->horizontalHeader()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
+    aTable->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
+    aTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    aTable->setSelectionMode(QAbstractItemView::NoSelection);
+    aTable->setFocusPolicy(Qt::NoFocus);
+    centerCellWidget(aTable,0,0,p_blockAverageBox);
+    aTable->setCellWidget(0,1,p_numAveragesBox);
+    centerCellWidget(aTable,1,0,p_multiRecordBox);
+    aTable->setCellWidget(1,1,p_numRecordsBox);
 
-    aBox->setLayout(agl);
+    auto aLayout = new QVBoxLayout;
+    aLayout->addWidget(aTable);
+    aBox->setLayout(aLayout);
 
     bottomHbl->addWidget(aBox,1);
     if(!s.get(canBlockAverage,false) && !s.get(canMultiRecord,false))
@@ -530,10 +550,7 @@ void DigitizerConfigWidget::setFromConfig(const DigitizerConfig &c)
      p_triggerLevelBox->setValue(c.d_triggerLevel);
      p_triggerSlopeBox->setCurrentIndex(p_triggerSlopeBox->findData(c.d_triggerSlope));
 
-     if(p_sampleRateBox->isEditable())
-         p_sampleRateBox->setEditText(QString::number(c.d_sampleRate,'e',6));
-     else
-         p_sampleRateBox->setCurrentIndex(p_sampleRateBox->findData(QVariant(c.d_sampleRate)));
+     p_sampleRateBox->setCurrentIndex(p_sampleRateBox->findData(QVariant(c.d_sampleRate)));
      p_recLengthBox->setValue(c.d_recordLength);
 
      p_bytesPerPointBox->setValue(c.d_bytesPerPoint);
@@ -587,10 +604,7 @@ void DigitizerConfigWidget::toConfig(DigitizerConfig &c)
     c.d_triggerSlope = p_triggerSlopeBox->currentData().value<DigitizerConfig::TriggerSlope>();
     c.d_triggerDelayUSec = p_triggerDelayBox->value();
 
-    if(p_sampleRateBox->isEditable())
-        c.d_sampleRate = p_sampleRateBox->currentText().toDouble();
-    else
-        c.d_sampleRate = p_sampleRateBox->currentData().toDouble();
+    c.d_sampleRate = p_sampleRateBox->currentData().toDouble();
     c.d_recordLength = p_recLengthBox->value();
 
     c.d_bytesPerPoint = p_bytesPerPointBox->value();
