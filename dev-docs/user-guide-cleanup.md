@@ -105,7 +105,7 @@ Getting Started:
 - [x] `installation.rst`
 - [x] `first_run.rst`
 - [x] `application_config.rst`
-- [ ] `ui_overview.rst`
+- [x] `ui_overview.rst`
 
 Hardware Setup:
 
@@ -157,6 +157,64 @@ Data Format and Diagnostics:
 Blackchirp Viewer:
 
 - [ ] `viewer.rst`
+
+## Screenshots to refresh
+
+The UI changes in commits `7dfd9c18` through `c8f4f6c4` invalidated
+several screenshots:
+
+- `7dfd9c18` ExperimentSetupDialog reflow (Summary nav page,
+  smaller min size, status text + Validate moved under nav tree);
+  LifProcessingWidget compacted (2x2 gate grid, checkable
+  Savitzky-Golay); DigitizerConfigWidget replaced stacked
+  groupboxes with QTableWidgets and a 3-column bottom row.
+- `1a528eb0` LIF Configuration dialog tightened; channel-name
+  column folded into DigitizerConfigWidget; in-canvas legend on
+  LifTracePlot.
+- `a7173f1c` TemperatureControlWidget moved to QTableWidget layout.
+- `f935b2ad` GasControlWidget moved to QTableWidget layout; channel
+  enable decoupled from setpoint; GasFlowDisplayBox visibility
+  predicate switched to the explicit enable flag.
+- `a910c9f3` PulseConfigWidget split into Standard/Advanced
+  QTableWidgets, per-row Cfg popup gone, Enable became a themed
+  power toggle; PulseStatusBox moved to 2-channel-per-row with
+  elided names; ExperimentSetupDialog lost its hard-coded minimum
+  size; HWDialog::sizeHint now honors a larger control widget.
+- `c8f4f6c4` PulseConfigWidget tab row heights aligned.
+
+Screenshots that need a refresh as the cleanup pass reaches each
+page:
+
+- [ ] `ui_overview-window.png` — main UI; shows the updated
+  PulseStatusBox.
+- [ ] `ftmw_configuration-digitizer.png` — Digitizer Config tab;
+  layout change is substantial.
+- [ ] `hwdialog-control_tab.png` — Pulse Generator Control tab;
+  channel grid was rewritten.
+- [ ] `lif-lif_config.png` — LIF Configuration dialog.
+- [ ] `lif-lif_tab.png` — LIF Display tab (processing panel and
+  in-canvas legend).
+- [ ] `python_hardware-hwdialog_python.png` — PythonFlowController
+  HwDialog; embeds the new GasControlWidget.
+
+Check on the next pass — refresh only if the affected widget is
+actually visible at the capture frame:
+
+- [ ] `cp-ftmw-overview.png` — CP-FTMW tab; PulseStatusBox is in the
+  status sidebar.
+- [ ] `cp-ftmw-peakfind.png` — peak-find panel; status sidebar may
+  be in frame.
+- [ ] `experiment-startpage.png`, `experiment-loscan.png`,
+  `experiment-drscan.png`, `experiment-validation.png`,
+  `experiment-quickexpt_1.png`, `experiment-quickexpt_2.png`,
+  `experiment-sequence.png`, `lif-lif_exp_setup.png` — all live
+  inside ExperimentSetupDialog; dialog chrome (nav tree, status
+  area) changed even if the page-specific contents did not.
+- [ ] `hwdialog-settings_tab.png` — Pulse Generator Settings tab;
+  the device-level settings registry did not change, but the dialog
+  size and frame did.
+- [ ] No new TemperatureControlWidget screenshot exists in the doc
+  set; flag if a user-guide page is added that surfaces it.
 
 ## Reference
 
