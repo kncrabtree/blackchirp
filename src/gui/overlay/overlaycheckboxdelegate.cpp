@@ -12,11 +12,16 @@ OverlayCheckBoxDelegate::OverlayCheckBoxDelegate(QObject *parent)
 
 QWidget *OverlayCheckBoxDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
+    Q_UNUSED(parent)
     Q_UNUSED(option)
     Q_UNUSED(index)
-    
-    QCheckBox *checkBox = new QCheckBox(parent);
-    return checkBox;
+
+    // This is a paint + editorEvent toggle delegate: the checkbox is drawn by
+    // paint() and toggled by editorEvent(). Returning an editor here would
+    // spawn a real QCheckBox on top of the painted one whenever an edit
+    // trigger fires (the column is ItemIsEditable), producing a stray
+    // duplicate checkbox in the cell.
+    return nullptr;
 }
 
 void OverlayCheckBoxDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
