@@ -21,52 +21,49 @@ Per-Type Capabilities
 
 Each Python hardware trampoline expects a different set of methods
 depending on how the C++ base class manages hardware state. This page
-catalogs every trampoline that ships with Blackchirp, the default
-class name its template defines, the state-management pattern it uses,
-and the methods a driver must implement for the trampoline to operate.
+catalogs every trampoline, the default class name its template
+defines, the state-management pattern it uses, and the
+hardware-specific methods a driver must implement.
 
 The lifecycle methods listed in :doc:`writing_a_driver`
 (:meth:`initialize`, :meth:`test_connection`,
 :meth:`prepare_for_experiment`, :meth:`begin_acquisition`,
 :meth:`end_acquisition`, :meth:`sleep`, :meth:`read_settings`,
 :meth:`read_aux_data`, :meth:`read_validation_data`) are common to
-every type and are not repeated below. The methods listed here are the
-hardware-specific ones the trampoline dispatches in addition to the
-common lifecycle.
+every type and are not repeated below.
 
 .. _python-hardware-state-patterns:
 
 State-Management Patterns
 -------------------------
 
-Blackchirp's hardware base classes fall into one of three patterns,
-which determine the shape of the Python interface:
+Hardware base classes fall into one of three patterns, which
+determine the shape of the Python interface:
 
 **Pattern A — Bulk configure.**
    The base class inherits from a complex config object (a digitizer
    config with channel maps, trigger settings, sample rates, and so
    on). Before each experiment, the trampoline serializes the entire
-   config into a dict and calls ``configure(...)`` on the driver. The
-   driver applies the settings, reads back actual values, and returns
-   ``{"success": bool, "config": dict}``. The returned ``config``
-   dict is deserialized back into the C++ side, so any clamped or
-   substituted values are preserved.
+   config into a dict and calls ``configure(...)`` on the driver.
+   The driver applies the settings, reads back actual values, and
+   returns ``{"success": bool, "config": dict}``. The returned
+   ``config`` dict is deserialized back into the C++ side, so clamped
+   or substituted values are preserved.
 
 **Pattern B — Granular methods.**
    The base class owns a config object and updates it through
-   individual setter and getter methods. Each method delegates to a
-   ``hw_*`` virtual that the driver implements. The driver only ever
-   sees one value at a time; the base class decides when and in what
-   order to call the methods. Polling, validation, and signal
-   emission are handled C++-side.
+   individual setter and getter methods. Each delegates to a
+   ``hw_*`` virtual that the driver implements. The driver sees one
+   value at a time; the base class decides when and in what order to
+   call the methods. Polling, validation, and signal emission are
+   handled C++-side.
 
 **Pattern C — Stateless / experiment-data pass-through.**
    The base class has no internal config to manage between calls.
    Each experiment delivers its data — chirp segments and markers,
    clock-frequency assignments — through
    :meth:`prepare_for_experiment`, and the driver programs the
-   hardware with that data. There are no granular setters for the
-   driver to implement.
+   hardware with that data.
 
 Digitizer trampolines (FtmwDigitizer, LifDigitizer) combine Pattern A
 configuration with a **push** acquisition model: the driver runs an
@@ -80,64 +77,52 @@ Trampoline Overview
 
 .. list-table::
    :header-rows: 1
-   :widths: 25 25 15 35
+   :widths: 25 15 60
 
-   * - Trampoline
-     - Default class
+   * - Type
      - Pattern
      - Driver entry points
-   * - PythonFtmwDigitizer
-     - ``FtmwDigitizerDriver``
+   * - FtmwDigitizer
      - A + push
      - :meth:`configure`,
        :meth:`begin_acquisition`,
        :meth:`end_acquisition`,
        ``self.digi.emit_shot``
-   * - PythonIOBoard
-     - ``IOBoardDriver``
+   * - IOBoard
      - A
      - :meth:`configure`,
        :meth:`read_analog_channels`,
        :meth:`read_digital_channels`
-   * - PythonLifDigitizer
-     - ``LifDigitizerDriver``
+   * - LifDigitizer
      - A + push
      - :meth:`configure`,
        :meth:`begin_acquisition`,
        :meth:`end_acquisition`,
        ``self.digi.emit_shot``
-   * - PythonFlowController
-     - ``FlowControllerDriver``
+   * - FlowController
      - B
-     - 8 ``hw_*`` flow / pressure methods
-   * - PythonGpibController
-     - ``GpibControllerDriver``
+     - 9 ``hw_*`` flow / pressure methods
+   * - GpibController
      - B
      - :meth:`read_address`,
        :meth:`set_address`
-   * - PythonLifLaser
-     - ``LifLaserDriver``
+   * - LifLaser
      - B
      - :meth:`read_pos`, :meth:`set_pos`,
        :meth:`read_fl`, :meth:`set_fl`
-   * - PythonPressureController
-     - ``PressureControllerDriver``
+   * - PressureController
      - B
      - 7 ``hw_*`` pressure / valve methods
-   * - PythonPulseGenerator
-     - ``PulseGeneratorDriver``
+   * - PulseGenerator
      - B
      - 22 ``set_*`` / ``read_*`` channel and global methods
-   * - PythonTemperatureController
-     - ``TemperatureControllerDriver``
+   * - TemperatureController
      - B
      - :meth:`hw_read_temperature`
-   * - PythonAwg
-     - ``AwgDriver``
+   * - Awg
      - C
      - :meth:`prepare_for_experiment`
-   * - PythonClock
-     - ``ClockDriver``
+   * - Clock
      - C
      - :meth:`hw_set_frequency`,
        :meth:`hw_read_frequency`
@@ -274,6 +259,7 @@ experiment applies a flow configuration.
    def hw_read_flow(self, channel: int) -> float: ...
    def hw_read_flow_setpoint(self, channel: int) -> float: ...
    def hw_set_flow_setpoint(self, channel: int, value: float) -> None: ...
+   def hw_set_channel_enabled(self, channel: int, enabled: bool) -> None: ...
    def hw_read_pressure(self) -> float: ...
    def hw_read_pressure_setpoint(self) -> float: ...
    def hw_set_pressure_setpoint(self, value: float) -> None: ...
@@ -282,7 +268,9 @@ experiment applies a flow configuration.
 
 Read methods return ``-1.0`` on error (``-1`` for
 ``hw_read_pressure_control_mode``). The number of flow channels comes
-from the ``flowChannels`` setting.
+from the ``flowChannels`` setting; ``hw_set_channel_enabled`` is
+called when the user toggles an enable checkbox in the gas-control
+widget.
 
 .. _python-hardware-tempcontroller:
 
@@ -329,10 +317,8 @@ setter methods (``hw_set_pressure_setpoint``,
 Pulse Generator (``PulseGeneratorDriver``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The pulse generator has the largest method surface — eight setter and
-eight getter methods per channel, plus six global methods — because
-each pulse-generator parameter (width, delay, active level, sync
-source, duty-cycle) is exposed as an independent UI control.
+Eight setter and eight getter methods per channel, plus six global
+methods.
 
 Per-channel setters and getters:
 

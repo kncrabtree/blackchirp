@@ -14,33 +14,28 @@
 Writing a Python Driver
 =======================
 
-A Python hardware driver is a single ``.py`` file containing one class.
-Blackchirp launches that script as a subprocess, instantiates the class,
-injects a small set of proxy objects onto the instance, and dispatches
-lifecycle and hardware-specific calls to its methods. This page covers
-the rules every driver follows, regardless of hardware type. The
-per-type method list lives on :doc:`per_type_capabilities`.
+A Python hardware driver is a single ``.py`` file containing one
+class. Blackchirp instantiates the class, injects a small set of
+proxy objects onto the instance, and dispatches lifecycle and
+hardware-specific calls to its methods. This page covers the rules
+every driver follows; the per-type method list lives on
+:doc:`per_type_capabilities`.
 
 .. _python-hardware-driver-class:
 
 Driver Class
 ------------
 
-Each Blackchirp Python hardware type expects a driver class with a
-specific default name. The :doc:`template script <selecting>` for the
-chosen type defines that class for you; for example, the AWG template
-defines ``AwgDriver`` and the IO Board template defines
-``IOBoardDriver``. Keeping the default class name means the **Python
-Class** dropdown in the Hardware Configuration dialog selects the
-correct entry without further input.
+Each Python hardware type expects a driver class with a specific
+default name (``AwgDriver``, ``IOBoardDriver``, and so on). Keeping
+the default name means the **Python Class** dropdown in the Hardware
+Configuration dialog selects the correct entry without further input.
+If the class is renamed — for example, to host two drivers in one
+file — pick the desired one from the dropdown.
 
-If you rename the class — for example, to host two distinct drivers in
-one file — the dropdown reflects every top-level class found in the
-script. Pick the one Blackchirp should instantiate.
-
-The class must have a no-argument constructor. All initialization that
+The class must have a no-argument constructor. Initialization that
 depends on the hardware connection or persistent settings belongs in
-:meth:`initialize`, not in ``__init__``, because ``self.comm``,
+:meth:`initialize`, not in ``__init__``: ``self.comm``,
 ``self.settings``, and ``self.log`` are not available until after
 construction.
 
@@ -51,8 +46,8 @@ Injected Proxies
 
 Three proxy objects are attached to every driver instance before
 :meth:`initialize` runs. They are the driver's interface back to
-Blackchirp: hardware I/O, persistent settings, and the log panel are
-all relayed across the IPC pipe.
+Blackchirp: hardware I/O, persistent settings, and the log panel
+are all relayed across the IPC pipe.
 
 .. _python-hardware-comm-proxy:
 
@@ -79,19 +74,13 @@ fails.
 
 .. _python-hardware-custom-protocol:
 
-The **Custom** protocol option is also available. Selecting it tells
-Blackchirp that the driver does not use the C++ ``self.comm`` transport
-at all — for example, when the script talks to its hardware through a
-vendor-supplied Python package, a USB-HID library, or a memory-mapped
-device. Connection parameters in this case are the **responsibility of
-the .py script**: declare them as constants near the top of the file
-or accept them as constructor arguments. The
-``REGISTER_CUSTOM_COMM`` mechanism that lets C++ Custom-protocol
-drivers expose typed fields in the Communication Settings dialog is
-intentionally C++-only; for a Python driver, editing the script is
-the simpler and only authoritative input. When the user picks the
-Custom protocol on a Python profile, the Communication Settings panel
-shows a note to that effect rather than a set of input fields.
+The **Custom** protocol option signals that the driver bypasses
+``self.comm`` entirely — typical when the script talks to its
+hardware through a vendor Python package, a USB-HID library, or a
+memory-mapped device. Connection parameters in this case live
+inside the ``.py`` script (as constants near the top of the file
+or as constructor arguments); the Communication Settings panel
+shows a note to that effect instead of input fields.
 
 .. _python-hardware-settings-proxy:
 

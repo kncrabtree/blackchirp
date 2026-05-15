@@ -184,7 +184,7 @@ Hardware Setup:
 - [x] `hardware_config/loadouts.rst`
 - [x] `hardware_config/ftmw_presets.rst` (moved to
   `ftmw_configuration/presets.rst` under Running Experiments)
-- [ ] `python_hardware.rst` and `python_hardware/` sub-pages
+- [x] `python_hardware.rst` and `python_hardware/` sub-pages
 - [ ] `hardware_menu.rst`
 - [ ] `hwdialog.rst` (now a sub-page of `hardware_menu`)
 - [ ] `hardware_details.rst`
@@ -267,8 +267,6 @@ page:
 - [ ] `lif-lif_config.png` — LIF Configuration dialog.
 - [ ] `lif-lif_tab.png` — LIF Display tab (processing panel and
   in-canvas legend).
-- [ ] `python_hardware-hwdialog_python.png` — PythonFlowController
-  HwDialog; embeds the new GasControlWidget.
 
 Check on the next pass — refresh only if the affected widget is
 actually visible at the capture frame:
