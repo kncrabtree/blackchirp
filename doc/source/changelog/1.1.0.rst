@@ -35,7 +35,7 @@ Highlights
   :doc:`/user_guide/plot_controls`.
 - Extended LIF hardware support, including Sirah Cobra
   compensator calibration updates and the additions required for
-  the Harvey Mudd LIF instrument. See :doc:`/user_guide/lif`.
+  the Harvey Mudd LIF instrument. See :doc:`/user_guide/lif/experiment_setup`.
 
 Build and distribution
 ----------------------
@@ -49,8 +49,9 @@ Build and distribution
 Hardware drivers
 ----------------
 
-The :doc:`LIF chapter </user_guide/lif>` covers the hardware
-additions in this section.
+The :doc:`LIF experiment setup </user_guide/lif/experiment_setup>` and
+:doc:`LIF Configuration dialog </user_guide/lif/configuration>` pages
+cover the hardware additions in this section.
 
 - Added Sirah Cobra control updates and external-crystal-stage
   support tailored to the Harvey Mudd LIF instrument.

@@ -53,9 +53,52 @@ set of recurring problems. On each page:
 - **American English, present tense, impersonal voice** per the
   committed style rules.
 
+## Navigation structure
+
+The user guide was restructured so the sidebar reflects task-based
+chapters. The toctrees live in `doc/source/index.rst` (captioned and
+`:hidden:`); `user_guide.rst` no longer exists. The chapter captions
+become sidebar section headers in `sphinx_rtd_theme`.
+
+```
+Getting Started
+  installation, first_run, application_config, ui_overview
+
+Hardware Setup
+  hardware_config (+ profiles, loadouts, ftmw_presets, library_status)
+  python_hardware (+ overview, selecting, writing_a_driver,
+                   hot_reload, per_type_capabilities)
+  hardware_menu (+ hwdialog as a sub-page)
+  hardware_details (globs hw/*.rst)
+
+Running Experiments
+  experiment_setup (+ experiment/* sub-pages + lif/experiment_setup)
+  ftmw_configuration (+ ftmw_configuration/rf_configuration,
+                       chirp_setup, digitizer_setup)
+  lif/configuration
+
+Inspecting Data
+  cp-ftmw, lif/lif_tab, plot_controls, overlays,
+  rolling-aux-data, log_tab, python
+
+Data Format and Diagnostics
+  data_storage, lif/data_storage, crash_reports
+
+Blackchirp Viewer
+  viewer
+
+Project Reference
+  migration, changelog, developer_guide, classes
+```
+
+Reorganization commit: see the `Restructure user guide…` commit on
+master.
+
 ## Pages still to review
 
-Roughly in the order a new user reads them.
+Roughly in the order a new user reads them. The reorg commit moved
+files but did not rewrite content; the per-page cleanup pass below
+applies the principles above to the prose.
 
 Getting Started:
 
@@ -72,7 +115,7 @@ Hardware Setup:
 - [ ] `hardware_config/ftmw_presets.rst`
 - [ ] `python_hardware.rst` and `python_hardware/` sub-pages
 - [ ] `hardware_menu.rst`
-- [ ] `hwdialog.rst`
+- [ ] `hwdialog.rst` (now a sub-page of `hardware_menu`)
 - [ ] `hardware_details.rst`
 - [ ] `hw/*.rst` — per-device pages; light pass already touched
   `ftmwdigitizer.rst`, `lifdigitizer.rst`, `ioboard.rst` to strip
@@ -81,24 +124,39 @@ Hardware Setup:
 
 Running Experiments:
 
+- [ ] `experiment_setup.rst` and `experiment/` sub-pages
 - [ ] `ftmw_configuration.rst`
-- [ ] `experiment_setup.rst`
-- [ ] `rf_configuration.rst`
+- [ ] `ftmw_configuration/rf_configuration.rst` (moved from the
+  user-guide root)
+- [ ] `ftmw_configuration/chirp_setup.rst`
+- [ ] `ftmw_configuration/digitizer_setup.rst`
+- [ ] `lif/configuration.rst` (LIF Configuration dialog, sibling of
+  `ftmw_configuration`)
+- [ ] `lif/experiment_setup.rst` (folded into `experiment_setup`'s
+  toctree)
 
 Inspecting Data:
 
 - [ ] `cp-ftmw.rst`
-- [ ] `data_storage.rst`
-- [ ] `overlays.rst`
+- [ ] `lif/lif_tab.rst` (promoted to top-level sibling of `cp-ftmw`)
 - [ ] `plot_controls.rst`
+- [ ] `overlays.rst`
 - [ ] `rolling-aux-data.rst`
 - [ ] `log_tab.rst`
+
+Data Format and Diagnostics:
+
+- [ ] `data_storage.rst` — split into four pages: general experiment
+  files (header.csv, hardware.csv, etc.), CP-FTMW data
+  (clocks.csv, markers.csv, chirp.csv, fid/), other data files
+  (rollingdata, log files, debug_log), with `lif/data_storage.rst`
+  becoming the LIF page.
+- [ ] `lif/data_storage.rst`
 - [ ] `crash_reports.rst`
+
+Blackchirp Viewer:
+
 - [ ] `viewer.rst`
-
-Modules:
-
-- [ ] `lif.rst`
 
 ## Reference
 

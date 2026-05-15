@@ -9,8 +9,9 @@ Experiment Setup
    experiment/validation
    experiment/quick_experiment
    experiment/sequence_mode
+   lif/experiment_setup
 
-An ``Experiment`` is the basic acquisition event in Blackchirp, and it may consist of CP-FTMW measurements and/or a laser scan experiment (discussed more in the LIF module section of the user guide).
+An ``Experiment`` is the basic acquisition event in Blackchirp, and it may consist of CP-FTMW measurements and/or a laser scan experiment (see the :doc:`LIF experiment setup <lif/experiment_setup>` page for laser-scan acquisitions).
 During an experiment, FID records are collected from the FTMW Digitizer and averaged in the time domain.
 The average FID and its Fourier transform can be viewed and processed in a number of ways on the :doc:`CP-FTMW tab <cp-ftmw>` on the main user interface.
 :doc:`Auxiliary Data <rolling-aux-data>` is also recorded during the experiment.

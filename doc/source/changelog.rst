@@ -10,7 +10,7 @@ Each release has its own page under ``changelog/``, named for the
 version it covers; the toctree below lists those pages newest first.
 Version-keyed prose ("v1.x did X, 2.0 does Y") lives here and in the
 :doc:`migration guide </migration>`. The
-:doc:`User Guide </user_guide>` and
+:doc:`User Guide </user_guide/installation>` and
 :doc:`Developer Guide </developer_guide>` describe the program in
 its current state and do not carry release markers in their prose.
 

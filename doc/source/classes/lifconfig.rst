@@ -25,8 +25,10 @@ covered once, behavior is governed by the ``LifCompleteMode`` enumerator:
 ``StopWhenComplete`` ends acquisition, while ``ContinueAveraging`` allows
 further sweeps to accumulate.
 
-The LIF module user guide, including experiment setup and data storage, is
-described in :doc:`/user_guide/lif`.
+The dialog that drives this configuration is described in
+:doc:`/user_guide/lif/configuration`; the experiment-wizard page in
+:doc:`/user_guide/lif/experiment_setup`; the on-disk layout in
+:doc:`/user_guide/lif/data_storage`.
 
 .. highlight:: cpp
 

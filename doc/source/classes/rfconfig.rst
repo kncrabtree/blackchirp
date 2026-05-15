@@ -19,7 +19,7 @@ parameters, and the embedded :cpp:class:`ChirpConfig`. ``RfConfig`` is
 stored as ``FtmwConfig::d_rfConfig`` and is a child
 :cpp:class:`HeaderStorage` node in the experiment header tree. The
 user-facing RF configuration controls are described in
-:doc:`/user_guide/rf_configuration`.
+:doc:`/user_guide/ftmw_configuration/rf_configuration`.
 
 Clock semantics
 ---------------

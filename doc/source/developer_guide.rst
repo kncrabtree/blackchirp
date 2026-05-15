@@ -31,7 +31,7 @@ Topics that require coordination across multiple files or subsystems
 are explained here. Topics that are confined to a single class belong
 in the :doc:`API reference </classes>` (or, for Python, on the
 per-class page under :doc:`/python`); topics about operating the
-program belong in the :doc:`User Guide </user_guide>`.
+program belong in the :doc:`User Guide </user_guide/installation>`.
 
 Pages in this chapter assume the API reference is available alongside
 them. Where a topic touches a class with its own API page, the

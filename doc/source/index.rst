@@ -1,16 +1,68 @@
 .. Blackchirp documentation master file.
-   The toctree below is the canonical entry point for the rendered docs.
+   The toctrees below define the sidebar navigation. Captioned
+   toctrees become sidebar section headers.
 
 
 .. toctree::
    :hidden:
+   :caption: Getting Started
 
-   user_guide
+   user_guide/installation
+   user_guide/first_run
+   user_guide/application_config
+   user_guide/ui_overview
+
+.. toctree::
+   :hidden:
+   :caption: Hardware Setup
+
+   user_guide/hardware_config
+   user_guide/python_hardware
+   user_guide/hardware_menu
+   user_guide/hardware_details
+
+.. toctree::
+   :hidden:
+   :caption: Running Experiments
+
+   user_guide/experiment_setup
+   user_guide/ftmw_configuration
+   user_guide/lif/configuration
+
+.. toctree::
+   :hidden:
+   :caption: Inspecting Data
+
+   user_guide/cp-ftmw
+   user_guide/lif/lif_tab
+   user_guide/plot_controls
+   user_guide/overlays
+   user_guide/rolling-aux-data
+   user_guide/log_tab
+   python
+
+.. toctree::
+   :hidden:
+   :caption: Data Format and Diagnostics
+
+   user_guide/data_storage
+   user_guide/lif/data_storage
+   user_guide/crash_reports
+
+.. toctree::
+   :hidden:
+   :caption: Blackchirp Viewer
+
+   user_guide/viewer
+
+.. toctree::
+   :hidden:
+   :caption: Project Reference
+
    migration
    changelog
    developer_guide
    classes
-   python
 
 Blackchirp Documentation
 ========================
@@ -36,13 +88,30 @@ Python or any other analysis environment.
 Where to start
 ==============
 
-* :doc:`user_guide` — install Blackchirp, configure hardware, run
-  experiments, and view data.
-* :doc:`migration` — upgrade notes for users coming from Blackchirp
-  1.x.
+The user guide walks through installing Blackchirp, connecting and
+configuring hardware, running experiments, and inspecting data, in
+roughly the order a new user encounters when setting up a spectrometer
+for the first time:
+
+* :doc:`Getting Started <user_guide/installation>` — install Blackchirp,
+  complete the first-run wizard, and learn the main UI.
+* :doc:`Hardware Setup <user_guide/hardware_config>` — configure
+  profiles, loadouts, and per-device drivers.
+* :doc:`Running Experiments <user_guide/experiment_setup>` — set up
+  FTMW, LIF, and combined acquisitions.
+* :doc:`Inspecting Data <user_guide/cp-ftmw>` — work with the live tabs
+  and plots during and after acquisition.
+* :doc:`Data Format and Diagnostics <user_guide/data_storage>` — on-disk
+  file formats and crash-report locations.
+* :doc:`Blackchirp Viewer <user_guide/viewer>` — the standalone viewer
+  application.
+
+Other resources:
+
+* :doc:`migration` — upgrade notes for users coming from Blackchirp 1.x.
 * :doc:`changelog` — version history.
-* :doc:`developer_guide` — architecture, build system, and
-  contribution conventions.
+* :doc:`developer_guide` — architecture, build system, and contribution
+  conventions.
 * :doc:`classes` — C++ API reference generated from the source.
 * :doc:`python` — companion Python module for offline analysis.
 

@@ -49,7 +49,7 @@ Highlights
   ``addr2line`` / ``atos`` / WinDbg. See
   :doc:`/user_guide/crash_reports`.
 - Overhauled the documentation: refreshed the
-  :doc:`User Guide </user_guide>` end to end against the 2.0
+  :doc:`User Guide </user_guide/installation>` end to end against the 2.0
   feature set, added the new :doc:`Developer Guide </developer_guide>`
   for contributors, and substantially expanded the
   :doc:`C++ API reference </classes>` to cover the hardware,
@@ -269,7 +269,7 @@ File formats and data storage
   for the run. See :doc:`/user_guide/data_storage`.
 - Added the ``RfConfigSnapshot`` helper for serializing the
   full RF configuration with each experiment. See
-  :doc:`/user_guide/rf_configuration`.
+  :doc:`/user_guide/ftmw_configuration/rf_configuration`.
 
 Python companion module
 -----------------------

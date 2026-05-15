@@ -13,7 +13,7 @@
 RF Configuration
 ================
 
-The **RF Config** tab of the :doc:`FTMW Configuration <ftmw_configuration>`
+The **RF Config** tab of the :doc:`FTMW Configuration </user_guide/ftmw_configuration>`
 dialog configures the frequency conversion chain between the AWG output and
 the sample, and between the sample emission and the digitizer input.
 
@@ -107,7 +107,7 @@ frequencies and the frequencies experienced by the sample:
     value of 2 indicates that the AWG output is sent through an external
     frequency doubler before reaching the mixer. The **Chirp Start** and
     **Chirp End** frequencies shown in the chirp segment table (see
-    :doc:`ftmw_configuration/chirp_setup`) reflect the AWG frequency multiplied
+    :doc:`chirp_setup`) reflect the AWG frequency multiplied
     by this factor.
 
 **Chirp Multiplication**

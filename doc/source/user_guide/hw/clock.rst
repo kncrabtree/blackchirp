@@ -8,7 +8,7 @@ Clock
 Overview
 --------
 
-A clock is any single-frequency oscillator. A single clock may have multiple independent output channels, each of which may be at a different frequency, and it may or may not be tunable. Clocks are assigned to logical roles within the program (see :doc:`/user_guide/rf_configuration`), and Blackchirp supports up to six clock devices.
+A clock is any single-frequency oscillator. A single clock may have multiple independent output channels, each of which may be at a different frequency, and it may or may not be tunable. Clocks are assigned to logical roles within the program (see :doc:`/user_guide/ftmw_configuration/rf_configuration`), and Blackchirp supports up to six clock devices.
 
 .. note::
   There is no means for controlling the power output of a clock from Blackchirp. If you require this functionality, please make a feature request on Github.

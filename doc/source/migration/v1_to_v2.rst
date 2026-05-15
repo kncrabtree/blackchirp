@@ -27,7 +27,7 @@ need to *do* about the changes.
 
 The page assumes you already use Blackchirp 1.x and have a working
 configuration plus possibly a body of acquired data. If you are new
-to Blackchirp, start with the :doc:`User Guide </user_guide>` instead.
+to Blackchirp, start with the :doc:`User Guide </user_guide/installation>` instead.
 
 Pre-upgrade Checklist
 ---------------------
@@ -391,8 +391,10 @@ requires a restart to take effect.
 #. After the restart, LIF hardware types appear in the Runtime
    Hardware Configuration dialog and the LIF tab is accessible from
    the main window. Build the LIF profiles into your loadout the
-   same way as any other hardware. See :doc:`/user_guide/lif` for
-   the rest of the LIF workflow.
+   same way as any other hardware. See
+   :doc:`/user_guide/lif/experiment_setup`,
+   :doc:`/user_guide/lif/configuration`, and
+   :doc:`/user_guide/lif/lif_tab` for the rest of the LIF workflow.
 
 .. _v1tov2-app-config:
 
@@ -528,7 +530,7 @@ Where to Go Next
 - The :doc:`/changelog/2.0.0` release notes list every user-visible
   change, with cross-links to the user-guide pages that document
   each new feature in depth.
-- The :doc:`User Guide </user_guide>` covers the 2.0 workflow end
+- The :doc:`User Guide </user_guide/installation>` covers the 2.0 workflow end
   to end. New chapters that have no v1.x analogue include
   :doc:`/user_guide/python_hardware`,
   :doc:`/user_guide/overlays`, and

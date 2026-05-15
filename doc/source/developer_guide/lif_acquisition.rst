@@ -85,8 +85,10 @@ traversed:
   completion check.
 
 The user-facing operation of the scan is documented in
-:doc:`/user_guide/lif`; the wiring that connects the wizard widgets to
-the fields above is the topic of *Configuration UI* below.
+:doc:`/user_guide/lif/experiment_setup` and
+:doc:`/user_guide/lif/configuration`; the wiring that connects the
+wizard widgets to the fields above is the topic of *Configuration UI*
+below.
 
 LifConfig and LifDigitizerConfig
 --------------------------------

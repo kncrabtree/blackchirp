@@ -13,6 +13,11 @@
 Hardware Menu
 =============
 
+.. toctree::
+   :hidden:
+
+   hwdialog
+
 .. figure:: /_static/user_guide/hardware_menu/menu.png
    :alt: Hardware menu opened, with Loadout submenu highlighted.
 

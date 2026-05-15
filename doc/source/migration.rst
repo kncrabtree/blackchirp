@@ -18,14 +18,14 @@ every entry names the starting condition on the source version,
 the end state on the destination version, and the steps to get
 from one to the other. The reader is expected to walk a page top
 to bottom in one sitting. Cross-links into the
-:doc:`User Guide </user_guide>` cover the destination-version
+:doc:`User Guide </user_guide/installation>` cover the destination-version
 features in depth, and the matching
 :doc:`changelog </changelog>` page is the authoritative summary
 of everything that changed.
 
 If you are setting up Blackchirp for the first time and have no
 prior version to migrate from, this chapter is not for you — start
-with the :doc:`User Guide </user_guide>` instead.
+with the :doc:`User Guide </user_guide/installation>` instead.
 
 .. toctree::
    :maxdepth: 1

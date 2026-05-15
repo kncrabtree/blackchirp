@@ -59,7 +59,7 @@ The toolbar buttons above the table manage segments:
 In the segment table the **Chirp Start** and **Chirp End** columns display
 molecular frequencies derived from the AWG frequencies using the
 upconversion and multiplication settings configured on the RF Config tab
-(see :doc:`/user_guide/rf_configuration`). Editing either the AWG
+(see :doc:`/user_guide/ftmw_configuration/rf_configuration`). Editing either the AWG
 frequency or the corresponding molecular frequency column updates the
 other automatically. Chirps may go in either direction; the start
 frequency need not be less than the end frequency. Duration is entered in

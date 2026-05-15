@@ -93,7 +93,7 @@ As a **multi-segment** acquisition type, Blackchirp writes a backup at each segm
 The number of shots collected at each LO step is set in the ``Shots/Point`` box within the LO scan configuration below the type selector.
 
 .. note::
-   Before the LO Scan configuration controls become accessible, both an ``UpLO`` and a ``DownLO`` clock source must be assigned in the :ref:`user_guide/rf_configuration:RF Configuration` (or, if the ``Common LO`` box is checked, only the ``UpLO`` needs to be set). The exact frequencies entered for those clocks are unimportant, as they are overridden by the scan parameters.
+   Before the LO Scan configuration controls become accessible, both an ``UpLO`` and a ``DownLO`` clock source must be assigned in the :ref:`user_guide/ftmw_configuration/rf_configuration:RF Configuration` (or, if the ``Common LO`` box is checked, only the ``UpLO`` needs to be set). The exact frequencies entered for those clocks are unimportant, as they are overridden by the scan parameters.
 
 .. image:: /_static/user_guide/experiment/loscan.png
    :align: center
@@ -132,7 +132,7 @@ Blackchirp writes a backup at each segment boundary, so the ``Backup Interval`` 
 The number of shots at each DR step is set in the ``Shots Per Step`` box within the DR scan configuration below the type selector.
 
 .. note::
-   A physical clock source must be assigned to the ``DR Clock`` role in the :ref:`user_guide/rf_configuration:RF Configuration` before DR Scan parameters can be configured.
+   A physical clock source must be assigned to the ``DR Clock`` role in the :ref:`user_guide/ftmw_configuration/rf_configuration:RF Configuration` before DR Scan parameters can be configured.
 
 .. image:: /_static/user_guide/experiment/drscan.png
    :align: center

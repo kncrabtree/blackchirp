@@ -131,7 +131,7 @@ Display Tabs
 The majority of important information is displayed in a tabbed interface in the center of the UI.
 
 - ``CP-FTMW`` shows free-induction decay and Fourier transform data from an ongoing or just-completed experiment. More information about the plots and controls on this tab is available on the :doc:`cp-ftmw` page.
-- ``LIF`` shows data from an ongoing or just-completed LIF experiment. More details can be found on the :doc:`lif` page.
+- ``LIF`` shows data from an ongoing or just-completed LIF experiment. More details can be found on the :doc:`lif/lif_tab` page.
 - ``Rolling Data`` and ``Aux Data`` both show signals from hardware items recorded as a function of time. "Rolling" data is acquired continuously while Blackchirp is open, while "Aux" data is recorded only during an experiment. More details are provided on the :doc:`rolling-aux-data` page.
 - ``Log`` shows program-related messages, including warnings and errors. The number of new messages shown since the last time the tab was viewed is displayed in parentheses. Any warnings are indicated with a yellow triangle icon on the tab, and errors are indicated with a red and white "X" icon. When an error occurs, additional information about the cause can be found here. All log messages are recorded to disk in a semicolon-delimited file format under the "log" folder in the current save path. A single log file contains all messages during a given month of program execution. Additionally, any log messages received during an experiment are stored in the same format as ``log.csv`` in the experiment's data folder.
 

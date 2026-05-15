@@ -1,6 +1,10 @@
 .. index::
+   single: LIF Module
    single: LIF Module; experiment setup
    single: LIF Module; wizard page
+   single: Laser-Induced Fluorescence
+   single: REMPI
+   single: Laser Scan
    single: Delay Axis; LIF
    single: Laser Axis; LIF
    single: Shots Per Point; LIF

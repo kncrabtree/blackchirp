@@ -17,7 +17,7 @@ experiment. Open it from the menu bar:
 The dialog contains a :ref:`preset bar <ftmw-preset-bar>` at
 the top and three tabs below it: **RF Config**, **Chirp Config**, and
 **Digitizer Config**. The RF Config tab is described in
-:doc:`rf_configuration`; the Chirp Config tab is described in
+:doc:`ftmw_configuration/rf_configuration`; the Chirp Config tab is described in
 :doc:`ftmw_configuration/chirp_setup`; the Digitizer Config tab is described in
 :doc:`ftmw_configuration/digitizer_setup`.
 
@@ -100,6 +100,6 @@ following pages.
 .. toctree::
    :maxdepth: 2
 
-   rf_configuration
+   ftmw_configuration/rf_configuration
    ftmw_configuration/chirp_setup
    ftmw_configuration/digitizer_setup
