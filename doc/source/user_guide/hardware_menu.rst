@@ -24,35 +24,28 @@ Hardware Menu
    The **Hardware** toolbar menu, showing the entry order and the per-device
    actions contributed by the active loadout.
 
-The **Hardware** toolbar button opens a menu that provides access to every
-instrument-level control and configuration surface in Blackchirp. The entries
-appear in the following order:
+The **Hardware** toolbar button opens a menu with every instrument-level
+control and configuration surface, in this order:
 
 #. **Hardware Selection** — opens the :doc:`Hardware Configuration
-   <hardware_config>` dialog, where you can switch or reconfigure the active
-   loadout and its hardware map.
-#. **Loadout** submenu — lists all defined loadouts; the active loadout is
-   checked. Switching loadouts is gated to the Disconnected and Idle states.
-#. **FTMW Preset** submenu — lists the FTMW presets that belong to the active
-   loadout (hidden when the active loadout has no named presets). The active
-   preset is checked. Switching presets is gated to Disconnected and Idle
-   states.
-#. **Communication** (``Ctrl+H``) — opens the Communication dialog (see
-   below).
+   <hardware_config>` dialog.
+#. **Loadout** submenu — lists all defined loadouts; the active one is
+   checked. Switching is gated to the Disconnected and Idle states.
+#. **FTMW Preset** submenu — lists the named FTMW presets belonging to the
+   active loadout; the active preset is checked. Disabled when the active
+   loadout has no named presets. Switching is gated to the Disconnected and
+   Idle states.
+#. **Communication** (``Ctrl+H``) — opens the Communication Settings dialog.
 #. **Test All Connections** (``Ctrl+T``) — attempts to reconnect to all
    hardware using the current protocol settings.
-#. **FTMW Configuration** — opens the FTMW configuration dialog for the active
-   preset. See :doc:`ftmw_configuration` for the RF chain, chirp, and digitizer
-   settings; see :doc:`ftmw_configuration/presets` for preset management.
+#. **FTMW Configuration** — opens the FTMW configuration dialog for the
+   active preset (see :doc:`ftmw_configuration` and
+   :doc:`ftmw_configuration/presets`).
 #. **LIF Configuration** *(visible only when the LIF module is enabled)* —
    opens the LIF configuration dialog.
-#. **Per-device entries** — one entry per device in the active hardware map,
-   labeled by the device's hardware key (``Type.Label``). Selecting an entry
-   opens the :doc:`Hardware Dialog <hwdialog>` for that device. These entries
-   stay reachable regardless of connection state so that cached settings can be
-   inspected and Python scripts can be reloaded after a failure; the dialog's
-   **Control** tab is disabled while the device is offline and re-enabled
-   automatically when the device reconnects.
+#. **Per-device entries** — one entry per device in the active hardware
+   map, labeled by the device's hardware key (``Type.Label``). Selecting
+   an entry opens the :doc:`Hardware Dialog <hwdialog>` for that device.
 
 .. _hardware-menu-communication:
 
@@ -68,13 +61,7 @@ Communication
    the active hardware map with a connection-status indicator; the right
    panel shows protocol-specific parameters for the selected device.
 
-**Communication** opens the Communication Settings dialog. The dialog uses a
-master-detail layout: the left panel lists every device in the active hardware
-map, and the right panel shows the protocol configuration for the selected
-device.
-
-Each device exposes the communication protocols supported by its driver.
-The available protocol types are:
+Each device exposes the communication protocols its driver supports:
 
 - **RS232** — direct serial port connection (USB-to-serial adapters are
   common; FTDI-based adapters are recommended for their per-device serial
@@ -87,28 +74,26 @@ The available protocol types are:
 - **Virtual** — software-only driver; no physical connection is
   required.
 
-Selecting a protocol from the drop-down immediately shows the
-protocol-specific parameter fields (port, baud rate, IP address, etc.) in the
-right panel. Common read options — response timeout and termination character —
-appear below the protocol fields and apply regardless of protocol type.
+Selecting a protocol from the drop-down shows the protocol-specific
+parameter fields (port, baud rate, IP address, etc.) in the right panel.
+Common read options — response timeout and termination character — appear
+below the protocol fields and apply regardless of protocol type.
 
 Click **Test Connection** to verify the selected device, or **Test All
-Devices** to test every device in sequence. Connection status is indicated next
-to each device name in the left panel.
+Devices** to test every device in sequence. Connection status is indicated
+next to each device name in the left panel.
 
 .. tip::
-   For **TCP** instruments, it is recommended to use a dedicated network
-   interface and configure devices on the link-local (169.254.x.x) address
-   space. Many instruments support 1 Gbps; ensure your adapter and any switches
-   match that speed.
+   For **TCP** instruments, use a dedicated network interface and configure
+   devices on the link-local (169.254.x.x) address space. Many instruments
+   support 1 Gbps; ensure the adapter and any switches match.
 
    For **GPIB** devices, verify the connection to the GPIB bridge controller
    first; all GPIB instruments share that link.
 
-   If a device fails to respond after changing protocol settings, it is worth
-   testing the connection a second time. A device that previously received
-   malformed bytes may need to drain its input buffer before it can process a
-   valid query.
+   If a device fails to respond after a protocol change, test the connection
+   a second time. A device that received malformed bytes may need to drain
+   its input buffer before it can process a valid query.
 
 .. rubric:: RS232 / USB-to-serial adapters on Linux
 
@@ -149,47 +134,28 @@ reliable targets for ``udev`` rules.
 Loadout Submenu
 ---------------
 
-The **Loadout** submenu lists every defined loadout. The active loadout is
-marked with a checkmark. Selecting a different loadout switches the active
-hardware map; this action is gated to the Disconnected and Idle states.
-
-See :doc:`hardware_config/loadouts` for a full description of the loadout
-concept and the Hardware Configuration dialog used to create and manage
-loadouts.
+See :doc:`hardware_config/loadouts` for the loadout concept and the
+Hardware Configuration dialog used to create and manage loadouts.
 
 .. _hardware-menu-ftmw-preset:
 
 FTMW Preset Submenu
 -------------------
 
-The **FTMW Preset** submenu lists the named FTMW presets that belong to the
-active loadout. The submenu is disabled when the active loadout has no named
-presets. The currently active preset is marked with a checkmark; selecting
-another preset switches the active FTMW configuration.
-
-Preset switching is gated to the Disconnected and Idle states.
-
-See :doc:`ftmw_configuration/presets` for a description of FTMW presets and
-the FTMW Configuration dialog.
+See :doc:`ftmw_configuration/presets` for FTMW presets and the FTMW
+Configuration dialog.
 
 .. _hardware-menu-device-entries:
 
 Per-Device Entries
 ------------------
 
-Below the FTMW Configuration entry, one menu action appears for each device in
-the active hardware map, labeled by the device's hardware key
-(``Type.Label``). Selecting an entry opens the :doc:`Hardware Dialog
-<hwdialog>` for that device. These entries stay reachable regardless of
-connection state — including while Blackchirp is in the **Disconnected** state
-following a critical hardware failure — so that the user can inspect or edit
-cached settings, fix a bad communication parameter, or reload a Python script
-without restarting the application.
-
-The Hardware Dialog provides a **Settings** tab for persistent device settings
-and, for devices that support live control, a **Control** tab. The **Control**
-tab is disabled while the device is offline and re-enabled automatically when
-the device reconnects; the **Settings** tab is always editable. For Python
-hardware, the script-reload controls remain active even while the rest of the
-**Control** tab is disabled, so a broken script can be edited and reloaded
-in place. See :doc:`hwdialog` for a full description of both tabs.
+One menu action appears for each device in the active hardware map.
+Per-device entries remain reachable while a device is offline (including
+the **Disconnected** state that follows a critical hardware failure), so
+cached settings can be inspected, a bad communication parameter fixed, or
+a Python script reloaded without restarting the application. The
+**Control** tab of the Hardware Dialog is disabled while the device is
+offline and re-enabled when the device reconnects; the **Settings** tab
+and Python script-reload controls remain active throughout. See
+:doc:`hwdialog`.

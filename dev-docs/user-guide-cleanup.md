@@ -185,8 +185,8 @@ Hardware Setup:
 - [x] `hardware_config/ftmw_presets.rst` (moved to
   `ftmw_configuration/presets.rst` under Running Experiments)
 - [x] `python_hardware.rst` and `python_hardware/` sub-pages
-- [ ] `hardware_menu.rst`
-- [ ] `hwdialog.rst` (now a sub-page of `hardware_menu`)
+- [x] `hardware_menu.rst`
+- [x] `hwdialog.rst` (now a sub-page of `hardware_menu`)
 - [ ] `hardware_details.rst`
 - [ ] `hw/*.rst` — per-device pages; light pass already touched
   `ftmwdigitizer.rst`, `lifdigitizer.rst`, `ioboard.rst` to strip
@@ -262,8 +262,6 @@ page:
   PulseStatusBox.
 - [ ] `ftmw_configuration-digitizer.png` — Digitizer Config tab;
   layout change is substantial.
-- [ ] `hwdialog-control_tab.png` — Pulse Generator Control tab;
-  channel grid was rewritten.
 - [ ] `lif-lif_config.png` — LIF Configuration dialog.
 - [ ] `lif-lif_tab.png` — LIF Display tab (processing panel and
   in-canvas legend).
@@ -281,9 +279,6 @@ actually visible at the capture frame:
   `experiment-sequence.png`, `lif-lif_exp_setup.png` — all live
   inside ExperimentSetupDialog; dialog chrome (nav tree, status
   area) changed even if the page-specific contents did not.
-- [ ] `hwdialog-settings_tab.png` — Pulse Generator Settings tab;
-  the device-level settings registry did not change, but the dialog
-  size and frame did.
 - [ ] No new TemperatureControlWidget screenshot exists in the doc
   set; flag if a user-guide page is added that surfaces it.
 
