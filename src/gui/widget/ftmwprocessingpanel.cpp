@@ -57,6 +57,8 @@ FtmwProcessingPanel::FtmwProcessingPanel(bool mainWin, QWidget *parent) :
     p_table->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     p_table->setSelectionMode(QAbstractItemView::NoSelection);
     p_table->setFocusPolicy(Qt::NoFocus);
+    p_table->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    p_table->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     p_startBox = new QDoubleSpinBox;
     p_startBox->setMinimum(0.0);

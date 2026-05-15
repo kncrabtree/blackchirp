@@ -12,7 +12,6 @@ class QDoubleSpinBox;
 class QComboBox;
 class QCheckBox;
 class QPushButton;
-class QGroupBox;
 class QTableWidget;
 
 class FtmwPlotPanel : public QWidget
@@ -53,13 +52,15 @@ signals:
     void plotSettingChanged(int id);
 
 private:
-    QComboBox *p_mainPlotBox;
+    QTableWidget *p_table{nullptr};
 
-    QGroupBox *p_sbBox;
-    QSpinBox *p_sbFrameBox;
-    QDoubleSpinBox *p_sbMinBox, *p_sbMaxBox;
-    QComboBox *p_sbAlgoBox;
-    QPushButton *p_sbReprocessButton;
+    QComboBox *p_mainPlotBox{nullptr};
+
+    QSpinBox *p_sbFrameBox{nullptr};
+    QDoubleSpinBox *p_sbMinBox{nullptr};
+    QDoubleSpinBox *p_sbMaxBox{nullptr};
+    QComboBox *p_sbAlgoBox{nullptr};
+    QPushButton *p_sbReprocessButton{nullptr};
 
     struct PlotControls {
         QSpinBox *seg;
@@ -69,8 +70,25 @@ private:
     };
     std::map<int,PlotControls> d_plotControls;
 
+    // Row indices into p_table.
+    static constexpr int d_rowMainMode      = 0;
+    static constexpr int d_rowSbFrame       = 1;
+    static constexpr int d_rowSbMin         = 2;
+    static constexpr int d_rowSbMax         = 3;
+    static constexpr int d_rowSbAlgo        = 4;
+    static constexpr int d_rowPlot1Seg      = 5;
+    static constexpr int d_rowPlot1Frame    = 6;
+    static constexpr int d_rowPlot1Backup   = 7;
+    static constexpr int d_rowPlot1Diff     = 8;
+    static constexpr int d_rowPlot2Seg      = 9;
+    static constexpr int d_rowPlot2Frame    = 10;
+    static constexpr int d_rowPlot2Backup   = 11;
+    static constexpr int d_rowPlot2Diff     = 12;
+    static constexpr int d_rowCount         = 13;
+
     void setMainPlotItemEnabled(MainPlotMode mode, bool enabled);
-    QGroupBox *buildPlotSection(int id);
+    void buildPlotControls(int id, int segRow, int frameRow, int backupRow, int diffRow);
+    void setSidebandRowsVisible(bool visible);
 };
 
 #endif // FTMWPLOTPANEL_H

@@ -1,8 +1,6 @@
 #include <gui/widget/ftmwplotpanel.h>
 
 #include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QGroupBox>
 #include <QTableWidget>
 #include <QHeaderView>
 #include <QSpinBox>
@@ -44,16 +42,30 @@ FtmwPlotPanel::FtmwPlotPanel(QWidget *parent) : QWidget(parent)
     auto *outer = new QVBoxLayout;
     outer->setContentsMargins(4,4,4,4);
 
-    // ─── Main Plot section ───────────────────────────────
-    auto *mainBox = new QGroupBox("Main Plot");
-    auto *mainTable = new QTableWidget(1,1,this);
-    mainTable->setVerticalHeaderLabels({"Mode"});
-    mainTable->horizontalHeader()->setVisible(false);
-    mainTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    mainTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    mainTable->setSelectionMode(QAbstractItemView::NoSelection);
-    mainTable->setFocusPolicy(Qt::NoFocus);
+    p_table = new QTableWidget(d_rowCount,1,this);
+    p_table->setVerticalHeaderLabels({
+        "Main Plot Mode",
+        "SB Frame",
+        "SB Min Offset",
+        "SB Max Offset",
+        "SB Avg Algorithm",
+        "Plot 1 Segment",
+        "Plot 1 Frame",
+        "Plot 1 Backup",
+        "Plot 1 Differential",
+        "Plot 2 Segment",
+        "Plot 2 Frame",
+        "Plot 2 Backup",
+        "Plot 2 Differential"});
+    p_table->horizontalHeader()->setVisible(false);
+    p_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    p_table->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    p_table->setSelectionMode(QAbstractItemView::NoSelection);
+    p_table->setFocusPolicy(Qt::NoFocus);
+    p_table->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    p_table->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
+    // ─── Main Plot Mode ────────────────────────────────────────────────
     p_mainPlotBox = makeCenteredCombo();
     {
         auto me = QMetaEnum::fromType<MainPlotMode>();
@@ -64,25 +76,11 @@ FtmwPlotPanel::FtmwPlotPanel(QWidget *parent) : QWidget(parent)
     recenterCombo(p_mainPlotBox);
     p_mainPlotBox->setCurrentIndex(p_mainPlotBox->findData(QVariant::fromValue(Live)));
     p_mainPlotBox->setToolTip("Select what is displayed on the main (large) FT Plot");
-    mainTable->setCellWidget(0,0,p_mainPlotBox);
+    p_table->setCellWidget(d_rowMainMode,0,p_mainPlotBox);
     connect(p_mainPlotBox, qOverload<int>(&QComboBox::currentIndexChanged),
             this, [this](int){ emit mainPlotSettingChanged(); });
 
-    auto *mainLay = new QVBoxLayout;
-    mainLay->addWidget(mainTable);
-    mainBox->setLayout(mainLay);
-    outer->addWidget(mainBox);
-
-    // ─── Sideband Processing section (LO Scan only) ─────
-    p_sbBox = new QGroupBox("Sideband Processing");
-    auto *sbTable = new QTableWidget(4,1,this);
-    sbTable->setVerticalHeaderLabels({"Frame","Min Offset","Max Offset","Avg Algorithm"});
-    sbTable->horizontalHeader()->setVisible(false);
-    sbTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    sbTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    sbTable->setSelectionMode(QAbstractItemView::NoSelection);
-    sbTable->setFocusPolicy(Qt::NoFocus);
-
+    // ─── Sideband Processing rows (visible for LO_Scan only) ───────────
     p_sbFrameBox = new QSpinBox;
     p_sbFrameBox->setRange(1,1);
     p_sbFrameBox->setValue(1);
@@ -90,7 +88,7 @@ FtmwPlotPanel::FtmwPlotPanel(QWidget *parent) : QWidget(parent)
     p_sbFrameBox->setAlignment(Qt::AlignCenter);
     p_sbFrameBox->setKeyboardTracking(false);
     p_sbFrameBox->setToolTip("Select which frame is used in sideband deconvolution.");
-    sbTable->setCellWidget(0,0,p_sbFrameBox);
+    p_table->setCellWidget(d_rowSbFrame,0,p_sbFrameBox);
 
     p_sbMinBox = new QDoubleSpinBox;
     p_sbMinBox->setRange(0,1000000.0);
@@ -100,7 +98,7 @@ FtmwPlotPanel::FtmwPlotPanel(QWidget *parent) : QWidget(parent)
     p_sbMinBox->setAlignment(Qt::AlignCenter);
     p_sbMinBox->setKeyboardTracking(false);
     p_sbMinBox->setToolTip("Minimum offset frequency included in sideband deconvolution algorithm.");
-    sbTable->setCellWidget(1,0,p_sbMinBox);
+    p_table->setCellWidget(d_rowSbMin,0,p_sbMinBox);
 
     p_sbMaxBox = new QDoubleSpinBox;
     p_sbMaxBox->setRange(0,1000000.0);
@@ -110,7 +108,7 @@ FtmwPlotPanel::FtmwPlotPanel(QWidget *parent) : QWidget(parent)
     p_sbMaxBox->setAlignment(Qt::AlignCenter);
     p_sbMaxBox->setKeyboardTracking(false);
     p_sbMaxBox->setToolTip("Maximum offset frequency included in sideband deconvolution algorithm.");
-    sbTable->setCellWidget(2,0,p_sbMaxBox);
+    p_table->setCellWidget(d_rowSbMax,0,p_sbMaxBox);
 
     p_sbAlgoBox = makeCenteredCombo();
     {
@@ -122,17 +120,7 @@ FtmwPlotPanel::FtmwPlotPanel(QWidget *parent) : QWidget(parent)
     recenterCombo(p_sbAlgoBox);
     p_sbAlgoBox->setCurrentIndex(p_sbAlgoBox->findData(QVariant::fromValue(FtWorker::Harmonic_Mean)));
     p_sbAlgoBox->setToolTip("Averaging algorithm to suppress signals in undesired sideband.");
-    sbTable->setCellWidget(3,0,p_sbAlgoBox);
-
-    p_sbReprocessButton = new QPushButton("Reprocess");
-    p_sbReprocessButton->setToolTip("Re-run sideband deconvolution with the current settings.");
-
-    auto *sbLay = new QVBoxLayout;
-    sbLay->addWidget(sbTable);
-    sbLay->addWidget(p_sbReprocessButton);
-    p_sbBox->setLayout(sbLay);
-    p_sbBox->setVisible(false);
-    outer->addWidget(p_sbBox);
+    p_table->setCellWidget(d_rowSbAlgo,0,p_sbAlgoBox);
 
     connect(p_sbFrameBox, qOverload<int>(&QSpinBox::valueChanged), this,
             [this](int){ emit mainPlotSettingChanged(); });
@@ -142,52 +130,50 @@ FtmwPlotPanel::FtmwPlotPanel(QWidget *parent) : QWidget(parent)
             [this](double){ emit mainPlotSettingChanged(); });
     connect(p_sbAlgoBox, qOverload<int>(&QComboBox::currentIndexChanged), this,
             [this](int){ emit mainPlotSettingChanged(); });
+
+    // ─── Per-plot rows (Plot 1, Plot 2) ─────────────────────────────────
+    buildPlotControls(1, d_rowPlot1Seg, d_rowPlot1Frame, d_rowPlot1Backup, d_rowPlot1Diff);
+    buildPlotControls(2, d_rowPlot2Seg, d_rowPlot2Frame, d_rowPlot2Backup, d_rowPlot2Diff);
+
+    outer->addWidget(p_table,1);
+
+    p_sbReprocessButton = new QPushButton("Reprocess Sidebands");
+    p_sbReprocessButton->setToolTip("Re-run sideband deconvolution with the current settings.");
+    outer->addWidget(p_sbReprocessButton,0);
     connect(p_sbReprocessButton, &QPushButton::clicked, this,
             [this](){ emit mainPlotSettingChanged(); });
 
-    // ─── Per-plot sections (Plot 1, Plot 2) ─────────────
-    for(int i=1; i<3; ++i)
-        outer->addWidget(buildPlotSection(i));
+    setSidebandRowsVisible(false);
 
-    outer->addStretch(1);
     setLayout(outer);
 }
 
-QGroupBox *FtmwPlotPanel::buildPlotSection(int id)
+void FtmwPlotPanel::buildPlotControls(int id, int segRow, int frameRow, int backupRow, int diffRow)
 {
-    auto *box = new QGroupBox(QString("Plot %1").arg(id));
-    auto *table = new QTableWidget(4,1,this);
-    table->setVerticalHeaderLabels({"Segment","Frame","Backup","Differential"});
-    table->horizontalHeader()->setVisible(false);
-    table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    table->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    table->setSelectionMode(QAbstractItemView::NoSelection);
-    table->setFocusPolicy(Qt::NoFocus);
-
     PlotControls pc;
     pc.seg = new QSpinBox;
     pc.seg->setRange(1,1);
     pc.seg->setAlignment(Qt::AlignCenter);
     pc.seg->setKeyboardTracking(false);
-    table->setCellWidget(0,0,pc.seg);
+    p_table->setCellWidget(segRow,0,pc.seg);
 
     pc.frame = new QSpinBox;
     pc.frame->setRange(1,1);
     pc.frame->setSpecialValueText("Average");
     pc.frame->setAlignment(Qt::AlignCenter);
     pc.frame->setKeyboardTracking(false);
-    table->setCellWidget(1,0,pc.frame);
+    p_table->setCellWidget(frameRow,0,pc.frame);
 
     pc.backup = new QSpinBox;
     pc.backup->setRange(0,0);
     pc.backup->setSpecialValueText("All");
     pc.backup->setAlignment(Qt::AlignCenter);
     pc.backup->setKeyboardTracking(false);
-    table->setCellWidget(2,0,pc.backup);
+    p_table->setCellWidget(backupRow,0,pc.backup);
 
     pc.differential = new QCheckBox;
     pc.differential->setToolTip("If checked, display all shots recorded since the indicated backup.");
-    centerCellWidget(table,3,0,pc.differential);
+    centerCellWidget(p_table,diffRow,0,pc.differential);
 
     connect(pc.seg, qOverload<int>(&QSpinBox::valueChanged), this,
             [this,id](int){ emit plotSettingChanged(id); });
@@ -199,11 +185,13 @@ QGroupBox *FtmwPlotPanel::buildPlotSection(int id)
             [this,id](bool){ emit plotSettingChanged(id); });
 
     d_plotControls.insert({id,pc});
+}
 
-    auto *lay = new QVBoxLayout;
-    lay->addWidget(table);
-    box->setLayout(lay);
-    return box;
+void FtmwPlotPanel::setSidebandRowsVisible(bool visible)
+{
+    for(int row : {d_rowSbFrame, d_rowSbMin, d_rowSbMax, d_rowSbAlgo})
+        p_table->setRowHidden(row, !visible);
+    p_sbReprocessButton->setVisible(visible);
 }
 
 void FtmwPlotPanel::setMainPlotItemEnabled(MainPlotMode mode, bool enabled)
@@ -233,8 +221,7 @@ void FtmwPlotPanel::prepareForExperiment(const Experiment &e)
         setMainPlotItemEnabled(Both_SideBands,isLoScan);
         setMainPlotItemEnabled(Upper_SideBand,isLoScan);
         setMainPlotItemEnabled(Lower_SideBand,isLoScan);
-        p_sbBox->setVisible(isLoScan);
-        p_sbBox->setEnabled(isLoScan);
+        setSidebandRowsVisible(isLoScan);
 
         auto chirpOffsetRange = e.ftmwConfig()->d_rfConfig.calculateChirpAbsOffsetRange();
         if(chirpOffsetRange.first < 0.0)

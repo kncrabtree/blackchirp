@@ -95,14 +95,16 @@ FtmwViewWidget::FtmwViewWidget(bool main, QWidget *parent, QString path, bool ov
     connect(p_plotPanel,&FtmwPlotPanel::mainPlotSettingChanged,this,&FtmwViewWidget::updateMainPlot);
     connect(p_plotPanel,&FtmwPlotPanel::plotSettingChanged,this,&FtmwViewWidget::updatePlotSetting);
 
-    p_acquisitionPanel->setRefreshInterval(get(BC::Key::FtmwView::refresh,500));
-    if(d_main)
+    if(p_acquisitionPanel)
+    {
+        p_acquisitionPanel->setRefreshInterval(get(BC::Key::FtmwView::refresh,500));
         registerGetter(BC::Key::FtmwView::refresh,p_acquisitionPanel,&FtmwAcquisitionPanel::refreshInterval);
-    p_acquisitionPanel->setRefreshEnabled(false);
+        p_acquisitionPanel->setRefreshEnabled(false);
 
-    connect(p_acquisitionPanel,&FtmwAcquisitionPanel::averagesChanged,this,&FtmwViewWidget::changeRollingAverageShots,Qt::UniqueConnection);
-    connect(p_acquisitionPanel,&FtmwAcquisitionPanel::resetAveragesClicked,this,&FtmwViewWidget::resetRollingAverage,Qt::UniqueConnection);
-    connect(p_acquisitionPanel,&FtmwAcquisitionPanel::manualBackupClicked,this,&FtmwViewWidget::manualBackupRequested);
+        connect(p_acquisitionPanel,&FtmwAcquisitionPanel::averagesChanged,this,&FtmwViewWidget::changeRollingAverageShots,Qt::UniqueConnection);
+        connect(p_acquisitionPanel,&FtmwAcquisitionPanel::resetAveragesClicked,this,&FtmwViewWidget::resetRollingAverage,Qt::UniqueConnection);
+        connect(p_acquisitionPanel,&FtmwAcquisitionPanel::manualBackupClicked,this,&FtmwViewWidget::manualBackupRequested);
+    }
 
     p_processingPanel->setEnabled(false);
     p_plotPanel->setEnabled(false);
@@ -198,11 +200,13 @@ void FtmwViewWidget::setupInnerUi()
     // ── Side-panel docks ───────────────────────────────────────────────
     p_processingPanel = new FtmwProcessingPanel(d_main, p_innerWindow);
     p_plotPanel = new FtmwPlotPanel(p_innerWindow);
-    p_acquisitionPanel = new FtmwAcquisitionPanel(d_main, p_innerWindow);
+    if(d_main)
+        p_acquisitionPanel = new FtmwAcquisitionPanel(d_main, p_innerWindow);
 
     p_processingDock  = makeDock("FtmwViewDock-Processing",  "FID Processing", p_processingPanel);
     p_plotDock        = makeDock("FtmwViewDock-Plot",        "Plot Settings",  p_plotPanel);
-    p_acquisitionDock = makeDock("FtmwViewDock-Acquisition", "Acquisition",    p_acquisitionPanel);
+    if(d_main)
+        p_acquisitionDock = makeDock("FtmwViewDock-Acquisition", "Acquisition", p_acquisitionPanel);
     p_peakFindDock    = makeDock("FtmwViewDock-PeakFind",    "Peak Find",      nullptr);
     p_overlayDock     = makeDock("FtmwViewDock-Overlays",    "Overlays",       nullptr);
 
@@ -210,7 +214,8 @@ void FtmwViewWidget::setupInnerUi()
     // checked state stays in sync with dock visibility automatically.
     p_processingAct = p_processingDock->toggleViewAction();
     p_plotAct       = p_plotDock->toggleViewAction();
-    p_acquisitionAct= p_acquisitionDock->toggleViewAction();
+    if(p_acquisitionDock)
+        p_acquisitionAct = p_acquisitionDock->toggleViewAction();
     p_peakFindAct   = p_peakFindDock->toggleViewAction();
     p_overlayAct    = p_overlayDock->toggleViewAction();
 
@@ -218,8 +223,11 @@ void FtmwViewWidget::setupInnerUi()
     p_processingAct->setText("FID Processing");
     p_plotAct->setIcon(ThemeColors::createThemedIcon(":/icons/presentation-chart-bar.svg",ThemeColors::IconSecondary,this));
     p_plotAct->setText("Plot Settings");
-    p_acquisitionAct->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-trending-up.svg",ThemeColors::IconSecondary,this));
-    p_acquisitionAct->setText("Acquisition");
+    if(p_acquisitionAct)
+    {
+        p_acquisitionAct->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-trending-up.svg",ThemeColors::IconSecondary,this));
+        p_acquisitionAct->setText("Acquisition");
+    }
     p_peakFindAct->setIcon(ThemeColors::createThemedIcon(":/icons/magnifying-glass-circle.svg",ThemeColors::IconPrimary,this));
     p_peakFindAct->setText("Peak Find");
     p_overlayAct->setIcon(ThemeColors::createThemedIcon(":/icons/squares-plus.svg",ThemeColors::IconSecondary,this));
@@ -227,25 +235,25 @@ void FtmwViewWidget::setupInnerUi()
 
     p_topToolbar->addAction(p_processingAct);
     p_topToolbar->addAction(p_plotAct);
-    p_topToolbar->addAction(p_acquisitionAct);
+    if(p_acquisitionAct)
+        p_topToolbar->addAction(p_acquisitionAct);
     p_topToolbar->addAction(p_peakFindAct);
     p_topToolbar->addAction(p_overlayAct);
 
     p_innerWindow->addDockWidget(Qt::RightDockWidgetArea, p_processingDock);
     p_innerWindow->addDockWidget(Qt::RightDockWidgetArea, p_plotDock);
-    p_innerWindow->addDockWidget(Qt::RightDockWidgetArea, p_acquisitionDock);
+    if(p_acquisitionDock)
+        p_innerWindow->addDockWidget(Qt::RightDockWidgetArea, p_acquisitionDock);
     p_innerWindow->addDockWidget(Qt::RightDockWidgetArea, p_peakFindDock);
     p_innerWindow->addDockWidget(Qt::RightDockWidgetArea, p_overlayDock);
 
-    // Tabify all five so they share one tab strip on the right edge.
-    p_innerWindow->tabifyDockWidget(p_processingDock, p_plotDock);
-    p_innerWindow->tabifyDockWidget(p_plotDock, p_acquisitionDock);
-    p_innerWindow->tabifyDockWidget(p_acquisitionDock, p_peakFindDock);
-    p_innerWindow->tabifyDockWidget(p_peakFindDock, p_overlayDock);
-
     // Default to all hidden (collapsed); restoreDockLayout() may override.
-    for(auto *d : {p_processingDock, p_plotDock, p_acquisitionDock, p_peakFindDock, p_overlayDock})
-        d->setVisible(false);
+    p_processingDock->setVisible(false);
+    p_plotDock->setVisible(false);
+    if(p_acquisitionDock)
+        p_acquisitionDock->setVisible(false);
+    p_peakFindDock->setVisible(false);
+    p_overlayDock->setVisible(false);
 
     // Lazy-construct PeakFind / Overlay widgets when their dock is first
     // shown and a suitable Ft / experiment is available.
@@ -278,6 +286,7 @@ QDockWidget *FtmwViewWidget::makeDock(const QString &objectName, const QString &
     dock->setFeatures(QDockWidget::DockWidgetMovable
                       | QDockWidget::DockWidgetFloatable
                       | QDockWidget::DockWidgetClosable);
+    dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     if(contents)
         dock->setWidget(contents);
     else
@@ -386,7 +395,8 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
     if(!p_exptLabel->isVisible())
         p_exptLabel->setVisible(true);
 
-    p_acquisitionPanel->setRefreshEnabled(false);
+    if(p_acquisitionPanel)
+        p_acquisitionPanel->setRefreshEnabled(false);
 
     p_liveFidPlot->prepareForExperiment(e);
     p_liveFidPlot->setVisible(true);
@@ -442,9 +452,12 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
 
     if(e.ftmwEnabled())
     {
-        p_acquisitionPanel->setRefreshEnabled(true);
-        connect(p_acquisitionPanel,&FtmwAcquisitionPanel::refreshIntervalChanged,
-                this,&FtmwViewWidget::setLiveUpdateInterval, Qt::UniqueConnection);
+        if(p_acquisitionPanel)
+        {
+            p_acquisitionPanel->setRefreshEnabled(true);
+            connect(p_acquisitionPanel,&FtmwAcquisitionPanel::refreshIntervalChanged,
+                    this,&FtmwViewWidget::setLiveUpdateInterval, Qt::UniqueConnection);
+        }
         ps_fidStorage = e.ftmwConfig()->storage();
         if(e.ftmwConfig()->d_type == FtmwConfig::Peak_Up)
             p_exptLabel->setText(QString("Peak Up Mode"));
@@ -457,27 +470,37 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         p_liveFidPlot->show();
         p_liveFtPlot->show();
 
-        const bool isPeakUp = (e.ftmwConfig()->d_type == FtmwConfig::Peak_Up);
-        p_acquisitionPanel->setAverages(isPeakUp ? e.ftmwConfig()->d_objective : 0);
-        p_acquisitionPanel->setPeakUpControlsEnabled(isPeakUp);
+        if(p_acquisitionPanel)
+        {
+            const bool isPeakUp = (e.ftmwConfig()->d_type == FtmwConfig::Peak_Up);
+            p_acquisitionPanel->setAverages(isPeakUp ? e.ftmwConfig()->d_objective : 0);
+            p_acquisitionPanel->setPeakUpControlsEnabled(isPeakUp);
 
-        // Manual backup is meaningful only for single-segment, backup-capable
-        // FTMW modes. Hidden entirely in the viewer (constructor of panel).
-        const auto t = e.ftmwConfig()->d_type;
-        p_acquisitionPanel->setManualBackupEnabled(
-            t == FtmwConfig::Target_Shots
-            || t == FtmwConfig::Target_Duration
-            || t == FtmwConfig::Forever);
+            // Manual backup is meaningful only for single-segment, backup-capable
+            // FTMW modes. Hidden entirely in the viewer (constructor of panel).
+            const auto t = e.ftmwConfig()->d_type;
+            p_acquisitionPanel->setManualBackupEnabled(
+                t == FtmwConfig::Target_Shots
+                || t == FtmwConfig::Target_Duration
+                || t == FtmwConfig::Forever);
 
-        d_liveTimerId = startTimer(p_acquisitionPanel->refreshInterval());
+            d_liveTimerId = startTimer(p_acquisitionPanel->refreshInterval());
+        }
+        else
+        {
+            d_liveTimerId = startTimer(get(BC::Key::FtmwView::refresh,500));
+        }
     }
     else
     {
         ps_fidStorage.reset();
         ps_overlayStorage.reset();
         p_exptLabel->setText(QString("Experiment %1").arg(e.d_number));
-        p_acquisitionPanel->setPeakUpControlsEnabled(false);
-        p_acquisitionPanel->setManualBackupEnabled(false);
+        if(p_acquisitionPanel)
+        {
+            p_acquisitionPanel->setPeakUpControlsEnabled(false);
+            p_acquisitionPanel->setManualBackupEnabled(false);
+        }
     }
 
     p_peakFindAct->setEnabled(false);
@@ -915,20 +938,24 @@ void FtmwViewWidget::updateBackups()
     p_plotPanel->newBackup(ps_fidStorage->numBackups());
 
     // Re-enable the manual backup button now that the write is on disk.
-    if(dynamic_cast<FidSingleStorage*>(ps_fidStorage.get()) != nullptr)
+    if(p_acquisitionPanel && dynamic_cast<FidSingleStorage*>(ps_fidStorage.get()) != nullptr)
         p_acquisitionPanel->setManualBackupEnabled(true);
 }
 
 void FtmwViewWidget::experimentComplete()
 {
-    disconnect(p_acquisitionPanel,&FtmwAcquisitionPanel::refreshIntervalChanged,
-               this,&FtmwViewWidget::setLiveUpdateInterval);
-    p_acquisitionPanel->setRefreshEnabled(false);
+    if(p_acquisitionPanel)
+    {
+        disconnect(p_acquisitionPanel,&FtmwAcquisitionPanel::refreshIntervalChanged,
+                   this,&FtmwViewWidget::setLiveUpdateInterval);
+        p_acquisitionPanel->setRefreshEnabled(false);
+    }
     if(d_liveTimerId >= 0)
         killTimer(d_liveTimerId);
     d_liveTimerId = -1;
 
-    p_acquisitionPanel->setManualBackupEnabled(false);
+    if(p_acquisitionPanel)
+        p_acquisitionPanel->setManualBackupEnabled(false);
 
     if(ps_fidStorage)
     {

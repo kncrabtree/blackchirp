@@ -23,6 +23,8 @@ FtmwAcquisitionPanel::FtmwAcquisitionPanel(bool main, QWidget *parent) :
     table->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     table->setSelectionMode(QAbstractItemView::NoSelection);
     table->setFocusPolicy(Qt::NoFocus);
+    table->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    table->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     p_refreshBox = new QSpinBox;
     p_refreshBox->setRange(500,60000);
