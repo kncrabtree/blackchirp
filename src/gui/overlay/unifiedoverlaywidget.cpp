@@ -329,6 +329,7 @@ void UnifiedOverlayWidget::loadOverlaySettings()
     p_overlayBaseOptionsWidget->setXOffset(d_overlay->getXOffset());
     p_overlayBaseOptionsWidget->setMinFreqLimit(d_overlay->getMinFreqEnabled(), d_overlay->getMinFreqValue());
     p_overlayBaseOptionsWidget->setMaxFreqLimit(d_overlay->getMaxFreqEnabled(), d_overlay->getMaxFreqValue());
+    p_overlayBaseOptionsWidget->setComment(d_overlay->getComment());
     
     // Load curve appearance settings
     if (p_curveAppearanceWidget)
