@@ -14,8 +14,8 @@
 
 .. _lif-tab:
 
-LIF Display Tab
-===============
+Viewing LIF Data
+================
 
 The **LIF** tab provides real-time and post-acquisition visualization of LIF
 data. It is visible in the main window whenever the LIF module is enabled

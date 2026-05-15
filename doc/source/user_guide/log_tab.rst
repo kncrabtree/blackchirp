@@ -7,8 +7,8 @@
 
 .. _log-tab:
 
-Log Tab
-=======
+Application Log
+===============
 
 The **Log** tab displays the running stream of messages produced by Blackchirp
 during a session. Messages come from the application core, the acquisition

@@ -35,10 +35,10 @@
 
    user_guide/cp-ftmw
    user_guide/lif/lif_tab
-   user_guide/plot_controls
-   user_guide/overlays
    user_guide/rolling-aux-data
    user_guide/log_tab
+   user_guide/overlays
+   user_guide/plot_controls
    python
 
 .. toctree::
@@ -99,8 +99,9 @@ for the first time:
   profiles, loadouts, and per-device drivers.
 * :doc:`Running Experiments <user_guide/experiment_setup>` — set up
   FTMW, LIF, and combined acquisitions.
-* :doc:`Inspecting Data <user_guide/cp-ftmw>` — work with the live tabs
-  and plots during and after acquisition.
+* :doc:`Inspecting Data <user_guide/cp-ftmw>` — view FTMW and LIF
+  results during and after acquisition, with overlays and plot
+  customization.
 * :doc:`Data Format and Diagnostics <user_guide/data_storage>` — on-disk
   file formats and crash-report locations.
 * :doc:`Blackchirp Viewer <user_guide/viewer>` — the standalone viewer

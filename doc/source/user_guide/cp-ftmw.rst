@@ -13,8 +13,8 @@
    single: Sideband Deconvolution
    single: Autoscale Curve
 
-CP-FTMW Tab
-===========
+Viewing FTMW Data
+=================
 
 .. image:: /_static/user_guide/cp-ftmw-overview.png
    :align: center

@@ -228,12 +228,15 @@ Running Experiments:
 
 Inspecting Data:
 
-- [ ] `cp-ftmw.rst`
-- [ ] `lif/lif_tab.rst` (promoted to top-level sibling of `cp-ftmw`)
-- [ ] `plot_controls.rst`
-- [ ] `overlays.rst`
+- [ ] `cp-ftmw.rst` (retitled "Viewing FTMW Data")
+- [ ] `lif/lif_tab.rst` (retitled "Viewing LIF Data"; top-level
+  sibling of `cp-ftmw` via the chapter toctree, file still under
+  `lif/`)
 - [ ] `rolling-aux-data.rst`
-- [ ] `log_tab.rst`
+- [ ] `log_tab.rst` (retitled "Application Log")
+- [ ] `overlays.rst`
+- [ ] `plot_controls.rst`
+- [ ] `python.rst`
 
 Data Format and Diagnostics:
 

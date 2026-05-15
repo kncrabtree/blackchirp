@@ -77,7 +77,7 @@ Peak Up
 
 **Peak Up** mode acquires and averages FIDs until a target number of shots is reached, but does not stop at that point.
 Processing continues as a `modified moving average <https://en.wikipedia.org/wiki/Moving_average#Modified_moving_average>`__, which is a special case of an exponentially-weighted moving average.
-The average can be reset and the number of shots included in the average can be changed during the acquisition with the controls on the :ref:`user_guide/cp-ftmw:CP-FTMW Tab`.
+The average can be reset and the number of shots included in the average can be changed during the acquisition with the controls on the :ref:`CP-FTMW tab <user_guide/cp-ftmw:Viewing FTMW Data>`.
 
 .. warning::
    Unlike the other acquisition modes, **Peak Up mode experiments are not saved to disk.** Once a new experiment has been started, the results from the Peak Up mode experiment are discarded. Be sure to export any data you wish to save manually!
@@ -96,7 +96,7 @@ LO Scan
 
 The **LO Scan** mode implements a version of `segmented CP-FTMW spectroscopy <https://doi.org/10.1364/OE.21.019743>`__ in which a certain number of FIDs are acquired and averaged, then the upconversion and/or downconversion local oscillators are stepped.
 By sampling a variety of LO frequencies, the spectral range covered by the instrument can far exceed the instantaneous bandwidth of the FTMW digitizer, allowing CP-FTMW spectroscopy to be performed with (comparatively) inexpensive hardware.
-On the :ref:`user_guide/cp-ftmw:CP-FTMW Tab`, each frequency segment can be viewed individually, and algorithms are available for stitching together the entire spectrum and deconvolving dual sidebands (see the linked page for more details about these algorithms).
+On the :ref:`CP-FTMW tab <user_guide/cp-ftmw:Viewing FTMW Data>`, each frequency segment can be viewed individually, and algorithms are available for stitching together the entire spectrum and deconvolving dual sidebands (see the linked page for more details about these algorithms).
 As a **multi-segment** acquisition type, Blackchirp writes a backup at each segment boundary, so the ``Backup Interval`` setting in :ref:`user_guide/experiment_setup:Common Settings` has no effect.
 The number of shots collected at each LO step is set in the ``Shots/Point`` box within the LO scan configuration below the type selector.
 
@@ -146,7 +146,7 @@ The number of shots at each DR step is set in the ``Shots Per Step`` box within 
 
 To set up a DR scan, enter the desired ``Start`` frequency, ``Step Size``, ``Num Steps``, and ``Shots Per Step``.
 The ``End`` box updates automatically to show the final DR frequency.
-When viewing the DR Scan on the :ref:`user_guide/cp-ftmw:CP-FTMW Tab`, peak intensity as a function of DR frequency is not directly displayed.
+When viewing the DR Scan on the :ref:`CP-FTMW tab <user_guide/cp-ftmw:Viewing FTMW Data>`, peak intensity as a function of DR frequency is not directly displayed.
 Instead, it is recommended to use the ``FT1 - FT2`` plot mode, as discussed in more detail on that page.
 
 Phase Correction
@@ -173,7 +173,7 @@ raised if the shift exceeds 50 points.
 
 If the ``Chirp Start`` box is set to ``Automatic``, Blackchirp assumes that the digitizer is triggered at the start of the protection pulse.
 The chirp start is then set to the sum of the pre-chirp protection and pre-chirp delay settings entered on the :ref:`user_guide/ftmw_configuration/chirp_setup:Chirp Setup` page, and the chirp end is determined from the chirp duration entered on that page.
-These computed values will be displayed on the FID plots displayed on the :ref:`user_guide/cp-ftmw:CP-FTMW Tab`.
+These computed values will be displayed on the FID plots displayed on the :ref:`CP-FTMW tab <user_guide/cp-ftmw:Viewing FTMW Data>`.
 If they are not correct, you can override the chirp starting time by entering the actual chirp start you observe into the ``Chirp Start`` box.
 The duration still comes from the :ref:`user_guide/ftmw_configuration/chirp_setup:Chirp Setup` value.
 
