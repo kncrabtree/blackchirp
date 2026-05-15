@@ -8,43 +8,44 @@
 FTMW Configuration
 ==================
 
-The **FTMW Configuration** dialog is the primary interface for setting up
-the RF chain, chirp waveform, and digitizer parameters for a CP-FTMW
-experiment. Open it from the menu bar:
+The **FTMW Configuration** dialog collects the RF chain, chirp waveform,
+and digitizer parameters that define a CP-FTMW measurement. The same
+controls surface in two places:
 
-    **Hardware → FTMW Configuration**
+- As the **FTMW Configuration** page of the :doc:`Experiment Setup
+  dialog <experiment_setup>`, where they are reviewed and validated
+  before an experiment starts. This is the path most users take during
+  routine acquisition.
+- As a standalone dialog opened from **Hardware → FTMW Configuration**.
+  Open it this way to adjust the RF chain, save or rename
+  :doc:`presets <ftmw_configuration/presets>`, or send clock settings to
+  the hardware without starting an experiment. The standalone dialog is
+  available only in the **Idle** state (hardware connected, no
+  experiment running) and is read-only when Blackchirp is disconnected.
 
-The dialog contains a :ref:`preset bar <ftmw-preset-bar>` at
-the top and three tabs below it: **RF Config**, **Chirp Config**, and
-**Digitizer Config**. The RF Config tab is described in
-:doc:`ftmw_configuration/rf_configuration`; the Chirp Config tab is described in
-:doc:`ftmw_configuration/chirp_setup`; the Digitizer Config tab is described in
-:doc:`ftmw_configuration/digitizer_setup`.
-
-The FTMW Configuration dialog is available only while Blackchirp is in
-the **Idle** state (hardware connected, no experiment running). The dialog
-is opened in read-only mode when Blackchirp is disconnected.
+A :ref:`preset bar <ftmw-preset-bar>` sits at the top of the dialog and
+three tabs below it group the parameters: **RF Config**
+(:doc:`ftmw_configuration/rf_configuration`), **Chirp Config**
+(:doc:`ftmw_configuration/chirp_setup`), and **Digitizer Config**
+(:doc:`ftmw_configuration/digitizer_setup`).
 
 .. figure:: /_static/user_guide/ftmw_configuration-dialog.png
    :width: 800
    :alt: FTMW Configuration dialog showing the preset bar at the top and
          the RF, Chirp, and Digitizer tabs below it.
 
-   The FTMW Configuration dialog. The **FTMW Preset** bar at the top
-   provides quick access to named operating points. The three tabs give
-   access to the RF chain, chirp waveform, and digitizer settings.
+   The standalone FTMW Configuration dialog. The same preset bar and
+   tabs appear inside the Experiment Setup dialog when starting an
+   experiment.
 
-.. _rf-configuration-preset-bar:
 .. _ftmw-preset-bar:
 
-
-An **FTMW preset** is a named snapshot of the complete FTMW operating
+An **FTMW preset** is a named snapshot of the FTMW operating
 configuration — RF chain parameters, clock frequencies, chirp waveform,
 and digitizer settings — saved within the active loadout. Switching
 presets restores all captured parameters at once. See
-:doc:`ftmw_configuration/presets` for a full description of preset
-semantics and the preset lifecycle. Presets can be created, switched, and
-deleted using the controls at the top of the FTMW Configuration dialog. The same controls are also available when initializing an experiment.
+:doc:`ftmw_configuration/presets` for the full preset lifecycle. The
+preset bar at the top of the dialog provides:
 
 **Preset selector (combo box)**
     Lists all named presets belonging to the active loadout. If you have
@@ -85,17 +86,7 @@ deleted using the controls at the top of the FTMW Configuration dialog. The same
 Accepting the FTMW Configuration dialog with unsaved changes opens a
 prompt offering to overwrite the current named preset, save as a new
 preset, proceed without saving, or cancel. In every non-cancel path,
-your accepted configuration is remembered so the dialog reopens with it.
-
-.. seealso::
-
-   :ref:`ftmw-configuration-presets` — full preset lifecycle reference.
-
-   :doc:`ftmw_configuration/presets` — preset creation, switching, and
-   deletion from the Hardware Configuration dialog and the Hardware menu.
-
-The three tabs of the FTMW Configuration dialog are documented on the
-following pages.
+the accepted configuration is remembered so the dialog reopens with it.
 
 .. toctree::
    :maxdepth: 2

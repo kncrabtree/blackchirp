@@ -218,11 +218,65 @@ Hardware Setup:
 Running Experiments:
 
 - [x] `experiment_setup.rst` and `experiment/` sub-pages
-- [ ] `ftmw_configuration.rst`
-- [ ] `ftmw_configuration/rf_configuration.rst` (moved from the
-  user-guide root)
-- [ ] `ftmw_configuration/chirp_setup.rst`
-- [ ] `ftmw_configuration/digitizer_setup.rst`
+- [ ] `ftmw_configuration.rst` — **initial pass landed; awaiting
+  UI cleanup + screenshot refresh before final pass.** First pass
+  reframed the intro so the same controls appear as a page inside
+  the Experiment Setup dialog (primary path) and also open standalone
+  via Hardware → FTMW Configuration; standalone-only state-gating
+  (Idle, read-only when disconnected) is scoped to the standalone
+  bullet. Trimmed the duplicate preset definition that restated
+  content from `presets.rst`; dropped the stale `seealso` block
+  (one entry referenced the Hardware Configuration dialog, where
+  presets are not created); dropped the redundant closing
+  "documented on the following pages" line. Removed the unused
+  ``_rf-configuration-preset-bar:`` anchor; kept ``_ftmw-preset-bar:``
+  (still referenced by ``migration/v1_to_v2.rst``). `ftmw_configuration-dialog.png`
+  needs a fresh capture once the planned UI cleanup lands.
+- [ ] `ftmw_configuration/rf_configuration.rst` — **initial pass
+  landed; awaiting UI cleanup + screenshot refresh.** Dropped the
+  single "RF Config Tab" wrapping H2; promoted the five sub-sections
+  (Clock Role Table, Common LO, Frequency Multiplication, Sideband
+  Selection, Copy from Other FTMW Preset) to H2 siblings. Renamed
+  "Copying RF Settings from Another Preset" → "Copy from Other FTMW
+  Preset" so the section title reflects the actual cross-tab scope;
+  rewrote the body to describe the combo's per-tab behavior in one
+  paragraph. Trimmed a "useful for…" explainer on the Apply Clock
+  Settings Now button. All ``_rf-configuration-*`` anchors preserved.
+  `ftmw_configuration-rf_configuration.png` needs refresh after the UI
+  pass.
+- [ ] `ftmw_configuration/chirp_setup.rst` — **initial pass landed;
+  awaiting UI cleanup + screenshot refresh.** Promoted the two orphan
+  H3s (Multiple Chirps, Protection Marker Validation) to H2 siblings
+  under the page title. Stripped "versatile interface for defining
+  chirps and chirp sequences" marketing phrase from the intro.
+  Stripped a "matching the previous default" source-evolution phrase
+  from the marker-defaults paragraph. Converted the 6-row marker
+  `list-table` to a definition list — the 15/85 width split put prose
+  in the wide column and forced horizontal overflow in rendered HTML;
+  the definition list reads identically and reflows cleanly. Removed
+  the trailing "Each enabled marker is drawn as a labeled rectangle…"
+  paragraph that duplicated the figure caption and the Role/Enabled
+  row descriptions. External anchors ``chirp-setup-markers`` and
+  ``chirp-setup-marker-validation`` are preserved (cross-referenced
+  from ``data_storage.rst``, ``changelog/2.0.0.rst``,
+  ``migration/v1_to_v2.rst``). `ftmw_configuration-segments.png` and
+  `ftmw_configuration-markers.png` need refresh after the UI pass.
+- [ ] `ftmw_configuration/digitizer_setup.rst` — **initial pass
+  landed; awaiting UI cleanup + screenshot refresh.** Heading
+  structure (five flat H2s using ``...``) already satisfied the
+  no-orphan check. Removed the second intro paragraph that re-stated
+  the "tab also accessible in the Experiment Setup dialog"
+  access-pattern claim already made on the main page. Trimmed the
+  preset-storage explainer in the first paragraph that duplicated
+  `presets.rst`. Replaced "Blackchirp sets a sensible default for
+  each supported digitizer" with a neutral statement about per-device
+  defaults. Rewrote the "Maximizing Transfer Efficiency" opening
+  paragraph to drop the "Blackchirp is designed to receive independent
+  records … not the primary intended mode of operation" author-side
+  rationale, keeping the factual co-averaging behavior and the
+  math-waveform caveat. `ftmw_configuration-digitizer.png` already
+  flagged in the screenshot-refresh tracking; UI cleanup may invalidate
+  it further.
 - [x] `ftmw_configuration/presets.rst` (moved from
   `hardware_config/ftmw_presets.rst`; cleanup landed in same pass)
 - [ ] `lif/configuration.rst` (LIF Configuration dialog, sibling of

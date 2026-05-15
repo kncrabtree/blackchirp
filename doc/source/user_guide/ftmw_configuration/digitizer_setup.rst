@@ -15,14 +15,8 @@ Digitizer Setup
 ===============
 
 The **Digitizer Config** tab of the :doc:`/user_guide/ftmw_configuration`
-dialog contains the settings sent to the FTMW digitizer at the start of a
-CP-FTMW acquisition. These settings are stored as part of the active
-:doc:`FTMW preset </user_guide/ftmw_configuration/presets>` and are
-loaded and saved together with the RF and chirp parameters whenever a
-preset is applied, saved, or accepted.
-
-The tab is also accessible in the Experiment Setup dialog, where the same
-settings are reviewed and validated before an experiment starts.
+dialog holds the settings sent to the FTMW digitizer at the start of a
+CP-FTMW acquisition.
 
 .. figure:: /_static/user_guide/ftmw_configuration-digitizer.png
    :width: 800
@@ -63,10 +57,10 @@ the digitizer to Blackchirp.
     frequency resolution of the Fourier transform.
 
 **Sample Rate**
-    The digitizer's sampling rate in samples per second. Blackchirp sets
-    a sensible default for each supported digitizer; the available rates
-    can be changed in the per-device settings opened from the Hardware
-    menu (see :doc:`/user_guide/hwdialog`).
+    The digitizer's sampling rate in samples per second. Each supported
+    digitizer has a default rate; the available rates are configured in
+    the per-device settings opened from the Hardware menu (see
+    :doc:`/user_guide/hwdialog`).
 
 **Bytes per Point**
     Number of bytes encoding each digitizer sample. Determined by the
@@ -134,16 +128,13 @@ capacity at configuration time.
 Maximizing Transfer Efficiency
 ..............................
 
-Each digitizer operates differently, and understanding how Blackchirp
-interacts with your device is important for maximizing throughput.
-Blackchirp is designed to receive independent records: each transfer is
-treated as new data to be co-averaged with the data collected so far.
-Polling from a continuously-accumulating math waveform (as some
-oscilloscopes support) is not the primary intended mode of operation,
-though it can be made to work by configuring a short accumulation window
-and accepting the associated overhead.
+Blackchirp treats each digitizer transfer as one independent record and
+co-averages it with the records collected so far. Polling a
+continuously-accumulating math waveform (as some oscilloscopes support)
+works only with a short accumulation window and incurs the associated
+overhead.
 
-The two rate-limiting factors are:
+Two factors limit the acquisition rate:
 
 1. **Processing time on the digitizer.** If the instrument spends time
    generating an internal average (e.g., a math waveform on a Tektronix

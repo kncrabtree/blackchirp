@@ -13,12 +13,12 @@
 Chirp Setup
 ===========
 
-The **Chirp Config** tab of the :doc:`/user_guide/ftmw_configuration` dialog
-provides a versatile interface for defining chirps and chirp sequences. When
-an experiment is started, Blackchirp writes the configured waveform to the
-AWG. When no supported AWG is active, the chirp configuration is saved to
-disk alongside the rest of the experimental data but no waveform is
-generated.
+The **Chirp Config** tab of the :doc:`/user_guide/ftmw_configuration`
+dialog defines the AWG waveform — one or more chirps with optional
+marker pulses. When an experiment starts, Blackchirp writes the
+configured waveform to the AWG. When no supported AWG is active, the
+chirp configuration is saved to disk alongside the rest of the
+experimental data but no waveform is generated.
 
 The tab contains two sub-tabs: **Chirp Segments** and **Markers**. The
 Markers sub-tab is hidden when the active AWG reports zero marker channels.
@@ -72,7 +72,7 @@ the device's reported minimum and maximum, respectively.
 .. _chirp-setup-multi-chirp:
 
 Multiple Chirps
-~~~~~~~~~~~~~~~
+---------------
 
 A single AWG record may consist of multiple chirps separated by a
 user-defined inter-chirp **interval**. This is often used in conjunction
@@ -119,44 +119,38 @@ least one marker channel (``markerCount >= 1``). When the AWG has no
 marker outputs the sub-tab is hidden and no marker configuration is
 needed.
 
-Each row in the marker table corresponds to one physical marker output on
-the AWG, indexed from 0. The table has six columns:
+Each row in the marker table corresponds to one physical marker output
+on the AWG, indexed from 0. The columns are:
 
-.. list-table::
-   :header-rows: 1
-   :widths: 15 85
+**Ch**
+    Marker channel index (0-based). Channel 0 maps to physical output
+    1, channel 1 to physical output 2, and so on.
 
-   * - Column
-     - Description
-   * - **Ch**
-     - Marker channel index (0-based). Matches the physical output number
-       minus one (channel 0 = physical output 1, etc.).
-   * - **Name**
-     - User-defined label, editable. The default names are
-       ``Protection`` (channel 0) and ``Gate`` (channel 1) when
-       ``markerCount >= 2``; additional channels default to
-       ``Marker N``.
-   * - **Role**
-     - The functional role of this channel. Available roles are
-       **Protection**, **Gate**, **Trigger**, and **Custom**. The role
-       drives safety validation; see :ref:`chirp-setup-marker-validation`.
-   * - **Start (μs)**
-     - Start time of the marker pulse relative to the chirp start. A
-       negative value means the pulse begins before the chirp starts.
-   * - **End (μs)**
-     - End time of the marker pulse relative to the chirp end. A positive
-       value means the pulse extends past the end of the chirp.
-   * - **Enabled**
-     - Checkbox. Disabled channels generate no output; their timing
-       settings are preserved but ignored.
+**Name**
+    Editable label. When ``markerCount >= 2`` the defaults are
+    ``Protection`` (channel 0) and ``Gate`` (channel 1); additional
+    channels default to ``Marker N``.
 
-Default timing values when ``markerCount >= 2`` are −0.5 μs for Start and
-+0.5 μs for End on both Protection and Gate channels, matching the
-previous default of 0.5 μs pre- and post-chirp margins.
+**Role**
+    Functional role for this channel — **Protection**, **Gate**,
+    **Trigger**, or **Custom**. The role drives safety validation; see
+    :ref:`chirp-setup-marker-validation`.
 
-Each enabled marker is drawn as a labeled rectangle in the chirp preview
-plot. The plot shows one curve per enabled channel, labeled with the
-channel name and role.
+**Start (μs)**
+    Start time of the marker pulse relative to the chirp start. A
+    negative value means the pulse begins before the chirp.
+
+**End (μs)**
+    End time of the marker pulse relative to the chirp end. A positive
+    value means the pulse extends past the end of the chirp.
+
+**Enabled**
+    Checkbox. Disabled channels generate no output; their timing
+    settings are preserved but ignored.
+
+Default Start and End values when ``markerCount >= 2`` are −0.5 μs and
++0.5 μs on both the Protection and Gate channels, giving 0.5 μs pre-
+and post-chirp margins.
 
 .. note::
    Start and End times are defined relative to each chirp's start and end
@@ -167,7 +161,7 @@ channel name and role.
 .. _chirp-setup-marker-validation:
 
 Protection Marker Validation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------
 
 When the active AWG has at least one marker channel, Blackchirp validates
 the Protection marker configuration every time you advance through the

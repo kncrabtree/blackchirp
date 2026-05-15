@@ -27,11 +27,6 @@ the sample, and between the sample emission and the digitizer input.
    each role; the multiplication factors and sideband selectors below the
    table describe the rest of the signal chain.
 
-.. _rf-configuration-rf-tab:
-
-RF Config Tab
--------------
-
 The diagram below summarizes Blackchirp's model of the RF chain. The AWG
 output is multiplied, mixed against the upconversion local oscillator, and
 delivered to the sample. The sample emission is mixed against the
@@ -52,7 +47,7 @@ diagram corresponds to a setting on this tab.
 .. _rf-configuration-clocks:
 
 Clock Role Table
-~~~~~~~~~~~~~~~~
+----------------
 
 The clock role table lists every clock role relevant to the active
 experiment type and lets you assign a hardware clock device to each role.
@@ -70,13 +65,11 @@ Each row specifies:
 
 The **Apply Clock Settings Now** button sends the current clock
 configuration to the hardware immediately, without closing the dialog.
-This is useful for verifying the hardware response before committing the
-configuration to a preset.
 
 .. _rf-configuration-common-lo:
 
 Common LO
-~~~~~~~~~
+---------
 
 When the **Common LO** checkbox is checked, Blackchirp uses the same
 hardware clock as both the upconversion and downconversion local
@@ -97,7 +90,7 @@ frequency is assumed to be 0 MHz) rather than an error.
 .. _rf-configuration-multiplication:
 
 Frequency Multiplication
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
 Two multiplication factors govern the relationship between AWG output
 frequencies and the frequencies experienced by the sample:
@@ -124,7 +117,7 @@ many multiplication stages exist in the external signal chain.
 .. _rf-configuration-sideband:
 
 Sideband Selection
-~~~~~~~~~~~~~~~~~~
+------------------
 
 Two sideband selectors — one for upconversion and one for downconversion
 — control which mixing product is treated as the signal frequency:
@@ -139,16 +132,13 @@ sideband deconvolution.
 
 .. _rf-configuration-copy-from-preset:
 
-Copying RF Settings from Another Preset
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Copy from Other FTMW Preset
+---------------------------
 
-At the top of the **RF Config** tab a **Copy from other FTMW Preset**
-combo box lists the other named presets in the active loadout. Selecting
-a preset and then making edits does not automatically copy that preset;
-instead it seeds the tab with the selected preset's RF parameters so you
-can use them as a starting point. The copy is effective only in the
-current widget session and is not committed until you save or accept the
-dialog.
-
-The same copy-from combo is present on the Chirp Config and Digitizer
-Config tabs.
+A **Copy from other FTMW Preset** combo box at the top of each tab
+(RF Config, Chirp Config, and Digitizer Config) lists the other named
+presets in the active loadout. Selecting a preset seeds the current tab
+with that preset's parameters as a starting point. The copy applies
+only to the tab it was triggered from and only to the in-memory widget
+state; nothing is committed until the dialog is accepted or the current
+preset is saved.
