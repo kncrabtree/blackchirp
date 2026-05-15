@@ -1,7 +1,7 @@
-#ifndef FTMWPROCESSINGTOOLBAR_H
-#define FTMWPROCESSINGTOOLBAR_H
+#ifndef FTMWPROCESSINGPANEL_H
+#define FTMWPROCESSINGPANEL_H
 
-#include <QToolBar>
+#include <QWidget>
 
 #include <data/storage/settingsstorage.h>
 #include <data/experiment/experiment.h>
@@ -9,13 +9,10 @@
 
 class QSpinBox;
 class QDoubleSpinBox;
-class QToolButton;
 class QComboBox;
-class SpinBoxWidgetAction;
-class DoubleSpinBoxWidgetAction;
-class CheckWidgetAction;
-template<typename T>
-class EnumComboBoxWidgetAction;
+class QCheckBox;
+class QPushButton;
+class QTableWidget;
 
 namespace BC::Key {
 inline constexpr QLatin1StringView ftmwProcWidget{"ftmwProcessingWidget"};
@@ -29,12 +26,12 @@ inline constexpr QLatin1StringView autoscaleIgnore{"autoscaleIgnoreMHz"};
 inline constexpr QLatin1StringView ftWinf{"windowFunction"};
 }
 
-class FtmwProcessingToolBar : public QToolBar, public SettingsStorage
+class FtmwProcessingPanel : public QWidget, public SettingsStorage
 {
     Q_OBJECT
 public:
-    explicit FtmwProcessingToolBar(bool mainWin = false, QWidget *parent = 0);
-    ~FtmwProcessingToolBar();
+    explicit FtmwProcessingPanel(bool mainWin = false, QWidget *parent = nullptr);
+    ~FtmwProcessingPanel();
     FtWorker::FidProcessingSettings getSettings();
 
 signals:
@@ -48,16 +45,15 @@ public slots:
     void readSettings();
 
 private:
-    DoubleSpinBoxWidgetAction *p_startBox, *p_endBox, *p_expBox, *p_autoScaleIgnoreBox;
-    SpinBoxWidgetAction *p_zeroPadBox;
-    CheckWidgetAction *p_removeDCBox;
-    EnumComboBoxWidgetAction<FtWorker::FtUnits> *p_unitsBox;
-    EnumComboBoxWidgetAction<FtWorker::FtWindowFunction> *p_winfBox;
-    QAction *p_resetButton, *p_saveButton;
+    QTableWidget *p_table;
+    QDoubleSpinBox *p_startBox, *p_endBox, *p_expBox, *p_autoScaleIgnoreBox;
+    QSpinBox *p_zeroPadBox;
+    QCheckBox *p_removeDCBox;
+    QComboBox *p_unitsBox, *p_winfBox;
+    QPushButton *p_resetButton, *p_saveButton;
 
-
+    int valueToWinfIndex(FtWorker::FtWindowFunction w) const;
+    int valueToUnitsIndex(FtWorker::FtUnits u) const;
 };
 
-
-
-#endif // FTMWPROCESSINGTOOLBAR_H
+#endif // FTMWPROCESSINGPANEL_H

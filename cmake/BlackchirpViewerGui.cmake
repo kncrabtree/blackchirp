@@ -57,9 +57,11 @@ set(BLACKCHIRP_VIEWER_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/updateavailabledialog.cpp
     
     # Basic widgets (no hardware dependencies)
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/cellwidgethelpers.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/experimentsummarywidget.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwplottoolbar.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwprocessingtoolbar.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwacquisitionpanel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwplotpanel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwprocessingpanel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/led.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/peakfindwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificspinbox.cpp
@@ -122,10 +124,12 @@ set(BLACKCHIRP_VIEWER_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/updateavailabledialog.h
     
     # Basic widgets (no hardware dependencies)
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/cellwidgethelpers.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/enumcombobox.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/experimentsummarywidget.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwplottoolbar.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwprocessingtoolbar.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwacquisitionpanel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwplotpanel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwprocessingpanel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/led.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/peakfindwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificspinbox.h

@@ -1,16 +1,21 @@
-#ifndef FTMWPLOTTOOLBAR_H
-#define FTMWPLOTTOOLBAR_H
+#ifndef FTMWPLOTPANEL_H
+#define FTMWPLOTPANEL_H
 
-#include <QToolBar>
+#include <QWidget>
+#include <map>
+
 #include <data/experiment/experiment.h>
 #include <data/analysis/ftworker.h>
 
-class SpinBoxWidgetAction;
-class DoubleSpinBoxWidgetAction;
-template<typename T>
-class EnumComboBoxWidgetAction;
+class QSpinBox;
+class QDoubleSpinBox;
+class QComboBox;
+class QCheckBox;
+class QPushButton;
+class QGroupBox;
+class QTableWidget;
 
-class FtmwPlotToolBar : public QToolBar
+class FtmwPlotPanel : public QWidget
 {
     Q_OBJECT
 public:
@@ -26,7 +31,7 @@ public:
     };
     Q_ENUM(MainPlotMode)
 
-    FtmwPlotToolBar(QWidget *parent = nullptr);
+    explicit FtmwPlotPanel(QWidget *parent = nullptr);
     void prepareForExperiment(const Experiment &e);
     void experimentComplete();
     void newBackup(int n);
@@ -48,16 +53,24 @@ signals:
     void plotSettingChanged(int id);
 
 private:
-    QAction *p_sbProcAction;
-    EnumComboBoxWidgetAction<MainPlotMode> *p_mainPlotBox;
-    SpinBoxWidgetAction *p_frameBox;
-    DoubleSpinBoxWidgetAction *p_sbMinBox, *p_sbMaxBox;
-    EnumComboBoxWidgetAction<FtWorker::DeconvolutionMethod> *p_sbAlgoBox;
+    QComboBox *p_mainPlotBox;
 
-    std::map<int,SpinBoxWidgetAction*> d_seg;
-    std::map<int,SpinBoxWidgetAction*> d_frame;
-    std::map<int,SpinBoxWidgetAction*> d_backup;
-    std::map<int,QAction*> d_differential;
+    QGroupBox *p_sbBox;
+    QSpinBox *p_sbFrameBox;
+    QDoubleSpinBox *p_sbMinBox, *p_sbMaxBox;
+    QComboBox *p_sbAlgoBox;
+    QPushButton *p_sbReprocessButton;
+
+    struct PlotControls {
+        QSpinBox *seg;
+        QSpinBox *frame;
+        QSpinBox *backup;
+        QCheckBox *differential;
+    };
+    std::map<int,PlotControls> d_plotControls;
+
+    void setMainPlotItemEnabled(MainPlotMode mode, bool enabled);
+    QGroupBox *buildPlotSection(int id);
 };
 
-#endif // FTMWPLOTTOOLBAR_H
+#endif // FTMWPLOTPANEL_H

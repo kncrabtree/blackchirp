@@ -21,28 +21,27 @@
 #include <gui/style/themecolors.h>
 
 OverlayManagerWidget::OverlayManagerWidget(QWidget *parent, int number, const QVector<std::shared_ptr<OverlayBase>> &overlays)
-    : QWidget{parent, Qt::Window}, SettingsStorage(BC::Key::OverlayManager::key), p_configureDelegate(nullptr), p_enabledDelegate(nullptr)
+    : QWidget{parent}, SettingsStorage(BC::Key::OverlayManager::key), p_configureDelegate(nullptr), p_enabledDelegate(nullptr)
 {
-    // Set window attributes
     if(number > 0)
         setWindowTitle(QString("Overlay Manager: Experiment %1").arg(number));
     else
         setWindowTitle("Overlay Manager: Main Window");
     setWindowIcon(ThemeColors::createThemedIcon(":/icons/magnifying-glass-circle.svg", ThemeColors::IconPrimary, this));
-    setAttribute(Qt::WA_DeleteOnClose);
-    resize(900, 400); // Increased width to accommodate all columns including type
 
     setupUI();
     populateWithExistingOverlays(overlays);
     updateButtonStates();
-    
-    // Progress indicator starts hidden
+
     p_progressWidget->setVisible(false);
-    
-    // Restore window geometry if available
-    QByteArray geom = get(BC::Key::OverlayManager::geometry).toByteArray();
-    if (!geom.isEmpty()) {
-        restoreGeometry(geom);
+
+    // Geometry restore only applies when the widget is a top-level window;
+    // embedded inside a dock or other layout, the layout dictates size.
+    if (isWindow()) {
+        resize(900, 400);
+        QByteArray geom = get(BC::Key::OverlayManager::geometry).toByteArray();
+        if (!geom.isEmpty())
+            restoreGeometry(geom);
     }
 }
 
@@ -1355,9 +1354,11 @@ void OverlayManagerWidget::pasteSettingsToSelected()
 
 void OverlayManagerWidget::closeEvent(QCloseEvent *event)
 {
-    // Save window geometry
-    set(BC::Key::OverlayManager::geometry, saveGeometry(), true);
-    
-    // Accept the close event
+    // Persist geometry only when running as a top-level window. When
+    // embedded in a dock or other layout the geometry is layout-driven
+    // and would overwrite the standalone-window geometry with nonsense.
+    if (isWindow())
+        set(BC::Key::OverlayManager::geometry, saveGeometry(), true);
+
     QWidget::closeEvent(event);
 }

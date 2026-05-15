@@ -91,9 +91,10 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/digitizerconfigwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/experimentsummarywidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/experimentviewwidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwacquisitionpanel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwdigitizerconfigwidget.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwplottoolbar.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwprocessingtoolbar.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwplotpanel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwprocessingpanel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwviewwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/gascontrolwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/gasflowdisplaywidget.cpp
@@ -210,9 +211,10 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/experimentsummarywidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/experimentviewwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwconfigwidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwacquisitionpanel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwdigitizerconfigwidget.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwplottoolbar.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwprocessingtoolbar.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwplotpanel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwprocessingpanel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwviewwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/gascontrolwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/gasflowdisplaywidget.h

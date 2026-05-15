@@ -1,50 +1,56 @@
 #include <gui/widget/ftmwviewwidget.h>
-#include <gui/style/themecolors.h>
 
-#include <QThread>
-#include <QMessageBox>
-#include <QMenu>
-#include <QToolButton>
-#include <QCheckBox>
-#include <QDoubleSpinBox>
-#include <QWidgetAction>
-#include <QFormLayout>
+#include <QAction>
+#include <QByteArray>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QDockWidget>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QMainWindow>
+#include <QMessageBox>
+#include <QPushButton>
+#include <QSplitter>
+#include <QThread>
+#include <QToolBar>
 #include <QTreeWidget>
+#include <QVBoxLayout>
 #include <QtConcurrent/QtConcurrent>
 
 #include <data/analysis/ftworker.h>
-#include <gui/widget/peakfindwidget.h>
-#include <gui/overlay/overlaymanagerwidget.h>
 #include <data/storage/fidsinglestorage.h>
 #include <data/storage/fidpeakupstorage.h>
 #include <data/storage/fidmultistorage.h>
+#include <gui/overlay/overlaymanagerwidget.h>
+#include <gui/plot/fidplot.h>
+#include <gui/plot/ftplot.h>
+#include <gui/plot/mainftplot.h>
+#include <gui/style/themecolors.h>
+#include <gui/widget/ftmwacquisitionpanel.h>
+#include <gui/widget/ftmwplotpanel.h>
+#include <gui/widget/ftmwprocessingpanel.h>
+#include <gui/widget/peakfindwidget.h>
 
 
 FtmwViewWidget::FtmwViewWidget(bool main, QWidget *parent, QString path, bool overlaysEnabled) :
     QWidget(parent), SettingsStorage(BC::Key::FtmwView::key),
-    ui(new Ui::FtmwViewWidget), d_currentExptNum(-1), d_currentSegment(-1), d_path(path), d_overlaysEnabled(overlaysEnabled)
+    d_main(main), d_overlaysEnabled(overlaysEnabled),
+    d_currentExptNum(-1), d_currentSegment(-1), d_path(path)
 {
-    ui->setupUi(main,this);
-    
-    // Set up theme-aware icons (override hardcoded icons from setupUi)
-    setupThemedIcons();
-    
-    // Create plot names list after UI is set up
-    createPlotNamesList();
+    setupInnerUi();
 
-    d_currentProcessingSettings = ui->processingToolBar->getSettings();
-    connect(ui->processingToolBar,&FtmwProcessingToolBar::resetSignal,this,&FtmwViewWidget::resetProcessingSettings);
-    connect(ui->processingToolBar,&FtmwProcessingToolBar::saveSignal,this,&FtmwViewWidget::saveProcessingSettings);
+    d_currentProcessingSettings = p_processingPanel->getSettings();
+    connect(p_processingPanel,&FtmwProcessingPanel::resetSignal,this,&FtmwViewWidget::resetProcessingSettings);
+    connect(p_processingPanel,&FtmwProcessingPanel::saveSignal,this,&FtmwViewWidget::saveProcessingSettings);
+    connect(p_processingPanel,&FtmwProcessingPanel::settingsUpdated,this,&FtmwViewWidget::updateProcessingSettings);
+
     p_worker = new FtWorker(this);
     connect(p_worker,&FtWorker::ftDone,this,&FtmwViewWidget::ftDone,Qt::QueuedConnection);
     connect(p_worker,&FtWorker::fidDone,this,&FtmwViewWidget::fidProcessed,Qt::QueuedConnection);
     connect(p_worker,&FtWorker::ftDiffDone,this,&FtmwViewWidget::ftDiffDone,Qt::QueuedConnection);
     connect(p_worker,&FtWorker::sidebandDone,this,&FtmwViewWidget::sidebandProcessingComplete);
-    
-    // Enable idle cleanup for ExperimentViewWidget instances (non-main)
-    if(!main)
+
+    if(!d_main)
         p_worker->setIdleCleanupEnabled(true);
 
     d_workerIds << d_liveId << d_mainId << d_plot1Id << d_plot2Id;
@@ -66,14 +72,12 @@ FtmwViewWidget::FtmwViewWidget(bool main, QWidget *parent, QString path, bool ov
                 fidLoadComplete(id);
             });
             if(id == d_liveId)
-                d_plotStatus.emplace(id,PlotStatus { fw2, ui->liveFidPlot, ui->liveFtPlot, FidList(), Ft() });
+                d_plotStatus.emplace(id,PlotStatus { fw2, p_liveFidPlot, p_liveFtPlot, FidList(), Ft() });
             else if(id == d_plot1Id)
-                d_plotStatus.emplace(id,PlotStatus { fw2, ui->fidPlot1, ui->ftPlot1, FidList(), Ft() });
+                d_plotStatus.emplace(id,PlotStatus { fw2, p_fidPlot1, p_ftPlot1, FidList(), Ft() });
             else if(id == d_plot2Id)
-                d_plotStatus.emplace(id,PlotStatus { fw2, ui->fidPlot2, ui->ftPlot2, FidList(), Ft() });
-            //don't need to add one of these for the main plot; it's special
+                d_plotStatus.emplace(id,PlotStatus { fw2, p_fidPlot2, p_ftPlot2, FidList(), Ft() });
         }
-
     }
 
     d_sbStatus.sbLoadWatcher = new QFutureWatcher<FidList>(this);
@@ -88,84 +92,260 @@ FtmwViewWidget::FtmwViewWidget(bool main, QWidget *parent, QString path, bool ov
         ps.fidPlot->blockSignals(false);
     }
 
-    connect(ui->processingToolBar,&FtmwProcessingToolBar::settingsUpdated,this,&FtmwViewWidget::updateProcessingSettings);
-    connect(ui->processingAct,&QAction::triggered,ui->processingToolBar,&FtmwProcessingToolBar::setVisible);
+    connect(p_plotPanel,&FtmwPlotPanel::mainPlotSettingChanged,this,&FtmwViewWidget::updateMainPlot);
+    connect(p_plotPanel,&FtmwPlotPanel::plotSettingChanged,this,&FtmwViewWidget::updatePlotSetting);
 
-    connect(ui->plotAction,&QAction::triggered,ui->plotToolBar,&FtmwPlotToolBar::setVisible);
-    connect(ui->plotToolBar,&FtmwPlotToolBar::mainPlotSettingChanged,this,&FtmwViewWidget::updateMainPlot);
-    connect(ui->plotToolBar,&FtmwPlotToolBar::plotSettingChanged,this,&FtmwViewWidget::updatePlotSetting);
+    p_acquisitionPanel->setRefreshInterval(get(BC::Key::FtmwView::refresh,500));
+    if(d_main)
+        registerGetter(BC::Key::FtmwView::refresh,p_acquisitionPanel,&FtmwAcquisitionPanel::refreshInterval);
+    p_acquisitionPanel->setRefreshEnabled(false);
 
+    connect(p_acquisitionPanel,&FtmwAcquisitionPanel::averagesChanged,this,&FtmwViewWidget::changeRollingAverageShots,Qt::UniqueConnection);
+    connect(p_acquisitionPanel,&FtmwAcquisitionPanel::resetAveragesClicked,this,&FtmwViewWidget::resetRollingAverage,Qt::UniqueConnection);
+    connect(p_acquisitionPanel,&FtmwAcquisitionPanel::manualBackupClicked,this,&FtmwViewWidget::manualBackupRequested);
 
-    ui->refreshBox->setValue(get(BC::Key::FtmwView::refresh,500));
-    registerGetter(BC::Key::FtmwView::refresh,ui->refreshBox,&SpinBoxWidgetAction::value);
-    ui->refreshBox->setEnabled(false);
-
-    ui->processingToolBar->setEnabled(false);
-    ui->plotToolBar->setEnabled(false);
-
-
-    connect(ui->peakFindAction,&QAction::triggered,this,&FtmwViewWidget::launchPeakFinder);
-    connect(ui->overlayAction,&QAction::triggered,this,&FtmwViewWidget::launchOverlayManager);
-
-    connect(ui->manualBackupAction,&QAction::triggered,this,[this]{
-        // Disable immediately so a single click cannot stack requests; the
-        // action is re-enabled in updateBackups() when the write completes.
-        ui->manualBackupAction->setEnabled(false);
-        emit manualBackupRequested();
-    });
-
-    connect(ui->averagesSpinbox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwViewWidget::changeRollingAverageShots,Qt::UniqueConnection);
-    connect(ui->resetAveragesButton,&QPushButton::clicked,this,&FtmwViewWidget::resetRollingAverage,Qt::UniqueConnection);
+    p_processingPanel->setEnabled(false);
+    p_plotPanel->setEnabled(false);
+    p_peakFindAct->setEnabled(false);
+    p_overlayAct->setEnabled(false);
 
     // Connect curveMetadataChanged signal from all FT plots
     QList<FtPlot*> ftPlots = findChildren<FtPlot*>();
     for (FtPlot* plot : ftPlots) {
-        if (plot) {
+        if (plot)
             connect(plot, &ZoomPanPlot::curveMetadataChanged, this, &FtmwViewWidget::onCurveMetadataChanged);
-        }
     }
+
+    createPlotNamesList();
+
+    restoreDockLayout();
 }
 
-void FtmwViewWidget::setupThemedIcons()
+void FtmwViewWidget::setupInnerUi()
 {
-    // Override hardcoded icons from setupUi with theme-aware versions
-    auto toolbar = findChild<QToolBar*>();
-    if (toolbar) {
-        auto actions = toolbar->actions();
-        for (auto action : actions) {
-            if (action->text() == "Peak Up Options") {
-                action->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-trending-up.svg", ThemeColors::IconSecondary, this));
-            } else if (action->text() == "FID Processing Settings") {
-                action->setIcon(ThemeColors::createThemedIcon(":/icons/presentation-chart-line.svg", ThemeColors::IconPrimary, this));
-            } else if (action->text() == "Peak Find") {
-                action->setIcon(ThemeColors::createThemedIcon(":/icons/magnifying-glass-circle.svg", ThemeColors::IconPrimary, this));
-            } else if (action->text() == "Overlays") {
-                action->setIcon(ThemeColors::createThemedIcon(":/icons/squares-plus.svg", ThemeColors::IconSecondary, this));
-            } else if (action->text() == "Plot Settings") {
-                action->setIcon(ThemeColors::createThemedIcon(":/icons/presentation-chart-bar.svg", ThemeColors::IconSecondary, this));
-            } else if (action->text() == "Manual Backup") {
-                action->setIcon(ThemeColors::createThemedIcon(":/icons/archive-box-arrow-down.svg", ThemeColors::IconSecondary, this));
-            }
-        }
-    }
-    
-    // Theme the reset averages button
-    if (ui->resetAveragesButton) {
-        ui->resetAveragesButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-path.svg", ThemeColors::IconSecondary, this));
-    }
+    p_innerWindow = new QMainWindow(this);
+    p_innerWindow->setWindowFlags(Qt::Widget);
+    p_innerWindow->setDockOptions(QMainWindow::AnimatedDocks
+                                  | QMainWindow::AllowTabbedDocks
+                                  | QMainWindow::AllowNestedDocks);
+    p_innerWindow->setTabPosition(Qt::AllDockWidgetAreas, QTabWidget::North);
+    p_innerWindow->setDockNestingEnabled(true);
+
+    setupTopToolbar();
+
+    // ── Central widget: experiment label header + splitter ─────────────
+    auto *central = new QWidget(p_innerWindow);
+    auto *centralLay = new QVBoxLayout(central);
+    centralLay->setContentsMargins(0,0,0,0);
+
+    p_exptLabel = new QLabel(central);
+    QFont boldFont;
+    boldFont.setBold(true);
+    p_exptLabel->setFont(boldFont);
+    p_exptLabel->setAlignment(Qt::AlignCenter);
+    p_exptLabel->setText("Experiment");
+    centralLay->addWidget(p_exptLabel,0);
+
+    p_splitter = new QSplitter(Qt::Vertical, central);
+    p_splitter->setChildrenCollapsible(false);
+    centralLay->addWidget(p_splitter,1);
+
+    p_topPlotsContainer = new QWidget(p_splitter);
+    auto *topLayout = new QVBoxLayout(p_topPlotsContainer);
+    topLayout->setContentsMargins(0,0,0,0);
+
+    p_liveRowWidget = new QWidget(p_topPlotsContainer);
+    auto *liveRow = new QHBoxLayout(p_liveRowWidget);
+    liveRow->setContentsMargins(0,0,0,0);
+    p_liveFidPlot = new FidPlot(QString("Live"),p_liveRowWidget);
+    p_liveFidPlot->setObjectName("liveFidPlot");
+    p_liveFtPlot = new FtPlot(QString("Live"),p_liveRowWidget);
+    p_liveFtPlot->setObjectName("liveFtPlot");
+    liveRow->addWidget(p_liveFidPlot);
+    liveRow->addWidget(p_liveFtPlot);
+    liveRow->setStretch(0,1);
+    liveRow->setStretch(1,1);
+    topLayout->addWidget(p_liveRowWidget,1);
+
+    p_plot12RowWidget = new QWidget(p_topPlotsContainer);
+    auto *plot12Row = new QHBoxLayout(p_plot12RowWidget);
+    plot12Row->setContentsMargins(0,0,0,0);
+    p_fidPlot1 = new FidPlot(QString("1"),p_plot12RowWidget);
+    p_fidPlot1->setObjectName("fidPlot1");
+    p_ftPlot1 = new FtPlot(QString("1"),p_plot12RowWidget);
+    p_ftPlot1->setObjectName("ftPlot1");
+    plot12Row->addWidget(p_fidPlot1);
+    plot12Row->addWidget(p_ftPlot1);
+    p_fidPlot2 = new FidPlot(QString("2"),p_plot12RowWidget);
+    p_fidPlot2->setObjectName("fidPlot2");
+    p_ftPlot2 = new FtPlot(QString("2"),p_plot12RowWidget);
+    p_ftPlot2->setObjectName("ftPlot2");
+    plot12Row->addWidget(p_fidPlot2);
+    plot12Row->addWidget(p_ftPlot2);
+    topLayout->addWidget(p_plot12RowWidget,1);
+
+    p_splitter->addWidget(p_topPlotsContainer);
+
+    p_mainFtPlot = new MainFtPlot(p_splitter);
+    p_mainFtPlot->setObjectName("mainFtPlot");
+    p_mainFtPlot->setMinimumSize(QSize(0,100));
+    p_splitter->addWidget(p_mainFtPlot);
+    p_splitter->setStretchFactor(0,1);
+    p_splitter->setStretchFactor(1,2);
+
+    p_innerWindow->setCentralWidget(central);
+
+    // ── Side-panel docks ───────────────────────────────────────────────
+    p_processingPanel = new FtmwProcessingPanel(d_main, p_innerWindow);
+    p_plotPanel = new FtmwPlotPanel(p_innerWindow);
+    p_acquisitionPanel = new FtmwAcquisitionPanel(d_main, p_innerWindow);
+
+    p_processingDock  = makeDock("FtmwViewDock-Processing",  "FID Processing", p_processingPanel);
+    p_plotDock        = makeDock("FtmwViewDock-Plot",        "Plot Settings",  p_plotPanel);
+    p_acquisitionDock = makeDock("FtmwViewDock-Acquisition", "Acquisition",    p_acquisitionPanel);
+    p_peakFindDock    = makeDock("FtmwViewDock-PeakFind",    "Peak Find",      nullptr);
+    p_overlayDock     = makeDock("FtmwViewDock-Overlays",    "Overlays",       nullptr);
+
+    // Build toolbar toggle actions from the docks' toggleViewAction so
+    // checked state stays in sync with dock visibility automatically.
+    p_processingAct = p_processingDock->toggleViewAction();
+    p_plotAct       = p_plotDock->toggleViewAction();
+    p_acquisitionAct= p_acquisitionDock->toggleViewAction();
+    p_peakFindAct   = p_peakFindDock->toggleViewAction();
+    p_overlayAct    = p_overlayDock->toggleViewAction();
+
+    p_processingAct->setIcon(ThemeColors::createThemedIcon(":/icons/presentation-chart-line.svg",ThemeColors::IconPrimary,this));
+    p_processingAct->setText("FID Processing");
+    p_plotAct->setIcon(ThemeColors::createThemedIcon(":/icons/presentation-chart-bar.svg",ThemeColors::IconSecondary,this));
+    p_plotAct->setText("Plot Settings");
+    p_acquisitionAct->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-trending-up.svg",ThemeColors::IconSecondary,this));
+    p_acquisitionAct->setText("Acquisition");
+    p_peakFindAct->setIcon(ThemeColors::createThemedIcon(":/icons/magnifying-glass-circle.svg",ThemeColors::IconPrimary,this));
+    p_peakFindAct->setText("Peak Find");
+    p_overlayAct->setIcon(ThemeColors::createThemedIcon(":/icons/squares-plus.svg",ThemeColors::IconSecondary,this));
+    p_overlayAct->setText("Overlays");
+
+    p_topToolbar->addAction(p_processingAct);
+    p_topToolbar->addAction(p_plotAct);
+    p_topToolbar->addAction(p_acquisitionAct);
+    p_topToolbar->addAction(p_peakFindAct);
+    p_topToolbar->addAction(p_overlayAct);
+
+    p_innerWindow->addDockWidget(Qt::RightDockWidgetArea, p_processingDock);
+    p_innerWindow->addDockWidget(Qt::RightDockWidgetArea, p_plotDock);
+    p_innerWindow->addDockWidget(Qt::RightDockWidgetArea, p_acquisitionDock);
+    p_innerWindow->addDockWidget(Qt::RightDockWidgetArea, p_peakFindDock);
+    p_innerWindow->addDockWidget(Qt::RightDockWidgetArea, p_overlayDock);
+
+    // Tabify all five so they share one tab strip on the right edge.
+    p_innerWindow->tabifyDockWidget(p_processingDock, p_plotDock);
+    p_innerWindow->tabifyDockWidget(p_plotDock, p_acquisitionDock);
+    p_innerWindow->tabifyDockWidget(p_acquisitionDock, p_peakFindDock);
+    p_innerWindow->tabifyDockWidget(p_peakFindDock, p_overlayDock);
+
+    // Default to all hidden (collapsed); restoreDockLayout() may override.
+    for(auto *d : {p_processingDock, p_plotDock, p_acquisitionDock, p_peakFindDock, p_overlayDock})
+        d->setVisible(false);
+
+    // Lazy-construct PeakFind / Overlay widgets when their dock is first
+    // shown and a suitable Ft / experiment is available.
+    connect(p_peakFindDock,&QDockWidget::visibilityChanged,this,&FtmwViewWidget::showPeakFinder);
+    connect(p_overlayDock,&QDockWidget::visibilityChanged,this,&FtmwViewWidget::showOverlayManager);
+
+    // Outer layout: just hosts the inner main window
+    auto *vbl = new QVBoxLayout;
+    vbl->setContentsMargins(0,0,0,0);
+    vbl->addWidget(p_innerWindow);
+    setLayout(vbl);
+
+    resize(850,520);
+}
+
+void FtmwViewWidget::setupTopToolbar()
+{
+    p_topToolbar = new QToolBar(p_innerWindow);
+    p_topToolbar->setObjectName("FtmwViewTopToolbar");
+    p_topToolbar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    p_topToolbar->setMovable(false);
+    p_topToolbar->setFloatable(false);
+    p_innerWindow->addToolBar(Qt::TopToolBarArea, p_topToolbar);
+}
+
+QDockWidget *FtmwViewWidget::makeDock(const QString &objectName, const QString &title, QWidget *contents)
+{
+    auto *dock = new QDockWidget(title, p_innerWindow);
+    dock->setObjectName(objectName);
+    dock->setFeatures(QDockWidget::DockWidgetMovable
+                      | QDockWidget::DockWidgetFloatable
+                      | QDockWidget::DockWidgetClosable);
+    if(contents)
+        dock->setWidget(contents);
+    else
+        resetDockToPlaceholder(dock,
+                               QString("%1 panel will appear when an experiment is loaded.").arg(title));
+    return dock;
+}
+
+void FtmwViewWidget::resetDockToPlaceholder(QDockWidget *dock, const QString &message)
+{
+    if (!dock)
+        return;
+    QWidget *prev = dock->widget();
+    auto *placeholder = new QLabel(message);
+    placeholder->setAlignment(Qt::AlignCenter);
+    placeholder->setWordWrap(true);
+    placeholder->setMargin(12);
+    dock->setWidget(placeholder);  // unparents `prev`; dock takes ownership of placeholder
+    if (prev)
+        prev->deleteLater();
+}
+
+QLatin1StringView FtmwViewWidget::dockStateKey() const
+{
+    return d_main ? BC::Key::FtmwView::dockStateMain
+                  : BC::Key::FtmwView::dockStateViewer;
+}
+
+QByteArray FtmwViewWidget::defaultDockStateBlob() const
+{
+    // Empty blob: restoreState() is a no-op and the widget keeps the
+    // post-construction default (all docks tabified on the right edge,
+    // all hidden).
+    return {};
+}
+
+void FtmwViewWidget::restoreDockLayout()
+{
+    auto blob = get<QByteArray>(dockStateKey(), defaultDockStateBlob());
+    if(!blob.isEmpty())
+        p_innerWindow->restoreState(blob);
+}
+
+void FtmwViewWidget::persistDockLayout()
+{
+    set(dockStateKey(), p_innerWindow->saveState(), false);
 }
 
 FtmwViewWidget::~FtmwViewWidget()
 {
-    clearGetters();
-
+    // Tear down the lazy-built dock contents (PeakFind, OverlayManager)
+    // first: detach signals, drop them via the dock helper, and let the
+    // event loop reap them after we return.
     closeOverlayManager();
 
-    // Save overlays before destruction
-    saveOverlays();
-
     if(p_pfw != nullptr)
-        p_pfw->close();
+    {
+        disconnect(p_worker, nullptr, p_pfw, nullptr);
+        disconnect(p_pfw, nullptr, p_mainFtPlot, nullptr);
+        p_pfw = nullptr;
+        resetDockToPlaceholder(p_peakFindDock,
+            "Peak Find panel will appear when an experiment is loaded.");
+    }
+
+    persistDockLayout();
+    clearGetters();
+
+    saveOverlays();
 
     d_sbStatus.sbLoadWatcher->waitForFinished();
 
@@ -181,43 +361,45 @@ FtmwViewWidget::~FtmwViewWidget()
         ws.p_watcher->waitForFinished();
     }
 
-    // Wait for any pending overlay writes before destruction
-    if (ps_overlayStorage) {
+    if (ps_overlayStorage)
         ps_overlayStorage->waitForPendingWrites();
-    }
-
-    delete ui;
 }
 
 void FtmwViewWidget::prepareForExperiment(const Experiment &e)
 {
     if(p_pfw != nullptr)
     {
-        p_pfw->close();
+        // Disconnect everything before unparenting + scheduling deletion to
+        // ensure no signal fires on a half-detached widget.
+        disconnect(p_worker, nullptr, p_pfw, nullptr);
+        disconnect(p_pfw, nullptr, p_mainFtPlot, nullptr);
         p_pfw = nullptr;
+        resetDockToPlaceholder(p_peakFindDock,
+            "Peak Find panel will appear when an experiment is loaded.");
     }
 
     closeOverlayManager();
+    if(p_overlayDock && p_overlayDock->widget() == nullptr)
+        resetDockToPlaceholder(p_overlayDock,
+            "Overlays panel will appear when an experiment is loaded.");
 
-    if(!ui->exptLabel->isVisible())
-        ui->exptLabel->setVisible(true);
+    if(!p_exptLabel->isVisible())
+        p_exptLabel->setVisible(true);
 
-    ui->refreshBox->setEnabled(false);
+    p_acquisitionPanel->setRefreshEnabled(false);
 
-    ui->liveFidPlot->prepareForExperiment(e);
-    ui->liveFidPlot->setVisible(true);
+    p_liveFidPlot->prepareForExperiment(e);
+    p_liveFidPlot->setVisible(true);
 
-    ui->fidPlot1->prepareForExperiment(e);
-    ui->fidPlot2->prepareForExperiment(e);
+    p_fidPlot1->prepareForExperiment(e);
+    p_fidPlot2->prepareForExperiment(e);
 
-//    ui->peakFindWidget->prepareForExperiment(e);
-
-    ui->liveFtPlot->prepareForExperiment(e);
-    ui->processingToolBar->prepareForExperient(e);
-    ui->plotToolBar->prepareForExperiment(e);
-    ui->ftPlot1->prepareForExperiment(e);
-    ui->ftPlot2->prepareForExperiment(e);
-    ui->mainFtPlot->prepareForExperiment(e);
+    p_liveFtPlot->prepareForExperiment(e);
+    p_processingPanel->prepareForExperient(e);
+    p_plotPanel->prepareForExperiment(e);
+    p_ftPlot1->prepareForExperiment(e);
+    p_ftPlot2->prepareForExperiment(e);
+    p_mainFtPlot->prepareForExperiment(e);
 
     d_currentSegment = 0;
     for(auto &[key,ps] : d_plotStatus)
@@ -230,24 +412,20 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         ps.backup = 0;
         ps.loadWhenDone = false;
     }
-    
-    // Save overlays before switching to new experiment
+
     if (ps_overlayStorage) {
         ps_overlayStorage->waitForPendingWrites();
         disconnect(ps_overlayStorage.get(), nullptr, this, nullptr);
         ps_overlayStorage->save();
     }
 
-    // Set overlay storage reference from experiment
     ps_overlayStorage = e.overlayStorage();
 
-    // Connect to new overlay storage signals
     if (ps_overlayStorage) {
         connect(ps_overlayStorage.get(), &OverlayStorage::overlayAdded, this, &FtmwViewWidget::onOverlayAdded);
         connect(ps_overlayStorage.get(), &OverlayStorage::overlayRemoved, this, &FtmwViewWidget::onOverlayRemoved);
     }
 
-    // Load overlays from experiment storage and display them (only if overlays are enabled)
     if (ps_overlayStorage && d_overlaysEnabled)
     {
         auto overlays = ps_overlayStorage->getAllOverlays();
@@ -255,61 +433,55 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
             addOverlayToPlots(overlay);
     }
 
-    // Copy selected overlays from previous experiment to new storage
     if (ps_overlayStorage && d_overlaysEnabled) {
         for (const auto &overlay : d_overlaysToCopy) {
             ps_overlayStorage->addOverlay(overlay);
-            // addOverlay triggers overlayAdded signal → onOverlayAdded → addOverlayToPlots
         }
     }
     d_overlaysToCopy.clear();
 
     if(e.ftmwEnabled())
     {
-        ui->refreshBox->setEnabled(true);
-        connect(ui->refreshBox,&SpinBoxWidgetAction::valueChanged,this,&FtmwViewWidget::setLiveUpdateInterval);
+        p_acquisitionPanel->setRefreshEnabled(true);
+        connect(p_acquisitionPanel,&FtmwAcquisitionPanel::refreshIntervalChanged,
+                this,&FtmwViewWidget::setLiveUpdateInterval, Qt::UniqueConnection);
         ps_fidStorage = e.ftmwConfig()->storage();
         if(e.ftmwConfig()->d_type == FtmwConfig::Peak_Up)
-            ui->exptLabel->setText(QString("Peak Up Mode"));
+            p_exptLabel->setText(QString("Peak Up Mode"));
         else
-            ui->exptLabel->setText(QString("Experiment %1").arg(e.d_number));
+            p_exptLabel->setText(QString("Experiment %1").arg(e.d_number));
 
         d_currentExptNum = e.d_number;
 
-        ui->verticalLayout->setStretch(0,1);
-        ui->liveFidPlot->show();
-        ui->liveFtPlot->show();
+        p_liveRowWidget->setVisible(true);
+        p_liveFidPlot->show();
+        p_liveFtPlot->show();
 
-        ui->averagesSpinbox->blockSignals(true);
-        ui->averagesSpinbox->setValue(e.ftmwConfig()->d_type == FtmwConfig::Peak_Up ? e.ftmwConfig()->d_objective : 0);
-        ui->averagesSpinbox->blockSignals(false);
+        const bool isPeakUp = (e.ftmwConfig()->d_type == FtmwConfig::Peak_Up);
+        p_acquisitionPanel->setAverages(isPeakUp ? e.ftmwConfig()->d_objective : 0);
+        p_acquisitionPanel->setPeakUpControlsEnabled(isPeakUp);
 
-        ui->resetAveragesButton->setEnabled(e.ftmwConfig()->d_type == FtmwConfig::Peak_Up);
-        ui->averagesSpinbox->setEnabled(e.ftmwConfig()->d_type == FtmwConfig::Peak_Up);
-
-        // Manual backup is only meaningful for single-segment, backup-capable
-        // FTMW modes. The action is hidden entirely in the viewer (Ui setup).
+        // Manual backup is meaningful only for single-segment, backup-capable
+        // FTMW modes. Hidden entirely in the viewer (constructor of panel).
         const auto t = e.ftmwConfig()->d_type;
-        ui->manualBackupAction->setEnabled(
+        p_acquisitionPanel->setManualBackupEnabled(
             t == FtmwConfig::Target_Shots
             || t == FtmwConfig::Target_Duration
             || t == FtmwConfig::Forever);
 
-        d_liveTimerId = startTimer(ui->refreshBox->value());
+        d_liveTimerId = startTimer(p_acquisitionPanel->refreshInterval());
     }
     else
     {
         ps_fidStorage.reset();
         ps_overlayStorage.reset();
-        ui->exptLabel->setText(QString("Experiment %1").arg(e.d_number));
-        ui->resetAveragesButton->setEnabled(false);
-        ui->averagesSpinbox->setEnabled(false);
-        ui->manualBackupAction->setEnabled(false);
+        p_exptLabel->setText(QString("Experiment %1").arg(e.d_number));
+        p_acquisitionPanel->setPeakUpControlsEnabled(false);
+        p_acquisitionPanel->setManualBackupEnabled(false);
     }
 
-    ui->peakFindAction->setEnabled(false);
-    ui->overlayAction->setEnabled(false);
-
+    p_peakFindAct->setEnabled(false);
+    p_overlayAct->setEnabled(false);
 }
 
 void FtmwViewWidget::setLiveUpdateInterval(int intervalms)
@@ -334,12 +506,12 @@ void FtmwViewWidget::updateLiveFidList()
         {
             if(d_currentSegment == ps.segment && ps.frame < fl.size())
             {
-                if(!ui->plotToolBar->viewingBackup(key))
+                if(!p_plotPanel->viewingBackup(key))
                 {
                     ps.fidList = fl;
                     process(key,fl,ps.frame);
                 }
-                else if(ui->plotToolBar->differential(key))
+                else if(p_plotPanel->differential(key))
                 {
                     updateFid(key);
                 }
@@ -357,31 +529,21 @@ void FtmwViewWidget::updateLiveFidList()
 
 void FtmwViewWidget::updateProcessingSettings(FtWorker::FidProcessingSettings s)
 {
-    //skip main plot because it will be updated when menu is closed
     d_currentProcessingSettings = s;
     QList<int> ignore;
-//    switch(ui->plotToolBar->mainPlotMode())
-//    {
-//    case FtmwPlotToolBar::Upper_SideBand:
-//    case FtmwPlotToolBar::Lower_SideBand:
-//    case FtmwPlotToolBar::Both_SideBands:
-//        ignore << d_mainId;
-//    default:
-//        break;
-//    }
 
-    if(!ui->liveFidPlot->isHidden())
+    if(!p_liveFidPlot->isHidden())
     {
-        ui->liveFidPlot->setFtStart(s.startUs);
-        ui->liveFidPlot->setFtEnd(s.endUs);
+        p_liveFidPlot->setFtStart(s.startUs);
+        p_liveFidPlot->setFtEnd(s.endUs);
     }
     else
         ignore << d_liveId;
 
-    ui->fidPlot1->setFtStart(s.startUs);
-    ui->fidPlot1->setFtEnd(s.endUs);
-    ui->fidPlot2->setFtStart(s.startUs);
-    ui->fidPlot2->setFtEnd(s.endUs);
+    p_fidPlot1->setFtStart(s.startUs);
+    p_fidPlot1->setFtEnd(s.endUs);
+    p_fidPlot2->setFtStart(s.startUs);
+    p_fidPlot2->setFtEnd(s.endUs);
 
     reprocess(ignore);
 }
@@ -391,14 +553,14 @@ void FtmwViewWidget::resetProcessingSettings()
     if(ps_fidStorage)
     {
         if(ps_fidStorage->readProcessingSettings(d_currentProcessingSettings))
-            ui->processingToolBar->setAll(d_currentProcessingSettings);
+            p_processingPanel->setAll(d_currentProcessingSettings);
     }
 }
 
 void FtmwViewWidget::saveProcessingSettings()
 {
     if(ps_fidStorage)
-        ps_fidStorage->writeProcessingSettings(ui->processingToolBar->getSettings());
+        ps_fidStorage->writeProcessingSettings(p_processingPanel->getSettings());
 }
 
 void FtmwViewWidget::updatePlotSetting(int id)
@@ -407,10 +569,10 @@ void FtmwViewWidget::updatePlotSetting(int id)
     if(it != d_plotStatus.end())
     {
         //segment and frame are 1-indexed on the UI
-        it->second.segment = ui->plotToolBar->segment(id)-1;
-        it->second.frame = ui->plotToolBar->frame(id)-1;
-        it->second.backup = ui->plotToolBar->backup(id);
-        it->second.differential = ui->plotToolBar->differential(id);
+        it->second.segment = p_plotPanel->segment(id)-1;
+        it->second.frame = p_plotPanel->frame(id)-1;
+        it->second.backup = p_plotPanel->backup(id);
+        it->second.differential = p_plotPanel->differential(id);
         updateFid(id);
     }
 }
@@ -434,15 +596,15 @@ void FtmwViewWidget::ftProcessingComplete(int id)
 {
     auto &ws = d_workersStatus[id];
     ws.busy = false;
-    if(ws.reprocessWhenDone) //this is set to true when there is another FID to process
+    if(ws.reprocessWhenDone)
     {
         if(id == d_mainId)
         {
-            switch(ui->plotToolBar->mainPlotMode())
+            switch(p_plotPanel->mainPlotMode())
             {
-            case FtmwPlotToolBar::Lower_SideBand:
-            case FtmwPlotToolBar::Upper_SideBand:
-            case FtmwPlotToolBar::Both_SideBands:
+            case FtmwPlotPanel::Lower_SideBand:
+            case FtmwPlotPanel::Upper_SideBand:
+            case FtmwPlotPanel::Both_SideBands:
                 if(d_sbStatus.cancel)
                     updateMainPlot();
                 else
@@ -490,12 +652,12 @@ void FtmwViewWidget::ftDone(const Ft ft, int workerId)
         ps.fidPlot->setCursor(Qt::CrossCursor);
         ps.ftPlot->setCursor(Qt::CrossCursor);
 
-        switch(ui->plotToolBar->mainPlotMode()) {
-        case FtmwPlotToolBar::Live:
-        case FtmwPlotToolBar::FT1:
-        case FtmwPlotToolBar::FT2:
-        case FtmwPlotToolBar::FT1_minus_FT2:
-        case FtmwPlotToolBar::FT2_minus_FT1:
+        switch(p_plotPanel->mainPlotMode()) {
+        case FtmwPlotPanel::Live:
+        case FtmwPlotPanel::FT1:
+        case FtmwPlotPanel::FT2:
+        case FtmwPlotPanel::FT1_minus_FT2:
+        case FtmwPlotPanel::FT2_minus_FT1:
             updateMainPlot();
             break;
         default:
@@ -505,10 +667,10 @@ void FtmwViewWidget::ftDone(const Ft ft, int workerId)
     else
     {
         //this is the main plot
-        ui->mainFtPlot->newFt(ft);
-        ui->peakFindAction->setEnabled(!ft.isEmpty());
-        ui->overlayAction->setEnabled(!ft.isEmpty() && d_overlaysEnabled);
-        ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::CrossCursor));
+        p_mainFtPlot->newFt(ft);
+        p_peakFindAct->setEnabled(!ft.isEmpty());
+        p_overlayAct->setEnabled(!ft.isEmpty() && d_overlaysEnabled);
+        p_mainFtPlot->canvas()->setCursor(QCursor(Qt::CrossCursor));
         if(p_pfw != nullptr)
             p_pfw->newFt(ft);
     }
@@ -516,51 +678,51 @@ void FtmwViewWidget::ftDone(const Ft ft, int workerId)
 
 void FtmwViewWidget::ftDiffDone(const Ft ft)
 {
-    ui->mainFtPlot->newFt(ft);
-    ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::CrossCursor));
+    p_mainFtPlot->newFt(ft);
+    p_mainFtPlot->canvas()->setCursor(QCursor(Qt::CrossCursor));
 }
 
 void FtmwViewWidget::updateMainPlot()
 {
-    ui->mainFtPlot->configureUnits(d_currentProcessingSettings.units);
-    ui->mainFtPlot->setMessageText("");
-    ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::CrossCursor));
+    p_mainFtPlot->configureUnits(d_currentProcessingSettings.units);
+    p_mainFtPlot->setMessageText("");
+    p_mainFtPlot->canvas()->setCursor(QCursor(Qt::CrossCursor));
 
     cancelSidebandProcessing();
 
-    switch(ui->plotToolBar->mainPlotMode()) {
-    case FtmwPlotToolBar::Live:
-        ui->mainFtPlot->newFt(d_plotStatus[d_liveId].ft);
+    switch(p_plotPanel->mainPlotMode()) {
+    case FtmwPlotPanel::Live:
+        p_mainFtPlot->newFt(d_plotStatus[d_liveId].ft);
         if(p_pfw != nullptr)
             p_pfw->newFt(d_plotStatus[d_liveId].ft);
         break;
-    case FtmwPlotToolBar::FT1:
-        ui->mainFtPlot->newFt(d_plotStatus[d_plot1Id].ft);
+    case FtmwPlotPanel::FT1:
+        p_mainFtPlot->newFt(d_plotStatus[d_plot1Id].ft);
         if(p_pfw != nullptr)
             p_pfw->newFt(d_plotStatus[d_plot1Id].ft);
         break;
-    case FtmwPlotToolBar::FT2:
-        ui->mainFtPlot->newFt(d_plotStatus[d_plot2Id].ft);
+    case FtmwPlotPanel::FT2:
+        p_mainFtPlot->newFt(d_plotStatus[d_plot2Id].ft);
         if(p_pfw != nullptr)
             p_pfw->newFt(d_plotStatus[d_plot2Id].ft);
         break;
-    case FtmwPlotToolBar::FT1_minus_FT2:
+    case FtmwPlotPanel::FT1_minus_FT2:
         processDiff(d_plotStatus[d_plot1Id].fidList,d_plotStatus[d_plot2Id].fidList,
                     d_plotStatus[d_plot1Id].frame,d_plotStatus[d_plot2Id].frame);
         break;
-    case FtmwPlotToolBar::FT2_minus_FT1:
+    case FtmwPlotPanel::FT2_minus_FT1:
         processDiff(d_plotStatus[d_plot2Id].fidList,d_plotStatus[d_plot1Id].fidList,
                     d_plotStatus[d_plot2Id].frame,d_plotStatus[d_plot1Id].frame);
         break;
-    case FtmwPlotToolBar::Upper_SideBand:
-    case FtmwPlotToolBar::Lower_SideBand:
-    case FtmwPlotToolBar::Both_SideBands:
+    case FtmwPlotPanel::Upper_SideBand:
+    case FtmwPlotPanel::Lower_SideBand:
+    case FtmwPlotPanel::Both_SideBands:
         processSidebands();
         break;
     }
 
-    ui->peakFindAction->setEnabled(!ui->mainFtPlot->currentFt().isEmpty());
-    ui->overlayAction->setEnabled(!ui->mainFtPlot->currentFt().isEmpty() && d_overlaysEnabled);
+    p_peakFindAct->setEnabled(!p_mainFtPlot->currentFt().isEmpty());
+    p_overlayAct->setEnabled(!p_mainFtPlot->currentFt().isEmpty() && d_overlaysEnabled);
 }
 
 void FtmwViewWidget::reprocess(const QList<int> ignore)
@@ -582,8 +744,6 @@ void FtmwViewWidget::reprocess(const QList<int> ignore)
 
 void FtmwViewWidget::process(int id, const FidList fl, int frame)
 {
-//    if(f.isEmpty())
-//        return;
     auto &ws = d_workersStatus[id];
     if(ws.busy)
         ws.reprocessWhenDone = true;
@@ -609,13 +769,12 @@ void FtmwViewWidget::processDiff(const FidList fl1, const FidList fl2, int frame
         ws.reprocessWhenDone = true;
     else
     {
-        ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
+        p_mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
         ws.busy = true;
         ws.reprocessWhenDone = false;
         ws.p_watcher->setFuture(QtConcurrent::run([fl1,fl2,frame1,frame2,this](){
             p_worker->doFtDiff(fl1,fl2,frame1,frame2,d_currentProcessingSettings);
         }));
-
     }
 }
 
@@ -630,25 +789,21 @@ void FtmwViewWidget::sidebandLoadComplete()
     }
     auto fl = d_sbStatus.sbLoadWatcher->result();
 
-    //queue FID
     d_sbStatus.nextFidList = fl;
     if(!d_workersStatus[d_mainId].busy)
     {
         processNextSidebandFid();
         loadNextSidebandFid();
     }
-
 }
 
 void FtmwViewWidget::processSidebands()
-{  
+{
     auto &ws = d_workersStatus[d_mainId];
     if(ws.busy)
         ws.reprocessWhenDone = true;
     else
     {
-        //need to reset sideband parameters
-        //then need to set up load/process chain
         auto storage = dynamic_cast<FidMultiStorage*>(ps_fidStorage.get());
         if(!storage)
             return;
@@ -663,22 +818,22 @@ void FtmwViewWidget::processSidebands()
         d_sbStatus.complete = false;
         auto &sbd = d_sbStatus.sbData;
         sbd = FtWorker::SidebandProcessingData();
-        sbd.frame = ui->plotToolBar->sbFrame()-1;
-        sbd.minOffset = ui->plotToolBar->sbMinFreq();
-        sbd.maxOffset = ui->plotToolBar->sbMaxFreq();
-        sbd.dcMethod = ui->plotToolBar->dcMethod();
+        sbd.frame = p_plotPanel->sbFrame()-1;
+        sbd.minOffset = p_plotPanel->sbMinFreq();
+        sbd.maxOffset = p_plotPanel->sbMaxFreq();
+        sbd.dcMethod = p_plotPanel->dcMethod();
         sbd.totalFids = storage->numSegments();
         sbd.loRange = storage->getLORange();
-        switch (ui->plotToolBar->mainPlotMode()) {
-        case FtmwPlotToolBar::Lower_SideBand:
+        switch (p_plotPanel->mainPlotMode()) {
+        case FtmwPlotPanel::Lower_SideBand:
             sbd.doubleSideband = false;
             sbd.sideband = RfConfig::LowerSideband;
             break;
-        case FtmwPlotToolBar::Upper_SideBand:
+        case FtmwPlotPanel::Upper_SideBand:
             sbd.doubleSideband = false;
             sbd.sideband = RfConfig::UpperSideband;
             break;
-        case FtmwPlotToolBar::Both_SideBands:
+        case FtmwPlotPanel::Both_SideBands:
             sbd.doubleSideband  = true;
             break;
         default:
@@ -686,9 +841,9 @@ void FtmwViewWidget::processSidebands()
         };
         d_sbStatus.sbData = sbd;
 
-        ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
-        ui->mainFtPlot->setMessageText(QString("Processing..."));
-        ui->mainFtPlot->newFt(Ft());
+        p_mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
+        p_mainFtPlot->setMessageText(QString("Processing..."));
+        p_mainFtPlot->newFt(Ft());
         loadNextSidebandFid();
     }
 }
@@ -705,7 +860,6 @@ void FtmwViewWidget::loadNextSidebandFid()
         return;
 
     d_sbStatus.sbLoadWatcher->setFuture(QtConcurrent::run([this](){ return ps_fidStorage->loadFidList(d_sbStatus.sbData.currentIndex); }));
-
 }
 
 void FtmwViewWidget::processNextSidebandFid()
@@ -725,10 +879,10 @@ void FtmwViewWidget::processNextSidebandFid()
         p_worker->processSideband(sbd,d_currentProcessingSettings);
     }));
     d_sbStatus.sbData.currentIndex++;
-    ui->mainFtPlot->setMessageText(QString("Processing %1/%2")
-                                   .arg(d_sbStatus.sbData.currentIndex)
-                                   .arg(d_sbStatus.sbData.totalFids));
-    ui->mainFtPlot->replot();
+    p_mainFtPlot->setMessageText(QString("Processing %1/%2")
+                                 .arg(d_sbStatus.sbData.currentIndex)
+                                 .arg(d_sbStatus.sbData.totalFids));
+    p_mainFtPlot->replot();
 }
 
 void FtmwViewWidget::sidebandProcessingComplete(const Ft ft)
@@ -741,9 +895,9 @@ void FtmwViewWidget::sidebandProcessingComplete(const Ft ft)
     {
         d_sbStatus.nextFidList = FidList();
 
-        ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::CrossCursor));
-        ui->mainFtPlot->setMessageText("");
-        ui->mainFtPlot->newFt(ft);
+        p_mainFtPlot->canvas()->setCursor(QCursor(Qt::CrossCursor));
+        p_mainFtPlot->setMessageText("");
+        p_mainFtPlot->newFt(ft);
     }
 }
 
@@ -758,42 +912,38 @@ void FtmwViewWidget::updateBackups()
     if(d_currentExptNum < 1)
         return;
 
-    ui->plotToolBar->newBackup(ps_fidStorage->numBackups());
+    p_plotPanel->newBackup(ps_fidStorage->numBackups());
 
-    // Re-enable the manual backup action now that the write is on disk.
-    // FidSingleStorage is the only backup-capable storage; other types
-    // override numBackups() to return 0 and never reach here from a manual
-    // click in the first place (the action is left disabled in
-    // prepareForExperiment for those modes).
+    // Re-enable the manual backup button now that the write is on disk.
     if(dynamic_cast<FidSingleStorage*>(ps_fidStorage.get()) != nullptr)
-        ui->manualBackupAction->setEnabled(true);
+        p_acquisitionPanel->setManualBackupEnabled(true);
 }
 
 void FtmwViewWidget::experimentComplete()
 {
-    disconnect(ui->refreshBox,&SpinBoxWidgetAction::valueChanged,this,&FtmwViewWidget::setLiveUpdateInterval);
-    ui->refreshBox->setEnabled(false);
+    disconnect(p_acquisitionPanel,&FtmwAcquisitionPanel::refreshIntervalChanged,
+               this,&FtmwViewWidget::setLiveUpdateInterval);
+    p_acquisitionPanel->setRefreshEnabled(false);
     if(d_liveTimerId >= 0)
         killTimer(d_liveTimerId);
     d_liveTimerId = -1;
 
-    ui->manualBackupAction->setEnabled(false);
+    p_acquisitionPanel->setManualBackupEnabled(false);
 
     if(ps_fidStorage)
     {
         d_currentSegment = -1;
 
-        ui->verticalLayout->setStretch(0,0);
-        ui->liveFidPlot->hide();
-        ui->liveFtPlot->hide();
+        p_liveRowWidget->setVisible(false);
+        p_liveFidPlot->hide();
+        p_liveFtPlot->hide();
 
-        ui->plotToolBar->experimentComplete();
+        p_plotPanel->experimentComplete();
 
         updateFid(d_plot1Id);
         updateFid(d_plot2Id);
         updateMainPlot();
     }
-
 }
 
 void FtmwViewWidget::changeRollingAverageShots(int shots)
@@ -813,73 +963,58 @@ void FtmwViewWidget::resetRollingAverage()
         p->reset();
 }
 
-void FtmwViewWidget::launchPeakFinder()
+void FtmwViewWidget::showPeakFinder(bool show)
 {
-    if(p_pfw != nullptr)
-    {
-        p_pfw->activateWindow();
-        p_pfw->raise();
+    if(!show)
         return;
-    }
 
-    p_pfw = new PeakFindWidget(ui->mainFtPlot->currentFt(),d_currentExptNum);
-    if(d_currentExptNum > 0)
-        p_pfw->setWindowTitle(QString("Peak List: Experiment %1").arg(d_currentExptNum));
-    else
-        p_pfw->setWindowTitle(QString("Peak List"));
+    if(p_pfw != nullptr || p_mainFtPlot->currentFt().isEmpty())
+        return;
 
-    p_pfw->setAttribute(Qt::WA_DeleteOnClose);
+    p_pfw = new PeakFindWidget(p_mainFtPlot->currentFt(),d_currentExptNum);
+    p_peakFindDock->setWindowTitle(d_currentExptNum > 0
+                                   ? QString("Peak List: Experiment %1").arg(d_currentExptNum)
+                                   : QString("Peak List"));
 
-    connect(p_worker,&FtWorker::ftDone,[this](const Ft ft, int id){
-        if(id == d_mainId)
+    // Backstop against external deletion (matches showOverlayManager).
+    connect(p_pfw, &QObject::destroyed, this, [this](QObject *obj){
+        if (obj == p_pfw) p_pfw = nullptr;
+    });
+
+    connect(p_worker,&FtWorker::ftDone,p_pfw,[this](const Ft ft, int id){
+        if(id == d_mainId && p_pfw)
             p_pfw->newFt(ft);
     });
-    connect(p_pfw,&PeakFindWidget::peakList,ui->mainFtPlot,&MainFtPlot::newPeakList);
-    connect(p_pfw,&PeakFindWidget::destroyed,this,[this](){
-        p_pfw = nullptr;
-    });
+    connect(p_pfw,&PeakFindWidget::peakList,p_mainFtPlot,&MainFtPlot::newPeakList);
 
-    p_pfw->show();
-    p_pfw->activateWindow();
-    p_pfw->raise();
-
+    p_peakFindDock->setWidget(p_pfw);
 }
 
-void FtmwViewWidget::launchOverlayManager()
+void FtmwViewWidget::showOverlayManager(bool show)
 {
-    // Check if overlay manager already exists and bring it to front
-    if(p_omw != nullptr)
-    {
-        p_omw->activateWindow();
-        p_omw->raise();
-        p_omw->show();
+    if(!show)
         return;
-    }
 
-    // Create new overlay manager widget with overlay storage
-    p_omw = new OverlayManagerWidget(this, d_currentExptNum, getAllOverlays());
+    if(p_omw != nullptr || !ps_overlayStorage)
+        return;
 
-    // Connect overlay manager to storage for async write tracking
-    if (ps_overlayStorage) {
-        p_omw->connectToOverlayStorage(ps_overlayStorage);
-    }
+    p_omw = new OverlayManagerWidget(p_overlayDock, d_currentExptNum, getAllOverlays());
 
-    // Connect cleanup when widget is destroyed - also save overlays
-    connect(p_omw, &OverlayManagerWidget::destroyed, this, [this](){
-        saveOverlays(); // Auto-save overlays when manager is closed
-        p_omw = nullptr;
+    // Backstop: if the widget is ever destroyed by something other than
+    // closeOverlayManager(), null our pointer so we don't dereference it.
+    connect(p_omw, &QObject::destroyed, this, [this](QObject *obj){
+        if (obj == p_omw) p_omw = nullptr;
     });
 
-    // Connect overlay manager signals for UI updates
-    connect(p_omw, &OverlayManagerWidget::overlayDataChanged, this, &FtmwViewWidget::onOverlayDataChanged);
-    
-    // Connect external overlay data changes to update the overlay manager table
-    connect(this, &FtmwViewWidget::externalOverlayDataChanged, p_omw, &OverlayManagerWidget::onExternalOverlayDataChanged);
+    if (ps_overlayStorage)
+        p_omw->connectToOverlayStorage(ps_overlayStorage);
 
-    // Show widget
-    p_omw->show();
-    p_omw->activateWindow();
-    p_omw->raise();
+    connect(p_omw, &OverlayManagerWidget::overlayDataChanged,
+            this, &FtmwViewWidget::onOverlayDataChanged);
+    connect(this, &FtmwViewWidget::externalOverlayDataChanged,
+            p_omw, &OverlayManagerWidget::onExternalOverlayDataChanged);
+
+    p_overlayDock->setWidget(p_omw);
 }
 
 void FtmwViewWidget::updateFid(int id)
@@ -894,14 +1029,12 @@ void FtmwViewWidget::updateFid(int id)
 
     if(seg == d_currentSegment && id == d_liveId)
     {
-        //For live plots, always average all frames
         auto fl = ps_fidStorage->getCurrentFidList();
         ps.fidList = fl;
         process(id, ps.fidList, -1);
     }
     else
     {
-        // only acquisition modes with 1 segment have backups right now... might change this later!
         if(backup > 0)
             seg = backup;
 
@@ -930,24 +1063,20 @@ void FtmwViewWidget::timerEvent(QTimerEvent *event)
 
 QVector<std::shared_ptr<OverlayBase>> FtmwViewWidget::getAllOverlays() const
 {
-    if (ps_overlayStorage) {
+    if (ps_overlayStorage)
         return ps_overlayStorage->getAllOverlays();
-    }
     return QVector<std::shared_ptr<OverlayBase>>();
 }
 
 void FtmwViewWidget::addOverlay(std::shared_ptr<OverlayBase> overlay)
 {
     if(overlay != nullptr) {
-        // Add overlay to storage first (if storage is available)
         if (ps_overlayStorage) {
             bool added = ps_overlayStorage->addOverlay(overlay);
             if (!added) {
                 return;
             }
         }
-        
-        // Add overlay to plots for display
         addOverlayToPlots(overlay);
     }
 }
@@ -955,28 +1084,20 @@ void FtmwViewWidget::addOverlay(std::shared_ptr<OverlayBase> overlay)
 void FtmwViewWidget::removeOverlay(std::shared_ptr<OverlayBase> overlay)
 {
     if(overlay != nullptr && ps_overlayStorage) {
-        // Wait for any pending writes for this overlay before removing
-        // Note: removeOverlay in OverlayStorage already handles waiting for specific overlay
         ps_overlayStorage->removeOverlay(overlay->getLabel());
-        // Remove from plots
         removeOverlayFromPlots(overlay);
     }
 }
 
 void FtmwViewWidget::addOverlayToPlots(std::shared_ptr<OverlayBase> overlay)
 {
-    if (!overlay) {
+    if (!overlay)
         return;
-    }
-    
-    // Get the target plot name from the overlay
+
     QString plotName = overlay->getPlotId();
-    
-    // Find the corresponding FtPlot instance in the map
     auto it = d_plotMap.find(plotName);
-    if (it != d_plotMap.end()) {
+    if (it != d_plotMap.end())
         it->second->addOverlay(overlay);
-    }
 }
 
 void FtmwViewWidget::onOverlayAdded(std::shared_ptr<OverlayBase> overlay)
@@ -986,37 +1107,27 @@ void FtmwViewWidget::onOverlayAdded(std::shared_ptr<OverlayBase> overlay)
 
 void FtmwViewWidget::removeOverlayFromPlots(std::shared_ptr<OverlayBase> overlay)
 {
-    if (!overlay) {
+    if (!overlay)
         return;
-    }
-    
-    // Get the target plot name from the overlay
+
     QString plotName = overlay->getPlotId();
-    
-    // Find the corresponding FtPlot instance in the map
     auto it = d_plotMap.find(plotName);
-    if (it != d_plotMap.end()) {
+    if (it != d_plotMap.end())
         it->second->removeOverlay(overlay);
-    }
 }
 
 void FtmwViewWidget::onOverlayRemoved(std::shared_ptr<OverlayBase> overlay)
 {
-    // Only remove from plots here — the overlay has already been removed
-    // from storage by whoever emitted the overlayRemoved signal.
     removeOverlayFromPlots(overlay);
 }
 
 void FtmwViewWidget::onOverlayDataChanged(std::shared_ptr<OverlayBase> overlay)
 {
-    if (!overlay) {
+    if (!overlay)
         return;
-    }
 
-    // Get the target plot name from the overlay
     QString targetPlotName = overlay->getPlotId();
-    
-    // Find which plot currently contains this overlay (if any)
+
     QString currentPlotName;
     for (auto& [plotName, plot] : d_plotMap) {
         if (plot->hasOverlay(overlay)) {
@@ -1024,55 +1135,41 @@ void FtmwViewWidget::onOverlayDataChanged(std::shared_ptr<OverlayBase> overlay)
             break;
         }
     }
-    
-    // If overlay needs to move to a different plot
+
     if (!currentPlotName.isEmpty() && currentPlotName != targetPlotName) {
-        // Remove from current plot
         auto currentIt = d_plotMap.find(currentPlotName);
-        if (currentIt != d_plotMap.end()) {
+        if (currentIt != d_plotMap.end())
             currentIt->second->removeOverlay(overlay);
-        }
-        
-        // Add to target plot
+
         auto targetIt = d_plotMap.find(targetPlotName);
-        if (targetIt != d_plotMap.end()) {
+        if (targetIt != d_plotMap.end())
             targetIt->second->addOverlay(overlay);
-        } else {
-        }
     }
-    // If overlay is not yet on any plot, add it to the target plot
     else if (currentPlotName.isEmpty()) {
         auto targetIt = d_plotMap.find(targetPlotName);
-        if (targetIt != d_plotMap.end()) {
+        if (targetIt != d_plotMap.end())
             targetIt->second->addOverlay(overlay);
-        } else {
+        else
             qWarning() << "Target plot" << targetPlotName << "not found!";
-        }
     }
-    // If overlay is already on the correct plot, just update it
     else {
         auto targetIt = d_plotMap.find(targetPlotName);
-        if (targetIt != d_plotMap.end()) {
+        if (targetIt != d_plotMap.end())
             targetIt->second->updateOverlay(overlay);
-        } else {
+        else
             qWarning() << "Target plot" << targetPlotName << "not found!";
-        }
     }
 }
 
 void FtmwViewWidget::onCurveMetadataChanged(BlackchirpPlotCurveBase* curve)
 {
-    if (!curve || !ps_overlayStorage) {
+    if (!curve || !ps_overlayStorage)
         return;
-    }
-    
-    // Check if this curve uses OverlayMetadataStorage backend
+
     if (curve->getStorageType() == BlackchirpPlotCurveBase::StorageType::OverlayMetadata) {
         auto overlay = curve->getOverlay();
-        if (overlay) {
-            // This curve belongs to an overlay - save its metadata immediately
+        if (overlay)
             ps_overlayStorage->saveOverlayMetadata(overlay);
-        }
     }
 }
 
@@ -1080,49 +1177,41 @@ void FtmwViewWidget::createPlotNamesList()
 {
     d_plotNames.clear();
     d_plotMap.clear();
-    
-    // Find all FtPlot children recursively
+
     QList<FtPlot*> ftPlots = findChildren<FtPlot*>();
-    
+
     for(FtPlot* plot : ftPlots) {
         if(plot != nullptr) {
             QString plotName = plot->objectName();
             if(!plotName.isEmpty()) {
-                // Exclude live plots (case insensitive search for "ft" and "live")
                 QString nameLower = plotName.toLower();
-                if(nameLower.contains("ft") && nameLower.contains("live")) {
-                    continue; // Skip live plots
-                }
+                if(nameLower.contains("ft") && nameLower.contains("live"))
+                    continue;
                 d_plotNames.append(plotName);
-                d_plotMap[plotName] = plot;  // Map plot name to FtPlot instance
-                
-                // Connect overlay data changed signal for bidirectional sync
-                connect(plot, &FtPlot::overlayDataChanged, 
+                d_plotMap[plotName] = plot;
+
+                connect(plot, &FtPlot::overlayDataChanged,
                         this, &FtmwViewWidget::onOverlayDataChanged);
-                
-                // Connect plot overlay changes directly to external signal for table updates
-                connect(plot, &FtPlot::overlayDataChanged, 
+
+                connect(plot, &FtPlot::overlayDataChanged,
                         this, &FtmwViewWidget::externalOverlayDataChanged);
             }
         }
     }
-    
-    // Sort the names for consistent ordering
+
     d_plotNames.sort();
 }
 
 Ft FtmwViewWidget::getMainPlotFt() const
 {
-    if (ui && ui->mainFtPlot) {
-        return ui->mainFtPlot->currentFt();
-    }
-    return Ft(); // Return empty Ft if mainFtPlot is null
+    if (p_mainFtPlot)
+        return p_mainFtPlot->currentFt();
+    return Ft();
 }
 
 void FtmwViewWidget::saveOverlays()
 {
     if (ps_overlayStorage) {
-        // Wait for any pending background writes to complete before saving metadata
         ps_overlayStorage->waitForPendingWrites();
         ps_overlayStorage->save();
     }
@@ -1130,34 +1219,33 @@ void FtmwViewWidget::saveOverlays()
 
 void FtmwViewWidget::closeOverlayManager()
 {
-    if (p_omw) {
-        // Disconnect destroyed signal to prevent saveOverlays() from firing
-        // after storage has potentially switched
-        disconnect(p_omw, &OverlayManagerWidget::destroyed, this, nullptr);
-        p_omw->close();  // WA_DeleteOnClose triggers destruction
-        p_omw = nullptr;
-    }
+    if (!p_omw)
+        return;
+
+    // Disconnect every connection we set up in either direction so no
+    // signal can fire on a widget that is about to be destroyed.
+    disconnect(p_omw, nullptr, this, nullptr);
+    disconnect(this, nullptr, p_omw, nullptr);
+    OverlayManagerWidget *doomed = p_omw;
+    p_omw = nullptr;
+    if (p_overlayDock && p_overlayDock->widget() == doomed)
+        p_overlayDock->setWidget(nullptr);  // unparents `doomed`
+    doomed->deleteLater();
 }
 
 bool FtmwViewWidget::promptOverlayTransition()
 {
-    // Close overlay manager first (saves to current experiment properly)
     closeOverlayManager();
 
-    // Clear any previous selection
     d_overlaysToCopy.clear();
 
-    // If no overlays exist or overlays are disabled, nothing to prompt
-    if (!ps_overlayStorage || !d_overlaysEnabled) {
+    if (!ps_overlayStorage || !d_overlaysEnabled)
         return true;
-    }
 
     auto allOverlays = ps_overlayStorage->getAllOverlays();
-    if (allOverlays.isEmpty()) {
+    if (allOverlays.isEmpty())
         return true;
-    }
 
-    // Build a selection dialog
     QDialog dlg(this);
     dlg.setWindowTitle("Overlay Transition");
 
@@ -1171,7 +1259,6 @@ bool FtmwViewWidget::promptOverlayTransition()
     tree->setRootIsDecorated(false);
     tree->setSelectionMode(QAbstractItemView::NoSelection);
 
-    // Helper lambda: overlay type to display string (mirrors OverlayTableModel)
     auto typeName = [](OverlayBase::OverlayType t) -> QString {
         switch (t) {
         case OverlayBase::BCExperiment: return "BC Experiment";
@@ -1184,7 +1271,7 @@ bool FtmwViewWidget::promptOverlayTransition()
     for (const auto &overlay : allOverlays) {
         auto *item = new QTreeWidgetItem(tree);
         item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-        item->setCheckState(0, Qt::Checked);  // Default: all selected
+        item->setCheckState(0, Qt::Checked);
         item->setText(0, overlay->getLabel());
         item->setText(1, typeName(overlay->type()));
     }
@@ -1193,7 +1280,6 @@ bool FtmwViewWidget::promptOverlayTransition()
     tree->resizeColumnToContents(1);
     layout->addWidget(tree);
 
-    // Select All / Select None buttons
     auto *selectionLayout = new QHBoxLayout;
     auto *selectAllBtn = new QPushButton("Select All");
     auto *selectNoneBtn = new QPushButton("Select None");
@@ -1211,19 +1297,16 @@ bool FtmwViewWidget::promptOverlayTransition()
             tree->topLevelItem(i)->setCheckState(0, Qt::Unchecked);
     });
 
-    // OK / Cancel
     auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     QObject::connect(buttonBox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
     QObject::connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
     layout->addWidget(buttonBox);
 
-    // Size the dialog reasonably
     dlg.resize(400, 300);
 
     if (dlg.exec() != QDialog::Accepted)
-        return false;  // User cancelled — abort experiment start
+        return false;
 
-    // Collect checked overlays
     for (int i = 0; i < tree->topLevelItemCount(); ++i) {
         if (tree->topLevelItem(i)->checkState(0) == Qt::Checked)
             d_overlaysToCopy.push_back(allOverlays.at(i));
