@@ -11,6 +11,7 @@
 #include <QVBoxLayout>
 #include <QFormLayout>
 #include <QGridLayout>
+#include <QHeaderView>
 #include <QCheckBox>
 #include <QSpinBox>
 #include <QGroupBox>
@@ -20,6 +21,7 @@
 #include <QMetaEnum>
 #include <QMessageBox>
 #include <QStackedWidget>
+#include <QTableWidget>
 
 #include <hardware/core/ftmwdigitizer/ftmwdigitizer.h>
 
@@ -61,7 +63,7 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     p_ftmwConfigStack = new QStackedWidget(this);
     p_foreverWidget = new QWidget(this);
     p_ftmwConfigStack->addWidget(p_foreverWidget);
-    ftmwl->addWidget(p_ftmwConfigStack);
+    ftmwl->addWidget(p_ftmwConfigStack, 1);
 
 
     p_ftmwShotsBox = new QSpinBox(this);
@@ -122,7 +124,6 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     connect(p_drScanConfigWidget,&DRScanConfigWidget::error,this,&ExperimentTypePage::error);
     p_ftmwConfigStack->addWidget(p_drScanConfigWidget);
 
-    ftmwl->addStretch(1);
     ftmwl->setSpacing(6);
 
     p_phaseCorrectionBox = new QCheckBox(this);
@@ -225,64 +226,12 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
         auto lvbl = new QVBoxLayout;
         p_lif->setLayout(lvbl);
 
-        auto dlg = new QGroupBox("Delay",this);
-        auto dl = new QGridLayout;
-        dlg->setLayout(dl);
-
-        p_dStartBox = new QDoubleSpinBox(this);
-        p_dStartBox->setDecimals(3);
-        p_dStartBox->setKeyboardTracking(false);
-        p_dStartBox->setRange(0,100000.0);
-        p_dStartBox->setSuffix(QString(" ").append(BC::Unit::us));
-        p_dStartBox->setValue(get(lifDelayStart,p_dStartBox->minimum()));
-        registerGetter(lifDelayStart,p_dStartBox,&QDoubleSpinBox::value);
-        dl->addWidget(new QLabel("Start"),0,0,Qt::AlignRight);
-        dl->addWidget(p_dStartBox,0,1);
-
-        auto range = p_dStartBox->maximum() - p_dStartBox->minimum();
-
-        p_dStepBox = new QDoubleSpinBox(this);
-        p_dStepBox->setDecimals(3);
-        p_dStepBox->setKeyboardTracking(false);
-        p_dStepBox->setRange(-range,range);
-        p_dStepBox->setSuffix(QString(" ").append(BC::Unit::us));
-        p_dStepBox->setValue(get(lifDelayStep,0.0));
-        registerGetter(lifDelayStep,p_dStepBox,&QDoubleSpinBox::value);
-        dl->addWidget(new QLabel("Step"),0,2,Qt::AlignRight);
-        dl->addWidget(p_dStepBox,0,3);
-
-        p_dEndBox = new QDoubleSpinBox(this);
-        p_dEndBox->setDecimals(3);
-        p_dEndBox->setRange(0,100000.0);
-        p_dEndBox->setSuffix(QString(" ").append(BC::Unit::us));
-        p_dEndBox->setReadOnly(true);
-        p_dEndBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
-        dl->addWidget(new QLabel("End"),1,0,Qt::AlignRight);
-        dl->addWidget(p_dEndBox,1,1);
-
-        p_dNumStepsBox = new QSpinBox(this);
-        p_dNumStepsBox->setMinimum(1);
-        p_dNumStepsBox->setKeyboardTracking(false);
-        p_dNumStepsBox->setValue(get(lifDelayPoints,1));
-        registerGetter(lifDelayPoints,p_dNumStepsBox,&QSpinBox::value);
-        dl->addWidget(new QLabel("Points"),1,2,Qt::AlignRight);
-        dl->addWidget(p_dNumStepsBox,1,3);
-
-        dl->addItem(new QSpacerItem(1,1,QSizePolicy::Minimum,QSizePolicy::Expanding),2,0);
-
-        lvbl->addWidget(dlg);
-
-        auto llg = new QGroupBox("Laser",this);
-        auto ll = new QGridLayout;
-        llg->setLayout(ll);
-
-        // Initialize with default values
+        // Look up LifLaser settings before constructing widgets so the
+        // laser column has the correct decimals, range, and units.
         int decimals = 2;
         double minPos = 250.0;
         double maxPos = 2000.0;
         QString units = "nm";
-        
-        // Find LifLaser hardware key from experiment's hardware data and update if found
         for (auto it = p_exp->d_hardwareData.hardwareMap.cbegin(); it != p_exp->d_hardwareData.hardwareMap.cend(); ++it) {
             if (it.value().type == BC::Data::HardwareType::LifLaser) {
                 SettingsStorage lset(it.key(), SettingsStorage::Hardware);
@@ -294,48 +243,96 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
             }
         }
 
+        // Delay column (microseconds)
+        p_dStartBox = new QDoubleSpinBox(this);
+        p_dStartBox->setDecimals(3);
+        p_dStartBox->setKeyboardTracking(false);
+        p_dStartBox->setRange(0,100000.0);
+        p_dStartBox->setSuffix(QString(" ").append(BC::Unit::us));
+        p_dStartBox->setValue(get(lifDelayStart,p_dStartBox->minimum()));
+        p_dStartBox->setAlignment(Qt::AlignCenter);
+        registerGetter(lifDelayStart,p_dStartBox,&QDoubleSpinBox::value);
+
+        auto delayRange = p_dStartBox->maximum() - p_dStartBox->minimum();
+        p_dStepBox = new QDoubleSpinBox(this);
+        p_dStepBox->setDecimals(3);
+        p_dStepBox->setKeyboardTracking(false);
+        p_dStepBox->setRange(-delayRange,delayRange);
+        p_dStepBox->setSuffix(QString(" ").append(BC::Unit::us));
+        p_dStepBox->setValue(get(lifDelayStep,0.0));
+        p_dStepBox->setAlignment(Qt::AlignCenter);
+        registerGetter(lifDelayStep,p_dStepBox,&QDoubleSpinBox::value);
+
+        p_dNumStepsBox = new QSpinBox(this);
+        p_dNumStepsBox->setMinimum(1);
+        p_dNumStepsBox->setMaximum(INT_MAX);
+        p_dNumStepsBox->setKeyboardTracking(false);
+        p_dNumStepsBox->setValue(get(lifDelayPoints,1));
+        p_dNumStepsBox->setAlignment(Qt::AlignCenter);
+        registerGetter(lifDelayPoints,p_dNumStepsBox,&QSpinBox::value);
+
+        p_dEndBox = new QDoubleSpinBox(this);
+        p_dEndBox->setDecimals(3);
+        p_dEndBox->setRange(0,100000.0);
+        p_dEndBox->setSuffix(QString(" ").append(BC::Unit::us));
+        p_dEndBox->setReadOnly(true);
+        p_dEndBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+        p_dEndBox->setAlignment(Qt::AlignCenter);
+
+        // Laser column (configured units)
         p_lStartBox = new QDoubleSpinBox(this);
         p_lStartBox->setDecimals(decimals);
         p_lStartBox->setKeyboardTracking(false);
         p_lStartBox->setRange(minPos, maxPos);
         p_lStartBox->setSuffix(QString(" ").append(units));
         p_lStartBox->setValue(get(lifLaserStart,p_lStartBox->minimum()));
+        p_lStartBox->setAlignment(Qt::AlignCenter);
         registerGetter(lifLaserStart,p_lStartBox,&QDoubleSpinBox::value);
-        ll->addWidget(new QLabel("Start"),0,0,Qt::AlignRight);
-        ll->addWidget(p_lStartBox,0,1);
 
-        range = p_lStartBox->maximum() - p_lStartBox->minimum();
-
+        auto laserRange = p_lStartBox->maximum() - p_lStartBox->minimum();
         p_lStepBox = new QDoubleSpinBox(this);
         p_lStepBox->setKeyboardTracking(false);
         p_lStepBox->setDecimals(decimals);
-        p_lStepBox->setRange(-range,range);
+        p_lStepBox->setRange(-laserRange,laserRange);
         p_lStepBox->setSuffix(QString(" ").append(units));
         p_lStepBox->setValue(get(lifLaserStep,0.0));
+        p_lStepBox->setAlignment(Qt::AlignCenter);
         registerGetter(lifLaserStep,p_lStepBox,&QDoubleSpinBox::value);
-        ll->addWidget(new QLabel("Step"),0,2,Qt::AlignRight);
-        ll->addWidget(p_lStepBox,0,3);
-
-        p_lEndBox = new QDoubleSpinBox(this);
-        p_lEndBox->setDecimals(3);
-        p_lEndBox->setRange(minPos, maxPos);
-        p_lEndBox->setSuffix(QString(" ").append(units));
-        p_lEndBox->setReadOnly(true);
-        p_lEndBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
-        ll->addWidget(new QLabel("End"),1,0,Qt::AlignRight);
-        ll->addWidget(p_lEndBox,1,1);
 
         p_lNumStepsBox = new QSpinBox(this);
         p_lNumStepsBox->setKeyboardTracking(false);
         p_lNumStepsBox->setMinimum(1);
+        p_lNumStepsBox->setMaximum(INT_MAX);
         p_lNumStepsBox->setValue(get(lifLaserPoints,1));
+        p_lNumStepsBox->setAlignment(Qt::AlignCenter);
         registerGetter(lifLaserPoints,p_lNumStepsBox,&QSpinBox::value);
-        ll->addWidget(new QLabel("Points"),1,2,Qt::AlignRight);
-        ll->addWidget(p_lNumStepsBox,1,3);
 
-        ll->addItem(new QSpacerItem(1,1,QSizePolicy::Minimum,QSizePolicy::Expanding),2,0);
+        p_lEndBox = new QDoubleSpinBox(this);
+        p_lEndBox->setDecimals(decimals);
+        p_lEndBox->setRange(minPos, maxPos);
+        p_lEndBox->setSuffix(QString(" ").append(units));
+        p_lEndBox->setReadOnly(true);
+        p_lEndBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+        p_lEndBox->setAlignment(Qt::AlignCenter);
 
-        lvbl->addWidget(llg);
+        auto scanTable = new QTableWidget(4, 2, this);
+        scanTable->setHorizontalHeaderLabels({"Delay", "Laser"});
+        scanTable->setVerticalHeaderLabels({"Start", "Step", "Points", "End"});
+        scanTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+        scanTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+        scanTable->setSelectionMode(QAbstractItemView::NoSelection);
+        scanTable->setFocusPolicy(Qt::NoFocus);
+
+        scanTable->setCellWidget(0, 0, p_dStartBox);
+        scanTable->setCellWidget(1, 0, p_dStepBox);
+        scanTable->setCellWidget(2, 0, p_dNumStepsBox);
+        scanTable->setCellWidget(3, 0, p_dEndBox);
+        scanTable->setCellWidget(0, 1, p_lStartBox);
+        scanTable->setCellWidget(1, 1, p_lStepBox);
+        scanTable->setCellWidget(2, 1, p_lNumStepsBox);
+        scanTable->setCellWidget(3, 1, p_lEndBox);
+
+        lvbl->addWidget(scanTable, 1);
 
         auto optvbl = new QGroupBox("Options");
         auto ofl = new QFormLayout;

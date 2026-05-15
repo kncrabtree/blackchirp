@@ -30,47 +30,38 @@ settings are also configured.
    :align: center
    :alt: LIF group on the first page of the experiment wizard
 
-The LIF group is divided into three panels: **Delay**, **Laser**, and
-**Options**. The **LIF** checkbox at the top of the group enables or disables
-LIF acquisition for this experiment. When the checkbox is unchecked, all
+The LIF group is divided into a scan-axes table that compares the
+**Delay** and **Laser** columns side by side, and an **Options** panel
+below it. The **LIF** checkbox at the top of the group enables or
+disables LIF acquisition for this experiment; when unchecked, all
 controls in the group are inactive and no LIF data are recorded.
 
-Delay axis
-----------
+Scan axes
+---------
 
-The **Delay** panel configures the timing axis of the scan. The delay refers
-to the time between the laser pulse and the detection gate, controlled via
-a dedicated channel on the pulse generator.
+The scan-axes table holds four parameters for each axis:
 
-- **Start** — the delay at the first point, in microseconds.
-- **Step** — the step size between consecutive delay points, in microseconds.
-- **Points** — the number of delay points.
-- **End** — the delay at the last point, computed automatically from
-  ``Start + (Points - 1) * Step``. This field is read-only and updates as
-  the other three values change.
+- **Start** — the position at the first point.
+- **Step** — the step size between consecutive points.
+- **Points** — the number of points along the axis.
+- **End** — the position at the last point, computed from
+  ``Start + (Points - 1) * Step``. This row is read-only and updates
+  as the other three values change.
 
-To perform a fixed-delay acquisition (scanning only the laser frequency),
-set Points to 1; the End value tracks Start automatically.
+The **Delay** column controls the timing axis (in microseconds) — the
+time between the laser pulse and the detection gate, set on a
+dedicated pulse-generator channel. The **Laser** column controls the
+wavelength axis; the units displayed (here **nm**) are determined by
+the connected laser hardware driver.
 
-Laser axis
-----------
-
-The **Laser** panel configures the wavelength axis of the scan. The units
-displayed (here **nm**) are determined by the connected laser hardware driver.
-
-- **Start** — the starting laser position.
-- **Step** — the step size between consecutive laser points.
-- **Points** — the number of laser points.
-- **End** — the ending laser position, computed automatically from
-  ``Start + (Points - 1) * Step``. This field is read-only.
-
-To perform a fixed-wavelength acquisition (scanning only the delay), set
-Points to 1.
-
-Both axes can be active simultaneously. In a two-dimensional scan,
-Blackchirp steps through all combinations of delay and laser positions,
-collecting the configured number of shots at each combination. The
-shots-per-point value is set on the :doc:`configuration`, not in the wizard.
+To perform a fixed-delay acquisition (scanning only the laser
+frequency), set the Delay column's ``Points`` to 1 — the ``End`` row
+tracks ``Start``. To perform a fixed-wavelength acquisition (scanning
+only the delay), do the same on the Laser column. Both axes can be
+active simultaneously; Blackchirp then steps through all combinations
+of delay and laser positions, collecting the configured number of
+shots at each combination. The shots-per-point value is set on the
+:doc:`configuration`, not in the wizard.
 
 Options
 -------

@@ -6,9 +6,8 @@ using namespace BC::Key::WizDR;
 
 #include <QDoubleSpinBox>
 #include <QSpinBox>
-#include <QLabel>
-#include <QFormLayout>
-#include <QGroupBox>
+#include <QHeaderView>
+#include <QTableWidget>
 #include <QVBoxLayout>
 
 #include <data/experiment/experiment.h>
@@ -25,6 +24,7 @@ DRScanConfigWidget::DRScanConfigWidget(Experiment *exp, QWidget *parent)
     p_startBox->setValue(get<double>(start,p_startBox->minimum()));
     p_startBox->setToolTip(QString("Starting DR frequency."));
     p_startBox->setKeyboardTracking(false);
+    p_startBox->setAlignment(Qt::AlignCenter);
 
     p_stepSizeBox = new QDoubleSpinBox;
     p_stepSizeBox->setDecimals(6);
@@ -34,12 +34,14 @@ DRScanConfigWidget::DRScanConfigWidget(Experiment *exp, QWidget *parent)
     p_stepSizeBox->setValue(get<double>(step,1.0));
     p_stepSizeBox->setToolTip(QString("DR step size (can be negative)."));
     p_stepSizeBox->setKeyboardTracking(false);
+    p_stepSizeBox->setAlignment(Qt::AlignCenter);
 
     p_numStepsBox = new QSpinBox;
     p_numStepsBox->setRange(2,INT_MAX);
     p_numStepsBox->setToolTip(QString("Number of steps to take."));
     p_numStepsBox->setValue(get<int>(numSteps,100));
     p_numStepsBox->setKeyboardTracking(false);
+    p_numStepsBox->setAlignment(Qt::AlignCenter);
 
     p_endBox = new QDoubleSpinBox;
     p_endBox->setDecimals(6);
@@ -47,32 +49,32 @@ DRScanConfigWidget::DRScanConfigWidget(Experiment *exp, QWidget *parent)
     p_endBox->setSuffix(QString(" MHz"));
     p_endBox->setToolTip(QString("Ending DR frequency. Set automatically."));
     p_endBox->setEnabled(false);
+    p_endBox->setAlignment(Qt::AlignCenter);
 
     p_shotsBox = new QSpinBox;
     p_shotsBox->setRange(0,INT_MAX);
     p_shotsBox->setSingleStep(100);
     p_shotsBox->setValue(get<int>(shots,100));
     p_shotsBox->setToolTip(QString("Number of shots to acquire at each DR point."));
+    p_shotsBox->setAlignment(Qt::AlignCenter);
 
-    auto gb = new QGroupBox(QString("DR Scan Settings"));
-    auto l = new QFormLayout;
+    auto table = new QTableWidget(5, 1, this);
+    table->setHorizontalHeaderLabels({"DR Scan Settings"});
+    table->setVerticalHeaderLabels({"Start", "Step Size", "Num Steps",
+                                    "End", "Shots Per Step"});
+    table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    table->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    table->setSelectionMode(QAbstractItemView::NoSelection);
+    table->setFocusPolicy(Qt::NoFocus);
 
-    l->addRow(QString("Start"),p_startBox);
-    l->addRow(QString("Step Size"),p_stepSizeBox);
-    l->addRow(QString("Num Steps"),p_numStepsBox);
-    l->addRow(QString("End"),p_endBox);
-    l->addRow(QString("Shots Per Step"),p_shotsBox);
-    gb->setLayout(l);
-
-    for(int i=0; i<l->rowCount(); i++)
-    {
-        auto lbl = static_cast<QLabel*>(l->itemAt(i,QFormLayout::LabelRole)->widget());
-        lbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
-    }
+    table->setCellWidget(0, 0, p_startBox);
+    table->setCellWidget(1, 0, p_stepSizeBox);
+    table->setCellWidget(2, 0, p_numStepsBox);
+    table->setCellWidget(3, 0, p_endBox);
+    table->setCellWidget(4, 0, p_shotsBox);
 
     auto vbl = new QVBoxLayout;
-    vbl->addWidget(gb,0);
-    vbl->addSpacerItem(new QSpacerItem(0,0));
+    vbl->addWidget(table, 1);
     setLayout(vbl);
 
     auto vc = static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged);

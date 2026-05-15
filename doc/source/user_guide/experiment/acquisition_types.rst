@@ -99,28 +99,26 @@ The number of shots collected at each LO step is set in the ``Shots/Point`` box 
    :align: center
    :alt: LO Scan configuration
 
-The LO scan widget is laid out as three stacked groups: ``Scan Settings``, ``Upconversion LO``, and ``Downconversion LO``.
-The ``Scan Settings`` group contains the ``Shots/Point`` and ``Target Sweeps`` boxes.
+The LO scan widget is laid out as a ``Scan Settings`` row at the top, an LO scan table that compares the Up LO and Down LO columns side by side, and a ``Down LO Mode`` row at the bottom.
+The ``Scan Settings`` row contains the ``Shots/Point`` and ``Target Sweeps`` boxes.
 Blackchirp acquires the indicated number of ``Shots/Point`` at each LO frequency specified.
 The complete set of LO frequencies is considered one **sweep**, and Blackchirp returns to the beginning LO configuration and resumes integrating until the desired number of ``Target Sweeps`` is reached.
 When Blackchirp repeats a segment, the new FIDs are automatically averaged together with the ones from the previous sweep(s).
 
-If the ``UpLO`` and ``DownLO`` correspond to the same hardware output, the entire ``Downconversion LO`` group is disabled.
+If the ``UpLO`` and ``DownLO`` correspond to the same hardware output, the entire ``Down LO`` column is disabled.
 
 Blackchirp divides the scan range into major and minor steps.
 Essentially, at each major step, a series of measurements can be made with slightly shifted LO positions to assist with sideband deconvolution.
 The LO is incremented by the minor step size for each minor step associated with the indicated major step.
-In the screenshot above, the Upconversion LO covers the total range of 1008 MHz in 5 major steps plus 3 minor steps per major step.
-Given the minor step size of 4 MHz, the major steps work out to 11520, 11770, 12020, 12270, and 12520 MHz.
-At each of these major step values, 3 minor steps are recorded, separated by 4 MHz: 11520, 11524, 11528, 11770, 11774, 11778, ..., 12520, 12524, 12528 MHz, for a total of 15 (3x5) steps.
-As the ``Start``, ``End``, and major/minor steps boxes are adjusted, some of the other boxes' values are updated to ensure the range is consistent.
+In the screenshot above, the Up LO covers the range from 6000 MHz to 10000 MHz in 5 major steps of 998 MHz plus 3 minor steps of 4 MHz per major step.
+The major steps therefore work out to 6000, 6998, 7996, 8994, and 9992 MHz; at each major step value, 3 minor steps are recorded separated by 4 MHz, for a total of 15 (3×5) steps and a final endpoint of 10000 MHz.
+As the ``Start``, ``End``, and major/minor steps cells are adjusted, some of the other cells' values are updated to keep the range consistent.
 
-The Downconversion LO is configured similarly.
-As the number of major or minor steps is changed, the Downconversion LO step counts and step sizes are also adjusted to ensure the number of steps matches the Upconversion LO and that the step sizes are consistent with the indicated range.
-Two checkboxes at the bottom of the ``Downconversion LO`` group modify this behavior.
-If the ``Fixed Frequency`` box is checked, the Downconversion LO is not changed during the acquisition; its frequency remains at the ``Start`` value, and all other Downconversion LO boxes are disabled.
-If the ``Constant Offset`` box is instead checked, the Downconversion LO frequency at each step is set to maintain the same difference between the Downconversion LO and Upconversion LO start frequencies.
-For example, in the screenshot above the Downconversion LO is offset from the Upconversion LO by :math:`40960-11520 = 29440` MHz, and that difference is held constant as the Upconversion LO is stepped through its values.
+The Down LO column is configured similarly.
+As the number of major or minor steps is changed, the Down LO step counts and step sizes are also adjusted so the number of steps matches the Up LO and the step sizes remain consistent with the indicated range.
+Two checkboxes in the ``Down LO Mode`` row modify this behavior.
+If the ``Fixed Frequency`` box is checked, the Down LO is not changed during the acquisition; its frequency remains at the ``Start`` value, and all other Down LO cells are disabled.
+If the ``Constant Offset`` box is instead checked, the Down LO frequency at each step is set to maintain a constant difference from the Up LO, equal to the difference between the Down LO and Up LO start frequencies.
 
 DR Scan
 -------

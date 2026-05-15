@@ -8,8 +8,8 @@
 class Experiment;
 class QSpinBox;
 class QDoubleSpinBox;
-class QGroupBox;
 class QCheckBox;
+class QTableWidget;
 
 namespace BC::Key::WizLoScan {
 inline constexpr QLatin1StringView key{"WizardLoScanPage"};
@@ -66,8 +66,10 @@ private:
              *p_shotsPerStepBox, *p_targetSweepsBox;
     QDoubleSpinBox *p_upStartBox, *p_downStartBox, *p_upEndBox, *p_downEndBox,
                    *p_upMinorStepBox, *p_downMinorStepBox, *p_upMajorStepBox, *p_downMajorStepBox;
-    QGroupBox *p_upBox, *p_downBox;
+    QTableWidget *p_loTable;
     QCheckBox *p_fixedDownLoBox, *p_constantDownOffsetBox;
+
+    void setDownColumnEnabled(bool enabled);
 
     struct LoRanges {
         std::pair<double,double> upLoRange;

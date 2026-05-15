@@ -7,194 +7,151 @@ using namespace BC::Key::WizLoScan;
 #include <QGroupBox>
 #include <QSpinBox>
 #include <QDoubleSpinBox>
-#include <QGridLayout>
+#include <QHBoxLayout>
+#include <QHeaderView>
 #include <QLabel>
 #include <QVBoxLayout>
 #include <QFormLayout>
 #include <QCheckBox>
+#include <QTableWidget>
 
 #include <data/experiment/experiment.h>
 #include <data/experiment/ftmwconfigtypes.h>
+namespace {
+constexpr int UpCol = 0;
+constexpr int DownCol = 1;
+constexpr int StartRow = 0;
+constexpr int EndRow = 1;
+constexpr int MinorStepsRow = 2;
+constexpr int MinorSizeRow = 3;
+constexpr int MajorStepsRow = 4;
+constexpr int MajorSizeRow = 5;
+}
 
 LOScanConfigWidget::LOScanConfigWidget(Experiment *exp, QWidget *parent)
     : QWidget(parent), SettingsStorage(BC::Key::WizLoScan::key), p_exp(exp)
 {
-    p_upBox = new QGroupBox("Upconversion LO");
+    auto makeFreqBox = [](double defaultVal, double singleStep,
+                          const QString &tip, double minRange = 0.0)
+    {
+        auto box = new QDoubleSpinBox;
+        box->setDecimals(6);
+        box->setSuffix(QString(" MHz"));
+        box->setSingleStep(singleStep);
+        box->setRange(minRange, 1e9);
+        box->setValue(defaultVal);
+        box->setToolTip(tip);
+        box->setKeyboardTracking(false);
+        box->setAlignment(Qt::AlignCenter);
+        return box;
+    };
 
-    p_upStartBox = new QDoubleSpinBox;
-    p_upStartBox->setDecimals(6);
-    p_upStartBox->setSuffix(QString(" MHz"));
-    p_upStartBox->setSingleStep(1000.0);
-    p_upStartBox->setRange(0.0,1e9);
-    p_upStartBox->setValue(get<double>(upStart,0.0));
-    p_upStartBox->setToolTip(QString("Starting major step LO frequency.\nChanging this value will update the major step size."));
-    p_upStartBox->setKeyboardTracking(false);
+    auto makeCountBox = [](int defaultVal, int minVal, int maxVal,
+                           const QString &tip)
+    {
+        auto box = new QSpinBox;
+        box->setRange(minVal, maxVal);
+        box->setValue(defaultVal);
+        box->setToolTip(tip);
+        box->setAlignment(Qt::AlignCenter);
+        return box;
+    };
 
-    p_upEndBox = new QDoubleSpinBox;
-    p_upEndBox->setDecimals(6);
-    p_upEndBox->setSuffix(QString(" MHz"));
-    p_upEndBox->setSingleStep(1000.0);
-    p_upEndBox->setRange(0.0,1e9);
-    p_upEndBox->setValue(get<double>(upEnd,1000.0));
-    p_upEndBox->setToolTip(QString("Ending LO frequency (including major and minor steps).\nThis is a limit; the frequency will not exceed this value.\nChanging this value will update the major step size."));
-    p_upEndBox->setKeyboardTracking(false);
+    p_upStartBox = makeFreqBox(get<double>(upStart, 0.0), 1000.0,
+        QString("Starting major step LO frequency.\nChanging this value will update the major step size."));
+    p_upEndBox = makeFreqBox(get<double>(upEnd, 1000.0), 1000.0,
+        QString("Ending LO frequency (including major and minor steps).\nThis is a limit; the frequency will not exceed this value.\nChanging this value will update the major step size."));
+    p_upMinorStepBox = makeFreqBox(get<double>(upMinorStep, 0.0), 1.0,
+        QString("Minor step size, if number of minor steps > 1.\nMay change the number of major steps."));
+    p_upMajorStepBox = makeFreqBox(get<double>(upMajorStep, 1000.0), 100.0,
+        QString("Desired major step size.\nChanging this will update the number of major steps."));
+    p_upNumMinorBox = makeCountBox(get<int>(upNumMinor, 1), 1, 10,
+        QString("Number of minor (small) steps to take per major step.\nThe sign is determined automatically."));
+    p_upNumMajorBox = makeCountBox(get<int>(upNumMajor, 2), 2, 100000,
+        QString("Number of major steps desired.\nChanging this will update the major step size."));
 
-    p_upNumMinorBox = new QSpinBox;
-    p_upNumMinorBox->setRange(1,10);
-    p_upNumMinorBox->setValue(get<int>(upNumMinor,1));
-    p_upNumMinorBox->setToolTip(QString("Number of minor (small) steps to take per major step.\nThe sign is determined automatically."));
+    p_downStartBox = makeFreqBox(get<double>(downStart, 0.0), 1000.0,
+        QString("Starting major step LO frequency."));
+    p_downEndBox = makeFreqBox(get<double>(downEnd, 1000.0), 1000.0,
+        QString("Ending LO frequency (including major and minor steps).\nThis is a limit; the frequency will not exceed this value.\nChanging this value will update the major step size."));
+    p_downMinorStepBox = makeFreqBox(get<double>(downMinorStep, 0.0), 1.0,
+        QString("Minor step size, if number of minor steps > 1.\nMay change the number of major steps."));
+    p_downMajorStepBox = makeFreqBox(get<double>(downMajorStep, 1000.0), 100.0,
+        QString("Desired major step size.\nChanging this will update the number of major steps."));
+    p_downNumMinorBox = makeCountBox(get<int>(downNumMinor, 1), 1, 10,
+        QString("Number of minor (small) steps to take per major step.\nThe sign is determined automatically."));
+    p_downNumMajorBox = makeCountBox(get<int>(downNumMajor, 2), 2, 100000,
+        QString("Number of major steps desired.\nChanging this will update the major step size."));
 
-    p_upMinorStepBox = new QDoubleSpinBox;
-    p_upMinorStepBox->setDecimals(6);
-    p_upMinorStepBox->setSuffix(QString(" MHz"));
-    p_upMinorStepBox->setSingleStep(1.0);
-    p_upMinorStepBox->setRange(0.0,1e9);
-    p_upMinorStepBox->setValue(get<double>(upMinorStep,0.0));
-    p_upMinorStepBox->setToolTip(QString("Minor step size, if number of minor steps > 1.\nMay change the number of major steps."));
-    p_upMinorStepBox->setKeyboardTracking(false);
+    p_loTable = new QTableWidget(6, 2, this);
+    p_loTable->setHorizontalHeaderLabels({"Up LO", "Down LO"});
+    p_loTable->setVerticalHeaderLabels({"Start", "End",
+                                        "Minor Steps/pt", "Minor Step Size",
+                                        "Major Steps", "Major Step Size"});
+    p_loTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    p_loTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    p_loTable->setSelectionMode(QAbstractItemView::NoSelection);
+    p_loTable->setFocusPolicy(Qt::NoFocus);
+    p_loTable->setShowGrid(true);
 
-    p_upNumMajorBox = new QSpinBox;
-    p_upNumMajorBox->setRange(2,100000);
-    p_upNumMajorBox->setValue(get<int>(upNumMajor,2));
-    p_upNumMajorBox->setToolTip(QString("Number of major steps desired.\nChanging this will update the major step size."));
+    p_loTable->setCellWidget(StartRow,      UpCol,   p_upStartBox);
+    p_loTable->setCellWidget(EndRow,        UpCol,   p_upEndBox);
+    p_loTable->setCellWidget(MinorStepsRow, UpCol,   p_upNumMinorBox);
+    p_loTable->setCellWidget(MinorSizeRow,  UpCol,   p_upMinorStepBox);
+    p_loTable->setCellWidget(MajorStepsRow, UpCol,   p_upNumMajorBox);
+    p_loTable->setCellWidget(MajorSizeRow,  UpCol,   p_upMajorStepBox);
 
-    p_upMajorStepBox = new QDoubleSpinBox;
-    p_upMajorStepBox->setDecimals(6);
-    p_upMajorStepBox->setSuffix(QString(" MHz"));
-    p_upMajorStepBox->setSingleStep(100.0);
-    p_upMajorStepBox->setRange(0.0,1e9);
-    p_upMajorStepBox->setValue(get<double>(upMajorStep,1000.0));
-    p_upMajorStepBox->setToolTip(QString("Desired major step size.\nChanging this will update the number of major steps."));
-    p_upMajorStepBox->setKeyboardTracking(false);
-
-    auto *upgl = new QGridLayout;
-    upgl->addWidget(new QLabel("Start"),0,0,Qt::AlignRight);
-    upgl->addWidget(p_upStartBox,0,1);
-    upgl->addWidget(new QLabel("End"),0,2,Qt::AlignRight);
-    upgl->addWidget(p_upEndBox,0,3);
-
-    upgl->addWidget(new QLabel("Minor Steps/pt"),1,0,Qt::AlignRight);
-    upgl->addWidget(p_upNumMinorBox,1,1);
-    upgl->addWidget(new QLabel("Size"),1,2,Qt::AlignRight);
-    upgl->addWidget(p_upMinorStepBox,1,3);
-
-    upgl->addWidget(new QLabel("Major Steps"),2,0,Qt::AlignRight);
-    upgl->addWidget(p_upNumMajorBox,2,1);
-    upgl->addWidget(new QLabel("Size"),2,2,Qt::AlignRight);
-    upgl->addWidget(p_upMajorStepBox,2,3);
-
-    upgl->addItem(new QSpacerItem(0,0,QSizePolicy::Minimum,QSizePolicy::Expanding),3,0);
-
-    p_upBox->setLayout(upgl);
-
-
-    p_downBox = new QGroupBox("Downconversion LO");
-
-    p_downStartBox = new QDoubleSpinBox;
-    p_downStartBox->setDecimals(6);
-    p_downStartBox->setSuffix(QString(" MHz"));
-    p_downStartBox->setSingleStep(1000.0);
-    p_downStartBox->setRange(0.0,1e9);
-    p_downStartBox->setValue(get<double>(downStart,0.0));
-    p_downStartBox->setToolTip(QString("Starting major step LO frequency."));
-    p_downStartBox->setKeyboardTracking(false);
-
-    p_downEndBox = new QDoubleSpinBox;
-    p_downEndBox->setDecimals(6);
-    p_downEndBox->setSuffix(QString(" MHz"));
-    p_downEndBox->setSingleStep(1000.0);
-    p_downEndBox->setRange(0.0,1e9);
-    p_downEndBox->setValue(get<double>(downEnd,1000.0));
-    p_downEndBox->setToolTip(QString("Ending LO frequency (including major and minor steps).\nThis is a limit; the frequency will not exceed this value.\nChanging this value will update the major step size."));
-    p_downEndBox->setKeyboardTracking(false);
-
-    p_downNumMinorBox = new QSpinBox;
-    p_downNumMinorBox->setRange(1,10);
-    p_downNumMinorBox->setValue(get<int>(downNumMinor,1));
-    p_downNumMinorBox->setToolTip(QString("Number of minor (small) steps to take per major step.\nThe sign is determined automatically."));
-
-    p_downMinorStepBox = new QDoubleSpinBox;
-    p_downMinorStepBox->setDecimals(6);
-    p_downMinorStepBox->setSuffix(QString(" MHz"));
-    p_downMinorStepBox->setSingleStep(1.0);
-    p_downMinorStepBox->setRange(0.0,1e9);
-    p_downMinorStepBox->setValue(get<double>(downMinorStep,0.0));
-    p_downMinorStepBox->setToolTip(QString("Minor step size, if number of minor steps > 1.\nMay change the number of major steps."));
-    p_downMinorStepBox->setKeyboardTracking(false);
-
-    p_downNumMajorBox = new QSpinBox;
-    p_downNumMajorBox->setRange(2,100000);
-    p_downNumMajorBox->setValue(get<int>(downNumMajor,2));
-    p_downNumMajorBox->setToolTip(QString("Number of major steps desired.\nChanging this will update the major step size."));
-
-    p_downMajorStepBox = new QDoubleSpinBox;
-    p_downMajorStepBox->setDecimals(6);
-    p_downMajorStepBox->setSuffix(QString(" MHz"));
-    p_downMajorStepBox->setSingleStep(100.0);
-    p_downMajorStepBox->setRange(0.0,1e9);
-    p_downMajorStepBox->setValue(get<double>(downMajorStep,1000.0));
-    p_downMajorStepBox->setToolTip(QString("Desired major step size.\nChanging this will update the number of major steps."));
-    p_downMajorStepBox->setKeyboardTracking(false);
+    p_loTable->setCellWidget(StartRow,      DownCol, p_downStartBox);
+    p_loTable->setCellWidget(EndRow,        DownCol, p_downEndBox);
+    p_loTable->setCellWidget(MinorStepsRow, DownCol, p_downNumMinorBox);
+    p_loTable->setCellWidget(MinorSizeRow,  DownCol, p_downMinorStepBox);
+    p_loTable->setCellWidget(MajorStepsRow, DownCol, p_downNumMajorBox);
+    p_loTable->setCellWidget(MajorSizeRow,  DownCol, p_downMajorStepBox);
 
     p_fixedDownLoBox = new QCheckBox(QString("Fixed Frequency"));
     p_fixedDownLoBox->setToolTip(QString("If checked, the downconversion frequency will be set to the start value for all points."));
-    p_fixedDownLoBox->setChecked(get<bool>(downFixed,false));
+    p_fixedDownLoBox->setChecked(get<bool>(downFixed, false));
 
     p_constantDownOffsetBox = new QCheckBox(QString("Constant Offset"));
     p_constantDownOffsetBox->setToolTip(QString("If checked, the downconversion frequency will maintain a constant difference from the upconversion LO.\nThe difference will be kept at the difference of the start frequencies."));
-    p_constantDownOffsetBox->setChecked(get<bool>(constOffset,false));
+    p_constantDownOffsetBox->setChecked(get<bool>(constOffset, false));
 
-    auto *downgl = new QGridLayout;
-    downgl->addWidget(new QLabel("Start"),0,0,Qt::AlignRight);
-    downgl->addWidget(p_downStartBox,0,1);
-    downgl->addWidget(new QLabel("End"),0,2,Qt::AlignRight);
-    downgl->addWidget(p_downEndBox,0,3);
-
-    downgl->addWidget(new QLabel("Minor Steps/pt"),1,0,Qt::AlignRight);
-    downgl->addWidget(p_downNumMinorBox,1,1);
-    downgl->addWidget(new QLabel("Size"),1,2,Qt::AlignRight);
-    downgl->addWidget(p_downMinorStepBox,1,3);
-
-    downgl->addWidget(new QLabel("Major Steps"),2,0,Qt::AlignRight);
-    downgl->addWidget(p_downNumMajorBox,2,1);
-    downgl->addWidget(new QLabel("Size"),2,2,Qt::AlignRight);
-    downgl->addWidget(p_downMajorStepBox,2,3);
-
-    downgl->addWidget(p_fixedDownLoBox,3,0,1,2,Qt::AlignLeft);
-    downgl->addWidget(p_constantDownOffsetBox,3,2,1,2,Qt::AlignLeft);
-
-    downgl->addItem(new QSpacerItem(0,0,QSizePolicy::Minimum,QSizePolicy::Expanding),4,0);
-
-    p_downBox->setLayout(downgl);
+    auto *downModeRow = new QHBoxLayout;
+    downModeRow->addWidget(new QLabel("Down LO Mode:"));
+    downModeRow->addWidget(p_fixedDownLoBox);
+    downModeRow->addWidget(p_constantDownOffsetBox);
+    downModeRow->addStretch(1);
 
     auto *otherBox = new QGroupBox(QString("Scan Settings"));
-    auto *fl = new QFormLayout;
 
     p_shotsPerStepBox = new QSpinBox;
     p_shotsPerStepBox->setRange(1,INT_MAX);
     p_shotsPerStepBox->setSingleStep(1000);
     p_shotsPerStepBox->setValue(get(shots,1000));
+    p_shotsPerStepBox->setAlignment(Qt::AlignCenter);
     p_shotsPerStepBox->setToolTip(QString("Number of shots to acquire at each step (major and minor)."));
-
-    auto lbl = new QLabel(QString("Shots/Point"));
-    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
-    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
-    fl->addRow(lbl,p_shotsPerStepBox);
 
     p_targetSweepsBox = new QSpinBox;
     p_targetSweepsBox->setRange(1,INT_MAX);
     p_targetSweepsBox->setValue(get(sweeps,1));
+    p_targetSweepsBox->setAlignment(Qt::AlignCenter);
     p_targetSweepsBox->setToolTip(QString("Number of sweeps through the total LO range.\nExperiment will end when this number is reached."));
-    lbl = new QLabel(QString("Target Sweeps"));
-    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
-    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
-    fl->addRow(lbl,p_targetSweepsBox);
-    otherBox->setLayout(fl);
+
+    auto *settingsRow = new QHBoxLayout;
+    auto *shotsLbl = new QLabel("Shots/Point:");
+    shotsLbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
+    settingsRow->addWidget(shotsLbl);
+    settingsRow->addWidget(p_shotsPerStepBox, 1);
+    auto *sweepsLbl = new QLabel("Target Sweeps:");
+    sweepsLbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
+    settingsRow->addWidget(sweepsLbl);
+    settingsRow->addWidget(p_targetSweepsBox, 1);
+    otherBox->setLayout(settingsRow);
 
     auto *vbl = new QVBoxLayout;
     vbl->addWidget(otherBox,0);
-    vbl->addWidget(p_upBox,1);
-    vbl->addWidget(p_downBox,1);
+    vbl->addWidget(p_loTable,1);
+    vbl->addLayout(downModeRow,0);
 
     setLayout(vbl);
 
@@ -559,7 +516,17 @@ void LOScanConfigWidget::initialize()
     p_downMajorStepBox->setRange(1.0,downMaxFreq-downMinFreq);
     p_downMinorStepBox->setRange(0.0,downMaxFreq-downMinFreq);
 
-    p_downBox->setDisabled(rfc.d_commonUpDownLO);
+    setDownColumnEnabled(!rfc.d_commonUpDownLO);
+    p_fixedDownLoBox->setEnabled(!rfc.d_commonUpDownLO);
+    p_constantDownOffsetBox->setEnabled(!rfc.d_commonUpDownLO);
+
+    if(!rfc.d_commonUpDownLO)
+    {
+        if(p_fixedDownLoBox->isChecked())
+            fixedChanged(true);
+        else if(p_constantDownOffsetBox->isChecked())
+            constantOffsetChanged(true);
+    }
 
     if(rfc.d_commonUpDownLO)
     {
@@ -708,4 +675,13 @@ void LOScanConfigWidget::apply()
 
     rfc.d_shotsPerClockConfig = p_shotsPerStepBox->value();
     rfc.d_targetSweeps = p_targetSweepsBox->value();
+}
+
+void LOScanConfigWidget::setDownColumnEnabled(bool enabled)
+{
+    for(int row = 0; row < p_loTable->rowCount(); ++row)
+    {
+        if(auto w = p_loTable->cellWidget(row, DownCol))
+            w->setEnabled(enabled);
+    }
 }
