@@ -141,6 +141,14 @@ void BCExpOverlay::_retrieveMetadata(const std::map<QString, QVariant, std::less
 
 CatalogOverlay::CatalogOverlay() : OverlayBase(Catalog)
 {
+    // Default a freshly-created catalog overlay to a stick plot (a raw
+    // line catalog is a stick spectrum). This is only the creation default:
+    // retrieveMetadata() repopulates curve metadata from disk, so a user who
+    // later switches to a line plot (e.g. after convolution) keeps that
+    // choice across reloads.
+    // QwtPlotCurve::CurveStyle ordinals: 0=Lines, 1=Sticks, 2=Steps, 3=Dots.
+    // (The data layer cannot include qwt, so the literal is used directly.)
+    setCurveMetadata(BC::Data::CurveKey::curveStyle, 1);
 }
 
 CatalogData CatalogOverlay::catalogData() const
@@ -683,10 +691,6 @@ void CatalogOverlay::_retrieveMetadata(const std::map<QString, QVariant, std::le
     if (it != m.end()) {
         d_filterMaxFreq = it->second.toDouble();
     }
-    
-    // Force curve style to stick plot when loaded from disk
-    // Value 2 = QwtPlotCurve::Sticks
-    setCurveMetadata(BC::Data::CurveKey::curveStyle, 2);
     
     // Invalidate cache after loading metadata
     invalidateConvolutionCache();
