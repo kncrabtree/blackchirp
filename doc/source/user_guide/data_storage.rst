@@ -13,7 +13,7 @@ Data Storage
 
 Blackchirp stores its data in your selected :ref:`Data Storage Location <first-run-data-path>`. The location may be changed by selecting the Settings > Data Storage menu item.
 
-.. image:: /_static/user_guide/first_run/savepathdialog.png
+.. image:: /_static/user_guide/first_run-savepathdialog.png
    :alt: Data storage location
 
 At this location, Blackchirp creates 4 subfolders:

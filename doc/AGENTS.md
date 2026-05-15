@@ -74,12 +74,16 @@ terms it introduces.
 
 ### Screenshots
 
-UI screenshots go in `doc/source/_static/user_guide/<page-name>/`.
-Reference them with `.. figure::` directives so they get a caption and
-fit into the page flow. Sizing convention: native ≤800 px renders 1:1
-(no `:width:`); native >800 px caps at `:width: 800` with `:target:`
-linking to the full-resolution image so users can click through.
-Match the existing rendered pages.
+UI screenshots go directly in `doc/source/_static/user_guide/` as a
+flat directory. Filenames follow `<page>-<topic>.<ext>`, where
+`<page>` matches the basename of the `.rst` page that uses the
+screenshot (use `hw-<device>` for per-device pages under
+`user_guide/hw/`). The hyphen separates page prefix from topic; the
+topic is the descriptive part. Reference screenshots with `.. figure::`
+directives so they get a caption and fit into the page flow. Sizing
+convention: native ≤800 px renders 1:1 (no `:width:`); native >800 px
+caps at `:width: 800` with `:target:` linking to the full-resolution
+image so users can click through. Match the existing rendered pages.
 
 ### API reference
 

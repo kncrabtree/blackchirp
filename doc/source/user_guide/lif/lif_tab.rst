@@ -21,7 +21,7 @@ The **LIF** tab provides real-time and post-acquisition visualization of LIF
 data. It is visible in the main window whenever the LIF module is enabled
 (see :ref:`application-config`).
 
-.. image:: /_static/user_guide/lif/lif_tab.png
+.. image:: /_static/user_guide/lif-lif_tab.png
    :align: center
    :width: 800
    :alt: LIF Display tab showing time trace, slice plots, 2D spectrogram, and processing panel

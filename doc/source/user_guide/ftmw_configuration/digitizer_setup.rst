@@ -24,7 +24,7 @@ preset is applied, saved, or accepted.
 The tab is also accessible in the Experiment Setup dialog, where the same
 settings are reviewed and validated before an experiment starts.
 
-.. figure:: /_static/user_guide/ftmw_configuration/digitizer.png
+.. figure:: /_static/user_guide/ftmw_configuration-digitizer.png
    :width: 800
    :alt: Digitizer Config tab of the FTMW Configuration dialog showing
          the analog channel list on the left, data-transfer settings,

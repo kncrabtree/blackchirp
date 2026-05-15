@@ -20,7 +20,7 @@ Blackchirp itself does not need any of these libraries to start; only
 the hardware that depends on a particular library is affected when it
 is missing.
 
-.. figure:: /_static/user_guide/library_status/widget.png
+.. figure:: /_static/user_guide/library_status-widget.png
    :width: 800
    :alt: Library Status widget
 

@@ -10,13 +10,13 @@ Overview
 
 A pulse generator is a source of timing pulses whose delays and widths can be varied with respect to a master timing source (either an internal rate generator or an external trigger). Each channel has an individually controllable width and delay. If supported by the device, the pulse sequence may be triggered externally and channels may be set to operate in a lower duty-cycle mode or synchronized to another channel.
 
-.. image:: /_static/hardware/pulsegenerator_menu.png
+.. image:: /_static/user_guide/hw-pulsegenerator-menu.png
    :width: 800
    :alt: Pulse Generator Control Screenshot
 
 The image above shows an overview of the pulse generator control widget. Individual channels can be further configured with the wrench-icon button, which opens a per-channel dialog (shown below) for setting the channel name and role, the active level, the duty-cycle behavior, and the step sizes for the numeric controls.
 
-.. image:: /_static/hardware/pulsegenerator_submenu.png
+.. image:: /_static/user_guide/hw-pulsegenerator-submenu.png
    :alt: Pulse Generator Control Channel Configuration
 
 Blackchirp recognizes a fixed list of channel roles, several of which trigger validation when an experiment is started:

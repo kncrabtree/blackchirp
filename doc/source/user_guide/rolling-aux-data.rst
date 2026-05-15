@@ -7,7 +7,7 @@
 Rolling/Aux Data
 ================
 
-.. image:: /_static/user_guide/rolling_aux_data/rollingdata.png
+.. image:: /_static/user_guide/rolling_aux_data-rollingdata.png
    :width: 800
    :align: center
    :alt: Rolling data screenshot

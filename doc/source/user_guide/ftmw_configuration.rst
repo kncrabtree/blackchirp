@@ -25,7 +25,7 @@ The FTMW Configuration dialog is available only while Blackchirp is in
 the **Idle** state (hardware connected, no experiment running). The dialog
 is opened in read-only mode when Blackchirp is disconnected.
 
-.. figure:: /_static/user_guide/ftmw_configuration/ftmw_configuration.png
+.. figure:: /_static/user_guide/ftmw_configuration-dialog.png
    :width: 800
    :alt: FTMW Configuration dialog showing the preset bar at the top and
          the RF, Chirp, and Digitizer tabs below it.

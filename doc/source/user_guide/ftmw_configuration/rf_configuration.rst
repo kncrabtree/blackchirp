@@ -17,7 +17,7 @@ The **RF Config** tab of the :doc:`FTMW Configuration </user_guide/ftmw_configur
 dialog configures the frequency conversion chain between the AWG output and
 the sample, and between the sample emission and the digitizer input.
 
-.. figure:: /_static/user_guide/ftmw_configuration/rf_configuration.png
+.. figure:: /_static/user_guide/ftmw_configuration-rf_configuration.png
    :width: 800
    :alt: RF Config tab of the FTMW Configuration dialog showing the clock
          role table, Common LO checkbox, AWG and chirp multiplication
@@ -38,7 +38,7 @@ delivered to the sample. The sample emission is mixed against the
 downconversion local oscillator and digitized. Each labeled stage in the
 diagram corresponds to a setting on this tab.
 
-.. figure:: /_static/user_guide/ftmw_configuration/clocks.svg
+.. figure:: /_static/user_guide/ftmw_configuration-clocks.svg
    :alt: Block diagram of the FTMW signal chain showing AWG output, AWG
          multiplication, upconversion mixing with the upconversion LO,
          the sample, downconversion mixing with the downconversion LO,

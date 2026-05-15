@@ -6,7 +6,7 @@
 Validation Settings
 ===================
 
-.. image:: /_static/user_guide/experiment/validation.png
+.. image:: /_static/user_guide/experiment-validation.png
    :align: center
    :width: 800
    :alt: Experiment validation settings

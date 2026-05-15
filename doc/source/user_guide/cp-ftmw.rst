@@ -16,7 +16,7 @@
 CP-FTMW Tab
 ===========
 
-.. image:: /_static/user_guide/ui_overview/cp_ftmw.png
+.. image:: /_static/user_guide/cp-ftmw-overview.png
    :align: center
    :width: 800
    :alt: CP-FTMW tab overview
@@ -103,7 +103,7 @@ If a periodic backup is already in flight when the button is clicked, the reques
 Peak Find
 .........
 
-.. image:: /_static/user_guide/ui_overview/peakfind.png
+.. image:: /_static/user_guide/cp-ftmw-peakfind.png
    :align: center
    :width: 800
    :alt: Peak find panel

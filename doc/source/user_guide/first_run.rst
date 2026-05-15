@@ -37,7 +37,7 @@ Configuration* and has two sections: **Data Storage** and
 Data Storage
 ~~~~~~~~~~~~
 
-.. figure:: /_static/user_guide/first_run/savepathdialog.png
+.. figure:: /_static/user_guide/first_run-savepathdialog.png
    :alt: The Data Storage section of the Initial Configuration dialog.
 
    The Data Storage section of the Initial Configuration dialog.
@@ -76,7 +76,7 @@ opens next.
 Hardware Configuration
 ----------------------
 
-.. figure:: /_static/user_guide/first_run/onboarding-runtimeconfig.png
+.. figure:: /_static/user_guide/first_run-onboarding_runtimeconfig.png
    :width: 800
    :alt: The Hardware Configuration dialog.
 

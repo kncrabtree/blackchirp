@@ -26,7 +26,7 @@ Configuration** dialog. Two paths open it:
 The two contexts share identical controls; values set in one are persisted
 and visible in the other.
 
-.. image:: /_static/user_guide/lif/lif_config.png
+.. image:: /_static/user_guide/lif-lif_config.png
    :align: center
    :width: 800
    :alt: LIF Configuration dialog

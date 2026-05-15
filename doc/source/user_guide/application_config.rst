@@ -21,7 +21,7 @@ hardware profile or experiment. Options are grouped into two sections:
 
 To open the dialog: **Settings → Application Settings**.
 
-.. figure:: /_static/user_guide/application_config/dialog.png
+.. figure:: /_static/user_guide/application_config-dialog.png
    :alt: Application Configuration dialog
 
    The Application Configuration dialog, showing all available options.

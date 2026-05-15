@@ -552,14 +552,18 @@ block are reachable but invisible from the documentation's index page.
 Screenshots
 ~~~~~~~~~~~
 
-UI screenshots live under
-``doc/source/_static/user_guide/<page-name>/``. Reference them with
-``.. figure::`` (not ``.. image::``) so the screenshot gets a caption
-and fits into the page flow:
+UI screenshots live directly under ``doc/source/_static/user_guide/``
+in a single flat directory. Filenames follow the pattern
+``<page>-<topic>.<ext>``, where ``<page>`` matches the basename of the
+``.rst`` page that uses the screenshot (or, for per-device pages under
+``user_guide/hw/``, the ``hw-<device>`` form). The hyphen separates
+the page prefix from the topic; the topic is the descriptive part of
+the original filename. Reference screenshots with ``.. figure::`` (not
+``.. image::``) so they get a caption and fit into the page flow:
 
 .. code-block:: rst
 
-   .. figure:: /_static/user_guide/hardware_menu/profile_dialog.png
+   .. figure:: /_static/user_guide/hardware_config-addprofile.png
       :width: 80%
       :align: center
 
@@ -569,8 +573,8 @@ Width is expressed as a percentage; the percentage depends on the
 content density of the screenshot (forms and dialogs typically render
 at 60–80%, full-window shots at 90–100%). Screenshots are PNG.
 Hardware-specific screenshots that may need re-capture with new
-firmware revisions live in the same directory as the page that uses
-them.
+firmware revisions follow the same naming pattern as any other
+screenshot.
 
 Notebooks
 ~~~~~~~~~

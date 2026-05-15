@@ -16,7 +16,7 @@
 User Interface Overview
 =======================
 
-.. image:: /_static/user_guide/ui_overview/ui.png
+.. image:: /_static/user_guide/ui_overview-window.png
    :width: 800
    :alt: User interface screenshot
 

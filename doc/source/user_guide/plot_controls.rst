@@ -50,7 +50,7 @@ Keyboard controls are also available for zooming and panning:
 Plot Configuration Options
 --------------------------
 
-.. image:: /_static/user_guide/plot_controls/contextmenu.png
+.. image:: /_static/user_guide/plot_controls-contextmenu.png
    :width: 800
    :align: center
    :alt: Plot context menu

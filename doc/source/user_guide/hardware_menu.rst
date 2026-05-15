@@ -18,7 +18,7 @@ Hardware Menu
 
    hwdialog
 
-.. figure:: /_static/user_guide/hardware_menu/menu.png
+.. figure:: /_static/user_guide/hardware_menu-menu.png
    :alt: Hardware menu opened, with Loadout submenu highlighted.
 
    The **Hardware** toolbar menu, showing the entry order and the per-device
@@ -59,7 +59,7 @@ appear in the following order:
 Communication
 -------------
 
-.. figure:: /_static/user_guide/hardware_menu/communication.png
+.. figure:: /_static/user_guide/hardware_menu-communication.png
    :width: 800
    :alt: Communication Settings dialog with TCP protocol selected for an
          FtmwDigitizer device.

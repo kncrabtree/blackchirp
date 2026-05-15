@@ -23,7 +23,7 @@ named operating points (FTMW presets), and a ``currentFtmwPreset`` pointer
 that records the most recently applied preset for that loadout. Switching
 loadouts swaps both the hardware map and the FTMW preset context.
 
-.. figure:: /_static/user_guide/hardware_config/loadouts_menu.png
+.. figure:: /_static/user_guide/hardware_config-loadouts_menu.png
    :alt: Hardware menu with the Loadout submenu open showing several saved loadouts
    :align: center
 
@@ -154,7 +154,7 @@ new hardware. This is called *hardware drift*.
 If the loadout has any named FTMW presets when drift is detected, Blackchirp
 shows a warning dialog with three choices:
 
-.. figure:: /_static/user_guide/hardware_config/drift_prompt.png
+.. figure:: /_static/user_guide/hardware_config-drift_prompt.png
    :alt: Hardware Configuration Changed dialog with Discard, Save As instead, and Cancel buttons
    :align: center
 

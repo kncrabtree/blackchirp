@@ -41,7 +41,7 @@ Below the tabs, a row of convenience controls is always visible:
 Control Tab
 -----------
 
-.. figure:: /_static/user_guide/hwdialog/control_tab.png
+.. figure:: /_static/user_guide/hwdialog-control_tab.png
    :width: 800
    :alt: Hardware Dialog showing a Pulse Generator's Control tab with the
          channel configuration table and timing-diagram preview.
@@ -83,7 +83,7 @@ will be applied immediately."*
 Settings Tab
 ------------
 
-.. figure:: /_static/user_guide/hwdialog/settings_tab.png
+.. figure:: /_static/user_guide/hwdialog-settings_tab.png
    :width: 800
    :alt: Hardware Dialog showing the Advanced sub-tab of a Pulse Generator's
          Settings tab.

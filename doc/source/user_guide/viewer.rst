@@ -16,7 +16,7 @@ installing from a release package places both executables side by side.
 Building from source produces both via the ``blackchirp`` and
 ``blackchirp-viewer`` CMake targets.
 
-.. figure:: /_static/user_guide/viewer/main_window.png
+.. figure:: /_static/user_guide/viewer-main_window.png
    :width: 800
    :align: center
    :alt: Blackchirp Viewer launcher window with a saved experiment opened in a separate experiment view window

@@ -23,7 +23,7 @@ example, a profile backed by ``PythonFlowController`` shows the
 Python controls and the standard gas-control widget on the same
 dialog.
 
-.. figure:: /_static/user_guide/python_hardware/hwdialog_python.png
+.. figure:: /_static/user_guide/python_hardware-hwdialog_python.png
    :alt: HwDialog for a PythonFlowController device. The Python Script group at the top of the Control tab shows the script path, Open in Editor and Reload Script buttons, and a Running status label. The standard gas-control widget appears below.
    :align: center
 
@@ -113,7 +113,7 @@ modes include:
   that the package is installed in the environment configured
   for the profile (see :doc:`selecting`).
 
-.. figure:: /_static/user_guide/python_hardware/error_state.png
+.. figure:: /_static/user_guide/python_hardware-error_state.png
    :width: 800
    :alt: Composite view of the Blackchirp main window with HwDialog open showing a red Error status label, the Log tab showing the full Python traceback, and an external editor displaying the script with the offending line highlighted.
    :align: center

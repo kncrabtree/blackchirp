@@ -5,7 +5,7 @@
 Quick Experiment
 ================
 
-.. image:: /_static/user_guide/experiment/quickexpt_1.png
+.. image:: /_static/user_guide/experiment-quickexpt_1.png
    :align: center
    :alt: Quick Experiment Dialog
 
@@ -34,6 +34,6 @@ Unchecking a box causes the saved values to be restored instead.
 - ``Configure Experiment`` — opens the experiment wizard with all values pre-populated from the selected experiment (respecting the ``Use Current Settings`` choices). Available only when hardware is compatible.
 - ``Start Experiment`` — immediately starts the experiment without opening the wizard. Available only when hardware is compatible.
 
-.. image:: /_static/user_guide/experiment/quickexpt_2.png
+.. image:: /_static/user_guide/experiment-quickexpt_2.png
    :align: center
    :alt: Quick Experiment Dialog Error

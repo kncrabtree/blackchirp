@@ -26,7 +26,7 @@ configuration live separately in the :doc:`configuration` (opened from
 **Hardware → LIF Configuration**), where shots-per-point and digitizer
 settings are also configured.
 
-.. image:: /_static/user_guide/lif/lif_exp_setup.png
+.. image:: /_static/user_guide/lif-lif_exp_setup.png
    :align: center
    :alt: LIF group on the first page of the experiment wizard
 

@@ -6,7 +6,7 @@
 Sequence Mode
 =============
 
-.. image:: /_static/user_guide/experiment/sequence.png
+.. image:: /_static/user_guide/experiment-sequence.png
    :align: center
    :alt: Experiment sequence mode
 

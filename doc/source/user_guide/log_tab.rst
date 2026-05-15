@@ -15,7 +15,7 @@ during a session. Messages come from the application core, the acquisition
 engine, and individual hardware drivers; together they form a continuous record
 of what the program is doing.
 
-.. figure:: /_static/user_guide/log_tab/log_tab.png
+.. figure:: /_static/user_guide/log_tab-overview.png
    :width: 800
    :align: center
    :alt: Log tab showing normal, highlight, warning, and error messages
@@ -80,7 +80,7 @@ Application Settings dialog (**Settings → Application Settings**) and
 check the **Debug Logging** option. See :ref:`app-config-debug-logging` for
 details.
 
-.. figure:: /_static/user_guide/log_tab/debug_toggle.png
+.. figure:: /_static/user_guide/log_tab-debug_toggle.png
    :align: center
    :alt: Application Settings dialog showing the Debug Logging checkbox
 

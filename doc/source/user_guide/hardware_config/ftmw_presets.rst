@@ -55,7 +55,7 @@ The preset bar at the top of the FTMW Configuration dialog is the primary
 interface for working with presets. See
 :doc:`/user_guide/ftmw_configuration` for the buttons and their behavior.
 
-.. figure:: /_static/user_guide/ftmw_configuration/ftmw_configuration.png
+.. figure:: /_static/user_guide/ftmw_configuration-dialog.png
    :width: 800
    :alt: FTMW Configuration dialog with the FTMW Preset bar at the top
    :align: center
@@ -73,7 +73,7 @@ Named presets for the active loadout also appear in the main menu bar:
 
 **Hardware → FTMW Preset → [preset name]**
 
-.. figure:: /_static/user_guide/hardware_config/ftmw_presets_menu.png
+.. figure:: /_static/user_guide/hardware_config-ftmw_presets_menu.png
    :alt: Hardware menu with the FTMW Preset submenu open showing the named presets in the active loadout
    :align: center
 

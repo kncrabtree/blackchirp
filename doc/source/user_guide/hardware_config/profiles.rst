@@ -33,7 +33,7 @@ information:
 Profiles are created once and then reused across loadouts. Changing a
 profile's settings affects every loadout that includes it.
 
-.. figure:: /_static/user_guide/hardware_config/runtimedialog.png
+.. figure:: /_static/user_guide/hardware_config-runtimedialog.png
    :width: 800
    :alt: Hardware Configuration dialog with Loadout, Configuration Overview, Hardware Browser, and per-profile Configuration panels
    :align: center
@@ -83,7 +83,7 @@ The **Add Profile** dialog collects:
 After selecting a driver, the dialog shows a settings widget
 organized into priority sections.
 
-.. figure:: /_static/user_guide/hardware_config/addprofile.png
+.. figure:: /_static/user_guide/hardware_config-addprofile.png
    :alt: Add Profile dialog showing the Driver, Label, and Required and Important Settings sections
    :align: center
 

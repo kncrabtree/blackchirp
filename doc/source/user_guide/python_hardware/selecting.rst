@@ -36,7 +36,7 @@ the same selection is also available from the **Driver**
 dropdown shown on the existing profile in the Hardware Configuration
 dialog.
 
-.. figure:: /_static/user_guide/python_hardware/profile_creation.png
+.. figure:: /_static/user_guide/python_hardware-profile_creation.png
    :width: 800
    :alt: Hardware Configuration dialog with a PythonAwg profile selected. The Advanced section shows the Python Script, Python Class, and Python Environment fields, with the resolved interpreter version displayed below.
    :align: center
@@ -54,7 +54,7 @@ Template-script copy
 When you save a new profile that uses a Python driver,
 Blackchirp offers to seed it with the bundled template:
 
-.. figure:: /_static/user_guide/python_hardware/template_copy_prompt.png
+.. figure:: /_static/user_guide/python_hardware-template_copy_prompt.png
    :alt: Dialog asking whether to copy the Python template script, with the security warning and Yes/No buttons.
    :align: center
 
