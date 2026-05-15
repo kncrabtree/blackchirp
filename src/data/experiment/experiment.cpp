@@ -147,9 +147,9 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
 
     if(ftmwEnabled())
     {
-        ps_ftmwConfig->d_rfConfig.d_chirpConfig.readChirpFile(csv.get(),num,exptPath);
-        ps_ftmwConfig->d_rfConfig.d_chirpConfig.readMarkersFile(csv.get(),num,exptPath);
-        ps_ftmwConfig->d_rfConfig.loadClockSteps(csv.get(),num,exptPath);
+        ps_ftmwConfig->d_rfConfig.d_chirpConfig.readChirpFile(csv.get(),d_number,exptPath);
+        ps_ftmwConfig->d_rfConfig.d_chirpConfig.readMarkersFile(csv.get(),d_number,exptPath);
+        ps_ftmwConfig->d_rfConfig.loadClockSteps(csv.get(),d_number,exptPath);
 
         if(!headerOnly)
             ps_ftmwConfig->loadFids();
@@ -160,13 +160,13 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
 
     //load aux data
     if(!headerOnly)
-        ps_auxData = std::make_shared<AuxDataStorage>(csv.get(),num,exptPath);
+        ps_auxData = std::make_shared<AuxDataStorage>(csv.get(),d_number,exptPath);
     else
         ps_auxData = std::make_shared<AuxDataStorage>();
 
     //load overlays
     if(!headerOnly)
-        ps_overlayStorage = std::make_shared<OverlayStorage>(num, exptPath);
+        ps_overlayStorage = std::make_shared<OverlayStorage>(d_number, exptPath);
     else
         ps_overlayStorage = std::make_shared<OverlayStorage>(-1, ""); // No overlays in header-only mode
 
