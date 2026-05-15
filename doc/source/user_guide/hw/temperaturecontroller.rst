@@ -32,4 +32,4 @@ Lakeshore 218
 The `Lakeshore 218 Cryogenic Temperature Monitor <https://www.lakeshore.com/products/categories/overview/temperature-products/cryogenic-temperature-monitors/model-218-temperature-monitor>`_ is an 8-channel device designed for cryogenic applications. It connects via RS232 with a 500 ms timeout and ``\r\n`` termination.
 
 .. warning::
-   This driver has not been thoroughly tested, as the UC Davis spectrometer does not have this device.
+   This driver has not been thoroughly tested against live hardware.

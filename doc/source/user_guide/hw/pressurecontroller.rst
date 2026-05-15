@@ -8,10 +8,10 @@ Pressure Controller
 Overview
 --------
 
-A PressureController monitors and optionally controls a pressure by means of a PID loop, and may also operate a gate valve.
-
-.. note::
-   The PressureController interface was implemented with a narrow scope in mind: regulating a vacuum chamber pressure for CRESU experiments on a chamber with a programmable pendulum valve. A natural extension is to support multiple channels and valves, or to split the role into separate controller and monitor classes so that thermocouple or ion gauges can be exposed without a control loop. Contributions are welcome.
+A PressureController monitors and optionally controls a pressure by
+means of a PID loop, and may also operate a gate valve. The interface
+is single-channel and assumes a single pressure sensor and an optional
+single valve.
 
 Settings
 --------

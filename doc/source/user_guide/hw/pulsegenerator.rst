@@ -44,7 +44,7 @@ The pulse generator's per-channel controls (name, role, width, delay, level, dut
 Drivers
 -------
 
-Pulse-generator support is organized by product family rather than by individual model number, because devices within a series typically differ only in channel count and share the same command protocol. The Quantum Composers and Berkeley Nucleonics drivers all communicate over RS232, TCP, or GPIB; the SRS DG645 driver is RS232-only.
+Drivers are organized by product family; devices within a series typically differ only in channel count and share a command protocol. The Quantum Composers and Berkeley Nucleonics drivers communicate over RS232, TCP, or GPIB; the SRS DG645 driver is RS232-only.
 
 Virtual
 ...............................
@@ -59,7 +59,7 @@ The `9210 / Sapphire family <https://www.quantumcomposers.com/pulse-delay-genera
 Quantum Composers 9510 Series
 ............................................
 
-The 9510 family is the 8-channel predecessor to the 9520 series, including the QC 9518. Feature support matches the 9210 series above. The 9510 hardware does not support locking to an external reference clock; ``lockExternal`` is ignored on this driver. Quantum Composers no longer sells the 9510 series; the 9520 series is the current offering.
+The 9510 family is the 8-channel predecessor to the 9520 series, including the QC 9518. Feature support matches the 9210 series above. The 9510 hardware does not support locking to an external reference clock; ``lockExternal`` is ignored on this driver.
 
 Quantum Composers 9520 Series
 ............................................

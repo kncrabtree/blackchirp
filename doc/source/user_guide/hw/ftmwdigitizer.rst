@@ -123,9 +123,7 @@ The `DSOX92004A <https://www.keysight.com/us/en/product/DSOX92004A/infiniium-hig
 is an 80 GSa/s oscilloscope with 20 GHz of bandwidth, upgradable to
 33 GHz. Communication is over a TCP socket on port 5025, requiring a
 static IP address configured in the Windows OS running on the scope.
-This driver has not been re-verified against the data-path
-refactor that introduced block-averaging support; treat it as
-untested.
+Treat this driver as untested.
 
 Tektronix MSO64B
 .........................

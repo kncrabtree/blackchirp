@@ -31,13 +31,13 @@ A dummy driver.
 Opolette
 ...................
 
-The OPOTek Opolette is a tunable pulsed OPO laser. Operation requires a Windows-based SDK; Blackchirp connects to a custom TCP server that runs on a Windows machine and wraps the SDK. The socket-server code is not in the Blackchirp repository, but it can be added in the unlikely event another group needs the same laser.
+The OPOTek Opolette is a tunable pulsed OPO laser. Operation requires a Windows-based SDK; Blackchirp connects to a custom TCP server that runs on a Windows machine and wraps the SDK. The socket-server code is not in the Blackchirp repository.
 
 Sirah Cobra
 ........................
 
 .. warning::
-   The Sirah Cobra driver is under active development and is not ready for general use.
+   The Sirah Cobra driver is incomplete; do not rely on it for production acquisitions.
 
 The Sirah Cobra is one of a series of tunable pulsed dye lasers. For maximum cross-platform compatibility, Blackchirp talks directly to the internal stepper motor through a serial port, emulating the behavior of the Sirah drivers (including the backlash correction for wavelength tuning). The Sirah drivers themselves are not required. The Sirah Cobra has no integrated flashlamp control; use a :doc:`/user_guide/hw/pulsegenerator` channel to drive the flashlamp instead.
 

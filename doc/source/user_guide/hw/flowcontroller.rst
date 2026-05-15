@@ -10,7 +10,7 @@ Overview
 
 A FlowController oversees a bank of mass flow controllers with an optional pressure sensor. Drivers typically support two operating modes: holding each channel at a fixed flow rate, or maintaining a constant ratio of flow rates while regulating the total flow to sustain a target pressure read by an integrated sensor. Blackchirp records the names and setpoints of all enabled gases at the start of an experiment, and reads flow rates and pressure as auxiliary data throughout the run.
 
-The flow channel count is a runtime setting (``numChannels``) rather than a compile-time constant, so a single build supports devices with different numbers of channels. Changing ``numChannels`` from the device dialog rebuilds the per-channel array immediately on accept; the data of channels that still exist is preserved.
+The number of flow channels is configurable per profile through the ``numChannels`` setting. Changing the value from the device dialog rebuilds the per-channel array on accept; data for channels that still exist is preserved.
 
 Settings
 --------

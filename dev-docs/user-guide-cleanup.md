@@ -187,11 +187,12 @@ Hardware Setup:
 - [x] `python_hardware.rst` and `python_hardware/` sub-pages
 - [x] `hardware_menu.rst`
 - [x] `hwdialog.rst` (now a sub-page of `hardware_menu`)
-- [ ] `hardware_details.rst`
-- [ ] `hw/*.rst` — per-device pages; light pass already touched
-  `ftmwdigitizer.rst`, `lifdigitizer.rst`, `ioboard.rst` to strip
-  "compile time" language. The remaining device pages likely have
-  similar phrasing.
+- [x] `hardware_details.rst`
+- [x] `hw/*.rst` — per-device pages; full pass stripped
+  source-evolution language ("compile-time", "data-path refactor",
+  "set up for the MIT group"), trimmed feature-request solicitations
+  and forward-looking notes, and rephrased the AD9914, M8190, Sirah
+  Cobra, Opolette, Lakeshore, and PressureController commentary.
 
 Running Experiments:
 
