@@ -171,10 +171,12 @@ QString OverlayStorage::sanitizeLabel(const QString& label) const
 
 void OverlayStorage::addVersionMetadata(std::map<QString, QVariant, std::less<>>& metadata) const
 {
+    // Mirror BlackchirpCSV::writeVersionFile: numeric components are emitted
+    // directly; only the release/build tags are macro-stringified.
     using namespace BC::Key::Overlay;
-    metadata.emplace(bcMajorVersion, STRINGIFY(BC_MAJOR_VERSION));
-    metadata.emplace(bcMinorVersion, STRINGIFY(BC_MINOR_VERSION));
-    metadata.emplace(bcPatchVersion, STRINGIFY(BC_PATCH_VERSION));
+    metadata.emplace(bcMajorVersion, BC_MAJOR_VERSION);
+    metadata.emplace(bcMinorVersion, BC_MINOR_VERSION);
+    metadata.emplace(bcPatchVersion, BC_PATCH_VERSION);
     metadata.emplace(bcReleaseVersion, STRINGIFY(BC_RELEASE_VERSION));
     metadata.emplace(bcBuildVersion, STRINGIFY(BC_BUILD_VERSION));
 }
@@ -524,6 +526,22 @@ bool OverlayStorage::detachPreviewOverlay(const QString& label)
     // so the curve stays on the plot during promotion to permanent storage.
     d_previewOverlays.erase(it);
     return true;
+}
+
+bool OverlayStorage::detachPreviewOverlay(const std::shared_ptr<OverlayBase>& overlay)
+{
+    if (!overlay)
+        return false;
+
+    for (auto it = d_previewOverlays.begin(); it != d_previewOverlays.end(); ++it) {
+        if (it->second == overlay) {
+            // Same rationale as the label-keyed overload: no overlayRemoved
+            // signal, so the curve survives promotion to permanent storage.
+            d_previewOverlays.erase(it);
+            return true;
+        }
+    }
+    return false;
 }
 
 void OverlayStorage::clearAllPreviews()

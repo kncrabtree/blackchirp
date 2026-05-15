@@ -13,6 +13,9 @@
 #include <QMessageBox>
 #include <QProgressBar>
 #include <QCloseEvent>
+#include <QResizeEvent>
+#include <QDockWidget>
+#include <QInputDialog>
 #include <QMenu>
 #include <QWidgetAction>
 #include <QColorDialog>
@@ -32,6 +35,15 @@ OverlayManagerWidget::OverlayManagerWidget(QWidget *parent, int number, const QV
     setupUI();
     populateWithExistingOverlays(overlays);
     updateButtonStates();
+
+    // The raise-parent action only helps when the dock has been torn out
+    // into a floating window (or the widget is a standalone top-level).
+    // Track the hosting dock's float state so the action shows/hides itself.
+    if (auto *dock = qobject_cast<QDockWidget*>(parent)) {
+        connect(dock, &QDockWidget::topLevelChanged,
+                this, &OverlayManagerWidget::updateRaiseParentVisibility);
+    }
+    updateRaiseParentVisibility();
 
     p_progressWidget->setVisible(false);
 
@@ -235,8 +247,8 @@ void OverlayManagerWidget::addOverlay(OverlayBase::OverlayType type)
     if (!p_overlayStorage)
         return;
 
-    // Get the FtmwViewWidget parent for dialog constructors
-    FtmwViewWidget* ftmwParent = qobject_cast<FtmwViewWidget*>(parentWidget());
+    // Get the FtmwViewWidget ancestor for dialog constructors
+    FtmwViewWidget* ftmwParent = findFtmwView();
     if(!ftmwParent) {
         return;
     }
@@ -270,9 +282,13 @@ void OverlayManagerWidget::addOverlay(OverlayBase::OverlayType type)
         // Add overlay to storage if created successfully
         if (overlay != nullptr) {
             // Detach from preview storage without emitting overlayRemoved,
-            // so the curve stays on the plot during promotion to permanent storage.
+            // so the curve stays on the plot during promotion to permanent
+            // storage. Detach by object identity, not label: if the label
+            // changed in the dialog the label-keyed lookup would miss, and
+            // the trailing clearAllPreviews() would then emit overlayRemoved
+            // for this very overlay and pull its curve back off the plot.
             if (p_overlayStorage) {
-                p_overlayStorage->detachPreviewOverlay(overlay->getLabel());
+                p_overlayStorage->detachPreviewOverlay(overlay);
             }
 
             // Ensure overlay is not in preview mode for persistent storage
@@ -285,6 +301,12 @@ void OverlayManagerWidget::addOverlay(OverlayBase::OverlayType type)
             if (p_overlayStorage->addOverlay(overlay)) {
                 // Add to unified model for display
                 p_overlayModel->addOverlay(overlay);
+
+                // The preview curve is still on the plot and FtPlot::addOverlay
+                // skipped it as a duplicate, so its visibility is frozen at the
+                // preview-time enabled state. Force a refresh so the promoted
+                // overlay renders immediately instead of after a manual toggle.
+                emit overlayDataChanged(overlay);
 
                 // Update UI state to show any pending writes
                 updateButtonStates();
@@ -355,8 +377,10 @@ void OverlayManagerWidget::removeOverlay()
 
 void OverlayManagerWidget::raiseParent()
 {
-    // Get parent widget and bring it to front
-    QWidget* w = parentWidget();
+    // Bring the FtmwViewWidget's top-level window to front (the immediate
+    // parent is the dock, whose window is the floating dock itself).
+    FtmwViewWidget *ftmwView = findFtmwView();
+    QWidget *w = ftmwView ? ftmwView->window() : nullptr;
     if(w)
     {
         w->activateWindow();
@@ -402,7 +426,12 @@ void OverlayManagerWidget::setupTableView()
     // Set up delegates
     setupConfigureDelegate();
     setupEnabledDelegate();
-    
+
+    // Comment is surfaced via row tooltip (and the "Edit Comment..." context
+    // menu entry); hiding the column keeps the table compact enough for a
+    // narrow side dock.
+    p_overlayTableView->hideColumn(static_cast<int>(OverlayTableModel::CommentColumn));
+
     // Set up column resize behavior
     resizeColumnsToContents();
 }
@@ -652,35 +681,35 @@ void OverlayManagerWidget::resizeColumnsToContents()
     if (!p_overlayModel || !p_overlayTableView) {
         return;
     }
-    
+
     auto horizontalHeader = p_overlayTableView->horizontalHeader();
     int columnCount = p_overlayModel->columnCount();
-    int commentColumn = static_cast<int>(OverlayTableModel::CommentColumn);
-    
-    // Resize all columns except the comment column to contents
+    int labelColumn = static_cast<int>(OverlayTableModel::LabelColumn);
+
+    // Resize all visible non-label columns to content; Configure/Enabled stay
+    // fixed at the icon width, others are user-adjustable.
     for (int i = 0; i < columnCount; ++i) {
-        if (i != commentColumn) {
-            p_overlayTableView->resizeColumnToContents(i);
-            // Configure and Enabled columns should be fixed width, others interactive
-            if (i == static_cast<int>(OverlayTableModel::ConfigureColumn) || 
-                i == static_cast<int>(OverlayTableModel::EnabledColumn)) {
-                horizontalHeader->setSectionResizeMode(i, QHeaderView::Fixed);
-            } else {
-                horizontalHeader->setSectionResizeMode(i, QHeaderView::Interactive);
-            }
+        if (i == labelColumn || p_overlayTableView->isColumnHidden(i))
+            continue;
+        p_overlayTableView->resizeColumnToContents(i);
+        if (i == static_cast<int>(OverlayTableModel::ConfigureColumn) ||
+            i == static_cast<int>(OverlayTableModel::EnabledColumn)) {
+            horizontalHeader->setSectionResizeMode(i, QHeaderView::Fixed);
+        } else {
+            horizontalHeader->setSectionResizeMode(i, QHeaderView::Interactive);
         }
     }
-    
-    // Set the comment column to stretch to fill remaining space
-    if (commentColumn < columnCount) {
-        horizontalHeader->setSectionResizeMode(commentColumn, QHeaderView::Stretch);
+
+    // Label takes whatever width remains so the table never exceeds dock width.
+    if (labelColumn < columnCount) {
+        horizontalHeader->setSectionResizeMode(labelColumn, QHeaderView::Stretch);
     }
-    
+
     // Set fixed width for configure and enabled columns with minimal padding
     QFontMetrics fm(p_overlayTableView->font());
     int configureWidth = fm.horizontalAdvance("⚙") + 8; // Gear symbol plus minimal padding
     int enabledWidth = fm.horizontalAdvance("👁") + 8; // Eye symbol plus minimal padding
-    
+
     if (static_cast<int>(OverlayTableModel::ConfigureColumn) < columnCount) {
         p_overlayTableView->setColumnWidth(static_cast<int>(OverlayTableModel::ConfigureColumn), configureWidth);
     }
@@ -743,17 +772,12 @@ void OverlayManagerWidget::onDoubleClicked(const QModelIndex &index)
     if (!index.isValid()) {
         return;
     }
-    
-    // Check if the double-clicked column is editable - if so, let the table handle it
-    int column = index.column();
-    if (column == static_cast<int>(OverlayTableModel::EnabledColumn) ||
-        column == static_cast<int>(OverlayTableModel::CommentColumn)) {
-        // These columns are editable, so don't open the configuration dialog
-        // The table view will handle the editing
+
+    // The Enabled checkbox handles its own activation; everything else opens
+    // the configuration dialog.
+    if (index.column() == static_cast<int>(OverlayTableModel::EnabledColumn))
         return;
-    }
-    
-    // For non-editable columns, open the configuration dialog
+
     onConfigureClicked(index);
 }
 
@@ -765,8 +789,8 @@ void OverlayManagerWidget::onConfigureClicked(const QModelIndex &index)
         return;
     }
     
-    // Get the FtmwViewWidget parent to access plot names and xRange
-    FtmwViewWidget* ftmwParent = qobject_cast<FtmwViewWidget*>(parentWidget());
+    // Get the FtmwViewWidget ancestor to access plot names and xRange
+    FtmwViewWidget* ftmwParent = findFtmwView();
     if (!ftmwParent) {
         QMessageBox::warning(this, "Error", "Cannot access parent widget for configuration.");
         return;
@@ -965,7 +989,13 @@ void OverlayManagerWidget::showContextMenu(const QPoint &position)
     connect(configureAction, &QAction::triggered, [this, index]() {
         onConfigureClicked(index);
     });
-    
+
+    QAction *editCommentAction = contextMenu.addAction(ThemeColors::createThemedIcon(":/icons/pencil-square.svg", ThemeColors::IconPrimary, this), "Edit Comment...");
+    editCommentAction->setToolTip("Edit the comment shown as the row tooltip");
+    connect(editCommentAction, &QAction::triggered, [this, overlay]() {
+        editOverlayComment(overlay);
+    });
+
     // === CURVE APPEARANCE GROUP ===
     contextMenu.addSeparator();
     
@@ -1350,6 +1380,88 @@ void OverlayManagerWidget::pasteSettingsToSelected()
         pasteOverlaySettings(overlay);
     }
     
+}
+
+void OverlayManagerWidget::editOverlayComment(std::shared_ptr<OverlayBase> overlay)
+{
+    if (!overlay)
+        return;
+
+    bool ok = false;
+    while (true) {
+        QString updated = QInputDialog::getMultiLineText(
+            this, QString("Edit Comment — %1").arg(overlay->getLabel()),
+            "Comment (semicolons are not allowed):",
+            overlay->getComment(), &ok);
+        if (!ok)
+            return;
+
+        if (updated.contains(';')) {
+            QMessageBox::warning(this, "Invalid Comment",
+                "Comments cannot contain semicolons; they conflict with the CSV storage format.");
+            continue;
+        }
+
+        overlay->setComment(updated);
+
+        // Refresh the row so the new tooltip takes effect immediately.
+        auto overlays = p_overlayModel->getAllOverlays();
+        for (int i = 0; i < overlays.size(); ++i) {
+            if (overlays[i] == overlay) {
+                auto topLeft = p_overlayModel->index(i, 0);
+                auto bottomRight = p_overlayModel->index(i, p_overlayModel->columnCount() - 1);
+                emit p_overlayModel->dataChanged(topLeft, bottomRight, {Qt::ToolTipRole});
+                break;
+            }
+        }
+        return;
+    }
+}
+
+void OverlayManagerWidget::updateRaiseParentVisibility()
+{
+    if (!p_raiseParentAction)
+        return;
+
+    bool show = false;
+    if (auto *dock = qobject_cast<QDockWidget*>(parentWidget())) {
+        show = dock->isFloating();
+    } else if (isWindow()) {
+        show = parentWidget() != nullptr;
+    }
+    p_raiseParentAction->setVisible(show);
+}
+
+FtmwViewWidget *OverlayManagerWidget::findFtmwView() const
+{
+    for (QWidget *w = parentWidget(); w != nullptr; w = w->parentWidget()) {
+        if (auto *f = qobject_cast<FtmwViewWidget*>(w))
+            return f;
+    }
+    return nullptr;
+}
+
+void OverlayManagerWidget::adjustToolbarStyle()
+{
+    if (!p_toolBar || !p_addButton)
+        return;
+
+    // Measure with labels shown; if the toolbar would overflow the available
+    // width, fall back to icon-only (tooltips already describe each action).
+    p_toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    p_addButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+
+    const auto style = (p_toolBar->sizeHint().width() <= width())
+                           ? Qt::ToolButtonTextBesideIcon
+                           : Qt::ToolButtonIconOnly;
+    p_toolBar->setToolButtonStyle(style);
+    p_addButton->setToolButtonStyle(style);
+}
+
+void OverlayManagerWidget::resizeEvent(QResizeEvent *event)
+{
+    QWidget::resizeEvent(event);
+    adjustToolbarStyle();
 }
 
 void OverlayManagerWidget::closeEvent(QCloseEvent *event)

@@ -153,6 +153,19 @@ public:
      */
     bool detachPreviewOverlay(const QString& label);
 
+    /*!
+     * \brief Detach a preview overlay identified by object identity.
+     *
+     * Equivalent to detachPreviewOverlay(const QString&) but matches the
+     * preview entry by shared_ptr rather than label. The label-keyed form
+     * misses when the overlay's label changed after it was registered as a
+     * preview, which then lets clearAllPreviews() emit overlayRemoved for the
+     * just-promoted overlay and tear its curve back off the plot.
+     * \param overlay The preview overlay instance to detach.
+     * \return \c true if a matching preview entry was found and removed.
+     */
+    bool detachPreviewOverlay(const std::shared_ptr<OverlayBase>& overlay);
+
     /// \brief Remove all preview overlays from the preview collection.
     void clearAllPreviews();
 

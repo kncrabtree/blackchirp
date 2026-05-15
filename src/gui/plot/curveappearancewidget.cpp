@@ -100,11 +100,15 @@ void CurveAppearanceWidget::setupUI()
     colorCurveLayout->addWidget(p_colorButton, 0, 1);
     
     p_curveStyleBox = new QComboBox(appearanceGroup);
-    p_curveStyleBox->addItem("No Curve", QVariant::fromValue(QwtPlotCurve::NoCurve));
-    p_curveStyleBox->addItem("Line Plot", QVariant::fromValue(QwtPlotCurve::Lines));
-    p_curveStyleBox->addItem("Stick Plot", QVariant::fromValue(QwtPlotCurve::Sticks));
-    p_curveStyleBox->addItem("Step Plot", QVariant::fromValue(QwtPlotCurve::Steps));
-    p_curveStyleBox->addItem("Scatter Dots", QVariant::fromValue(QwtPlotCurve::Dots));
+    // Store the enum's int value (not QVariant::fromValue of the enum):
+    // QwtPlotCurve::CurveStyle is a plain enum with no Q_ENUM/meta-enum, so
+    // QVariant<->enum and findData round-trips are unreliable, and because
+    // NoCurve sits at index 0 the failure surfaces as an off-by-one style.
+    p_curveStyleBox->addItem("No Curve", static_cast<int>(QwtPlotCurve::NoCurve));
+    p_curveStyleBox->addItem("Line Plot", static_cast<int>(QwtPlotCurve::Lines));
+    p_curveStyleBox->addItem("Stick Plot", static_cast<int>(QwtPlotCurve::Sticks));
+    p_curveStyleBox->addItem("Step Plot", static_cast<int>(QwtPlotCurve::Steps));
+    p_curveStyleBox->addItem("Scatter Dots", static_cast<int>(QwtPlotCurve::Dots));
     auto typeLabel = new QLabel("Type:", appearanceGroup);
     typeLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     colorCurveLayout->addWidget(typeLabel, 0, 2);
@@ -127,12 +131,12 @@ void CurveAppearanceWidget::setupUI()
     lineLayout->addWidget(p_thicknessBox, 0, 1);
     
     p_lineStyleBox = new QComboBox(appearanceGroup);
-    p_lineStyleBox->addItem("None", QVariant::fromValue(Qt::NoPen));
-    p_lineStyleBox->addItem(QString::fromUtf16(u"⸻ "), QVariant::fromValue(Qt::SolidLine));
-    p_lineStyleBox->addItem("- - - ", QVariant::fromValue(Qt::DashLine));
-    p_lineStyleBox->addItem(QString::fromUtf16(u"· · · "), QVariant::fromValue(Qt::DotLine));
-    p_lineStyleBox->addItem(QString::fromUtf16(u"-·-·-"), QVariant::fromValue(Qt::DashDotLine));
-    p_lineStyleBox->addItem(QString::fromUtf16(u"-··-··"), QVariant::fromValue(Qt::DashDotDotLine));
+    p_lineStyleBox->addItem("None", static_cast<int>(Qt::NoPen));
+    p_lineStyleBox->addItem(QString::fromUtf16(u"⸻ "), static_cast<int>(Qt::SolidLine));
+    p_lineStyleBox->addItem("- - - ", static_cast<int>(Qt::DashLine));
+    p_lineStyleBox->addItem(QString::fromUtf16(u"· · · "), static_cast<int>(Qt::DotLine));
+    p_lineStyleBox->addItem(QString::fromUtf16(u"-·-·-"), static_cast<int>(Qt::DashDotLine));
+    p_lineStyleBox->addItem(QString::fromUtf16(u"-··-··"), static_cast<int>(Qt::DashDotDotLine));
     auto styleLabel = new QLabel("Style:", appearanceGroup);
     styleLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     lineLayout->addWidget(styleLabel, 0, 2);
@@ -145,21 +149,21 @@ void CurveAppearanceWidget::setupUI()
     markerLayout->setSpacing(3);
     
     p_markerBox = new QComboBox(appearanceGroup);
-    p_markerBox->addItem("None", QVariant::fromValue(QwtSymbol::NoSymbol));
-    p_markerBox->addItem(QString::fromUtf16(u"●"), QVariant::fromValue(QwtSymbol::Ellipse));
-    p_markerBox->addItem(QString::fromUtf16(u"■"), QVariant::fromValue(QwtSymbol::Rect));
-    p_markerBox->addItem(QString::fromUtf16(u"⬥"), QVariant::fromValue(QwtSymbol::Diamond));
-    p_markerBox->addItem(QString::fromUtf16(u"▲"), QVariant::fromValue(QwtSymbol::UTriangle));
-    p_markerBox->addItem(QString::fromUtf16(u"▼"), QVariant::fromValue(QwtSymbol::DTriangle));
-    p_markerBox->addItem(QString::fromUtf16(u"◀"), QVariant::fromValue(QwtSymbol::LTriangle));
-    p_markerBox->addItem(QString::fromUtf16(u"▶"), QVariant::fromValue(QwtSymbol::RTriangle));
-    p_markerBox->addItem(QString::fromUtf16(u"＋"), QVariant::fromValue(QwtSymbol::Cross));
-    p_markerBox->addItem(QString::fromUtf16(u"⨯"), QVariant::fromValue(QwtSymbol::XCross));
-    p_markerBox->addItem(QString::fromUtf16(u"—"), QVariant::fromValue(QwtSymbol::HLine));
-    p_markerBox->addItem(QString::fromUtf16(u"︱"), QVariant::fromValue(QwtSymbol::VLine));
-    p_markerBox->addItem(QString::fromUtf16(u"✳"), QVariant::fromValue(QwtSymbol::Star1));
-    p_markerBox->addItem(QString::fromUtf16(u"✶"), QVariant::fromValue(QwtSymbol::Star2));
-    p_markerBox->addItem(QString::fromUtf16(u"⬢"), QVariant::fromValue(QwtSymbol::Hexagon));
+    p_markerBox->addItem("None", static_cast<int>(QwtSymbol::NoSymbol));
+    p_markerBox->addItem(QString::fromUtf16(u"●"), static_cast<int>(QwtSymbol::Ellipse));
+    p_markerBox->addItem(QString::fromUtf16(u"■"), static_cast<int>(QwtSymbol::Rect));
+    p_markerBox->addItem(QString::fromUtf16(u"⬥"), static_cast<int>(QwtSymbol::Diamond));
+    p_markerBox->addItem(QString::fromUtf16(u"▲"), static_cast<int>(QwtSymbol::UTriangle));
+    p_markerBox->addItem(QString::fromUtf16(u"▼"), static_cast<int>(QwtSymbol::DTriangle));
+    p_markerBox->addItem(QString::fromUtf16(u"◀"), static_cast<int>(QwtSymbol::LTriangle));
+    p_markerBox->addItem(QString::fromUtf16(u"▶"), static_cast<int>(QwtSymbol::RTriangle));
+    p_markerBox->addItem(QString::fromUtf16(u"＋"), static_cast<int>(QwtSymbol::Cross));
+    p_markerBox->addItem(QString::fromUtf16(u"⨯"), static_cast<int>(QwtSymbol::XCross));
+    p_markerBox->addItem(QString::fromUtf16(u"—"), static_cast<int>(QwtSymbol::HLine));
+    p_markerBox->addItem(QString::fromUtf16(u"︱"), static_cast<int>(QwtSymbol::VLine));
+    p_markerBox->addItem(QString::fromUtf16(u"✳"), static_cast<int>(QwtSymbol::Star1));
+    p_markerBox->addItem(QString::fromUtf16(u"✶"), static_cast<int>(QwtSymbol::Star2));
+    p_markerBox->addItem(QString::fromUtf16(u"⬢"), static_cast<int>(QwtSymbol::Hexagon));
     auto markerLabel = new QLabel("Marker:", appearanceGroup);
     markerLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     markerLayout->addWidget(markerLabel, 0, 0);
@@ -281,9 +285,9 @@ void CurveAppearanceWidget::setCurrentAppearance(const CurveAppearance &appearan
     p_colorButton->setStyleSheet(colorStyle);
     
     // Update combo boxes
-    p_curveStyleBox->setCurrentIndex(p_curveStyleBox->findData(QVariant::fromValue(appearance.curveStyle)));
-    p_lineStyleBox->setCurrentIndex(p_lineStyleBox->findData(QVariant::fromValue(appearance.lineStyle)));
-    p_markerBox->setCurrentIndex(p_markerBox->findData(QVariant::fromValue(appearance.markerStyle)));
+    p_curveStyleBox->setCurrentIndex(p_curveStyleBox->findData(static_cast<int>(appearance.curveStyle)));
+    p_lineStyleBox->setCurrentIndex(p_lineStyleBox->findData(static_cast<int>(appearance.lineStyle)));
+    p_markerBox->setCurrentIndex(p_markerBox->findData(static_cast<int>(appearance.markerStyle)));
     p_yAxisBox->setCurrentIndex(p_yAxisBox->findData(QVariant::fromValue(appearance.yAxis)));
     
     // Update spin boxes
@@ -342,7 +346,7 @@ void CurveAppearanceWidget::onCurveStyleChanged(int index)
 {
     if (d_blockSignals) return;
     
-    auto newStyle = p_curveStyleBox->itemData(index).value<QwtPlotCurve::CurveStyle>();
+    auto newStyle = static_cast<QwtPlotCurve::CurveStyle>(p_curveStyleBox->itemData(index).toInt());
     if (newStyle != d_currentAppearance.curveStyle) {
         d_currentAppearance.curveStyle = newStyle;
         emitAppearanceChanged();
@@ -363,7 +367,7 @@ void CurveAppearanceWidget::onLineStyleChanged(int index)
 {
     if (d_blockSignals) return;
     
-    auto newStyle = p_lineStyleBox->itemData(index).value<Qt::PenStyle>();
+    auto newStyle = static_cast<Qt::PenStyle>(p_lineStyleBox->itemData(index).toInt());
     if (newStyle != d_currentAppearance.lineStyle) {
         d_currentAppearance.lineStyle = newStyle;
         emitAppearanceChanged();
@@ -374,7 +378,7 @@ void CurveAppearanceWidget::onMarkerStyleChanged(int index)
 {
     if (d_blockSignals) return;
     
-    auto newStyle = p_markerBox->itemData(index).value<QwtSymbol::Style>();
+    auto newStyle = static_cast<QwtSymbol::Style>(p_markerBox->itemData(index).toInt());
     if (newStyle != d_currentAppearance.markerStyle) {
         d_currentAppearance.markerStyle = newStyle;
         emitAppearanceChanged();

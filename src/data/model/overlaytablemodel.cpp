@@ -61,6 +61,12 @@ QVariant OverlayTableModel::data(const QModelIndex &index, int role) const
         // Center-align all columns
         return Qt::AlignCenter;
     }
+    else if (role == Qt::ToolTipRole)
+    {
+        QString comment = overlay->getComment();
+        if (!comment.isEmpty())
+            return comment;
+    }
 
     return QVariant();
 }

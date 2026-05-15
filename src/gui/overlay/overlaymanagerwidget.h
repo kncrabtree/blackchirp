@@ -22,6 +22,8 @@
 
 #include <gui/plot/curveappearancewidget.h>
 
+class FtmwViewWidget;
+
 
 namespace BC::Key::OverlayManager {
 inline constexpr QLatin1StringView key{"OverlayManagerWidget"};
@@ -146,6 +148,14 @@ private:
     
     SelectionInfo getSelectionInfo();
     std::shared_ptr<OverlayBase> getSelectedOverlay(); // Keep for backward compatibility
+
+    void editOverlayComment(std::shared_ptr<OverlayBase> overlay);
+    void updateRaiseParentVisibility();
+    void adjustToolbarStyle();
+
+    // Walks the parent chain to the hosting FtmwViewWidget. The direct
+    // parent is the QDockWidget, so a plain parentWidget() cast won't do.
+    FtmwViewWidget *findFtmwView() const;
     
     // Undo system methods
     void captureUndoState(const QVector<std::shared_ptr<OverlayBase>> &overlays, const QString &operationType);
@@ -161,6 +171,7 @@ private:
     
 protected:
     void closeEvent(QCloseEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 };
 
 #endif // OVERLAYMANAGERWIDGET_H

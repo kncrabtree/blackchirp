@@ -5,9 +5,13 @@
 #include <QPalette>
 #include <QMutex>
 
-// Meta-type declarations moved here to avoid redefinition issues when included from multiple translation units
+// Meta-type declarations moved here to avoid redefinition issues when included from multiple translation units.
+// The disk code path decodes these as plain ints, but the metatypes are kept
+// registered so any queued signal/slot connection carrying one of these enums
+// does not fault at runtime.
 Q_DECLARE_METATYPE(QwtSymbol::Style)
 Q_DECLARE_METATYPE(QwtPlot::Axis)
+Q_DECLARE_METATYPE(QwtPlotCurve::CurveStyle)
 
 BlackchirpPlotCurveBase::BlackchirpPlotCurveBase(std::unique_ptr<CurveStorageInterface> storage, const QString key, const QString title, Qt::PenStyle defaultLineStyle, QwtSymbol::Style defaultMarker, CurveStyle defaultStyle) :
     d_storage{std::move(storage)}, d_key{key}, p_samplesMutex{new QMutex}
@@ -158,7 +162,8 @@ void BlackchirpPlotCurveBase::configurePen()
     QPalette pal;
     p.setColor(d_storage->get<QColor>(BC::Key::bcCurveColor, pal.color(QPalette::Text)));
     p.setWidthF(d_storage->get<double>(BC::Key::bcCurveThickness, 1.0));
-    p.setStyle(d_storage->get<Qt::PenStyle>(BC::Key::bcCurveLineStyle, Qt::SolidLine));
+    p.setStyle(static_cast<Qt::PenStyle>(
+        d_storage->get<int>(BC::Key::bcCurveLineStyle, static_cast<int>(Qt::SolidLine))));
     setPen(p);
 }
 
@@ -166,7 +171,8 @@ void BlackchirpPlotCurveBase::configureSymbol()
 {
     auto sym = new QwtSymbol();
     QPalette pal;
-    sym->setStyle(d_storage->get<QwtSymbol::Style>(BC::Key::bcCurveMarker, QwtSymbol::NoSymbol));
+    sym->setStyle(static_cast<QwtSymbol::Style>(
+        d_storage->get<int>(BC::Key::bcCurveMarker, static_cast<int>(QwtSymbol::NoSymbol))));
     sym->setColor(d_storage->get<QColor>(BC::Key::bcCurveColor, pal.color(QPalette::Text)));
     sym->setPen(d_storage->get<QColor>(BC::Key::bcCurveColor, pal.color(QPalette::Text)));
     auto s = d_storage->get<int>(BC::Key::bcCurveMarkerSize, 5);
@@ -176,7 +182,11 @@ void BlackchirpPlotCurveBase::configureSymbol()
 
 void BlackchirpPlotCurveBase::configureCurveStyle()
 {
-    setStyle(d_storage->get<CurveStyle>(BC::Key::bcCurveCurveStyle, Lines));
+    // All appearance enums are persisted as plain ints (static_cast on write);
+    // decode them as int rather than via QVariant::value<Enum>(), which is
+    // unreliable for non-Q_ENUM types and across the CSV string round trip.
+    setStyle(static_cast<CurveStyle>(
+        d_storage->get<int>(BC::Key::bcCurveCurveStyle, static_cast<int>(Lines))));
 }
 
 void BlackchirpPlotCurveBase::setSamples(const QVector<QPointF> d)
