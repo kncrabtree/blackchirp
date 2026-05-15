@@ -76,7 +76,7 @@ opens next.
 Hardware Configuration
 ----------------------
 
-.. figure:: /_static/user_guide/first_run-onboarding_runtimeconfig.png
+.. figure:: /_static/user_guide/hardware_config-overview.png
    :width: 800
    :alt: The Hardware Configuration dialog.
 

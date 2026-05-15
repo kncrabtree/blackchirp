@@ -12,16 +12,11 @@ Loadouts
 ========
 
 A **loadout** is a named hardware map: a complete assignment of driver
-profiles to hardware-type slots. Switching loadouts tells Blackchirp to use
-a different set of physical (or virtual) instruments. A typical use case is
-a lab that shares one computer between two spectrometers: each spectrometer
-has its own loadout, and switching loadouts reconfigures the application
-for the instrument currently in use.
-
-Loadouts own their FTMW presets. Each loadout carries a private set of
-named operating points (FTMW presets), and a ``currentFtmwPreset`` pointer
-that records the most recently applied preset for that loadout. Switching
-loadouts swaps both the hardware map and the FTMW preset context.
+profiles to hardware-type slots. Switching loadouts tells Blackchirp to
+use a different set of physical (or virtual) instruments. A typical use
+case is a lab that shares one computer between two spectrometers; each
+spectrometer has its own loadout, and switching reconfigures the
+application for the instrument currently in use.
 
 .. figure:: /_static/user_guide/hardware_config-loadouts_menu.png
    :alt: Hardware menu with the Loadout submenu open showing several saved loadouts
@@ -76,14 +71,10 @@ operations via the buttons below the list:
     Remove the selected loadout and all its FTMW presets. At least one
     loadout must exist at all times; the active loadout cannot be deleted.
 
-Loadouts can also be switched from the main menu bar without opening the
-Hardware Configuration dialog:
-
-**Hardware → Loadout → [loadout name]**
-
-This submenu is available only when Blackchirp is in the **Idle** state
-(hardware connected and not acquiring). It is not available while
-hardware is disconnected or an experiment is in progress.
+Loadouts can also be switched from the main menu bar without opening
+the Hardware Configuration dialog (**Hardware → Loadout → [loadout
+name]**); see :ref:`hardware-menu-loadouts` for the submenu's
+state-gating behavior.
 
 .. _hardware-config-loadouts-preview:
 
@@ -145,11 +136,12 @@ Blackchirp prompts you with a separate three-choice dialog:
 Drift-Detection Prompt
 -----------------------
 
-When you save a loadout whose hardware map has changed in a way that affects
-FTMW configuration — specifically, when the set of active AWG, FTMW Digitizer,
-or Clock profiles is different from what was previously saved — Blackchirp
-detects that the existing FTMW presets may no longer be compatible with the
-new hardware. This is called *hardware drift*.
+A loadout owns the
+:doc:`FTMW presets </user_guide/ftmw_configuration/presets>` saved
+against its hardware map. When the active AWG, FTMW Digitizer, or
+Clock profiles in the preview differ from those of the last saved
+hardware map, the existing presets may no longer be compatible with
+the new hardware. This is called *hardware drift*.
 
 If the loadout has any named FTMW presets when drift is detected, Blackchirp
 shows a warning dialog with three choices:
@@ -190,5 +182,3 @@ that loadout.
    :doc:`/user_guide/hardware_config` — chapter overview
 
    :doc:`/user_guide/hardware_config/profiles`
-
-   :doc:`/user_guide/hardware_config/ftmw_presets`

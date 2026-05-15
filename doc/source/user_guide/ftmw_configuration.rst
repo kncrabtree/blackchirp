@@ -42,7 +42,7 @@ An **FTMW preset** is a named snapshot of the complete FTMW operating
 configuration — RF chain parameters, clock frequencies, chirp waveform,
 and digitizer settings — saved within the active loadout. Switching
 presets restores all captured parameters at once. See
-:doc:`hardware_config/ftmw_presets` for a full description of preset
+:doc:`ftmw_configuration/presets` for a full description of preset
 semantics and the preset lifecycle. Presets can be created, switched, and
 deleted using the controls at the top of the FTMW Configuration dialog. The same controls are also available when initializing an experiment.
 
@@ -89,9 +89,9 @@ your accepted configuration is remembered so the dialog reopens with it.
 
 .. seealso::
 
-   :ref:`hardware-config-ftmw-presets` — full preset lifecycle reference.
+   :ref:`ftmw-configuration-presets` — full preset lifecycle reference.
 
-   :doc:`hardware_config/ftmw_presets` — preset creation, switching, and
+   :doc:`ftmw_configuration/presets` — preset creation, switching, and
    deletion from the Hardware Configuration dialog and the Hardware menu.
 
 The three tabs of the FTMW Configuration dialog are documented on the
@@ -103,3 +103,4 @@ following pages.
    ftmw_configuration/rf_configuration
    ftmw_configuration/chirp_setup
    ftmw_configuration/digitizer_setup
+   ftmw_configuration/presets

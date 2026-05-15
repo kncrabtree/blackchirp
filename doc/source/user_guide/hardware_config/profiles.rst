@@ -31,20 +31,10 @@ information:
   driver, create a new profile.
 
 Profiles are created once and then reused across loadouts. Changing a
-profile's settings affects every loadout that includes it.
-
-.. figure:: /_static/user_guide/hardware_config-runtimedialog.png
-   :width: 800
-   :alt: Hardware Configuration dialog with Loadout, Configuration Overview, Hardware Browser, and per-profile Configuration panels
-   :align: center
-
-   The Hardware Configuration dialog. From left to right: the **Loadout**
-   panel lists saved loadouts and offers loadout-level operations; the
-   **Configuration Overview** summarizes the preview hardware map; the
-   **Hardware Browser** shows the count of profiles for each supported
-   hardware type; and the rightmost panel shows per-profile settings for
-   the selection. The validation status bar across the bottom reports
-   whether the preview is a valid configuration.
+profile's settings affects every loadout that includes it. The
+overall layout of the Hardware Configuration dialog is shown on the
+:doc:`/user_guide/hardware_config` chapter page; profile work happens
+in its **Hardware Browser** and **Configuration** panels.
 
 .. _hardware-config-profiles-system:
 
@@ -94,54 +84,31 @@ organized into priority sections.
 
 .. _hardware-config-profiles-priority:
 
-Settings Priority Sections
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Settings at Creation Time
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The settings shown during profile creation (and later, in the hardware
-settings dialog) are grouped by priority. The grouping tells you how much
-attention each setting deserves before you accept the dialog.
+The Add Profile dialog presents the driver's settings in the same
+**Required / Important / Advanced** priority groups described on the
+:doc:`Hardware Dialog </user_guide/hwdialog>` page. Two behaviors are
+specific to creation:
 
-**Required Settings**
-    Settings that must be correct before Blackchirp constructs the hardware
-    object. Typical examples: the number of digitizer channels, or the
-    number of pulse-generator channels. Required settings appear at the top
-    of the **Settings** tab as an editable form. After the profile is
-    created, these fields become **read-only**; changing them requires
-    deleting and recreating the profile.
-
-**Important Settings**
-    Settings that have sensible defaults but which you should review for
-    your specific instrument. Typical examples: sample rate tables, output
-    voltage ranges. Important settings appear in a table below the Required
-    section and remain editable after profile creation.
-
-**Optional / Advanced Settings**
-    Settings that rarely need changing. These appear under an **Advanced**
-    tab. The tab is hidden if the driver has no optional settings.
-
-Hovering over any setting row shows a tooltip with a description of the
-setting and its effect.
-
-When you accept the Add Profile dialog, all settings are written to the
-Blackchirp configuration file before the hardware object is constructed.
-This means the hardware object always starts with the values you chose,
-even before it has been connected.
+- All groups, including **Required**, are editable. After the dialog is
+  accepted, Required fields become read-only; changing them requires
+  deleting and recreating the profile.
+- All settings are written to the Blackchirp configuration file before
+  the hardware object is constructed, so the device starts with the
+  chosen values even before it has been connected.
 
 .. _hardware-config-profiles-edit:
 
 Editing Profile Settings After Creation
 ---------------------------------------
 
-To revisit profile settings after a profile has been created, open
-**Hardware → [Device Name]** from the menu bar. The hardware dialog has a
-**Settings** tab that hosts the same settings widget used at creation time,
-except that Required settings are now shown read-only. Important and
-Optional settings remain editable. Changes take effect when you click
-**OK**.
-
-.. seealso::
-
-   :doc:`/user_guide/hardware_menu`
+Open **Hardware → [Device Name]** from the menu bar to reach the
+:doc:`Hardware Dialog </user_guide/hwdialog>` for a device. Its
+**Settings** tab hosts the same settings widget used at creation time,
+with Required settings now read-only and Important / Optional settings
+still editable.
 
 .. _hardware-config-profiles-enable:
 
@@ -177,5 +144,3 @@ alternative is added.
    :doc:`/user_guide/hardware_config` — chapter overview
 
    :doc:`/user_guide/hardware_config/loadouts`
-
-   :doc:`/user_guide/hardware_config/ftmw_presets`

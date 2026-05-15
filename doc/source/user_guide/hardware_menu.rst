@@ -43,7 +43,7 @@ appear in the following order:
    hardware using the current protocol settings.
 #. **FTMW Configuration** — opens the FTMW configuration dialog for the active
    preset. See :doc:`ftmw_configuration` for the RF chain, chirp, and digitizer
-   settings; see :doc:`hardware_config/ftmw_presets` for preset management.
+   settings; see :doc:`ftmw_configuration/presets` for preset management.
 #. **LIF Configuration** *(visible only when the LIF module is enabled)* —
    opens the LIF configuration dialog.
 #. **Per-device entries** — one entry per device in the active hardware map,
@@ -169,7 +169,7 @@ another preset switches the active FTMW configuration.
 
 Preset switching is gated to the Disconnected and Idle states.
 
-See :doc:`hardware_config/ftmw_presets` for a description of FTMW presets and
+See :doc:`ftmw_configuration/presets` for a description of FTMW presets and
 the FTMW Configuration dialog.
 
 .. _hardware-menu-device-entries:

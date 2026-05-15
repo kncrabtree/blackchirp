@@ -56,7 +56,7 @@ entirely by :cpp:class:`LoadoutManager`. AWG sample rate is a
 hardware-derived value and is reconstructed from the active AWG profile
 on read rather than being stored in the preset. The user-facing model
 for naming, switching, and editing presets is described in the
-:doc:`/user_guide/hardware_config/ftmw_presets` chapter.
+:doc:`/user_guide/ftmw_configuration/presets` chapter.
 
 Persistence helpers
 -------------------

@@ -3,7 +3,6 @@
    single: Library Status
    single: Profiles
    single: Loadouts
-   single: FTMW Presets
 
 .. _hardware-config:
 
@@ -11,32 +10,14 @@ Hardware and Library Configuration
 ==================================
 
 The Hardware Configuration dialog (**Hardware → Hardware Selection**)
-is where you map Blackchirp to the physical or virtual instruments on
-this system and where you check that any vendor-supplied driver
-libraries are installed correctly. It is the same dialog that opens
-during :ref:`first-run-hardware-onboarding` on a fresh system.
+is where Blackchirp is mapped to the physical or virtual instruments
+on this system and where vendor-supplied driver libraries are checked
+for correct installation. It is the same dialog that opens during
+:ref:`first-run-hardware-onboarding` on a fresh system, and it
+exposes two tabs: **Hardware Configuration** (profiles and loadouts)
+and **Library Status** (optional vendor libraries).
 
-The dialog has two tabs:
-
-**Hardware Configuration**
-   Manage hardware profiles, loadouts, and FTMW presets.
-
-**Library Status**
-   View the load state of optional vendor libraries (LabJack,
-   Spectrum) and configure custom search paths.
-
-.. toctree::
-   :hidden:
-
-   hardware_config/profiles
-   hardware_config/loadouts
-   hardware_config/ftmw_presets
-   hardware_config/library_status
-
-Profiles, loadouts, and presets
--------------------------------
-
-Blackchirp identifies and manages hardware through three layered
+Blackchirp identifies and manages hardware through two layered
 concepts:
 
 **Profiles**
@@ -54,18 +35,42 @@ concepts:
    a 26–40 GHz instrument. A profile may appear in any number of
    loadouts.
 
-**FTMW presets**
-   Named operating points inside a loadout. A preset captures the RF
-   chain configuration, clock frequencies, chirp waveform, and
-   digitizer settings that define one experimental operating point.
-   Switching presets within a loadout changes the FTMW configuration
-   without touching the hardware map — useful for, e.g., keeping a
-   "10-shot co-average" preset alongside a "10-shot retain-each-FID"
-   preset, or for stepping through chirp durations tuned to different
-   target species.
+A running experiment uses one *active loadout*. The FTMW operating
+point used within that loadout — captured as an
+:doc:`FTMW preset </user_guide/ftmw_configuration/presets>` — is
+managed in the FTMW Configuration dialog and documented under
+:doc:`/user_guide/ftmw_configuration`.
 
-A running experiment uses one *active loadout* and, within it, one
-*current FTMW preset* that drives the FTMW configuration widgets.
+.. figure:: /_static/user_guide/hardware_config-overview.png
+   :width: 800
+   :alt: Hardware Configuration dialog showing the Loadout panel on the left, the Configuration Overview, the Hardware Browser, and the per-profile Configuration panel
+   :align: center
+
+   The Hardware Configuration dialog. From left to right: the
+   **Loadout** panel (saved loadouts and loadout-level operations),
+   the **Configuration Overview** (preview hardware map), the
+   **Hardware Browser** (count of profiles per supported type), and
+   the **Configuration** panel (per-profile settings for the
+   selection). The validation status bar across the bottom reports
+   whether the preview is valid; the **Apply Configuration** and
+   **Cancel** buttons govern what happens to it.
+
+The dialog operates on a *preview* of the configuration: edits made
+in the panels are held in memory until they are persisted to a
+loadout (**Save**) or pushed to the running application
+(**Apply Configuration**). Typical flow: pick or create a loadout in
+the Loadout panel, use the Hardware Browser to add or select a
+profile, edit it in the Configuration panel, then **Save** to commit
+to the active loadout (or **Save As** for a new one) and **Apply
+Configuration** to push to the running app. See
+:doc:`hardware_config/loadouts` for full preview-state semantics.
+
+.. toctree::
+   :hidden:
+
+   hardware_config/profiles
+   hardware_config/loadouts
+   hardware_config/library_status
 
 .. rubric:: In this chapter
 
@@ -77,14 +82,9 @@ A running experiment uses one *active loadout* and, within it, one
 
 :doc:`hardware_config/loadouts`
    What a loadout is, how to create and switch between loadouts, and
-   the preview-state semantics that protect you from accidentally
-   discarding work. Covers the drift-detection prompt that appears
-   when hardware changes would invalidate existing FTMW presets.
-
-:doc:`hardware_config/ftmw_presets`
-   What an FTMW preset captures and how to create, apply, save,
-   rename, and delete presets from the preset bar in the FTMW
-   Configuration dialog and from the Hardware menu.
+   the preview-state semantics that protect against accidental
+   discards. Covers the drift-detection prompt that appears when
+   hardware changes would invalidate existing FTMW presets.
 
 :doc:`hardware_config/library_status`
    The Library Status tab: vendor-library load state, search-path
@@ -93,3 +93,6 @@ A running experiment uses one *active loadout* and, within it, one
 .. seealso::
 
    :doc:`/user_guide/hardware_menu`
+
+   :doc:`/user_guide/ftmw_configuration/presets` — FTMW operating
+   points stored inside a loadout

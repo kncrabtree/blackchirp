@@ -5,6 +5,12 @@ Ephemeral scratchpad. The committed style rules live in
 the pre-2.0.0 user-guide pass and the cleanup principles to apply on
 each remaining page.
 
+**Cleanup-time note:** when this pass finishes and the doc is removed
+from `dev-docs/`, also delete
+`.claude/commands/user-guide-cleanup.md` — the slash command exists
+only to re-enter this workflow across sessions and has no purpose
+once the pass is done.
+
 The pass through `installation.rst`, `first_run.rst`,
 `hardware_config.rst`, the new `hardware_config/library_status.rst`,
 and `application_config.rst` (commit `021bdc83`) established the
@@ -53,6 +59,70 @@ set of recurring problems. On each page:
 - **American English, present tense, impersonal voice** per the
   committed style rules.
 
+## Heuristics learned in earlier passes
+
+These came out of cleaning the Getting Started, Hardware Setup, and
+parts of Running Experiments chapters. They build on the per-page
+checklist above and apply to the remaining pages.
+
+- **Chapter intro page = canonical home for the whole-dialog
+  screenshot.** Sub-pages should defer to it for the full-dialog
+  view and use focused captures (or no screenshot) on the panels
+  they specifically document. Reuse one screenshot across multiple
+  pages when they show the same surface; rename the file so its
+  page-prefix matches the canonical home.
+- **Cross-page duplications to flag.** Section headings in
+  `hardware_menu.rst` are the canonical reference for the menu's
+  submenus (Loadout, FTMW Preset, per-device). Sub-pages that
+  describe the same submenus should defer with ``:ref:`` rather
+  than restate. When subordinate pages disagree with the canonical
+  page on details like state-gating, defer to the canonical page
+  and drop the conflicting prose.
+- **Place documentation where the user interacts.** FTMW presets
+  belong under FTMW Configuration even though loadouts own them,
+  because users interact with presets in the FTMW Configuration
+  dialog, not the Hardware Configuration dialog. Hardware-area
+  mentions of presets are limited to the drift-detection prompt in
+  `loadouts.rst`. Apply the same principle if other pages surface
+  features whose primary UI is on a different page.
+- **Anchor renames cascade.** Renaming ``_foo-bar:`` to
+  ``_baz-qux:`` requires updating the sub-anchors
+  (``_foo-bar-current:``, etc.) and every ``:ref:`` user across the
+  whole docs tree. Use ``grep -rn`` and a single sed sweep; verify
+  with a follow-up grep for the old name.
+- **Cross-reference retargeting touches a lot of trees.** Moving a
+  user-guide page typically updates ~15 cross-references across
+  ``classes/``, ``developer_guide/``, ``migration/``, ``changelog/``,
+  ``python/``, and the user guide itself. The bulk sed sweep
+  pattern from earlier commits works; just verify with a follow-up
+  grep that nothing stale remains.
+- **Sphinx CMake glob caches.** After ``git mv``-ing or deleting
+  ``.rst`` files, re-run ``cmake . -B build`` once before the doc
+  build, otherwise ninja errors on the stale file list. After
+  ``.rst``-content-only edits, ``touch doc/source/index.rst &&
+  cmake --build build --target docs`` is sufficient.
+- **Sidebar behavior in sphinx_rtd_theme.** Section headings inside
+  a page surface in the sidebar as ``toctree-l2``/``l3`` children of
+  the current page. To suppress one specific entry, restructure the
+  page so the section becomes part of the chapter intro (no
+  ``---``/``~~~`` heading). To suppress globally would require
+  ``html_theme_options = {'titles_only': True}`` in ``conf.py``;
+  not currently set because the in-page section anchors are useful
+  on long pages.
+- **Second-person voice.** AGENTS.md asks for impersonal voice, but
+  the earlier-cleaned pages keep some "you" usage where it reads
+  naturally (especially in walk-throughs and instructions). Strip
+  awkward second-person ("clicking it allows you to reclaim screen
+  space..."); leave the unawkward kind.
+- **Section-marker styles.** Pages use different combinations of
+  ``===``/``---``/``~~~``/``....`` for headings. Preserve the
+  existing style on each page rather than imposing one across the
+  user guide.
+- **Repeated boilerplate per variant.** Lists of variants that each
+  repeat "appears when X is present" (or similar) compress well to
+  one umbrella sentence above the list. Watched this pattern on
+  ``ui_overview.rst`` (status box variants).
+
 ## Navigation structure
 
 The user guide was restructured so the sidebar reflects task-based
@@ -65,7 +135,7 @@ Getting Started
   installation, first_run, application_config, ui_overview
 
 Hardware Setup
-  hardware_config (+ profiles, loadouts, ftmw_presets, library_status)
+  hardware_config (+ profiles, loadouts, library_status)
   python_hardware (+ overview, selecting, writing_a_driver,
                    hot_reload, per_type_capabilities)
   hardware_menu (+ hwdialog as a sub-page)
@@ -74,7 +144,7 @@ Hardware Setup
 Running Experiments
   experiment_setup (+ experiment/* sub-pages + lif/experiment_setup)
   ftmw_configuration (+ ftmw_configuration/rf_configuration,
-                       chirp_setup, digitizer_setup)
+                       chirp_setup, digitizer_setup, presets)
   lif/configuration
 
 Inspecting Data
@@ -110,9 +180,10 @@ Getting Started:
 Hardware Setup:
 
 - [x] `hardware_config.rst` and `hardware_config/library_status.rst`
-- [ ] `hardware_config/profiles.rst`
-- [ ] `hardware_config/loadouts.rst`
-- [ ] `hardware_config/ftmw_presets.rst`
+- [x] `hardware_config/profiles.rst`
+- [x] `hardware_config/loadouts.rst`
+- [x] `hardware_config/ftmw_presets.rst` (moved to
+  `ftmw_configuration/presets.rst` under Running Experiments)
 - [ ] `python_hardware.rst` and `python_hardware/` sub-pages
 - [ ] `hardware_menu.rst`
 - [ ] `hwdialog.rst` (now a sub-page of `hardware_menu`)
@@ -130,6 +201,8 @@ Running Experiments:
   user-guide root)
 - [ ] `ftmw_configuration/chirp_setup.rst`
 - [ ] `ftmw_configuration/digitizer_setup.rst`
+- [x] `ftmw_configuration/presets.rst` (moved from
+  `hardware_config/ftmw_presets.rst`; cleanup landed in same pass)
 - [ ] `lif/configuration.rst` (LIF Configuration dialog, sibling of
   `ftmw_configuration`)
 - [ ] `lif/experiment_setup.rst` (folded into `experiment_setup`'s

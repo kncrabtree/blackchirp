@@ -94,7 +94,7 @@ Hardware configuration
   from the *Runtime Hardware Configuration* dialog without
   recompilation. See :doc:`/user_guide/hardware_config/profiles`,
   :doc:`/user_guide/hardware_config/loadouts`, and
-  :doc:`/user_guide/hardware_config/ftmw_presets`.
+  :doc:`/user_guide/ftmw_configuration/presets`.
 - Added a first-run hardware onboarding flow that walks a new
   user through profile creation. See
   :doc:`/user_guide/first_run`.
@@ -103,7 +103,7 @@ Hardware configuration
   :doc:`/user_guide/hardware_menu`.
 - Added the FTMW preset bar with full create, copy, save-as, and
   delete operations. See
-  :doc:`/user_guide/hardware_config/ftmw_presets`.
+  :doc:`/user_guide/ftmw_configuration/presets`.
 - Added the consolidated *FTMW Configuration* menu entry and
   ``FtmwConfigDialog``, replacing the v1.x scattered FTMW pages.
   See :doc:`/user_guide/ftmw_configuration`.

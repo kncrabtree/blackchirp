@@ -29,7 +29,7 @@ namespace declared alongside :cpp:struct:`HardwareLoadout`:
 ``rfConfigClocksArray`` flattens the clock table. ``LoadoutManager``
 writes these maps under each preset's ``rfScalars`` and ``rfClocks``
 QSettings sub-groups; see :doc:`loadoutmanager` for the storage layout
-and the :doc:`/user_guide/hardware_config/ftmw_presets` chapter for the
+and the :doc:`/user_guide/ftmw_configuration/presets` chapter for the
 user-facing model.
 
 .. highlight:: cpp

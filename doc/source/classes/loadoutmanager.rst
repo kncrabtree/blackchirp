@@ -15,7 +15,7 @@ manager, and every CRUD operation funnels through one of its public
 methods. Loadout-level changes propagate to the rest of the application
 through the manager's Qt signals; the user-facing model is described in
 the :doc:`/user_guide/hardware_config/loadouts` and
-:doc:`/user_guide/hardware_config/ftmw_presets` chapters.
+:doc:`/user_guide/ftmw_configuration/presets` chapters.
 
 The manager loads every known loadout into an in-memory ``QHash`` cache
 during construction, then services subsequent reads against that cache.

@@ -287,7 +287,7 @@ model performs.
    window does not fully enclose the Gate window or the chirp
    itself.
 #. Save the configuration as a named FTMW preset
-   (:doc:`/user_guide/hardware_config/ftmw_presets`) so the timings
+   (:doc:`/user_guide/ftmw_configuration/presets`) so the timings
    are preserved across sessions.
 
 .. warning::
@@ -451,7 +451,7 @@ Configuration** (or its v1.x equivalent), open
 **Hardware → FTMW Configuration** instead and switch to the tab you
 want. The :ref:`preset bar at the top of the dialog
 <ftmw-preset-bar>` is also new (see
-:doc:`/user_guide/hardware_config/ftmw_presets`); it lets you save
+:doc:`/user_guide/ftmw_configuration/presets`); it lets you save
 the full FTMW operating point under a name and switch between
 operating points within the active loadout.
 

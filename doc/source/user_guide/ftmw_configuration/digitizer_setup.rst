@@ -17,7 +17,7 @@ Digitizer Setup
 The **Digitizer Config** tab of the :doc:`/user_guide/ftmw_configuration`
 dialog contains the settings sent to the FTMW digitizer at the start of a
 CP-FTMW acquisition. These settings are stored as part of the active
-:doc:`FTMW preset </user_guide/hardware_config/ftmw_presets>` and are
+:doc:`FTMW preset </user_guide/ftmw_configuration/presets>` and are
 loaded and saved together with the RF and chirp parameters whenever a
 preset is applied, saved, or accepted.
 

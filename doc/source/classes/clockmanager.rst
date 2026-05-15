@@ -97,7 +97,7 @@ to ``ClockManager::clockFrequencyUpdate``, which ``HardwareManager`` then
 re-emits to the rest of the system.
 
 For the end-user view of clock assignment see :doc:`/user_guide/ftmw_configuration/rf_configuration`
-and :doc:`/user_guide/hardware_config/ftmw_presets`.
+and :doc:`/user_guide/ftmw_configuration/presets`.
 
 .. highlight:: cpp
 

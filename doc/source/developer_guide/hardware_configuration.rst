@@ -377,7 +377,7 @@ currently active preset, and a timestamp. See
 :doc:`/classes/loadoutmanager` and :doc:`/classes/hardwareloadout` for
 the data model and persistence helpers, and the user-guide pages
 :doc:`/user_guide/hardware_config/loadouts` and
-:doc:`/user_guide/hardware_config/ftmw_presets` for the workflow.
+:doc:`/user_guide/ftmw_configuration/presets` for the workflow.
 
 The hardware map inside a loadout records each member profile's
 identity together with the driver that profile carried at the
