@@ -66,11 +66,32 @@ parts of Running Experiments chapters. They build on the per-page
 checklist above and apply to the remaining pages.
 
 - **Chapter intro page = canonical home for the whole-dialog
-  screenshot.** Sub-pages should defer to it for the full-dialog
-  view and use focused captures (or no screenshot) on the panels
-  they specifically document. Reuse one screenshot across multiple
-  pages when they show the same surface; rename the file so its
-  page-prefix matches the canonical home.
+  screenshot and dialog chrome.** Sub-pages should defer to it for
+  the full-dialog view and use focused captures (or no screenshot) on
+  the panels they specifically document. Reuse one screenshot across
+  multiple pages when they show the same surface; rename the file so
+  its page-prefix matches the canonical home. The same page also owns
+  the explanation of the dialog's chrome — navigation tree / page
+  list, status / warning / error area, and action buttons (Validate,
+  Start, Cancel, etc.) — since the sub-pages otherwise have no place
+  to describe controls that aren't on any individual sub-panel.
+- **Parallel halves of a dialog = sibling sub-pages.** When a dialog
+  has two co-equal halves (e.g., the Experiment Setup dialog's FTMW
+  group and LIF group), give each its own sub-page and treat them as
+  siblings under the chapter intro rather than nesting one as an
+  addendum to the other. The chapter intro frames them as parallel
+  options and hosts shared controls (e.g., the Common Settings group).
+  Applied to Experiment Setup: ``experiment/acquisition_types.rst``
+  retitled "FTMW Experiment Setup" parallel to
+  ``lif/experiment_setup.rst`` "LIF Experiment Setup", with
+  ``Common Settings`` moved up to the chapter intro.
+- **Suppress one specific sidebar entry by folding the heading into
+  the chapter intro flow.** Section headings inside a page surface in
+  the sidebar as ``toctree-l2`` children. Where a wrapping heading
+  (e.g., "Experiment Setup Dialog" inside the Experiment Setup chapter
+  intro) duplicates the page title, drop the heading and let the
+  content flow under H1 directly, keeping H2s only for substantive
+  thematic blocks like ``Common Settings``.
 - **Cross-page duplications to flag.** Section headings in
   `hardware_menu.rst` are the canonical reference for the menu's
   submenus (Loadout, FTMW Preset, per-device). Sub-pages that
@@ -274,11 +295,10 @@ actually visible at the capture frame:
   status sidebar.
 - [ ] `cp-ftmw-peakfind.png` — peak-find panel; status sidebar may
   be in frame.
-- [ ] `experiment-loscan.png`, `experiment-drscan.png`,
-  `experiment-quickexpt_1.png`, `experiment-quickexpt_2.png`,
-  `experiment-sequence.png`, `lif-lif_exp_setup.png` — all live
-  inside ExperimentSetupDialog; dialog chrome (nav tree, status
-  area) changed even if the page-specific contents did not.
+- [ ] `experiment-quickexpt_1.png`, `experiment-quickexpt_2.png`,
+  `experiment-sequence.png` — all live inside ExperimentSetupDialog;
+  dialog chrome (nav tree, status area) changed even if the
+  page-specific contents did not.
 - [ ] No new TemperatureControlWidget screenshot exists in the doc
   set; flag if a user-guide page is added that surfaces it.
 

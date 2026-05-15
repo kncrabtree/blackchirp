@@ -12,7 +12,7 @@ Validation Settings
    :alt: Experiment validation settings
 
 The Validation Settings page of the experiment wizard allows conditions to be defined that automatically terminate an experiment.
-Every time Auxiliary Data is read (see :doc:`acquisition_types`), any value that falls outside the specified range causes the experiment to abort immediately.
+Every time Auxiliary Data is read (see :ref:`user_guide/experiment_setup:Common Settings`), any value that falls outside the specified range causes the experiment to abort immediately.
 This prevents poor-quality data from being averaged in and, when used together with sleep mode, avoids unnecessary sample consumption if an operating parameter changes substantially.
 
 A validation condition is associated with an **object key** (identifying a piece of hardware in the hardware map) and a **value key** (a particular reading reported by that device).

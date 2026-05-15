@@ -41,7 +41,7 @@ Each experiment is associated with several CSV files that contain information ab
 auxdata.csv
 ...........
 
-This file contains all auxiliary data collected during the experiment, which is plotted on the :doc:`Aux Data <rolling-aux-data>` tab. Aux data is collected at fixed time intervals throughout the experiment as determined by the "Aux Data Interval" option on the :doc:`Experiment Setup <experiment/acquisition_types>` page. Example::
+This file contains all auxiliary data collected during the experiment, which is plotted on the :doc:`Aux Data <rolling-aux-data>` tab. Aux data is collected at fixed time intervals throughout the experiment as determined by the ``Aux Data Interval`` option in :ref:`user_guide/experiment_setup:Common Settings`. Example::
 
   timestamp;epochtime;elapsedsecs;FlowController.Main.Pressure;Ftmw.Shots;TemperatureController.default.Temperature Ch2.Temperature2
   Thu Apr 30 19:50:51 2026;1777603851;0;0;0;4.932009643731726
@@ -78,7 +78,7 @@ This file contains the configuration of the clocks (upconversion LO, downconvers
   0;UpLO;11520;Multiply;2;Clock.virtual;0
   0;DownLO;40960;Multiply;8;Clock.virtual;1
 
-In some cases (e.g., an `LO Scan <experiment/acquisition_types.html#lo-scan>`_ or a `DR Scan <experiment/acquisition_types.html#dr-scan>`_), one or more of the clocks may be tuned to different values throughout the experiment. The following is an excerpt from an LO scan in which the upconversion and downconversion LOs were each stepped by 250 MHz::
+In some cases (e.g., an :ref:`user_guide/experiment/acquisition_types:LO Scan` or a :ref:`user_guide/experiment/acquisition_types:DR Scan`), one or more of the clocks may be tuned to different values throughout the experiment. The following is an excerpt from an LO scan in which the upconversion and downconversion LOs were each stepped by 250 MHz::
 
   Index;ClockType;FreqMHz;Operation;Factor;HwKey;OutputNum
   0;DownLO;40960;Multiply;8;Clock.virtual;1

@@ -1,4 +1,5 @@
 .. index::
+   single: FTMW Experiment Setup
    single: Target Shots
    single: Target Duration
    single: Forever
@@ -7,22 +8,24 @@
    single: DR Scan
    single: Phase Correction
    single: Chirp Scoring
-   single: Aux Data
 
-Acquisition Types
-=================
+FTMW Experiment Setup
+=====================
 
-.. image:: /_static/user_guide/experiment-startpage.png
-   :align: center
-   :width: 800
-   :alt: Experiment start page
+The first page of the
+:doc:`Experiment Setup <../experiment_setup>` dialog hosts the
+``FTMW`` group, which selects the FTMW acquisition type and its
+parameters. When LIF is enabled, an ``LIF`` group is shown alongside
+it; the LIF controls are described on the
+:doc:`LIF Experiment Setup <../lif/experiment_setup>` page. The
+``Common Settings`` group at the top of the page is described under
+:ref:`user_guide/experiment_setup:Common Settings`.
 
-When starting a new experiment, the first page of the wizard allows for selecting the desired type of the FTMW acquisition along with other options related to real-time FID processing.
-The type of the acquisition determines how many FIDs will be recorded, and in some cases, how the entire spectrum will be partitioned into multiple **segments**.
-For the LO Scan and DR Scan types, the scan configuration controls appear inline on this same first wizard page immediately below the type selector; no separate page is shown for those settings.
-
-The page is divided into a ``Common Settings`` group at the top, which holds the ``Aux Data Interval`` and ``Backup Interval`` boxes that apply to every acquisition type, and an ``FTMW`` group below it containing the type selector and the type-specific controls.
-When LIF is enabled, an ``LIF`` group is shown alongside the ``FTMW`` group with its own delay and laser scan controls.
+The acquisition type determines how many FIDs are recorded and, in
+some cases, how the spectrum is partitioned into multiple
+**segments**. For the LO Scan and DR Scan types, the scan
+configuration controls appear inline below the type selector; no
+separate page is shown for those settings.
 
 Available acquisition types are:
 
@@ -33,20 +36,25 @@ Available acquisition types are:
 - :ref:`user_guide/experiment/acquisition_types:LO Scan`
 - :ref:`user_guide/experiment/acquisition_types:DR Scan`
 
-Real-time processing includes phase correction (adjusting for slow temporal phase drift during long averages) and/or chirp scoring, which attempts to reject "weak" chirps.
+Below the type-specific controls, the ``FTMW`` group also contains
+real-time processing options:
+:ref:`user_guide/experiment/acquisition_types:Phase Correction`
+(adjusting for slow temporal phase drift during long averages) and
+:ref:`user_guide/experiment/acquisition_types:Chirp Scoring`, which
+attempts to reject "weak" chirps.
 
 Target Shots
 ------------
 
 **Target Shots** is the default and most straightforward type of acquisition.
-In this mode, FIDs are recorded and averaged until the desired number of shots (as indicated in the ``Shots`` box) is reached.
+In this mode, FIDs are recorded and averaged until the desired number of shots (entered in the ``Shots`` cell of the ``Shot Settings`` table) is reached.
 This is considered a **single segment** acquisition: only a single Rf/Clock configuration is used during the experiment.
 
 Target Duration
 ---------------
 
 **Target Duration** mode records and averages FIDs until a period of time has elapsed.
-The desired acquisition duration is specified in the ``Duration`` box, and an estimate of the experiment completion time is provided in the text below the box.
+The desired acquisition duration is entered in the ``Duration`` cell of the ``Duration Settings`` table, and the ``Est. End`` cell below it shows an estimate of the experiment completion time.
 
 .. note::
    The estimated completion time is computed simply by adding the duration to the current time, and does not account for the time spent configuring the remainder of the experiment and initializing.
@@ -58,7 +66,7 @@ Forever
 -------
 
 In **Forever** mode, FIDs are recorded and averaged until the user hits the abort button or a critical hardware failure occurs.
-No acquisition-objective field is shown when this mode is selected.
+The ``Forever`` table in place of an acquisition-objective field carries only an informational note.
 Like Target Shots and Target Duration, this is a **single segment** acquisition.
 
 .. note::
@@ -89,7 +97,7 @@ LO Scan
 The **LO Scan** mode implements a version of `segmented CP-FTMW spectroscopy <https://doi.org/10.1364/OE.21.019743>`__ in which a certain number of FIDs are acquired and averaged, then the upconversion and/or downconversion local oscillators are stepped.
 By sampling a variety of LO frequencies, the spectral range covered by the instrument can far exceed the instantaneous bandwidth of the FTMW digitizer, allowing CP-FTMW spectroscopy to be performed with (comparatively) inexpensive hardware.
 On the :ref:`user_guide/cp-ftmw:CP-FTMW Tab`, each frequency segment can be viewed individually, and algorithms are available for stitching together the entire spectrum and deconvolving dual sidebands (see the linked page for more details about these algorithms).
-As a **multi-segment** acquisition type, Blackchirp writes a backup at each segment boundary, so the ``Backup Interval`` setting in Common Settings has no effect.
+As a **multi-segment** acquisition type, Blackchirp writes a backup at each segment boundary, so the ``Backup Interval`` setting in :ref:`user_guide/experiment_setup:Common Settings` has no effect.
 The number of shots collected at each LO step is set in the ``Shots/Point`` box within the LO scan configuration below the type selector.
 
 .. note::
@@ -126,7 +134,7 @@ DR Scan
 In a **DR Scan** (double resonance), FIDs are recorded while a second ``DR Clock`` source is scanned across a desired frequency range in a series of steps.
 The purpose of this scan mode is to monitor the intensity of one or more transitions as a function of the DR Clock frequency: when two transitions share a common state, the intensity of a line may be depleted or enhanced, depending on the pulse powers and timings.
 Like the LO Scan mode, this is a **multi-segment** acquisition mode.
-Blackchirp writes a backup at each segment boundary, so the ``Backup Interval`` setting in Common Settings has no effect.
+Blackchirp writes a backup at each segment boundary, so the ``Backup Interval`` setting in :ref:`user_guide/experiment_setup:Common Settings` has no effect.
 The number of shots at each DR step is set in the ``Shots Per Step`` box within the DR scan configuration below the type selector.
 
 .. note::
@@ -141,13 +149,8 @@ The ``End`` box updates automatically to show the final DR frequency.
 When viewing the DR Scan on the :ref:`user_guide/cp-ftmw:CP-FTMW Tab`, peak intensity as a function of DR frequency is not directly displayed.
 Instead, it is recommended to use the ``FT1 - FT2`` plot mode, as discussed in more detail on that page.
 
-Other Experiment Options
-------------------------
-
-In addition to the acquisition type, other options accessible on the first wizard page involve real-time FID processing (phase correction and chirp scoring) and the Common Settings group (auxiliary data and backups; backups are also discussed on the :ref:`user_guide/data_storage:Data Storage` page).
-
 Phase Correction
-................
+----------------
 
 Time-domain averaging requires that FIDs are mutually in phase.
 Locking all oscillators to a common reference (a rubidium clock or
@@ -175,7 +178,7 @@ If they are not correct, you can override the chirp starting time by entering th
 The duration still comes from the :ref:`user_guide/ftmw_configuration/chirp_setup:Chirp Setup` value.
 
 Chirp Scoring
-.............
+-------------
 
 Occasionally, amplifiers may show significant shot-to-shot jitter in the chirp amplitude.
 By enabling the ``Chirp Scoring`` feature, Blackchirp will compute the squared sum of the chirp embedded in the FID record (as described above) and compare it to the squared sum of the averaged chirp.
@@ -185,16 +188,3 @@ Similar to the Phase Correction algorithm, the chirp scoring routine requires th
 
 .. warning::
    Setting the chirp threshold too high will result in a large fraction of chirps being rejected, and an acquisition may therefore appear to stall.
-
-Common Settings
-...............
-
-The ``Common Settings`` group at the top of the wizard page contains two boxes that apply to every acquisition type.
-
-The ``Aux Data Interval`` box sets the period between :doc:`Aux Data readings <../rolling-aux-data>`.
-More frequent readings increase data storage requirements but provide more regular opportunities to automatically abort an acquisition using one of the :doc:`validation conditions <validation>`.
-
-The ``Backup Interval`` box sets how often Blackchirp writes a backup copy of the experiment to disk during a single-segment acquisition.
-Setting the box to its minimum value displays ``Disabled`` and turns backups off.
-Multi-segment acquisition types (LO Scan and DR Scan) write a backup at each segment boundary regardless of this setting.
-In addition to the periodic backup driven by this setting, a single-segment acquisition can be backed up on demand from the CP-FTMW toolbar; see :ref:`user_guide/cp-ftmw:Manual Backup`.

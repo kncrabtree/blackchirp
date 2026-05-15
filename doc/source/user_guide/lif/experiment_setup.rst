@@ -18,13 +18,14 @@ LIF Experiment Setup
 ====================
 
 When the LIF module is enabled in the Application Configuration (see
-:ref:`application-config`), the first page of the experiment wizard gains
-an **LIF** group alongside the **FTMW** group described in
-:doc:`/user_guide/experiment/acquisition_types`. The LIF group defines the
-scan-axis parameters and options for the laser scan; channel and gate
-configuration live separately in the :doc:`configuration` (opened from
-**Hardware → LIF Configuration**), where shots-per-point and digitizer
-settings are also configured.
+:ref:`application-config`), the first page of the
+:doc:`Experiment Setup </user_guide/experiment_setup>` dialog gains an
+**LIF** group alongside the **FTMW** group covered on the
+:doc:`FTMW Experiment Setup </user_guide/experiment/acquisition_types>`
+page. The LIF group defines the scan-axis parameters and options for
+the laser scan; channel and gate configuration live separately in the
+:doc:`configuration` (opened from **Hardware → LIF Configuration**),
+where shots-per-point and digitizer settings are also configured.
 
 .. image:: /_static/user_guide/lif-lif_exp_setup.png
    :align: center

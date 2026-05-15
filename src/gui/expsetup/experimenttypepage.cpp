@@ -61,7 +61,27 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     ftmwl->addItem(typeLayout);
 
     p_ftmwConfigStack = new QStackedWidget(this);
+
+    auto makeStackTable = [this](int rows, const QString &columnHeader,
+                                 const QStringList &rowHeaders) {
+        auto *table = new QTableWidget(rows, 1, this);
+        table->setHorizontalHeaderLabels({columnHeader});
+        table->setVerticalHeaderLabels(rowHeaders);
+        table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+        table->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+        table->setSelectionMode(QAbstractItemView::NoSelection);
+        table->setFocusPolicy(Qt::NoFocus);
+        return table;
+    };
+
     p_foreverWidget = new QWidget(this);
+    auto *foreverTable = makeStackTable(1, QString("Forever"), {QString("Notes")});
+    auto *foreverNote = new QLabel(QString("Runs until aborted"), this);
+    foreverNote->setAlignment(Qt::AlignCenter);
+    foreverTable->setCellWidget(0, 0, foreverNote);
+    auto *foreverl = new QVBoxLayout;
+    foreverl->addWidget(foreverTable, 1);
+    p_foreverWidget->setLayout(foreverl);
     p_ftmwConfigStack->addWidget(p_foreverWidget);
     ftmwl->addWidget(p_ftmwConfigStack, 1);
 
@@ -73,22 +93,18 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
                                        "If this box is disabled, it is either irrelevant or will be configured on a later page (e.g. in LO/DR Scan mode)."));
     p_ftmwShotsBox->setSingleStep(5000);
     p_ftmwShotsBox->setValue(get(ftmwShots,10000));
+    p_ftmwShotsBox->setAlignment(Qt::AlignCenter);
     registerGetter(ftmwShots,p_ftmwShotsBox,&QSpinBox::value);
 
     p_ftmwShotsWidget = new QWidget(this);
+    auto *shotsTable = makeStackTable(1, QString("Shot Settings"),
+                                      {QString("Shots")});
+    shotsTable->setCellWidget(0, 0, p_ftmwShotsBox);
     auto *shotsouterl = new QVBoxLayout;
-    auto *shotsl = new QHBoxLayout;
-    shotsl->setSpacing(6);
-    shotsl->addWidget(new QLabel("Shots", this),0,Qt::AlignRight);
-    shotsl->addWidget(p_ftmwShotsBox,1);
-    shotsouterl->addItem(shotsl);
-    shotsouterl->addStretch(1);
+    shotsouterl->addWidget(shotsTable, 1);
     p_ftmwShotsWidget->setLayout(shotsouterl);
     p_ftmwConfigStack->addWidget(p_ftmwShotsWidget);
 
-    
-    auto durl = new QVBoxLayout;
-    durl->setSpacing(6);
 
     p_ftmwTargetDurationBox = new QSpinBox(this);
     p_ftmwTargetDurationBox->setRange(1,INT_MAX);
@@ -96,21 +112,22 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     p_ftmwTargetDurationBox->setSuffix(" min");
     p_ftmwTargetDurationBox->setToolTip(QString("Duration of experiment in Target Duration mode."));
     p_ftmwTargetDurationBox->setValue(get(ftmwDuration,60));
+    p_ftmwTargetDurationBox->setAlignment(Qt::AlignCenter);
     registerGetter(ftmwDuration,p_ftmwTargetDurationBox,&QSpinBox::value);
-    auto *durrow1 = new QHBoxLayout;
-    durrow1->addWidget(new QLabel("Duration", this),0,Qt::AlignRight);
-    durrow1->addWidget(p_ftmwTargetDurationBox,1);
-    durl->addLayout(durrow1);
 
-    p_endTimeLabel = new QLabel;
-    p_endTimeLabel->setAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
+    p_endTimeLabel = new QLabel(this);
+    p_endTimeLabel->setAlignment(Qt::AlignCenter);
     auto dt = QDateTime::currentDateTime().addSecs(p_ftmwTargetDurationBox->value()*60);
-    p_endTimeLabel->setText(d_endText.arg(dt.toString("yyyy-MM-dd h:mm AP")));
-    durl->addWidget(p_endTimeLabel);
-    durl->addStretch(1);
+    p_endTimeLabel->setText(dt.toString("yyyy-MM-dd h:mm AP"));
     connect(p_ftmwTargetDurationBox,qOverload<int>(&QSpinBox::valueChanged),this,&ExperimentTypePage::updateLabel);
 
     p_ftmwTargetDurationWidget = new QWidget(this);
+    auto *durTable = makeStackTable(2, QString("Duration Settings"),
+                                    {QString("Duration"), QString("Est. End")});
+    durTable->setCellWidget(0, 0, p_ftmwTargetDurationBox);
+    durTable->setCellWidget(1, 0, p_endTimeLabel);
+    auto *durl = new QVBoxLayout;
+    durl->addWidget(durTable, 1);
     p_ftmwTargetDurationWidget->setLayout(durl);
     p_ftmwConfigStack->addWidget(p_ftmwTargetDurationWidget);
 
@@ -172,8 +189,6 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
 
     p_ftmw->setLayout(ftmwl);
 
-    auto *fl2 = new QFormLayout(this);
-
     auto *sgb = new QGroupBox(QString("Common Settings"));
     p_auxDataIntervalBox = new QSpinBox(this);
     p_auxDataIntervalBox->setRange(5,INT_MAX);
@@ -182,7 +197,6 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     p_auxDataIntervalBox->setToolTip(QString("Interval for auxilliary data readings (e.g., flows, pressure, etc.)"));
     p_auxDataIntervalBox->setValue(get(auxInterval,300));
     registerGetter(auxInterval,p_auxDataIntervalBox,&QSpinBox::value);
-    fl2->addRow("Aux Data Interval",p_auxDataIntervalBox);
 
     p_backupBox = new QSpinBox(this);
     p_backupBox->setRange(0,6000);
@@ -192,19 +206,18 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     p_backupBox->setToolTip(QString("Interval for autosaving."));
     p_backupBox->setValue(get(backup,0));
     registerGetter(backup,p_backupBox,&QSpinBox::value);
-    fl2->addRow("Backup Interval",p_backupBox);
 
-
-    for(int i=0; i<fl2->rowCount(); ++i)
-    {
-        auto lbl = dynamic_cast<QLabel*>(fl2->itemAt(i,QFormLayout::LabelRole)->widget());
-        if(lbl != nullptr)
-        {
-            lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
-            lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
-        }
-    }
-    sgb->setLayout(fl2);
+    auto *commonRow = new QHBoxLayout;
+    commonRow->setSpacing(6);
+    auto *auxLbl = new QLabel("Aux Data Interval", this);
+    auxLbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
+    commonRow->addWidget(auxLbl);
+    commonRow->addWidget(p_auxDataIntervalBox, 1);
+    auto *backupLbl = new QLabel("Backup Interval", this);
+    backupLbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
+    commonRow->addWidget(backupLbl);
+    commonRow->addWidget(p_backupBox, 1);
+    sgb->setLayout(commonRow);
 
 
     auto *hbl = new QHBoxLayout();
@@ -685,7 +698,7 @@ void ExperimentTypePage::updateLifRanges()
 void ExperimentTypePage::updateLabel()
 {
     auto dt = QDateTime::currentDateTime().addSecs(p_ftmwTargetDurationBox->value()*60);
-    p_endTimeLabel->setText(d_endText.arg(dt.toString("yyyy-MM-dd h:mm AP")));
+    p_endTimeLabel->setText(dt.toString("yyyy-MM-dd h:mm AP"));
 }
 
 void ExperimentTypePage::timerEvent(QTimerEvent *event)

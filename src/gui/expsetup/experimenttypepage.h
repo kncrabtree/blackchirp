@@ -81,7 +81,6 @@ private:
     QDoubleSpinBox *p_thresholdBox, *p_chirpOffsetBox;
     QLabel *p_endTimeLabel;
     int d_timerId;
-    QString d_endText{"Est. end: %1"};
 
 private slots:
     void updateLabel();
