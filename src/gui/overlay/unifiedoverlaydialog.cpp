@@ -315,7 +315,7 @@ void UnifiedOverlayDialog::setupUI()
     p_progressBar = new QProgressBar(this);
     p_progressBar->setRange(0, 100);
     p_progressBar->setValue(100);
-    p_progressBar->setMaximumWidth(200);
+    p_progressBar->setMinimumWidth(320);
 
     p_progressLabel = new QLabel(this);
 

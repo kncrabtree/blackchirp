@@ -9,9 +9,9 @@
 SettingsTable::SettingsTable(QWidget *parent)
     : QTableWidget(0, 2, parent)
 {
-    setHorizontalHeaderLabels({"Setting", "Value"});
     horizontalHeader()->setStretchLastSection(true);
     horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    horizontalHeader()->setVisible(false);
     verticalHeader()->setVisible(false);
     setSelectionMode(QAbstractItemView::NoSelection);
     setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -69,6 +69,7 @@ void SettingsTable::applySectionShading(int row, QWidget *cellWidget)
     } else if (auto *item = this->item(row, 0)) {
         item->setBackground(band);
         item->setForeground(fg);
+        item->setTextAlignment(Qt::AlignCenter);
         QFont f = item->font();
         f.setBold(true);
         item->setFont(f);
@@ -97,8 +98,16 @@ int SettingsTable::addCheckableSectionRow(const QString &title, bool checked,
 
     auto *box = new QCheckBox(title, this);
     box->setChecked(checked);
-    setCellWidget(row, 0, box);
-    applySectionShading(row, box);
+
+    // Center the checkbox within the spanned section cell.
+    auto *wrap = new QWidget(this);
+    auto *hbl = new QHBoxLayout(wrap);
+    hbl->setContentsMargins(0, 0, 0, 0);
+    hbl->addStretch(1);
+    hbl->addWidget(box);
+    hbl->addStretch(1);
+    setCellWidget(row, 0, wrap);
+    applySectionShading(row, wrap);
 
     d_sectionBoxes.insert(row, box);
     if (outBox)

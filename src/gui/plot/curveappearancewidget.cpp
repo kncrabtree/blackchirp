@@ -11,6 +11,7 @@
 #include <cmath>
 
 #include <gui/widget/settingstable.h>
+#include <gui/style/themecolors.h>
 
 CurveAppearanceWidget::CurveAppearanceWidget(QWidget *parent)
     : QWidget(parent), d_blockSignals(false), p_presetManager(nullptr)
@@ -60,13 +61,15 @@ void CurveAppearanceWidget::setupUI()
     p_presetBox = new QComboBox(this);
     p_presetBox->setToolTip("Select a preset to apply or create a new preset");
 
-    p_savePresetButton = new QPushButton("Save", this);
+    p_savePresetButton = new QPushButton(this);
+    p_savePresetButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-down-tray.svg", ThemeColors::IconSecondary, this));
     p_savePresetButton->setToolTip("Save current appearance as a new preset");
-    p_savePresetButton->setMaximumWidth(60);
+    p_savePresetButton->setMaximumWidth(32);
 
-    p_deletePresetButton = new QPushButton("Delete", this);
+    p_deletePresetButton = new QPushButton(this);
+    p_deletePresetButton->setIcon(ThemeColors::createThemedIcon(":/icons/trash.svg", ThemeColors::IconSecondary, this));
     p_deletePresetButton->setToolTip("Delete the selected preset");
-    p_deletePresetButton->setMaximumWidth(60);
+    p_deletePresetButton->setMaximumWidth(32);
     p_deletePresetButton->setEnabled(false);
 
     presetRow->addWidget(presetLabel);
@@ -99,7 +102,8 @@ void CurveAppearanceWidget::setupUI()
     p_thicknessBox->setDecimals(1);
     p_thicknessBox->setSingleStep(0.5);
     p_thicknessBox->setMaximumWidth(60);
-    table->addSettingRow("Width", p_thicknessBox);
+    p_thicknessBox->setSuffix(" px");
+    p_thicknessBox->setToolTip("Line width in pixels");
 
     p_lineStyleBox = new QComboBox(this);
     p_lineStyleBox->addItem("None", static_cast<int>(Qt::NoPen));
@@ -108,7 +112,7 @@ void CurveAppearanceWidget::setupUI()
     p_lineStyleBox->addItem(QString::fromUtf16(u"· · · "), static_cast<int>(Qt::DotLine));
     p_lineStyleBox->addItem(QString::fromUtf16(u"-·-·-"), static_cast<int>(Qt::DashDotLine));
     p_lineStyleBox->addItem(QString::fromUtf16(u"-··-··"), static_cast<int>(Qt::DashDotDotLine));
-    table->addSettingRow("Style", p_lineStyleBox);
+    table->addSettingRow("Style", p_lineStyleBox, p_thicknessBox);
 
     p_markerBox = new QComboBox(this);
     p_markerBox->addItem("None", static_cast<int>(QwtSymbol::NoSymbol));
@@ -126,12 +130,13 @@ void CurveAppearanceWidget::setupUI()
     p_markerBox->addItem(QString::fromUtf16(u"✳"), static_cast<int>(QwtSymbol::Star1));
     p_markerBox->addItem(QString::fromUtf16(u"✶"), static_cast<int>(QwtSymbol::Star2));
     p_markerBox->addItem(QString::fromUtf16(u"⬢"), static_cast<int>(QwtSymbol::Hexagon));
-    table->addSettingRow("Marker", p_markerBox);
 
     p_markerSizeBox = new QSpinBox(this);
     p_markerSizeBox->setRange(1, 20);
-    p_markerSizeBox->setMaximumWidth(50);
-    table->addSettingRow("Size", p_markerSizeBox);
+    p_markerSizeBox->setMaximumWidth(60);
+    p_markerSizeBox->setSuffix(" px");
+    p_markerSizeBox->setToolTip("Marker size in pixels");
+    table->addSettingRow("Marker", p_markerBox, p_markerSizeBox);
 
     p_yAxisBox = new QComboBox(this);
     p_yAxisBox->addItem("Left", QVariant::fromValue(QwtAxis::YLeft));

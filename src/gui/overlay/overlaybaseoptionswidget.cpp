@@ -33,6 +33,9 @@ void OverlayBaseOptionsWidget::setupUI()
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
     auto table = new SettingsTable(this);
+    // Keep the value column wide enough that the Identity line edits and the
+    // storage-name preview are not clipped at the dialog's content size.
+    table->setMinimumWidth(380);
 
     // --- Identity ---
     table->addSectionRow("Identity");
