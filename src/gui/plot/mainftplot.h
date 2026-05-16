@@ -20,6 +20,11 @@ public:
     
 public slots:
     void newPeakList(const QVector<QPointF> l);
+
+    /// Pops the shared curve-appearance editor for the FT peak marker
+    /// curve at \p globalPos. Discoverability shortcut mirroring the
+    /// main-plot right-click submenu entry for the same curve.
+    void showPeakAppearanceMenu(const QPoint &globalPos);
     
 private:
     std::unique_ptr<BlackchirpPlotCurve> p_peakData;

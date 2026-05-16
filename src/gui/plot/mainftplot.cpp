@@ -1,6 +1,8 @@
 #include "mainftplot.h"
 #include <gui/plot/curvefactory.h>
 
+#include <QMenu>
+
 #include <gui/plot/blackchirpplotcurve.h>
 
 MainFtPlot::MainFtPlot(QWidget *parent) :
@@ -36,4 +38,11 @@ void MainFtPlot::newPeakList(const QVector<QPointF> l)
 
     p_peakData->setCurveVisible(!l.isEmpty());
     replot();
+}
+
+void MainFtPlot::showPeakAppearanceMenu(const QPoint &globalPos)
+{
+    QMenu *m = buildCurveAppearanceMenu(p_peakData.get(),this);
+    m->setAttribute(Qt::WA_DeleteOnClose);
+    m->popup(globalPos);
 }

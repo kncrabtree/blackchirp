@@ -39,6 +39,11 @@ public:
 signals:
     void peakList(QVector<QPointF>);
 
+    /// Requests that the host pop the peak-marker appearance editor.
+    /// \param globalPos Screen position to anchor the menu (the
+    ///        Appearance toolbar button's lower-left corner).
+    void editPeakAppearanceRequested(const QPoint &globalPos);
+
 public slots:
     void newFt(const Ft ft);
     void newPeakList(const QVector<QPointF> pl);
@@ -60,6 +65,7 @@ private:
     QTableView *p_peakListView;
     QAction *p_findAction;
     QAction *p_liveAction;
+    QAction *p_appearanceAction;
     QAction *p_optionsAction;
     QAction *p_exportAction;
     QAction *p_removeAction;

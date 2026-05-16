@@ -17,6 +17,7 @@
 #include <QDockWidget>
 #include <QResizeEvent>
 #include <QShowEvent>
+#include <QCursor>
 #include <QtConcurrent/QtConcurrent>
 
 #include <gui/dialog/peaklistexportdialog.h>
@@ -80,6 +81,16 @@ void PeakFindWidget::setupUI()
     p_liveAction->setToolTip("Re-find peaks automatically whenever the FT changes");
     p_liveAction->setCheckable(true);
     connect(p_liveAction,&QAction::toggled,this,[this](bool b){ if(b) findPeaks(); });
+
+    p_appearanceAction = p_toolBar->addAction(ThemeColors::createThemedIcon(":/icons/swatch.svg", ThemeColors::IconSecondary, this), "Appearance");
+    p_appearanceAction->setToolTip("Edit the peak marker appearance");
+    connect(p_appearanceAction,&QAction::triggered,this,[this](){
+        // Anchor the appearance menu at the button's lower-left so it
+        // drops directly beneath the Appearance toolbar button.
+        QWidget *w = p_toolBar->widgetForAction(p_appearanceAction);
+        QPoint pos = w ? w->mapToGlobal(QPoint(0,w->height())) : QCursor::pos();
+        emit editPeakAppearanceRequested(pos);
+    });
 
     p_toolBar->addSeparator();
 

@@ -211,6 +211,10 @@ User interface
   drift-detection on Save. See :doc:`/user_guide/hardware_menu`.
 - Updated the Peak Find Widget icon. See
   :doc:`/user_guide/cp-ftmw`.
+- Added an Appearance button to the Peak Find toolbar that opens
+  the FT peak-marker styling editor directly, without hunting for
+  the curve in the main-plot right-click menu. See
+  :doc:`/user_guide/cp-ftmw`.
 - Relaxed the experiment-setup dialog minimum size. See
   :doc:`/user_guide/experiment_setup`.
 

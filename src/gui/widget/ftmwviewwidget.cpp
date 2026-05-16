@@ -1013,6 +1013,8 @@ void FtmwViewWidget::showPeakFinder(bool show)
             p_pfw->newFt(ft);
     });
     connect(p_pfw,&PeakFindWidget::peakList,p_mainFtPlot,&MainFtPlot::newPeakList);
+    connect(p_pfw,&PeakFindWidget::editPeakAppearanceRequested,
+            p_mainFtPlot,&MainFtPlot::showPeakAppearanceMenu);
 
     p_peakFindDock->setWidget(p_pfw);
 }
