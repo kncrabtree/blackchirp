@@ -3,9 +3,6 @@
 #include <QHeaderView>
 #include <QHBoxLayout>
 #include <QCheckBox>
-#include <QLayout>
-#include <QTimer>
-#include <QPointer>
 
 #include <gui/style/themecolors.h>
 
@@ -131,34 +128,30 @@ void SettingsTable::bindSectionRows(int sectionRow, const QList<int> &rows)
     for (int r : rows)
         setRowHidden(r, !box->isChecked());
 
-    // On user toggle, reveal/hide the rows and grow the window so the
-    // newly-visible rows are not clipped behind the (suppressed) scrollbar.
+    // On user toggle, reveal/hide the rows. When revealing, grow the
+    // window by exactly the height of the rows now shown so they are not
+    // clipped behind the (suppressed) scrollbar. Computed from the row
+    // sizes rather than a deferred sizeHint, which is stale on the first
+    // toggle because the table has not relaid out yet.
     connect(box, &QCheckBox::toggled, this, [this, rows](bool on) {
-        for (int r : rows)
+        int extra = 0;
+        for (int r : rows) {
             setRowHidden(r, !on);
-        growEnclosingWindow();
+            if (on)
+                extra += rowHeight(r) + 1; // row + its grid line
+        }
+        if (on && extra > 0)
+            growEnclosingWindow(extra);
     });
 }
 
-void SettingsTable::growEnclosingWindow()
+void SettingsTable::growEnclosingWindow(int extraHeight)
 {
-    updateGeometry();
-
     QWidget *w = window();
-    if (!w || w == this)
+    if (!w || w == this || extraHeight <= 0)
         return;
 
-    // Defer until layouts have re-evaluated the new content height, then
-    // resize grow-only so a user-enlarged dialog is never shrunk back.
-    QPointer<QWidget> wp(w);
-    QTimer::singleShot(0, wp, [wp]() {
-        if (!wp)
-            return;
-        if (auto *l = wp->layout())
-            l->activate();
-        const QSize hint = wp->sizeHint();
-        const QSize cur = wp->size();
-        wp->resize(qMax(cur.width(), hint.width()),
-                   qMax(cur.height(), hint.height()));
-    });
+    // Grow-only: we only ever add height, never shrink a dialog the
+    // user may have enlarged.
+    w->resize(w->width(), w->height() + extraHeight);
 }

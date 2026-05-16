@@ -73,9 +73,10 @@ public:
 private:
     void applySectionShading(int row, QWidget *cellWidget = nullptr);
 
-    /// Grow the enclosing top-level window (grow-only) so newly-shown
-    /// section rows are not clipped. No-op if there is no parent window.
-    void growEnclosingWindow();
+    /// Add \a extraHeight px to the enclosing top-level window so
+    /// newly-shown section rows are not clipped. Grow-only by
+    /// construction (called only on expand). No-op without a window.
+    void growEnclosingWindow(int extraHeight);
 
     QHash<int, QCheckBox*> d_sectionBoxes;
 };
