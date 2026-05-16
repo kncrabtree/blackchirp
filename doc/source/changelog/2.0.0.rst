@@ -444,6 +444,25 @@ Bug fixes
 
 - Fixed ``ScientificSpinBox`` not displaying an initial value
   of ``0.0`` (:commit:`00b0608d`).
+- Fixed overlays and aux data never persisting for experiments
+  opened by path: the disk-loading ``Experiment`` constructor
+  passed the placeholder number rather than the header-resolved
+  one to its sub-storages, and ``OverlayStorage`` gates all disk
+  writes on a valid experiment number (:commit:`5a595db8`).
+- Fixed catalog overlays always rendering as a step plot and
+  overwriting the saved curve style on every load. The stick-plot
+  style is now a creation-time default, so switching a convolved
+  catalog to a line plot survives reloads (:commit:`1f473d60`).
+- Fixed the overlay Configure dialog silently erasing an existing
+  comment because the comment field was never populated from the
+  overlay before the dialog wrote it back (:commit:`286fe2fe`).
+- Fixed a stray duplicate checkbox appearing in the overlay table
+  when toggling visibility: the paint-based delegate also created
+  a real checkbox editor (:commit:`175e66b3`).
+- Fixed a "pure virtual method called" crash when removing an
+  overlay while a plot filter pass was in flight; the curve is
+  now drained and unregistered before destruction
+  (:commit:`b82736e6`).
 
 **Python companion module.**
 
