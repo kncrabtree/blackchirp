@@ -1159,6 +1159,88 @@ void ZoomPanPlot::buildContextMenu(QMouseEvent *me)
     m->popup(me->globalPosition().toPoint());
 }
 
+QMenu *ZoomPanPlot::buildCurveAppearanceMenu(BlackchirpPlotCurveBase *curve, QWidget *parent)
+{
+    auto *menu = new QMenu(parent);
+
+    // Create curve appearance widget for all styling controls
+    auto curveWa = new QWidgetAction(menu);
+    auto appearanceWidget = new CurveAppearanceWidget(menu);
+
+    // Connect to global preset manager for preset functionality
+    appearanceWidget->setPresetManager(CurveAppearancePresetManager::instance());
+
+    // Initialize widget with current curve properties
+    appearanceWidget->initializeFromCurve(curve);
+
+    // Connect widget to real-time curve updates
+    connect(appearanceWidget, &CurveAppearanceWidget::curveAppearanceChanged,
+            this, [this, curve](const CurveAppearanceWidget::CurveAppearance &appearance) {
+        // Apply changes to curve immediately for real-time feedback
+        curve->setColor(appearance.color);
+        setCurveStyle(curve, appearance.curveStyle);
+        setCurveLineThickness(curve, appearance.lineThickness);
+        setCurveLineStyle(curve, appearance.lineStyle);
+        setCurveMarker(curve, appearance.markerStyle);
+        setCurveMarkerSize(curve, appearance.markerSize);
+        setCurveVisible(curve, appearance.visible);
+        setCurveAutoscale(curve, appearance.autoscale);
+        setCurveAxisY(curve, static_cast<QwtPlot::Axis>(appearance.yAxis));
+    });
+
+    // Handle color change requests through existing setCurveColor method
+    connect(appearanceWidget, &CurveAppearanceWidget::colorChangeRequested,
+            this, [this, curve, appearanceWidget]() {
+        setCurveColor(curve);
+        // Update widget's color display after color change
+        appearanceWidget->updateColorDisplay(curve->pen().color());
+    });
+
+    // Handle preset save requests with custom dialog
+    connect(appearanceWidget, &CurveAppearanceWidget::presetSaveRequested,
+            this, [this, appearanceWidget](const QString &suggestedName) {
+        PresetSaveDialog dialog(suggestedName, CurveAppearancePresetManager::instance(), this);
+
+        if (dialog.exec() == QDialog::Accepted) {
+            QString presetName = dialog.getPresetName();
+            if (!presetName.isEmpty()) {
+                // If overwriting existing preset, no additional confirmation needed
+                // since the dialog already handled the selection
+                if (!dialog.isOverwriteMode()) {
+                    // For new presets, check if name already exists
+                    if (CurveAppearancePresetManager::instance()->hasPreset(presetName)) {
+                        int result = QMessageBox::question(this, "Preset Exists",
+                                                         QString("Preset '%1' already exists. Overwrite?").arg(presetName),
+                                                         QMessageBox::Yes | QMessageBox::No);
+                        if (result != QMessageBox::Yes) {
+                            return;
+                        }
+                    }
+                }
+
+                appearanceWidget->saveCurrentAsPreset(presetName);
+            }
+        }
+    });
+
+    // Handle preset delete requests with confirmation dialog
+    connect(appearanceWidget, &CurveAppearanceWidget::presetDeleteRequested,
+            this, [this, appearanceWidget](const QString &presetName) {
+        int result = QMessageBox::question(this, "Delete Preset",
+                                         QString("Delete preset '%1'?").arg(presetName),
+                                         QMessageBox::Yes | QMessageBox::No);
+
+        if (result == QMessageBox::Yes) {
+            appearanceWidget->deletePreset(presetName);
+        }
+    });
+
+    curveWa->setDefaultWidget(appearanceWidget);
+    menu->addAction(curveWa);
+
+    return menu;
+}
+
 QMenu *ZoomPanPlot::contextMenu()
 {
     QMenu *menu = new QMenu();
@@ -1337,88 +1419,18 @@ QMenu *ZoomPanPlot::contextMenu()
         if(curve != nullptr)
         {
             ++count;
-            auto m = curveMenu->addMenu(curve->title().text());
+            auto m = buildCurveAppearanceMenu(curve, curveMenu);
+            m->setTitle(curve->title().text());
+            curveMenu->addMenu(m);
 
-            auto exportAct = m->addAction("Export XY");
+            // Export XY precedes the appearance widget in the submenu;
+            // the appearance widget action is the menu's first (and only)
+            // entry after buildCurveAppearanceMenu(), so insert before it.
+            auto exportAct = new QAction(QString("Export XY"),m);
             if(curve->curveData().isEmpty())
                 exportAct->setEnabled(false);
             connect(exportAct,&QAction::triggered,[this,curve](){ exportCurve(curve); });
-
-
-            // Create curve appearance widget for all styling controls
-            auto curveWa = new QWidgetAction(m);
-            auto appearanceWidget = new CurveAppearanceWidget(m);
-            
-            // Connect to global preset manager for preset functionality
-            appearanceWidget->setPresetManager(CurveAppearancePresetManager::instance());
-            
-            // Initialize widget with current curve properties
-            appearanceWidget->initializeFromCurve(curve);
-            
-            // Connect widget to real-time curve updates
-            connect(appearanceWidget, &CurveAppearanceWidget::curveAppearanceChanged,
-                    this, [this, curve](const CurveAppearanceWidget::CurveAppearance &appearance) {
-                // Apply changes to curve immediately for real-time feedback
-                curve->setColor(appearance.color);
-                setCurveStyle(curve, appearance.curveStyle);
-                setCurveLineThickness(curve, appearance.lineThickness);
-                setCurveLineStyle(curve, appearance.lineStyle);
-                setCurveMarker(curve, appearance.markerStyle);
-                setCurveMarkerSize(curve, appearance.markerSize);
-                setCurveVisible(curve, appearance.visible);
-                setCurveAutoscale(curve, appearance.autoscale);
-                setCurveAxisY(curve, static_cast<QwtPlot::Axis>(appearance.yAxis));
-            });
-            
-            // Handle color change requests through existing setCurveColor method
-            connect(appearanceWidget, &CurveAppearanceWidget::colorChangeRequested,
-                    this, [this, curve, appearanceWidget]() {
-                setCurveColor(curve);
-                // Update widget's color display after color change
-                appearanceWidget->updateColorDisplay(curve->pen().color());
-            });
-            
-            // Handle preset save requests with custom dialog
-            connect(appearanceWidget, &CurveAppearanceWidget::presetSaveRequested,
-                    this, [this, appearanceWidget](const QString &suggestedName) {
-                PresetSaveDialog dialog(suggestedName, CurveAppearancePresetManager::instance(), this);
-                
-                if (dialog.exec() == QDialog::Accepted) {
-                    QString presetName = dialog.getPresetName();
-                    if (!presetName.isEmpty()) {
-                        // If overwriting existing preset, no additional confirmation needed
-                        // since the dialog already handled the selection
-                        if (!dialog.isOverwriteMode()) {
-                            // For new presets, check if name already exists
-                            if (CurveAppearancePresetManager::instance()->hasPreset(presetName)) {
-                                int result = QMessageBox::question(this, "Preset Exists", 
-                                                                 QString("Preset '%1' already exists. Overwrite?").arg(presetName),
-                                                                 QMessageBox::Yes | QMessageBox::No);
-                                if (result != QMessageBox::Yes) {
-                                    return;
-                                }
-                            }
-                        }
-                        
-                        appearanceWidget->saveCurrentAsPreset(presetName);
-                    }
-                }
-            });
-            
-            // Handle preset delete requests with confirmation dialog
-            connect(appearanceWidget, &CurveAppearanceWidget::presetDeleteRequested,
-                    this, [this, appearanceWidget](const QString &presetName) {
-                int result = QMessageBox::question(this, "Delete Preset", 
-                                                 QString("Delete preset '%1'?").arg(presetName),
-                                                 QMessageBox::Yes | QMessageBox::No);
-                
-                if (result == QMessageBox::Yes) {
-                    appearanceWidget->deletePreset(presetName);
-                }
-            });
-            
-            curveWa->setDefaultWidget(appearanceWidget);
-            m->addAction(curveWa);
+            m->insertAction(m->actions().constFirst(),exportAct);
 
             auto c = dynamic_cast<BlackchirpPlotCurve*>(curve);
             if(c && d_maxIndex > 0)

@@ -373,6 +373,21 @@ protected:
     /// QMenu is owned by the caller (has \c Qt::WA_DeleteOnClose set).
     virtual QMenu *contextMenu();
 
+    /// \brief Builds a menu containing the full curve-appearance editor for \p curve.
+    ///
+    /// The returned QMenu holds a single QWidgetAction wrapping a
+    /// CurveAppearanceWidget wired to the live curve-update slots
+    /// (color, style, thickness, marker, visibility, autoscale, y axis)
+    /// and to the appearance-preset save/delete dialogs. It is the
+    /// shared builder used both by the per-curve right-click submenu and
+    /// by discoverability shortcuts that pop the editor elsewhere
+    /// (e.g. a toolbar button). The caller owns the returned menu and
+    /// decides its lifetime (parent ownership for an embedded submenu,
+    /// or \c Qt::WA_DeleteOnClose for a standalone popup).
+    /// \param curve  Curve whose appearance the widget edits; must not be null.
+    /// \param parent Parent object for the returned menu.
+    QMenu *buildCurveAppearanceMenu(BlackchirpPlotCurveBase *curve, QWidget *parent);
+
 private:
     PlotConfig d_config;
     QFutureWatcher<void> *p_watcher;
