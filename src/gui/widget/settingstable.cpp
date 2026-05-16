@@ -45,36 +45,53 @@ int SettingsTable::addSettingRow(const QString &label, QWidget *first,
     auto *cell = new QWidget(this);
     auto *hbl = new QHBoxLayout(cell);
     hbl->setContentsMargins(0, 0, 0, 0);
+
+    // A horizontally-expanding widget (e.g. a QLineEdit path field)
+    // fills the value cell; a fixed widget (e.g. a browse button) keeps
+    // its hint. Only when nothing wants to expand do we add a trailing
+    // spacer so the pair stays left-aligned, as before.
+    auto expands = [](QWidget *w) {
+        return w && (w->sizePolicy().horizontalPolicy()
+                     & QSizePolicy::ExpandFlag);
+    };
+    bool any = expands(first) || expands(second);
     if (first)
-        hbl->addWidget(first);
+        hbl->addWidget(first, expands(first) ? 1 : 0);
     if (second)
-        hbl->addWidget(second);
-    hbl->addStretch(1);
+        hbl->addWidget(second, expands(second) ? 1 : 0);
+    if (!any)
+        hbl->addStretch(1);
     return addSettingRow(label, cell, tooltip);
 }
 
-void SettingsTable::applySectionShading(int row, QWidget *cellWidget)
+void SettingsTable::styleSectionItem(int row)
 {
-    const QColor band = palette().color(QPalette::AlternateBase);
-    const QColor fg = ThemeColors::getThemeAwareColor(ThemeColors::EmphasisText, this);
+    auto *it = item(row, 0);
+    if (!it)
+        return;
+    it->setBackground(palette().color(QPalette::AlternateBase));
+    it->setForeground(ThemeColors::getThemeAwareColor(
+        ThemeColors::EmphasisText, this));
+    it->setTextAlignment(Qt::AlignCenter);
+    QFont f = it->font();
+    f.setBold(true);
+    it->setFont(f);
+}
 
-    if (cellWidget) {
-        cellWidget->setAutoFillBackground(true);
-        QPalette pal = cellWidget->palette();
-        pal.setColor(QPalette::Window, band);
-        pal.setColor(QPalette::WindowText, fg);
-        cellWidget->setPalette(pal);
-        QFont f = cellWidget->font();
-        f.setBold(true);
-        cellWidget->setFont(f);
-    } else if (auto *item = this->item(row, 0)) {
-        item->setBackground(band);
-        item->setForeground(fg);
-        item->setTextAlignment(Qt::AlignCenter);
-        QFont f = item->font();
-        f.setBold(true);
-        item->setFont(f);
-    }
+void SettingsTable::styleSectionText(QWidget *textWidget)
+{
+    if (!textWidget)
+        return;
+    const QColor fg = ThemeColors::getThemeAwareColor(
+        ThemeColors::EmphasisText, this);
+    QPalette pal = textWidget->palette();
+    pal.setColor(QPalette::WindowText, fg);
+    pal.setColor(QPalette::Text, fg);
+    pal.setColor(QPalette::ButtonText, fg);
+    textWidget->setPalette(pal);
+    QFont f = textWidget->font();
+    f.setBold(true);
+    textWidget->setFont(f);
 }
 
 int SettingsTable::addSectionRow(const QString &title)
@@ -83,10 +100,21 @@ int SettingsTable::addSectionRow(const QString &title)
     insertRow(row);
     setSpan(row, 0, 1, 2);
 
-    auto *item = new QTableWidgetItem(title);
-    item->setFlags(Qt::ItemIsEnabled);
-    setItem(row, 0, item);
-    applySectionShading(row);
+    // Plain heading: a styled QTableWidgetItem (no cell widget). The
+    // band comes from the item background — the original, correct
+    // rendering that the checkable variant must now match.
+    auto *it = new QTableWidgetItem(title);
+    it->setFlags(Qt::ItemIsEnabled);
+    setItem(row, 0, it);
+    styleSectionItem(row);
+
+    Section s;
+    s.box = nullptr;
+    s.wrap = nullptr;
+    s.plainLabel = nullptr;
+    s.title = title;
+    s.checkable = false;
+    d_sections.insert(row, s);
     return row;
 }
 
@@ -97,16 +125,27 @@ int SettingsTable::addCheckableSectionRow(const QString &title, bool checked,
     insertRow(row);
     setSpan(row, 0, 1, 2);
 
+    // Background item carries the band, exactly as for a plain heading,
+    // so the two render identically. The centering cell widget below is
+    // transparent and sits on top of it.
+    auto *bg = new QTableWidgetItem();
+    bg->setFlags(Qt::ItemIsEnabled);
+    setItem(row, 0, bg);
+    styleSectionItem(row);
+
     auto *box = new QCheckBox(title, this);
     box->setChecked(checked);
+    styleSectionText(box);
 
     // The plain-heading rendering used when the section is made
     // non-checkable. Created up front and kept hidden so switching
     // modes never recreates a widget the row index depends on.
     auto *plain = new QLabel(title, this);
     plain->setVisible(false);
+    styleSectionText(plain);
 
-    // Center the active element within the spanned section cell.
+    // Transparent centering host: no autoFillBackground / Window color,
+    // so the band painted by the item shows through.
     auto *wrap = new QWidget(this);
     auto *hbl = new QHBoxLayout(wrap);
     hbl->setContentsMargins(0, 0, 0, 0);
@@ -115,7 +154,6 @@ int SettingsTable::addCheckableSectionRow(const QString &title, bool checked,
     hbl->addWidget(plain);
     hbl->addStretch(1);
     setCellWidget(row, 0, wrap);
-    applySectionShading(row, wrap);
 
     Section s;
     s.box = box;
@@ -139,24 +177,41 @@ void SettingsTable::bindSectionRows(int sectionRow, const QList<int> &rows)
     it->boundRows = rows;
     QCheckBox *box = it->box;
 
-    // Initial state: hide collapsed rows without resizing (the window is
-    // not yet shown during setup).
-    for (int r : rows)
-        setRowHidden(r, !box->isChecked());
+    // A plain (non-checkable) container section never collapses on its
+    // own and must not disturb the visibility state any nested
+    // collapsible sub-section already applied to these rows; just
+    // record the membership. Whole-section show/hide is driven
+    // explicitly via setSectionVisible().
+    if (!box)
+        return;
 
-    // On user toggle, reveal/hide the rows. When revealing, grow the
-    // window by exactly the height of the rows now shown so they are not
-    // clipped behind the (suppressed) scrollbar. Computed from the row
-    // sizes rather than a deferred sizeHint, which is stale on the first
-    // toggle because the table has not relaid out yet.
-    connect(box, &QCheckBox::toggled, this, [this, rows](bool on) {
-        int extra = 0;
-        for (int r : rows) {
+    // Initial state: hide collapsed rows without resizing (the window is
+    // not yet shown during setup). The window is grown on the first
+    // expand only, and only if the section started collapsed — a
+    // section that starts expanded already has its rows accounted for
+    // in the initial size, and repeated toggling must not keep growing.
+    const bool startedCollapsed = !box->isChecked();
+    it->growPending = startedCollapsed;
+    for (int r : rows)
+        setRowHidden(r, startedCollapsed);
+
+    // On user toggle, reveal/hide the rows. The one-shot grow uses the
+    // revealed rows' exact pixel height (computed from the row sizes,
+    // not a deferred sizeHint, which is stale before the table relays
+    // out) so they are not clipped behind the suppressed scrollbar.
+    connect(box, &QCheckBox::toggled, this, [this, rows, sectionRow](bool on) {
+        for (int r : rows)
             setRowHidden(r, !on);
-            if (on)
-                extra += rowHeight(r) + 1; // row + its grid line
-        }
-        if (on && extra > 0)
+        if (!on)
+            return;
+        auto s = d_sections.find(sectionRow);
+        if (s == d_sections.end() || !s->growPending)
+            return;
+        s->growPending = false; // consume: grow exactly once
+        int extra = 0;
+        for (int r : rows)
+            extra += rowHeight(r) + 1; // row + its grid line
+        if (extra > 0)
             growEnclosingWindow(extra);
     });
 }
@@ -171,6 +226,11 @@ void SettingsTable::setSectionTitle(int sectionRow, const QString &title)
         it->box->setText(title);
     if (it->plainLabel)
         it->plainLabel->setText(title);
+    // Plain (item-based) heading: the title lives on the item itself.
+    if (!it->box && !it->plainLabel) {
+        if (auto *cell = item(sectionRow, 0))
+            cell->setText(title);
+    }
 }
 
 void SettingsTable::setSectionCheckable(int sectionRow, bool checkable)
@@ -207,6 +267,20 @@ void SettingsTable::setBoundRowsEnabled(int sectionRow, bool enabled)
     if (it == d_sections.constEnd())
         return;
 
+    // Grey out the heading too, matching the old whole-QGroupBox
+    // disable this stands in for: a checkable heading via its cell
+    // widget, a plain (item-based) heading via the item's flags.
+    if (it->wrap) {
+        it->wrap->setEnabled(enabled);
+    } else if (auto *head = item(sectionRow, 0)) {
+        Qt::ItemFlags f = head->flags();
+        if (enabled)
+            f |= Qt::ItemIsEnabled;
+        else
+            f &= ~Qt::ItemIsEnabled;
+        head->setFlags(f);
+    }
+
     for (int r : it->boundRows) {
         if (auto *labelItem = item(r, 0)) {
             Qt::ItemFlags f = labelItem->flags();
@@ -220,6 +294,33 @@ void SettingsTable::setBoundRowsEnabled(int sectionRow, bool enabled)
             w->setEnabled(enabled);
         if (auto *w = cellWidget(r, 1))
             w->setEnabled(enabled);
+    }
+}
+
+void SettingsTable::setSectionVisible(int sectionRow, bool visible)
+{
+    auto it = d_sections.constFind(sectionRow);
+    if (it == d_sections.constEnd())
+        return;
+
+    setRowHidden(sectionRow, !visible);
+
+    for (int r : it->boundRows) {
+        bool hide = !visible;
+        if (visible) {
+            // Defer to any nested checkable section that currently
+            // collapses this row, so a plain container section can
+            // wrap collapsible sub-sections.
+            for (auto s = d_sections.constBegin();
+                 s != d_sections.constEnd(); ++s) {
+                if (s->box && !s->box->isChecked()
+                    && s->boundRows.contains(r)) {
+                    hide = true;
+                    break;
+                }
+            }
+        }
+        setRowHidden(r, hide);
     }
 }
 

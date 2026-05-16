@@ -57,6 +57,13 @@ public:
 
     /*!
      * \brief Append a bold, spanned, theme-shaded heading row.
+     *
+     * Rendered through the same centered cell-widget mechanism as a
+     * checkable section row (a plain QLabel instead of a QCheckBox), so
+     * the band color is identical for checkable and non-checkable
+     * headings. The row is tracked like a checkable section (with a
+     * null checkbox) so it can be retitled, have rows bound to it, and
+     * be shown/hidden as a unit.
      * \return the new row index.
      */
     int addSectionRow(const QString &title);
@@ -98,11 +105,24 @@ public:
     void setSectionCheckable(int sectionRow, bool checkable);
 
     /*!
-     * \brief Enable or disable a section's bound rows without changing
-     *        their visibility (the disabled counterpart of the
-     *        hide-on-uncheck collapse).
+     * \brief Enable or disable a section's bound rows (and the section
+     *        heading itself) without changing visibility — the disabled
+     *        counterpart of the hide-on-uncheck collapse.
      */
     void setBoundRowsEnabled(int sectionRow, bool enabled);
+
+    /*!
+     * \brief Show or hide a whole section as a unit: the heading row
+     *        and every bound row.
+     *
+     * Collapse-aware: when re-showing, a bound row that also belongs to
+     * a nested checkable section whose box is unchecked stays hidden,
+     * so a plain container section can wrap nested collapsible
+     * sub-sections without fighting their collapse state. Does not grow
+     * the enclosing window (used for programmatic context switches, not
+     * user toggles).
+     */
+    void setSectionVisible(int sectionRow, bool visible);
 
     /*!
      * \brief Re-apply the hidden state of a section's bound rows from
@@ -128,9 +148,22 @@ private:
         QString title;
         bool checkable = true;
         QList<int> boundRows;
+        /// One-shot: the enclosing window is grown on the *first*
+        /// expand only, and only when the section started collapsed.
+        /// Cleared once consumed so repeated toggling never re-grows.
+        bool growPending = false;
     };
 
-    void applySectionShading(int row, QWidget *cellWidget = nullptr);
+    /// Paint the section-heading band on the row's QTableWidgetItem
+    /// (AlternateBase fill + EmphasisText, bold, centered). Both plain
+    /// and checkable headings go through this single mechanism so the
+    /// band is byte-for-byte identical; for a checkable row the
+    /// transparent cell widget sits on top of this item.
+    void styleSectionItem(int row);
+
+    /// Emphasize a heading's visible text widget (the QLabel or
+    /// QCheckBox that sits over the band) to match the item styling.
+    void styleSectionText(QWidget *textWidget);
 
     /// Add \a extraHeight px to the enclosing top-level window so
     /// newly-shown section rows are not clipped. Grow-only by
