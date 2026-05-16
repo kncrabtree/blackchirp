@@ -490,6 +490,12 @@ Bug fixes
   experiment or tearing down the dock mid-search could free members
   still in use; the pass is now drained before destruction
   (:commit:`9428b017`).
+- Fixed Peak List Export dialog defects: the dipole spin box
+  ignored its enabled setting on load, persisted fractional
+  intensity thresholds were truncated to integers, cancelling the
+  save-file dialog raised a spurious export-failure box, and edits
+  to the shots/intensity table were discarded unless the FTB
+  format was exported (:commit:`f15eb918`).
 
 **Python companion module.**
 
