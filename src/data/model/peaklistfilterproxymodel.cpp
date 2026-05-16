@@ -5,76 +5,72 @@ PeakListFilterProxyModel::PeakListFilterProxyModel(QObject *parent) :
 {
 }
 
+void PeakListFilterProxyModel::reapplyRowFilter()
+{
+#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
+    beginFilterChange();
+    endFilterChange(QSortFilterProxyModel::Direction::Rows);
+#else
+    invalidateRowsFilter();
+#endif
+}
+
 void PeakListFilterProxyModel::setStaticFilterEnabled(bool en)
 {
     if(d_staticEnabled == en)
         return;
-    beginFilterChange();
     d_staticEnabled = en;
-    endFilterChange(QSortFilterProxyModel::Direction::Rows);
+    reapplyRowFilter();
 }
 
 void PeakListFilterProxyModel::setMinFreq(double mhz)
 {
     if(qFuzzyCompare(d_minFreq,mhz))
         return;
-    beginFilterChange();
     d_minFreq = mhz;
-    endFilterChange(QSortFilterProxyModel::Direction::Rows);
+    reapplyRowFilter();
 }
 
 void PeakListFilterProxyModel::setMaxFreq(double mhz)
 {
     if(qFuzzyCompare(d_maxFreq,mhz))
         return;
-    beginFilterChange();
     d_maxFreq = mhz;
-    endFilterChange(QSortFilterProxyModel::Direction::Rows);
+    reapplyRowFilter();
 }
 
 void PeakListFilterProxyModel::setMinIntensity(double v)
 {
     if(qFuzzyCompare(d_minInt,v))
         return;
-    beginFilterChange();
     d_minInt = v;
-    endFilterChange(QSortFilterProxyModel::Direction::Rows);
+    reapplyRowFilter();
 }
 
 void PeakListFilterProxyModel::setMaxIntensity(double v)
 {
     if(qFuzzyCompare(d_maxInt,v))
         return;
-    beginFilterChange();
     d_maxInt = v;
-    endFilterChange(QSortFilterProxyModel::Direction::Rows);
+    reapplyRowFilter();
 }
 
 void PeakListFilterProxyModel::setViewSyncEnabled(bool en)
 {
     if(d_viewSyncEnabled == en)
         return;
-    beginFilterChange();
     d_viewSyncEnabled = en;
-    endFilterChange(QSortFilterProxyModel::Direction::Rows);
+    reapplyRowFilter();
 }
 
 void PeakListFilterProxyModel::setViewRange(double min, double max)
 {
     if(qFuzzyCompare(d_viewMin,min) && qFuzzyCompare(d_viewMax,max))
         return;
+    d_viewMin = min;
+    d_viewMax = max;
     if(d_viewSyncEnabled)
-    {
-        beginFilterChange();
-        d_viewMin = min;
-        d_viewMax = max;
-        endFilterChange(QSortFilterProxyModel::Direction::Rows);
-    }
-    else
-    {
-        d_viewMin = min;
-        d_viewMax = max;
-    }
+        reapplyRowFilter();
 }
 
 bool PeakListFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const

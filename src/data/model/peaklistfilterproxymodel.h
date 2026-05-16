@@ -58,6 +58,15 @@ protected:
     bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
 
 private:
+    /// \brief Re-evaluates the row filter across Qt versions.
+    ///
+    /// Qt 6.10 introduced \c endFilterChange(Direction) and the \c
+    /// Direction enum; \c beginFilterChange() arrived in 6.9 and the
+    /// older \c invalidateRowsFilter() is deprecated from 6.13. This
+    /// wrapper uses the begin/end pair where available and falls back
+    /// to \c invalidateRowsFilter() on the 6.4 minimum target.
+    void reapplyRowFilter();
+
     static constexpr double s_inf = std::numeric_limits<double>::infinity();
 
     bool d_staticEnabled{false};
