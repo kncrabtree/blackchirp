@@ -1,10 +1,16 @@
 #include "overlaytypespecificwidget.h"
 
+#include <QCheckBox>
+
+#include <gui/widget/settingstable.h>
+
 OverlayTypeSpecificWidget::OverlayTypeSpecificWidget(const Ft &currentFt, QWidget *parent)
     : QWidget(parent),
       d_context(Context::Creation),
       d_currentFt(currentFt),
-      p_sourceFileConfigBox(nullptr),
+      p_sourceFileConfigTable(nullptr),
+      p_sourceConfigBox(nullptr),
+      d_sourceConfigSection(-1),
       p_sourceFileSettingsBox(nullptr),
       p_overlaySettingsBox(nullptr),
       d_sourceFileValid(false),
@@ -73,21 +79,18 @@ void OverlayTypeSpecificWidget::configureForContext()
 
 void OverlayTypeSpecificWidget::updateSourceFileControls()
 {
-    // Configure source file configuration box based on context
+    // Configure source file configuration section based on context
     if (isCreationContext()) {
-        // Creation context: source file config is always enabled and not checkable
-        p_sourceFileConfigBox->setCheckable(false);
-        p_sourceFileConfigBox->setEnabled(true);
-        p_sourceFileConfigBox->setTitle("Source File Configuration");
+        // Creation context: source file config is always enabled and not
+        // checkable (a plain heading; the file picker must stay usable).
+        setSourceConfigCheckable(false);
+        setSourceConfigTitle("Source File Configuration");
+        p_sourceFileConfigTable->setBoundRowsEnabled(d_sourceConfigSection, true);
     } else if (isSettingsContext()) {
-        // Settings context: source file config is checkable and optional
-        p_sourceFileConfigBox->setCheckable(true);
-        p_sourceFileConfigBox->setTitle("Source File Configuration (Optional)");
-
-        auto b = p_sourceFileConfigBox->signalsBlocked();
-        p_sourceFileConfigBox->blockSignals(true);
-        p_sourceFileConfigBox->setChecked(d_sourceFileEnabled); // Use current state
-        p_sourceFileConfigBox->blockSignals(b);
+        // Settings context: source file config is checkable and optional.
+        setSourceConfigCheckable(true);
+        setSourceConfigTitle("Source File Configuration (Optional)");
+        setSourceConfigChecked(d_sourceFileEnabled); // Use current state
     }
     
     // Smart visibility and state management for Source File Settings section
@@ -116,6 +119,11 @@ void OverlayTypeSpecificWidget::updateSourceFileControls()
     if (sourceEnabled) {
         validateSourceFile();
     }
+
+    // Let the subclass re-assert any dynamic row visibility it owns
+    // (e.g. catalog parsed-file detail rows) after the section's
+    // context state has been applied.
+    refreshSourceFileConfigState();
 }
 
 void OverlayTypeSpecificWidget::onSourceFileConfigToggled(bool enabled)
@@ -125,6 +133,41 @@ void OverlayTypeSpecificWidget::onSourceFileConfigToggled(bool enabled)
     
     // Note: sourceFileEnabled is contextual and should not be persisted
     emit settingsChanged();
+}
+
+bool OverlayTypeSpecificWidget::isSourceConfigEnabled() const
+{
+    // A non-checkable (Creation) section is always "on"; the file
+    // picker is unconditionally available there.
+    if (isCreationContext())
+        return true;
+    return p_sourceConfigBox && p_sourceConfigBox->isChecked();
+}
+
+void OverlayTypeSpecificWidget::setSourceConfigChecked(bool checked)
+{
+    if (!p_sourceConfigBox)
+        return;
+
+    // Signal-blocked so neither the toggle relay nor the window-grow
+    // fires for this programmatic, context-setup state application;
+    // visibility is then reconciled without resizing.
+    const bool b = p_sourceConfigBox->signalsBlocked();
+    p_sourceConfigBox->blockSignals(true);
+    p_sourceConfigBox->setChecked(checked);
+    p_sourceConfigBox->blockSignals(b);
+    p_sourceFileConfigTable->applySectionVisibility(d_sourceConfigSection);
+}
+
+void OverlayTypeSpecificWidget::setSourceConfigCheckable(bool checkable)
+{
+    p_sourceFileConfigTable->setSectionCheckable(d_sourceConfigSection,
+                                                 checkable);
+}
+
+void OverlayTypeSpecificWidget::setSourceConfigTitle(const QString &title)
+{
+    p_sourceFileConfigTable->setSectionTitle(d_sourceConfigSection, title);
 }
 
 void OverlayTypeSpecificWidget::configureGroupBoxAppearance(QGroupBox* groupBox)
@@ -151,37 +194,45 @@ void OverlayTypeSpecificWidget::setupUI()
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(4); // Reduced from 6 to 4 for tighter layout
 
-    // Flat, frameless single-level containers. They retain QGroupBox
-    // type so the source-file-config state machine (setCheckable /
-    // setChecked / setTitle / toggled in updateSourceFileControls,
-    // validateSourceFile, onSourceFileConfigToggled, configureForContext)
-    // keeps identical observable behavior. The nested QGroupBox scaffold
-    // is gone; subclasses populate SettingsTables instead.
-    p_sourceFileConfigBox = new QGroupBox("Source File Configuration", this);
+    // The source-file-config tier is a flat SettingsTable led by a
+    // checkable section row; updateSourceFileControls() retitles it and
+    // switches it between the Creation (plain heading) and Settings
+    // (checkable) renderings via the setSourceConfig* helpers. The other
+    // two tiers stay flat, frameless QGroupBoxes.
+    p_sourceFileConfigTable = new SettingsTable(this);
+    d_sourceConfigSection = p_sourceFileConfigTable->addCheckableSectionRow(
+        "Source File Configuration", false, &p_sourceConfigBox);
+
     p_sourceFileSettingsBox = new QGroupBox("Source File Settings", this);
     p_overlaySettingsBox = new QGroupBox("Type-Specific Settings", this);
 
-    // updateSourceFileControls() drives the source-file-config title
-    // ("Source File Configuration" / "Source File Configuration
-    // (Optional)") and its checkable state; the containers stay flat
-    // and rely on the SettingsTable section rows their subclasses build
-    // for the in-region labelling that the nested boxes used to carry.
-    configureGroupBoxAppearance(p_sourceFileConfigBox);
     configureGroupBoxAppearance(p_sourceFileSettingsBox);
     configureGroupBoxAppearance(p_overlaySettingsBox);
 
-    // Let derived classes populate the containers with SettingsTables
-    createSourceFileConfigUI(p_sourceFileConfigBox);
+    // The subclass appends its file-selection / status rows (and any
+    // dynamic detail rows) after the section row; everything it adds is
+    // bound to the section so it collapses with it.
+    const int firstRow = p_sourceFileConfigTable->rowCount();
+    createSourceFileConfigUI(p_sourceFileConfigTable);
+    const int lastRow = p_sourceFileConfigTable->rowCount();
+    for (int r = firstRow; r < lastRow; ++r)
+        d_sourceConfigRows.append(r);
+    p_sourceFileConfigTable->bindSectionRows(d_sourceConfigSection,
+                                             d_sourceConfigRows);
+
     createSourceFileSettingsUI(p_sourceFileSettingsBox);
     createTypeSpecificSettingsUI(p_overlaySettingsBox);
 
     // Add containers to main layout with intelligent stretch
-    mainLayout->addWidget(p_sourceFileConfigBox, 0); // Fixed size for file selection
+    mainLayout->addWidget(p_sourceFileConfigTable, 0); // Fixed size for file selection
     mainLayout->addWidget(p_sourceFileSettingsBox, 0); // Fixed size for settings
     mainLayout->addWidget(p_overlaySettingsBox, 1); // Takes remaining space for previews/large content
 
-    // Connect source file config box toggle
-    connect(p_sourceFileConfigBox, &QGroupBox::toggled,
+    // Relay the section checkbox toggle through to the source-file
+    // state machine, exactly as the QGroupBox::toggled connection did.
+    connect(p_sourceConfigBox, &QCheckBox::toggled,
+            this, &OverlayTypeSpecificWidget::sourceConfigToggled);
+    connect(this, &OverlayTypeSpecificWidget::sourceConfigToggled,
             this, &OverlayTypeSpecificWidget::onSourceFileConfigToggled);
 
     // Setup connections after UI is created

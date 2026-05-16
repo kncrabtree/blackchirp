@@ -580,67 +580,55 @@ void BCExpOverlayWidget::configureForSettingsContext()
     }
 }
 
-void BCExpOverlayWidget::createSourceFileConfigUI(QGroupBox *parent)
+void BCExpOverlayWidget::createSourceFileConfigUI(SettingsTable *table)
 {
     // Fixed source-file selector: experiment number / custom path,
-    // plus a single status line. This is the file picker, not a
-    // settings table.
-    auto mainLayout = new QVBoxLayout(parent);
-    mainLayout->setSpacing(6);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
+    // plus a single status line. The base has already added the
+    // checkable section row above.
 
-    // First row: Experiment number selection
-    auto experimentRow = new QHBoxLayout();
-    experimentRow->setSpacing(6);
-
-    experimentRow->addWidget(new QLabel("Experiment:", parent));
-
+    // Experiment number selection (spinbox + "OR" + custom-path toggle
+    // in a single value cell).
     SettingsStorage s;
     int lastExperiment = s.get(BC::Key::exptNum, 1);
-    p_experimentNumberSpinBox = new QSpinBox(parent);
+    p_experimentNumberSpinBox = new QSpinBox(table);
     p_experimentNumberSpinBox->setMinimum(1);
     p_experimentNumberSpinBox->setMaximum(lastExperiment);
     p_experimentNumberSpinBox->setValue(1);
     p_experimentNumberSpinBox->setMinimumWidth(80);
+
+    p_usePathCheckBox = new QCheckBox("Use custom path", table);
+
+    auto experimentCell = new QWidget(table);
+    auto experimentRow = new QHBoxLayout(experimentCell);
+    experimentRow->setContentsMargins(0, 0, 0, 0);
+    experimentRow->setSpacing(6);
     experimentRow->addWidget(p_experimentNumberSpinBox);
-
-    experimentRow->addWidget(new QLabel("OR", parent));
-
-    p_usePathCheckBox = new QCheckBox("Use custom path", parent);
+    experimentRow->addWidget(new QLabel("OR", experimentCell));
     experimentRow->addWidget(p_usePathCheckBox);
-
     experimentRow->addStretch();
+    table->addSettingRow("Experiment", experimentCell);
 
-    mainLayout->addLayout(experimentRow);
-
-    // Second row: Path selection (full width)
-    auto pathRow = new QHBoxLayout();
-    pathRow->setSpacing(6);
-
-    pathRow->addWidget(new QLabel("Path:", parent));
-
-    p_pathLineEdit = new QLineEdit(parent);
+    // Path selection
+    p_pathLineEdit = new QLineEdit(table);
     p_pathLineEdit->setEnabled(false);
     p_pathLineEdit->setPlaceholderText("Select experiment directory...");
-    pathRow->addWidget(p_pathLineEdit, 1); // Give it full available width
 
-    p_browseButton = new QToolButton(parent);
+    p_browseButton = new QToolButton(table);
     p_browseButton->setText("📁"); // Use folder icon
     p_browseButton->setToolTip("Browse for experiment directory");
     p_browseButton->setEnabled(false);
     p_browseButton->setMaximumSize(30, 30);
-    pathRow->addWidget(p_browseButton);
 
-    mainLayout->addLayout(pathRow);
+    table->addSettingRow("Path", p_pathLineEdit, p_browseButton);
 
     // Status display (compact, single line with icon)
-    p_experimentStatusLabel = new QLabel(parent);
+    p_experimentStatusLabel = new QLabel(table);
     p_experimentStatusLabel->setWordWrap(false);
     p_experimentStatusLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     p_experimentStatusLabel->setMinimumHeight(20);
     p_experimentStatusLabel->setMaximumHeight(22);
     p_experimentStatusLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    mainLayout->addWidget(p_experimentStatusLabel);
+    table->addSettingRow("Status", p_experimentStatusLabel);
 }
 
 void BCExpOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)

@@ -105,7 +105,7 @@ private slots:
 
 protected:
     // Three-tier UI creation interface
-    void createSourceFileConfigUI(QGroupBox *parent) override;
+    void createSourceFileConfigUI(SettingsTable *table) override;
     void createSourceFileSettingsUI(QGroupBox *parent) override;
     void createTypeSpecificSettingsUI(QGroupBox *parent) override;
     

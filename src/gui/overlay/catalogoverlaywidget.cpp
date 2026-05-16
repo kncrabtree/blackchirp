@@ -51,6 +51,21 @@ CatalogOverlayWidget::~CatalogOverlayWidget()
     disconnect(&manager, nullptr, this, nullptr);
 }
 
+bool CatalogOverlayWidget::isConvolutionEnabled() const
+{
+    return p_convolutionSectionBox && p_convolutionSectionBox->isChecked();
+}
+
+void CatalogOverlayWidget::setConvolutionEnabled(bool enabled)
+{
+    // A state change emits QCheckBox::toggled, which drives both the
+    // bound-row collapse (bindSectionRows) and the
+    // convolutionEnabledChanged() relay feeding the convolution state
+    // machine.
+    if (p_convolutionSectionBox)
+        p_convolutionSectionBox->setChecked(enabled);
+}
+
 void CatalogOverlayWidget::setupForCreation()
 {
     d_context = Context::Creation;
@@ -60,7 +75,7 @@ void CatalogOverlayWidget::setupForCreation()
     loadSettings();
 
     //Convolution should be disabled for new overlay
-    p_convolutionGroupBox->setChecked(false);
+    setConvolutionEnabled(false);
     
     // Initialize convolution state - no convolution performed yet
     d_lastConvolutionState.convolutionPerformed = false;
@@ -93,7 +108,7 @@ void CatalogOverlayWidget::setupForSettings(std::shared_ptr<OverlayBase> overlay
             updatePathDisplayAndTooltip(p_filePathLineEdit, d_filePath);
             
             // Load convolution settings
-            p_convolutionGroupBox->setChecked(catalogOverlay->convolutionEnabled());
+            setConvolutionEnabled(catalogOverlay->convolutionEnabled());
             p_lineshapeComboBox->setCurrentIndex(static_cast<int>(catalogOverlay->lineshapeType()));
             p_linewidthSpinBox->setValue(catalogOverlay->linewidth());
             p_convMinFreqSpinBox->setValue(catalogOverlay->convolutionMinFreq());
@@ -169,7 +184,7 @@ void CatalogOverlayWidget::applyToOverlay(std::shared_ptr<OverlayBase> overlay) 
     catalogOverlay->setSourceFile(d_filePath);
     
     // Apply convolution settings
-    catalogOverlay->setConvolutionEnabled(p_convolutionGroupBox->isChecked());
+    catalogOverlay->setConvolutionEnabled(isConvolutionEnabled());
     catalogOverlay->setLineshapeType(static_cast<CatalogOverlay::LineshapeType>(p_lineshapeComboBox->currentIndex()));
     catalogOverlay->setLinewidth(p_linewidthSpinBox->value());
     catalogOverlay->setConvolutionFreqRange(p_convMinFreqSpinBox->value(), p_convMaxFreqSpinBox->value());
@@ -281,7 +296,7 @@ QHash<QString, QVariant> CatalogOverlayWidget::getSettingsHash() const
     settings[BC::Key::CatalogWidget::fileValid] = d_fileValid;
     
     // Convolution settings (including frequency range for convolution)
-    settings[BC::Key::CatalogWidget::convolutionEnabled] = p_convolutionGroupBox->isChecked();
+    settings[BC::Key::CatalogWidget::convolutionEnabled] = isConvolutionEnabled();
     settings[BC::Key::CatalogWidget::lineshapeType] = p_lineshapeComboBox->currentIndex();
     settings[BC::Key::CatalogWidget::linewidthKHz] = p_linewidthSpinBox->value();
     settings[BC::Key::CatalogWidget::numConvolutionPoints] = p_numPointsSpinBox->value();
@@ -318,7 +333,7 @@ std::shared_ptr<OverlayOperation> CatalogOverlayWidget::createOperation(Operatio
             // Create convolution operation
             return std::make_shared<ConvolutionOperation>(
                 overlay,
-                p_convolutionGroupBox->isChecked(),
+                isConvolutionEnabled(),
                 static_cast<CatalogOverlay::LineshapeType>(p_lineshapeComboBox->currentIndex()),
                 p_linewidthSpinBox->value(),
                 p_convMinFreqSpinBox->value(),
@@ -468,7 +483,7 @@ void CatalogOverlayWidget::setupConnections()
 {
     connect(p_browseButton, &QToolButton::clicked, this, &CatalogOverlayWidget::onBrowseButtonClicked);
     connect(p_filePathLineEdit, &QLineEdit::textChanged, this, &CatalogOverlayWidget::onFilePathChanged);
-    connect(p_convolutionGroupBox, &QGroupBox::toggled, this, &CatalogOverlayWidget::onConvolutionEnabledToggled);
+    connect(this, &CatalogOverlayWidget::convolutionEnabledChanged, this, &CatalogOverlayWidget::onConvolutionEnabledToggled);
     connect(p_lineshapeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &CatalogOverlayWidget::onLineshapeTypeChanged);
     connect(p_linewidthSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CatalogOverlayWidget::onConvolutionSettingsChanged);
     connect(p_convMinFreqSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CatalogOverlayWidget::onConvolutionSettingsChanged);
@@ -507,7 +522,7 @@ void CatalogOverlayWidget::loadSettings()
     }
     
     // Load convolution settings from stored preferences
-    p_convolutionGroupBox->setChecked(get(BC::Key::CatalogWidget::convolutionEnabled, DEFAULT_CONVOLUTION_ENABLED));
+    setConvolutionEnabled(get(BC::Key::CatalogWidget::convolutionEnabled, DEFAULT_CONVOLUTION_ENABLED));
     p_lineshapeComboBox->setCurrentIndex(get(BC::Key::CatalogWidget::lineshapeType, DEFAULT_LINESHAPE_TYPE));
     p_linewidthSpinBox->setValue(get(BC::Key::CatalogWidget::linewidthKHz, DEFAULT_LINEWIDTH));
     updateSpacingDisplay();
@@ -530,7 +545,7 @@ void CatalogOverlayWidget::saveSettings()
     set(BC::Key::CatalogWidget::lastFilePath, d_filePath);
     
     // Save convolution settings
-    set(BC::Key::CatalogWidget::convolutionEnabled, p_convolutionGroupBox->isChecked());
+    set(BC::Key::CatalogWidget::convolutionEnabled, isConvolutionEnabled());
     set(BC::Key::CatalogWidget::lineshapeType, p_lineshapeComboBox->currentIndex());
     set(BC::Key::CatalogWidget::linewidthKHz, p_linewidthSpinBox->value());
     set(BC::Key::CatalogWidget::convMinFreqMHz, p_convMinFreqSpinBox->value());
@@ -574,11 +589,26 @@ void CatalogOverlayWidget::loadCatalogFile(const QString &filePath)
     onFilteringParametersChanged();
 }
 
+void CatalogOverlayWidget::applyDetailRowVisibility()
+{
+    // Detail rows are shown only when a parsed catalog is present and
+    // the source-file-config section is expanded (always so for the
+    // non-checkable Creation heading; gated by the checkbox otherwise).
+    const bool show = (d_catalogData.size() > 0) && isSourceConfigEnabled();
+    for (int r : d_fileDetailRows)
+        p_sourceFileConfigTable->setRowHidden(r, !show);
+}
+
+void CatalogOverlayWidget::refreshSourceFileConfigState()
+{
+    // Re-assert detail-row visibility after the base applies section
+    // context state (which, for the non-checkable Creation heading,
+    // expands every bound row including these).
+    applyDetailRowVisibility();
+}
+
 void CatalogOverlayWidget::updateFileInfo()
 {
-    // Find the details frame using object name
-    auto detailsFrame = p_sourceFileConfigBox->findChild<QFrame*>("fileDetailsFrame");
-    
     if (d_catalogData.isEmpty()) {
         p_formatLabel->setText("-");
         p_moleculeLabel->setText("-");
@@ -586,10 +616,8 @@ void CatalogOverlayWidget::updateFileInfo()
         p_frequencyRangeLabel->setText("-");
         p_overlaySettingsBox->setEnabled(false);
 
-        // Hide details frame when no valid file
-        if (detailsFrame) {
-            detailsFrame->setVisible(false);
-        }
+        // Hide detail rows when no valid file
+        applyDetailRowVisibility();
         return;
     }
     
@@ -619,23 +647,18 @@ void CatalogOverlayWidget::updateFileInfo()
         
         p_frequencyRangeLabel->setText(formatFrequencyRange(minFreq, maxFreq));
         p_overlaySettingsBox->setEnabled(true);
-        
-        // Show details frame when we have valid file data
-        if (detailsFrame) {
-            detailsFrame->setVisible(true);
-        }
     }
     else {
         p_overlaySettingsBox->setEnabled(false);
-        if (detailsFrame) {
-            detailsFrame->setVisible(false);
-        }
     }
+
+    // Detail rows track parsed data and section-expand state.
+    applyDetailRowVisibility();
 }
 
 void CatalogOverlayWidget::updateConvolutionControls()
 {
-    bool convolutionEnabled = p_convolutionGroupBox->isChecked();
+    bool convolutionEnabled = isConvolutionEnabled();
     bool hasOverlay = (d_overlay != nullptr);
     
     // Enable/disable the entire group box based on whether we have an overlay
@@ -682,7 +705,7 @@ void CatalogOverlayWidget::updateSpacingDisplay()
 
 bool CatalogOverlayWidget::validateConvolutionSettings(QString &errorMessage) const
 {
-    if (!p_convolutionGroupBox->isChecked()) {
+    if (!isConvolutionEnabled()) {
         return true; // No validation needed if convolution disabled
     }
     
@@ -734,7 +757,7 @@ void CatalogOverlayWidget::triggerBackgroundConvolution()
     // Create convolution operation
     auto convolutionOp = std::make_shared<ConvolutionOperation>(
         d_overlay,
-        p_convolutionGroupBox->isChecked(),
+        isConvolutionEnabled(),
         static_cast<CatalogOverlay::LineshapeType>(p_lineshapeComboBox->currentIndex()),
         p_linewidthSpinBox->value(),
         p_convMinFreqSpinBox->value(),
@@ -916,41 +939,28 @@ void CatalogOverlayWidget::onFilteringParametersChanged()
     emit settingsChanged(); // Trigger real-time preview updates in settings context
 }
 
-void CatalogOverlayWidget::createSourceFileConfigUI(QGroupBox *parent)
+void CatalogOverlayWidget::createSourceFileConfigUI(SettingsTable *table)
 {
-    auto mainLayout = new QVBoxLayout(parent);
-    mainLayout->setSpacing(6);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
-
-    // Fixed source-file row: path + browse.
-    auto fileRow = new QHBoxLayout();
-    fileRow->setSpacing(6);
-
-    p_filePathLineEdit = new QLineEdit(parent);
+    // Fixed source-file row: path + browse. The base has already added
+    // the checkable section row above.
+    p_filePathLineEdit = new QLineEdit(table);
     p_filePathLineEdit->setPlaceholderText("Select catalog file (.cat, .xo, .out)...");
     p_filePathLineEdit->setMinimumWidth(250); // Ensure adequate width
-    fileRow->addWidget(p_filePathLineEdit, 1); // Give it stretch priority
 
-    p_browseButton = new QToolButton(parent);
+    p_browseButton = new QToolButton(table);
     p_browseButton->setText("📁"); // Use folder icon instead of text to save space
     p_browseButton->setToolTip("Browse for catalog file");
     p_browseButton->setMaximumSize(30, 30);
-    fileRow->addWidget(p_browseButton);
 
-    mainLayout->addLayout(fileRow);
+    table->addSettingRow("File", p_filePathLineEdit, p_browseButton);
 
-    // Parsed-file detail rows in a settings table, wrapped in a frame
-    // that updateFileInfo() finds by object name and shows/hides.
-    auto detailsFrame = new QFrame(parent);
-    auto detailsFrameLayout = new QVBoxLayout(detailsFrame);
-    detailsFrameLayout->setContentsMargins(0, 0, 0, 0);
-
-    auto detailsTable = new SettingsTable(detailsFrame);
-
-    p_formatLabel = new QLabel("-", detailsFrame);
-    p_moleculeLabel = new QLabel("-", detailsFrame);
-    p_transitionCountLabel = new QLabel("-", detailsFrame);
-    p_frequencyRangeLabel = new QLabel("-", detailsFrame);
+    // Parsed-file detail rows. They live directly in the config table
+    // and are hidden via setRowHidden() until a valid catalog is
+    // loaded (replacing the old object-named details frame).
+    p_formatLabel = new QLabel("-", table);
+    p_moleculeLabel = new QLabel("-", table);
+    p_transitionCountLabel = new QLabel("-", table);
+    p_frequencyRangeLabel = new QLabel("-", table);
 
     auto configureDetailLabel = [](QLabel* label) {
         label->setWordWrap(false);
@@ -963,18 +973,16 @@ void CatalogOverlayWidget::createSourceFileConfigUI(QGroupBox *parent)
     configureDetailLabel(p_transitionCountLabel);
     configureDetailLabel(p_frequencyRangeLabel);
 
-    detailsTable->addSettingRow("Format", p_formatLabel);
-    detailsTable->addSettingRow("Molecule", p_moleculeLabel);
-    detailsTable->addSettingRow("Transitions", p_transitionCountLabel);
-    detailsTable->addSettingRow("Range", p_frequencyRangeLabel);
+    d_fileDetailRows = {
+        table->addSettingRow("Format", p_formatLabel),
+        table->addSettingRow("Molecule", p_moleculeLabel),
+        table->addSettingRow("Transitions", p_transitionCountLabel),
+        table->addSettingRow("Range", p_frequencyRangeLabel)
+    };
 
-    detailsFrameLayout->addWidget(detailsTable);
-
-    mainLayout->addWidget(detailsFrame);
-
-    // Initially hide details frame - will be shown when file is loaded
-    detailsFrame->setVisible(false);
-    detailsFrame->setObjectName("fileDetailsFrame"); // For easy access in updateFileInfo()
+    // Initially hidden - shown by updateFileInfo() once a file loads.
+    for (int r : d_fileDetailRows)
+        table->setRowHidden(r, true);
 }
 
 void CatalogOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)
@@ -1035,40 +1043,33 @@ void CatalogOverlayWidget::createTypeSpecificSettingsUI(QGroupBox *parent)
     mainLayout->setContentsMargins(0, 0, 0, 0);
     parent->setTitle("Catalog Settings");
 
-    // Convolution enable is a flat, checkable container kept as a
-    // QGroupBox so the convolution state machine (isChecked/setChecked/
-    // toggled across setupConnections, apply/createOverlay,
-    // updateConvolutionControls, getCurrentConvolutionState, …) keeps
-    // identical behavior. Its child is a single settings table; the
-    // collapse on toggle is preserved by hiding the table.
-    p_convolutionGroupBox = new QGroupBox("Convolution Enabled", parent);
-    p_convolutionGroupBox->setFlat(true);
-    p_convolutionGroupBox->setCheckable(true);
-    p_convolutionGroupBox->setChecked(get(BC::Key::CatalogWidget::convolutionEnabled, DEFAULT_CONVOLUTION_ENABLED));
-    mainLayout->addWidget(p_convolutionGroupBox);
+    // Convolution enable is a checkable SettingsTable section row. Its
+    // bound rows (the Line Shape / Frequency Range sub-headings, value
+    // rows, and the Convolve button) collapse with the section,
+    // reproducing the old checkable-QGroupBox behavior. The convolution
+    // state machine talks to the section checkbox through
+    // isConvolutionEnabled()/setConvolutionEnabled() and the
+    // convolutionEnabledChanged() relay.
+    p_convolutionTable = new SettingsTable(parent);
+    mainLayout->addWidget(p_convolutionTable);
 
-    auto convolutionGroupLayout = new QVBoxLayout(p_convolutionGroupBox);
-    convolutionGroupLayout->setContentsMargins(0, 0, 0, 0);
+    d_convolutionSection = p_convolutionTable->addCheckableSectionRow(
+        "Convolution Enabled",
+        get(BC::Key::CatalogWidget::convolutionEnabled, DEFAULT_CONVOLUTION_ENABLED),
+        &p_convolutionSectionBox);
 
-    // Collapsible content: one settings table replacing the nested
-    // Line Shape / Frequency Range & Resolution group boxes.
-    auto convolutionContentWidget = new QWidget(p_convolutionGroupBox);
-    auto convolutionContentLayout = new QVBoxLayout(convolutionContentWidget);
-    convolutionContentLayout->setSpacing(4);
-    convolutionContentLayout->setContentsMargins(0, 0, 0, 0);
-    convolutionGroupLayout->addWidget(convolutionContentWidget);
-
-    auto table = new SettingsTable(convolutionContentWidget);
+    auto *table = p_convolutionTable;
+    const int firstConvRow = table->rowCount();
 
     // --- Line Shape ---
     table->addSectionRow("Line Shape");
 
-    p_lineshapeComboBox = new QComboBox(convolutionContentWidget);
+    p_lineshapeComboBox = new QComboBox(table);
     p_lineshapeComboBox->addItems({"Lorentzian", "Gaussian"});
     p_lineshapeComboBox->setCurrentIndex(get(BC::Key::CatalogWidget::lineshapeType, DEFAULT_LINESHAPE_TYPE));
     table->addSettingRow("Type", p_lineshapeComboBox);
 
-    p_linewidthSpinBox = new QDoubleSpinBox(convolutionContentWidget);
+    p_linewidthSpinBox = new QDoubleSpinBox(table);
     configureSpinBox(p_linewidthSpinBox,
                      BC::Key::CatalogWidget::linewidthMin, BC::Key::CatalogWidget::linewidthMax,
                      BC::Key::CatalogWidget::linewidthDecimals, BC::Key::CatalogWidget::linewidthStep,
@@ -1081,7 +1082,7 @@ void CatalogOverlayWidget::createTypeSpecificSettingsUI(QGroupBox *parent)
     // --- Frequency Range & Resolution ---
     table->addSectionRow("Frequency Range & Resolution");
 
-    p_convMinFreqSpinBox = new QDoubleSpinBox(convolutionContentWidget);
+    p_convMinFreqSpinBox = new QDoubleSpinBox(table);
     configureSpinBox(p_convMinFreqSpinBox,
                      BC::Key::CatalogWidget::freqMin, BC::Key::CatalogWidget::freqMax,
                      BC::Key::CatalogWidget::freqDecimals, BC::Key::CatalogWidget::freqStep,
@@ -1089,7 +1090,7 @@ void CatalogOverlayWidget::createTypeSpecificSettingsUI(QGroupBox *parent)
     p_convMinFreqSpinBox->setSuffix(" MHz");
     p_convMinFreqSpinBox->setKeyboardTracking(false);
 
-    p_convMaxFreqSpinBox = new QDoubleSpinBox(convolutionContentWidget);
+    p_convMaxFreqSpinBox = new QDoubleSpinBox(table);
     configureSpinBox(p_convMaxFreqSpinBox,
                      BC::Key::CatalogWidget::freqMin, BC::Key::CatalogWidget::freqMax,
                      BC::Key::CatalogWidget::freqDecimals, BC::Key::CatalogWidget::freqStep,
@@ -1097,16 +1098,16 @@ void CatalogOverlayWidget::createTypeSpecificSettingsUI(QGroupBox *parent)
     p_convMaxFreqSpinBox->setSuffix(" MHz");
     p_convMaxFreqSpinBox->setKeyboardTracking(false);
 
-    p_numPointsSpinBox = new QSpinBox(convolutionContentWidget);
+    p_numPointsSpinBox = new QSpinBox(table);
     p_numPointsSpinBox->setMinimum(get(BC::Key::CatalogWidget::numPointsMin, 100));
     p_numPointsSpinBox->setMaximum(get(BC::Key::CatalogWidget::numPointsMax, 10000000));
     p_numPointsSpinBox->setSingleStep(get(BC::Key::CatalogWidget::numPointsStep, 100));
     p_numPointsSpinBox->setKeyboardTracking(false);
 
-    p_spacingDisplayLabel = new QLabel("0.000 MHz", convolutionContentWidget);
+    p_spacingDisplayLabel = new QLabel("0.000 MHz", table);
     styleSubtleLabel(p_spacingDisplayLabel, ThemeColors::SubtleText);
 
-    auto rangeCell = new QWidget(convolutionContentWidget);
+    auto rangeCell = new QWidget(table);
     auto rangeRow = new QHBoxLayout(rangeCell);
     rangeRow->setContentsMargins(0, 0, 0, 0);
     rangeRow->addWidget(p_convMinFreqSpinBox);
@@ -1118,24 +1119,24 @@ void CatalogOverlayWidget::createTypeSpecificSettingsUI(QGroupBox *parent)
     table->addSettingRow("Points", p_numPointsSpinBox);
     table->addSettingRow("Spacing", p_spacingDisplayLabel);
 
-    convolutionContentLayout->addWidget(table);
-
-    // Action control
-    auto actionLayout = new QHBoxLayout();
-    p_convolveButton = new QPushButton("Convolve", convolutionContentWidget);
+    // Action control: a trailing bound row so the Convolve button
+    // collapses with the section exactly as the old content widget did.
+    p_convolveButton = new QPushButton("Convolve", table);
     p_convolveButton->setIcon(ThemeColors::createThemedIcon(":/icons/calculator.svg", ThemeColors::IconPrimary, this));
     p_convolveButton->setEnabled(false);
     p_convolveButton->setMinimumHeight(30);
-    actionLayout->addWidget(p_convolveButton);
-    actionLayout->addStretch();
-    convolutionContentLayout->addLayout(actionLayout);
-    convolutionContentLayout->addStretch();
+    table->addSettingRow("Action", p_convolveButton);
 
-    // Connect GroupBox toggled signal to hide/show content widget for true collapsible behavior
-    connect(p_convolutionGroupBox, &QGroupBox::toggled, convolutionContentWidget, &QWidget::setVisible);
+    const int lastConvRow = table->rowCount();
+    QList<int> convRows;
+    for (int r = firstConvRow; r < lastConvRow; ++r)
+        convRows.append(r);
+    table->bindSectionRows(d_convolutionSection, convRows);
 
-    // Set initial visibility based on GroupBox state
-    convolutionContentWidget->setVisible(p_convolutionGroupBox->isChecked());
+    // Relay the section checkbox toggle through one internal slot, the
+    // single point the convolution state machine connects to.
+    connect(p_convolutionSectionBox, &QCheckBox::toggled, this,
+            [this](bool on) { emit convolutionEnabledChanged(on); });
 
     // Initialize with intelligent defaults from Ft data
     if (!d_currentFt.isEmpty()) {
@@ -1158,7 +1159,7 @@ void CatalogOverlayWidget::createTypeSpecificSettingsUI(QGroupBox *parent)
 CatalogOverlayWidget::ConvolutionState CatalogOverlayWidget::getCurrentConvolutionState() const
 {
     ConvolutionState current;
-    current.enabled = p_convolutionGroupBox->isChecked();
+    current.enabled = isConvolutionEnabled();
     current.lineshapeType = p_lineshapeComboBox->currentIndex();
     current.linewidthKHz = p_linewidthSpinBox->value();
     current.minFreqMHz = p_convMinFreqSpinBox->value();

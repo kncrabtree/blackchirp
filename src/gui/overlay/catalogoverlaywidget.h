@@ -152,6 +152,15 @@ public:
     bool hasUnsavedChanges() const override;
     bool validateAcceptance() override;
 
+    // Convolution-enable abstraction. The convolution state machine
+    // talks to these instead of the backing control directly so it can
+    // be repointed without touching every call site.
+    bool isConvolutionEnabled() const;
+    void setConvolutionEnabled(bool enabled);
+
+signals:
+    void convolutionEnabledChanged(bool enabled);
+
 private slots:
     void onBrowseButtonClicked();
     void onFilePathChanged();
@@ -171,7 +180,8 @@ private slots:
 
 protected:
     // Three-tier UI creation interface
-    void createSourceFileConfigUI(QGroupBox *parent) override;
+    void createSourceFileConfigUI(SettingsTable *table) override;
+    void refreshSourceFileConfigState() override;
     void createSourceFileSettingsUI(QGroupBox *parent) override;
     void createTypeSpecificSettingsUI(QGroupBox *parent) override;
     
@@ -216,14 +226,22 @@ private:
     QLabel *p_moleculeLabel;
     QLabel *p_transitionCountLabel;
     QLabel *p_frequencyRangeLabel;
+    // Parsed-file detail rows in the source-file-config table; hidden
+    // until a valid catalog is loaded (replaces the old details frame).
+    QList<int> d_fileDetailRows;
     
     // Source File Settings tier (Source-dependent controls)
     QCheckBox *p_saveRangeOnlyCheckBox;
     QDoubleSpinBox *p_filterMinFreqSpinBox;
     QDoubleSpinBox *p_filterMaxFreqSpinBox;
     
-    // Overlay Settings tier (Convolution - source-independent)
-    QGroupBox *p_convolutionGroupBox;
+    // Overlay Settings tier (Convolution - source-independent).
+    // The convolution config is a SettingsTable led by a checkable
+    // "Convolution Enabled" section row; its bound rows (including the
+    // Convolve button) collapse with the section.
+    SettingsTable *p_convolutionTable;
+    QCheckBox *p_convolutionSectionBox;
+    int d_convolutionSection;
     QComboBox *p_lineshapeComboBox;
     QDoubleSpinBox *p_linewidthSpinBox;
     QDoubleSpinBox *p_convMinFreqSpinBox;
@@ -241,6 +259,7 @@ private:
     // Helper methods
     void loadCatalogFile(const QString &filePath);
     void updateFileInfo();
+    void applyDetailRowVisibility();
     void updateConvolutionControls();
     void updateSpacingDisplay();
     bool validateConvolutionSettings(QString &errorMessage) const;

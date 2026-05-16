@@ -6,6 +6,7 @@
 #include <QGroupBox>
 #include <QVBoxLayout>
 #include <QLineEdit>
+#include <QList>
 #include <memory>
 
 #include <data/experiment/overlaybase.h>
@@ -14,6 +15,8 @@
 
 // Forward declarations
 class OverlayOperation;
+class SettingsTable;
+class QCheckBox;
 
 /**
  * @brief Operation capability metadata for overlay widgets
@@ -96,8 +99,17 @@ public:
     virtual void configureForSettingsContext() {} // Override to customize settings UI
     
     // Three-tier state management (moved from UnifiedOverlayWidget)
-    void updateSourceFileControls(); // Update source file UI state - controls base class QGroupBoxes
+    void updateSourceFileControls(); // Update source file UI state - controls base class regions
     void onSourceFileConfigToggled(bool enabled); // Handle source config changes
+
+    // Source-file-config abstraction. The Creation/Settings state
+    // machine talks to these instead of the underlying control so the
+    // section row that replaced the QGroupBox can be repointed without
+    // touching the state-machine logic.
+    bool isSourceConfigEnabled() const;
+    void setSourceConfigChecked(bool checked); // signal-blocked, no window grow
+    void setSourceConfigCheckable(bool checkable);
+    void setSourceConfigTitle(const QString &title);
     
     // Helper method for compact file path display with tooltips
     void updatePathDisplayAndTooltip(QLineEdit* lineEdit, const QString &fullPath);
@@ -133,6 +145,7 @@ protected:
 
 signals:
     void settingsChanged();
+    void sourceConfigToggled(bool enabled); // relayed to onSourceFileConfigToggled
     void dataValidityChanged(bool isValid);
     void progressOperationStarted(const QString &message);
     void progressOperationFinished();
@@ -140,10 +153,19 @@ signals:
     void labelUpdateRequested(const QString &newLabel);
 
 protected:
-    // Three-tier UI creation interface - pure virtual methods for derived classes
-    virtual void createSourceFileConfigUI(QGroupBox *parent) = 0;
-    virtual void createSourceFileSettingsUI(QGroupBox *parent) = 0; 
+    // Three-tier UI creation interface - pure virtual methods for derived classes.
+    // The source-file-config tier fills a SettingsTable; the base has
+    // already added the checkable "Source File Configuration" section
+    // row at the top, so the subclass only appends its file-selection /
+    // status rows (and any dynamic detail rows it manages itself).
+    virtual void createSourceFileConfigUI(SettingsTable *table) = 0;
+    virtual void createSourceFileSettingsUI(QGroupBox *parent) = 0;
     virtual void createTypeSpecificSettingsUI(QGroupBox *parent) = 0;
+
+    // Re-assert subclass-managed dynamic row visibility after the base
+    // applies context state (e.g. catalog's parsed-file detail rows,
+    // which are hidden until a file is loaded). Default: no-op.
+    virtual void refreshSourceFileConfigState() {}
     
     // Helper methods for derived classes
     virtual void setupConnections() = 0;
@@ -165,8 +187,14 @@ protected:
     std::shared_ptr<OverlayBase> d_overlay; // Only valid in settings context
     const Ft d_currentFt; // Current spectroscopic data for intelligent defaults and analysis
     
-    // Three-tier QGroupBox widgets (owned by base class)
-    QGroupBox *p_sourceFileConfigBox;
+    // Source-file-config tier: a flat SettingsTable whose first row is
+    // the checkable "Source File Configuration" section. The remaining
+    // two tiers stay flat QGroupBoxes (only the config box is being
+    // converted).
+    SettingsTable *p_sourceFileConfigTable;
+    QCheckBox *p_sourceConfigBox;       // section checkbox; alive across modes
+    int d_sourceConfigSection;          // section row index
+    QList<int> d_sourceConfigRows;      // subclass rows bound to the section
     QGroupBox *p_sourceFileSettingsBox;
     QGroupBox *p_overlaySettingsBox;
     

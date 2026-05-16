@@ -568,35 +568,27 @@ void GenericXYOverlayWidget::configureForSettingsContext()
     }
 }
 
-void GenericXYOverlayWidget::createSourceFileConfigUI(QGroupBox *parent)
+void GenericXYOverlayWidget::createSourceFileConfigUI(SettingsTable *table)
 {
     // Fixed source-file row: path + browse, plus a single status line.
-    auto mainLayout = new QVBoxLayout(parent);
-    mainLayout->setSpacing(6);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
-
-    auto fileRow = new QHBoxLayout();
-    fileRow->setSpacing(6);
-
-    p_filePathEdit = new QLineEdit(parent);
+    // The base has already added the checkable section row above.
+    p_filePathEdit = new QLineEdit(table);
     p_filePathEdit->setPlaceholderText("Select a data file...");
     p_filePathEdit->setMinimumWidth(250); // Ensure adequate width
-    fileRow->addWidget(p_filePathEdit, 1); // Give it stretch priority
 
-    p_browseButton = new QPushButton("📁", parent);
+    p_browseButton = new QPushButton("📁", table);
     p_browseButton->setToolTip("Browse for data file");
     p_browseButton->setMaximumSize(30, 30);
-    fileRow->addWidget(p_browseButton);
 
-    mainLayout->addLayout(fileRow);
+    table->addSettingRow("File", p_filePathEdit, p_browseButton);
 
-    p_fileStatusLabel = new QLabel(parent);
+    p_fileStatusLabel = new QLabel(table);
     p_fileStatusLabel->setWordWrap(false);
     p_fileStatusLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     p_fileStatusLabel->setMinimumHeight(20);
     p_fileStatusLabel->setMaximumHeight(22);
     p_fileStatusLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    mainLayout->addWidget(p_fileStatusLabel);
+    table->addSettingRow("Status", p_fileStatusLabel);
 }
 
 void GenericXYOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)
