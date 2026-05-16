@@ -3,6 +3,9 @@
 #include <QHeaderView>
 #include <QHBoxLayout>
 #include <QCheckBox>
+#include <QLayout>
+#include <QTimer>
+#include <QPointer>
 
 #include <gui/style/themecolors.h>
 
@@ -122,10 +125,40 @@ void SettingsTable::bindSectionRows(int sectionRow, const QList<int> &rows)
         return;
 
     QCheckBox *box = it.value();
-    auto apply = [this, rows](bool on) {
+
+    // Initial state: hide collapsed rows without resizing (the window is
+    // not yet shown during setup).
+    for (int r : rows)
+        setRowHidden(r, !box->isChecked());
+
+    // On user toggle, reveal/hide the rows and grow the window so the
+    // newly-visible rows are not clipped behind the (suppressed) scrollbar.
+    connect(box, &QCheckBox::toggled, this, [this, rows](bool on) {
         for (int r : rows)
             setRowHidden(r, !on);
-    };
-    connect(box, &QCheckBox::toggled, this, apply);
-    apply(box->isChecked());
+        growEnclosingWindow();
+    });
+}
+
+void SettingsTable::growEnclosingWindow()
+{
+    updateGeometry();
+
+    QWidget *w = window();
+    if (!w || w == this)
+        return;
+
+    // Defer until layouts have re-evaluated the new content height, then
+    // resize grow-only so a user-enlarged dialog is never shrunk back.
+    QPointer<QWidget> wp(w);
+    QTimer::singleShot(0, wp, [wp]() {
+        if (!wp)
+            return;
+        if (auto *l = wp->layout())
+            l->activate();
+        const QSize hint = wp->sizeHint();
+        const QSize cur = wp->size();
+        wp->resize(qMax(cur.width(), hint.width()),
+                   qMax(cur.height(), hint.height()));
+    });
 }
