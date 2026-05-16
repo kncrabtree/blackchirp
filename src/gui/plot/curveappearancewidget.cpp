@@ -10,6 +10,8 @@
 #include <QHBoxLayout>
 #include <cmath>
 
+#include <gui/widget/settingstable.h>
+
 CurveAppearanceWidget::CurveAppearanceWidget(QWidget *parent)
     : QWidget(parent), d_blockSignals(false), p_presetManager(nullptr)
 {
@@ -46,60 +48,41 @@ CurveAppearanceWidget::~CurveAppearanceWidget()
 
 void CurveAppearanceWidget::setupUI()
 {
-    // Create main vertical layout with compact spacing
     auto mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(6, 6, 6, 6);
     mainLayout->setSpacing(4);
-    
-    // === PRESET CONTROLS GROUP ===
-    auto presetGroup = new QGroupBox("Presets", this);
-    presetGroup->setFlat(true);
-    auto presetLayout = new QGridLayout(presetGroup);
-    presetLayout->setContentsMargins(3, 2, 3, 3);
-    presetLayout->setSpacing(3);
-    
-    // Preset selection (full width)
-    p_presetBox = new QComboBox(presetGroup);
+
+    // === PRESET BAR (compact top row, no nested box) ===
+    auto presetRow = new QHBoxLayout();
+    presetRow->setSpacing(3);
+
+    auto presetLabel = new QLabel("Preset:", this);
+    p_presetBox = new QComboBox(this);
     p_presetBox->setToolTip("Select a preset to apply or create a new preset");
-    auto presetLabel = new QLabel("Preset:", presetGroup);
-    presetLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    presetLayout->addWidget(presetLabel, 0, 0);
-    presetLayout->addWidget(p_presetBox, 0, 1, 1, 2);
-    
-    // Preset action buttons (compact, side by side)
-    p_savePresetButton = new QPushButton("Save", presetGroup);
+
+    p_savePresetButton = new QPushButton("Save", this);
     p_savePresetButton->setToolTip("Save current appearance as a new preset");
     p_savePresetButton->setMaximumWidth(60);
-    
-    p_deletePresetButton = new QPushButton("Delete", presetGroup);
+
+    p_deletePresetButton = new QPushButton("Delete", this);
     p_deletePresetButton->setToolTip("Delete the selected preset");
     p_deletePresetButton->setMaximumWidth(60);
     p_deletePresetButton->setEnabled(false);
-    
-    presetLayout->addWidget(p_savePresetButton, 1, 1);
-    presetLayout->addWidget(p_deletePresetButton, 1, 2);
-    
-    mainLayout->addWidget(presetGroup);
-    
-    // === APPEARANCE CONTROLS GROUP ===
-    auto appearanceGroup = new QGroupBox("Appearance", this);
-    appearanceGroup->setFlat(true);
-    auto appearanceLayout = new QVBoxLayout(appearanceGroup);
-    appearanceLayout->setContentsMargins(3, 2, 3, 3);
-    appearanceLayout->setSpacing(3);
-    
-    // Color and curve type row
-    auto colorCurveLayout = new QGridLayout();
-    colorCurveLayout->setSpacing(3);
-    
-    p_colorButton = new QPushButton("Choose Color...", appearanceGroup);
+
+    presetRow->addWidget(presetLabel);
+    presetRow->addWidget(p_presetBox, 1);
+    presetRow->addWidget(p_savePresetButton);
+    presetRow->addWidget(p_deletePresetButton);
+    mainLayout->addLayout(presetRow);
+
+    // === APPEARANCE TABLE ===
+    auto table = new SettingsTable(this);
+
+    p_colorButton = new QPushButton("Choose Color...", this);
     p_colorButton->setMinimumHeight(25);
-    auto colorLabel = new QLabel("Color:", appearanceGroup);
-    colorLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    colorCurveLayout->addWidget(colorLabel, 0, 0);
-    colorCurveLayout->addWidget(p_colorButton, 0, 1);
-    
-    p_curveStyleBox = new QComboBox(appearanceGroup);
+    table->addSettingRow("Color", p_colorButton);
+
+    p_curveStyleBox = new QComboBox(this);
     // Store the enum's int value (not QVariant::fromValue of the enum):
     // QwtPlotCurve::CurveStyle is a plain enum with no Q_ENUM/meta-enum, so
     // QVariant<->enum and findData round-trips are unreliable, and because
@@ -109,46 +92,25 @@ void CurveAppearanceWidget::setupUI()
     p_curveStyleBox->addItem("Stick Plot", static_cast<int>(QwtPlotCurve::Sticks));
     p_curveStyleBox->addItem("Step Plot", static_cast<int>(QwtPlotCurve::Steps));
     p_curveStyleBox->addItem("Scatter Dots", static_cast<int>(QwtPlotCurve::Dots));
-    auto typeLabel = new QLabel("Type:", appearanceGroup);
-    typeLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    colorCurveLayout->addWidget(typeLabel, 0, 2);
-    colorCurveLayout->addWidget(p_curveStyleBox, 0, 3);
-    
-    appearanceLayout->addLayout(colorCurveLayout);
-    
-    // Line style and thickness row  
-    auto lineLayout = new QGridLayout();
-    lineLayout->setSpacing(3);
-    
-    p_thicknessBox = new QDoubleSpinBox(appearanceGroup);
+    table->addSettingRow("Type", p_curveStyleBox);
+
+    p_thicknessBox = new QDoubleSpinBox(this);
     p_thicknessBox->setRange(0.0, 10.0);
     p_thicknessBox->setDecimals(1);
     p_thicknessBox->setSingleStep(0.5);
     p_thicknessBox->setMaximumWidth(60);
-    auto widthLabel = new QLabel("Width:", appearanceGroup);
-    widthLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    lineLayout->addWidget(widthLabel, 0, 0);
-    lineLayout->addWidget(p_thicknessBox, 0, 1);
-    
-    p_lineStyleBox = new QComboBox(appearanceGroup);
+    table->addSettingRow("Width", p_thicknessBox);
+
+    p_lineStyleBox = new QComboBox(this);
     p_lineStyleBox->addItem("None", static_cast<int>(Qt::NoPen));
     p_lineStyleBox->addItem(QString::fromUtf16(u"⸻ "), static_cast<int>(Qt::SolidLine));
     p_lineStyleBox->addItem("- - - ", static_cast<int>(Qt::DashLine));
     p_lineStyleBox->addItem(QString::fromUtf16(u"· · · "), static_cast<int>(Qt::DotLine));
     p_lineStyleBox->addItem(QString::fromUtf16(u"-·-·-"), static_cast<int>(Qt::DashDotLine));
     p_lineStyleBox->addItem(QString::fromUtf16(u"-··-··"), static_cast<int>(Qt::DashDotDotLine));
-    auto styleLabel = new QLabel("Style:", appearanceGroup);
-    styleLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    lineLayout->addWidget(styleLabel, 0, 2);
-    lineLayout->addWidget(p_lineStyleBox, 0, 3);
-    
-    appearanceLayout->addLayout(lineLayout);
-    
-    // Marker style and size row
-    auto markerLayout = new QGridLayout();
-    markerLayout->setSpacing(3);
-    
-    p_markerBox = new QComboBox(appearanceGroup);
+    table->addSettingRow("Style", p_lineStyleBox);
+
+    p_markerBox = new QComboBox(this);
     p_markerBox->addItem("None", static_cast<int>(QwtSymbol::NoSymbol));
     p_markerBox->addItem(QString::fromUtf16(u"●"), static_cast<int>(QwtSymbol::Ellipse));
     p_markerBox->addItem(QString::fromUtf16(u"■"), static_cast<int>(QwtSymbol::Rect));
@@ -164,43 +126,24 @@ void CurveAppearanceWidget::setupUI()
     p_markerBox->addItem(QString::fromUtf16(u"✳"), static_cast<int>(QwtSymbol::Star1));
     p_markerBox->addItem(QString::fromUtf16(u"✶"), static_cast<int>(QwtSymbol::Star2));
     p_markerBox->addItem(QString::fromUtf16(u"⬢"), static_cast<int>(QwtSymbol::Hexagon));
-    auto markerLabel = new QLabel("Marker:", appearanceGroup);
-    markerLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    markerLayout->addWidget(markerLabel, 0, 0);
-    markerLayout->addWidget(p_markerBox, 0, 1);
-    
-    p_markerSizeBox = new QSpinBox(appearanceGroup);
+    table->addSettingRow("Marker", p_markerBox);
+
+    p_markerSizeBox = new QSpinBox(this);
     p_markerSizeBox->setRange(1, 20);
     p_markerSizeBox->setMaximumWidth(50);
-    auto sizeLabel = new QLabel("Size:", appearanceGroup);
-    sizeLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    markerLayout->addWidget(sizeLabel, 0, 2);
-    markerLayout->addWidget(p_markerSizeBox, 0, 3);
-    
-    appearanceLayout->addLayout(markerLayout);
-    
-    // Options row (checkboxes and Y-axis)
-    auto optionsLayout = new QGridLayout();
-    optionsLayout->setSpacing(3);
-    
-    p_visibleBox = new QCheckBox("Visible", appearanceGroup);
-    optionsLayout->addWidget(p_visibleBox, 0, 0);
-    
-    p_autoscaleBox = new QCheckBox("Autoscale", appearanceGroup);
-    p_autoscaleBox->setToolTip("Controls whether the curve is included when calculating the axis limits for the autoscale operation");
-    optionsLayout->addWidget(p_autoscaleBox, 0, 1);
-    
-    p_yAxisBox = new QComboBox(appearanceGroup);
+    table->addSettingRow("Size", p_markerSizeBox);
+
+    p_yAxisBox = new QComboBox(this);
     p_yAxisBox->addItem("Left", QVariant::fromValue(QwtAxis::YLeft));
     p_yAxisBox->addItem("Right", QVariant::fromValue(QwtAxis::YRight));
-    auto yAxisLabel = new QLabel("Y Axis:", appearanceGroup);
-    yAxisLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    optionsLayout->addWidget(yAxisLabel, 0, 2);
-    optionsLayout->addWidget(p_yAxisBox, 0, 3);
-    
-    appearanceLayout->addLayout(optionsLayout);
-    
-    mainLayout->addWidget(appearanceGroup);
+    table->addSettingRow("Y Axis", p_yAxisBox);
+
+    p_visibleBox = new QCheckBox("Visible", this);
+    p_autoscaleBox = new QCheckBox("Autoscale", this);
+    p_autoscaleBox->setToolTip("Controls whether the curve is included when calculating the axis limits for the autoscale operation");
+    table->addSettingRow("Display", p_visibleBox, p_autoscaleBox);
+
+    mainLayout->addWidget(table);
 }
 
 void CurveAppearanceWidget::setupConnections()
