@@ -104,6 +104,7 @@ set(BLACKCHIRP_DATA_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/analysis/ft.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/analysis/ftworker.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/analysis/peakfinder.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/analysis/peakfindsettings.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/analysis/waveformparser.h
     
     # Experiment configuration

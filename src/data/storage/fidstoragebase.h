@@ -8,6 +8,7 @@
 #include <data/storage/datastoragebase.h>
 #include <data/experiment/fid.h>
 #include <data/analysis/ftworker.h>
+#include <data/analysis/peakfindsettings.h>
 
 class BlackchirpCSV;
 
@@ -21,6 +22,16 @@ inline constexpr QLatin1StringView rdc{"FidRemoveDC"};              ///< When \c
 inline constexpr QLatin1StringView units{"FtUnits"};                ///< Output magnitude units; maps to \c FtWorker::FtUnits.
 inline constexpr QLatin1StringView autoscaleIgnore{"AutoscaleIgnoreMHz"}; ///< Half-width around the LO (MHz) excluded from autoscale tracking.
 inline constexpr QLatin1StringView winf{"FidWindowFunction"};       ///< Apodization window function; maps to \c FtWorker::FtWindowFunction.
+}
+
+/// \brief CSV key constants for the per-experiment peak-finder settings file.
+namespace BC::Key::PeakStorage {
+inline constexpr QLatin1StringView pkMinFreq{"PeakMinFreqMHz"};       ///< Lower bound of the peak-search frequency range (MHz).
+inline constexpr QLatin1StringView pkMaxFreq{"PeakMaxFreqMHz"};       ///< Upper bound of the peak-search frequency range (MHz).
+inline constexpr QLatin1StringView pkSnr{"PeakSnr"};                  ///< Signal-to-noise ratio threshold for detection.
+inline constexpr QLatin1StringView pkWinSize{"PeakWindowSize"};       ///< Savitzky-Golay smoothing window size.
+inline constexpr QLatin1StringView pkOrder{"PeakPolyOrder"};          ///< Savitzky-Golay smoothing polynomial order.
+inline constexpr QLatin1StringView pkNavHalfWidth{"PeakNavHalfWidthMHz"}; ///< Plot-centering window half-width (MHz).
 }
 
 /*!
@@ -146,6 +157,19 @@ public:
      \return \c true if the file was found and parsed successfully.
     */
     bool readProcessingSettings(FtWorker::FidProcessingSettings &out);
+
+    /*!
+     \brief Serialize a \c PeakFindSettings struct to \c fid/peakfind.csv.
+     \param c Peak-finder settings to write.
+    */
+    void writePeakFindSettings(const PeakFindSettings &c);
+
+    /*!
+     \brief Deserialize a \c PeakFindSettings struct from \c fid/peakfind.csv.
+     \param out Peak-finder settings populated on success.
+     \return \c true if the file was found and parsed successfully.
+    */
+    bool readPeakFindSettings(PeakFindSettings &out);
 
     /*!
      \brief Return the [min, max] probe-frequency range across all stored FID segments.

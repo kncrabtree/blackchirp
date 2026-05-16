@@ -12,6 +12,7 @@ class BlackchirpCSV;
 /// \brief CSV key constants used by DataStorageBase helpers.
 namespace BC::Key::DS {
 inline constexpr QLatin1StringView proc{"processing.csv"}; ///< Filename of the per-subdirectory processing-settings CSV.
+inline constexpr QLatin1StringView peakFind{"peakfind.csv"}; ///< Filename of the per-experiment peak-finder settings CSV.
 }
 
 /*!

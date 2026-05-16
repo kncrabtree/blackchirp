@@ -327,6 +327,51 @@ bool FidStorageBase::readProcessingSettings(FtWorker::FidProcessingSettings &out
 
 }
 
+void FidStorageBase::writePeakFindSettings(const PeakFindSettings &c)
+{
+    using namespace BC::Key::PeakStorage;
+    std::map<QString,QVariant,std::less<>> m;
+    m.emplace(pkMinFreq,c.minFreq);
+    m.emplace(pkMaxFreq,c.maxFreq);
+    m.emplace(pkSnr,c.snr);
+    m.emplace(pkNavHalfWidth,c.navHalfWidth);
+    m.emplace(pkWinSize,c.winSize);
+    m.emplace(pkOrder,c.polyOrder);
+
+    writeMetadata(BC::Key::DS::peakFind,m,BC::CSV::fidDir);
+}
+
+bool FidStorageBase::readPeakFindSettings(PeakFindSettings &out)
+{
+    using namespace BC::Key::PeakStorage;
+    std::map<QString,QVariant,std::less<>> m;
+    readMetadata(BC::Key::DS::peakFind,m,BC::CSV::fidDir);
+
+    if(m.empty())
+        return false;
+
+    auto it = m.find(pkMinFreq);
+    if(it != m.end())
+        out.minFreq = it->second.toDouble();
+    it = m.find(pkMaxFreq);
+    if(it != m.end())
+        out.maxFreq = it->second.toDouble();
+    it = m.find(pkSnr);
+    if(it != m.end())
+        out.snr = it->second.toDouble();
+    it = m.find(pkNavHalfWidth);
+    if(it != m.end())
+        out.navHalfWidth = it->second.toDouble();
+    it = m.find(pkWinSize);
+    if(it != m.end())
+        out.winSize = it->second.toInt();
+    it = m.find(pkOrder);
+    if(it != m.end())
+        out.polyOrder = it->second.toInt();
+
+    return true;
+}
+
 std::pair<double, double> FidStorageBase::getLORange()
 {
     QMutexLocker l(pu_mutex.get());
