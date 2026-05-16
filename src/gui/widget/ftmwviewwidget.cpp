@@ -1015,7 +1015,7 @@ void FtmwViewWidget::showPeakFinder(bool show)
     if(p_pfw != nullptr || p_mainFtPlot->currentFt().isEmpty())
         return;
 
-    p_pfw = new PeakFindWidget(p_mainFtPlot->currentFt(),d_currentExptNum);
+    p_pfw = new PeakFindWidget(p_mainFtPlot->currentFt(),d_currentExptNum,ps_fidStorage);
     p_peakFindDock->setWindowTitle(d_currentExptNum > 0
                                    ? QString("Peak List: Experiment %1").arg(d_currentExptNum)
                                    : QString("Peak List"));

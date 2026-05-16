@@ -230,6 +230,12 @@ User interface
   or sort order), centering the main plot on each. The frequency
   window half-width is configurable in the Peak Finding Options
   dialog. See :doc:`/user_guide/cp-ftmw`.
+- The Peak Find search parameters (frequency range, SNR, window
+  size, polynomial order, and navigation half-width) are now
+  remembered per experiment, stored in a ``peakfind.csv`` file and
+  falling back to the application-wide defaults when none has been
+  saved, mirroring the FID processing-settings behavior. See
+  :doc:`/user_guide/cp-ftmw`.
 - Relaxed the experiment-setup dialog minimum size. See
   :doc:`/user_guide/experiment_setup`.
 

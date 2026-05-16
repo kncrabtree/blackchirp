@@ -9,9 +9,12 @@
 #include <QPointF>
 #include <QFutureWatcher>
 
+#include <memory>
+
 #include <data/storage/settingsstorage.h>
 #include <data/experiment/experiment.h>
 #include <data/analysis/peakfinder.h>
+#include <data/analysis/peakfindsettings.h>
 #include <data/model/peaklistmodel.h>
 #include <data/model/peaklistfilterproxymodel.h>
 
@@ -23,6 +26,7 @@ class QTableWidget;
 class QDoubleSpinBox;
 class ScientificSpinBox;
 class FtmwViewWidget;
+class FidStorageBase;
 
 namespace BC::Key {
 inline constexpr QLatin1StringView peakFind{"peakFind"};
@@ -48,8 +52,20 @@ class PeakFindWidget : public QWidget, public SettingsStorage
     Q_OBJECT
 
 public:
-    explicit PeakFindWidget(Ft ft, int number, QWidget *parent = nullptr);
+    explicit PeakFindWidget(Ft ft, int number,
+                            std::shared_ptr<FidStorageBase> storage = nullptr,
+                            QWidget *parent = nullptr);
     ~PeakFindWidget();
+
+    /// \brief Return the current peak-search parameters.
+    PeakFindSettings getSearchSettings() const;
+
+    /// \brief Apply peak-search parameters without triggering a find.
+    ///
+    /// Updates the search members and recomputes the smoothing
+    /// coefficients but does not start a peak-find pass; the normal
+    /// FT/newFt path drives the first find.
+    void applySearchSettings(const PeakFindSettings &s);
 
 signals:
     void peakList(QVector<QPointF>);
@@ -116,6 +132,7 @@ private:
     int d_winSize;
     int d_polyOrder;
     double d_navHalfWidth;
+    std::shared_ptr<FidStorageBase> ps_fidStorage;
     int d_number;
     bool d_busy;
     bool d_waiting;

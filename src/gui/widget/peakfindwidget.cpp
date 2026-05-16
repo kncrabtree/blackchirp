@@ -32,9 +32,13 @@
 #include <limits>
 
 #include <gui/dialog/peaklistexportdialog.h>
+#include <data/storage/fidstoragebase.h>
 
-PeakFindWidget::PeakFindWidget(Ft ft, int number, QWidget *parent):
+PeakFindWidget::PeakFindWidget(Ft ft, int number,
+                               std::shared_ptr<FidStorageBase> storage,
+                               QWidget *parent):
     QWidget(parent), SettingsStorage(BC::Key::peakFind),
+    ps_fidStorage(std::move(storage)),
     d_number(number), d_busy(false), d_waiting(false)
 {
     setWindowTitle(QString("Peak Finder"));
@@ -74,6 +78,19 @@ PeakFindWidget::PeakFindWidget(Ft ft, int number, QWidget *parent):
         d_maxFreq = ft.maxFreqMHz();
 
     d_currentFt = ft;
+
+    // Experiment-priority load, mirroring FtmwProcessingPanel: a stored
+    // per-experiment peak-find file takes priority over the global
+    // defaults; when absent, seed it from the globals for a numbered
+    // experiment. Peak-up / unnumbered instances never write a file.
+    if(ps_fidStorage)
+    {
+        PeakFindSettings s;
+        if(ps_fidStorage->readPeakFindSettings(s))
+            applySearchSettings(s);
+        else if(d_number > 0)
+            ps_fidStorage->writePeakFindSettings(getSearchSettings());
+    }
 
     // Restore display-filter state. The frequency spin boxes use their
     // minimum as the "unbounded" sentinel (shown via specialValueText),
@@ -585,6 +602,30 @@ void PeakFindWidget::changeScaleFactor(double scf)
     }
 }
 
+PeakFindSettings PeakFindWidget::getSearchSettings() const
+{
+    return {d_minFreq,d_maxFreq,d_snr,d_navHalfWidth,d_winSize,d_polyOrder};
+}
+
+void PeakFindWidget::applySearchSettings(const PeakFindSettings &s)
+{
+    d_minFreq = s.minFreq;
+    d_maxFreq = s.maxFreq;
+    d_snr = s.snr;
+    d_navHalfWidth = s.navHalfWidth;
+    d_winSize = s.winSize;
+    d_polyOrder = s.polyOrder;
+
+    // Keep the search range within the current FT, matching the
+    // constructor's clamping of the global-default values.
+    if(d_minFreq > d_currentFt.maxFreqMHz())
+        d_minFreq = d_currentFt.minFreqMHz();
+    if(d_maxFreq < d_minFreq)
+        d_maxFreq = d_currentFt.maxFreqMHz();
+
+    QMetaObject::invokeMethod(p_pf,[this](){p_pf->calcCoefs(d_winSize,d_polyOrder);});
+}
+
 void PeakFindWidget::launchOptionsDialog()
 {
     QDialog d(this);
@@ -676,6 +717,11 @@ void PeakFindWidget::launchOptionsDialog()
         set(BC::Key::pfOrder,d_polyOrder,false);
         set(BC::Key::pfNavHalfWidth,d_navHalfWidth,false);
         save();
+
+        // Persist per-experiment alongside the global defaults; peak-up
+        // / unnumbered instances stay global-only.
+        if(ps_fidStorage && d_number > 0)
+            ps_fidStorage->writePeakFindSettings(getSearchSettings());
 
         if(p_liveAction->isChecked())
             findPeaks();
