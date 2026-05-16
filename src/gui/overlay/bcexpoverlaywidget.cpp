@@ -14,11 +14,29 @@
 
 #include <gui/widget/ftmwviewwidget.h>
 #include <gui/style/themecolors.h>
+#include <gui/widget/settingstable.h>
 #include <gui/widget/experimentviewwidget.h>
 #include <data/storage/settingsstorage.h>
 #include <data/storage/fidstoragebase.h>
 #include <data/experiment/experiment.h>
 #include <data/storage/blackchirpcsv.h>
+
+namespace {
+// Apply a themed foreground color (and optional italic) to a label
+// without a raw stylesheet color string.
+void styleStatusLabel(QLabel *label, ThemeColors::ColorRole role,
+                      bool italic, bool bold = false)
+{
+    QPalette pal = label->palette();
+    pal.setColor(QPalette::WindowText,
+                 ThemeColors::getThemeAwareColor(role, label));
+    label->setPalette(pal);
+    QFont f = label->font();
+    f.setItalic(italic);
+    f.setBold(bold);
+    label->setFont(f);
+}
+}
 
 using namespace BC::Store;
 
@@ -450,12 +468,12 @@ void BCExpOverlayWidget::updateExperimentStatus()
 {
     if (d_experimentValid) {
         p_experimentStatusLabel->setText("✓ Valid experiment found");
-        p_experimentStatusLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusSuccess, this)));
+        styleStatusLabel(p_experimentStatusLabel, ThemeColors::StatusSuccess, false);
     } else {
         QString errorMessage;
         validateExperimentPath(getExperimentPath(), errorMessage);
         p_experimentStatusLabel->setText(QString("✗ %1").arg(errorMessage));
-        p_experimentStatusLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusError, this)));
+        styleStatusLabel(p_experimentStatusLabel, ThemeColors::StatusError, false);
     }
 }
 
@@ -463,14 +481,17 @@ void BCExpOverlayWidget::updateFtStatus()
 {
     if (d_hasFtData) {
         p_configureFtButton->setText("FT Configured ✓");
-        p_configureFtButton->setStyleSheet(QString("QPushButton { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusSuccess, this)));
+        QPalette bpal = p_configureFtButton->palette();
+        bpal.setColor(QPalette::ButtonText,
+                      ThemeColors::getThemeAwareColor(ThemeColors::StatusSuccess, this));
+        p_configureFtButton->setPalette(bpal);
         p_ftStatusLabel->setText("FT data configured and ready.");
-        p_ftStatusLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusSuccess, this)));
+        styleStatusLabel(p_ftStatusLabel, ThemeColors::StatusSuccess, false);
     } else {
         p_configureFtButton->setText("Configure FT...");
-        p_configureFtButton->setStyleSheet("");
+        p_configureFtButton->setPalette(QPalette());
         p_ftStatusLabel->setText("Click to configure FT processing settings for this overlay.");
-        p_ftStatusLabel->setStyleSheet(QString("QLabel { color: %1; font-style: italic; }").arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, this)));
+        styleStatusLabel(p_ftStatusLabel, ThemeColors::SubtleText, true);
     }
 }
 
@@ -506,17 +527,19 @@ void BCExpOverlayWidget::configureForCreationContext()
     // Show helpful status message
     if (p_experimentStatusLabel) {
         p_experimentStatusLabel->setText("Select an experiment to create overlay");
-        p_experimentStatusLabel->setStyleSheet(QString("QLabel { color: %1; font-style: italic; }").arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, this)));
+        styleStatusLabel(p_experimentStatusLabel, ThemeColors::SubtleText, true);
     }
-    
+
     // Emphasize FT configuration requirement
     if (p_configureFtButton) {
-        p_configureFtButton->setStyleSheet("QPushButton { font-weight: bold; }");
+        QFont bf = p_configureFtButton->font();
+        bf.setBold(true);
+        p_configureFtButton->setFont(bf);
     }
-    
+
     if (p_ftStatusLabel) {
         p_ftStatusLabel->setText("FT configuration required - click 'Configure FT...' to begin");
-        p_ftStatusLabel->setStyleSheet(QString("QLabel { color: %1; font-style: italic; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusWarning, this)));
+        styleStatusLabel(p_ftStatusLabel, ThemeColors::StatusWarning, true);
     }
 }
 
@@ -533,9 +556,9 @@ void BCExpOverlayWidget::configureForSettingsContext()
             
             if (p_experimentStatusLabel) {
                 p_experimentStatusLabel->setText(info);
-                p_experimentStatusLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusInfo, this)));
+                styleStatusLabel(p_experimentStatusLabel, ThemeColors::StatusInfo, false);
             }
-            
+
             // Show FT configuration status
             if (!bcexpOverlay->getFtData().isEmpty() && p_ftStatusLabel) {
                 const auto& ft = bcexpOverlay->getFtData();
@@ -544,31 +567,34 @@ void BCExpOverlayWidget::configureForSettingsContext()
                     .arg(ft.maxFreqMHz(), 0, 'f', 1)
                     .arg(ft.size());
                 p_ftStatusLabel->setText(ftInfo);
-                p_ftStatusLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusSuccess, this)));
+                styleStatusLabel(p_ftStatusLabel, ThemeColors::StatusSuccess, false);
             }
         }
     }
-    
+
     // Reduce emphasis on configuration button in settings mode
     if (p_configureFtButton) {
-        p_configureFtButton->setStyleSheet("");
+        QFont bf = p_configureFtButton->font();
+        bf.setBold(false);
+        p_configureFtButton->setFont(bf);
     }
 }
 
 void BCExpOverlayWidget::createSourceFileConfigUI(QGroupBox *parent)
 {
-    // Use two-row layout for experiment selection to give path selection adequate space
+    // Fixed source-file selector: experiment number / custom path,
+    // plus a single status line. This is the file picker, not a
+    // settings table.
     auto mainLayout = new QVBoxLayout(parent);
     mainLayout->setSpacing(6);
-    mainLayout->setContentsMargins(6, 6, 6, 6);
-    
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+
     // First row: Experiment number selection
     auto experimentRow = new QHBoxLayout();
     experimentRow->setSpacing(6);
-    
-    // Experiment number section
+
     experimentRow->addWidget(new QLabel("Experiment:", parent));
-    
+
     SettingsStorage s;
     int lastExperiment = s.get(BC::Key::exptNum, 1);
     p_experimentNumberSpinBox = new QSpinBox(parent);
@@ -577,75 +603,66 @@ void BCExpOverlayWidget::createSourceFileConfigUI(QGroupBox *parent)
     p_experimentNumberSpinBox->setValue(1);
     p_experimentNumberSpinBox->setMinimumWidth(80);
     experimentRow->addWidget(p_experimentNumberSpinBox);
-    
-    // OR separator
+
     experimentRow->addWidget(new QLabel("OR", parent));
-    
-    // Custom path checkbox
+
     p_usePathCheckBox = new QCheckBox("Use custom path", parent);
     experimentRow->addWidget(p_usePathCheckBox);
-    
-    // Add stretch to push everything to the left
+
     experimentRow->addStretch();
-    
+
     mainLayout->addLayout(experimentRow);
-    
+
     // Second row: Path selection (full width)
     auto pathRow = new QHBoxLayout();
     pathRow->setSpacing(6);
-    
+
     pathRow->addWidget(new QLabel("Path:", parent));
-    
+
     p_pathLineEdit = new QLineEdit(parent);
     p_pathLineEdit->setEnabled(false);
     p_pathLineEdit->setPlaceholderText("Select experiment directory...");
     pathRow->addWidget(p_pathLineEdit, 1); // Give it full available width
-    
+
     p_browseButton = new QToolButton(parent);
     p_browseButton->setText("📁"); // Use folder icon
     p_browseButton->setToolTip("Browse for experiment directory");
     p_browseButton->setEnabled(false);
     p_browseButton->setMaximumSize(30, 30);
     pathRow->addWidget(p_browseButton);
-    
+
     mainLayout->addLayout(pathRow);
-    
+
     // Status display (compact, single line with icon)
-    auto statusRow = new QHBoxLayout();
-    statusRow->setSpacing(6);
-    
     p_experimentStatusLabel = new QLabel(parent);
     p_experimentStatusLabel->setWordWrap(false);
     p_experimentStatusLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     p_experimentStatusLabel->setMinimumHeight(20);
     p_experimentStatusLabel->setMaximumHeight(22);
     p_experimentStatusLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    p_experimentStatusLabel->setStyleSheet("QLabel { font-size: 11px; padding: 2px; }");
-    
-    statusRow->addWidget(p_experimentStatusLabel, 1);
-    mainLayout->addLayout(statusRow);
+    mainLayout->addWidget(p_experimentStatusLabel);
 }
 
 void BCExpOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)
 {
-    QVBoxLayout *ftLayout = new QVBoxLayout(parent);
-    
-    // Configure FT button
+    auto ftLayout = new QVBoxLayout(parent);
+    ftLayout->setContentsMargins(0, 0, 0, 0);
+
+    auto table = new SettingsTable(parent);
+    table->addSectionRow("FT Configuration");
+
     p_configureFtButton = new QPushButton("Configure FT...", parent);
     p_configureFtButton->setMinimumHeight(30);
-    
-    // Status label
+    table->addSettingRow("Processing", p_configureFtButton);
+
     p_ftStatusLabel = new QLabel("Click to configure FT processing settings for this overlay.", parent);
     p_ftStatusLabel->setWordWrap(true);
-    p_ftStatusLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    p_ftStatusLabel->setMinimumHeight(20); // Ensure minimum visibility
-    p_ftStatusLabel->setMaximumHeight(60); // Prevent excessive expansion
     p_ftStatusLabel->setMinimumWidth(200); // Ensure sufficient width before wrapping
     p_ftStatusLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft); // Align to top for multi-line text
-    p_ftStatusLabel->setStyleSheet(QString("QLabel { color: %1; font-style: italic; }").arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, this)));
-    
-    ftLayout->addWidget(p_configureFtButton);
-    ftLayout->addWidget(p_ftStatusLabel);
+    styleStatusLabel(p_ftStatusLabel, ThemeColors::SubtleText, true);
+    table->addSettingRow("Status", p_ftStatusLabel);
+
+    ftLayout->addWidget(table);
 }
 
 void BCExpOverlayWidget::createTypeSpecificSettingsUI(QGroupBox *parent)

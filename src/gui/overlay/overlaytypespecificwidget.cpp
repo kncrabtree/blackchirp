@@ -132,17 +132,16 @@ void OverlayTypeSpecificWidget::configureGroupBoxAppearance(QGroupBox* groupBox)
     if (!groupBox) {
         return;
     }
-    
-    // Set size policy for optimal space usage
+
+    // Flat, single-level container: no nested frames. The logical
+    // groupings inside are carried by SettingsTable section rows.
+    groupBox->setFlat(true);
     groupBox->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
-    
-    // Apply reduced spacing but keep standard Qt GroupBox appearance
+
     if (auto layout = groupBox->layout()) {
-        layout->setContentsMargins(6, 6, 6, 6); // Reduced margins
-        layout->setSpacing(4); // Consistent reduced spacing
+        layout->setContentsMargins(0, 0, 0, 0);
+        layout->setSpacing(4);
     }
-    
-    // No custom styling - use standard Qt GroupBox appearance for consistency
 }
 
 void OverlayTypeSpecificWidget::setupUI()
@@ -151,31 +150,40 @@ void OverlayTypeSpecificWidget::setupUI()
     auto mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(4); // Reduced from 6 to 4 for tighter layout
-    
-    // Create the three QGroupBoxes with optimized size policies
+
+    // Flat, frameless single-level containers. They retain QGroupBox
+    // type so the source-file-config state machine (setCheckable /
+    // setChecked / setTitle / toggled in updateSourceFileControls,
+    // validateSourceFile, onSourceFileConfigToggled, configureForContext)
+    // keeps identical observable behavior. The nested QGroupBox scaffold
+    // is gone; subclasses populate SettingsTables instead.
     p_sourceFileConfigBox = new QGroupBox("Source File Configuration", this);
     p_sourceFileSettingsBox = new QGroupBox("Source File Settings", this);
     p_overlaySettingsBox = new QGroupBox("Type-Specific Settings", this);
-    
-    // Configure group boxes for visual balance
+
+    // updateSourceFileControls() drives the source-file-config title
+    // ("Source File Configuration" / "Source File Configuration
+    // (Optional)") and its checkable state; the containers stay flat
+    // and rely on the SettingsTable section rows their subclasses build
+    // for the in-region labelling that the nested boxes used to carry.
     configureGroupBoxAppearance(p_sourceFileConfigBox);
     configureGroupBoxAppearance(p_sourceFileSettingsBox);
     configureGroupBoxAppearance(p_overlaySettingsBox);
-    
-    // Let derived classes populate the group boxes
+
+    // Let derived classes populate the containers with SettingsTables
     createSourceFileConfigUI(p_sourceFileConfigBox);
     createSourceFileSettingsUI(p_sourceFileSettingsBox);
     createTypeSpecificSettingsUI(p_overlaySettingsBox);
-    
-    // Add group boxes to main layout with intelligent stretch
+
+    // Add containers to main layout with intelligent stretch
     mainLayout->addWidget(p_sourceFileConfigBox, 0); // Fixed size for file selection
     mainLayout->addWidget(p_sourceFileSettingsBox, 0); // Fixed size for settings
     mainLayout->addWidget(p_overlaySettingsBox, 1); // Takes remaining space for previews/large content
-    
+
     // Connect source file config box toggle
     connect(p_sourceFileConfigBox, &QGroupBox::toggled,
             this, &OverlayTypeSpecificWidget::onSourceFileConfigToggled);
-    
+
     // Setup connections after UI is created
     setupConnections();
 }
