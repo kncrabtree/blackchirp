@@ -195,11 +195,16 @@ void PeakListExportDialog::setupUI()
     shotsBtnRow->addWidget(p_removeShotButton);
     ftbLayout->addLayout(shotsBtnRow);
 
-    mainLayout->addWidget(p_ftbOptionsBox);
+    // FTB options sit beside the peak list (and disappear for ASCII),
+    // so toggling the format grows the dialog in width rather than
+    // stacking a tall options group above the table.
+    auto *contentLayout = new QHBoxLayout;
+    contentLayout->addWidget(p_ftbOptionsBox);
 
+    auto *peakColumn = new QVBoxLayout;
     auto *peaksLabel = new QLabel("Peaks",this);
     peaksLabel->setAlignment(Qt::AlignCenter);
-    mainLayout->addWidget(peaksLabel);
+    peakColumn->addWidget(peaksLabel);
 
     p_peakListView = new QTableView(this);
     p_peakListView->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -209,7 +214,7 @@ void PeakListExportDialog::setupUI()
     p_peakListView->setSelectionMode(QAbstractItemView::ExtendedSelection);
     p_peakListView->setSelectionBehavior(QAbstractItemView::SelectRows);
     p_peakListView->setMinimumHeight(200);
-    mainLayout->addWidget(p_peakListView,1);
+    peakColumn->addWidget(p_peakListView,1);
 
     auto *peakBtnRow = new QHBoxLayout;
     auto *resetButton = new QPushButton("Reset",this);
@@ -219,7 +224,10 @@ void PeakListExportDialog::setupUI()
     peakBtnRow->addWidget(resetButton);
     peakBtnRow->addWidget(p_removePeakButton);
     peakBtnRow->addStretch(1);
-    mainLayout->addLayout(peakBtnRow);
+    peakColumn->addLayout(peakBtnRow);
+
+    contentLayout->addLayout(peakColumn,1);
+    mainLayout->addLayout(contentLayout,1);
 
     connect(resetButton,&QPushButton::clicked,this,[this](){ p_pm->setPeakList(d_peakList);});
 
