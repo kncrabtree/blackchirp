@@ -1,27 +1,34 @@
 #include "peakfindwidget.h"
-#include "ui_peakfindwidget.h"
 #include <gui/style/themecolors.h>
+#include <gui/widget/ftmwviewwidget.h>
 
 #include <QThread>
 #include <QDialog>
+#include <QVBoxLayout>
 #include <QFormLayout>
 #include <QDoubleSpinBox>
 #include <QSpinBox>
+#include <QPushButton>
 #include <QDialogButtonBox>
+#include <QToolBar>
+#include <QAction>
+#include <QTableView>
+#include <QHeaderView>
+#include <QDockWidget>
+#include <QResizeEvent>
+#include <QShowEvent>
 #include <QtConcurrent/QtConcurrent>
 
 #include <gui/dialog/peaklistexportdialog.h>
 
 PeakFindWidget::PeakFindWidget(Ft ft, int number, QWidget *parent):
     QWidget(parent), SettingsStorage(BC::Key::peakFind),
-    ui(new Ui::PeakFindWidget), d_number(number), d_busy(false), d_waiting(false)
+    d_number(number), d_busy(false), d_waiting(false)
 {
-    ui->setupUi(this);
+    setWindowTitle(QString("Peak Finder"));
+    setWindowIcon(ThemeColors::createThemedIcon(":/icons/magnifying-glass-circle.svg", ThemeColors::IconPrimary, this));
 
-    setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg", ThemeColors::IconPrimary, this));
-
-    // Override icons with theme-aware versions
-    ui->removeButton->setIcon(ThemeColors::createThemedIcon(":/icons/minus.svg", ThemeColors::IconPrimary, this));
+    setupUI();
 
     p_pf = new PeakFinder(this);
     connect(p_pf,&PeakFinder::peakList,this,&PeakFindWidget::newPeakList);
@@ -30,14 +37,9 @@ PeakFindWidget::PeakFindWidget(Ft ft, int number, QWidget *parent):
     p_proxy = new QSortFilterProxyModel(this);
     p_proxy->setSourceModel(p_listModel);
     p_proxy->setSortRole(Qt::EditRole);
-    ui->peakListTableView->setModel(p_proxy);
+    p_peakListView->setModel(p_proxy);
 
-    connect(ui->findButton,&QPushButton::clicked,this,&PeakFindWidget::findPeaks);
-    connect(ui->removeButton,&QToolButton::clicked,this,&PeakFindWidget::removeSelected);
-    connect(ui->peakListTableView->selectionModel(),&QItemSelectionModel::selectionChanged,this,&PeakFindWidget::updateRemoveButton);
-    connect(ui->liveUpdateBox,&QCheckBox::toggled,this,[this](bool b){ if(b) findPeaks(); });
-    connect(ui->optionsButton,&QPushButton::clicked,this,&PeakFindWidget::launchOptionsDialog);
-    connect(ui->exportButton,&QPushButton::clicked,this,&PeakFindWidget::launchExportDialog);
+    connect(p_peakListView->selectionModel(),&QItemSelectionModel::selectionChanged,this,&PeakFindWidget::updateRemoveButton);
 
     d_minFreq = get<double>(BC::Key::pfMinFreq,ft.minFreqMHz());
     d_maxFreq = get<double>(BC::Key::pfMaxFreq,ft.maxFreqMHz());
@@ -51,7 +53,6 @@ PeakFindWidget::PeakFindWidget(Ft ft, int number, QWidget *parent):
         d_maxFreq = ft.maxFreqMHz();
 
     d_currentFt = ft;
-
 }
 
 PeakFindWidget::~PeakFindWidget()
@@ -60,18 +61,81 @@ PeakFindWidget::~PeakFindWidget()
     // dock lazily destroys this widget on experiment reload / teardown, so
     // block until any in-flight pass finishes before members are freed.
     pu_watcher->waitForFinished();
+}
 
-    delete ui;
+void PeakFindWidget::setupUI()
+{
+    auto *mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(0,0,0,0);
+    mainLayout->setSpacing(0);
 
+    p_toolBar = new QToolBar(this);
+    p_toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+
+    p_findAction = p_toolBar->addAction(ThemeColors::createThemedIcon(":/icons/magnifying-glass-circle.svg", ThemeColors::IconPrimary, this), "Find Now");
+    p_findAction->setToolTip("Find peaks in the current FT now");
+    connect(p_findAction,&QAction::triggered,this,&PeakFindWidget::findPeaks);
+
+    p_liveAction = p_toolBar->addAction(ThemeColors::createThemedIcon(":/icons/arrow-path.svg", ThemeColors::IconSecondary, this), "Live Update");
+    p_liveAction->setToolTip("Re-find peaks automatically whenever the FT changes");
+    p_liveAction->setCheckable(true);
+    connect(p_liveAction,&QAction::toggled,this,[this](bool b){ if(b) findPeaks(); });
+
+    p_toolBar->addSeparator();
+
+    p_optionsAction = p_toolBar->addAction(ThemeColors::createThemedIcon(":/icons/cog-6-tooth.svg", ThemeColors::IconSecondary, this), "Options...");
+    p_optionsAction->setToolTip("Configure peak-finding parameters");
+    connect(p_optionsAction,&QAction::triggered,this,&PeakFindWidget::launchOptionsDialog);
+
+    p_exportAction = p_toolBar->addAction(ThemeColors::createThemedIcon(":/icons/arrow-down-tray.svg", ThemeColors::IconSecondary, this), "Export...");
+    p_exportAction->setToolTip("Export the peak list");
+    p_exportAction->setEnabled(false);
+    connect(p_exportAction,&QAction::triggered,this,&PeakFindWidget::launchExportDialog);
+
+    p_removeAction = p_toolBar->addAction(ThemeColors::createThemedIcon(":/icons/minus.svg", ThemeColors::IconPrimary, this), "Remove");
+    p_removeAction->setToolTip("Remove the selected peaks from the list");
+    p_removeAction->setEnabled(false);
+    connect(p_removeAction,&QAction::triggered,this,&PeakFindWidget::removeSelected);
+
+    p_toolBar->addSeparator();
+
+    p_raiseParentAction = p_toolBar->addAction(ThemeColors::createThemedIcon(":/icons/arrow-up.svg", ThemeColors::IconPrimary, this), "Show Parent");
+    p_raiseParentAction->setToolTip("Bring the parent window to front");
+    connect(p_raiseParentAction,&QAction::triggered,this,&PeakFindWidget::raiseParent);
+
+    auto *spacer = new QWidget(this);
+    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+    p_toolBar->addWidget(spacer);
+
+    p_peakListView = new QTableView(this);
+    p_peakListView->setSelectionMode(QAbstractItemView::MultiSelection);
+    p_peakListView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    p_peakListView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    p_peakListView->setAlternatingRowColors(true);
+    p_peakListView->setSortingEnabled(true);
+    p_peakListView->verticalHeader()->setVisible(false);
+
+    // Both columns share the dock width so the table never needs a
+    // horizontal scrollbar. Forcing the vertical scrollbar always-on keeps
+    // the table's width constant when stacked docks fight for height —
+    // otherwise its appearance/disappearance jolts the whole dock column.
+    auto *hh = p_peakListView->horizontalHeader();
+    hh->setStretchLastSection(false);
+    hh->setSectionResizeMode(QHeaderView::Stretch);
+    p_peakListView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    p_peakListView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+    mainLayout->addWidget(p_toolBar);
+    mainLayout->addWidget(p_peakListView,1);
 }
 
 void PeakFindWidget::newFt(const Ft ft)
 {
     d_currentFt = ft;
 
-    ui->findButton->setEnabled(true);
+    p_findAction->setEnabled(true);
 
-    if(ui->liveUpdateBox->isChecked())
+    if(p_liveAction->isChecked())
         findPeaks();
 }
 
@@ -81,10 +145,9 @@ void PeakFindWidget::newPeakList(const QVector<QPointF> pl)
 
     //send peak list to model
     p_listModel->setPeakList(pl);
-    ui->peakListTableView->resizeColumnsToContents();
     emit peakList(p_listModel->peakList());
 
-    ui->exportButton->setEnabled(!pl.isEmpty());
+    p_exportAction->setEnabled(!pl.isEmpty());
 
     if(d_waiting)
         findPeaks();
@@ -107,12 +170,12 @@ void PeakFindWidget::findPeaks()
 
 void PeakFindWidget::removeSelected()
 {
-    QModelIndexList l = ui->peakListTableView->selectionModel()->selectedRows();
+    QModelIndexList l = p_peakListView->selectionModel()->selectedRows();
     if(!l.isEmpty())
     {
         QVector<int> rows;
         for(int i=0; i<l.size(); i++)
-            rows.append(l.at(i).row());
+            rows.append(p_proxy->mapToSource(l.at(i)).row());
 
         p_listModel->removePeaks(rows);
     }
@@ -122,7 +185,7 @@ void PeakFindWidget::removeSelected()
 
 void PeakFindWidget::updateRemoveButton()
 {
-    ui->removeButton->setEnabled(!ui->peakListTableView->selectionModel()->selectedRows().isEmpty());
+    p_removeAction->setEnabled(!p_peakListView->selectionModel()->selectedRows().isEmpty());
 }
 
 void PeakFindWidget::changeScaleFactor(double scf)
@@ -215,12 +278,87 @@ void PeakFindWidget::launchOptionsDialog()
         set(BC::Key::pfWinSize,d_winSize,false);
         set(BC::Key::pfOrder,d_polyOrder,false);
         save();
-    }
 
+        if(p_liveAction->isChecked())
+            findPeaks();
+    }
 }
 
 void PeakFindWidget::launchExportDialog()
 {
     PeakListExportDialog d(p_listModel->peakList(),d_number,this);
     d.exec();
+}
+
+void PeakFindWidget::raiseParent()
+{
+    // The immediate parent is the dock; raise the FtMW view's top-level
+    // window (the floating dock itself when torn out).
+    FtmwViewWidget *ftmwView = findFtmwView();
+    QWidget *w = ftmwView ? ftmwView->window() : nullptr;
+    if(w)
+    {
+        w->activateWindow();
+        w->raise();
+        w->show();
+    }
+}
+
+FtmwViewWidget *PeakFindWidget::findFtmwView() const
+{
+    for (QWidget *w = parentWidget(); w != nullptr; w = w->parentWidget()) {
+        if (auto *f = qobject_cast<FtmwViewWidget*>(w))
+            return f;
+    }
+    return nullptr;
+}
+
+void PeakFindWidget::updateRaiseParentVisibility()
+{
+    if (!p_raiseParentAction)
+        return;
+
+    bool show = false;
+    if (auto *dock = qobject_cast<QDockWidget*>(parentWidget()))
+        show = dock->isFloating();
+    else if (isWindow())
+        show = parentWidget() != nullptr;
+    p_raiseParentAction->setVisible(show);
+}
+
+void PeakFindWidget::adjustToolbarStyle()
+{
+    if (!p_toolBar)
+        return;
+
+    // Measure with labels shown; if the toolbar would overflow the dock
+    // width, fall back to icon-only (tooltips already describe each action).
+    p_toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    const auto style = (p_toolBar->sizeHint().width() <= width())
+                           ? Qt::ToolButtonTextBesideIcon
+                           : Qt::ToolButtonIconOnly;
+    p_toolBar->setToolButtonStyle(style);
+}
+
+void PeakFindWidget::resizeEvent(QResizeEvent *event)
+{
+    QWidget::resizeEvent(event);
+    adjustToolbarStyle();
+}
+
+void PeakFindWidget::showEvent(QShowEvent *event)
+{
+    QWidget::showEvent(event);
+
+    // The hosting dock only becomes our parent after setWidget(), so the
+    // float-state hookup can't happen in the constructor.
+    if (!d_dockHooked) {
+        if (auto *dock = qobject_cast<QDockWidget*>(parentWidget())) {
+            connect(dock,&QDockWidget::topLevelChanged,
+                    this,&PeakFindWidget::updateRaiseParentVisibility);
+            d_dockHooked = true;
+        }
+    }
+    updateRaiseParentVisibility();
+    adjustToolbarStyle();
 }

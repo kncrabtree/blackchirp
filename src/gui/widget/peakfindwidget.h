@@ -14,9 +14,10 @@
 #include <data/analysis/peakfinder.h>
 #include <data/model/peaklistmodel.h>
 
-namespace Ui {
-class PeakFindWidget;
-}
+class QToolBar;
+class QAction;
+class QTableView;
+class FtmwViewWidget;
 
 namespace BC::Key {
 inline constexpr QLatin1StringView peakFind{"peakFind"};
@@ -47,14 +48,22 @@ public slots:
     void changeScaleFactor(double scf);
     void launchOptionsDialog();
     void launchExportDialog();
+    void raiseParent();
 
 private:
-    Ui::PeakFindWidget *ui;
-
     PeakFinder *p_pf;
     PeakListModel *p_listModel;
     QSortFilterProxyModel *p_proxy;
     std::unique_ptr<QFutureWatcher<void>> pu_watcher{std::make_unique<QFutureWatcher<void>>() };
+
+    QToolBar *p_toolBar;
+    QTableView *p_peakListView;
+    QAction *p_findAction;
+    QAction *p_liveAction;
+    QAction *p_optionsAction;
+    QAction *p_exportAction;
+    QAction *p_removeAction;
+    QAction *p_raiseParentAction;
 
     double d_minFreq;
     double d_maxFreq;
@@ -64,7 +73,20 @@ private:
     int d_number;
     bool d_busy;
     bool d_waiting;
+    bool d_dockHooked{false};
     Ft d_currentFt;
+
+    void setupUI();
+    void adjustToolbarStyle();
+    void updateRaiseParentVisibility();
+
+    // Walks the parent chain to the hosting FtmwViewWidget. The direct
+    // parent is the QDockWidget, so a plain parentWidget() cast won't do.
+    FtmwViewWidget *findFtmwView() const;
+
+protected:
+    void resizeEvent(QResizeEvent *event) override;
+    void showEvent(QShowEvent *event) override;
 };
 
 #endif // PEAKFINDWIDGET_H
