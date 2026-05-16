@@ -112,6 +112,12 @@ public slots:
     void resetRollingAverage();
 
     void showPeakFinder(bool show);
+
+    /// Frames a plot on a peak selected in the Peak Find panel.
+    /// \param plotName Target plot object name; empty centers the main FT plot.
+    void centerPlotOnPeak(const QString &plotName, double freq,
+                          double intensity, double halfWidth);
+
     void showOverlayManager(bool show);
     void saveOverlays();
 

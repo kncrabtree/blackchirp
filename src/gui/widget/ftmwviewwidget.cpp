@@ -1019,6 +1019,8 @@ void FtmwViewWidget::showPeakFinder(bool show)
             p_mainFtPlot,&MainFtPlot::showPeakAppearanceMenu);
     connect(p_mainFtPlot,&ZoomPanPlot::visibleXRangeChanged,
             p_pfw,&PeakFindWidget::setMainPlotXRange);
+    connect(p_pfw,&PeakFindWidget::centerPlotRequested,
+            this,&FtmwViewWidget::centerPlotOnPeak);
     // Seed the current range so the in-view filter is correct before the
     // next replot emits.
     const auto xiv = p_mainFtPlot->axisInterval(QwtPlot::xBottom);
@@ -1026,6 +1028,24 @@ void FtmwViewWidget::showPeakFinder(bool show)
         p_pfw->setMainPlotXRange(xiv.minValue(),xiv.maxValue());
 
     p_peakFindDock->setWidget(p_pfw);
+}
+
+void FtmwViewWidget::centerPlotOnPeak(const QString &plotName, double freq,
+                                      double intensity, double halfWidth)
+{
+    // Empty name is the double-click fast path: the main FT plot.
+    FtPlot *plot = nullptr;
+    if(plotName.isEmpty())
+        plot = p_mainFtPlot;
+    else
+    {
+        auto it = d_plotMap.find(plotName);
+        if(it != d_plotMap.end())
+            plot = it->second;
+    }
+
+    if(plot)
+        plot->zoomToPeak(freq,halfWidth,intensity);
 }
 
 void FtmwViewWidget::showOverlayManager(bool show)

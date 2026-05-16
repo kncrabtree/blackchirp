@@ -223,6 +223,29 @@ public slots:
     /// \param a     Destination y axis (QwtPlot::yLeft or QwtPlot::yRight).
     void setCurveAxisY(BlackchirpPlotCurveBase* curve, QwtPlot::Axis a);
 
+    /// \brief Frames the plot on a peak: a fixed x window and an explicit y window.
+    ///
+    /// The x axis is set to [\p xCenter - \p xHalfWidth,
+    /// \p xCenter + \p xHalfWidth]. The y axis is framed explicitly
+    /// (not autoscaled) so the peak is clearly visible: \c [0, 1.25·|I|]
+    /// when the current yLeft range is non-negative, or the symmetric
+    /// \c [-1.25·|I|, +1.25·|I|] when it currently dips below zero.
+    /// Both axes leave autoscale disabled, so the context-menu Autoscale
+    /// action restores the data-driven view.
+    /// \param xCenter    Peak center (x data units).
+    /// \param xHalfWidth Half-width of the x window (x data units).
+    /// \param intensity  Peak intensity, used to size the y window.
+    void zoomToPeak(double xCenter, double xHalfWidth, double intensity);
+
+    /// \brief Sets an explicit yLeft window and disables yLeft autoscale.
+    ///
+    /// Symmetric with setXRanges(): the range holds until the next
+    /// autoScale(). Keeps d_config manipulation inside the class so
+    /// callers never poke axis state directly.
+    /// \param min Lower yLeft bound.
+    /// \param max Upper yLeft bound.
+    void setYRangeOverride(double min, double max);
+
     /// \brief Reads the major-grid color and style from settings and applies them to the grid pen.
     void configureGridMajorPen();
 

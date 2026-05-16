@@ -221,6 +221,11 @@ User interface
   plot's visible range. These filters affect only the displayed
   table, not the search bounds or the peaks drawn on the plot. See
   :doc:`/user_guide/cp-ftmw`.
+- Added peak navigation to the Peak Find panel: double-click a row
+  to center the main FT plot on that peak, or use the row's
+  "Center on" context menu to frame any FT plot. The frequency
+  window half-width is configurable in the Peak Finding Options
+  dialog. See :doc:`/user_guide/cp-ftmw`.
 - Relaxed the experiment-setup dialog minimum size. See
   :doc:`/user_guide/experiment_setup`.
 

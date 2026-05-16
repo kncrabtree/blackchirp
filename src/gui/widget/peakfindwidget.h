@@ -37,6 +37,7 @@ inline constexpr QLatin1StringView pfFilterMaxFreq{"filterMaxFreq"};
 inline constexpr QLatin1StringView pfFilterMinInt{"filterMinInt"};
 inline constexpr QLatin1StringView pfFilterEnabled{"filterEnabled"};
 inline constexpr QLatin1StringView pfViewSync{"filterViewSync"};
+inline constexpr QLatin1StringView pfNavHalfWidth{"navHalfWidth"};
 }
 
 class PeakFindWidget : public QWidget, public SettingsStorage
@@ -54,6 +55,15 @@ signals:
     /// \param globalPos Screen position to anchor the menu (the
     ///        Appearance toolbar button's lower-left corner).
     void editPeakAppearanceRequested(const QPoint &globalPos);
+
+    /// Requests that a plot be centered on a selected peak.
+    /// \param plotName  Target plot object name; empty means the main
+    ///        FT plot (the double-click fast path).
+    /// \param freq      Peak frequency (MHz).
+    /// \param intensity Peak intensity, for y framing.
+    /// \param halfWidth x half-width of the framed window (MHz).
+    void centerPlotRequested(const QString &plotName, double freq,
+                             double intensity, double halfWidth);
 
 public slots:
     void newFt(const Ft ft);
@@ -100,6 +110,7 @@ private:
     double d_snr;
     int d_winSize;
     int d_polyOrder;
+    double d_navHalfWidth;
     int d_number;
     bool d_busy;
     bool d_waiting;
@@ -114,6 +125,10 @@ private:
     // persists them under the peakFind group.
     void applyFilters();
     void persistFilterState();
+
+    // Row context menu (Center on ▸) and the double-click fast path.
+    void showPeakContextMenu(const QPoint &pos);
+    void centerPlot(const QModelIndex &proxyIndex, const QString &plotName);
 
     // Walks the parent chain to the hosting FtmwViewWidget. The direct
     // parent is the QDockWidget, so a plain parentWidget() cast won't do.

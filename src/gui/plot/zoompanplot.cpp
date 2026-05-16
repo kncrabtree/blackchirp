@@ -256,6 +256,47 @@ void ZoomPanPlot::setXRanges(const QwtScaleDiv &bottom, const QwtScaleDiv &top)
     replot();
 }
 
+void ZoomPanPlot::setYRangeOverride(double min, double max)
+{
+    // Mirrors setXRanges() for yLeft: set the scale directly and clear
+    // autoscale so replot() leaves it alone until autoScale() restores
+    // the data-driven view. (override/overrideAutoScaleRange are not
+    // used here precisely so Autoscale recovers cleanly.)
+    setAxisScale(QwtPlot::yLeft,min,max);
+    d_config.axisMap[QwtPlot::yLeft].autoScale = false;
+    replot();
+}
+
+void ZoomPanPlot::zoomToPeak(double xCenter, double xHalfWidth, double intensity)
+{
+    const double lo = xCenter - xHalfWidth;
+    const double hi = xCenter + xHalfWidth;
+    // FtPlot does not configure xTop (no items, no transform); mirror
+    // the bottom div, matching AuxDataViewWidget::pushXAxis.
+    const QwtScaleDiv xdiv(lo,hi);
+    setXRanges(xdiv,xdiv);
+
+    const double a = std::abs(intensity);
+    double ymin, ymax;
+    if(axisInterval(QwtPlot::yLeft).minValue() < 0.0)
+    {
+        ymax = 1.25*a;
+        ymin = -ymax;
+    }
+    else
+    {
+        ymin = 0.0;
+        ymax = 1.25*a;
+    }
+    // Zero-intensity guard: keep a sane non-degenerate window.
+    if(!(ymax > ymin))
+    {
+        ymin = 0.0;
+        ymax = 1.0;
+    }
+    setYRangeOverride(ymin,ymax);
+}
+
 void ZoomPanPlot::setPlotTitle(const QString &text)
 {
     QwtText t(text);

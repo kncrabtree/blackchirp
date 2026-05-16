@@ -12,6 +12,7 @@
 #include <QDialogButtonBox>
 #include <QToolBar>
 #include <QAction>
+#include <QMenu>
 #include <QTableView>
 #include <QHeaderView>
 #include <QDockWidget>
@@ -55,6 +56,7 @@ PeakFindWidget::PeakFindWidget(Ft ft, int number, QWidget *parent):
     d_snr = get<double>(BC::Key::pfSnr,5.0);
     d_winSize = get<int>(BC::Key::pfWinSize,11);
     d_polyOrder = get<int>(BC::Key::pfOrder,6);
+    d_navHalfWidth = get<double>(BC::Key::pfNavHalfWidth,2.0);
 
     if(d_minFreq > ft.maxFreqMHz())
         d_minFreq = ft.minFreqMHz();
@@ -227,6 +229,14 @@ void PeakFindWidget::setupUI()
     p_peakListView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     p_peakListView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
+    p_peakListView->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(p_peakListView,&QWidget::customContextMenuRequested,
+            this,&PeakFindWidget::showPeakContextMenu);
+    // Double-click is the fast path: center the main FT plot (empty
+    // plot name) on the double-clicked row.
+    connect(p_peakListView,&QAbstractItemView::doubleClicked,
+            this,[this](const QModelIndex &idx){ centerPlot(idx,QString()); });
+
     mainLayout->addWidget(p_toolBar);
     mainLayout->addWidget(p_toolBar2);
     mainLayout->addWidget(p_filterStrip);
@@ -268,6 +278,46 @@ void PeakFindWidget::setMainPlotXRange(double min, double max)
     // Fed unconditionally; the proxy only narrows the table while the
     // "In view" control is active.
     p_proxy->setViewRange(min,max);
+}
+
+void PeakFindWidget::centerPlot(const QModelIndex &proxyIndex, const QString &plotName)
+{
+    if(!proxyIndex.isValid())
+        return;
+
+    const int srcRow = p_proxy->mapToSource(proxyIndex).row();
+    const auto peaks = p_listModel->peakList();
+    if(srcRow < 0 || srcRow >= peaks.size())
+        return;
+
+    const QPointF &pk = peaks.at(srcRow);
+    emit centerPlotRequested(plotName,pk.x(),pk.y(),d_navHalfWidth);
+}
+
+void PeakFindWidget::showPeakContextMenu(const QPoint &pos)
+{
+    const QModelIndex idx = p_peakListView->indexAt(pos);
+    if(!idx.isValid())
+        return;
+
+    QMenu menu(this);
+
+    QAction *mainAct = menu.addAction("Center main plot");
+    connect(mainAct,&QAction::triggered,this,[this,idx](){ centerPlot(idx,QString()); });
+
+    FtmwViewWidget *view = findFtmwView();
+    const QStringList names = view ? view->getPlotNames() : QStringList();
+    if(!names.isEmpty())
+    {
+        QMenu *sub = menu.addMenu("Center on");
+        for(const QString &n : names)
+        {
+            QAction *a = sub->addAction(n);
+            connect(a,&QAction::triggered,this,[this,idx,n](){ centerPlot(idx,n); });
+        }
+    }
+
+    menu.exec(p_peakListView->viewport()->mapToGlobal(pos));
 }
 
 void PeakFindWidget::newFt(const Ft ft)
@@ -379,6 +429,14 @@ void PeakFindWidget::launchOptionsDialog()
     orderBox->setToolTip(QString("Polynomial order for Savistsky-Golay smoothing. Must be less than the window size."));
     fl->addRow(QString("Polynomial Order"),orderBox);
 
+    QDoubleSpinBox *navBox = new QDoubleSpinBox(&d);
+    navBox->setDecimals(3);
+    navBox->setRange(0.001,10000.0);
+    navBox->setValue(d_navHalfWidth);
+    navBox->setSuffix(QString(" MHz"));
+    navBox->setToolTip(QString("Half-width of the frequency window when centering a plot on a selected peak (double-click or the Center on menu)."));
+    fl->addRow(QString("Navigation Half-Width"),navBox);
+
     QVBoxLayout *vbl = new QVBoxLayout;
     QDialogButtonBox *bb = new QDialogButtonBox(QDialogButtonBox::Ok|QDialogButtonBox::Cancel,&d);
     connect(bb->button(QDialogButtonBox::Ok),&QPushButton::clicked,&d,&QDialog::accept);
@@ -410,6 +468,7 @@ void PeakFindWidget::launchOptionsDialog()
         d_winSize = ws;
         d_polyOrder = po;
         d_snr = snrBox->value();
+        d_navHalfWidth = navBox->value();
 
         QMetaObject::invokeMethod(p_pf,[this](){p_pf->calcCoefs(d_winSize,d_polyOrder);});
 
@@ -418,6 +477,7 @@ void PeakFindWidget::launchOptionsDialog()
         set(BC::Key::pfSnr,d_snr,false);
         set(BC::Key::pfWinSize,d_winSize,false);
         set(BC::Key::pfOrder,d_polyOrder,false);
+        set(BC::Key::pfNavHalfWidth,d_navHalfWidth,false);
         save();
 
         if(p_liveAction->isChecked())
