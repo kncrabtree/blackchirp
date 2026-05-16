@@ -15,15 +15,41 @@ double-`QGroupBox` scaffold onto a shared table widget. Landed commits
   `AlternateBase`-shaded span), `addCheckableSectionRow(title, checked,
   &box)`, `bindSectionRows(section, rows)` (bound rows collapse via
   `setRowHidden`; on expand the enclosing window is grown by the
-  revealed rows' exact pixel height, grow-only). Registered in both
-  `BlackchirpGui.cmake` and `BlackchirpViewerGui.cmake`.
+  revealed rows' exact pixel height, grow-only). Section rows can also
+  be retitled (`setSectionTitle`), switched between checkbox and plain
+  centered heading (`setSectionCheckable`, swapping the displayed cell
+  while keeping the `QCheckBox` alive so connections survive),
+  enable/disabled without hiding (`setBoundRowsEnabled`), reconciled
+  without window growth (`applySectionVisibility`), and re-grabbed
+  (`sectionCheckBox`). Registered in both `BlackchirpGui.cmake` and
+  `BlackchirpViewerGui.cmake`.
 - **`HwSettingsWidget`** refactored onto `SettingsTable` (Part 1);
   `addArrayTableRow` reimplemented on the paired-widget row API.
 - **`OverlayBaseOptionsWidget`** (2a), **`CurveAppearanceWidget`**
   (2b), **`OverlayTypeSpecificWidget` + the three subclasses** (2c)
-  flattened. The three subclass containers and the catalog
-  `Convolution` box were kept as flat `QGroupBox`es to preserve their
-  check/enable/visible state machines verbatim — see next task.
+  flattened.
+- **Checkable-container conversion** (final step). The last two flat
+  `QGroupBox`es kept only for their state machines are gone:
+  - `OverlayTypeSpecificWidget::createSourceFileConfigUI` now takes a
+    `SettingsTable*`. The base adds the checkable "Source File
+    Configuration" section row, binds the subclass's
+    file/path/status rows to it, and drives the Creation/Settings
+    state machine through `isSourceConfigEnabled` /
+    `setSourceConfigChecked` (signal-blocked, no grow) /
+    `setSourceConfigCheckable` / `setSourceConfigTitle` plus a
+    `sourceConfigToggled` relay. A `refreshSourceFileConfigState()`
+    hook lets a subclass re-assert dynamic row visibility after the
+    base applies context state. BCExp/Catalog/GenericXY build their
+    config rows as table rows; catalog's parsed-file detail rows live
+    in the config table (shown only when a catalog is parsed **and**
+    the section is expanded), replacing the object-named details
+    frame.
+  - `CatalogOverlayWidget`'s convolution box is a checkable
+    "Convolution Enabled" section with the Line Shape / Frequency
+    Range sub-headings and the `Convolve` button as bound rows that
+    collapse with it. Every `p_convolutionGroupBox` call site routes
+    through `isConvolutionEnabled` / `setConvolutionEnabled` and a
+    `convolutionEnabledChanged` relay.
 - **Dialog shell** (Part 3): dropped the `Expanding` column spacers and
   the fixed 800×400 size (`adjustSize()`, still resizable); the
   validity message + progress bar moved into a bottom strip beside the
@@ -45,14 +71,22 @@ Decision of note: `SettingsTable` section-row shading uses
 Build is clean for `blackchirp` + `blackchirp-viewer` and docs build;
 no runtime testing was possible. Test:
 
-1. **Settings-context "Source File Configuration (Optional)"**:
-   checkable, starts unchecked (settings region hidden), toggling
-   shows/enables it; Creation context non-checkable, settings enable
-   only when the source file is valid. (Highest risk — see next task.)
-2. **Catalog convolution end-to-end**: load `.cat`/`.xo`, toggle
-   Convolution (collapse/expand + window grow), change shape / FWHM /
-   range / points, Convolve runs/cancels with progress bar; parsed
-   file-detail rows show/hide on load.
+1. **Source File Configuration section (highest risk)**: Settings
+   context — section is a centered checkbox titled "… (Optional)",
+   starts unchecked with the file/path/status rows hidden; checking
+   reveals them (window grows) and `Source File Settings` becomes
+   visible/enabled; unchecking hides them again. Creation context —
+   section renders as a plain centered heading (no checkbox), file
+   picker rows always visible **and enabled** (you can always pick a
+   file), `Source File Settings` enables once the file validates.
+   Switch overlay type with the section toggled both ways.
+2. **Catalog convolution end-to-end**: load `.cat`/`.xo`, toggle the
+   "Convolution Enabled" section (collapse/expand of the Line Shape /
+   Frequency Range sub-rows **and the Convolve button** + window
+   grow), change shape / FWHM / range / points, Convolve runs/cancels
+   with progress bar; parsed file-detail rows show/hide on load.
+   Opening Settings on an overlay that had convolution enabled expands
+   the section on open (grows the dialog once — grow-only, expected).
 3. **GenericXY**: preview table grows with the dialog; Format
    Detection / Column Mapping / Data Filtering stay content-sized;
    the pre-existing filtering load quirk (section collapsed but inner
@@ -70,125 +104,55 @@ no runtime testing was possible. Test:
 9. Screenshots `overlays-overlay_creation_dialog`,
    `overlays-catalog_convolution_settings`,
    `overlays-generic_xy_preview` are stale — recapture from the GUI.
+10. **Catalog detail-row edge case**: in Settings with an invalid /
+    empty catalog, expanding the source-file section briefly grows the
+    dialog for the detail rows before `refreshSourceFileConfigState()`
+    re-hides them (grow-only over-grow; cosmetic, not a regression).
+    Confirm detail rows are hidden whenever the section is collapsed
+    and shown only with a parsed catalog while expanded.
+11. **BCExp / GenericXY config rows as table rows**: experiment-number
+    / custom-path / browse / status (BCExp) and file / status
+    (GenericXY) now render as `SettingsTable` rows under the section;
+    confirm layout, the "OR custom path" cell, and the path/browse
+    pair behave as before, in both Creation and Settings.
 
-## Next task — finish the checkable-container conversions
+## Status — planned coding complete
 
-**Goal:** remove the last flat `QGroupBox`es kept only for their
-check/enable state machines: the catalog **Convolution** box and the
-shared base **Source File Configuration** box (the latter across
-`OverlayTypeSpecificWidget` + `BCExpOverlayWidget`,
-`CatalogOverlayWidget`, `GenericXYOverlayWidget`). Replace them with
-`SettingsTable` checkable section rows.
+The checkable-container conversion (the former "next task") is done
+and landed; no further coding is planned for this effort. What remains
+is GUI verification of the items above and screenshot recapture.
 
-**Sequencing (decided): one combined commit.** Within it, still do the
-decouple-then-swap *internally* so the diff is reviewable: introduce
-accessor/relay helpers, repoint all call sites, then point the helpers
-at the new control — but land it as a single commit. Build both
-binaries; behavior must be byte-for-byte unchanged except the
-intended visual flatten.
+### Behavior-preservation note (decision of record)
 
-### Part A — `SettingsTable` API additions
+The spec's Part C wording said the Creation-context source rows should
+be "*enabled* only when the file is valid (`setBoundRowsEnabled`, not
+hide)". The original state machine instead left `p_sourceFileConfigBox`
+unconditionally enabled in Creation (`setEnabled(true)`) — the file
+picker must stay usable to *select* a file; only `p_sourceFileSettings`
+gated on validity. To honor the binding "byte-for-byte unchanged except
+the intended visual flatten" constraint, Creation keeps the config rows
+always enabled (`setBoundRowsEnabled(section, true)`); the
+validity-gating still lives on the separate `Source File Settings`
+region, exactly as before. `setBoundRowsEnabled` is implemented and
+available; it is simply driven with the value that reproduces the
+original behavior.
 
-The base box is not a clean checkable (catalog convolution is). Add:
+### Implementation choices worth knowing
 
-- `void setSectionTitle(int row, const QString &title)` — retitle a
-  section row in place (Creation "Source File Configuration" vs
-  Settings "Source File Configuration (Optional)").
-- `void setSectionCheckable(int row, bool checkable)` — a section row
-  that can drop its checkbox and render as a plain centered heading
-  (Creation context: non-checkable; Settings: checkable). Implement by
-  building the row with a checkbox always present and swapping the
-  cell widget (checkbox ⟷ plain shaded label) so the row index and
-  bound-row wiring survive the mode change.
-- `void setBoundRowsEnabled(int section, bool)` — in addition to the
-  existing hide-on-uncheck, support **enable/disable** of bound rows
-  without hiding them (Creation context keeps the source-file rows
-  visible but disabled until the file is valid; only Settings context
-  hides). Keep `bindSectionRows` (hide semantics) and add an
-  enable-only variant or a mode flag.
-- Expose the section checkbox after creation
-  (`QCheckBox *sectionCheckBox(int row) const`) so the relay/connect
-  can be repointed.
-
-Keep the grow-on-expand behavior; it already benefits these.
-
-### Part B — decoupling helpers (catalog)
-
-Add to `CatalogOverlayWidget`:
-
-- `bool isConvolutionEnabled() const;`
-- `void setConvolutionEnabled(bool);`
-- `signals: void convolutionEnabledChanged(bool);` — emitted from one
-  internal slot connected to *whichever* control backs it.
-
-Replace every `p_convolutionGroupBox->isChecked()` (~`setupForSettings`,
-`applyToOverlay`, `getSettingsHash`, `createOverlay`, `loadSettings`,
-`saveSettings`, `updateConvolutionControls`,
-`getCurrentConvolutionState`) with `isConvolutionEnabled()`, every
-`->setChecked(x)` with `setConvolutionEnabled(x)`, and both
-`connect(p_convolutionGroupBox, &QGroupBox::toggled, …)` (the
-`onConvolutionEnabledToggled` one and the content-visibility one) with
-connections to `convolutionEnabledChanged`. The `Convolve` button (not
-a table row) collapses with the section: drive its visibility from the
-relay too, or make it a trailing settings row bound to the section.
-
-Then swap: build the convolution config as one `SettingsTable` with
-`addCheckableSectionRow("Convolution Enabled", …, &box)`, the existing
-`addSectionRow("Line Shape")` / `"Frequency Range & Resolution"`
-sub-headings, and `bindSectionRows` covering all convolution rows;
-point the three helpers + relay at `box`. Delete `p_convolutionGroupBox`.
-
-### Part C — decoupling helpers (base source-file-config)
-
-`OverlayTypeSpecificWidget` drives `p_sourceFileConfigBox` via
-`setupUI`, `updateSourceFileControls`, `onSourceFileConfigToggled`,
-`configureForContext`. Introduce a small abstraction the state machine
-talks to instead of the box directly:
-
-- `bool isSourceConfigEnabled() const;`
-- `void setSourceConfigChecked(bool);` (signal-blocked variant
-  preserved — `updateSourceFileControls` blocks signals around the
-  Settings-context `setChecked`).
-- `void setSourceConfigCheckable(bool);`
-- `void setSourceConfigTitle(const QString &);`
-- `signals: void sourceConfigToggled(bool);` relayed to
-  `onSourceFileConfigToggled`.
-
-The subclass `createSourceFileConfigUI(QGroupBox*)` virtuals must now
-fill a `SettingsTable` instead of a box. Either change the virtual's
-parameter to `SettingsTable*` (update all three subclasses + the base
-caller consistently) or keep the box as a thin frameless host of the
-table. Recommended: change the signature to `SettingsTable*` and add
-a checkable "Source File Configuration" section row at the top, with
-the subclass's browse/path/status rows bound to it; the base state
-machine repoints onto the Part A APIs (`setSectionTitle`,
-`setSectionCheckable`, `setBoundRowsEnabled`, `sectionCheckBox`).
-
-**Hard constraints (unchanged behavior):**
-
-- Creation: section non-checkable, titled "Source File Configuration",
-  source rows always visible, *enabled* only when the file is valid
-  (`setBoundRowsEnabled`, not hide).
-- Settings: section checkable, titled "Source File Configuration
-  (Optional)", `setChecked(d_sourceFileEnabled)` under blocked
-  signals, source rows hidden when unchecked (existing hide
-  semantics), `onSourceFileConfigToggled` fired identically.
-- `p_sourceFileSettingsBox` / `p_overlaySettingsBox` enable/visible
-  logic and `hasTypeSpecificSettings()` gating untouched (those are
-  separate regions; only the *config* box is being converted).
-- No changes to settings keys, persistence, validation, preview,
-  `Configure FT…`, convolution threading/caching, or on-disk format.
-
-### Risks / watch list
-
-- The base box conversion is the riskiest change in the whole effort
-  (the Creation/Settings state machine). Regression-test item 1 above
-  before and after.
-- `setSectionCheckable` swapping the cell widget must not orphan
-  `bindSectionRows` connections or the relay; re-grab `sectionCheckBox`
-  after a mode change.
-- Window grow-on-expand now fires for the source-file/convolution
-  sections too — confirm no unwanted growth during context setup
-  (initial state is applied without resize by design; keep that).
-- Catalog `Convolve` button visibility must track the section exactly
-  as the old content-widget `setVisible` did.
+- The base auto-binds **every** row a subclass adds in
+  `createSourceFileConfigUI` to the section (uniform collapse). Catalog
+  therefore manages its detail-row visibility separately via
+  `applyDetailRowVisibility()` / the `refreshSourceFileConfigState()`
+  hook, which the base calls at the end of `updateSourceFileControls()`
+  so dynamic rows are reconciled after context state is applied.
+- Source-file-config programmatic state during setup uses the
+  signal-blocked `setSourceConfigChecked()` + `applySectionVisibility()`
+  (no relay, no grow) — matching the original blocked-`setChecked`.
+  Catalog convolution `setConvolutionEnabled()` is **not** blocked, so
+  it fires `convolutionEnabledChanged` and the collapse/grow exactly as
+  the old `QGroupBox::toggled` did; the only new effect is grow-on-open
+  when Settings restores an overlay with convolution enabled (item 2).
+- `setSectionCheckable(false)` expands all bound rows (a plain heading
+  never collapses); the subclass refresh hook then re-hides any
+  dynamic rows. `setSectionCheckable` early-returns when the mode is
+  unchanged, so repeated `updateSourceFileControls()` calls are safe.
