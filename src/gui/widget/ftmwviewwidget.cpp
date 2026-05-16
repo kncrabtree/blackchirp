@@ -698,6 +698,8 @@ void FtmwViewWidget::ftDone(const Ft ft, int workerId)
         p_mainFtPlot->canvas()->setCursor(QCursor(Qt::CrossCursor));
         if(p_pfw != nullptr)
             p_pfw->newFt(ft);
+        else
+            ensurePeakFinder();
     }
 }
 
@@ -748,6 +750,9 @@ void FtmwViewWidget::updateMainPlot()
 
     p_peakFindAct->setEnabled(!p_mainFtPlot->currentFt().isEmpty());
     p_overlayAct->setEnabled(!p_mainFtPlot->currentFt().isEmpty() && d_overlaysEnabled);
+
+    if(p_pfw == nullptr)
+        ensurePeakFinder();
 }
 
 void FtmwViewWidget::reprocess(const QList<int> ignore)
@@ -990,6 +995,16 @@ void FtmwViewWidget::resetRollingAverage()
     auto p = dynamic_cast<FidPeakUpStorage*>(ps_fidStorage.get());
     if(p != nullptr)
         p->reset();
+}
+
+void FtmwViewWidget::ensurePeakFinder()
+{
+    // The dock can be restored visible before any FT exists, in which
+    // case visibilityChanged()->showPeakFinder() already ran and
+    // bailed; recreate once an FT is available without a manual toggle.
+    if(p_pfw == nullptr && p_peakFindDock->isVisible()
+       && !p_mainFtPlot->currentFt().isEmpty())
+        showPeakFinder(true);
 }
 
 void FtmwViewWidget::showPeakFinder(bool show)

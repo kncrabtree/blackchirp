@@ -113,6 +113,12 @@ public slots:
 
     void showPeakFinder(bool show);
 
+    /// Creates the peak finder if its dock is open but empty once an FT
+    /// is available. Covers the case where the dock was restored
+    /// visible before any FT existed, so visibilityChanged() already
+    /// fired and will not fire again on its own.
+    void ensurePeakFinder();
+
     /// Frames a plot on a peak selected in the Peak Find panel.
     /// \param plotName Target plot object name; empty centers the main FT plot.
     void centerPlotOnPeak(const QString &plotName, double freq,
