@@ -11,6 +11,7 @@
 #include <QRegularExpressionValidator>
 #include <limits>
 #include <gui/style/themecolors.h>
+#include <gui/widget/settingstable.h>
 
 OverlayBaseOptionsWidget::OverlayBaseOptionsWidget(const QStringList &plotNames, const Ft &currentFt, QWidget *parent)
     : QWidget(parent), SettingsStorage(BC::Key::OverlayBaseOptions::key), d_currentFt(currentFt), d_hasFtData(!currentFt.isEmpty()),
@@ -29,67 +30,58 @@ OverlayBaseOptionsWidget::OverlayBaseOptionsWidget(const QStringList &plotNames,
 void OverlayBaseOptionsWidget::setupUI()
 {
     auto mainLayout = new QVBoxLayout(this);
-    mainLayout->setSpacing(4); // Reduced spacing between flat GroupBoxes
-    
-    // Group 1: Overlay Identity
-    auto identityGroup = new QGroupBox("Overlay Identity", this);
-    identityGroup->setFlat(true); // Flat appearance for nested GroupBox
-    auto identityLayout = new QFormLayout(identityGroup);
-    identityLayout->setContentsMargins(3, 2, 3, 3); // Reduced margins for flat GroupBox
-    identityLayout->setVerticalSpacing(3); // Reduced spacing for compact appearance
-    
-    // Label
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+
+    auto table = new SettingsTable(this);
+
+    // --- Identity ---
+    table->addSectionRow("Identity");
+
     p_labelLineEdit = new QLineEdit(this);
     p_labelLineEdit->setPlaceholderText("Enter overlay label");
-    identityLayout->addRow("Label:", p_labelLineEdit);
-    
-    // Sanitized filename preview
+    table->addSettingRow("Label", p_labelLineEdit);
+
+    // Sanitized filename preview: themed subtle text, no stylesheet string
     p_sanitizedLabelDisplay = new QLabel(this);
-    p_sanitizedLabelDisplay->setStyleSheet(QString("color: %1; font-style: italic; font-size: 11px;").arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, this)));
+    {
+        QFont f = p_sanitizedLabelDisplay->font();
+        f.setItalic(true);
+        p_sanitizedLabelDisplay->setFont(f);
+        QPalette pal = p_sanitizedLabelDisplay->palette();
+        pal.setColor(QPalette::WindowText,
+                     ThemeColors::getThemeAwareColor(ThemeColors::SubtleText, this));
+        p_sanitizedLabelDisplay->setPalette(pal);
+    }
     p_sanitizedLabelDisplay->setWordWrap(false);
     p_sanitizedLabelDisplay->setMinimumWidth(200); // Prevent text wrapping
-    identityLayout->addRow("Storage Name:", p_sanitizedLabelDisplay);
-    
+    table->addSettingRow("Storage Name", p_sanitizedLabelDisplay);
+
     // Connect label changes to update sanitized preview (label doesn't emit settingsChanged)
     connect(p_labelLineEdit, &QLineEdit::textChanged, this, &OverlayBaseOptionsWidget::onLabelChanged);
-    
+
     // Comment field with semicolon validation
     p_commentLineEdit = new QLineEdit(this);
     p_commentLineEdit->setPlaceholderText("Enter description or comment");
     p_commentValidator = new QRegularExpressionValidator(QRegularExpression("[^;]*"), this);
     p_commentLineEdit->setValidator(p_commentValidator);
     p_commentLineEdit->setToolTip("Comments cannot contain semicolons (;) due to file format constraints");
-    identityLayout->addRow("Comment:", p_commentLineEdit);
-    
-    // Plot ID
+    table->addSettingRow("Comment", p_commentLineEdit);
+
     p_plotIdComboBox = new QComboBox(this);
-    identityLayout->addRow("Plot ID:", p_plotIdComboBox);
-    
-    // Group 2: Scale & Position
-    auto scaleGroup = new QGroupBox("Scale & Position", this);
-    scaleGroup->setFlat(true); // Flat appearance for nested GroupBox
-    auto scaleLayout = new QVBoxLayout(scaleGroup);
-    scaleLayout->setContentsMargins(3, 2, 3, 3); // Reduced margins for flat GroupBox
-    scaleLayout->setSpacing(3); // Reduced spacing for compact appearance
-    
-    // Y Scale with Invert button
-    auto yScaleRow = new QHBoxLayout();
-    yScaleRow->addWidget(new QLabel("Y Scale:", this));
+    table->addSettingRow("Plot ID", p_plotIdComboBox);
+
+    // --- Scale & Position ---
+    table->addSectionRow("Scale & Position");
+
     p_yScaleInputWidget = new ScientificInputWidget(this);
     p_yScaleInputWidget->setSingleStep(1.0);
     p_yScaleInputWidget->setKeyboardTracking(false); // Prevent updates while typing
-    yScaleRow->addWidget(p_yScaleInputWidget);
     p_invertButton = new QPushButton("Invert", this);
     p_invertButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrows-up-down.svg", ThemeColors::IconSecondary, this));
     p_invertButton->setMaximumWidth(60);
-    yScaleRow->addWidget(p_invertButton);
-    yScaleRow->addStretch();
     connect(p_invertButton, &QPushButton::clicked, this, &OverlayBaseOptionsWidget::onInvertClicked);
-    scaleLayout->addLayout(yScaleRow);
-    
-    // Autoscale controls (positioned right below Y Scale)
-    auto autoscaleRow = new QHBoxLayout();
-    autoscaleRow->addWidget(new QLabel("Autoscale:", this));
+    table->addSettingRow("Y Scale", p_yScaleInputWidget, p_invertButton);
+
     p_autoscalePercentageSpinBox = new QDoubleSpinBox(this);
     p_autoscalePercentageSpinBox->setRange(0.1, 1000.0);
     p_autoscalePercentageSpinBox->setDecimals(1);
@@ -97,50 +89,29 @@ void OverlayBaseOptionsWidget::setupUI()
     p_autoscalePercentageSpinBox->setSuffix("%");
     p_autoscalePercentageSpinBox->setValue(20.0); // Default 20%
     p_autoscalePercentageSpinBox->setKeyboardTracking(false);
-    autoscaleRow->addWidget(p_autoscalePercentageSpinBox);
     p_autoscaleButton = new QPushButton("Autoscale", this);
     p_autoscaleButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrows-pointing-out.svg", ThemeColors::IconSecondary, this));
     p_autoscaleButton->setMaximumWidth(80);
-    autoscaleRow->addWidget(p_autoscaleButton);
-    autoscaleRow->addStretch();
     connect(p_autoscaleButton, &QPushButton::clicked, this, &OverlayBaseOptionsWidget::onAutoscaleClicked);
-    scaleLayout->addLayout(autoscaleRow);
-    
-    // Y and X Offsets (side-by-side for compact layout)
-    auto offsetRow = new QHBoxLayout();
-    offsetRow->addWidget(new QLabel("Y Offset:", this));
+    table->addSettingRow("Autoscale", p_autoscalePercentageSpinBox, p_autoscaleButton);
+
     p_yOffsetSpinBox = new QDoubleSpinBox(this);
     p_yOffsetSpinBox->setRange(-1e10, 1e10);
     p_yOffsetSpinBox->setDecimals(4);
     p_yOffsetSpinBox->setSingleStep(1.0);
     p_yOffsetSpinBox->setKeyboardTracking(false); // Prevent updates while typing
-    offsetRow->addWidget(p_yOffsetSpinBox);
-    
-    offsetRow->addWidget(new QLabel("X Offset:", this));
+    table->addSettingRow("Y Offset", p_yOffsetSpinBox);
+
     p_xOffsetSpinBox = new QDoubleSpinBox(this);
     p_xOffsetSpinBox->setRange(-1e10, 1e10);
     p_xOffsetSpinBox->setDecimals(4);
     p_xOffsetSpinBox->setSingleStep(1.0);
     p_xOffsetSpinBox->setKeyboardTracking(false); // Prevent updates while typing
-    offsetRow->addWidget(p_xOffsetSpinBox);
-    offsetRow->addStretch();
-    scaleLayout->addLayout(offsetRow);
-    
-    // Group 3: Frequency Limits (Collapsible)
-    auto frequencyGroup = new QGroupBox("Frequency Limits", this);
-    frequencyGroup->setFlat(true); // Flat appearance for nested GroupBox
-    frequencyGroup->setCheckable(true);
-    frequencyGroup->setChecked(false);
-    auto frequencyGroupLayout = new QVBoxLayout(frequencyGroup);
-    frequencyGroupLayout->setContentsMargins(3, 2, 3, 3); // Reduced margins for flat GroupBox
-    
-    // Collapsible content widget
-    auto frequencyContentWidget = new QWidget(this);
-    auto frequencyLayout = new QGridLayout(frequencyContentWidget);
-    frequencyLayout->setContentsMargins(3, 2, 3, 3); // Reduced margins for flat GroupBox
-    frequencyLayout->setSpacing(3); // Reduced spacing for compact appearance
-    
-    // Min Frequency Limit
+    table->addSettingRow("X Offset", p_xOffsetSpinBox);
+
+    // --- Frequency Limits (collapsible) ---
+    int freqSection = table->addCheckableSectionRow("Frequency Limits", false);
+
     p_minFreqCheckBox = new QCheckBox("Enable", this);
     p_minFreqSpinBox = new QDoubleSpinBox(this);
     p_minFreqSpinBox->setRange(-1e10, 1e10);
@@ -149,14 +120,8 @@ void OverlayBaseOptionsWidget::setupUI()
     p_minFreqSpinBox->setSuffix(" MHz");
     p_minFreqSpinBox->setKeyboardTracking(false); // Prevent updates while typing
     connect(p_minFreqCheckBox, &QCheckBox::toggled, p_minFreqSpinBox, &QDoubleSpinBox::setEnabled);
-    
-    auto minFreqLabel = new QLabel("Min Frequency:", this);
-    minFreqLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    frequencyLayout->addWidget(minFreqLabel, 0, 0);
-    frequencyLayout->addWidget(p_minFreqCheckBox, 0, 1);
-    frequencyLayout->addWidget(p_minFreqSpinBox, 0, 2);
-    
-    // Max Frequency Limit
+    int minFreqRow = table->addSettingRow("Min Frequency", p_minFreqCheckBox, p_minFreqSpinBox);
+
     p_maxFreqCheckBox = new QCheckBox("Enable", this);
     p_maxFreqSpinBox = new QDoubleSpinBox(this);
     p_maxFreqSpinBox->setRange(-1e10, 1e10);
@@ -165,27 +130,12 @@ void OverlayBaseOptionsWidget::setupUI()
     p_maxFreqSpinBox->setSuffix(" MHz");
     p_maxFreqSpinBox->setKeyboardTracking(false); // Prevent updates while typing
     connect(p_maxFreqCheckBox, &QCheckBox::toggled, p_maxFreqSpinBox, &QDoubleSpinBox::setEnabled);
-    
-    auto maxFreqLabel = new QLabel("Max Frequency:", this);
-    maxFreqLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    frequencyLayout->addWidget(maxFreqLabel, 1, 0);
-    frequencyLayout->addWidget(p_maxFreqCheckBox, 1, 1);
-    frequencyLayout->addWidget(p_maxFreqSpinBox, 1, 2);
-    
-    frequencyGroupLayout->addWidget(frequencyContentWidget);
-    
-    // Connect GroupBox toggled signal to hide/show content widget for true collapsible behavior
-    connect(frequencyGroup, &QGroupBox::toggled, frequencyContentWidget, &QWidget::setVisible);
-    
-    // Initially hide content since group starts unchecked
-    frequencyContentWidget->setVisible(false);
-    
-    // Add groups to main layout
-    mainLayout->addWidget(identityGroup);
-    mainLayout->addWidget(scaleGroup);
-    mainLayout->addWidget(frequencyGroup);
-    mainLayout->addStretch();
-    
+    int maxFreqRow = table->addSettingRow("Max Frequency", p_maxFreqCheckBox, p_maxFreqSpinBox);
+
+    // Unchecking the section collapses (hides) the two value rows.
+    table->bindSectionRows(freqSection, {minFreqRow, maxFreqRow});
+
+    mainLayout->addWidget(table);
     setLayout(mainLayout);
     
     // Connect all non-label widgets to emit settingsChanged signal for real-time updates
@@ -461,8 +411,9 @@ void OverlayBaseOptionsWidget::onLabelChanged()
         p_sanitizedLabelDisplay->setText(sanitized);
     } else {
         p_sanitizedLabelDisplay->setText(QString("<b>%1</b><br/>"
-                                                "<span style='color: #CC6600;'>Changed from: %2</span>")
-                                                .arg(sanitized, label));
+                                                "<span style='color: %3;'>Changed from: %2</span>")
+                                                .arg(sanitized, label,
+                                                     ThemeColors::getCSSColor(ThemeColors::StatusWarning, this)));
     }
     
     // Emit signal for label changes to trigger validation
