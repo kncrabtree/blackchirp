@@ -36,7 +36,7 @@ PeakListExportDialog::PeakListExportDialog(const QVector<QPointF> peakList, int 
     double dipole = get<double>(BC::Key::plDipole,1.0);
     ui->dipoleDoubleSpinBox->setValue(dipole);
     ui->dipoleCheckBox->setChecked(dipoleEn);
-    ui->dipoleDoubleSpinBox->setEnabled(dipole);
+    ui->dipoleDoubleSpinBox->setEnabled(dipoleEn);
     connect(ui->dipoleCheckBox,&QCheckBox::toggled,ui->dipoleDoubleSpinBox,&QDoubleSpinBox::setEnabled);
     registerGetter(BC::Key::plDipoleEn,
                    static_cast<QAbstractButton*>(ui->dipoleCheckBox),&QAbstractButton::isChecked);
@@ -74,7 +74,7 @@ PeakListExportDialog::PeakListExportDialog(const QVector<QPointF> peakList, int 
     for(std::size_t i=0; i<num; ++i)
     {
         int shots = getArrayValue<int>(BC::Key::plShotsTab,i,BC::Key::plShots,100);
-        double intensity = getArrayValue<int>(BC::Key::plShotsTab,i,BC::Key::plIntensity,1.0);
+        double intensity = getArrayValue<double>(BC::Key::plShotsTab,i,BC::Key::plIntensity,1.0);
         shotsList.append(qMakePair(shots,intensity));
     }
     p_sm->setList(shotsList);
@@ -142,6 +142,19 @@ void PeakListExportDialog::removePeaks()
 
 void PeakListExportDialog::accept()
 {
+    // Persist the shots table regardless of export format or cancel so
+    // edits to it are never silently discarded.
+    {
+        QVector<QPair<int,double>> sl = p_sm->shotsList();
+        std::sort(sl.begin(),sl.end());
+        std::vector<SettingsMap> l;
+        l.reserve(sl.size());
+        for(int i=0; i<sl.size(); i++)
+            l.push_back({ {BC::Key::plShots,sl.at(i).first},
+                          {BC::Key::plIntensity,sl.at(i).second} });
+        setArray(BC::Key::plShotsTab,l,false);
+    }
+
     QDir d = BlackchirpCSV::textExportDir();
 
     QString ext = QString(".txt");
@@ -153,6 +166,11 @@ void PeakListExportDialog::accept()
         fn = QString("peaks%1").arg(d_number)+ext;
     QString name = QFileDialog::getSaveFileName(this,QString("Export Peak List"),
                                                 d.absoluteFilePath(fn));
+
+    // An empty name means the save dialog was cancelled; leave this
+    // dialog open without raising a spurious export-failure box.
+    if(name.isEmpty())
+        return;
 
     QSaveFile f(name);
     if(!f.open(QIODevice::WriteOnly|QIODevice::Text))
@@ -179,13 +197,6 @@ void PeakListExportDialog::accept()
     {
         QVector<QPair<int,double>> shotsList = p_sm->shotsList();
         std::sort(shotsList.begin(),shotsList.end());
-
-        std::vector<SettingsMap> l;
-        l.reserve(shotsList.size());
-        for(int i=0; i<shotsList.size(); i++)
-            l.push_back({ {BC::Key::plShots,shotsList.at(i).first},
-                          {BC::Key::plIntensity,shotsList.at(i).second} });
-        setArray(BC::Key::plShotsTab,l,false);
 
         QString dipoleText("");
         QString shotsText("shots:");
