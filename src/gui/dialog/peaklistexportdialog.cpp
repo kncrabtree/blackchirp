@@ -1,73 +1,87 @@
 #include "peaklistexportdialog.h"
-#include "ui_peaklistexportdialog.h"
 #include <gui/style/themecolors.h>
 
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QTextStream>
 #include <QSaveFile>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QRadioButton>
+#include <QGroupBox>
+#include <QSpinBox>
+#include <QDoubleSpinBox>
+#include <QCheckBox>
+#include <QToolButton>
+#include <QLabel>
+#include <QTableView>
+#include <QHeaderView>
+#include <QPushButton>
+#include <QDialogButtonBox>
+#include <QItemSelectionModel>
 
 #include <data/storage/blackchirpcsv.h>
 
 PeakListExportDialog::PeakListExportDialog(const QVector<QPointF> peakList, int number, QWidget *parent) :
     QDialog(parent), SettingsStorage(BC::Key::plExport),
-    ui(new Ui::PeakListExportDialog), d_number(number), d_peakList(peakList)
+    d_number(number), d_peakList(peakList)
 {
-    ui->setupUi(this);
-    
-    // Set BlackChirp branding
+    setWindowTitle(QString("Export Peak List"));
     setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg", ThemeColors::IconPrimary, this));
-    
-    // Override icons with theme-aware versions
-    ui->addShotButton->setIcon(ThemeColors::createThemedIcon(":/icons/plus.svg", ThemeColors::IconPrimary, this));
-    ui->removeShotButton->setIcon(ThemeColors::createThemedIcon(":/icons/minus.svg", ThemeColors::IconPrimary, this));
-    ui->insertShotButton->setIcon(ThemeColors::createThemedIcon(":/icons/go-last.svg", ThemeColors::IconSecondary, this));
 
-    connect(ui->ftbRadioButton,&QRadioButton::toggled,ui->ftbOptionsBox,&QGroupBox::setEnabled);
-    ui->ftbOptionsBox->setEnabled(false);
+    setupUI();
+
+    // The FTB-options group is only relevant for FTB export; hide it
+    // (not just disable) for ASCII so the dialog stays compact, and
+    // resize to fit whenever the format changes.
+    connect(p_ftbRadio,&QRadioButton::toggled,this,[this](bool ftb){
+        p_ftbOptionsBox->setVisible(ftb);
+        adjustSize();
+    });
 
     bool ascii = get<bool>(BC::Key::plAscii,true);
-    ui->asciiRadioButton->setChecked(ascii);
-    ui->ftbRadioButton->setChecked(!ascii);
+    p_asciiRadio->setChecked(ascii);
+    p_ftbRadio->setChecked(!ascii);
+    p_ftbOptionsBox->setVisible(!ascii);
     registerGetter(BC::Key::plAscii,
-                   static_cast<QAbstractButton*>(ui->asciiRadioButton),&QAbstractButton::isChecked);
+                   static_cast<QAbstractButton*>(p_asciiRadio),&QAbstractButton::isChecked);
 
     bool dipoleEn = get<bool>(BC::Key::plDipoleEn,true);
     double dipole = get<double>(BC::Key::plDipole,1.0);
-    ui->dipoleDoubleSpinBox->setValue(dipole);
-    ui->dipoleCheckBox->setChecked(dipoleEn);
-    ui->dipoleDoubleSpinBox->setEnabled(dipoleEn);
-    connect(ui->dipoleCheckBox,&QCheckBox::toggled,ui->dipoleDoubleSpinBox,&QDoubleSpinBox::setEnabled);
+    p_dipoleBox->setValue(dipole);
+    p_dipoleCheck->setChecked(dipoleEn);
+    p_dipoleBox->setEnabled(dipoleEn);
+    connect(p_dipoleCheck,&QCheckBox::toggled,p_dipoleBox,&QDoubleSpinBox::setEnabled);
     registerGetter(BC::Key::plDipoleEn,
-                   static_cast<QAbstractButton*>(ui->dipoleCheckBox),&QAbstractButton::isChecked);
-    registerGetter(BC::Key::plDipole,ui->dipoleDoubleSpinBox,&QDoubleSpinBox::value);
+                   static_cast<QAbstractButton*>(p_dipoleCheck),&QAbstractButton::isChecked);
+    registerGetter(BC::Key::plDipole,p_dipoleBox,&QDoubleSpinBox::value);
 
     bool drOnly = get<bool>(BC::Key::plDrOnlyEn,false);
     double drOnlyThresh = get<double>(BC::Key::plDrOnlyThresh,1.0);
-    ui->drOnlyCheckBox->setChecked(drOnly);
-    ui->drOnlyThreshSpinBox->setValue(drOnlyThresh);
-    ui->drOnlyThreshSpinBox->setEnabled(drOnly);
-    connect(ui->drOnlyCheckBox,&QCheckBox::toggled,ui->drOnlyThreshSpinBox,&QDoubleSpinBox::setEnabled);
+    p_drOnlyCheck->setChecked(drOnly);
+    p_drOnlyThreshBox->setValue(drOnlyThresh);
+    p_drOnlyThreshBox->setEnabled(drOnly);
+    connect(p_drOnlyCheck,&QCheckBox::toggled,p_drOnlyThreshBox,&QDoubleSpinBox::setEnabled);
     registerGetter(BC::Key::plDrOnlyEn,
-                   static_cast<QAbstractButton*>(ui->drOnlyCheckBox),&QAbstractButton::isChecked);
-    registerGetter(BC::Key::plDrOnlyThresh,ui->drOnlyThreshSpinBox,&QDoubleSpinBox::value);
+                   static_cast<QAbstractButton*>(p_drOnlyCheck),&QAbstractButton::isChecked);
+    registerGetter(BC::Key::plDrOnlyThresh,p_drOnlyThreshBox,&QDoubleSpinBox::value);
 
     int defaultShots = get<int>(BC::Key::plDefaultShots,100);
-    ui->defaultShotsSpinBox->setValue(defaultShots);
-    registerGetter(BC::Key::plDefaultShots,ui->defaultShotsSpinBox,&QSpinBox::value);
+    p_defaultShotsBox->setValue(defaultShots);
+    registerGetter(BC::Key::plDefaultShots,p_defaultShotsBox,&QSpinBox::value);
 
     bool drPowerEnabled = get<bool>(BC::Key::plDrPowerEn,false);
     double drPower = get<double>(BC::Key::plDrPower,17.0);
-    ui->drPowerCheckBox->setChecked(drPowerEnabled);
-    ui->drPowerDoubleSpinBox->setValue(drPower);
-    ui->drPowerDoubleSpinBox->setEnabled(drPowerEnabled);
-    connect(ui->drPowerCheckBox,&QCheckBox::toggled,ui->drPowerDoubleSpinBox,&QDoubleSpinBox::setEnabled);
+    p_drPowerCheck->setChecked(drPowerEnabled);
+    p_drPowerBox->setValue(drPower);
+    p_drPowerBox->setEnabled(drPowerEnabled);
+    connect(p_drPowerCheck,&QCheckBox::toggled,p_drPowerBox,&QDoubleSpinBox::setEnabled);
     registerGetter(BC::Key::plDrPowerEn,
-                   static_cast<QAbstractButton*>(ui->drPowerCheckBox),&QAbstractButton::isChecked);
-    registerGetter(BC::Key::plDrPower,ui->drPowerDoubleSpinBox,&QDoubleSpinBox::value);
+                   static_cast<QAbstractButton*>(p_drPowerCheck),&QAbstractButton::isChecked);
+    registerGetter(BC::Key::plDrPower,p_drPowerBox,&QDoubleSpinBox::value);
 
     p_sm = new ShotsModel(this);
-    ui->shotsTableView->setModel(p_sm);
+    p_shotsView->setModel(p_sm);
 
     QVector<QPair<int,double>> shotsList;
     std::size_t num = getArraySize(BC::Key::plShotsTab);
@@ -79,51 +93,166 @@ PeakListExportDialog::PeakListExportDialog(const QVector<QPointF> peakList, int 
     }
     p_sm->setList(shotsList);
 
-    connect(ui->shotsTableView->selectionModel(),&QItemSelectionModel::selectionChanged,this,&PeakListExportDialog::toggleButtons);
-    connect(ui->addShotButton,&QToolButton::clicked,p_sm,&ShotsModel::addEntry);
-    connect(ui->insertShotButton,&QToolButton::clicked,this,&PeakListExportDialog::insertShot);
-    connect(ui->removeShotButton,&QToolButton::clicked,this,&PeakListExportDialog::removeShots);
+    connect(p_shotsView->selectionModel(),&QItemSelectionModel::selectionChanged,this,&PeakListExportDialog::toggleButtons);
+    connect(p_addShotButton,&QToolButton::clicked,p_sm,&ShotsModel::addEntry);
+    connect(p_insertShotButton,&QToolButton::clicked,this,&PeakListExportDialog::insertShot);
+    connect(p_removeShotButton,&QToolButton::clicked,this,&PeakListExportDialog::removeShots);
 
     p_pm = new PeakListModel(this);
     p_proxy = new QSortFilterProxyModel(this);
     p_proxy->setSourceModel(p_pm);
     p_proxy->setSortRole(Qt::EditRole);
     p_pm->setPeakList(d_peakList);
-    ui->peakListTableView->setModel(p_proxy);
-    ui->peakListTableView->sortByColumn(1,Qt::DescendingOrder);
-    ui->peakListTableView->setSortingEnabled(true);
-    connect(ui->removePeakButton,&QToolButton::clicked,this,&PeakListExportDialog::removePeaks);
-    connect(ui->resetPeakListButton,&QPushButton::clicked,this,[this](){ p_pm->setPeakList(d_peakList);});
+    p_peakListView->setModel(p_proxy);
+    p_peakListView->sortByColumn(1,Qt::DescendingOrder);
+    p_peakListView->setSortingEnabled(true);
+    connect(p_removePeakButton,&QToolButton::clicked,this,&PeakListExportDialog::removePeaks);
 
+    adjustSize();
+}
 
+void PeakListExportDialog::setupUI()
+{
+    auto *mainLayout = new QVBoxLayout(this);
 
+    auto *fmtLayout = new QHBoxLayout;
+    p_asciiRadio = new QRadioButton("ASCII",this);
+    p_ftbRadio = new QRadioButton("FTB",this);
+    fmtLayout->addWidget(p_asciiRadio);
+    fmtLayout->addWidget(p_ftbRadio);
+    mainLayout->addLayout(fmtLayout);
+
+    p_ftbOptionsBox = new QGroupBox("FTB Options",this);
+    auto *ftbLayout = new QVBoxLayout(p_ftbOptionsBox);
+
+    auto *shotsRow = new QHBoxLayout;
+    shotsRow->addWidget(new QLabel("Default Shots",p_ftbOptionsBox));
+    p_defaultShotsBox = new QSpinBox(p_ftbOptionsBox);
+    p_defaultShotsBox->setRange(1,100000000);
+    p_defaultShotsBox->setSingleStep(20);
+    p_defaultShotsBox->setValue(100);
+    p_defaultShotsBox->setToolTip("The number of shots to place into the ftb file for strong lines.\n"
+                                  "For weak lines, use the table below to set intensity thresholds for more shots.");
+    shotsRow->addWidget(p_defaultShotsBox);
+    ftbLayout->addLayout(shotsRow);
+
+    auto *dipoleRow = new QHBoxLayout;
+    p_dipoleCheck = new QCheckBox("Dipole",p_ftbOptionsBox);
+    p_dipoleBox = new QDoubleSpinBox(p_ftbOptionsBox);
+    p_dipoleBox->setRange(0.01,10.0);
+    p_dipoleBox->setSingleStep(0.5);
+    p_dipoleBox->setValue(1.0);
+    dipoleRow->addWidget(p_dipoleCheck);
+    dipoleRow->addWidget(p_dipoleBox);
+    ftbLayout->addLayout(dipoleRow);
+
+    auto *drPowerRow = new QHBoxLayout;
+    p_drPowerCheck = new QCheckBox("DR Power",p_ftbOptionsBox);
+    p_drPowerBox = new QDoubleSpinBox(p_ftbOptionsBox);
+    p_drPowerBox->setSuffix(" dBm");
+    p_drPowerBox->setRange(-100.0,100.0);
+    drPowerRow->addWidget(p_drPowerCheck);
+    drPowerRow->addWidget(p_drPowerBox);
+    ftbLayout->addLayout(drPowerRow);
+
+    auto *drOnlyRow = new QHBoxLayout;
+    p_drOnlyCheck = new QCheckBox("DR Only Threshold",p_ftbOptionsBox);
+    p_drOnlyThreshBox = new QDoubleSpinBox(p_ftbOptionsBox);
+    p_drOnlyThreshBox->setDecimals(6);
+    p_drOnlyThreshBox->setMaximum(100000.0);
+    drOnlyRow->addWidget(p_drOnlyCheck);
+    drOnlyRow->addWidget(p_drOnlyThreshBox);
+    ftbLayout->addLayout(drOnlyRow);
+
+    auto *siLabel = new QLabel("Shots/Intensity",p_ftbOptionsBox);
+    siLabel->setAlignment(Qt::AlignCenter);
+    ftbLayout->addWidget(siLabel);
+
+    p_shotsView = new QTableView(p_ftbOptionsBox);
+    p_shotsView->setAlternatingRowColors(true);
+    p_shotsView->verticalHeader()->setVisible(false);
+    p_shotsView->setMinimumHeight(100);
+    ftbLayout->addWidget(p_shotsView);
+
+    auto *shotsBtnRow = new QHBoxLayout;
+    p_addShotButton = new QToolButton(p_ftbOptionsBox);
+    p_addShotButton->setText("Add");
+    p_addShotButton->setIcon(ThemeColors::createThemedIcon(":/icons/plus.svg", ThemeColors::IconPrimary, this));
+    p_addShotButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    p_addShotButton->setToolTip("Add a shots/intensity row");
+    p_insertShotButton = new QToolButton(p_ftbOptionsBox);
+    p_insertShotButton->setText("Insert");
+    p_insertShotButton->setIcon(ThemeColors::createThemedIcon(":/icons/go-last.svg", ThemeColors::IconSecondary, this));
+    p_insertShotButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    p_insertShotButton->setToolTip("Insert a shots/intensity row before the selected row");
+    p_removeShotButton = new QToolButton(p_ftbOptionsBox);
+    p_removeShotButton->setText("Remove");
+    p_removeShotButton->setIcon(ThemeColors::createThemedIcon(":/icons/minus.svg", ThemeColors::IconPrimary, this));
+    p_removeShotButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    p_removeShotButton->setToolTip("Remove the selected shots/intensity rows");
+    shotsBtnRow->addWidget(p_addShotButton);
+    shotsBtnRow->addWidget(p_insertShotButton);
+    shotsBtnRow->addWidget(p_removeShotButton);
+    ftbLayout->addLayout(shotsBtnRow);
+
+    mainLayout->addWidget(p_ftbOptionsBox);
+
+    auto *peaksLabel = new QLabel("Peaks",this);
+    peaksLabel->setAlignment(Qt::AlignCenter);
+    mainLayout->addWidget(peaksLabel);
+
+    p_peakListView = new QTableView(this);
+    p_peakListView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    p_peakListView->setAlternatingRowColors(true);
+    // Extended (not Multi) selection matches the PeakFindWidget table: a
+    // plain click selects a single row while Ctrl/Shift extend it.
+    p_peakListView->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    p_peakListView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    p_peakListView->setMinimumHeight(200);
+    mainLayout->addWidget(p_peakListView,1);
+
+    auto *peakBtnRow = new QHBoxLayout;
+    auto *resetButton = new QPushButton("Reset",this);
+    p_removePeakButton = new QToolButton(this);
+    p_removePeakButton->setIcon(ThemeColors::createThemedIcon(":/icons/minus.svg", ThemeColors::IconPrimary, this));
+    p_removePeakButton->setToolTip("Remove the selected peaks from the list");
+    peakBtnRow->addWidget(resetButton);
+    peakBtnRow->addWidget(p_removePeakButton);
+    peakBtnRow->addStretch(1);
+    mainLayout->addLayout(peakBtnRow);
+
+    connect(resetButton,&QPushButton::clicked,this,[this](){ p_pm->setPeakList(d_peakList);});
+
+    auto *bb = new QDialogButtonBox(QDialogButtonBox::Cancel|QDialogButtonBox::Ok,this);
+    connect(bb,&QDialogButtonBox::accepted,this,&PeakListExportDialog::accept);
+    connect(bb,&QDialogButtonBox::rejected,this,&PeakListExportDialog::reject);
+    mainLayout->addWidget(bb);
 }
 
 PeakListExportDialog::~PeakListExportDialog()
 {
-    delete ui;
 }
 
 void PeakListExportDialog::toggleButtons()
 {
-    QModelIndexList l = ui->shotsTableView->selectionModel()->selectedRows();
-    ui->removeShotButton->setEnabled(!l.isEmpty());
-    ui->insertShotButton->setEnabled(!l.isEmpty());
+    QModelIndexList l = p_shotsView->selectionModel()->selectedRows();
+    p_removeShotButton->setEnabled(!l.isEmpty());
+    p_insertShotButton->setEnabled(!l.isEmpty());
 
-    l = ui->peakListTableView->selectionModel()->selectedRows();
-    ui->removePeakButton->setEnabled(!l.isEmpty());
+    l = p_peakListView->selectionModel()->selectedRows();
+    p_removePeakButton->setEnabled(!l.isEmpty());
 }
 
 void PeakListExportDialog::insertShot()
 {
-    QModelIndexList l = ui->shotsTableView->selectionModel()->selectedRows();
+    QModelIndexList l = p_shotsView->selectionModel()->selectedRows();
     if(!l.isEmpty())
         p_sm->insertEntry(l.constFirst().row());
 }
 
 void PeakListExportDialog::removeShots()
 {
-    QModelIndexList l = ui->shotsTableView->selectionModel()->selectedRows();
+    QModelIndexList l = p_shotsView->selectionModel()->selectedRows();
     QVector<int> rows;
     for(int i=0; i<l.size(); i++)
         rows.append(l.at(i).row());
@@ -132,7 +261,7 @@ void PeakListExportDialog::removeShots()
 
 void PeakListExportDialog::removePeaks()
 {
-    QModelIndexList l = ui->peakListTableView->selectionModel()->selectedRows();
+    QModelIndexList l = p_peakListView->selectionModel()->selectedRows();
     QVector<int> rows;
     for(int i=0; i<l.size(); i++)
         rows.append(l.at(i).row());
@@ -158,7 +287,7 @@ void PeakListExportDialog::accept()
     QDir d = BlackchirpCSV::textExportDir();
 
     QString ext = QString(".txt");
-    if(ui->ftbRadioButton->isChecked())
+    if(p_ftbRadio->isChecked())
         ext = QString(".ftb");
 
     QString fn = QString("peaks")+ext;
@@ -183,7 +312,7 @@ void PeakListExportDialog::accept()
     QString nl("\n");
 
 
-    if(ui->asciiRadioButton->isChecked())
+    if(p_asciiRadio->isChecked())
     {
         BlackchirpCSV::writeLine(t,{"Frequency","Intensity"});
         for(int i=0; i<p_proxy->rowCount(); i++)
@@ -200,13 +329,13 @@ void PeakListExportDialog::accept()
 
         QString dipoleText("");
         QString shotsText("shots:");
-        QString drText = QString("drpower:%1").arg(ui->drPowerDoubleSpinBox->value(),0,'f',2);
+        QString drText = QString("drpower:%1").arg(p_drPowerBox->value(),0,'f',2);
         QString space(" ");
         t.setRealNumberNotation(QTextStream::FixedNotation);
         t.setRealNumberPrecision(3);
 
-        if(ui->dipoleCheckBox->isChecked())
-            dipoleText = QString("dipole:%1").arg(ui->dipoleDoubleSpinBox->value(),0,'f',2);
+        if(p_dipoleCheck->isChecked())
+            dipoleText = QString("dipole:%1").arg(p_dipoleBox->value(),0,'f',2);
 
         t << QString("#File generated by Blackchirp") << nl;
 
@@ -217,7 +346,7 @@ void PeakListExportDialog::accept()
             double freq = p_pm->data(p_pm->index(ind.row(),0),Qt::EditRole).toDouble();
             double intensity = p_pm->data(p_pm->index(ind.row(),1),Qt::EditRole).toDouble();
 
-            int shots = ui->defaultShotsSpinBox->value();
+            int shots = p_defaultShotsBox->value();
             for(int j=0; j<shotsList.size(); j++)
             {
                 if(intensity < shotsList.at(j).second)
@@ -225,11 +354,11 @@ void PeakListExportDialog::accept()
             }
 
 
-            if(ui->drOnlyCheckBox->isChecked() && intensity<ui->drOnlyThreshSpinBox->value())
+            if(p_drOnlyCheck->isChecked() && intensity<p_drOnlyThreshBox->value())
             {
                 t << QString("amdor drfreq:") << freq << space;
 
-                if(ui->drPowerCheckBox->isChecked())
+                if(p_drPowerCheck->isChecked())
                     t << drText << space;
 
                 t << QString("#intensity %1").arg(intensity,0,'e',3);
@@ -237,9 +366,9 @@ void PeakListExportDialog::accept()
             else
             {
                 t << QString("ftmfreq:") << freq << space << shotsText << shots << space;
-                if(ui->dipoleCheckBox->isChecked())
+                if(p_dipoleCheck->isChecked())
                     t << dipoleText << space;
-                if(ui->drPowerCheckBox->isChecked())
+                if(p_drPowerCheck->isChecked())
                     t << drText << space;
 
                 t  << QString("#intensity %1").arg(intensity,0,'e',3);

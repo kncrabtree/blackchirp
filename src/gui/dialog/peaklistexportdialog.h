@@ -11,9 +11,13 @@
 #include <data/model/peaklistmodel.h>
 #include <data/storage/settingsstorage.h>
 
-namespace Ui {
-class PeakListExportDialog;
-}
+class QRadioButton;
+class QGroupBox;
+class QSpinBox;
+class QDoubleSpinBox;
+class QCheckBox;
+class QTableView;
+class QToolButton;
 
 namespace BC::Key {
 inline constexpr QLatin1StringView plExport{"peakListExport"};
@@ -47,13 +51,30 @@ public slots:
     void removePeaks();
 
 private:
-    Ui::PeakListExportDialog *ui;
-
     int d_number;
     QVector<QPointF> d_peakList;
     ShotsModel *p_sm;
     PeakListModel *p_pm;
     QSortFilterProxyModel *p_proxy;
+
+    QRadioButton *p_asciiRadio;
+    QRadioButton *p_ftbRadio;
+    QGroupBox *p_ftbOptionsBox;
+    QSpinBox *p_defaultShotsBox;
+    QCheckBox *p_dipoleCheck;
+    QDoubleSpinBox *p_dipoleBox;
+    QCheckBox *p_drPowerCheck;
+    QDoubleSpinBox *p_drPowerBox;
+    QCheckBox *p_drOnlyCheck;
+    QDoubleSpinBox *p_drOnlyThreshBox;
+    QTableView *p_shotsView;
+    QToolButton *p_addShotButton;
+    QToolButton *p_insertShotButton;
+    QToolButton *p_removeShotButton;
+    QTableView *p_peakListView;
+    QToolButton *p_removePeakButton;
+
+    void setupUI();
 
     // QDialog interface
 public slots:

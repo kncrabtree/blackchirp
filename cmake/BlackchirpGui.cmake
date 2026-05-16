@@ -263,7 +263,6 @@ set(BLACKCHIRP_GUI_HEADERS
 # UI Forms
 set(BLACKCHIRP_GUI_FORMS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/communicationdialog.ui
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/peaklistexportdialog.ui
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/chirpconfigwidget.ui
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/digitizerconfigwidget.ui
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/rfconfigwidget.ui

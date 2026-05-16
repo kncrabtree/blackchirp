@@ -158,7 +158,6 @@ set(BLACKCHIRP_VIEWER_GUI_HEADERS
 
 # UI Forms (only the ones safe for viewer)
 set(BLACKCHIRP_VIEWER_GUI_FORMS
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/peaklistexportdialog.ui
 )
 
 # ============================================================================
