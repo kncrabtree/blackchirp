@@ -101,7 +101,7 @@ void CurveAppearanceWidget::setupUI()
     p_thicknessBox->setRange(0.0, 10.0);
     p_thicknessBox->setDecimals(1);
     p_thicknessBox->setSingleStep(0.5);
-    p_thicknessBox->setMaximumWidth(60);
+    p_thicknessBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     p_thicknessBox->setSuffix(" px");
     p_thicknessBox->setToolTip("Line width in pixels");
 
@@ -133,7 +133,7 @@ void CurveAppearanceWidget::setupUI()
 
     p_markerSizeBox = new QSpinBox(this);
     p_markerSizeBox->setRange(1, 20);
-    p_markerSizeBox->setMaximumWidth(60);
+    p_markerSizeBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     p_markerSizeBox->setSuffix(" px");
     p_markerSizeBox->setToolTip("Marker size in pixels");
     table->addSettingRow("Marker", p_markerBox, p_markerSizeBox);

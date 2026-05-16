@@ -61,7 +61,6 @@ void UnifiedOverlayDialog::initializeCommon(OverlayBase::OverlayType type,
     p_progressLabel = nullptr;
     p_cancelButton = nullptr;
     p_progressTimer = nullptr;
-    p_timeoutTimer = nullptr;
     
     // Initialize state variables
     d_overlayType = type;
@@ -324,10 +323,6 @@ void UnifiedOverlayDialog::setupUI()
     p_progressTimer->setSingleShot(false);
     connect(p_progressTimer, &QTimer::timeout, this, &UnifiedOverlayDialog::updateProgressDisplay);
     
-    p_timeoutTimer = new QTimer(this);
-    p_timeoutTimer->setSingleShot(true);
-    connect(p_timeoutTimer, &QTimer::timeout, this, &UnifiedOverlayDialog::onOperationTimeout);
-    
     // Create button box
     p_buttonBox = new QDialogButtonBox(this);
     if (isCreationMode()) {
@@ -511,9 +506,8 @@ void UnifiedOverlayDialog::setDialogState(DialogState state)
     case DialogState::Ready:
         if (p_cancelButton) p_cancelButton->setVisible(false);
         if (p_progressTimer) p_progressTimer->stop();
-        if (p_timeoutTimer) p_timeoutTimer->stop();
         break;
-        
+
     case DialogState::Processing:
         if (p_progressBar) {
             p_progressBar->setValue(0);
@@ -523,7 +517,6 @@ void UnifiedOverlayDialog::setDialogState(DialogState state)
         }
         if (p_cancelButton) p_cancelButton->setVisible(true);
         if (p_progressTimer) p_progressTimer->start(PROGRESS_UPDATE_INTERVAL_MS);
-        if (p_timeoutTimer) p_timeoutTimer->start(OPERATION_TIMEOUT_MS);
         break;
         
     case DialogState::Cancelling:
@@ -538,7 +531,6 @@ void UnifiedOverlayDialog::setDialogState(DialogState state)
         }
         if (p_cancelButton) p_cancelButton->setVisible(false);
         if (p_progressTimer) p_progressTimer->stop();
-        if (p_timeoutTimer) p_timeoutTimer->stop();
         break;
     }
 }
@@ -665,19 +657,5 @@ void UnifiedOverlayDialog::updateProgressDisplay()
     
     if (p_progressLabel && !d_operationMessage.isEmpty()) {
         p_progressLabel->setText(d_operationMessage);
-    }
-}
-
-void UnifiedOverlayDialog::onOperationTimeout()
-{
-    if (d_dialogState == DialogState::Processing) {
-        d_operationError = "Operation timed out after 30 seconds";
-        setDialogState(DialogState::Error);
-        
-        // Attempt to cancel the operation
-        if (!d_currentOperationId.isEmpty()) {
-            auto& manager = OverlayProcessManager::instance();
-            manager.cancelOperation(d_currentOperationId);
-        }
     }
 }

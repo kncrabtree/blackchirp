@@ -668,10 +668,17 @@ void CatalogOverlayWidget::updateFileInfo()
 void CatalogOverlayWidget::updateConvolutionControls()
 {
     bool convolutionEnabled = isConvolutionEnabled();
-    bool hasOverlay = (d_overlay != nullptr);
-    
-    // Enable/disable the entire group box based on whether we have an overlay
-    setConvolutionRegionEnabled(hasOverlay);
+
+    // The convolution tier is usable once there is something to
+    // convolve. In Settings/Edit that is an existing overlay; in
+    // Creation no overlay exists until the dialog is accepted, so the
+    // gate is a parsed catalog instead. Gating Creation on d_overlay
+    // would disable the section checkbox the moment it is checked,
+    // wedging it in the checked state.
+    bool hasConvolvableData = isCreationContext() ? isDataValid()
+                                                  : (d_overlay != nullptr);
+
+    setConvolutionRegionEnabled(hasConvolvableData);
     
     // Individual control states based on checkbox (preserved when group is re-enabled)
     p_lineshapeComboBox->setEnabled(convolutionEnabled);
@@ -1011,7 +1018,7 @@ void CatalogOverlayWidget::populateSourceFileSettingsRows(SettingsTable *table)
     table->addSectionRow("Filtering");
 
     // Save range only option (source-dependent)
-    p_saveRangeOnlyCheckBox = new QCheckBox("Save only transitions within frequency range (recommended)", table);
+    p_saveRangeOnlyCheckBox = new QCheckBox("(recommended)", table);
     p_saveRangeOnlyCheckBox->setChecked(get(BC::Key::CatalogWidget::saveRangeOnly, DEFAULT_SAVE_RANGE_ONLY));
     p_saveRangeOnlyCheckBox->setToolTip("When enabled, only saves catalog transitions within the frequency range, reducing file size and improving performance.");
     table->addSettingRow("Limit to Range", p_saveRangeOnlyCheckBox);

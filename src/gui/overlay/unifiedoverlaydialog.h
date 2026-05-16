@@ -92,11 +92,9 @@ private slots:
     
     // Timer handlers
     void updateProgressDisplay();
-    void onOperationTimeout();
 
 private:
     // Constants
-    static const int OPERATION_TIMEOUT_MS = 30000; // 30 seconds
     static const int PROGRESS_UPDATE_INTERVAL_MS = 100;
     
     // Context mode enum
@@ -143,7 +141,6 @@ private:
     
     // Timers
     QTimer *p_progressTimer;
-    QTimer *p_timeoutTimer;
     
     // Context and configuration
     Mode d_mode;
