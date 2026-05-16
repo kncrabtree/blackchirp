@@ -297,31 +297,28 @@ void UnifiedOverlayDialog::onOverlayDataChanged(std::shared_ptr<OverlayBase> ove
 void UnifiedOverlayDialog::setupUI()
 {
     setModal(true);
-    resize(800, 400);
-    
+
     // Create main layout
     p_mainLayout = new QVBoxLayout(this);
     p_mainLayout->setContentsMargins(12, 12, 12, 12);
     p_mainLayout->setSpacing(12);
-    
+
     // Widget is already created in constructor with all necessary data
     p_mainLayout->addWidget(p_widget, 1); // Give it all available space
-    
+
     // Create status label
     p_statusLabel = new QLabel(this);
     p_statusLabel->setStyleSheet(QString("QLabel { color: %1; font-style: italic; }").arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, this)));
     p_statusLabel->setText("Validating settings...");
-    p_mainLayout->addWidget(p_statusLabel);
-    
-    // Create progress components (initially hidden)
+
+    // Create progress components
     p_progressBar = new QProgressBar(this);
     p_progressBar->setRange(0, 100);
     p_progressBar->setValue(100);
-    p_mainLayout->addWidget(p_progressBar);
-    
+    p_progressBar->setMaximumWidth(200);
+
     p_progressLabel = new QLabel(this);
-    p_mainLayout->addWidget(p_progressLabel);
-    
+
     // Create timers
     p_progressTimer = new QTimer(this);
     p_progressTimer->setSingleShot(false);
@@ -341,11 +338,22 @@ void UnifiedOverlayDialog::setupUI()
         p_buttonBox->button(QDialogButtonBox::Ok)->setText("Apply Changes");
     }
     
-    p_mainLayout->addWidget(p_buttonBox);
-    
+    // Bottom strip: validity message + progress indicators adjacent to the
+    // button box, instead of an orphaned band floating mid-dialog.
+    auto bottomBar = new QHBoxLayout();
+    bottomBar->setSpacing(8);
+    bottomBar->addWidget(p_statusLabel, 1);
+    bottomBar->addWidget(p_progressLabel);
+    bottomBar->addWidget(p_progressBar);
+    bottomBar->addWidget(p_buttonBox);
+    p_mainLayout->addLayout(bottomBar);
+
     // Connect button box
     connect(p_buttonBox, &QDialogButtonBox::accepted, this, &UnifiedOverlayDialog::accept);
     connect(p_buttonBox, &QDialogButtonBox::rejected, this, &UnifiedOverlayDialog::reject);
+
+    // Size the dialog to its content; it remains user-resizable.
+    adjustSize();
 }
 
 void UnifiedOverlayDialog::setupConnections()

@@ -245,29 +245,19 @@ void UnifiedOverlayWidget::setupUI()
     
     // Add overlay widgets to left layout
     leftVLayout->addWidget(p_typeSpecificWidget);
-    
-    // Add bottom spacer
-    leftVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
 
     auto centerVLayout = new QVBoxLayout;
-    // centerVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
     centerVLayout->addWidget(p_overlayBaseOptionsBox);
-    centerVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
-    
+
     // Create right side vertical layout for curve appearance
     auto rightVLayout = new QVBoxLayout();
     rightVLayout->setSpacing(6);
-    
-    // Add top spacer
-    // rightVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
-    
+
     // Create curve appearance widget
     createCurveAppearanceBox();
     rightVLayout->addWidget(p_curveAppearanceBox);
-    
-    // Add bottom spacer
-    rightVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
-    
+
+    // Columns size to their content; no Expanding spacers padding the dialog.
     // Add all layouts to main horizontal layout with equal stretch
     p_mainLayout->addLayout(leftVLayout, 1);
     p_mainLayout->addLayout(centerVLayout, 1);

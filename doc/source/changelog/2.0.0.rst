@@ -238,6 +238,10 @@ User interface
   :doc:`/user_guide/cp-ftmw`.
 - Relaxed the experiment-setup dialog minimum size. See
   :doc:`/user_guide/experiment_setup`.
+- Streamlined the overlay creation and configuration dialog:
+  flattened the nested group boxes into aligned settings tables and
+  moved the validity and progress indicators into the dialog button
+  bar. See :doc:`/user_guide/overlays`.
 
 Logging and diagnostics
 -----------------------
