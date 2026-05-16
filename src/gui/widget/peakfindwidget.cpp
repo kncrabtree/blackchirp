@@ -14,14 +14,12 @@
 #include <QAction>
 #include <QMenu>
 #include <QTableView>
+#include <QTableWidget>
 #include <QHeaderView>
 #include <QDockWidget>
 #include <QResizeEvent>
 #include <QShowEvent>
 #include <QCursor>
-#include <QCheckBox>
-#include <QLabel>
-#include <QHBoxLayout>
 #include <QSignalBlocker>
 #include <QtConcurrent/QtConcurrent>
 
@@ -72,18 +70,21 @@ PeakFindWidget::PeakFindWidget(Ft ft, int number, QWidget *parent):
     const double fmax = ft.maxFreqMHz();
     {
         QSignalBlocker bMin(p_minFreqBox), bMax(p_maxFreqBox),
-                       bInt(p_minIntBox), bView(p_inViewBox), bAct(p_filterAction);
+                       bIMin(p_minIntBox), bIMax(p_maxIntBox),
+                       bView(p_inViewAction), bAct(p_filterAction);
         p_minFreqBox->setRange(fmin,fmax);
         p_minFreqBox->setValue(get<double>(BC::Key::pfFilterMinFreq,fmin));
         p_maxFreqBox->setRange(fmin,fmax);
         p_maxFreqBox->setValue(get<double>(BC::Key::pfFilterMaxFreq,fmin));
         p_minIntBox->setRange(0.0,1.0e15);
         p_minIntBox->setValue(qMax(0.0,get<double>(BC::Key::pfFilterMinInt,0.0)));
+        p_maxIntBox->setRange(0.0,1.0e15);
+        p_maxIntBox->setValue(qMax(0.0,get<double>(BC::Key::pfFilterMaxInt,0.0)));
 
         const bool fen = get<bool>(BC::Key::pfFilterEnabled,false);
         p_filterAction->setChecked(fen);
-        p_inViewBox->setChecked(get<bool>(BC::Key::pfViewSync,false));
-        p_filterStrip->setVisible(fen);
+        p_inViewAction->setChecked(get<bool>(BC::Key::pfViewSync,false));
+        p_filterGrid->setVisible(fen);
     }
     applyFilters();
 }
@@ -131,14 +132,19 @@ void PeakFindWidget::setupUI()
     });
 
     p_filterAction = p_toolBar->addAction(ThemeColors::createThemedIcon(":/icons/funnel.svg", ThemeColors::IconSecondary, this), "Filter");
-    p_filterAction->setToolTip("Show the display-filter controls (frequency range, minimum intensity, in-view)");
+    p_filterAction->setToolTip("Show the frequency/intensity display-filter grid");
     p_filterAction->setCheckable(true);
     connect(p_filterAction,&QAction::toggled,this,[this](bool b){
-        p_filterStrip->setVisible(b);
+        p_filterGrid->setVisible(b);
         applyFilters();
         persistFilterState();
         adjustToolbarStyle();
     });
+
+    p_inViewAction = p_toolBar->addAction(ThemeColors::createThemedIcon(":/icons/viewfinder-circle.svg", ThemeColors::IconSecondary, this), "In view");
+    p_inViewAction->setToolTip("Show only peaks within the main FT plot's currently visible frequency range");
+    p_inViewAction->setCheckable(true);
+    connect(p_inViewAction,&QAction::toggled,this,[this](){ applyFilters(); persistFilterState(); });
 
     auto *spacer1 = new QWidget(this);
     spacer1->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
@@ -168,51 +174,68 @@ void PeakFindWidget::setupUI()
     spacer2->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
     p_toolBar2->addWidget(spacer2);
 
-    // Slim display-filter strip, hidden until the Filter action is on.
-    p_filterStrip = new QWidget(this);
-    auto *fl = new QHBoxLayout(p_filterStrip);
-    fl->setContentsMargins(4,2,4,2);
-    fl->setSpacing(4);
-
-    p_minFreqBox = new QDoubleSpinBox(p_filterStrip);
+    // 2x2 display-filter grid (rows: Freq / Intensity, cols: Min / Max),
+    // hidden until the Filter action is on. Spans the panel width below
+    // the top toolbar so toggling it grows height, never width.
+    p_minFreqBox = new QDoubleSpinBox;
     p_minFreqBox->setDecimals(3);
     p_minFreqBox->setSuffix(" MHz");
     p_minFreqBox->setKeyboardTracking(false);
     p_minFreqBox->setSpecialValueText("Min");
     p_minFreqBox->setToolTip("Hide peaks below this frequency. Display only — does not change the search range. At minimum: no lower bound.");
 
-    p_maxFreqBox = new QDoubleSpinBox(p_filterStrip);
+    p_maxFreqBox = new QDoubleSpinBox;
     p_maxFreqBox->setDecimals(3);
     p_maxFreqBox->setSuffix(" MHz");
     p_maxFreqBox->setKeyboardTracking(false);
     p_maxFreqBox->setSpecialValueText("Max");
     p_maxFreqBox->setToolTip("Hide peaks above this frequency. Display only — does not change the search range. At minimum: no upper bound.");
 
-    p_minIntBox = new ScientificSpinBox(p_filterStrip);
-    p_minIntBox->setToolTip("Hide peaks below this intensity. Display only. Zero: no intensity bound.");
+    p_minIntBox = new ScientificSpinBox;
+    p_minIntBox->setToolTip("Hide peaks below this intensity. Display only. Zero: no lower bound.");
 
-    p_inViewBox = new QCheckBox("In view",p_filterStrip);
-    p_inViewBox->setToolTip("Show only peaks within the main FT plot's currently visible frequency range.");
+    p_maxIntBox = new ScientificSpinBox;
+    p_maxIntBox->setToolTip("Hide peaks above this intensity. Display only. Zero: no upper bound.");
 
-    fl->addWidget(new QLabel("Freq",p_filterStrip));
-    fl->addWidget(p_minFreqBox);
-    fl->addWidget(new QLabel(QString::fromUtf8("–"),p_filterStrip));
-    fl->addWidget(p_maxFreqBox);
-    fl->addSpacing(8);
-    fl->addWidget(new QLabel("Min Int",p_filterStrip));
-    fl->addWidget(p_minIntBox);
-    fl->addStretch(1);
-    fl->addWidget(p_inViewBox);
-    p_filterStrip->setVisible(false);
+    for(auto *sb : {p_minFreqBox,p_maxFreqBox})
+        sb->setMinimumWidth(40);
+    p_minIntBox->setMinimumWidth(40);
+    p_maxIntBox->setMinimumWidth(40);
+
+    p_filterGrid = new QTableWidget(2,2,this);
+    p_filterGrid->setHorizontalHeaderLabels({"Min","Max"});
+    p_filterGrid->setVerticalHeaderLabels({"Freq","Intensity"});
+    p_filterGrid->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    p_filterGrid->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+    p_filterGrid->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    p_filterGrid->setSelectionMode(QAbstractItemView::NoSelection);
+    p_filterGrid->setFocusPolicy(Qt::NoFocus);
+    p_filterGrid->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    p_filterGrid->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    p_filterGrid->setCellWidget(0,0,p_minFreqBox);
+    p_filterGrid->setCellWidget(0,1,p_maxFreqBox);
+    p_filterGrid->setCellWidget(1,0,p_minIntBox);
+    p_filterGrid->setCellWidget(1,1,p_maxIntBox);
+
+    // Pin the grid height to header + the two cell-widget rows so it
+    // never claims more vertical space than it needs.
+    const int rh = p_minFreqBox->sizeHint().height() + 6;
+    p_filterGrid->verticalHeader()->setDefaultSectionSize(rh);
+    p_filterGrid->setFixedHeight(p_filterGrid->horizontalHeader()->height()
+                                 + 2*rh + 2*p_filterGrid->frameWidth());
+    p_filterGrid->setVisible(false);
 
     auto onFilterChanged = [this](){ applyFilters(); persistFilterState(); };
     connect(p_minFreqBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,onFilterChanged);
     connect(p_maxFreqBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,onFilterChanged);
     connect(p_minIntBox,&ScientificSpinBox::valueChanged,this,onFilterChanged);
-    connect(p_inViewBox,&QCheckBox::toggled,this,onFilterChanged);
+    connect(p_maxIntBox,&ScientificSpinBox::valueChanged,this,onFilterChanged);
 
     p_peakListView = new QTableView(this);
-    p_peakListView->setSelectionMode(QAbstractItemView::MultiSelection);
+    // Extended (not Multi) selection: a plain click selects a single
+    // row — pairs cleanly with click/double-click navigation — while
+    // Ctrl/Shift still extend the selection for multi-row removal.
+    p_peakListView->setSelectionMode(QAbstractItemView::ExtendedSelection);
     p_peakListView->setSelectionBehavior(QAbstractItemView::SelectRows);
     p_peakListView->setEditTriggers(QAbstractItemView::NoEditTriggers);
     p_peakListView->setAlternatingRowColors(true);
@@ -237,9 +260,11 @@ void PeakFindWidget::setupUI()
     connect(p_peakListView,&QAbstractItemView::doubleClicked,
             this,[this](const QModelIndex &idx){ centerPlot(idx,QString()); });
 
+    // Top toolbar, then the filter grid, then the list-management
+    // toolbar, then the peak table.
     mainLayout->addWidget(p_toolBar);
+    mainLayout->addWidget(p_filterGrid);
     mainLayout->addWidget(p_toolBar2);
-    mainLayout->addWidget(p_filterStrip);
     mainLayout->addWidget(p_peakListView,1);
 }
 
@@ -253,14 +278,19 @@ void PeakFindWidget::applyFilters()
                           ? -inf : p_minFreqBox->value();
     const double hi = (p_maxFreqBox->value() <= p_maxFreqBox->minimum())
                           ? inf : p_maxFreqBox->value();
-    const double mi = (p_minIntBox->value() <= 0.0) ? -inf : p_minIntBox->value();
+    // Intensities are non-negative, so zero is the "no bound" sentinel
+    // on both the min and max intensity boxes.
+    const double imin = (p_minIntBox->value() <= 0.0) ? -inf : p_minIntBox->value();
+    const double imax = (p_maxIntBox->value() <= 0.0) ? inf : p_maxIntBox->value();
     const bool fen = p_filterAction->isChecked();
 
     p_proxy->setMinFreq(lo);
     p_proxy->setMaxFreq(hi);
-    p_proxy->setMinIntensity(mi);
+    p_proxy->setMinIntensity(imin);
+    p_proxy->setMaxIntensity(imax);
     p_proxy->setStaticFilterEnabled(fen);
-    p_proxy->setViewSyncEnabled(fen && p_inViewBox->isChecked());
+    // "In view" is independent of the static filter grid.
+    p_proxy->setViewSyncEnabled(p_inViewAction->isChecked());
 }
 
 void PeakFindWidget::persistFilterState()
@@ -268,8 +298,9 @@ void PeakFindWidget::persistFilterState()
     set(BC::Key::pfFilterMinFreq,p_minFreqBox->value(),false);
     set(BC::Key::pfFilterMaxFreq,p_maxFreqBox->value(),false);
     set(BC::Key::pfFilterMinInt,p_minIntBox->value(),false);
+    set(BC::Key::pfFilterMaxInt,p_maxIntBox->value(),false);
     set(BC::Key::pfFilterEnabled,p_filterAction->isChecked(),false);
-    set(BC::Key::pfViewSync,p_inViewBox->isChecked(),false);
+    set(BC::Key::pfViewSync,p_inViewAction->isChecked(),false);
     save();
 }
 
@@ -543,6 +574,17 @@ void PeakFindWidget::adjustToolbarStyle()
                             : Qt::ToolButtonIconOnly;
     p_toolBar->setToolButtonStyle(style);
     p_toolBar2->setToolButtonStyle(style);
+}
+
+QSize PeakFindWidget::sizeHint() const
+{
+    // Keep a compact preferred width so the dock matches the sibling
+    // tool panels instead of stretching to the toolbar label width
+    // (adjustToolbarStyle() collapses the toolbars to icon-only at this
+    // width). Height still comes from the layout.
+    QSize s = QWidget::sizeHint();
+    s.setWidth(240);
+    return s;
 }
 
 void PeakFindWidget::resizeEvent(QResizeEvent *event)

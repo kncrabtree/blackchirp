@@ -41,6 +41,9 @@ public slots:
     ///        below zero, since intensities are non-negative) for no bound.
     void setMinIntensity(double v);
 
+    /// \brief Maximum intensity. Pass \c +infinity for no upper bound.
+    void setMaxIntensity(double v);
+
     /// \brief Enables or disables the "only peaks in the main-plot view" filter.
     void setViewSyncEnabled(bool en);
 
@@ -61,6 +64,7 @@ private:
     double d_minFreq{-s_inf};
     double d_maxFreq{s_inf};
     double d_minInt{-s_inf};
+    double d_maxInt{s_inf};
 
     bool d_viewSyncEnabled{false};
     double d_viewMin{-s_inf};

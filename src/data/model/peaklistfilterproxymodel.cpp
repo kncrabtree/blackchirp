@@ -9,50 +9,72 @@ void PeakListFilterProxyModel::setStaticFilterEnabled(bool en)
 {
     if(d_staticEnabled == en)
         return;
+    beginFilterChange();
     d_staticEnabled = en;
-    invalidateRowsFilter();
+    endFilterChange(QSortFilterProxyModel::Direction::Rows);
 }
 
 void PeakListFilterProxyModel::setMinFreq(double mhz)
 {
     if(qFuzzyCompare(d_minFreq,mhz))
         return;
+    beginFilterChange();
     d_minFreq = mhz;
-    invalidateRowsFilter();
+    endFilterChange(QSortFilterProxyModel::Direction::Rows);
 }
 
 void PeakListFilterProxyModel::setMaxFreq(double mhz)
 {
     if(qFuzzyCompare(d_maxFreq,mhz))
         return;
+    beginFilterChange();
     d_maxFreq = mhz;
-    invalidateRowsFilter();
+    endFilterChange(QSortFilterProxyModel::Direction::Rows);
 }
 
 void PeakListFilterProxyModel::setMinIntensity(double v)
 {
     if(qFuzzyCompare(d_minInt,v))
         return;
+    beginFilterChange();
     d_minInt = v;
-    invalidateRowsFilter();
+    endFilterChange(QSortFilterProxyModel::Direction::Rows);
+}
+
+void PeakListFilterProxyModel::setMaxIntensity(double v)
+{
+    if(qFuzzyCompare(d_maxInt,v))
+        return;
+    beginFilterChange();
+    d_maxInt = v;
+    endFilterChange(QSortFilterProxyModel::Direction::Rows);
 }
 
 void PeakListFilterProxyModel::setViewSyncEnabled(bool en)
 {
     if(d_viewSyncEnabled == en)
         return;
+    beginFilterChange();
     d_viewSyncEnabled = en;
-    invalidateRowsFilter();
+    endFilterChange(QSortFilterProxyModel::Direction::Rows);
 }
 
 void PeakListFilterProxyModel::setViewRange(double min, double max)
 {
     if(qFuzzyCompare(d_viewMin,min) && qFuzzyCompare(d_viewMax,max))
         return;
-    d_viewMin = min;
-    d_viewMax = max;
     if(d_viewSyncEnabled)
-        invalidateRowsFilter();
+    {
+        beginFilterChange();
+        d_viewMin = min;
+        d_viewMax = max;
+        endFilterChange(QSortFilterProxyModel::Direction::Rows);
+    }
+    else
+    {
+        d_viewMin = min;
+        d_viewMax = max;
+    }
 }
 
 bool PeakListFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
@@ -68,7 +90,7 @@ bool PeakListFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex
     {
         if(freq < d_minFreq || freq > d_maxFreq)
             return false;
-        if(inten < d_minInt)
+        if(inten < d_minInt || inten > d_maxInt)
             return false;
     }
 

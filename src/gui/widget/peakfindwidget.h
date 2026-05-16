@@ -17,8 +17,8 @@
 class QToolBar;
 class QAction;
 class QTableView;
+class QTableWidget;
 class QDoubleSpinBox;
-class QCheckBox;
 class ScientificSpinBox;
 class FtmwViewWidget;
 
@@ -35,6 +35,7 @@ inline constexpr QLatin1StringView pfOrder{"polyOrder"};
 inline constexpr QLatin1StringView pfFilterMinFreq{"filterMinFreq"};
 inline constexpr QLatin1StringView pfFilterMaxFreq{"filterMaxFreq"};
 inline constexpr QLatin1StringView pfFilterMinInt{"filterMinInt"};
+inline constexpr QLatin1StringView pfFilterMaxInt{"filterMaxInt"};
 inline constexpr QLatin1StringView pfFilterEnabled{"filterEnabled"};
 inline constexpr QLatin1StringView pfViewSync{"filterViewSync"};
 inline constexpr QLatin1StringView pfNavHalfWidth{"navHalfWidth"};
@@ -94,16 +95,17 @@ private:
     QAction *p_liveAction;
     QAction *p_appearanceAction;
     QAction *p_filterAction;
+    QAction *p_inViewAction;
     QAction *p_optionsAction;
     QAction *p_exportAction;
     QAction *p_removeAction;
     QAction *p_raiseParentAction;
 
-    QWidget *p_filterStrip;
+    QTableWidget *p_filterGrid;
     QDoubleSpinBox *p_minFreqBox;
     QDoubleSpinBox *p_maxFreqBox;
     ScientificSpinBox *p_minIntBox;
-    QCheckBox *p_inViewBox;
+    ScientificSpinBox *p_maxIntBox;
 
     double d_minFreq;
     double d_maxFreq;
@@ -135,6 +137,9 @@ private:
     FtmwViewWidget *findFtmwView() const;
 
 protected:
+    // Compact preferred width so the dock matches the other tool
+    // panels instead of stretching to fit the toolbar labels.
+    QSize sizeHint() const override;
     void resizeEvent(QResizeEvent *event) override;
     void showEvent(QShowEvent *event) override;
 };
