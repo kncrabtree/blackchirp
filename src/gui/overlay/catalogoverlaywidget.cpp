@@ -952,7 +952,7 @@ void CatalogOverlayWidget::createSourceFileConfigUI(QGroupBox *parent)
     p_transitionCountLabel = new QLabel("-", detailsFrame);
     p_frequencyRangeLabel = new QLabel("-", detailsFrame);
 
-    auto configureDetailLabel = [this](QLabel* label) {
+    auto configureDetailLabel = [](QLabel* label) {
         label->setWordWrap(false);
         label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
         styleSubtleLabel(label, ThemeColors::SubtleText);
