@@ -3,12 +3,15 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QHeaderView>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QSplitter>
 #include <QApplication>
 #include <QStandardPaths>
+#include <QRegularExpression>
 
 #include <data/experiment/overlaytypes.h>
 #include <data/storage/settingsstorage.h>
@@ -18,15 +21,16 @@
 #include <gui/widget/settingstable.h>
 
 namespace {
-// Apply a themed foreground color to a label without a raw stylesheet
-// color string.
+// Apply a themed foreground color to a label. A widget-scoped
+// stylesheet (themed via ThemeColors::getCSSColor) is used rather than
+// a palette: a QLabel hosted in a QTableWidget cell does not reliably
+// pick up a palette WindowText override, but a stylesheet color always
+// wins. The color is still theme-derived, not a hard-coded string.
 void styleStatusLabel(QLabel *label, ThemeColors::ColorRole role,
                       bool italic = false)
 {
-    QPalette pal = label->palette();
-    pal.setColor(QPalette::WindowText,
-                 ThemeColors::getThemeAwareColor(role, label));
-    label->setPalette(pal);
+    label->setStyleSheet(QString("color:%1;")
+        .arg(ThemeColors::getCSSColor(role, label)));
     QFont f = label->font();
     f.setItalic(italic);
     label->setFont(f);
@@ -313,6 +317,12 @@ void GenericXYOverlayWidget::setSourceFilePath(const QString &path)
         d_parsedData.clear(); // Clears data, making isValid() return false
         d_fileAnalyzed = false;
     }
+
+    // Refresh the base source-file validity so the Source File Settings
+    // tier (Format Detection / Column Mapping / Data Filtering) enables
+    // as soon as a file exists — the user may need those controls to
+    // coax a non-default file into parsing.
+    validateSourceFile();
 }
 
 bool GenericXYOverlayWidget::validateSourceFileImpl()
@@ -330,17 +340,13 @@ bool GenericXYOverlayWidget::validateSourceFileImpl()
     if (!d_fileAnalyzed) {
         analyzeAndParseFile(false); // Use current UI settings
     }
-    
-    if (!d_parsedData.isValid()) {
-        setSourceFileErrorMessage("File format could not be detected - check file format and parsing settings, or try Auto-Detect");
-        return false;
-    }
-    
-    if (d_parsedData.data().isEmpty()) {
-        setSourceFileErrorMessage("No valid data points found in file");
-        return false;
-    }
-    
+
+    // An existing, readable file is a valid *source*. Whether it parses
+    // correctly is a parsing-settings concern (reported by
+    // validateSettings / gated by isDataValid for acceptance), not a
+    // source-file concern — keeping it separate is what lets the
+    // parsing controls stay enabled so the user can adjust delimiter /
+    // columns / header lines to make a stubborn file parse.
     return true;
 }
 
@@ -393,60 +399,84 @@ std::shared_ptr<OverlayOperation> GenericXYOverlayWidget::createOperation(Operat
 
 void GenericXYOverlayWidget::updatePreview()
 {
-    if (!p_previewTable || !d_parsedData.isValid()) {
-        return;
+    // The row-by-row grid now lives in a modal dialog; "preview" here
+    // just refreshes the inline summary rows.
+    if (p_columnCountLabel) {
+        const int cols = d_parsedData.columnNames().size();
+        p_columnCountLabel->setText(cols > 0 ? QString::number(cols) : "-");
+        p_columnCountLabel->setToolTip(d_parsedData.columnNames().join(", "));
     }
-    
-    // Clear and setup table
-    p_previewTable->clear();
-    p_previewTable->setRowCount(0);
-    p_previewTable->setColumnCount(0);
-    
-    if (d_parsedData.data().isEmpty()) {
+    updateDataStatistics();
+}
+
+void GenericXYOverlayWidget::buildPreviewInto(QTableWidget *t) const
+{
+    t->clear();
+    t->setRowCount(0);
+    t->setColumnCount(0);
+
+    if (!d_parsedData.isValid() || d_parsedData.data().isEmpty())
         return;
-    }
-    
-    // Setup table with data preview (limit to first 100 rows)
+
+    // Limit to first 100 rows.
     const int maxPreviewRows = 100;
     const int numRows = qMin(d_parsedData.data().size(), maxPreviewRows);
-    
-    p_previewTable->setColumnCount(2);
-    p_previewTable->setRowCount(numRows);
-    
-    // Set column headers
+
+    t->setColumnCount(2);
+    t->setRowCount(numRows);
+
     QStringList headers;
     int xColumn = p_xColumnCombo->currentIndex();
     int yColumn = p_yColumnCombo->currentIndex();
-    
-    // Use column names from parsed data (with fallbacks if needed)
     QStringList columnNames = d_parsedData.columnNames();
-    if (xColumn < columnNames.size()) {
-        headers << columnNames[xColumn];
-    } else {
-        headers << QString("X (Col %1)").arg(xColumn + 1);
-    }
-    
-    if (yColumn < columnNames.size()) {
-        headers << columnNames[yColumn];
-    } else {
-        headers << QString("Y (Col %1)").arg(yColumn + 1);
-    }
-    
-    p_previewTable->setHorizontalHeaderLabels(headers);
-    
-    // Fill with data
+    headers << (xColumn < columnNames.size()
+                    ? columnNames[xColumn]
+                    : QString("X (Col %1)").arg(xColumn + 1));
+    headers << (yColumn < columnNames.size()
+                    ? columnNames[yColumn]
+                    : QString("Y (Col %1)").arg(yColumn + 1));
+    t->setHorizontalHeaderLabels(headers);
+
     auto d = d_parsedData.data();
     for (int i = 0; i < numRows; ++i) {
         const QPointF &point = d[i];
-        p_previewTable->setItem(i, 0, new QTableWidgetItem(QString::number(point.x(), 'g', 6)));
-        p_previewTable->setItem(i, 1, new QTableWidgetItem(QString::number(point.y(), 'g', 6)));
+        t->setItem(i, 0, new QTableWidgetItem(QString::number(point.x(), 'g', 6)));
+        t->setItem(i, 1, new QTableWidgetItem(QString::number(point.y(), 'g', 6)));
     }
-    
-    // Columns will automatically stretch to fill available space
-    // due to QHeaderView::Stretch resize mode set during initialization
-    
-    // Update statistics
-    updateDataStatistics();
+}
+
+void GenericXYOverlayWidget::openPreviewDialog()
+{
+    if (!d_parsedData.isValid() || d_parsedData.data().isEmpty()) {
+        QMessageBox::information(this, "Data Preview",
+            "No parsed data to preview. Select a file and parse it first.");
+        return;
+    }
+
+    QDialog dlg(this);
+    dlg.setWindowTitle("Data Preview");
+    dlg.setModal(true);
+    dlg.resize(420, 400);
+
+    auto *lay = new QVBoxLayout(&dlg);
+    auto *t = new QTableWidget(&dlg);
+    t->setAlternatingRowColors(true);
+    t->setSelectionBehavior(QAbstractItemView::SelectRows);
+    t->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    t->verticalHeader()->setVisible(false);
+    t->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    buildPreviewInto(t);
+
+    auto *bb = new QDialogButtonBox(QDialogButtonBox::Close, &dlg);
+    connect(bb, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    connect(bb, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+
+    lay->addWidget(new QLabel(QString("First %1 of %2 points")
+                                  .arg(t->rowCount())
+                                  .arg(d_parsedData.data().size()), &dlg));
+    lay->addWidget(t, 1);
+    lay->addWidget(bb);
+    dlg.exec();
 }
 
 void GenericXYOverlayWidget::onFileDialogRequested()
@@ -533,11 +563,6 @@ void GenericXYOverlayWidget::configureForCreationContext()
     if (p_filePathEdit) p_filePathEdit->setEnabled(true);
     if (p_browseButton) p_browseButton->setEnabled(true);
     
-    // Make preview more prominent in creation context
-    if (p_previewTable) {
-        p_previewTable->setMinimumHeight(150);
-    }
-    
     // Show helpful status messages
     if (p_fileStatusLabel) {
         p_fileStatusLabel->setText("Select a file and configure parsing to create overlay");
@@ -561,14 +586,9 @@ void GenericXYOverlayWidget::configureForSettingsContext()
             styleStatusLabel(p_fileStatusLabel, ThemeColors::StatusInfo);
         }
     }
-    
-    // Compact preview in settings context
-    if (p_previewTable) {
-        p_previewTable->setMaximumHeight(100);
-    }
 }
 
-void GenericXYOverlayWidget::createSourceFileConfigUI(SettingsTable *table)
+void GenericXYOverlayWidget::populateSourceFileConfigRows(SettingsTable *table)
 {
     // Fixed source-file row: path + browse, plus a single status line.
     // The base has already added the checkable section row above.
@@ -576,9 +596,10 @@ void GenericXYOverlayWidget::createSourceFileConfigUI(SettingsTable *table)
     p_filePathEdit->setPlaceholderText("Select a data file...");
     p_filePathEdit->setMinimumWidth(250); // Ensure adequate width
 
-    p_browseButton = new QPushButton("📁", table);
+    p_browseButton = new QPushButton(table);
+    p_browseButton->setIcon(ThemeColors::createThemedIcon(
+        ":/icons/folder-open.svg", ThemeColors::IconSecondary, this));
     p_browseButton->setToolTip("Browse for data file");
-    p_browseButton->setMaximumSize(30, 30);
 
     table->addSettingRow("File", p_filePathEdit, p_browseButton);
 
@@ -591,25 +612,19 @@ void GenericXYOverlayWidget::createSourceFileConfigUI(SettingsTable *table)
     table->addSettingRow("Status", p_fileStatusLabel);
 }
 
-void GenericXYOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)
+void GenericXYOverlayWidget::populateSourceFileSettingsRows(SettingsTable *table)
 {
-    auto mainLayout = new QVBoxLayout(parent);
-    mainLayout->setSpacing(4);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
-
-    auto table = new SettingsTable(parent);
-
     // --- Format Detection ---
     table->addSectionRow("Format Detection");
 
-    p_delimiterCombo = new QComboBox(parent);
+    p_delimiterCombo = new QComboBox(table);
     populateDelimiterComboBox();
 
-    p_headerLinesSpinBox = new QSpinBox(parent);
+    p_headerLinesSpinBox = new QSpinBox(table);
     p_headerLinesSpinBox->setRange(0, 100);
     p_headerLinesSpinBox->setValue(0);
 
-    p_autoDetectButton = new QPushButton("Auto-Detect", parent);
+    p_autoDetectButton = new QPushButton("Auto-Detect", table);
     p_autoDetectButton->setIcon(ThemeColors::createThemedIcon(":/icons/cpu-chip.svg", ThemeColors::IconPrimary, this));
     p_autoDetectButton->setToolTip("Automatically detect delimiter, headers, and column structure");
 
@@ -620,10 +635,10 @@ void GenericXYOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)
     // --- Column Mapping ---
     table->addSectionRow("Column Mapping");
 
-    p_xColumnCombo = new QComboBox(parent);
-    p_yColumnCombo = new QComboBox(parent);
+    p_xColumnCombo = new QComboBox(table);
+    p_yColumnCombo = new QComboBox(table);
 
-    p_parseButton = new QPushButton("Parse File", parent);
+    p_parseButton = new QPushButton("Parse File", table);
     p_parseButton->setIcon(ThemeColors::createThemedIcon(":/icons/document-magnifying-glass.svg", ThemeColors::IconPrimary, this));
 
     table->addSettingRow("X Column", p_xColumnCombo);
@@ -635,16 +650,16 @@ void GenericXYOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)
     int filterSection = table->addCheckableSectionRow("Data Filtering", false,
                                                       &filterSectionBox);
 
-    p_enableFilteringCheckBox = new QCheckBox("Enable X-range filtering", parent);
+    p_enableFilteringCheckBox = new QCheckBox("Enable X-range filtering", table);
 
-    p_xMinEdit = new QLineEdit(parent);
+    p_xMinEdit = new QLineEdit(table);
     p_xMinEdit->setPlaceholderText("Min X");
-    p_xMaxEdit = new QLineEdit(parent);
+    p_xMaxEdit = new QLineEdit(table);
     p_xMaxEdit->setPlaceholderText("Max X");
 
     int enableRow = table->addSettingRow("Filtering", p_enableFilteringCheckBox);
 
-    auto rangeCell = new QWidget(parent);
+    auto rangeCell = new QWidget(table);
     auto rangeRow = new QHBoxLayout(rangeCell);
     rangeRow->setContentsMargins(0, 0, 0, 0);
     rangeRow->addWidget(p_xMinEdit);
@@ -656,15 +671,6 @@ void GenericXYOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)
     // Collapse the filtering rows when the section box is unchecked,
     // matching the old checkable-QGroupBox behavior.
     table->bindSectionRows(filterSection, {enableRow, rangeRowIdx});
-
-    // Data statistics (compact info display)
-    p_dataStatsLabel = new QLabel(parent);
-    p_dataStatsLabel->setWordWrap(true);
-    styleStatusLabel(p_dataStatsLabel, ThemeColors::SubtleText);
-
-    mainLayout->addWidget(table);
-    mainLayout->addWidget(p_dataStatsLabel);
-    mainLayout->addStretch();
 
     // Initially disable filtering controls
     p_xMinEdit->setEnabled(false);
@@ -684,24 +690,27 @@ void GenericXYOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)
     });
 }
 
-void GenericXYOverlayWidget::createTypeSpecificSettingsUI(QGroupBox *parent)
+void GenericXYOverlayWidget::populateTypeSpecificRows(SettingsTable *table)
 {
-    auto layout = new QVBoxLayout(parent);
-    layout->setContentsMargins(0, 0, 0, 0);
+    // The full row-by-row grid does not fit the single-table panel;
+    // surface a parsed-data summary plus a button that opens it modally.
+    p_columnCountLabel = new QLabel("-", table);
+    p_columnCountLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    styleStatusLabel(p_columnCountLabel, ThemeColors::SubtleText);
+    table->addSettingRow("Columns", p_columnCountLabel,
+                         "Number of parsed columns (hover for names)");
 
-    // Preview table — the one widget that keeps stretch 1 and grows.
-    p_previewTable = new QTableWidget(parent);
-    p_previewTable->setAlternatingRowColors(true);
-    p_previewTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    p_previewTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    p_previewTable->verticalHeader()->setVisible(false);
-    p_previewTable->setMaximumHeight(200);
+    p_dataStatsLabel = new QLabel("No valid data", table);
+    p_dataStatsLabel->setWordWrap(true);
+    styleStatusLabel(p_dataStatsLabel, ThemeColors::SubtleText);
+    table->addSettingRow("Statistics", p_dataStatsLabel);
 
-    // Configure columns to stretch and fill evenly
-    p_previewTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-
-    layout->addWidget(new QLabel("Data Preview:"));
-    layout->addWidget(p_previewTable, 1);
+    auto *previewButton = new QPushButton("Preview Data…", table);
+    previewButton->setIcon(ThemeColors::createThemedIcon(":/icons/document-magnifying-glass.svg", ThemeColors::IconPrimary, this));
+    previewButton->setToolTip("Show the first parsed rows in a separate window");
+    connect(previewButton, &QPushButton::clicked,
+            this, &GenericXYOverlayWidget::openPreviewDialog);
+    table->addSettingRow("Preview", previewButton);
 }
 
 void GenericXYOverlayWidget::analyzeAndParseFile(bool autodetect)
@@ -711,6 +720,7 @@ void GenericXYOverlayWidget::analyzeAndParseFile(bool autodetect)
         d_parsedData.clear(); // Clears data, making isValid() return false
         d_fileAnalyzed = false;
         p_fileStatusLabel->setText("No file selected or file not found");
+        styleStatusLabel(p_fileStatusLabel, ThemeColors::StatusError);
         emit dataValidityChanged(false);
         return;
     }
@@ -721,6 +731,7 @@ void GenericXYOverlayWidget::analyzeAndParseFile(bool autodetect)
         d_parsedData.clear(); // Clears data, making isValid() return false
         d_fileAnalyzed = true;
         p_fileStatusLabel->setText("No GenericXY parser available");
+        styleStatusLabel(p_fileStatusLabel, ThemeColors::StatusError);
         emit dataValidityChanged(false);
         return;
     }
@@ -780,7 +791,34 @@ void GenericXYOverlayWidget::analyzeAndParseFile(bool autodetect)
     } else {
         d_parsedData.clear(); // Clears data, making isValid() return false
         d_fileAnalyzed = true;
-        p_fileStatusLabel->setText("Failed to parse file");
+
+        // Distinguish the common cause — a single-column file (e.g. an
+        // FID, one value per line) — from a generic parse failure, so
+        // the message is actionable rather than just "Failed to parse".
+        const QStringList sample = parser->readSampleLinesPublic(filePath, 20);
+        const QString delim = parser->detectDelimiterPublic(sample);
+        int maxCols = 0;
+        for (const QString &l : sample) {
+            const QString t = l.trimmed();
+            if (t.isEmpty())
+                continue;
+            const int n = (delim == "\\s+")
+                ? t.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts).size()
+                : t.split(delim, Qt::KeepEmptyParts).size();
+            maxCols = qMax(maxCols, n);
+        }
+
+        QString msg;
+        if (maxCols < 2)
+            msg = "Cannot parse: file must contain at least 2 columns "
+                  "(X and Y); only 1 column was found.";
+        else if (!result.errorMessage().isEmpty())
+            msg = result.errorMessage();
+        else
+            msg = "Failed to parse file";
+
+        p_fileStatusLabel->setText(msg);
+        p_fileStatusLabel->setToolTip(msg);
         styleStatusLabel(p_fileStatusLabel, ThemeColors::StatusError);
     }
     
@@ -940,6 +978,16 @@ void GenericXYOverlayWidget::updateDataStatistics()
 
 GenericXYParser* GenericXYOverlayWidget::getParser() const
 {
+    // The user explicitly chose this file in the GenericXY widget, so
+    // the generic parser should always attempt it. Fetch it by type
+    // rather than via findParserOfType(), whose canParse() heuristic is
+    // for auto-discovery among parsers and over-eagerly rejects valid
+    // tabular files; parse()/parseWithSettings() still report a real
+    // error for genuinely non-tabular input.
     auto registry = FileParserRegistry::instance();
-    return registry->findParserOfType<GenericXYParser>(getStoredFullSourceFilePath());
+    for (auto *parser : registry->getAllParsers()) {
+        if (auto *gxy = dynamic_cast<GenericXYParser*>(parser))
+            return gxy;
+    }
+    return nullptr;
 }

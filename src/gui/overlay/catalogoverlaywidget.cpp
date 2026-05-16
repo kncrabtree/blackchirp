@@ -17,15 +17,16 @@
 #include <gui/style/themecolors.h>
 
 namespace {
-// Apply a themed foreground color to a label without a raw stylesheet
-// color string.
+// Apply a themed foreground color to a label. A widget-scoped
+// stylesheet (themed via ThemeColors::getCSSColor) is used rather than
+// a palette: a QLabel hosted in a QTableWidget cell does not reliably
+// pick up a palette WindowText override, but a stylesheet color always
+// wins. The color is still theme-derived, not a hard-coded string.
 void styleSubtleLabel(QLabel *label, ThemeColors::ColorRole role,
                       bool italic = false, bool bold = false)
 {
-    QPalette pal = label->palette();
-    pal.setColor(QPalette::WindowText,
-                 ThemeColors::getThemeAwareColor(role, label));
-    label->setPalette(pal);
+    label->setStyleSheet(QString("color:%1;")
+        .arg(ThemeColors::getCSSColor(role, label)));
     QFont f = label->font();
     f.setItalic(italic);
     f.setBold(bold);
@@ -412,15 +413,23 @@ void CatalogOverlayWidget::onFilePathChanged()
         d_fileValid = false;
         d_catalogData = CatalogData();
         updateFileInfo();
+        // Refresh the base Source File Settings tier enable-state
+        // (filtering) for the now-invalid source.
+        validateSourceFile();
         emit dataValidityChanged(isDataValid());
         return;
     }
-    
+
     emit progressOperationStarted("Loading catalog file...");
-    
+
     loadCatalogFile(d_filePath);
     updateFileInfo();
-    
+
+    // Re-run base source-file validation so the Source File Settings
+    // tier (catalog filtering) enables as soon as a valid catalog is
+    // selected in Creation, not only in Settings/edit mode.
+    validateSourceFile();
+
     emit progressOperationFinished();
     emit dataValidityChanged(isDataValid());
     emit settingsChanged();
@@ -596,7 +605,7 @@ void CatalogOverlayWidget::applyDetailRowVisibility()
     // non-checkable Creation heading; gated by the checkbox otherwise).
     const bool show = (d_catalogData.size() > 0) && isSourceConfigEnabled();
     for (int r : d_fileDetailRows)
-        p_sourceFileConfigTable->setRowHidden(r, !show);
+        p_settingsTable->setRowHidden(r, !show);
 }
 
 void CatalogOverlayWidget::refreshSourceFileConfigState()
@@ -614,7 +623,7 @@ void CatalogOverlayWidget::updateFileInfo()
         p_moleculeLabel->setText("-");
         p_transitionCountLabel->setText("-");
         p_frequencyRangeLabel->setText("-");
-        p_overlaySettingsBox->setEnabled(false);
+        setConvolutionRegionEnabled(false);
 
         // Hide detail rows when no valid file
         applyDetailRowVisibility();
@@ -646,10 +655,10 @@ void CatalogOverlayWidget::updateFileInfo()
         }
         
         p_frequencyRangeLabel->setText(formatFrequencyRange(minFreq, maxFreq));
-        p_overlaySettingsBox->setEnabled(true);
+        setConvolutionRegionEnabled(true);
     }
     else {
-        p_overlaySettingsBox->setEnabled(false);
+        setConvolutionRegionEnabled(false);
     }
 
     // Detail rows track parsed data and section-expand state.
@@ -662,7 +671,7 @@ void CatalogOverlayWidget::updateConvolutionControls()
     bool hasOverlay = (d_overlay != nullptr);
     
     // Enable/disable the entire group box based on whether we have an overlay
-    p_overlaySettingsBox->setEnabled(hasOverlay);
+    setConvolutionRegionEnabled(hasOverlay);
     
     // Individual control states based on checkbox (preserved when group is re-enabled)
     p_lineshapeComboBox->setEnabled(convolutionEnabled);
@@ -671,6 +680,18 @@ void CatalogOverlayWidget::updateConvolutionControls()
     p_convMaxFreqSpinBox->setEnabled(convolutionEnabled);
     p_numPointsSpinBox->setEnabled(convolutionEnabled);
     p_spacingDisplayLabel->setEnabled(convolutionEnabled);
+}
+
+void CatalogOverlayWidget::setConvolutionRegionEnabled(bool enabled)
+{
+    // Stands in for the old whole-QGroupBox enable: grey the
+    // convolution heading + its bound rows and block the section
+    // checkbox so the tier cannot be toggled when there is no data /
+    // overlay to convolve.
+    if (d_convolutionSection >= 0)
+        p_settingsTable->setBoundRowsEnabled(d_convolutionSection, enabled);
+    if (p_convolutionSectionBox)
+        p_convolutionSectionBox->setEnabled(enabled);
 }
 
 void CatalogOverlayWidget::updateSpacingDisplay()
@@ -939,7 +960,7 @@ void CatalogOverlayWidget::onFilteringParametersChanged()
     emit settingsChanged(); // Trigger real-time preview updates in settings context
 }
 
-void CatalogOverlayWidget::createSourceFileConfigUI(SettingsTable *table)
+void CatalogOverlayWidget::populateSourceFileConfigRows(SettingsTable *table)
 {
     // Fixed source-file row: path + browse. The base has already added
     // the checkable section row above.
@@ -948,9 +969,9 @@ void CatalogOverlayWidget::createSourceFileConfigUI(SettingsTable *table)
     p_filePathLineEdit->setMinimumWidth(250); // Ensure adequate width
 
     p_browseButton = new QToolButton(table);
-    p_browseButton->setText("📁"); // Use folder icon instead of text to save space
+    p_browseButton->setIcon(ThemeColors::createThemedIcon(
+        ":/icons/folder-open.svg", ThemeColors::IconSecondary, this));
     p_browseButton->setToolTip("Browse for catalog file");
-    p_browseButton->setMaximumSize(30, 30);
 
     table->addSettingRow("File", p_filePathLineEdit, p_browseButton);
 
@@ -985,29 +1006,25 @@ void CatalogOverlayWidget::createSourceFileConfigUI(SettingsTable *table)
         table->setRowHidden(r, true);
 }
 
-void CatalogOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)
+void CatalogOverlayWidget::populateSourceFileSettingsRows(SettingsTable *table)
 {
-    auto outer = new QVBoxLayout(parent);
-    outer->setContentsMargins(0, 0, 0, 0);
-
-    auto table = new SettingsTable(parent);
     table->addSectionRow("Filtering");
 
     // Save range only option (source-dependent)
-    p_saveRangeOnlyCheckBox = new QCheckBox("Save only transitions within frequency range (recommended)");
+    p_saveRangeOnlyCheckBox = new QCheckBox("Save only transitions within frequency range (recommended)", table);
     p_saveRangeOnlyCheckBox->setChecked(get(BC::Key::CatalogWidget::saveRangeOnly, DEFAULT_SAVE_RANGE_ONLY));
     p_saveRangeOnlyCheckBox->setToolTip("When enabled, only saves catalog transitions within the frequency range, reducing file size and improving performance.");
     table->addSettingRow("Limit to Range", p_saveRangeOnlyCheckBox);
 
     // Filtering frequency range spinboxes
-    p_filterMinFreqSpinBox = new QDoubleSpinBox(parent);
+    p_filterMinFreqSpinBox = new QDoubleSpinBox(table);
     configureSpinBox(p_filterMinFreqSpinBox,
                      BC::Key::CatalogWidget::freqMin, BC::Key::CatalogWidget::freqMax,
                      BC::Key::CatalogWidget::freqDecimals, BC::Key::CatalogWidget::freqStep,
                      0.0, 10000000.0, 3, 1.0);
     p_filterMinFreqSpinBox->setSuffix(" MHz");
 
-    p_filterMaxFreqSpinBox = new QDoubleSpinBox(parent);
+    p_filterMaxFreqSpinBox = new QDoubleSpinBox(table);
     configureSpinBox(p_filterMaxFreqSpinBox,
                      BC::Key::CatalogWidget::freqMin, BC::Key::CatalogWidget::freqMax,
                      BC::Key::CatalogWidget::freqDecimals, BC::Key::CatalogWidget::freqStep,
@@ -1024,7 +1041,7 @@ void CatalogOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)
         p_filterMaxFreqSpinBox->setValue(get(BC::Key::CatalogWidget::filterMaxFreqMHz, DEFAULT_FILTER_MAX_FREQ));
     }
 
-    auto rangeCell = new QWidget(parent);
+    auto rangeCell = new QWidget(table);
     auto rangeRow = new QHBoxLayout(rangeCell);
     rangeRow->setContentsMargins(0, 0, 0, 0);
     rangeRow->addWidget(p_filterMinFreqSpinBox);
@@ -1032,33 +1049,27 @@ void CatalogOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)
     rangeRow->addWidget(p_filterMaxFreqSpinBox);
     rangeRow->addStretch();
     table->addSettingRow("Filter Range", rangeCell);
-
-    outer->addWidget(table);
 }
 
-void CatalogOverlayWidget::createTypeSpecificSettingsUI(QGroupBox *parent)
+void CatalogOverlayWidget::populateTypeSpecificRows(SettingsTable *table)
 {
-    auto mainLayout = new QVBoxLayout(parent);
-    mainLayout->setSpacing(8);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
-    parent->setTitle("Catalog Settings");
+    // Retitle the base-provided tier heading.
+    table->setSectionTitle(d_typeSpecificSection, "Catalog Settings");
 
-    // Convolution enable is a checkable SettingsTable section row. Its
-    // bound rows (the Line Shape / Frequency Range sub-headings, value
-    // rows, and the Convolve button) collapse with the section,
-    // reproducing the old checkable-QGroupBox behavior. The convolution
-    // state machine talks to the section checkbox through
-    // isConvolutionEnabled()/setConvolutionEnabled() and the
-    // convolutionEnabledChanged() relay.
-    p_convolutionTable = new SettingsTable(parent);
-    mainLayout->addWidget(p_convolutionTable);
-
-    d_convolutionSection = p_convolutionTable->addCheckableSectionRow(
+    // Convolution enable is a checkable section row nested in the
+    // shared table. Its bound rows (the Line Shape / Frequency Range
+    // sub-headings, value rows, and the Convolve button) collapse with
+    // the section, reproducing the old checkable-QGroupBox behavior.
+    // The convolution state machine talks to the section checkbox
+    // through isConvolutionEnabled()/setConvolutionEnabled() and the
+    // convolutionEnabledChanged() relay. setSectionVisible() on the
+    // enclosing tier is collapse-aware, so showing the tier does not
+    // fight this collapse.
+    d_convolutionSection = table->addCheckableSectionRow(
         "Convolution Enabled",
         get(BC::Key::CatalogWidget::convolutionEnabled, DEFAULT_CONVOLUTION_ENABLED),
         &p_convolutionSectionBox);
 
-    auto *table = p_convolutionTable;
     const int firstConvRow = table->rowCount();
 
     // --- Line Shape ---
@@ -1128,10 +1139,10 @@ void CatalogOverlayWidget::createTypeSpecificSettingsUI(QGroupBox *parent)
     table->addSettingRow("Action", p_convolveButton);
 
     const int lastConvRow = table->rowCount();
-    QList<int> convRows;
+    d_convolutionRows.clear();
     for (int r = firstConvRow; r < lastConvRow; ++r)
-        convRows.append(r);
-    table->bindSectionRows(d_convolutionSection, convRows);
+        d_convolutionRows.append(r);
+    table->bindSectionRows(d_convolutionSection, d_convolutionRows);
 
     // Relay the section checkbox toggle through one internal slot, the
     // single point the convolution state machine connects to.

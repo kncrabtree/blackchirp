@@ -113,13 +113,10 @@ public:
     
     // Helper method for compact file path display with tooltips
     void updatePathDisplayAndTooltip(QLineEdit* lineEdit, const QString &fullPath);
-    
+
     // Access to full source file path (separate from potentially abbreviated display)
     QString getStoredFullSourceFilePath() const { return d_fullSourceFilePath; }
-    
-    // Visual appearance configuration
-    void configureGroupBoxAppearance(QGroupBox* groupBox);
-    
+
     // Validation state getters
     bool getSourceFileValid() const { return d_sourceFileValid; }
     bool getSourceFileEnabled() const { return d_sourceFileEnabled; }
@@ -153,14 +150,18 @@ signals:
     void labelUpdateRequested(const QString &newLabel);
 
 protected:
-    // Three-tier UI creation interface - pure virtual methods for derived classes.
-    // The source-file-config tier fills a SettingsTable; the base has
-    // already added the checkable "Source File Configuration" section
-    // row at the top, so the subclass only appends its file-selection /
-    // status rows (and any dynamic detail rows it manages itself).
-    virtual void createSourceFileConfigUI(SettingsTable *table) = 0;
-    virtual void createSourceFileSettingsUI(QGroupBox *parent) = 0;
-    virtual void createTypeSpecificSettingsUI(QGroupBox *parent) = 0;
+    // Row-population interface — pure virtual. Every tier shares the
+    // single base-owned SettingsTable; the base adds the section
+    // heading row for each tier, then calls the matching hook so the
+    // subclass appends its rows beneath it. The base binds the appended
+    // rows to that section so the whole tier can be shown/hidden and
+    // enabled/disabled as a unit. Subclasses may add their own nested
+    // checkable sub-sections (e.g. catalog convolution, generic-xy
+    // filtering); setSectionVisible() is collapse-aware so a tier
+    // wrapper never fights a nested sub-section's collapse.
+    virtual void populateSourceFileConfigRows(SettingsTable *table) = 0;
+    virtual void populateSourceFileSettingsRows(SettingsTable *table) = 0;
+    virtual void populateTypeSpecificRows(SettingsTable *table) = 0;
 
     // Re-assert subclass-managed dynamic row visibility after the base
     // applies context state (e.g. catalog's parsed-file detail rows,
@@ -187,16 +188,16 @@ protected:
     std::shared_ptr<OverlayBase> d_overlay; // Only valid in settings context
     const Ft d_currentFt; // Current spectroscopic data for intelligent defaults and analysis
     
-    // Source-file-config tier: a flat SettingsTable whose first row is
-    // the checkable "Source File Configuration" section. The remaining
-    // two tiers stay flat QGroupBoxes (only the config box is being
-    // converted).
-    SettingsTable *p_sourceFileConfigTable;
-    QCheckBox *p_sourceConfigBox;       // section checkbox; alive across modes
-    int d_sourceConfigSection;          // section row index
-    QList<int> d_sourceConfigRows;      // subclass rows bound to the section
-    QGroupBox *p_sourceFileSettingsBox;
-    QGroupBox *p_overlaySettingsBox;
+    // Single base-owned table carrying all three tiers as section rows,
+    // mirroring the Base Options / Curve Appearance panels. Subclasses
+    // never create their own container; they only append rows in the
+    // populate*Rows() hooks.
+    SettingsTable *p_settingsTable;
+    QCheckBox *p_sourceConfigBox;       // source-config section checkbox; alive across modes
+    int d_sourceConfigSection;          // "Source File Configuration" section row
+    QList<int> d_sourceConfigRows;      // config rows bound to that section
+    int d_sourceFileSettingsSection;    // "Source File Settings" section row
+    int d_typeSpecificSection;          // "Type-Specific Settings" section row
     
     // Three-tier state management (moved from UnifiedOverlayWidget)
     bool d_sourceFileValid = false;

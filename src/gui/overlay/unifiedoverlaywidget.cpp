@@ -34,6 +34,7 @@ UnifiedOverlayWidget::UnifiedOverlayWidget(const QString &settingsKey,
       p_overlayStorage(overlayStorage),
       p_mainLayout(nullptr),
       p_typeSpecificWidget(nullptr),
+      p_typeSpecificBox(nullptr),
       p_overlayBaseOptionsBox(nullptr),
       p_overlayBaseOptionsWidget(nullptr),
       p_curveAppearanceBox(nullptr),
@@ -242,9 +243,22 @@ void UnifiedOverlayWidget::setupUI()
     // Create overlay widgets
     setupTypeSpecificWidget();
     createOverlayBaseOptionsBox();
-    
+
+    // Wrap the type-specific tier in a titled box so the left column
+    // reads as a panel like Base Options / Curve Appearance instead of
+    // a bare table with a floating section band.
+    QString typeTitle;
+    switch (d_overlayType) {
+    case OverlayBase::BCExperiment: typeTitle = "BC Experiment Source"; break;
+    case OverlayBase::Catalog:      typeTitle = "Catalog Source";       break;
+    case OverlayBase::GenericXY:    typeTitle = "Generic XY Source";    break;
+    }
+    p_typeSpecificBox = new QGroupBox(typeTitle, this);
+    auto typeBoxLayout = new QVBoxLayout(p_typeSpecificBox);
+    typeBoxLayout->addWidget(p_typeSpecificWidget);
+
     // Add overlay widgets to left layout
-    leftVLayout->addWidget(p_typeSpecificWidget);
+    leftVLayout->addWidget(p_typeSpecificBox);
 
     auto centerVLayout = new QVBoxLayout;
     centerVLayout->addWidget(p_overlayBaseOptionsBox);

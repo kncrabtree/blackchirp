@@ -8,11 +8,11 @@ OverlayTypeSpecificWidget::OverlayTypeSpecificWidget(const Ft &currentFt, QWidge
     : QWidget(parent),
       d_context(Context::Creation),
       d_currentFt(currentFt),
-      p_sourceFileConfigTable(nullptr),
+      p_settingsTable(nullptr),
       p_sourceConfigBox(nullptr),
       d_sourceConfigSection(-1),
-      p_sourceFileSettingsBox(nullptr),
-      p_overlaySettingsBox(nullptr),
+      d_sourceFileSettingsSection(-1),
+      d_typeSpecificSection(-1),
       d_sourceFileValid(false),
       d_sourceFileEnabled(true),
       d_settingsValid(false)
@@ -31,14 +31,17 @@ bool OverlayTypeSpecificWidget::validateSourceFile()
     // Update base class state
     d_sourceFileValid = isValid;
 
-    // Update settings group box enabled state without calling updateSourceFileControls()
-    // (which would re-enter validateSourceFile and cause a stack overflow)
-    if (p_sourceFileSettingsBox) {
+    // Update the Source File Settings tier's enabled state without
+    // calling updateSourceFileControls() (which would re-enter
+    // validateSourceFile and cause a stack overflow).
+    if (d_sourceFileSettingsSection >= 0) {
         bool sourceEnabled = isCreationContext() || d_sourceFileEnabled;
         if (isCreationContext())
-            p_sourceFileSettingsBox->setEnabled(sourceEnabled && d_sourceFileValid);
+            p_settingsTable->setBoundRowsEnabled(
+                d_sourceFileSettingsSection, sourceEnabled && d_sourceFileValid);
         else
-            p_sourceFileSettingsBox->setEnabled(d_sourceFileEnabled);
+            p_settingsTable->setBoundRowsEnabled(
+                d_sourceFileSettingsSection, d_sourceFileEnabled);
     }
 
     return isValid;
@@ -85,7 +88,7 @@ void OverlayTypeSpecificWidget::updateSourceFileControls()
         // checkable (a plain heading; the file picker must stay usable).
         setSourceConfigCheckable(false);
         setSourceConfigTitle("Source File Configuration");
-        p_sourceFileConfigTable->setBoundRowsEnabled(d_sourceConfigSection, true);
+        p_settingsTable->setBoundRowsEnabled(d_sourceConfigSection, true);
     } else if (isSettingsContext()) {
         // Settings context: source file config is checkable and optional.
         setSourceConfigCheckable(true);
@@ -108,12 +111,16 @@ void OverlayTypeSpecificWidget::updateSourceFileControls()
         settingsEnabled = d_sourceFileEnabled;
     }
     
-    // Apply smart visibility
-    p_sourceFileSettingsBox->setVisible(settingsVisible);
-    p_sourceFileSettingsBox->setEnabled(settingsEnabled);
-    
-    // Smart visibility for Type-Specific settings section
-    p_overlaySettingsBox->setVisible(hasTypeSpecificSettings());
+    // Apply smart visibility to the Source File Settings tier
+    p_settingsTable->setSectionVisible(d_sourceFileSettingsSection,
+                                       settingsVisible);
+    p_settingsTable->setBoundRowsEnabled(d_sourceFileSettingsSection,
+                                         settingsEnabled);
+
+    // Type-Specific tier presence (static per overlay type)
+    if (d_typeSpecificSection >= 0)
+        p_settingsTable->setSectionVisible(d_typeSpecificSection,
+                                           hasTypeSpecificSettings());
     
     // Validate source file if source is enabled
     if (sourceEnabled) {
@@ -156,77 +163,68 @@ void OverlayTypeSpecificWidget::setSourceConfigChecked(bool checked)
     p_sourceConfigBox->blockSignals(true);
     p_sourceConfigBox->setChecked(checked);
     p_sourceConfigBox->blockSignals(b);
-    p_sourceFileConfigTable->applySectionVisibility(d_sourceConfigSection);
+    p_settingsTable->applySectionVisibility(d_sourceConfigSection);
 }
 
 void OverlayTypeSpecificWidget::setSourceConfigCheckable(bool checkable)
 {
-    p_sourceFileConfigTable->setSectionCheckable(d_sourceConfigSection,
+    p_settingsTable->setSectionCheckable(d_sourceConfigSection,
                                                  checkable);
 }
 
 void OverlayTypeSpecificWidget::setSourceConfigTitle(const QString &title)
 {
-    p_sourceFileConfigTable->setSectionTitle(d_sourceConfigSection, title);
-}
-
-void OverlayTypeSpecificWidget::configureGroupBoxAppearance(QGroupBox* groupBox)
-{
-    if (!groupBox) {
-        return;
-    }
-
-    // Flat, single-level container: no nested frames. The logical
-    // groupings inside are carried by SettingsTable section rows.
-    groupBox->setFlat(true);
-    groupBox->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
-
-    if (auto layout = groupBox->layout()) {
-        layout->setContentsMargins(0, 0, 0, 0);
-        layout->setSpacing(4);
-    }
+    p_settingsTable->setSectionTitle(d_sourceConfigSection, title);
 }
 
 void OverlayTypeSpecificWidget::setupUI()
 {
-    // Create main layout with reduced spacing for compactness
     auto mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setSpacing(4); // Reduced from 6 to 4 for tighter layout
 
-    // The source-file-config tier is a flat SettingsTable led by a
-    // checkable section row; updateSourceFileControls() retitles it and
+    // One table carries all three tiers as section rows, matching the
+    // Base Options / Curve Appearance panels. The minimum width keeps
+    // the status / path cells from clipping at the dialog's content
+    // size (mirrors OverlayBaseOptionsWidget).
+    p_settingsTable = new SettingsTable(this);
+    p_settingsTable->setMinimumWidth(380);
+
+    auto bindTier = [this](int section, auto populate) {
+        const int first = p_settingsTable->rowCount();
+        populate(p_settingsTable);
+        const int last = p_settingsTable->rowCount();
+        QList<int> rows;
+        for (int r = first; r < last; ++r)
+            rows.append(r);
+        p_settingsTable->bindSectionRows(section, rows);
+        return rows;
+    };
+
+    // Source File Configuration — checkable; updateSourceFileControls()
     // switches it between the Creation (plain heading) and Settings
-    // (checkable) renderings via the setSourceConfig* helpers. The other
-    // two tiers stay flat, frameless QGroupBoxes.
-    p_sourceFileConfigTable = new SettingsTable(this);
-    d_sourceConfigSection = p_sourceFileConfigTable->addCheckableSectionRow(
+    // (checkable) renderings via the setSourceConfig* helpers.
+    d_sourceConfigSection = p_settingsTable->addCheckableSectionRow(
         "Source File Configuration", false, &p_sourceConfigBox);
+    d_sourceConfigRows = bindTier(d_sourceConfigSection,
+        [this](SettingsTable *t) { populateSourceFileConfigRows(t); });
 
-    p_sourceFileSettingsBox = new QGroupBox("Source File Settings", this);
-    p_overlaySettingsBox = new QGroupBox("Type-Specific Settings", this);
+    // Source File Settings — plain heading; shown/hidden and
+    // enabled/disabled as a unit by the state machine.
+    d_sourceFileSettingsSection =
+        p_settingsTable->addSectionRow("Source File Settings");
+    bindTier(d_sourceFileSettingsSection,
+        [this](SettingsTable *t) { populateSourceFileSettingsRows(t); });
 
-    configureGroupBoxAppearance(p_sourceFileSettingsBox);
-    configureGroupBoxAppearance(p_overlaySettingsBox);
+    // Type-Specific Settings — added only when the subclass actually
+    // has any (BCExp has none); a subclass may retitle the section.
+    if (hasTypeSpecificSettings()) {
+        d_typeSpecificSection =
+            p_settingsTable->addSectionRow("Type-Specific Settings");
+        bindTier(d_typeSpecificSection,
+            [this](SettingsTable *t) { populateTypeSpecificRows(t); });
+    }
 
-    // The subclass appends its file-selection / status rows (and any
-    // dynamic detail rows) after the section row; everything it adds is
-    // bound to the section so it collapses with it.
-    const int firstRow = p_sourceFileConfigTable->rowCount();
-    createSourceFileConfigUI(p_sourceFileConfigTable);
-    const int lastRow = p_sourceFileConfigTable->rowCount();
-    for (int r = firstRow; r < lastRow; ++r)
-        d_sourceConfigRows.append(r);
-    p_sourceFileConfigTable->bindSectionRows(d_sourceConfigSection,
-                                             d_sourceConfigRows);
-
-    createSourceFileSettingsUI(p_sourceFileSettingsBox);
-    createTypeSpecificSettingsUI(p_overlaySettingsBox);
-
-    // Add containers to main layout with intelligent stretch
-    mainLayout->addWidget(p_sourceFileConfigTable, 0); // Fixed size for file selection
-    mainLayout->addWidget(p_sourceFileSettingsBox, 0); // Fixed size for settings
-    mainLayout->addWidget(p_overlaySettingsBox, 1); // Takes remaining space for previews/large content
+    mainLayout->addWidget(p_settingsTable);
 
     // Relay the section checkbox toggle through to the source-file
     // state machine, exactly as the QGroupBox::toggled connection did.

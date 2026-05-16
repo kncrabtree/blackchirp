@@ -131,7 +131,8 @@ private:
     
     // UI Components - Three-tier architecture
     QHBoxLayout *p_mainLayout;
-    OverlayTypeSpecificWidget *p_typeSpecificWidget; // Type-specific tier  
+    OverlayTypeSpecificWidget *p_typeSpecificWidget; // Type-specific tier
+    QGroupBox *p_typeSpecificBox; // Titled wrapper, matches the other two panels
     QGroupBox *p_overlayBaseOptionsBox; // Base overlay options tier
     OverlayBaseOptionsWidget *p_overlayBaseOptionsWidget;
     QGroupBox *p_curveAppearanceBox; // Curve appearance tier

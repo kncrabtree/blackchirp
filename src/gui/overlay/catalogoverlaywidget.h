@@ -180,10 +180,10 @@ private slots:
 
 protected:
     // Three-tier UI creation interface
-    void createSourceFileConfigUI(SettingsTable *table) override;
+    void populateSourceFileConfigRows(SettingsTable *table) override;
     void refreshSourceFileConfigState() override;
-    void createSourceFileSettingsUI(QGroupBox *parent) override;
-    void createTypeSpecificSettingsUI(QGroupBox *parent) override;
+    void populateSourceFileSettingsRows(SettingsTable *table) override;
+    void populateTypeSpecificRows(SettingsTable *table) override;
     
     // OverlayTypeSpecificWidget interface
     void setupConnections() override;
@@ -236,12 +236,12 @@ private:
     QDoubleSpinBox *p_filterMaxFreqSpinBox;
     
     // Overlay Settings tier (Convolution - source-independent).
-    // The convolution config is a SettingsTable led by a checkable
+    // Convolution lives in the shared base table as a checkable
     // "Convolution Enabled" section row; its bound rows (including the
     // Convolve button) collapse with the section.
-    SettingsTable *p_convolutionTable;
     QCheckBox *p_convolutionSectionBox;
     int d_convolutionSection;
+    QList<int> d_convolutionRows;  // bound rows, for region enable-gating
     QComboBox *p_lineshapeComboBox;
     QDoubleSpinBox *p_linewidthSpinBox;
     QDoubleSpinBox *p_convMinFreqSpinBox;
@@ -261,6 +261,9 @@ private:
     void updateFileInfo();
     void applyDetailRowVisibility();
     void updateConvolutionControls();
+    // Enable/disable the whole convolution tier (heading + bound rows +
+    // the section checkbox), replacing the old whole-QGroupBox gate.
+    void setConvolutionRegionEnabled(bool enabled);
     void updateSpacingDisplay();
     bool validateConvolutionSettings(QString &errorMessage) const;
     QString formatFrequencyRange(double min, double max) const;

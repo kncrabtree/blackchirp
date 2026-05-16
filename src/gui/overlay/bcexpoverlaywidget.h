@@ -105,9 +105,9 @@ private slots:
 
 protected:
     // Three-tier UI creation interface
-    void createSourceFileConfigUI(SettingsTable *table) override;
-    void createSourceFileSettingsUI(QGroupBox *parent) override;
-    void createTypeSpecificSettingsUI(QGroupBox *parent) override;
+    void populateSourceFileConfigRows(SettingsTable *table) override;
+    void populateSourceFileSettingsRows(SettingsTable *table) override;
+    void populateTypeSpecificRows(SettingsTable *table) override;
     
     // OverlayTypeSpecificWidget interface
     void setupConnections() override;
@@ -138,9 +138,6 @@ private:
     QString d_fullCustomPath; // Store full path separately from abbreviated display
     
     // Helper methods
-    void setupExperimentSelectionUI();
-    void setupFtConfigurationUI();
-    void setupBCExpSettingsUI();
     void resetFtConfiguration();
     QString getExperimentPath() const;
     bool validateExperimentPath(const QString &path, QString &errorMessage);

@@ -79,12 +79,13 @@ private slots:
     void onFileDialogRequested();
     void onAutoDetectClicked();
     void onFilteringChanged();
+    void openPreviewDialog();
 
 protected:
     // Three-tier UI creation interface
-    void createSourceFileConfigUI(SettingsTable *table) override;
-    void createSourceFileSettingsUI(QGroupBox *parent) override;
-    void createTypeSpecificSettingsUI(QGroupBox *parent) override;
+    void populateSourceFileConfigRows(SettingsTable *table) override;
+    void populateSourceFileSettingsRows(SettingsTable *table) override;
+    void populateTypeSpecificRows(SettingsTable *table) override;
     
     // OverlayTypeSpecificWidget interface
     void setupConnections() override;
@@ -131,10 +132,13 @@ private:
     QCheckBox *p_enableFilteringCheckBox;
     QLineEdit *p_xMinEdit;
     QLineEdit *p_xMaxEdit;
+
+    // Tier 3: Type-specific settings — parsed-data summary rows plus a
+    // button that opens the row-by-row preview in a modal dialog (the
+    // data grid does not fit the single-table panel model).
+    QLabel *p_columnCountLabel;
     QLabel *p_dataStatsLabel;
-    
-    // Tier 3: Type-specific settings - Preview display (created in QGroupBox provided by base class)
-    QTableWidget *p_previewTable;
+    void buildPreviewInto(QTableWidget *t) const;
     
     // State tracking
     bool d_settingsLoaded;
