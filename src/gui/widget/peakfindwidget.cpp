@@ -306,12 +306,12 @@ void PeakFindWidget::setupUI()
     connect(p_peakListView,&QAbstractItemView::doubleClicked,
             this,[this](const QModelIndex &idx){ centerPlot(idx,QString()); });
 
-    // Top toolbar, then the filter grid, then the list-management
-    // toolbar, then the peak table.
+    // Top toolbar, then the filter grid, then the peak table, with the
+    // list-management toolbar below it.
     mainLayout->addWidget(p_toolBar);
     mainLayout->addWidget(p_filterGrid);
-    mainLayout->addWidget(p_bottomBar);
     mainLayout->addWidget(p_peakListView,1);
+    mainLayout->addWidget(p_bottomBar);
 }
 
 void PeakFindWidget::applyFilters()
