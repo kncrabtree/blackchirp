@@ -11,6 +11,8 @@
 #include <QPushButton>
 #include <QDialogButtonBox>
 #include <QToolBar>
+#include <QToolButton>
+#include <QHBoxLayout>
 #include <QAction>
 #include <QMenu>
 #include <QTableView>
@@ -103,14 +105,14 @@ void PeakFindWidget::setupUI()
     mainLayout->setContentsMargins(0,0,0,0);
     mainLayout->setSpacing(0);
 
-    // Two rows: row 1 is the "what to show" actions (find / live /
-    // appearance / filter), row 2 manages the list (options / export /
-    // remove / show-parent). Splitting avoids the QToolBar overflow
-    // (>>) menu burying first-class controls in a narrow dock.
+    // Top row is a QToolBar of the "what to show" actions (find / live
+    // / appearance / filter / in-view). The list-management group
+    // (options / export / remove / show-parent) is a plain QHBoxLayout
+    // of QToolButtons rather than a second QToolBar: a QToolBar nested
+    // in this dock's inner QMainWindow does not lay out reliably below
+    // the filter grid, whereas a box layout is deterministic.
     p_toolBar = new QToolBar(this);
     p_toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    p_toolBar2 = new QToolBar(this);
-    p_toolBar2->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
     p_findAction = p_toolBar->addAction(ThemeColors::createThemedIcon(":/icons/magnifying-glass-circle.svg", ThemeColors::IconPrimary, this), "Find Now");
     p_findAction->setToolTip("Find peaks in the current FT now");
@@ -150,29 +152,46 @@ void PeakFindWidget::setupUI()
     spacer1->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
     p_toolBar->addWidget(spacer1);
 
-    p_optionsAction = p_toolBar2->addAction(ThemeColors::createThemedIcon(":/icons/cog-6-tooth.svg", ThemeColors::IconSecondary, this), "Options...");
+    p_optionsAction = new QAction(ThemeColors::createThemedIcon(":/icons/cog-6-tooth.svg", ThemeColors::IconSecondary, this), "Options...", this);
     p_optionsAction->setToolTip("Configure peak-finding parameters");
     connect(p_optionsAction,&QAction::triggered,this,&PeakFindWidget::launchOptionsDialog);
 
-    p_exportAction = p_toolBar2->addAction(ThemeColors::createThemedIcon(":/icons/arrow-down-tray.svg", ThemeColors::IconSecondary, this), "Export...");
+    p_exportAction = new QAction(ThemeColors::createThemedIcon(":/icons/arrow-down-tray.svg", ThemeColors::IconSecondary, this), "Export...", this);
     p_exportAction->setToolTip("Export the peak list");
     p_exportAction->setEnabled(false);
     connect(p_exportAction,&QAction::triggered,this,&PeakFindWidget::launchExportDialog);
 
-    p_removeAction = p_toolBar2->addAction(ThemeColors::createThemedIcon(":/icons/minus.svg", ThemeColors::IconPrimary, this), "Remove");
+    p_removeAction = new QAction(ThemeColors::createThemedIcon(":/icons/minus.svg", ThemeColors::IconPrimary, this), "Remove", this);
     p_removeAction->setToolTip("Remove the selected peaks from the list");
     p_removeAction->setEnabled(false);
     connect(p_removeAction,&QAction::triggered,this,&PeakFindWidget::removeSelected);
 
-    p_toolBar2->addSeparator();
-
-    p_raiseParentAction = p_toolBar2->addAction(ThemeColors::createThemedIcon(":/icons/arrow-up.svg", ThemeColors::IconPrimary, this), "Show Parent");
+    p_raiseParentAction = new QAction(ThemeColors::createThemedIcon(":/icons/arrow-up.svg", ThemeColors::IconPrimary, this), "Show Parent", this);
     p_raiseParentAction->setToolTip("Bring the parent window to front");
     connect(p_raiseParentAction,&QAction::triggered,this,&PeakFindWidget::raiseParent);
 
-    auto *spacer2 = new QWidget(this);
-    spacer2->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
-    p_toolBar2->addWidget(spacer2);
+    p_bottomBar = new QWidget(this);
+    auto *bbl = new QHBoxLayout(p_bottomBar);
+    bbl->setContentsMargins(0,0,0,0);
+    bbl->setSpacing(0);
+    for(QAction *a : {p_optionsAction,p_exportAction,p_removeAction})
+    {
+        auto *b = new QToolButton(p_bottomBar);
+        b->setDefaultAction(a);
+        b->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+        b->setAutoRaise(true);
+        d_bottomButtons.append(b);
+        bbl->addWidget(b);
+    }
+    bbl->addStretch(1);
+    {
+        auto *b = new QToolButton(p_bottomBar);
+        b->setDefaultAction(p_raiseParentAction);
+        b->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+        b->setAutoRaise(true);
+        d_bottomButtons.append(b);
+        bbl->addWidget(b);
+    }
 
     // 2x2 display-filter grid (rows: Freq / Intensity, cols: Min / Max),
     // hidden until the Filter action is on. Spans the panel width below
@@ -264,7 +283,7 @@ void PeakFindWidget::setupUI()
     // toolbar, then the peak table.
     mainLayout->addWidget(p_toolBar);
     mainLayout->addWidget(p_filterGrid);
-    mainLayout->addWidget(p_toolBar2);
+    mainLayout->addWidget(p_bottomBar);
     mainLayout->addWidget(p_peakListView,1);
 }
 
@@ -560,20 +579,24 @@ void PeakFindWidget::updateRaiseParentVisibility()
 
 void PeakFindWidget::adjustToolbarStyle()
 {
-    if (!p_toolBar || !p_toolBar2)
+    if (!p_toolBar || !p_bottomBar)
         return;
 
     // Measure both rows with labels shown; if either would overflow the
     // dock width, drop both to icon-only so the two rows stay visually
     // consistent (tooltips already describe each action).
     p_toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    p_toolBar2->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    for(auto *b : d_bottomButtons)
+        b->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    p_bottomBar->layout()->invalidate();
+
     const bool fits = p_toolBar->sizeHint().width() <= width()
-                      && p_toolBar2->sizeHint().width() <= width();
+                      && p_bottomBar->sizeHint().width() <= width();
     const auto style = fits ? Qt::ToolButtonTextBesideIcon
                             : Qt::ToolButtonIconOnly;
     p_toolBar->setToolButtonStyle(style);
-    p_toolBar2->setToolButtonStyle(style);
+    for(auto *b : d_bottomButtons)
+        b->setToolButtonStyle(style);
 }
 
 QSize PeakFindWidget::sizeHint() const

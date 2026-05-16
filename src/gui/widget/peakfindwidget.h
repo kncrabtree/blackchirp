@@ -5,6 +5,7 @@
 
 #include <QPair>
 #include <QVector>
+#include <QList>
 #include <QPointF>
 #include <QFutureWatcher>
 
@@ -15,6 +16,7 @@
 #include <data/model/peaklistfilterproxymodel.h>
 
 class QToolBar;
+class QToolButton;
 class QAction;
 class QTableView;
 class QTableWidget;
@@ -89,7 +91,8 @@ private:
     std::unique_ptr<QFutureWatcher<void>> pu_watcher{std::make_unique<QFutureWatcher<void>>() };
 
     QToolBar *p_toolBar;
-    QToolBar *p_toolBar2;
+    QWidget *p_bottomBar;
+    QList<QToolButton*> d_bottomButtons;
     QTableView *p_peakListView;
     QAction *p_findAction;
     QAction *p_liveAction;
