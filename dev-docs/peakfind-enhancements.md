@@ -22,10 +22,17 @@ that way — `FtmwViewWidget` does the cross-widget wiring.
   (menu `exec`'d at the button's global position), reusing
   `MainFtPlot`/`ZoomPanPlot`'s existing curve-apply path — no
   duplicated `setCurve*` logic.
-- Layout: one top `QToolBar`; a filter strip directly below it, above
-  the table, hidden until a checkable "Filter" toolbar action is on;
-  navigation lives in the table's row context menu. The existing
-  `adjustToolbarStyle()` icon-only fallback absorbs the extra actions.
+- Layout: a **two-row toolbar** at the top (row 1: Find, Live,
+  Appearance, Filter — the "what to show" actions; row 2: Options,
+  Export, Remove, Show Parent — the "manage the list" actions); a
+  filter strip directly below it, above the table, hidden until the
+  checkable "Filter" action is on; navigation lives in the table's row
+  context menu. Two rows are chosen over relying on `QToolBar`'s
+  overflow-extension (`>>`) menu: with the added Appearance + Filter
+  actions the single-row icon-only fallback lands right at the dock's
+  ~250 px boundary, and a hidden-behind-`>>` action is poor
+  discoverability for first-class controls. `adjustToolbarStyle()`
+  still applies its text-beside-icon → icon-only fallback per row.
 
 ## Feature A — "Appearance" button for the FTPeaks curve
 
@@ -83,15 +90,28 @@ the same keys.
 ### B2. "Only peaks in main-plot view" toggle
 
 1. **`ZoomPanPlot` visible-range signal.** Add
-   `void visibleXRangeChanged(double min, double max)`. Emit at the
-   end of `replot()` after the xBottom scale div is finalized
-   (post-`rescaleAxes`/autoscale path around `zoompanplot.cpp:100–152`),
-   guarded by a "changed since last emit" check to avoid thrash
-   during pan/zoom. Confirm one emit per settled view (debounce if
-   the rescale path runs multiple times per interaction).
+   `void visibleXRangeChanged(double min, double max)`. A bare
+   "changed since last emit" guard is **insufficient**: `pan()` calls
+   `replot()` on every mouse-move (each frame genuinely changes the
+   range), and `replot()` splits across threads — the synchronous path
+   sets the xBottom scale then kicks off the async filter worker
+   (`zoompanplot.cpp:422–431`), and the worker-finished lambda issues a
+   *second* `QwtPlot::replot()` (`zoompanplot.cpp:103–110`). There is
+   no single "settled replot" to hook. Instead, debounce: add a
+   single-shot `QTimer` (~75–100 ms) and `d_lastEmitXMin/Max` members.
+   Every `replot()` exit (both branches) and the worker-finished
+   lambda call `timer->start()` (cheap restart). The timer slot reads
+   `axisInterval(QwtPlot::xBottom)` — reliable because the scale is
+   always set *before* the async kickoff, independent of the
+   replot/busy split — and emits only if it moved beyond an epsilon
+   vs. the last emitted pair. One emit per settled view.
 2. **`FtmwViewWidget::showPeakFinder`** — connect
-   `p_mainFtPlot::visibleXRangeChanged` → `p_pfw::setMainPlotXRange`.
-   On toggle-on, seed the current range (add
+   `p_mainFtPlot::visibleXRangeChanged` → `p_pfw::setMainPlotXRange`
+   **unconditionally**; no busy-path gating. The proxy filter is
+   purely downstream of the peak-find pass (`newPeakList` replaces the
+   model; the view-range change only calls `invalidateFilter()`), so
+   an in-flight `findPeaks()` and a view-filter invalidation cannot
+   contend. On toggle-on, seed the current range (add
    `FtmwViewWidget::mainPlotXRange()` or have the plot emit once).
 3. **`PeakFindWidget`** — checkable "In view" control in the filter
    strip; when on, `setMainPlotXRange` feeds the proxy's view bounds
@@ -127,11 +147,14 @@ standalone user-visible effect).
    `FtPlot::zoomToPeak(freq, halfWidth, intensity)`.
 4. **`ZoomPanPlot::zoomToPeak(double xCenter, double xHalfWidth, double intensity)`**:
    - x: build a `QwtScaleDiv` for `[xCenter-xHalfWidth, xCenter+xHalfWidth]`
-     and call `setXRanges`. **Verify FtPlot top/bottom axis coupling**
-     — `setXRanges` takes both bottom and top divs; FtPlot's top axis
-     may be a transformed (LO-relative) scale. Confirm the correct
-     top div before finalizing (likely mirror bottom or recompute
-     from the plot's existing x transform).
+     and call `setXRanges`, passing the **same div** for both bottom
+     and top. `FtPlot` never configures `xTop` (constructor sets only
+     `xBottom`/`yLeft` titles, no custom `QwtScaleDraw` or LO-relative
+     transform); nothing is attached to `xTop`, so `replot()` leaves it
+     disabled and the top div is display-irrelevant. Mirroring bottom
+     is correct and matches `AuxDataViewWidget::pushXAxis`, the only
+     other `setXRanges` caller. `setXRanges` also pins `autoScale=false`
+     on both x axes until the user autoscales — desired here.
    - y: read the current `yLeft` interval; pick `[0, 1.25·Int]` or
      symmetric `[-1.25·|Int|, +1.25·|Int|]` per the locked rule. Apply
      via a new `void ZoomPanPlot::setYRangeOverride(double min, double max)`
@@ -155,14 +178,26 @@ improvements list (these are features, not the Bug-fixes section used
 for the earlier two fixes). Confirm the exact 2.0.0.rst subsection
 heading before writing.
 
-## Open items to verify during implementation
+## Resolved verification items
 
-- FtPlot x top-axis transform when calling `setXRanges` from
-  `zoomToPeak` (Feature C step 4).
-- Debounce semantics of `visibleXRangeChanged` — one settled emit per
-  pan/zoom, not per intermediate `replot`.
-- Toolbar width with the added actions: confirm `adjustToolbarStyle()`
-  still collapses cleanly at ~250 px; all new actions need tooltips.
-- Interaction of the live-view filter with `Live Update`: re-find +
-  view-filter should not fight (filter runs on already-found peaks;
-  fine, but sanity-check the busy/waiting path).
+Verified against the source before implementation; resolutions folded
+into the feature sections above.
+
+- **FtPlot x top-axis transform (Feature C step 4)** — *resolved.* No
+  transform exists; `FtPlot` never configures `xTop`. Pass the same
+  div for bottom and top in `setXRanges`. Caveat struck.
+- **Debounce of `visibleXRangeChanged` (Feature B2 step 1)** —
+  *resolved.* `replot()` fires per mouse-move and splits across a
+  sync/async pair, so a dirty-check alone thrashes. Use a single-shot
+  ~75–100 ms `QTimer` sampling `axisInterval(xBottom)`; one emit per
+  settled view. Detail in B2 step 1.
+- **Toolbar width with the added actions** — *resolved into a design
+  change.* Single-row icon-only lands at the ~250 px boundary with the
+  Appearance + Filter additions; rather than depend on the `>>`
+  overflow menu, the toolbar becomes **two rows** (see Locked design
+  decisions). All new actions still need tooltips (icon-only is the
+  steady state in a narrow dock).
+- **Live-view filter vs. `Live Update`** — *resolved.* No contention:
+  the proxy filter is downstream of the find pass and never touches
+  the `d_busy`/`d_waiting` path. Wire B2 connection unconditionally
+  (Feature B2 step 2).
