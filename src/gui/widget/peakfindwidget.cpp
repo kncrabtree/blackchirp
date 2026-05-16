@@ -56,6 +56,11 @@ PeakFindWidget::PeakFindWidget(Ft ft, int number, QWidget *parent):
 
 PeakFindWidget::~PeakFindWidget()
 {
+    // A peak-find pass runs on a pooled thread and captures `this`. The
+    // dock lazily destroys this widget on experiment reload / teardown, so
+    // block until any in-flight pass finishes before members are freed.
+    pu_watcher->waitForFinished();
+
     delete ui;
 
 }
@@ -93,8 +98,7 @@ void PeakFindWidget::findPeaks()
     if(!d_busy)
     {
         d_busy = true;
-        auto ret = QtConcurrent::run([this](){p_pf->findPeaks(d_currentFt,d_minFreq,d_maxFreq,d_snr);});
-        Q_UNUSED(ret)
+        pu_watcher->setFuture(QtConcurrent::run([this](){p_pf->findPeaks(d_currentFt,d_minFreq,d_maxFreq,d_snr);}));
         d_waiting = false;
     }
     else
