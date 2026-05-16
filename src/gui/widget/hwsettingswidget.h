@@ -10,8 +10,8 @@
 class QFormLayout;
 class QGroupBox;
 class QLabel;
-class QTableWidget;
 class QTabWidget;
+class SettingsTable;
 
 /*!
  * \brief Display mode for HwSettingsWidget
@@ -79,9 +79,7 @@ private:
     QWidget *makeScalarWidget(const HwSettingDef &def, const QVariant &currentValue);
     QVariant readWidget(QWidget *widget, const QVariant &defaultValue) const;
 
-    void addTableRow(QTableWidget *table, const QString &label,
-                     const QString &description, QWidget *valueWidget);
-    void addArrayTableRow(QTableWidget *table, const HwArraySettingDef &def);
+    void addArrayTableRow(SettingsTable *table, const HwArraySettingDef &def);
 
     QStringList subKeysForArray(const HwArraySettingDef &def) const;
 
@@ -95,10 +93,10 @@ private:
     QFormLayout *p_requiredLayout{nullptr};
     QGroupBox *p_requiredGroup{nullptr};
 
-    QTableWidget *p_importantTable{nullptr};
+    SettingsTable *p_importantTable{nullptr};
     QGroupBox *p_importantGroup{nullptr};
 
-    QTableWidget *p_advancedTable{nullptr};
+    SettingsTable *p_advancedTable{nullptr};
 
     // key → input widget for scalar settings
     QHash<QString, QWidget*> d_scalarWidgets;

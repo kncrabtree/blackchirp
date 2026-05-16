@@ -6,8 +6,6 @@
 #include <QGroupBox>
 #include <QTabWidget>
 #include <QScrollArea>
-#include <QTableWidget>
-#include <QHeaderView>
 #include <QLabel>
 #include <QSpinBox>
 #include <QDoubleSpinBox>
@@ -17,25 +15,9 @@
 #include <limits>
 
 #include <gui/widget/scientificspinbox.h>
+#include <gui/widget/settingstable.h>
 #include <gui/dialog/hwarrayeditdialog.h>
 #include <data/storage/settingsstorage.h>
-
-// ---------------------------------------------------------------------------
-// Helper: build a compact two-column table for Important or Advanced settings
-// ---------------------------------------------------------------------------
-static QTableWidget *makeSettingsTable(QWidget *parent)
-{
-    auto *t = new QTableWidget(0, 2, parent);
-    t->setHorizontalHeaderLabels({"Setting", "Value"});
-    t->horizontalHeader()->setStretchLastSection(true);
-    t->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-    t->verticalHeader()->setVisible(false);
-    t->setSelectionMode(QAbstractItemView::NoSelection);
-    t->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    t->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
-    t->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    return t;
-}
 
 // ---------------------------------------------------------------------------
 
@@ -66,7 +48,7 @@ HwSettingsWidget::HwSettingsWidget(const QString &hwType,
     p_importantGroup = new QGroupBox("Important Settings", settingsContent);
     auto *importantVbl = new QVBoxLayout(p_importantGroup);
     importantVbl->setContentsMargins(4, 4, 4, 4);
-    p_importantTable = makeSettingsTable(settingsContent);
+    p_importantTable = new SettingsTable(settingsContent);
     importantVbl->addWidget(p_importantTable);
     p_importantGroup->hide();
     settingsVbl->addWidget(p_importantGroup);
@@ -81,7 +63,7 @@ HwSettingsWidget::HwSettingsWidget(const QString &hwType,
 
     // Advanced table: created here, wired into a tab in populate() if needed.
     // Hidden until populate() places it inside a QScrollArea tab.
-    p_advancedTable = makeSettingsTable(this);
+    p_advancedTable = new SettingsTable(this);
     p_advancedTable->hide();
 
     // Shown in place of the tab widget when there are no settings to display
@@ -144,7 +126,7 @@ void HwSettingsWidget::populate(const QString &storageKey)
             if (w) {
                 w->setToolTip(def.description);
                 d_scalarWidgets[def.key] = w;
-                addTableRow(p_importantTable, def.label, def.description, w);
+                p_importantTable->addSettingRow(def.label, w, def.description);
             }
             hasImportant = true;
             break;
@@ -155,7 +137,7 @@ void HwSettingsWidget::populate(const QString &storageKey)
             if (w) {
                 w->setToolTip(def.description);
                 d_scalarWidgets[def.key] = w;
-                addTableRow(p_advancedTable, def.label, def.description, w);
+                p_advancedTable->addSettingRow(def.label, w, def.description);
             }
             hasAdvanced = true;
             break;
@@ -302,44 +284,13 @@ QVariant HwSettingsWidget::readWidget(QWidget *widget, const QVariant &defaultVa
 
 // ---------------------------------------------------------------------------
 
-void HwSettingsWidget::addTableRow(QTableWidget *table, const QString &label,
-                                    const QString &description, QWidget *valueWidget)
+void HwSettingsWidget::addArrayTableRow(SettingsTable *table, const HwArraySettingDef &def)
 {
-    int row = table->rowCount();
-    table->insertRow(row);
-
-    auto *labelItem = new QTableWidgetItem(label);
-    labelItem->setFlags(Qt::ItemIsEnabled);
-    labelItem->setToolTip(description);
-    table->setItem(row, 0, labelItem);
-
-    if (valueWidget) {
-        table->setCellWidget(row, 1, valueWidget);
-        table->setRowHeight(row, valueWidget->sizeHint().height() + 4);
-    }
-}
-
-void HwSettingsWidget::addArrayTableRow(QTableWidget *table, const HwArraySettingDef &def)
-{
-    int row = table->rowCount();
-    table->insertRow(row);
-
-    auto *labelItem = new QTableWidgetItem(def.label);
-    labelItem->setFlags(Qt::ItemIsEnabled);
-    labelItem->setToolTip(def.description);
-    table->setItem(row, 0, labelItem);
-
     // Value cell: "N entries" label + "Edit..." button
-    auto *cell = new QWidget(this);
-    auto *hbl = new QHBoxLayout(cell);
-    hbl->setContentsMargins(4, 0, 4, 0);
-
     auto *countLabel = new QLabel(
-        QString("%1 entries").arg(d_arrayValues.value(def.key).size()), cell);
-    hbl->addWidget(countLabel, 1);
+        QString("%1 entries").arg(d_arrayValues.value(def.key).size()), this);
 
-    auto *btn = new QPushButton("Edit...", cell);
-    hbl->addWidget(btn, 0);
+    auto *btn = new QPushButton("Edit...", this);
 
     // Capture by value for the key; def ref would dangle
     const QString arrayKey = def.key;
@@ -364,8 +315,7 @@ void HwSettingsWidget::addArrayTableRow(QTableWidget *table, const HwArraySettin
         }
     });
 
-    table->setCellWidget(row, 1, cell);
-    table->setRowHeight(row, cell->sizeHint().height() + 4);
+    table->addSettingRow(def.label, countLabel, btn, def.description);
 }
 
 QStringList HwSettingsWidget::subKeysForArray(const HwArraySettingDef &def) const
