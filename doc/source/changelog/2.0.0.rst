@@ -223,7 +223,11 @@ User interface
   :doc:`/user_guide/cp-ftmw`.
 - Added peak navigation to the Peak Find panel: double-click a row
   to center the main FT plot on that peak, or use the row's
-  "Center on" context menu to frame any FT plot. The frequency
+  "Center on" context menu to frame any FT plot. With the table
+  focused, Enter re-centers the current peak, Up/Down step through
+  the visible rows, and Left/Right step to the next lower/higher
+  frequency peak across the full peak list (regardless of filtering
+  or sort order), centering the main plot on each. The frequency
   window half-width is configurable in the Peak Finding Options
   dialog. See :doc:`/user_guide/cp-ftmw`.
 - Relaxed the experiment-setup dialog minimum size. See

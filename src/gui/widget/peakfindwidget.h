@@ -135,6 +135,16 @@ private:
     void showPeakContextMenu(const QPoint &pos);
     void centerPlot(const QModelIndex &proxyIndex, const QString &plotName);
 
+    // Keyboard navigation. The navigation cursor is tracked as a
+    // source-model row so it survives proxy filtering and re-sorting;
+    // Left/Right walk it by frequency across the full (unfiltered,
+    // unsorted) peak list, Up/Down walk the visible table rows, Enter
+    // re-centers the current peak.
+    void centerSourceRow(int sourceRow);
+    void navigateProxyRow(int delta);
+    void navigateByFrequency(int dir);
+    int d_navSrcRow{-1};
+
     // Walks the parent chain to the hosting FtmwViewWidget. The direct
     // parent is the QDockWidget, so a plain parentWidget() cast won't do.
     FtmwViewWidget *findFtmwView() const;
@@ -145,6 +155,7 @@ protected:
     QSize sizeHint() const override;
     void resizeEvent(QResizeEvent *event) override;
     void showEvent(QShowEvent *event) override;
+    bool eventFilter(QObject *obj, QEvent *ev) override;
 };
 
 #endif // PEAKFINDWIDGET_H

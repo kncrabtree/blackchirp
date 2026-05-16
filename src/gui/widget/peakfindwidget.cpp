@@ -21,6 +21,8 @@
 #include <QDockWidget>
 #include <QResizeEvent>
 #include <QShowEvent>
+#include <QKeyEvent>
+#include <QItemSelectionModel>
 #include <QCursor>
 #include <QSignalBlocker>
 #include <QtConcurrent/QtConcurrent>
@@ -50,6 +52,14 @@ PeakFindWidget::PeakFindWidget(Ft ft, int number, QWidget *parent):
     p_peakListView->setModel(p_proxy);
 
     connect(p_peakListView->selectionModel(),&QItemSelectionModel::selectionChanged,this,&PeakFindWidget::updateRemoveButton);
+    // Keep the keyboard navigation cursor on whatever row the user
+    // last made current (mouse or keyboard).
+    connect(p_peakListView->selectionModel(),&QItemSelectionModel::currentChanged,this,
+            [this](const QModelIndex &cur,const QModelIndex&){
+        if(cur.isValid())
+            d_navSrcRow = p_proxy->mapToSource(cur).row();
+    });
+    p_peakListView->installEventFilter(this);
 
     d_minFreq = get<double>(BC::Key::pfMinFreq,ft.minFreqMHz());
     d_maxFreq = get<double>(BC::Key::pfMaxFreq,ft.maxFreqMHz());
@@ -340,8 +350,145 @@ void PeakFindWidget::centerPlot(const QModelIndex &proxyIndex, const QString &pl
     if(srcRow < 0 || srcRow >= peaks.size())
         return;
 
+    d_navSrcRow = srcRow;
     const QPointF &pk = peaks.at(srcRow);
     emit centerPlotRequested(plotName,pk.x(),pk.y(),d_navHalfWidth);
+}
+
+void PeakFindWidget::centerSourceRow(int sourceRow)
+{
+    const auto peaks = p_listModel->peakList();
+    if(sourceRow < 0 || sourceRow >= peaks.size())
+        return;
+
+    d_navSrcRow = sourceRow;
+
+    // Reflect the cursor in the table when the row is not filtered out.
+    // A filtered-out peak is still zoomed, just not selectable.
+    const QModelIndex prox = p_proxy->mapFromSource(p_listModel->index(sourceRow,0));
+    if(prox.isValid())
+    {
+        p_peakListView->selectionModel()->select(prox,
+            QItemSelectionModel::ClearAndSelect|QItemSelectionModel::Rows);
+        p_peakListView->setCurrentIndex(prox);
+        p_peakListView->scrollTo(prox);
+    }
+
+    const QPointF &pk = peaks.at(sourceRow);
+    emit centerPlotRequested(QString(),pk.x(),pk.y(),d_navHalfWidth);
+}
+
+void PeakFindWidget::navigateProxyRow(int delta)
+{
+    const int n = p_proxy->rowCount();
+    if(n <= 0)
+        return;
+
+    int base = -1;
+    const QModelIndex cur = p_peakListView->currentIndex();
+    if(cur.isValid())
+        base = cur.row();
+    else if(d_navSrcRow >= 0)
+    {
+        const QModelIndex prox = p_proxy->mapFromSource(p_listModel->index(d_navSrcRow,0));
+        if(prox.isValid())
+            base = prox.row();
+    }
+
+    const int newRow = (base < 0) ? 0 : qBound(0,base+delta,n-1);
+    centerPlot(p_proxy->index(newRow,0),QString());
+
+    const QModelIndex idx = p_proxy->index(newRow,0);
+    p_peakListView->selectionModel()->select(idx,
+        QItemSelectionModel::ClearAndSelect|QItemSelectionModel::Rows);
+    p_peakListView->setCurrentIndex(idx);
+    p_peakListView->scrollTo(idx);
+}
+
+void PeakFindWidget::navigateByFrequency(int dir)
+{
+    const auto peaks = p_listModel->peakList();
+    if(peaks.isEmpty())
+        return;
+
+    int ref = d_navSrcRow;
+    if(ref < 0 || ref >= peaks.size())
+    {
+        const QModelIndex cur = p_peakListView->currentIndex();
+        ref = cur.isValid() ? p_proxy->mapToSource(cur).row() : -1;
+    }
+
+    if(ref < 0 || ref >= peaks.size())
+    {
+        // No cursor yet: jump to the lowest- (Left) or highest- (Right)
+        // frequency peak.
+        int best = 0;
+        for(int i=1; i<peaks.size(); ++i)
+        {
+            const double f = peaks.at(i).x();
+            if((dir < 0 && f < peaks.at(best).x()) ||
+               (dir > 0 && f > peaks.at(best).x()))
+                best = i;
+        }
+        centerSourceRow(best);
+        return;
+    }
+
+    const double refFreq = peaks.at(ref).x();
+    int target = -1;
+    for(int i=0; i<peaks.size(); ++i)
+    {
+        const double f = peaks.at(i).x();
+        if(dir < 0)
+        {
+            if(f < refFreq && (target < 0 || f > peaks.at(target).x()))
+                target = i;
+        }
+        else
+        {
+            if(f > refFreq && (target < 0 || f < peaks.at(target).x()))
+                target = i;
+        }
+    }
+    if(target >= 0)
+        centerSourceRow(target);
+}
+
+bool PeakFindWidget::eventFilter(QObject *obj, QEvent *ev)
+{
+    if(obj == p_peakListView && ev->type() == QEvent::KeyPress)
+    {
+        auto *ke = static_cast<QKeyEvent*>(ev);
+        switch(ke->key())
+        {
+        case Qt::Key_Return:
+        case Qt::Key_Enter:
+            if(d_navSrcRow >= 0)
+                centerSourceRow(d_navSrcRow);
+            else
+            {
+                const QModelIndex cur = p_peakListView->currentIndex();
+                if(cur.isValid())
+                    centerPlot(cur,QString());
+            }
+            return true;
+        case Qt::Key_Up:
+            navigateProxyRow(-1);
+            return true;
+        case Qt::Key_Down:
+            navigateProxyRow(1);
+            return true;
+        case Qt::Key_Left:
+            navigateByFrequency(-1);
+            return true;
+        case Qt::Key_Right:
+            navigateByFrequency(1);
+            return true;
+        default:
+            break;
+        }
+    }
+    return QWidget::eventFilter(obj,ev);
 }
 
 void PeakFindWidget::showPeakContextMenu(const QPoint &pos)
