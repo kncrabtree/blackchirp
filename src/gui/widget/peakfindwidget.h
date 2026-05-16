@@ -3,7 +3,6 @@
 
 #include <QWidget>
 
-#include <QSortFilterProxyModel>
 #include <QPair>
 #include <QVector>
 #include <QPointF>
@@ -13,10 +12,14 @@
 #include <data/experiment/experiment.h>
 #include <data/analysis/peakfinder.h>
 #include <data/model/peaklistmodel.h>
+#include <data/model/peaklistfilterproxymodel.h>
 
 class QToolBar;
 class QAction;
 class QTableView;
+class QDoubleSpinBox;
+class QCheckBox;
+class ScientificSpinBox;
 class FtmwViewWidget;
 
 namespace BC::Key {
@@ -26,6 +29,14 @@ inline constexpr QLatin1StringView pfMaxFreq{"maxFreq"};
 inline constexpr QLatin1StringView pfSnr{"snr"};
 inline constexpr QLatin1StringView pfWinSize{"winSize"};
 inline constexpr QLatin1StringView pfOrder{"polyOrder"};
+// Display-filter state (distinct from pfMinFreq/pfMaxFreq, which bound
+// the search). pfFilterMin/MaxFreq hold the spin-box values; a value at
+// the box minimum means "unbounded" on that side.
+inline constexpr QLatin1StringView pfFilterMinFreq{"filterMinFreq"};
+inline constexpr QLatin1StringView pfFilterMaxFreq{"filterMaxFreq"};
+inline constexpr QLatin1StringView pfFilterMinInt{"filterMinInt"};
+inline constexpr QLatin1StringView pfFilterEnabled{"filterEnabled"};
+inline constexpr QLatin1StringView pfViewSync{"filterViewSync"};
 }
 
 class PeakFindWidget : public QWidget, public SettingsStorage
@@ -55,21 +66,34 @@ public slots:
     void launchExportDialog();
     void raiseParent();
 
+    /// Feeds the main FT plot's visible x range to the display filter.
+    /// Connected unconditionally; only narrows the table while the
+    /// "In view" control is on.
+    void setMainPlotXRange(double min, double max);
+
 private:
     PeakFinder *p_pf;
     PeakListModel *p_listModel;
-    QSortFilterProxyModel *p_proxy;
+    PeakListFilterProxyModel *p_proxy;
     std::unique_ptr<QFutureWatcher<void>> pu_watcher{std::make_unique<QFutureWatcher<void>>() };
 
     QToolBar *p_toolBar;
+    QToolBar *p_toolBar2;
     QTableView *p_peakListView;
     QAction *p_findAction;
     QAction *p_liveAction;
     QAction *p_appearanceAction;
+    QAction *p_filterAction;
     QAction *p_optionsAction;
     QAction *p_exportAction;
     QAction *p_removeAction;
     QAction *p_raiseParentAction;
+
+    QWidget *p_filterStrip;
+    QDoubleSpinBox *p_minFreqBox;
+    QDoubleSpinBox *p_maxFreqBox;
+    ScientificSpinBox *p_minIntBox;
+    QCheckBox *p_inViewBox;
 
     double d_minFreq;
     double d_maxFreq;
@@ -85,6 +109,11 @@ private:
     void setupUI();
     void adjustToolbarStyle();
     void updateRaiseParentVisibility();
+
+    // Pushes the current filter-strip controls into the proxy and
+    // persists them under the peakFind group.
+    void applyFilters();
+    void persistFilterState();
 
     // Walks the parent chain to the hosting FtmwViewWidget. The direct
     // parent is the QDockWidget, so a plain parentWidget() cast won't do.

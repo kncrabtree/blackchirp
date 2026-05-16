@@ -16,6 +16,7 @@
 class QMenu;
 class CustomTracker;
 class QMutex;
+class QTimer;
 
 
 /// \brief Settings keys used by ZoomPanPlot and its per-axis configuration.
@@ -248,6 +249,17 @@ signals:
     /// \param curve The modified curve.
     void curveMetadataChanged(BlackchirpPlotCurveBase* curve);
 
+    /// \brief Emitted once per settled xBottom range after pan/zoom/autoscale.
+    ///
+    /// Debounced: replot() fires on every mouse-move during a pan and
+    /// splits across a synchronous/asynchronous pair, so this is driven
+    /// by a short single-shot timer that samples the finalized xBottom
+    /// interval once activity quiesces. Suppressed when the range has
+    /// not moved since the previous emit.
+    /// \param min Lower xBottom bound (data units).
+    /// \param max Upper xBottom bound (data units).
+    void visibleXRangeChanged(double min, double max);
+
 protected:
     int d_maxIndex;          ///< Maximum valid plot index; drives the "Change plot" submenu entry count.
     QwtPlotGrid *p_grid;     ///< Grid item attached to the plot.
@@ -419,6 +431,13 @@ private:
     /// curve registry — markers and other items are handled by replot().
     /// Caller must hold \c p_mutex.
     void _recomputeBoundingRects();
+
+    QTimer *p_xRangeDebounce;        ///< Single-shot timer coalescing visibleXRangeChanged emits.
+    double d_lastEmitXMin;           ///< xBottom lower bound at the last visibleXRangeChanged emit.
+    double d_lastEmitXMax;           ///< xBottom upper bound at the last visibleXRangeChanged emit.
+
+    /// \brief Samples the finalized xBottom interval and emits visibleXRangeChanged if it moved.
+    void _emitVisibleXRange();
 
     // QWidget interface
 public:

@@ -21,8 +21,12 @@
 #include <QtConcurrent/QtConcurrent>
 #include <QMutexLocker>
 #include <QActionGroup>
+#include <QTimer>
+
+#include <cmath>
 
 #include <qwt6/qwt_scale_div.h>
+#include <qwt6/qwt_interval.h>
 #include <qwt6/qwt_plot_marker.h>
 #include <qwt6/qwt_plot_spectrogram.h>
 #include <data/storage/blackchirpcsv.h>
@@ -31,9 +35,18 @@
 
 
 ZoomPanPlot::ZoomPanPlot(const QString &name, QWidget *parent) : QwtPlot(parent),
-    SettingsStorage(name,SettingsStorage::General), d_name(name), d_maxIndex(0), p_mutex{new QMutex}
+    SettingsStorage(name,SettingsStorage::General), d_name(name), d_maxIndex(0), p_mutex{new QMutex},
+    d_lastEmitXMin(qQNaN()), d_lastEmitXMax(qQNaN())
 {
     setAutoReplot(false);
+
+    // Coalesces visibleXRangeChanged: replot() can fire many times per
+    // pan/zoom and splits across the sync/async filter pair, so sample
+    // the settled xBottom interval only once activity quiesces.
+    p_xRangeDebounce = new QTimer(this);
+    p_xRangeDebounce->setSingleShot(true);
+    p_xRangeDebounce->setInterval(90);
+    connect(p_xRangeDebounce,&QTimer::timeout,this,&ZoomPanPlot::_emitVisibleXRange);
 
     d_config.axisMap.insert({yLeft,AxisConfig(0,BC::Key::left)});
     d_config.axisMap.insert({yRight,AxisConfig(1,BC::Key::right)});
@@ -108,6 +121,7 @@ ZoomPanPlot::ZoomPanPlot(const QString &name, QWidget *parent) : QwtPlot(parent)
             d_config.xDirty = false;
             _kickoffFilterPass();
         }
+        p_xRangeDebounce->start();
     },Qt::QueuedConnection);
 }
 
@@ -430,6 +444,25 @@ void ZoomPanPlot::replot()
     else
         QwtPlot::replot();
 
+    p_xRangeDebounce->start();
+}
+
+void ZoomPanPlot::_emitVisibleXRange()
+{
+    const auto iv = axisInterval(QwtPlot::xBottom);
+    const double mn = iv.minValue();
+    const double mx = iv.maxValue();
+    if(!(mx > mn))
+        return;
+
+    // 1e-6 MHz ≈ 1 Hz: below the meaningful resolution of the FT axis,
+    // so treat sub-epsilon jitter as "unchanged" and stay quiet.
+    if(std::abs(mn - d_lastEmitXMin) < 1e-6 && std::abs(mx - d_lastEmitXMax) < 1e-6)
+        return;
+
+    d_lastEmitXMin = mn;
+    d_lastEmitXMax = mx;
+    emit visibleXRangeChanged(mn,mx);
 }
 
 void ZoomPanPlot::setZoomFactor(QwtPlot::Axis a, double v)

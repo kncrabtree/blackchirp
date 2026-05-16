@@ -215,6 +215,12 @@ User interface
   the FT peak-marker styling editor directly, without hunting for
   the curve in the main-plot right-click menu. See
   :doc:`/user_guide/cp-ftmw`.
+- Added a Peak Find display filter: a toggleable strip filters the
+  peak table by frequency range, minimum intensity, and an optional
+  "In view" mode that limits the table to peaks within the main FT
+  plot's visible range. These filters affect only the displayed
+  table, not the search bounds or the peaks drawn on the plot. See
+  :doc:`/user_guide/cp-ftmw`.
 - Relaxed the experiment-setup dialog minimum size. See
   :doc:`/user_guide/experiment_setup`.
 

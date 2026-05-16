@@ -18,7 +18,15 @@
 #include <QResizeEvent>
 #include <QShowEvent>
 #include <QCursor>
+#include <QCheckBox>
+#include <QLabel>
+#include <QHBoxLayout>
+#include <QSignalBlocker>
 #include <QtConcurrent/QtConcurrent>
+
+#include <gui/widget/scientificspinbox.h>
+
+#include <limits>
 
 #include <gui/dialog/peaklistexportdialog.h>
 
@@ -29,15 +37,15 @@ PeakFindWidget::PeakFindWidget(Ft ft, int number, QWidget *parent):
     setWindowTitle(QString("Peak Finder"));
     setWindowIcon(ThemeColors::createThemedIcon(":/icons/magnifying-glass-circle.svg", ThemeColors::IconPrimary, this));
 
-    setupUI();
-
     p_pf = new PeakFinder(this);
     connect(p_pf,&PeakFinder::peakList,this,&PeakFindWidget::newPeakList);
 
     p_listModel = new PeakListModel(this);
-    p_proxy = new QSortFilterProxyModel(this);
+    p_proxy = new PeakListFilterProxyModel(this);
     p_proxy->setSourceModel(p_listModel);
     p_proxy->setSortRole(Qt::EditRole);
+
+    setupUI();
     p_peakListView->setModel(p_proxy);
 
     connect(p_peakListView->selectionModel(),&QItemSelectionModel::selectionChanged,this,&PeakFindWidget::updateRemoveButton);
@@ -54,6 +62,28 @@ PeakFindWidget::PeakFindWidget(Ft ft, int number, QWidget *parent):
         d_maxFreq = ft.maxFreqMHz();
 
     d_currentFt = ft;
+
+    // Restore display-filter state. The frequency spin boxes use their
+    // minimum as the "unbounded" sentinel (shown via specialValueText),
+    // so a saved value equal to the minimum stays unbounded on that side.
+    const double fmin = ft.minFreqMHz();
+    const double fmax = ft.maxFreqMHz();
+    {
+        QSignalBlocker bMin(p_minFreqBox), bMax(p_maxFreqBox),
+                       bInt(p_minIntBox), bView(p_inViewBox), bAct(p_filterAction);
+        p_minFreqBox->setRange(fmin,fmax);
+        p_minFreqBox->setValue(get<double>(BC::Key::pfFilterMinFreq,fmin));
+        p_maxFreqBox->setRange(fmin,fmax);
+        p_maxFreqBox->setValue(get<double>(BC::Key::pfFilterMaxFreq,fmin));
+        p_minIntBox->setRange(0.0,1.0e15);
+        p_minIntBox->setValue(qMax(0.0,get<double>(BC::Key::pfFilterMinInt,0.0)));
+
+        const bool fen = get<bool>(BC::Key::pfFilterEnabled,false);
+        p_filterAction->setChecked(fen);
+        p_inViewBox->setChecked(get<bool>(BC::Key::pfViewSync,false));
+        p_filterStrip->setVisible(fen);
+    }
+    applyFilters();
 }
 
 PeakFindWidget::~PeakFindWidget()
@@ -70,8 +100,14 @@ void PeakFindWidget::setupUI()
     mainLayout->setContentsMargins(0,0,0,0);
     mainLayout->setSpacing(0);
 
+    // Two rows: row 1 is the "what to show" actions (find / live /
+    // appearance / filter), row 2 manages the list (options / export /
+    // remove / show-parent). Splitting avoids the QToolBar overflow
+    // (>>) menu burying first-class controls in a narrow dock.
     p_toolBar = new QToolBar(this);
     p_toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    p_toolBar2 = new QToolBar(this);
+    p_toolBar2->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
     p_findAction = p_toolBar->addAction(ThemeColors::createThemedIcon(":/icons/magnifying-glass-circle.svg", ThemeColors::IconPrimary, this), "Find Now");
     p_findAction->setToolTip("Find peaks in the current FT now");
@@ -92,31 +128,86 @@ void PeakFindWidget::setupUI()
         emit editPeakAppearanceRequested(pos);
     });
 
-    p_toolBar->addSeparator();
+    p_filterAction = p_toolBar->addAction(ThemeColors::createThemedIcon(":/icons/funnel.svg", ThemeColors::IconSecondary, this), "Filter");
+    p_filterAction->setToolTip("Show the display-filter controls (frequency range, minimum intensity, in-view)");
+    p_filterAction->setCheckable(true);
+    connect(p_filterAction,&QAction::toggled,this,[this](bool b){
+        p_filterStrip->setVisible(b);
+        applyFilters();
+        persistFilterState();
+        adjustToolbarStyle();
+    });
 
-    p_optionsAction = p_toolBar->addAction(ThemeColors::createThemedIcon(":/icons/cog-6-tooth.svg", ThemeColors::IconSecondary, this), "Options...");
+    auto *spacer1 = new QWidget(this);
+    spacer1->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+    p_toolBar->addWidget(spacer1);
+
+    p_optionsAction = p_toolBar2->addAction(ThemeColors::createThemedIcon(":/icons/cog-6-tooth.svg", ThemeColors::IconSecondary, this), "Options...");
     p_optionsAction->setToolTip("Configure peak-finding parameters");
     connect(p_optionsAction,&QAction::triggered,this,&PeakFindWidget::launchOptionsDialog);
 
-    p_exportAction = p_toolBar->addAction(ThemeColors::createThemedIcon(":/icons/arrow-down-tray.svg", ThemeColors::IconSecondary, this), "Export...");
+    p_exportAction = p_toolBar2->addAction(ThemeColors::createThemedIcon(":/icons/arrow-down-tray.svg", ThemeColors::IconSecondary, this), "Export...");
     p_exportAction->setToolTip("Export the peak list");
     p_exportAction->setEnabled(false);
     connect(p_exportAction,&QAction::triggered,this,&PeakFindWidget::launchExportDialog);
 
-    p_removeAction = p_toolBar->addAction(ThemeColors::createThemedIcon(":/icons/minus.svg", ThemeColors::IconPrimary, this), "Remove");
+    p_removeAction = p_toolBar2->addAction(ThemeColors::createThemedIcon(":/icons/minus.svg", ThemeColors::IconPrimary, this), "Remove");
     p_removeAction->setToolTip("Remove the selected peaks from the list");
     p_removeAction->setEnabled(false);
     connect(p_removeAction,&QAction::triggered,this,&PeakFindWidget::removeSelected);
 
-    p_toolBar->addSeparator();
+    p_toolBar2->addSeparator();
 
-    p_raiseParentAction = p_toolBar->addAction(ThemeColors::createThemedIcon(":/icons/arrow-up.svg", ThemeColors::IconPrimary, this), "Show Parent");
+    p_raiseParentAction = p_toolBar2->addAction(ThemeColors::createThemedIcon(":/icons/arrow-up.svg", ThemeColors::IconPrimary, this), "Show Parent");
     p_raiseParentAction->setToolTip("Bring the parent window to front");
     connect(p_raiseParentAction,&QAction::triggered,this,&PeakFindWidget::raiseParent);
 
-    auto *spacer = new QWidget(this);
-    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
-    p_toolBar->addWidget(spacer);
+    auto *spacer2 = new QWidget(this);
+    spacer2->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+    p_toolBar2->addWidget(spacer2);
+
+    // Slim display-filter strip, hidden until the Filter action is on.
+    p_filterStrip = new QWidget(this);
+    auto *fl = new QHBoxLayout(p_filterStrip);
+    fl->setContentsMargins(4,2,4,2);
+    fl->setSpacing(4);
+
+    p_minFreqBox = new QDoubleSpinBox(p_filterStrip);
+    p_minFreqBox->setDecimals(3);
+    p_minFreqBox->setSuffix(" MHz");
+    p_minFreqBox->setKeyboardTracking(false);
+    p_minFreqBox->setSpecialValueText("Min");
+    p_minFreqBox->setToolTip("Hide peaks below this frequency. Display only — does not change the search range. At minimum: no lower bound.");
+
+    p_maxFreqBox = new QDoubleSpinBox(p_filterStrip);
+    p_maxFreqBox->setDecimals(3);
+    p_maxFreqBox->setSuffix(" MHz");
+    p_maxFreqBox->setKeyboardTracking(false);
+    p_maxFreqBox->setSpecialValueText("Max");
+    p_maxFreqBox->setToolTip("Hide peaks above this frequency. Display only — does not change the search range. At minimum: no upper bound.");
+
+    p_minIntBox = new ScientificSpinBox(p_filterStrip);
+    p_minIntBox->setToolTip("Hide peaks below this intensity. Display only. Zero: no intensity bound.");
+
+    p_inViewBox = new QCheckBox("In view",p_filterStrip);
+    p_inViewBox->setToolTip("Show only peaks within the main FT plot's currently visible frequency range.");
+
+    fl->addWidget(new QLabel("Freq",p_filterStrip));
+    fl->addWidget(p_minFreqBox);
+    fl->addWidget(new QLabel(QString::fromUtf8("–"),p_filterStrip));
+    fl->addWidget(p_maxFreqBox);
+    fl->addSpacing(8);
+    fl->addWidget(new QLabel("Min Int",p_filterStrip));
+    fl->addWidget(p_minIntBox);
+    fl->addStretch(1);
+    fl->addWidget(p_inViewBox);
+    p_filterStrip->setVisible(false);
+
+    auto onFilterChanged = [this](){ applyFilters(); persistFilterState(); };
+    connect(p_minFreqBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,onFilterChanged);
+    connect(p_maxFreqBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,onFilterChanged);
+    connect(p_minIntBox,&ScientificSpinBox::valueChanged,this,onFilterChanged);
+    connect(p_inViewBox,&QCheckBox::toggled,this,onFilterChanged);
 
     p_peakListView = new QTableView(this);
     p_peakListView->setSelectionMode(QAbstractItemView::MultiSelection);
@@ -137,7 +228,46 @@ void PeakFindWidget::setupUI()
     p_peakListView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     mainLayout->addWidget(p_toolBar);
+    mainLayout->addWidget(p_toolBar2);
+    mainLayout->addWidget(p_filterStrip);
     mainLayout->addWidget(p_peakListView,1);
+}
+
+void PeakFindWidget::applyFilters()
+{
+    constexpr double inf = std::numeric_limits<double>::infinity();
+
+    // A spin box sitting at its minimum shows specialValueText and means
+    // "no bound on this side".
+    const double lo = (p_minFreqBox->value() <= p_minFreqBox->minimum())
+                          ? -inf : p_minFreqBox->value();
+    const double hi = (p_maxFreqBox->value() <= p_maxFreqBox->minimum())
+                          ? inf : p_maxFreqBox->value();
+    const double mi = (p_minIntBox->value() <= 0.0) ? -inf : p_minIntBox->value();
+    const bool fen = p_filterAction->isChecked();
+
+    p_proxy->setMinFreq(lo);
+    p_proxy->setMaxFreq(hi);
+    p_proxy->setMinIntensity(mi);
+    p_proxy->setStaticFilterEnabled(fen);
+    p_proxy->setViewSyncEnabled(fen && p_inViewBox->isChecked());
+}
+
+void PeakFindWidget::persistFilterState()
+{
+    set(BC::Key::pfFilterMinFreq,p_minFreqBox->value(),false);
+    set(BC::Key::pfFilterMaxFreq,p_maxFreqBox->value(),false);
+    set(BC::Key::pfFilterMinInt,p_minIntBox->value(),false);
+    set(BC::Key::pfFilterEnabled,p_filterAction->isChecked(),false);
+    set(BC::Key::pfViewSync,p_inViewBox->isChecked(),false);
+    save();
+}
+
+void PeakFindWidget::setMainPlotXRange(double min, double max)
+{
+    // Fed unconditionally; the proxy only narrows the table while the
+    // "In view" control is active.
+    p_proxy->setViewRange(min,max);
 }
 
 void PeakFindWidget::newFt(const Ft ft)
@@ -339,16 +469,20 @@ void PeakFindWidget::updateRaiseParentVisibility()
 
 void PeakFindWidget::adjustToolbarStyle()
 {
-    if (!p_toolBar)
+    if (!p_toolBar || !p_toolBar2)
         return;
 
-    // Measure with labels shown; if the toolbar would overflow the dock
-    // width, fall back to icon-only (tooltips already describe each action).
+    // Measure both rows with labels shown; if either would overflow the
+    // dock width, drop both to icon-only so the two rows stay visually
+    // consistent (tooltips already describe each action).
     p_toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    const auto style = (p_toolBar->sizeHint().width() <= width())
-                           ? Qt::ToolButtonTextBesideIcon
-                           : Qt::ToolButtonIconOnly;
+    p_toolBar2->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    const bool fits = p_toolBar->sizeHint().width() <= width()
+                      && p_toolBar2->sizeHint().width() <= width();
+    const auto style = fits ? Qt::ToolButtonTextBesideIcon
+                            : Qt::ToolButtonIconOnly;
     p_toolBar->setToolButtonStyle(style);
+    p_toolBar2->setToolButtonStyle(style);
 }
 
 void PeakFindWidget::resizeEvent(QResizeEvent *event)

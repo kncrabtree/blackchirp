@@ -135,6 +135,7 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/markertablemodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/overlaytablemodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/peaklistmodel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/peaklistfilterproxymodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/validationmodel.cpp
 )
 
@@ -255,6 +256,7 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/markertablemodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/overlaytablemodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/peaklistmodel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/peaklistfilterproxymodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/validationmodel.h
 )
 

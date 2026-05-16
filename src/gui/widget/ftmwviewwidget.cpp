@@ -25,6 +25,8 @@
 #include <gui/plot/fidplot.h>
 #include <gui/plot/ftplot.h>
 #include <gui/plot/mainftplot.h>
+
+#include <qwt6/qwt_interval.h>
 #include <gui/style/themecolors.h>
 #include <gui/widget/ftmwacquisitionpanel.h>
 #include <gui/widget/ftmwplotpanel.h>
@@ -1015,6 +1017,13 @@ void FtmwViewWidget::showPeakFinder(bool show)
     connect(p_pfw,&PeakFindWidget::peakList,p_mainFtPlot,&MainFtPlot::newPeakList);
     connect(p_pfw,&PeakFindWidget::editPeakAppearanceRequested,
             p_mainFtPlot,&MainFtPlot::showPeakAppearanceMenu);
+    connect(p_mainFtPlot,&ZoomPanPlot::visibleXRangeChanged,
+            p_pfw,&PeakFindWidget::setMainPlotXRange);
+    // Seed the current range so the in-view filter is correct before the
+    // next replot emits.
+    const auto xiv = p_mainFtPlot->axisInterval(QwtPlot::xBottom);
+    if(xiv.isValid())
+        p_pfw->setMainPlotXRange(xiv.minValue(),xiv.maxValue());
 
     p_peakFindDock->setWidget(p_pfw);
 }

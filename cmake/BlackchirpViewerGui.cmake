@@ -76,6 +76,7 @@ set(BLACKCHIRP_VIEWER_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/exptsummarymodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/overlaytablemodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/peaklistmodel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/peaklistfilterproxymodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/validationmodel.cpp
     
     # LIF GUI components (needed for viewing LIF experiment data)
@@ -144,6 +145,7 @@ set(BLACKCHIRP_VIEWER_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/exptsummarymodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/overlaytablemodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/peaklistmodel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/peaklistfilterproxymodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/validationmodel.h
     
     # LIF GUI components (needed for viewing LIF experiment data)
