@@ -506,6 +506,21 @@ Bug fixes
   save-file dialog raised a spurious export-failure box, and edits
   to the shots/intensity table were discarded unless the FTB
   format was exported (:commit:`f15eb918`).
+- Fixed the catalog overlay creation dialog leaving the
+  frequency-range filtering controls disabled even after a valid
+  catalog file was selected; they were only editable when
+  reconfiguring an existing overlay (:commit:`3341b0ad`).
+- Fixed the Generic XY overlay dialog locking the delimiter,
+  header-line, column-mapping, and filtering controls until the
+  file already parsed, so a file that needed manual settings to
+  parse could never be coaxed into parsing. Source-file validity
+  is now existence-based; parse correctness still gates overlay
+  creation (:commit:`3341b0ad`).
+- Fixed the Generic XY overlay reporting an opaque
+  parser-availability or parse failure. The selected file is
+  always handed to the Generic XY parser, and the failure message
+  states the cause, such as a file containing only one column
+  (:commit:`3341b0ad`).
 
 **Python companion module.**
 
