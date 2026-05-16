@@ -463,6 +463,14 @@ Bug fixes
   overlay while a plot filter pass was in flight; the curve is
   now drained and unregistered before destruction
   (:commit:`b82736e6`).
+- Fixed the Peak Find Remove control doing nothing: the button's
+  clicked signal was never connected, so selected peaks could not
+  be removed from the list (:commit:`004c523b`).
+- Fixed a use-after-free when a Peak Find pass outlived its widget.
+  The background search discarded its future, so reloading the
+  experiment or tearing down the dock mid-search could free members
+  still in use; the pass is now drained before destruction
+  (:commit:`9428b017`).
 
 **Python companion module.**
 
