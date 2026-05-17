@@ -300,11 +300,27 @@ Acquisition Pipelines: **done.**
   units/decimals from saved record) is a reopen-path addition the
   page doesn't cover — no false claim, no edit)
 
-Extending Blackchirp:
+Extending Blackchirp: **done.**
 
-- [ ] `developer_guide/adding_a_driver.rst`
-- [ ] `developer_guide/adding_a_hardware_type.rst`
-- [ ] `developer_guide/adding_an_experiment_mode.rst`
+- [x] `developer_guide/adding_a_driver.rst` (rename reflected.
+  `f935b2ad` added `FlowController::hwSetChannelEnabled` (non-pure,
+  default no-op) which real flow drivers now implement — softened
+  the brittle "eight hw*" count and added the optional override to
+  the Pattern B sketch. Test names / interface count / AWG settings
+  enumeration verified accurate)
+- [x] `developer_guide/adding_a_hardware_type.rst` (reviewed —
+  clean; rename reflected, all four CMake list names
+  (`HARDWARE_TYPES_SOURCES`, `HARDWARE_TYPE_HEADERS`,
+  `HARDWARE_IMPLEMENTATIONS_SOURCES`, `HARDWARE_IMPLEMENTATION_HEADERS`)
+  and the `blackchirp-test-hardware` virtual-source list verified
+  against the CMake files, NVI-hook list consistent. No edits)
+- [x] `developer_guide/adding_an_experiment_mode.rst` (rename
+  terminology fix: page last touched 2026-05-06, *before* the
+  FtmwScope→FtmwDigitizer rename — "FTMW scope('s) (hardware) key"
+  in steps 2 and 3 was stale; the actual ctor param is
+  `digitizerHwKey` (`ftmwconfigtypes.h:22`). Updated both spots to
+  "FTMW digitizer". The remaining "scope" uses are
+  "scope of this page" — unrelated, left)
 
 Python Module:
 

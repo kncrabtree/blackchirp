@@ -158,7 +158,8 @@ A new ``FtmwType`` is a five-touch change. The first three live in
      :doc:`/developer_guide/ftmw_acquisition`.
 
    Provide both constructors used by the existing concretes — one
-   that takes the FTMW scope's hardware key, and one that takes a
+   that takes the FTMW digitizer's hardware key
+   (``const QString& digitizerHwKey``), and one that takes a
    ``const FtmwConfig &`` for the deserialization path that constructs
    a typed subclass from a base-class value object.
 
@@ -166,7 +167,7 @@ A new ``FtmwType`` is a five-touch change. The first three live in
    ``src/data/experiment/experiment.cpp`` is the single dispatch from
    ``FtmwType`` to a concrete subclass. Add a ``case`` for the new
    enumerator that constructs the new subclass with the discovered
-   FTMW scope key, sets ``ps_ftmwConfig->d_type`` (the trailing
+   FTMW digitizer key, sets ``ps_ftmwConfig->d_type`` (the trailing
    assignment after the switch already handles this), and inserts it
    into ``d_objectives``. There is no second factory site;
    :cpp:class:`FtmwConfig`'s deserialization path constructs a

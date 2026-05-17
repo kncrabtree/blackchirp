@@ -354,7 +354,7 @@ Worked example B — Pattern B (FlowController)
 :cpp:func:`HardwareObject::initialize`,
 :cpp:func:`HardwareObject::testConnection`, and
 :cpp:func:`HardwareObject::prepareForExperiment`. A driver does not
-override any of those; instead it implements eight per-channel/
+override any of those; instead it implements the per-channel/
 per-parameter ``hw*`` virtuals plus the small ``fcInitialize`` /
 ``fcTestConnection`` hooks the base class calls from its own
 ``initialize`` / ``testConnection``:
@@ -377,6 +377,9 @@ per-parameter ``hw*`` virtuals plus the small ``fcInitialize`` /
        double hwReadPressureSetpoint() override;
        void   hwSetPressureControlMode(bool enabled) override;
        int    hwReadPressureControlMode() override;
+       // Optional: override only if the hardware can enable/disable
+       // individual channels. The base default is a no-op.
+       void   hwSetChannelEnabled(int ch, bool en) override;
 
    protected:
        void fcInitialize() override;
