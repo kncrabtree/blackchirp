@@ -144,22 +144,6 @@ thread with a cancelable progress dialog
 responsive even when the SG-filter convolution runs from scratch
 on every gate adjustment.
 
-## Pre-Release
-
-### [Packaging and Binary Generation (Github Actions)](packaging-and-ci.md)
-
-`.github/workflows/release.yml` produces release-only DEB, RPM,
-AppImage, DMG, and NSIS packages via CPack + linuxdeploy. Five
-`*-smoke` jobs install each artifact in a clean container or fresh
-runner and verify `--version` exits cleanly. CI symbol capture
-(`.debug` / `.dSYM` / `.pdb` per platform, with a per-platform
-`symbols-manifest.json`) ships as separate 90-day workflow artifacts
-keyed on the build's git SHA. **Remaining work** is the manual
-clean-VM acceptance pass on each artifact (the smoke tests cover
-`--version` only; full UI launch on a fresh OS install is still
-worth the spot-check before alpha tag). See `packaging-and-ci.md` for
-the strategy reference and per-round debugging history.
-
 ## Cleanups
 
 Low-priority code-debt items, none release-blocking. Each is gated on
