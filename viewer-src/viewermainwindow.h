@@ -24,6 +24,7 @@
 
 class QMenu;
 class UpdateChecker;
+class ClickableLabel;
 
 namespace BC::Key::Viewer {
 // Group name for every viewer-owned setting in Blackchirp2.conf. The
@@ -63,7 +64,8 @@ private slots:
 private:
     QWidget *p_centralWidget;
     QListWidget *p_experimentList;
-    QLabel *p_dataPathLabel;
+    ClickableLabel *p_dataPathLabel;
+    QToolButton *p_dataPathConfigButton{nullptr};
     QLabel *p_statusLabel;
 
     // Shared actions for menu and toolbar

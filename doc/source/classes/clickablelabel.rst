@@ -12,8 +12,9 @@ a link to a folder. When it carries a non-empty folder path, hovering
 the text shows a hand cursor and underlines it, and a left click opens
 that folder in the system file manager (via
 ``QDesktopServices::openUrl``). It backs the data-path label in the
-main window status bar and the experiment-number labels in the FTMW and
-LIF view widgets, which link to the experiment's storage directory.
+main window status bar, the matching data-path label in the standalone
+viewer, and the experiment-number labels in the FTMW and LIF view
+widgets, which link to the experiment's storage directory.
 
 The hit and hover target is only the bounding rectangle of the rendered
 text — computed from the non-underlined font and honoring the label's

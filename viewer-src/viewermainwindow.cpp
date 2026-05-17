@@ -8,7 +8,6 @@
 #include <QFormLayout>
 #include <QListWidgetItem>
 #include <QMenu>
-#include <QMouseEvent>
 #include <QPushButton>
 #include <QToolBar>
 #include <QUrl>
@@ -17,6 +16,7 @@
 #include <gui/dialog/updateavailabledialog.h>
 #include <gui/dialog/experimentchooserdialog.h>
 #include <gui/util/recentexperiments.h>
+#include <gui/widget/clickablelabel.h>
 #include <data/storage/applicationconfigmanager.h>
 #include <data/storage/blackchirpcsv.h>
 #include <data/updatechecker.h>
@@ -106,16 +106,30 @@ void ViewerMainWindow::setupUI()
     
     mainLayout->addWidget(p_experimentList);
 
-    // Active data-path label. Shows the directory the viewer reads
-    // experiments-by-number from, with a click-to-change affordance
-    // (cursor + underline on hover, MouseButtonRelease handled in
-    // eventFilter). Tooltip carries the full path plus the rule for
-    // when this directory does and doesn't apply.
-    p_dataPathLabel = new QLabel(this);
-    p_dataPathLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
-    p_dataPathLabel->setCursor(Qt::PointingHandCursor);
+    // Active data-path row. The label shows the directory the viewer
+    // reads experiments-by-number from; clicking it opens that folder
+    // in the system file manager (ClickableLabel). The cog button
+    // beside it opens the directory chooser to set or override the
+    // path. The label's eventFilter handles only width-driven
+    // re-elision on resize; hover/click is ClickableLabel's job.
+    auto *dataPathRow = new QHBoxLayout;
+    p_dataPathLabel = new ClickableLabel(this);
     p_dataPathLabel->installEventFilter(this);
-    mainLayout->addWidget(p_dataPathLabel);
+    dataPathRow->addWidget(p_dataPathLabel, 1);
+
+    p_dataPathConfigButton = new QToolButton(this);
+    p_dataPathConfigButton->setIcon(ThemeColors::createThemedIcon(
+        ":/icons/cog-6-tooth.svg", ThemeColors::IconSecondary, this));
+    p_dataPathConfigButton->setAutoRaise(true);
+    p_dataPathConfigButton->setIconSize({16, 16});
+    p_dataPathConfigButton->setToolTip(
+        QString("Choose the data directory the viewer reads "
+                "experiments-by-number from"));
+    connect(p_dataPathConfigButton, &QToolButton::clicked,
+            this, &ViewerMainWindow::chooseDataPath);
+    dataPathRow->addWidget(p_dataPathConfigButton, 0);
+
+    mainLayout->addLayout(dataPathRow);
     updateDataPathLabel();
 
     // Status label — transient activity messages (Ready / Opened X /
@@ -324,14 +338,17 @@ void ViewerMainWindow::updateDataPathLabel()
                 "experiments tree.");
 
     if (d_dataPath.isEmpty()) {
-        p_dataPathLabel->setText(QString("Data Path: (click to choose)"));
+        p_dataPathLabel->setFolderPath(QString());
+        p_dataPathLabel->setText(QString("Data Path: (not set)"));
         p_dataPathLabel->setToolTip(
-            QString("No data path configured.\n\n%1").arg(explanation));
+            QString("No data path configured. Use the cog button to "
+                    "choose one.\n\n%1").arg(explanation));
         return;
     }
 
-    p_dataPathLabel->setToolTip(
-        QString("%1\n\n%2").arg(d_dataPath, explanation));
+    // Make the label a link to the directory, then override the
+    // path-only tooltip ClickableLabel sets with the fuller one.
+    p_dataPathLabel->setFolderPath(d_dataPath);
 
     const QFontMetrics fm(p_dataPathLabel->font());
     const int w = p_dataPathLabel->width();
@@ -339,6 +356,9 @@ void ViewerMainWindow::updateDataPathLabel()
     const int avail = (w > 0 ? w : 200) - fm.horizontalAdvance(prefix);
     p_dataPathLabel->setText(
         prefix + fm.elidedText(d_dataPath, Qt::ElideMiddle, std::max(avail, 32)));
+
+    p_dataPathLabel->setToolTip(
+        QString("%1\n\n%2").arg(d_dataPath, explanation));
 }
 
 void ViewerMainWindow::loadActiveDataPath()
@@ -477,35 +497,10 @@ void ViewerMainWindow::updateRecentMenu()
 
 bool ViewerMainWindow::eventFilter(QObject *watched, QEvent *event)
 {
-    if (watched != p_dataPathLabel)
-        return QMainWindow::eventFilter(watched, event);
-
-    switch (event->type()) {
-    case QEvent::Resize:
+    // Re-elide the path to the label's new width; hover and
+    // click-to-open are handled by ClickableLabel itself.
+    if (watched == p_dataPathLabel && event->type() == QEvent::Resize)
         updateDataPathLabel();
-        break;
-    case QEvent::Enter: {
-        auto f = p_dataPathLabel->font();
-        f.setUnderline(true);
-        p_dataPathLabel->setFont(f);
-        break;
-    }
-    case QEvent::Leave: {
-        auto f = p_dataPathLabel->font();
-        f.setUnderline(false);
-        p_dataPathLabel->setFont(f);
-        break;
-    }
-    case QEvent::MouseButtonRelease: {
-        auto *me = static_cast<QMouseEvent *>(event);
-        if (me->button() == Qt::LeftButton
-            && p_dataPathLabel->rect().contains(me->pos()))
-            chooseDataPath();
-        break;
-    }
-    default:
-        break;
-    }
 
     return QMainWindow::eventFilter(watched, event);
 }
