@@ -89,7 +89,11 @@ void BlackchirpCSVTest::testExportXYFormats()
     auto run = [&](XYFormat fmt) -> QString {
         QByteArray b;
         QBuffer f(&b);
-        f.open(QIODevice::WriteOnly|QIODevice::Text);
+        // No QIODevice::Text: assert writeXY's own \n output deterministically.
+        // Text mode would rewrite \n to \r\n on Windows, which is Qt's
+        // platform newline policy (exercised in production by exportCurve),
+        // not behavior of writeXY under test here.
+        f.open(QIODevice::WriteOnly);
         const bool ok = csv.writeXY(f,d,QString(),fmt);
         f.close();
         return ok ? QString::fromUtf8(b) : QString();
