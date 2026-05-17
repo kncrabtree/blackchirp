@@ -192,9 +192,14 @@ a single macro call after ``REGISTER_HARDWARE_META``:
 
 - The dependency itself, so that
   :cpp:func:`HardwareRegistry::getLibraryDependencies` can answer "which
-  vendor libraries does *this* driver need" and
-  :cpp:func:`HardwareRegistry::getHardwareDependingOnLibrary` can answer
-  the inverse question for the reload coordination above.
+  vendor libraries does *this* driver need". The reload coordination
+  above is built on this query: it pairs
+  :cpp:func:`HardwareRegistry::getLibrariesWithChanges` with a
+  per-driver ``getLibraryDependencies`` lookup over the active
+  hardware to decide what to tear down.
+  :cpp:func:`HardwareRegistry::getHardwareDependingOnLibrary` answers
+  the inverse question ("which drivers need *this* library") for
+  callers that want it directly.
 - A ``std::function<VendorLibrary*()>`` that returns the library's singleton
   instance. The registry stores these getters in
   ``d_libraryGetters`` so :cpp:func:`HardwareRegistry::getLibrariesWithChanges`

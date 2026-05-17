@@ -252,13 +252,33 @@ Architecture: **done.**
   would break the `gh run download` command. Corrected. Source:
   `b6273ec9`)
 
-Hardware Subsystem:
+Hardware Subsystem: **done.**
 
-- [ ] `developer_guide/hardware_configuration.rst`
-- [ ] `developer_guide/hardware_runtime.rst`
-- [ ] `developer_guide/python_hardware.rst` (fix the "parameters
-  that used to flow through the older…" source-evolution line)
-- [ ] `developer_guide/vendor_libraries.rst`
+- [x] `developer_guide/hardware_configuration.rst` (reviewed —
+  clean; `FtmwDigitizer` reflected, the `ensureRequiredSystemProfiles`
+  refactor predates the page's last update, post-05-14 commits are
+  widget-reuse refactors below the priority→placement semantic
+  level. No edits)
+- [x] `developer_guide/hardware_runtime.rst` (reviewed — clean;
+  rename reflected, the `initialize()` step-1 description stays
+  accurate after the system-profile refactor, the "for example"
+  control-slot list is explicitly non-exhaustive so `setChannelEnabled`
+  doesn't drift it. No edits)
+- [x] `developer_guide/python_hardware.rst` (fixed the flagged
+  source-evolution line — `HwConfigParam` still exists in
+  `hardwareregistry.h`, so "the older … system" was doubly wrong;
+  rewrote timelessly. Drift fix: `f935b2ad` added `hwSetChannelEnabled`
+  which `PythonFlowController` overrides, so the exact "eight hw*"
+  count was stale — replaced with a description, matching the
+  page's own approximate style elsewhere)
+- [x] `developer_guide/vendor_libraries.rst` (correctness fix:
+  `getHardwareDependingOnLibrary` has no callers; the reload
+  coordination uses `getLibrariesWithChanges` + per-driver
+  `getLibraryDependencies` (`hardwaremanager.cpp:1676`), so the
+  page's attribution of the inverse-lookup method to "the reload
+  coordination above" was wrong — corrected. `db964132` made CMake
+  the sole platform gate, which the case study already describes
+  correctly)
 
 Acquisition Pipelines:
 

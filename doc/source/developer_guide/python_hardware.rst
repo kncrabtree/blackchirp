@@ -339,9 +339,9 @@ implements. The base class owns the polling sequence, the validity
 checks, and the signal emission; the trampoline only ever sees one
 value at a time.
 
-Examples: :cpp:class:`PythonFlowController` (eight
-``hw*`` reads/writes for per-channel flow and pressure, plus the
-control mode), :cpp:class:`PythonPulseGenerator` (~22 setters and
+Examples: :cpp:class:`PythonFlowController` (per-channel flow and
+pressure reads/writes, the per-channel enable toggle, and the
+pressure-control mode), :cpp:class:`PythonPulseGenerator` (~22 setters and
 readers across channel and global state),
 :cpp:class:`PythonTemperatureController`,
 :cpp:class:`PythonPressureController`. The trampoline does not
@@ -560,9 +560,9 @@ calls that any other :cpp:class:`HardwareObject` subclass uses;
 the relay across ``self.settings`` reaches that root from the
 script side.
 
-Required parameters that used to flow through the older
-``HwConfigParam`` system now live in the same group as ordinary
-settings, declared with ``HwSettingPriority::Required``. The
+Required parameters live in the same group as ordinary settings,
+declared with ``HwSettingPriority::Required`` — there is no
+separate parameter store for them. The
 settings registry is the single source of truth; see
 :doc:`/developer_guide/hardware_configuration` for the full
 declaration model and the create-vs-edit semantics that determine
