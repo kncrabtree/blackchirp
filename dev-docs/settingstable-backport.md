@@ -93,72 +93,90 @@ Follow these so the ported widgets stay consistent with what shipped:
   `cmake/BlackchirpGui.cmake` and `cmake/BlackchirpViewerGui.cmake`.
 - `tablefit.h` is gone — do not reintroduce a manual height cap.
 
-## Candidate survey (current state, triaged)
+## Evaluation outcome (closed)
 
-Grep used: `new QTableWidget` / `setVerticalHeaderLabels` /
-`setCellWidget` under `gui/`. Triage is a starting hypothesis —
-confirm by reading each before porting.
+Per-widget verdicts after reading each candidate. A standing user
+decision applies throughout: **any `QTableWidget` whose row names live
+in the vertical header must move them into a regular column-0 cell**
+(built like `SettingsTable`'s label cells: `QTableWidgetItem`,
+`Qt::ItemIsEnabled`, `NoEditTriggers`, vertical header hidden), for
+visual consistency with the ported settings tables — *whether or not*
+the widget itself becomes a `SettingsTable`. This makes the old
+"poor fit / leave entirely" bucket mostly a **restyle** bucket.
 
-**Strong fit — single value column, label/value rows (port):**
+### A. Ported to `SettingsTable` — done
 
-- `gui/expsetup/drscanconfigwidget.cpp` — `QTableWidget(5,1)`,
-  `setVerticalHeaderLabels` + `setCellWidget(r,0,...)`. Exactly the
-  FTMW-panel pattern. Best first port / proof.
-- `gui/expsetup/experimenttypepage.cpp` — several small
-  `QTableWidget(rows,1)` sub-tables (`forever`, `shots`, `duration`,
-  …), same pattern. Port each sub-table.
+- `gui/expsetup/drscanconfigwidget.cpp` — `1554d518`.
+- `gui/expsetup/experimenttypepage.cpp` Forever / Shot Settings /
+  Duration Settings stack sub-tables — `ff3a1aa1`.
 
-**Borderline — needs a judgment call:**
+### B. Kept as `QTableWidget`, vertical-header → column-0 restyle — done
 
-- `gui/expsetup/loscanconfigwidget.cpp` — `QTableWidget(6,2)`, two
-  value columns "Up LO" / "Down LO". Could map onto the
-  `addSettingRow(label, upBox, downBox)` two-widget variant, but the
-  column headers are lost; assess whether that reads acceptably or
-  whether it should stay a real matrix.
-- `gui/widget/temperaturecontrolwidget.cpp` (`n×2`, Name/Enabled),
-  `gui/widget/gascontrolwidget.cpp` (`n×3`, Name/Setpoint/Enabled)
-  — per-channel matrices. They were *deliberately* moved to
-  `QTableWidget` in the recent UI pass (see
-  `dev-docs/user-guide-cleanup.md` screenshot notes). Likely **leave
-  as-is**; only revisit if a row genuinely reduces to label/value.
+Two real value columns with meaningful headers ("Up LO/Down LO",
+"Delay/Laser") — not a 2-column `SettingsTable` fit, restyled instead:
 
-**Poor fit — true matrices or data grids, leave alone:**
+- `gui/expsetup/loscanconfigwidget.cpp` `p_loTable` — `d819cdd4`.
+- `gui/expsetup/experimenttypepage.cpp` LIF `scanTable` — `dd944422`.
 
-- `gui/widget/digitizerconfigwidget.cpp` — multi-column channel
-  tables (analog/digital × params). Matrix; not label/value.
-- `gui/widget/pulseconfigwidget.cpp` — standard/advanced per-channel
-  multi-column tables. Matrix.
-- `gui/widget/peakfindwidget.cpp` — `p_filterGrid` is a 2×2
-  Freq/Intensity × Min/Max matrix (not label/value); `p_peakListView`
-  is a data list. Neither is a SettingsTable candidate.
+### C. Genuine `SettingsTable` candidates — NOT yet done
+
+The original triage missed these; they are real label/value forms:
+
+- `gui/widget/digitizerconfigwidget.cpp` is **mixed**: `dtTable`
+  (`QTableWidget(4,1)`: Record Length / Sample Rate / …) and
+  `trigTable` (`QTableWidget(4,1)`: Source / Slope / Delay / Level)
+  are single-column label/value — exactly the `drscanconfigwidget`
+  pattern, strong `SettingsTable` fits. Its analog/digital channel
+  tables and `aTable` (2×2) are matrices → bucket D.
+- `gui/lif/gui/lifprocessingwidget.cpp` — a `QGroupBox`-based
+  processing form structurally analogous to the already-ported
+  `FtmwProcessingPanel`. Real candidate, but a **substantial** port,
+  not a quick swap: the "Gates" block is a 2×2 LIF/Reference ×
+  Start/End matrix (bucket-D restyle, not label/value), the
+  Savitzky-Golay checkable `QGroupBox` maps to a checkable section,
+  and α / window / order map to setting rows. Effort comparable to
+  the overlay type-panel port.
+
+### D. Restyle-only — true matrices/data grids, NOT yet done
+
+Stay `QTableWidget`; apply the vertical-header → column-0 restyle
+only (the standing decision). Not `SettingsTable` ports:
+
+- `gui/widget/peakfindwidget.cpp` `p_filterGrid` (2×2 Freq/Intensity
+  × Min/Max). `p_peakListView` is a data list — leave entirely.
+- `gui/widget/digitizerconfigwidget.cpp` analog/digital channel
+  tables + `aTable` (the non-C parts above).
+- `gui/widget/pulseconfigwidget.cpp` standard/advanced per-channel
+  multi-column tables.
+- `gui/widget/temperaturecontrolwidget.cpp` (`n×2`),
+  `gui/widget/gascontrolwidget.cpp` (`n×3`) — deliberate UI-pass
+  per-channel matrices; kept as matrices, vertical header restyled.
+
+### E. Leave entirely — no change
+
+- `gui/lif/gui/liflaserwidget.cpp` — small `QGridLayout` of live
+  hardware-command buttons (set position, toggle flashlamp), not a
+  persisted-settings form. Weak fit; no table.
+- `gui/lif/gui/lifcontrolwidget.cpp` — a `QVBox/QHBox/QGroupBox`
+  shell embedding child widgets; no table. (Its `<QFormLayout>`
+  include is stale/unused — the doc's "QFormLayout restyle" premise
+  was wrong; the real LIF candidates are its children, see C/D/E.)
 - `gui/widget/librarystatuswidget.cpp`, `gui/dialog/aboutdialog.cpp`
-  — read-only tabular data (exactly what plain tables are *for* per
-  `doc/AGENTS.md`). Not candidates.
+  — read-only tabular data (what plain tables are *for*).
 - `gui/dialog/hwarrayeditdialog.cpp` — dynamic N-column array editor.
-  Not label/value.
-- `gui/overlay/overlaymanagerwidget.cpp` — the overlay list table is
-  a data grid, not a settings form. Not a candidate.
+- `gui/overlay/overlaymanagerwidget.cpp` — overlay-list data grid.
 
-**Reclassified from the original memory note:**
+### Remaining work (decision point)
 
-- "ExperimentSetupPage" → the concrete targets are the
-  `gui/expsetup/*.cpp` tables above (there is no single
-  `ExperimentSetupPage` file).
-- `gui/lif/gui/lifcontrolwidget.cpp` — uses `QFormLayout` +
-  `QGroupBox`, **not** a raw table. Converting it would be a layout
-  *restyle* (form → SettingsTable), a different and larger decision
-  than a like-for-like table swap. Treat separately / probably out
-  of scope for this pass.
+Buckets C and D are not yet executed and materially exceed the
+original "assess + port the easy ones" scope. Sequence when resumed,
+one widget per commit, user runtime-verifies each:
 
-## Suggested order
-
-1. `drscanconfigwidget` — smallest, cleanest proof; validates the
-   pattern end to end (build + runtime).
-2. `experimenttypepage` sub-tables — same pattern, slightly more rows.
-3. Decide `loscanconfigwidget` (two-widget variant vs. keep matrix);
-   implement only if the two-widget rendering reads well.
-4. Write up the verdict for the "poor fit / leave" set so the
-   evaluation is closed, not silently dropped.
+1. `digitizerconfigwidget` `dtTable` + `trigTable` → `SettingsTable`
+   (drscan pattern); its other tables → D restyle.
+2. D restyles: `peakfindwidget`, `pulseconfigwidget`,
+   `temperaturecontrolwidget`, `gascontrolwidget`.
+3. `lifprocessingwidget` → `SettingsTable` (largest; do last).
 
 One widget per commit; user runtime-verifies each before the next
 (the discipline used throughout the FTMW/overlay work — live-UI
