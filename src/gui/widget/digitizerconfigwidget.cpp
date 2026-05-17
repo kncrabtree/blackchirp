@@ -16,9 +16,11 @@
 #include <data/experiment/digitizerconfig.h>
 #include <data/settings/hardwarekeys.h>
 #include <gui/widget/cellwidgethelpers.h>
+#include <gui/widget/settingstable.h>
 
 using namespace BC::Key::Digi;
 using namespace BC::Store::Digi;
+using namespace Qt::StringLiterals;
 using BC::Gui::centerCellWidget;
 
 DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QString digHwKey, bool withChannelNames, QWidget *parent) :
@@ -218,18 +220,12 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
     centerCombo(p_sampleRateBox);
     centerCombo(p_byteOrderBox);
 
-    auto dtTable = new QTableWidget(4,1,this);
-    dtTable->setVerticalHeaderLabels({"Record Length","Sample Rate",
-                                      "Bytes Per Point","Byte Order"});
-    dtTable->horizontalHeader()->setVisible(false);
-    dtTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    dtTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    dtTable->setSelectionMode(QAbstractItemView::NoSelection);
+    auto dtTable = new SettingsTable(this);
     dtTable->setFocusPolicy(Qt::NoFocus);
-    dtTable->setCellWidget(0,0,p_recLengthBox);
-    dtTable->setCellWidget(1,0,p_sampleRateBox);
-    dtTable->setCellWidget(2,0,p_bytesPerPointBox);
-    dtTable->setCellWidget(3,0,p_byteOrderBox);
+    dtTable->addSettingRow("Record Length"_L1,p_recLengthBox);
+    dtTable->addSettingRow("Sample Rate"_L1,p_sampleRateBox);
+    dtTable->addSettingRow("Bytes Per Point"_L1,p_bytesPerPointBox);
+    dtTable->addSettingRow("Byte Order"_L1,p_byteOrderBox);
 
     auto horLayout = new QVBoxLayout;
     horLayout->addWidget(dtTable);
@@ -270,17 +266,12 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
     p_triggerLevelBox->setSingleStep((p_triggerLevelBox->maximum()-p_triggerLevelBox->minimum())/100.0);
     p_triggerLevelBox->setAlignment(Qt::AlignCenter);
 
-    auto trigTable = new QTableWidget(4,1,this);
-    trigTable->setVerticalHeaderLabels({"Source","Slope","Delay","Level"});
-    trigTable->horizontalHeader()->setVisible(false);
-    trigTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    trigTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    trigTable->setSelectionMode(QAbstractItemView::NoSelection);
+    auto trigTable = new SettingsTable(this);
     trigTable->setFocusPolicy(Qt::NoFocus);
-    trigTable->setCellWidget(0,0,p_triggerSourceBox);
-    trigTable->setCellWidget(1,0,p_triggerSlopeBox);
-    trigTable->setCellWidget(2,0,p_triggerDelayBox);
-    trigTable->setCellWidget(3,0,p_triggerLevelBox);
+    trigTable->addSettingRow("Source"_L1,p_triggerSourceBox);
+    trigTable->addSettingRow("Slope"_L1,p_triggerSlopeBox);
+    trigTable->addSettingRow("Delay"_L1,p_triggerDelayBox);
+    trigTable->addSettingRow("Level"_L1,p_triggerLevelBox);
 
     auto tLayout = new QVBoxLayout;
     tLayout->addWidget(trigTable);
