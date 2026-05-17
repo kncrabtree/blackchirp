@@ -44,7 +44,15 @@ UnifiedOverlayDialog::UnifiedOverlayDialog(std::shared_ptr<OverlayBase> overlay,
     d_isValid = true; // Settings mode starts valid
 }
 
-UnifiedOverlayDialog::~UnifiedOverlayDialog() = default;
+UnifiedOverlayDialog::~UnifiedOverlayDialog()
+{
+    // Don't leak a busy override cursor if the dialog is torn down
+    // while an operation is still in flight.
+    if (d_busyCursorActive) {
+        QApplication::restoreOverrideCursor();
+        d_busyCursorActive = false;
+    }
+}
 
 void UnifiedOverlayDialog::initializeCommon(OverlayBase::OverlayType type, 
                                            const QStringList &plotNames,
@@ -500,7 +508,21 @@ void UnifiedOverlayDialog::setDialogState(DialogState state)
     d_dialogState = state;
     updateButtonState();
     updateWindowTitle();
-    
+
+    // A background parse/convolution is one opaque blocking call with
+    // no sub-progress, so the progress bar stalls mid-way. A busy
+    // cursor is the honest "still working" cue; the bool keeps the
+    // override-cursor stack balanced across every transition path.
+    const bool wantBusy = (state == DialogState::Processing ||
+                           state == DialogState::Cancelling);
+    if (wantBusy && !d_busyCursorActive) {
+        QApplication::setOverrideCursor(Qt::BusyCursor);
+        d_busyCursorActive = true;
+    } else if (!wantBusy && d_busyCursorActive) {
+        QApplication::restoreOverrideCursor();
+        d_busyCursorActive = false;
+    }
+
     // Handle state-specific logic
     switch (state) {
     case DialogState::Ready:

@@ -321,11 +321,9 @@ QString SaveOverlayOperation::getDescription() const
 
 // ParseCatalogOperation implementation
 
-ParseCatalogOperation::ParseCatalogOperation(std::shared_ptr<OverlayBase> overlay,
-                                            const QString& filePath,
+ParseCatalogOperation::ParseCatalogOperation(const QString& filePath,
                                             QObject* parent)
     : OverlayOperation(Type::Deferred, Priority::Normal, parent),
-      d_overlay(overlay),
       d_filePath(filePath)
 {
 }
@@ -335,57 +333,41 @@ std::shared_ptr<OverlayBase> ParseCatalogOperation::execute()
     try {
         updateProgress(0, "Parsing catalog file...");
         checkCancellation();
-        
-        if (!d_overlay) {
-            throw std::runtime_error("Null overlay provided for catalog parsing");
-        }
-        
-        auto catalogOverlay = std::dynamic_pointer_cast<CatalogOverlay>(d_overlay);
-        if (!catalogOverlay) {
-            throw std::runtime_error("Catalog parsing only supported for catalog overlays");
-        }
-        
+
         QFileInfo fileInfo(d_filePath);
         if (!fileInfo.exists()) {
             throw std::runtime_error(QString("Catalog file does not exist: %1").arg(d_filePath).toStdString());
         }
-        
+
         updateProgress(25, QString("Reading catalog: %1").arg(fileInfo.fileName()));
-        
-        // Set source file path
-        catalogOverlay->setSourceFile(d_filePath);
-        
+
         checkCancellation();
         updateProgress(50, "Finding appropriate parser...");
-        
+
         // Use type-safe parser lookup to ensure we get a CatalogParser
         auto registry = FileParserRegistry::instance();
         auto parser = registry->findParserOfType<CatalogParser>(d_filePath);
-        
+
         if (!parser) {
             throw std::runtime_error(QString("No catalog parser found for file: %1").arg(d_filePath).toStdString());
         }
-        
+
         checkCancellation();
         updateProgress(75, "Parsing catalog data...");
-        
-        // Parse the catalog file
+
         CatalogData catalogData = parser->parse(d_filePath);
-        
+
         if (catalogData.isEmpty()) {
             throw std::runtime_error(QString("No data found in catalog file: %1").arg(d_filePath).toStdString());
         }
-        
+
         checkCancellation();
-        updateProgress(90, "Loading catalog data into overlay...");
-        
-        // Set the catalog data in the overlay
-        catalogOverlay->setCatalogData(catalogData);
-        
+        d_parsedData = catalogData;
         updateProgress(100, "Catalog parsing completed successfully");
-        
-        return catalogOverlay;
-        
+
+        // No overlay result; payload is carried via parsedData().
+        return nullptr;
+
     } catch (const OperationCancelledException&) {
         updateProgress(0, "Catalog parsing cancelled");
         throw;
@@ -405,4 +387,82 @@ QString ParseCatalogOperation::getDescription() const
 {
     QFileInfo fileInfo(d_filePath);
     return QString("Parse catalog file: %1").arg(fileInfo.fileName());
+}
+
+// ParseGenericXYOperation implementation
+
+ParseGenericXYOperation::ParseGenericXYOperation(const QString& filePath,
+                                                 QObject* parent)
+    : OverlayOperation(Type::Deferred, Priority::Normal, parent),
+      d_filePath(filePath),
+      d_autoDetect(true)
+{
+}
+
+ParseGenericXYOperation::ParseGenericXYOperation(const QString& filePath,
+                                                 const GenericXYParser::ParseSettings& settings,
+                                                 QObject* parent)
+    : OverlayOperation(Type::Deferred, Priority::Normal, parent),
+      d_filePath(filePath),
+      d_settings(settings),
+      d_autoDetect(false)
+{
+}
+
+std::shared_ptr<OverlayBase> ParseGenericXYOperation::execute()
+{
+    try {
+        updateProgress(0, "Parsing data file...");
+        checkCancellation();
+
+        QFileInfo fileInfo(d_filePath);
+        if (!fileInfo.exists()) {
+            throw std::runtime_error(QString("Data file does not exist: %1").arg(d_filePath).toStdString());
+        }
+
+        GenericXYParser parser;
+
+        if (d_autoDetect) {
+            updateProgress(25, QString("Detecting format: %1").arg(fileInfo.fileName()));
+            d_settings = parser.autoDetectSettings(d_filePath);
+        }
+
+        checkCancellation();
+        updateProgress(60, "Parsing data...");
+
+        GenericXYData result = parser.parseWithSettings(d_filePath, d_settings);
+
+        if (!result.isValid()) {
+            QString err = result.hasError()
+                              ? result.errorMessage()
+                              : QString("No valid data found in file: %1").arg(d_filePath);
+            throw std::runtime_error(err.toStdString());
+        }
+
+        checkCancellation();
+        d_parsedData = result;
+        updateProgress(100, "Data parsing completed successfully");
+
+        // No overlay result; payload is carried via parsedData().
+        return nullptr;
+
+    } catch (const OperationCancelledException&) {
+        updateProgress(0, "Data parsing cancelled");
+        throw;
+    } catch (const std::exception& e) {
+        updateProgress(0, QString("Parse error: %1").arg(e.what()));
+        throw;
+    }
+}
+
+void ParseGenericXYOperation::cancel()
+{
+    d_cancelled.store(true);
+    emit cancellationRequested();
+}
+
+QString ParseGenericXYOperation::getDescription() const
+{
+    QFileInfo fileInfo(d_filePath);
+    return QString("Parse data file: %1").arg(fileInfo.fileName());
 }

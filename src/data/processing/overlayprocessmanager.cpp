@@ -226,6 +226,18 @@ QString OverlayProcessManager::getOperationMessage(const QString& operationId) c
     return it->second->progressMessage;
 }
 
+std::shared_ptr<OverlayOperation> OverlayProcessManager::operation(const QString& operationId) const
+{
+    QMutexLocker locker(&d_mutex);
+
+    auto it = d_allOperations.find(operationId);
+    if (it == d_allOperations.end()) {
+        return nullptr;
+    }
+
+    return it->second->operation;
+}
+
 void OverlayProcessManager::processQueue()
 {
     QMutexLocker locker(&d_mutex);
@@ -283,54 +295,88 @@ void OverlayProcessManager::processQueue()
 
 void OverlayProcessManager::onOperationFinished()
 {
-    QMutexLocker locker(&d_mutex);
-    
-    if (!d_currentOperation || !d_currentOperation->watcher) {
-        qWarning() << "Operation finished but no current operation tracked";
-        return;
-    }
-    
-    auto watcher = d_currentOperation->watcher;
-    QString operationId = d_currentOperation->id;
-    
-    if (watcher->isCanceled()) {
-        d_currentOperation->state = OperationState::Cancelled;
-        d_cancelledOperations++;
-        emit operationCancelled(operationId);
-    } else {
-        try {
-            auto result = watcher->result();
-            if (result) {
-                d_currentOperation->state = OperationState::Completed;
-                d_completedOperations++;
-                emit operationCompleted(operationId, result);
-            } else {
-                d_currentOperation->state = OperationState::Failed;
-                // Check if the operation provided an error message in its progress
-                QString progressMsg = d_currentOperation->progressMessage;
-                if (progressMsg.startsWith("Error:")) {
-                    d_currentOperation->errorMessage = progressMsg.mid(7).trimmed(); // Remove "Error: " prefix
-                } else {
-                    d_currentOperation->errorMessage = "Operation returned null result";
-                }
-                d_failedOperations++;
-                emit operationFailed(operationId, d_currentOperation->errorMessage);
-            }
-        } catch (const std::exception& e) {
-            d_currentOperation->state = OperationState::Failed;
-            d_currentOperation->errorMessage = e.what();
-            d_failedOperations++;
-            emit operationFailed(operationId, d_currentOperation->errorMessage);
+    // All shared-state mutation happens under the lock; the resulting
+    // signal is emitted *after* the lock is released. A slot may call
+    // back into the manager (e.g. operation()) synchronously through a
+    // direct-connected signal, and QMutex is non-recursive — emitting
+    // while holding d_mutex would deadlock that re-entry.
+    enum class Outcome { None, Completed, Failed, Cancelled };
+    Outcome outcome = Outcome::None;
+    QString operationId;
+    std::shared_ptr<OverlayBase> result;
+    QString errorMessage;
+
+    {
+        QMutexLocker locker(&d_mutex);
+
+        if (!d_currentOperation || !d_currentOperation->watcher) {
+            qWarning() << "Operation finished but no current operation tracked";
+            return;
         }
+
+        auto watcher = d_currentOperation->watcher;
+        operationId = d_currentOperation->id;
+
+        if (watcher->isCanceled()) {
+            d_currentOperation->state = OperationState::Cancelled;
+            d_cancelledOperations++;
+            outcome = Outcome::Cancelled;
+        } else {
+            try {
+                result = watcher->result();
+                if (result || !d_currentOperation->operation->producesOverlay()) {
+                    // A null result is success for operations that carry
+                    // their payload on the operation object rather than an
+                    // OverlayBase; failure for those is signalled by an
+                    // exception, handled below.
+                    d_currentOperation->state = OperationState::Completed;
+                    d_completedOperations++;
+                    outcome = Outcome::Completed;
+                } else {
+                    d_currentOperation->state = OperationState::Failed;
+                    // Check if the operation provided an error message in its progress
+                    QString progressMsg = d_currentOperation->progressMessage;
+                    if (progressMsg.startsWith("Error:")) {
+                        d_currentOperation->errorMessage = progressMsg.mid(7).trimmed(); // Remove "Error: " prefix
+                    } else {
+                        d_currentOperation->errorMessage = "Operation returned null result";
+                    }
+                    d_failedOperations++;
+                    errorMessage = d_currentOperation->errorMessage;
+                    outcome = Outcome::Failed;
+                }
+            } catch (const std::exception& e) {
+                d_currentOperation->state = OperationState::Failed;
+                d_currentOperation->errorMessage = e.what();
+                d_failedOperations++;
+                errorMessage = d_currentOperation->errorMessage;
+                outcome = Outcome::Failed;
+            }
+        }
+
+        // Cleanup watcher
+        watcher->deleteLater();
+        d_currentOperation->watcher = nullptr;
+
+        // Clean up old completed operations
+        cleanupCompletedOperations();
     }
-    
-    // Cleanup watcher
-    watcher->deleteLater();
-    d_currentOperation->watcher = nullptr;
-    
-    // Clean up old completed operations
-    cleanupCompletedOperations();
-    
+
+    // Lock released — safe for slots to re-enter the manager.
+    switch (outcome) {
+    case Outcome::Completed:
+        emit operationCompleted(operationId, result);
+        break;
+    case Outcome::Failed:
+        emit operationFailed(operationId, errorMessage);
+        break;
+    case Outcome::Cancelled:
+        emit operationCancelled(operationId);
+        break;
+    case Outcome::None:
+        break;
+    }
+
     // Process next operation
     QMetaObject::invokeMethod(this, &OverlayProcessManager::processQueue, Qt::QueuedConnection);
 }

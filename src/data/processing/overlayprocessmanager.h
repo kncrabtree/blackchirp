@@ -72,6 +72,12 @@ public:
     int getOperationProgress(const QString& operationId) const;
     QString getOperationMessage(const QString& operationId) const;
 
+    // Retrieve the operation object for a (typically completed) id so
+    // the caller can pull typed result payload off it. Valid until the
+    // operation is evicted by completed-history cleanup. Returns null
+    // for an unknown id.
+    std::shared_ptr<OverlayOperation> operation(const QString& operationId) const;
+
 signals:
     // Operation lifecycle signals
     void operationStarted(const QString& operationId);

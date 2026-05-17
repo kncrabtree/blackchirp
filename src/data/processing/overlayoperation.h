@@ -8,6 +8,8 @@
 
 #include <data/experiment/overlaybase.h>
 #include <data/experiment/overlaytypes.h>
+#include <data/experiment/catalogdata.h>
+#include <data/processing/parsers/genericxyparser.h>
 
 /**
  * @brief Abstract base class for all overlay operations
@@ -44,6 +46,13 @@ public:
     virtual std::shared_ptr<OverlayBase> execute() = 0;
     virtual void cancel() = 0;
     virtual bool canCancel() const = 0;
+
+    // Whether execute() yields an OverlayBase as its result. Operations
+    // that instead carry typed payload data retrievable off the
+    // operation object (e.g. file parsing) return false; for those a
+    // null execute() result that did not throw is a success, not a
+    // failure.
+    virtual bool producesOverlay() const { return true; }
     
     // Operation metadata
     virtual QString getDescription() const = 0;
@@ -174,26 +183,74 @@ private:
 };
 
 /**
- * @brief Operation for parsing catalog files and loading data into overlay
+ * @brief Operation for parsing a catalog file off the UI thread
+ *
+ * Carries the parsed CatalogData on the operation object; no overlay
+ * is involved. A failed parse throws (surfaced as operationFailed);
+ * success is signalled by a non-throwing run with the data available
+ * via parsedData().
  */
 class ParseCatalogOperation : public OverlayOperation
 {
     Q_OBJECT
 
 public:
-    ParseCatalogOperation(std::shared_ptr<OverlayBase> overlay,
-                         const QString& filePath,
-                         QObject* parent = nullptr);
+    explicit ParseCatalogOperation(const QString& filePath,
+                                   QObject* parent = nullptr);
 
     std::shared_ptr<OverlayBase> execute() override;
     void cancel() override;
     bool canCancel() const override { return true; }
+    bool producesOverlay() const override { return false; }
     QString getDescription() const override;
     QString getOperationName() const override { return "ParseCatalog"; }
 
+    // Valid after a successful run.
+    const CatalogData& parsedData() const { return d_parsedData; }
+
 private:
-    std::shared_ptr<OverlayBase> d_overlay;
     QString d_filePath;
+    CatalogData d_parsedData;
+};
+
+/**
+ * @brief Operation for parsing a generic XY file off the UI thread
+ *
+ * When constructed without explicit settings the parser auto-detects
+ * them; the resolved settings are available via resolvedSettings() so
+ * the dialog can reflect them back into its controls. The parsed data
+ * is available via parsedData(). A failed parse throws.
+ */
+class ParseGenericXYOperation : public OverlayOperation
+{
+    Q_OBJECT
+
+public:
+    // Auto-detect parse settings from the file.
+    explicit ParseGenericXYOperation(const QString& filePath,
+                                     QObject* parent = nullptr);
+    // Parse with explicit, user-edited settings.
+    ParseGenericXYOperation(const QString& filePath,
+                            const GenericXYParser::ParseSettings& settings,
+                            QObject* parent = nullptr);
+
+    std::shared_ptr<OverlayBase> execute() override;
+    void cancel() override;
+    bool canCancel() const override { return true; }
+    bool producesOverlay() const override { return false; }
+    QString getDescription() const override;
+    QString getOperationName() const override { return "ParseGenericXY"; }
+
+    // Valid after a successful run.
+    const GenericXYData& parsedData() const { return d_parsedData; }
+    const GenericXYParser::ParseSettings& resolvedSettings() const { return d_settings; }
+    bool didAutoDetect() const { return d_autoDetect; }
+
+private:
+    QString d_filePath;
+    GenericXYParser::ParseSettings d_settings;
+    bool d_autoDetect;
+    GenericXYData d_parsedData;
 };
 
 #endif // OVERLAYOPERATION_H

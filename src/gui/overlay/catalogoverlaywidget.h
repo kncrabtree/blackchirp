@@ -178,6 +178,12 @@ private slots:
     void onConvolutionOperationFailed(const QString &operationId, const QString &error);
     void onConvolutionOperationCancelled(const QString &operationId);
 
+    // Background catalog-parse handlers
+    void onParseOperationProgress(const QString &operationId, int percentage, const QString &message);
+    void onParseOperationCompleted(const QString &operationId, std::shared_ptr<OverlayBase> result);
+    void onParseOperationFailed(const QString &operationId, const QString &error);
+    void onParseOperationCancelled(const QString &operationId);
+
 protected:
     // Three-tier UI creation interface
     void populateSourceFileConfigRows(SettingsTable *table) override;
@@ -257,7 +263,7 @@ private:
     bool d_fileValid;
     
     // Helper methods
-    void loadCatalogFile(const QString &filePath);
+    void startCatalogParse(const QString &filePath); // Queues a background parse
     void updateFileInfo();
     void applyDetailRowVisibility();
     void updateConvolutionControls();
@@ -284,6 +290,11 @@ private:
     // Background operation tracking
     QString d_currentConvolutionId;
     bool d_convolutionInProgress;
+
+    // Background catalog-parse tracking
+    QString d_parseOperationId;
+    bool d_parsePending = false;
+    QString d_parseErrorMessage;
     
     // Default values
     static constexpr bool DEFAULT_CONVOLUTION_ENABLED = false;

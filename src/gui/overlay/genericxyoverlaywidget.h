@@ -81,6 +81,13 @@ private slots:
     void onFilteringChanged();
     void openPreviewDialog();
 
+    // Background data-parse handlers (shared manager signals, filtered
+    // by d_parseOperationId).
+    void onParseOperationProgress(const QString &operationId, int percentage, const QString &message);
+    void onParseOperationCompleted(const QString &operationId, std::shared_ptr<OverlayBase> result);
+    void onParseOperationFailed(const QString &operationId, const QString &error);
+    void onParseOperationCancelled(const QString &operationId);
+
 protected:
     // Three-tier UI creation interface
     void populateSourceFileConfigRows(SettingsTable *table) override;
@@ -98,8 +105,10 @@ protected:
 
 private:
     
-    // File handling
+    // File handling — analyzeAndParseFile() now only *launches* a
+    // background parse; the result is applied in the parse handlers.
     void analyzeAndParseFile(bool autodetect = true);
+    void applyDetectedSettingsToUi(const GenericXYParser::ParseSettings &settings);
     void updateColumnSelectors(bool setDefaults = true);
     
     // Settings management - loadSettings already declared in protected section
@@ -143,6 +152,10 @@ private:
     // State tracking
     bool d_settingsLoaded;
     bool d_fileAnalyzed;
+
+    // Background data-parse tracking
+    QString d_parseOperationId;
+    bool d_parsePending = false;
 };
 
 #endif // GENERICXYOVERLAYWIDGET_H

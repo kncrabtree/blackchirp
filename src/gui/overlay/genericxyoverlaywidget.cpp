@@ -17,6 +17,7 @@
 #include <data/storage/settingsstorage.h>
 #include <data/processing/parsers/fileparserregistry.h>
 #include <data/processing/parsers/genericxyparser.h>
+#include <data/processing/overlayoperation.h>
 #include <gui/style/themecolors.h>
 #include <gui/widget/settingstable.h>
 
@@ -64,7 +65,15 @@ GenericXYOverlayWidget::GenericXYOverlayWidget(const Ft &currentFt, QWidget *par
     // Base class handles setupUI() and setupConnections()
 }
 
-GenericXYOverlayWidget::~GenericXYOverlayWidget() = default;
+GenericXYOverlayWidget::~GenericXYOverlayWidget()
+{
+    // Abandon any in-flight parse so the worker is not left running
+    // after the dialog closes. Qt auto-disconnects the manager signals
+    // on destruction, so no result will be delivered regardless.
+    if (!d_parseOperationId.isEmpty()) {
+        OverlayProcessManager::instance().cancelOperation(d_parseOperationId);
+    }
+}
 
 void GenericXYOverlayWidget::setupForCreation()
 {
@@ -337,11 +346,9 @@ bool GenericXYOverlayWidget::validateSourceFileImpl()
         return false;
     }
     
-    if (!d_fileAnalyzed) {
-        analyzeAndParseFile(false); // Use current UI settings
-    }
-
-    // An existing, readable file is a valid *source*. Whether it parses
+    // Parsing runs on a worker thread (launched from setSourceFilePath
+    // / the parse controls); this never parses synchronously. An
+    // existing, readable file is a valid *source*. Whether it parses
     // correctly is a parsing-settings concern (reported by
     // validateSettings / gated by isDataValid for acceptance), not a
     // source-file concern — keeping it separate is what lets the
@@ -549,6 +556,18 @@ void GenericXYOverlayWidget::setupConnections()
     connect(p_enableFilteringCheckBox, &QCheckBox::toggled, this, &GenericXYOverlayWidget::onFilteringChanged);
     connect(p_xMinEdit, &QLineEdit::editingFinished, this, &GenericXYOverlayWidget::onFilteringChanged);
     connect(p_xMaxEdit, &QLineEdit::editingFinished, this, &GenericXYOverlayWidget::onFilteringChanged);
+
+    // Background data parsing — handlers filter by d_parseOperationId
+    // so they ignore any unrelated overlay operations.
+    auto &manager = OverlayProcessManager::instance();
+    connect(&manager, &OverlayProcessManager::operationProgress,
+            this, &GenericXYOverlayWidget::onParseOperationProgress);
+    connect(&manager, &OverlayProcessManager::operationCompleted,
+            this, &GenericXYOverlayWidget::onParseOperationCompleted);
+    connect(&manager, &OverlayProcessManager::operationFailed,
+            this, &GenericXYOverlayWidget::onParseOperationFailed);
+    connect(&manager, &OverlayProcessManager::operationCancelled,
+            this, &GenericXYOverlayWidget::onParseOperationCancelled);
 }
 
 void GenericXYOverlayWidget::configureForCreationContext()
@@ -724,7 +743,7 @@ void GenericXYOverlayWidget::analyzeAndParseFile(bool autodetect)
         emit dataValidityChanged(false);
         return;
     }
-    
+
     // Get parser from registry
     auto parser = getParser();
     if (!parser) {
@@ -735,66 +754,140 @@ void GenericXYOverlayWidget::analyzeAndParseFile(bool autodetect)
         emit dataValidityChanged(false);
         return;
     }
-    
-    GenericXYParser::ParseSettings settings;
-    
-    // Handle autodetection if requested
+
+    // Abandon any in-flight parse for an earlier file/settings.
+    if (!d_parseOperationId.isEmpty()) {
+        OverlayProcessManager::instance().cancelOperation(d_parseOperationId);
+        d_parseOperationId.clear();
+    }
+
+    std::shared_ptr<ParseGenericXYOperation> parseOp;
     if (autodetect) {
-        settings = parser->autoDetectSettings(filePath);
-        
-        // Update UI with detected settings
-        for (int i = 0; i < p_delimiterCombo->count(); ++i) {
-            if (p_delimiterCombo->itemData(i).toString() == settings.delimiter) {
-                p_delimiterCombo->setCurrentIndex(i);
-                break;
-            }
-        }
-        
-        p_headerLinesSpinBox->setValue(settings.headerLines);
-        // Column names are now stored directly in d_parsedData
-        
-        updateColumnSelectors();
-        
-        // Apply user's saved column preferences if available and valid
-        int savedXColumn = get(BC::Key::GenericXYWidget::xColumn, settings.xColumn);
-        int savedYColumn = get(BC::Key::GenericXYWidget::yColumn, settings.yColumn);
-        
-        // Validate and set saved column selections (combo index = column index)
-        if (savedXColumn >= 0 && savedXColumn < p_xColumnCombo->count()) {
-            p_xColumnCombo->setCurrentIndex(savedXColumn);
-        }
-        
-        if (savedYColumn >= 0 && savedYColumn < p_yColumnCombo->count()) {
-            p_yColumnCombo->setCurrentIndex(savedYColumn);
-        }
+        parseOp = std::make_shared<ParseGenericXYOperation>(filePath);
     } else {
-        // Create parse settings from current UI state
+        // Snapshot current UI settings for the worker thread.
+        GenericXYParser::ParseSettings settings;
         settings.delimiter = p_delimiterCombo->currentData().toString();
         settings.headerLines = p_headerLinesSpinBox->value();
         settings.xColumn = p_xColumnCombo->currentIndex();
         settings.yColumn = p_yColumnCombo->currentIndex();
+        parseOp = std::make_shared<ParseGenericXYOperation>(filePath, settings);
     }
-    
-    // Parse the file with either detected or UI settings
-    GenericXYData result = parser->parseWithSettings(filePath, settings);
-    
-    if (result.isValid()) {
-        d_parsedData = result;
-        // Data validity is now automatically tracked by d_parsedData
-        d_fileAnalyzed = true;
-        
-        updateColumnSelectors();
-        updatePreview();
-        
-        p_fileStatusLabel->setText(QString("Loaded %1 data points").arg(d_parsedData.data().size()));
-        styleStatusLabel(p_fileStatusLabel, ThemeColors::StatusSuccess);
-    } else {
-        d_parsedData.clear(); // Clears data, making isValid() return false
-        d_fileAnalyzed = true;
 
-        // Distinguish the common cause — a single-column file (e.g. an
-        // FID, one value per line) — from a generic parse failure, so
-        // the message is actionable rather than just "Failed to parse".
+    d_parsePending = true;
+    auto &manager = OverlayProcessManager::instance();
+    d_parseOperationId = manager.queueOperation(parseOp,
+                                                OverlayProcessManager::Priority::High);
+
+    p_fileStatusLabel->setText("Parsing data file…");
+    styleStatusLabel(p_fileStatusLabel, ThemeColors::SubtleText);
+
+    emit progressOperationStarted("Parsing data file...");
+    emit dataValidityChanged(false);
+    emit settingsChanged();
+}
+
+void GenericXYOverlayWidget::applyDetectedSettingsToUi(const GenericXYParser::ParseSettings &settings)
+{
+    for (int i = 0; i < p_delimiterCombo->count(); ++i) {
+        if (p_delimiterCombo->itemData(i).toString() == settings.delimiter) {
+            p_delimiterCombo->setCurrentIndex(i);
+            break;
+        }
+    }
+
+    p_headerLinesSpinBox->setValue(settings.headerLines);
+
+    updateColumnSelectors();
+
+    // Apply user's saved column preferences if available and valid
+    int savedXColumn = get(BC::Key::GenericXYWidget::xColumn, settings.xColumn);
+    int savedYColumn = get(BC::Key::GenericXYWidget::yColumn, settings.yColumn);
+
+    if (savedXColumn >= 0 && savedXColumn < p_xColumnCombo->count()) {
+        p_xColumnCombo->setCurrentIndex(savedXColumn);
+    }
+
+    if (savedYColumn >= 0 && savedYColumn < p_yColumnCombo->count()) {
+        p_yColumnCombo->setCurrentIndex(savedYColumn);
+    }
+}
+
+void GenericXYOverlayWidget::onParseOperationProgress(const QString &operationId, int percentage, const QString &message)
+{
+    Q_UNUSED(message);
+
+    if (operationId != d_parseOperationId) {
+        return;
+    }
+
+    emit progressValueChanged(percentage);
+}
+
+void GenericXYOverlayWidget::onParseOperationCompleted(const QString &operationId, std::shared_ptr<OverlayBase> result)
+{
+    Q_UNUSED(result); // Parse operations carry their payload on the operation object.
+
+    if (operationId != d_parseOperationId) {
+        return;
+    }
+
+    auto op = std::dynamic_pointer_cast<ParseGenericXYOperation>(
+        OverlayProcessManager::instance().operation(operationId));
+
+    d_parseOperationId.clear();
+    d_parsePending = false;
+    d_fileAnalyzed = true;
+
+    if (!op) {
+        d_parsedData.clear();
+        p_fileStatusLabel->setText("Parsed data result was unavailable.");
+        styleStatusLabel(p_fileStatusLabel, ThemeColors::StatusError);
+        emit progressOperationFinished();
+        emit dataValidityChanged(false);
+        emit settingsChanged();
+        return;
+    }
+
+    d_parsedData = op->parsedData();
+
+    // Reflect auto-detected settings back into the parsing controls so
+    // the user sees what produced the data and can tweak from there.
+    if (op->didAutoDetect()) {
+        applyDetectedSettingsToUi(op->resolvedSettings());
+    }
+
+    updateColumnSelectors();
+    updatePreview();
+
+    p_fileStatusLabel->setText(QString("Loaded %1 data points").arg(d_parsedData.data().size()));
+    styleStatusLabel(p_fileStatusLabel, ThemeColors::StatusSuccess);
+
+    validateSourceFile();
+    emit progressOperationFinished();
+    emit dataValidityChanged(d_parsedData.isValid());
+    emit settingsChanged();
+}
+
+void GenericXYOverlayWidget::onParseOperationFailed(const QString &operationId, const QString &error)
+{
+    if (operationId != d_parseOperationId) {
+        return;
+    }
+
+    d_parseOperationId.clear();
+    d_parsePending = false;
+    d_fileAnalyzed = true;
+    d_parsedData.clear();
+
+    // Distinguish the common cause — a single-column file (e.g. an FID,
+    // one value per line) — from a generic parse failure, so the
+    // message is actionable. Reading a 20-line sample is cheap and is
+    // not the operation that hung the UI.
+    QString msg = error;
+    auto parser = getParser();
+    const QString filePath = getStoredFullSourceFilePath();
+    if (parser && !filePath.isEmpty()) {
         const QStringList sample = parser->readSampleLinesPublic(filePath, 20);
         const QString delim = parser->detectDelimiterPublic(sample);
         int maxCols = 0;
@@ -807,22 +900,38 @@ void GenericXYOverlayWidget::analyzeAndParseFile(bool autodetect)
                 : t.split(delim, Qt::KeepEmptyParts).size();
             maxCols = qMax(maxCols, n);
         }
-
-        QString msg;
         if (maxCols < 2)
             msg = "Cannot parse: file must contain at least 2 columns "
                   "(X and Y); only 1 column was found.";
-        else if (!result.errorMessage().isEmpty())
-            msg = result.errorMessage();
-        else
-            msg = "Failed to parse file";
-
-        p_fileStatusLabel->setText(msg);
-        p_fileStatusLabel->setToolTip(msg);
-        styleStatusLabel(p_fileStatusLabel, ThemeColors::StatusError);
     }
-    
-    emit dataValidityChanged(d_parsedData.isValid());
+
+    p_fileStatusLabel->setText(msg);
+    p_fileStatusLabel->setToolTip(msg);
+    styleStatusLabel(p_fileStatusLabel, ThemeColors::StatusError);
+
+    validateSourceFile();
+    emit progressOperationFinished();
+    emit dataValidityChanged(false);
+    emit settingsChanged();
+}
+
+void GenericXYOverlayWidget::onParseOperationCancelled(const QString &operationId)
+{
+    if (operationId != d_parseOperationId) {
+        return;
+    }
+
+    d_parseOperationId.clear();
+    d_parsePending = false;
+    d_fileAnalyzed = true;
+    d_parsedData.clear();
+
+    p_fileStatusLabel->setText("Data parsing was cancelled.");
+    styleStatusLabel(p_fileStatusLabel, ThemeColors::StatusError);
+
+    validateSourceFile();
+    emit progressOperationFinished();
+    emit dataValidityChanged(false);
     emit settingsChanged();
 }
 

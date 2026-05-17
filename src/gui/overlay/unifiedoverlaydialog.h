@@ -151,6 +151,7 @@ private:
     
     // Dialog state tracking
     DialogState d_dialogState;
+    bool d_busyCursorActive = false; // Balances setOverrideCursor/restore
     QString d_currentOperationId;
     QString d_operationError;
     int d_operationProgress;

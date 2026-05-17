@@ -256,35 +256,28 @@ bool CatalogOverlayWidget::validateSourceFileImpl()
         d_fileValid = false;
         return false;
     }
-    
-    // Try to parse the file
-    auto registry = FileParserRegistry::instance();
-    auto parser = registry->findParserOfType<CatalogParser>(path);
-    
-    if (!parser) {
-        setSourceFileErrorMessage(QString("No suitable catalog parser found for file: %1").arg(path));
+
+    // Parsing happens on a worker thread; this only reports the cached
+    // outcome so the validation state machine never blocks the UI.
+    if (d_parsePending) {
+        setSourceFileErrorMessage("Parsing catalog file…");
+        return false;
+    }
+
+    if (!d_parseErrorMessage.isEmpty()) {
+        setSourceFileErrorMessage(d_parseErrorMessage);
         d_fileValid = false;
         return false;
     }
-    
-    try {
-        CatalogData testData = parser->parse(path);
-        if (testData.isEmpty()) {
-            setSourceFileErrorMessage(QString("Catalog file contains no valid transitions: %1").arg(path));
-            d_fileValid = false;
-            return false;
-        }
-        d_fileValid = true;
-        return true;
-    } catch (const std::exception &e) {
-        setSourceFileErrorMessage(QString("Error parsing catalog file: %1").arg(e.what()));
-        d_fileValid = false;
-        return false;
-    } catch (...) {
-        setSourceFileErrorMessage(QString("Unknown error parsing catalog file: %1").arg(path));
+
+    if (d_catalogData.isEmpty()) {
+        setSourceFileErrorMessage(QString("Catalog file contains no valid transitions: %1").arg(path));
         d_fileValid = false;
         return false;
     }
+
+    d_fileValid = true;
+    return true;
 }
 
 
@@ -408,10 +401,18 @@ void CatalogOverlayWidget::onBrowseButtonClicked()
 void CatalogOverlayWidget::onFilePathChanged()
 {
     d_filePath = getStoredFullSourceFilePath(); // Use stored full path instead of potentially abbreviated display text
-    
+
+    // Abandon any in-flight parse for a previously selected file.
+    if (!d_parseOperationId.isEmpty()) {
+        OverlayProcessManager::instance().cancelOperation(d_parseOperationId);
+        d_parseOperationId.clear();
+    }
+    d_parsePending = false;
+    d_parseErrorMessage.clear();
+    d_fileValid = false;
+    d_catalogData = CatalogData();
+
     if (d_filePath.isEmpty()) {
-        d_fileValid = false;
-        d_catalogData = CatalogData();
         updateFileInfo();
         // Refresh the base Source File Settings tier enable-state
         // (filtering) for the now-invalid source.
@@ -420,19 +421,7 @@ void CatalogOverlayWidget::onFilePathChanged()
         return;
     }
 
-    emit progressOperationStarted("Loading catalog file...");
-
-    loadCatalogFile(d_filePath);
-    updateFileInfo();
-
-    // Re-run base source-file validation so the Source File Settings
-    // tier (catalog filtering) enables as soon as a valid catalog is
-    // selected in Creation, not only in Settings/edit mode.
-    validateSourceFile();
-
-    emit progressOperationFinished();
-    emit dataValidityChanged(isDataValid());
-    emit settingsChanged();
+    startCatalogParse(d_filePath);
 }
 
 void CatalogOverlayWidget::onConvolutionEnabledToggled(bool enabled)
@@ -518,6 +507,18 @@ void CatalogOverlayWidget::setupConnections()
             this, &CatalogOverlayWidget::onConvolutionOperationFailed);
     connect(&manager, &OverlayProcessManager::operationCancelled,
             this, &CatalogOverlayWidget::onConvolutionOperationCancelled);
+
+    // Background catalog parsing shares the same manager signals; each
+    // handler filters by its own operation id so convolution and parse
+    // never cross-talk.
+    connect(&manager, &OverlayProcessManager::operationProgress,
+            this, &CatalogOverlayWidget::onParseOperationProgress);
+    connect(&manager, &OverlayProcessManager::operationCompleted,
+            this, &CatalogOverlayWidget::onParseOperationCompleted);
+    connect(&manager, &OverlayProcessManager::operationFailed,
+            this, &CatalogOverlayWidget::onParseOperationFailed);
+    connect(&manager, &OverlayProcessManager::operationCancelled,
+            this, &CatalogOverlayWidget::onParseOperationCancelled);
 }
 
 void CatalogOverlayWidget::loadSettings()
@@ -567,35 +568,115 @@ void CatalogOverlayWidget::saveSettings()
     set(BC::Key::CatalogWidget::filterMaxFreqMHz, p_filterMaxFreqSpinBox->value());
 }
 
-void CatalogOverlayWidget::loadCatalogFile(const QString &filePath)
+void CatalogOverlayWidget::startCatalogParse(const QString &filePath)
 {
+    // Parsing runs on a worker thread; the result is applied in
+    // onParseOperationCompleted(). Until then the source is treated as
+    // not-yet-valid (Accept stays disabled) and the status row shows
+    // progress rather than a spurious error.
+    d_parsePending = true;
+    d_parseErrorMessage.clear();
+
+    auto parseOp = std::make_shared<ParseCatalogOperation>(filePath);
+
+    auto &manager = OverlayProcessManager::instance();
+    d_parseOperationId = manager.queueOperation(parseOp,
+                                                OverlayProcessManager::Priority::High);
+
+    updateFileInfo();
+    validateSourceFile();
+
+    emit progressOperationStarted("Parsing catalog file...");
+    emit dataValidityChanged(isDataValid());
+    emit settingsChanged();
+}
+
+void CatalogOverlayWidget::onParseOperationProgress(const QString &operationId, int percentage, const QString &message)
+{
+    Q_UNUSED(message);
+
+    if (operationId != d_parseOperationId) {
+        return;
+    }
+
+    emit progressValueChanged(percentage);
+}
+
+void CatalogOverlayWidget::onParseOperationCompleted(const QString &operationId, std::shared_ptr<OverlayBase> result)
+{
+    Q_UNUSED(result); // Parse operations carry their payload on the operation object.
+
+    if (operationId != d_parseOperationId) {
+        return;
+    }
+
+    auto op = std::dynamic_pointer_cast<ParseCatalogOperation>(
+        OverlayProcessManager::instance().operation(operationId));
+
+    d_parseOperationId.clear();
+    d_parsePending = false;
+
+    if (op) {
+        d_catalogData = op->parsedData();
+        d_fileValid = !d_catalogData.isEmpty();
+    } else {
+        // Operation evicted before retrieval (should not happen in
+        // practice); treat as a parse failure.
+        d_fileValid = false;
+        d_catalogData = CatalogData();
+        d_parseErrorMessage = "Parsed catalog result was unavailable.";
+    }
+
+    // Apply filtering to the freshly parsed data, then refresh UI.
+    onFilteringParametersChanged();
+    updateFileInfo();
+    validateSourceFile();
+
+    emit progressOperationFinished();
+    emit dataValidityChanged(isDataValid());
+    emit settingsChanged();
+}
+
+void CatalogOverlayWidget::onParseOperationFailed(const QString &operationId, const QString &error)
+{
+    if (operationId != d_parseOperationId) {
+        return;
+    }
+
+    d_parseOperationId.clear();
+    d_parsePending = false;
     d_fileValid = false;
     d_catalogData = CatalogData();
-    
-    if (!QFile::exists(filePath)) {
-        return;
-    }
-    
-    auto registry = FileParserRegistry::instance();
-    auto parser = registry->findParserOfType<CatalogParser>(filePath);
-    
-    if (!parser) {
-        return;
-    }
-    
-    try {
-        d_catalogData = parser->parse(filePath);
-        d_fileValid = !d_catalogData.isEmpty();
-    } catch (const std::exception &e) {
-        d_fileValid = false;
-        d_catalogData = CatalogData();
-    } catch (...) {
-        d_fileValid = false;
-        d_catalogData = CatalogData();
-    }
-    
-    // Apply filtering after successful parsing (or clear filtered data on failure)
+    d_parseErrorMessage = error;
+
     onFilteringParametersChanged();
+    updateFileInfo();
+    validateSourceFile();
+
+    emit progressOperationFinished();
+    emit dataValidityChanged(isDataValid());
+    emit settingsChanged();
+}
+
+void CatalogOverlayWidget::onParseOperationCancelled(const QString &operationId)
+{
+    if (operationId != d_parseOperationId) {
+        return;
+    }
+
+    d_parseOperationId.clear();
+    d_parsePending = false;
+    d_fileValid = false;
+    d_catalogData = CatalogData();
+    d_parseErrorMessage = "Catalog parsing was cancelled.";
+
+    onFilteringParametersChanged();
+    updateFileInfo();
+    validateSourceFile();
+
+    emit progressOperationFinished();
+    emit dataValidityChanged(isDataValid());
+    emit settingsChanged();
 }
 
 void CatalogOverlayWidget::applyDetailRowVisibility()
