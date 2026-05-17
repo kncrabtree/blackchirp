@@ -42,32 +42,38 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
     };
 
     auto numAn = s.get(numAnalogChannels,4);
-    const int anCols = d_namesEnabled ? 4 : 3;
-    const int anNameCol = 3;
+    // Column 0 holds the per-channel row label (was the vertical header),
+    // for consistency with the restyled settings/matrix tables.
+    const int anCols = d_namesEnabled ? 5 : 4;
+    const int anNameCol = anCols - 1;
     p_anTable = new QTableWidget(numAn,anCols,this);
-    QStringList anHeaders{"Enable","Full Scale","Offset"};
+    QStringList anHeaders{"Ch","Enable","Full Scale","Offset"};
     if(d_namesEnabled) anHeaders << "Name";
     p_anTable->setHorizontalHeaderLabels(anHeaders);
     p_anTable->horizontalHeader()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
+    p_anTable->horizontalHeader()->setSectionResizeMode(1,QHeaderView::ResizeToContents);
     if(d_namesEnabled)
     {
-        p_anTable->horizontalHeader()->setSectionResizeMode(1,QHeaderView::ResizeToContents);
         p_anTable->horizontalHeader()->setSectionResizeMode(2,QHeaderView::ResizeToContents);
+        p_anTable->horizontalHeader()->setSectionResizeMode(3,QHeaderView::ResizeToContents);
         p_anTable->horizontalHeader()->setSectionResizeMode(anNameCol,QHeaderView::Stretch);
     }
     else
     {
-        p_anTable->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
         p_anTable->horizontalHeader()->setSectionResizeMode(2,QHeaderView::Stretch);
+        p_anTable->horizontalHeader()->setSectionResizeMode(3,QHeaderView::Stretch);
     }
     p_anTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    p_anTable->verticalHeader()->setVisible(false);
     p_anTable->setSelectionMode(QAbstractItemView::NoSelection);
     p_anTable->setFocusPolicy(Qt::NoFocus);
-    QStringList anRowLabels;
 
     for(int i=0; i<numAn; ++i)
     {
-        anRowLabels << QString("Ch %1").arg(i+1);
+        auto chLabel = new QTableWidgetItem(QString::number(i+1));
+        chLabel->setFlags(Qt::ItemIsEnabled);
+        chLabel->setTextAlignment(Qt::AlignCenter);
+        p_anTable->setItem(i,0,chLabel);
 
         auto chBox = new QCheckBox;
         chBox->setChecked(s.getArrayValue(dwAnChannels,i,en,false));
@@ -103,9 +109,9 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
         fsBox->setEnabled(chBox->isChecked());
         voBox->setEnabled(chBox->isChecked());
 
-        centerCellWidget(p_anTable,i,0,chBox);
-        p_anTable->setCellWidget(i,1,fsBox);
-        p_anTable->setCellWidget(i,2,voBox);
+        centerCellWidget(p_anTable,i,1,chBox);
+        p_anTable->setCellWidget(i,2,fsBox);
+        p_anTable->setCellWidget(i,3,voBox);
 
         if(d_namesEnabled)
         {
@@ -115,7 +121,6 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
 
         d_anChannelWidgets.insert({i+1,{chBox,fsBox,voBox}});
     }
-    p_anTable->setVerticalHeaderLabels(anRowLabels);
 
     auto anBox = new QGroupBox("Analog Channels",this);
     auto anLayout = new QVBoxLayout;
@@ -128,28 +133,32 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
     int dch = s.get(numDigitalChannels,0);
     if(dch > 0)
     {
-        const int digCols = d_namesEnabled ? 3 : 2;
-        const int digNameCol = 2;
+        const int digCols = d_namesEnabled ? 4 : 3;
+        const int digNameCol = digCols - 1;
         p_digTable = new QTableWidget(dch,digCols,this);
-        QStringList digHeaders{"Read","Role"};
+        QStringList digHeaders{"Ch","Read","Role"};
         if(d_namesEnabled) digHeaders << "Name";
         p_digTable->setHorizontalHeaderLabels(digHeaders);
         p_digTable->horizontalHeader()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
+        p_digTable->horizontalHeader()->setSectionResizeMode(1,QHeaderView::ResizeToContents);
         if(d_namesEnabled)
         {
-            p_digTable->horizontalHeader()->setSectionResizeMode(1,QHeaderView::ResizeToContents);
+            p_digTable->horizontalHeader()->setSectionResizeMode(2,QHeaderView::ResizeToContents);
             p_digTable->horizontalHeader()->setSectionResizeMode(digNameCol,QHeaderView::Stretch);
         }
         else
-            p_digTable->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
+            p_digTable->horizontalHeader()->setSectionResizeMode(2,QHeaderView::Stretch);
         p_digTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+        p_digTable->verticalHeader()->setVisible(false);
         p_digTable->setSelectionMode(QAbstractItemView::NoSelection);
         p_digTable->setFocusPolicy(Qt::NoFocus);
-        QStringList digRowLabels;
 
         for(int i=0; i<dch; ++i)
         {
-            digRowLabels << QString("Ch %1").arg(i+1);
+            auto chLabel = new QTableWidgetItem(QString::number(i+1));
+            chLabel->setFlags(Qt::ItemIsEnabled);
+            chLabel->setTextAlignment(Qt::AlignCenter);
+            p_digTable->setItem(i,0,chLabel);
 
             auto readBox = new QCheckBox;
             readBox->setChecked(s.getArrayValue(dwDigChannels,i,digInp,false));
@@ -161,8 +170,8 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
             connect(readBox,&QCheckBox::toggled,roleBox,&QComboBox::setDisabled);
             connect(readBox,&QCheckBox::toggled,this,&DigitizerConfigWidget::edited);
 
-            centerCellWidget(p_digTable,i,0,readBox);
-            p_digTable->setCellWidget(i,1,roleBox);
+            centerCellWidget(p_digTable,i,1,readBox);
+            p_digTable->setCellWidget(i,2,roleBox);
 
             if(d_namesEnabled)
             {
@@ -172,7 +181,6 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
 
             d_digChannelWidgets.insert({i+1,{readBox,roleBox}});
         }
-        p_digTable->setVerticalHeaderLabels(digRowLabels);
 
         auto digBox = new QGroupBox("Digital Channels",this);
         auto digLayout = new QVBoxLayout;
@@ -354,18 +362,27 @@ The actual number of records able to be acquired may be limited by the record le
     if(s.get(multiRec,false))
         p_multiRecordBox->setChecked(true);
 
-    auto aTable = new QTableWidget(2,2,this);
-    aTable->setHorizontalHeaderLabels({"On","Count"});
-    aTable->setVerticalHeaderLabels({"Block Average","Multiple Records"});
+    auto aTable = new QTableWidget(2,3,this);
+    aTable->setHorizontalHeaderLabels({"","On","Count"});
     aTable->horizontalHeader()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
-    aTable->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
+    aTable->horizontalHeader()->setSectionResizeMode(1,QHeaderView::ResizeToContents);
+    aTable->horizontalHeader()->setSectionResizeMode(2,QHeaderView::Stretch);
     aTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    aTable->verticalHeader()->setVisible(false);
     aTable->setSelectionMode(QAbstractItemView::NoSelection);
+    aTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     aTable->setFocusPolicy(Qt::NoFocus);
-    centerCellWidget(aTable,0,0,p_blockAverageBox);
-    aTable->setCellWidget(0,1,p_numAveragesBox);
-    centerCellWidget(aTable,1,0,p_multiRecordBox);
-    aTable->setCellWidget(1,1,p_numRecordsBox);
+    for(int r=0; r<2; ++r)
+    {
+        auto *it = new QTableWidgetItem(r==0 ? QString("Block Average")
+                                              : QString("Multiple Records"));
+        it->setFlags(Qt::ItemIsEnabled);
+        aTable->setItem(r,0,it);
+    }
+    centerCellWidget(aTable,0,1,p_blockAverageBox);
+    aTable->setCellWidget(0,2,p_numAveragesBox);
+    centerCellWidget(aTable,1,1,p_multiRecordBox);
+    aTable->setCellWidget(1,2,p_numRecordsBox);
 
     auto aLayout = new QVBoxLayout;
     aLayout->addWidget(aTable);
