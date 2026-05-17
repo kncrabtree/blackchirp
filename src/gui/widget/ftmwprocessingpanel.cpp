@@ -1,9 +1,7 @@
 #include <gui/widget/ftmwprocessingpanel.h>
 
 #include <QVBoxLayout>
-#include <QGridLayout>
-#include <QTableWidget>
-#include <QHeaderView>
+#include <QHBoxLayout>
 #include <QSpinBox>
 #include <QDoubleSpinBox>
 #include <QComboBox>
@@ -13,10 +11,9 @@
 #include <QMetaEnum>
 
 #include <gui/style/themecolors.h>
-#include <gui/widget/cellwidgethelpers.h>
-#include <gui/widget/tablefit.h>
+#include <gui/widget/settingstable.h>
 
-using BC::Gui::centerCellWidget;
+using namespace Qt::StringLiterals;
 
 namespace {
 
@@ -40,37 +37,22 @@ void recenterCombo(QComboBox *cb)
 FtmwProcessingPanel::FtmwProcessingPanel(bool mainWin, QWidget *parent) :
     QWidget(parent), SettingsStorage(BC::Key::ftmwProcWidget)
 {
-    const QStringList labels{
-        QStringLiteral("FT Start"),
-        QStringLiteral("FT End"),
-        QStringLiteral("Exp Filter"),
-        QStringLiteral("VScale Ignore"),
-        QStringLiteral("Zero Pad"),
-        QStringLiteral("Remove DC"),
-        QStringLiteral("Window Function"),
-        QStringLiteral("FT Units")
-    };
-
-    p_table = new QTableWidget(labels.size(),1,this);
-    p_table->setVerticalHeaderLabels(labels);
-    p_table->horizontalHeader()->setVisible(false);
-    p_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    p_table->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    p_table->setSelectionMode(QAbstractItemView::NoSelection);
+    p_table = new SettingsTable(this);
     p_table->setFocusPolicy(Qt::NoFocus);
-    p_table->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-    p_table->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     p_startBox = new QDoubleSpinBox;
     p_startBox->setMinimum(0.0);
     p_startBox->setDecimals(4);
     p_startBox->setSingleStep(0.05);
-    p_startBox->setSuffix(QString::fromUtf8(" μs"));
+    p_startBox->setSuffix(u" μs"_s);
     p_startBox->setValue(get<double>(BC::Key::fidStart,0.0));
     p_startBox->setAlignment(Qt::AlignCenter);
     p_startBox->setKeyboardTracking(false);
-    p_startBox->setToolTip(QStringLiteral("Start of data for FT. Points before this in the FID will be set to 0."));
-    p_table->setCellWidget(0,0,p_startBox);
+    {
+        const auto tip = "Start of data for FT. Points before this in the FID will be set to 0."_L1;
+        p_startBox->setToolTip(tip);
+        p_table->addSettingRow("FT Start"_L1,p_startBox,tip);
+    }
     if(mainWin)
         registerGetter(BC::Key::fidStart,p_startBox,&QDoubleSpinBox::value);
 
@@ -78,12 +60,15 @@ FtmwProcessingPanel::FtmwProcessingPanel(bool mainWin, QWidget *parent) :
     p_endBox->setMinimum(0.0);
     p_endBox->setDecimals(4);
     p_endBox->setSingleStep(0.05);
-    p_endBox->setSuffix(QString::fromUtf8(" μs"));
+    p_endBox->setSuffix(u" μs"_s);
     p_endBox->setValue(get<double>(BC::Key::fidEnd,99.0));
     p_endBox->setAlignment(Qt::AlignCenter);
     p_endBox->setKeyboardTracking(false);
-    p_endBox->setToolTip(QStringLiteral("End of data for FT. Points after this in the FID will be set to 0."));
-    p_table->setCellWidget(1,0,p_endBox);
+    {
+        const auto tip = "End of data for FT. Points after this in the FID will be set to 0."_L1;
+        p_endBox->setToolTip(tip);
+        p_table->addSettingRow("FT End"_L1,p_endBox,tip);
+    }
     if(mainWin)
         registerGetter(BC::Key::fidEnd,p_endBox,&QDoubleSpinBox::value);
 
@@ -91,42 +76,54 @@ FtmwProcessingPanel::FtmwProcessingPanel(bool mainWin, QWidget *parent) :
     p_expBox->setMinimum(0.0);
     p_expBox->setDecimals(1);
     p_expBox->setSingleStep(0.1);
-    p_expBox->setSpecialValueText(QStringLiteral("Disabled"));
-    p_expBox->setSuffix(QString::fromUtf8(" μs"));
+    p_expBox->setSpecialValueText("Disabled"_L1);
+    p_expBox->setSuffix(u" μs"_s);
     p_expBox->setValue(get<double>(BC::Key::fidExp,0.0));
     p_expBox->setAlignment(Qt::AlignCenter);
     p_expBox->setKeyboardTracking(false);
-    p_expBox->setToolTip(QStringLiteral("Time constant for exponential filter."));
-    p_table->setCellWidget(2,0,p_expBox);
+    {
+        const auto tip = "Time constant for an exponential filter applied to the FID. The special value 0 disables the filter."_L1;
+        p_expBox->setToolTip(tip);
+        p_table->addSettingRow("Exp Filter"_L1,p_expBox,tip);
+    }
     if(mainWin)
         registerGetter(BC::Key::fidExp,p_expBox,&QDoubleSpinBox::value);
 
     p_autoScaleIgnoreBox = new QDoubleSpinBox;
     p_autoScaleIgnoreBox->setRange(0.0,1000.0);
     p_autoScaleIgnoreBox->setDecimals(1);
-    p_autoScaleIgnoreBox->setSuffix(QStringLiteral(" MHz"));
+    p_autoScaleIgnoreBox->setSuffix(" MHz"_L1);
     p_autoScaleIgnoreBox->setValue(get<double>(BC::Key::autoscaleIgnore,0.0));
     p_autoScaleIgnoreBox->setAlignment(Qt::AlignCenter);
     p_autoScaleIgnoreBox->setKeyboardTracking(false);
-    p_autoScaleIgnoreBox->setToolTip(QStringLiteral("Points within this frequency of the LO are ignored when calculating the autoscale minimum and maximum."));
-    p_table->setCellWidget(3,0,p_autoScaleIgnoreBox);
+    {
+        const auto tip = "Points within this frequency of the LO are ignored when computing the autoscale vertical minimum and maximum."_L1;
+        p_autoScaleIgnoreBox->setToolTip(tip);
+        p_table->addSettingRow("VScale Ignore"_L1,p_autoScaleIgnoreBox,tip);
+    }
     if(mainWin)
         registerGetter(BC::Key::autoscaleIgnore,p_autoScaleIgnoreBox,&QDoubleSpinBox::value);
 
     p_zeroPadBox = new QSpinBox;
     p_zeroPadBox->setRange(0,2);
-    p_zeroPadBox->setSpecialValueText(QStringLiteral("None"));
+    p_zeroPadBox->setSpecialValueText("None"_L1);
     p_zeroPadBox->setValue(get(BC::Key::zeroPad,0));
     p_zeroPadBox->setAlignment(Qt::AlignCenter);
     p_zeroPadBox->setKeyboardTracking(false);
-    p_zeroPadBox->setToolTip(QStringLiteral("Pad FID with zeroes until length extends to a power of 2.\n1 = next power of 2, 2 = second power of 2, etc."));
-    p_table->setCellWidget(4,0,p_zeroPadBox);
+    {
+        const auto tip = "Pad the FID with zeroes until its length reaches a power of 2.\n1 = next power of 2, 2 = second power of 2, etc. Interpolates the spectrum; does not add information."_L1;
+        p_zeroPadBox->setToolTip(tip);
+        p_table->addSettingRow("Zero Pad"_L1,p_zeroPadBox,tip);
+    }
     registerGetter(BC::Key::zeroPad,p_zeroPadBox,&QSpinBox::value);
 
     p_removeDCBox = new QCheckBox;
     p_removeDCBox->setChecked(get(BC::Key::removeDC,false));
-    p_removeDCBox->setToolTip(QStringLiteral("Subtract any DC offset in the FID."));
-    centerCellWidget(p_table,5,0,p_removeDCBox);
+    {
+        const auto tip = "Subtract the mean (DC offset) from the FID before processing, suppressing the spurious feature at 0 Hz."_L1;
+        p_removeDCBox->setToolTip(tip);
+        p_table->addSettingRow("Remove DC"_L1,p_removeDCBox,tip);
+    }
     if(mainWin)
         registerGetter<bool>(BC::Key::removeDC,std::function<bool()>{
             [this](){ return p_removeDCBox->isChecked(); }});
@@ -140,7 +137,11 @@ FtmwProcessingPanel::FtmwProcessingPanel(bool mainWin, QWidget *parent) :
     }
     recenterCombo(p_winfBox);
     p_winfBox->setCurrentIndex(p_winfBox->findData(QVariant::fromValue(get(BC::Key::ftWinf,FtWorker::None))));
-    p_table->setCellWidget(6,0,p_winfBox);
+    {
+        const auto tip = "Window function applied to the FID before the FFT. Reduces spectral leakage at the cost of frequency resolution; None is a rectangular (uniform) window."_L1;
+        p_winfBox->setToolTip(tip);
+        p_table->addSettingRow("Window"_L1,p_winfBox,tip);
+    }
     if(mainWin)
         registerGetter<FtWorker::FtWindowFunction>(BC::Key::ftWinf,std::function<FtWorker::FtWindowFunction()>{
             [this](){ return p_winfBox->currentData().value<FtWorker::FtWindowFunction>(); }});
@@ -154,17 +155,21 @@ FtmwProcessingPanel::FtmwProcessingPanel(bool mainWin, QWidget *parent) :
     }
     recenterCombo(p_unitsBox);
     p_unitsBox->setCurrentIndex(p_unitsBox->findData(QVariant::fromValue(get(BC::Key::ftUnits,FtWorker::FtuV))));
-    p_table->setCellWidget(7,0,p_unitsBox);
+    {
+        const auto tip = "Amplitude units for the magnitude spectrum (volts, millivolts, microvolts, or nanovolts)."_L1;
+        p_unitsBox->setToolTip(tip);
+        p_table->addSettingRow("FT Units"_L1,p_unitsBox,tip);
+    }
     if(mainWin)
         registerGetter<FtWorker::FtUnits>(BC::Key::ftUnits,std::function<FtWorker::FtUnits()>{
             [this](){ return p_unitsBox->currentData().value<FtWorker::FtUnits>(); }});
 
     p_resetButton = new QPushButton(ThemeColors::createThemedIcon(":/icons/arrow-path.svg",ThemeColors::IconSecondary,this),
-                                    QStringLiteral("Reset"));
-    p_resetButton->setToolTip(QStringLiteral("Reset processing settings to last saved values."));
+                                    "Reset"_L1);
+    p_resetButton->setToolTip("Reset processing settings to last saved values."_L1);
     p_saveButton = new QPushButton(ThemeColors::createThemedIcon(":/icons/arrow-down-tray.svg",ThemeColors::IconSecondary,this),
-                                   QStringLiteral("Save"));
-    p_saveButton->setToolTip(QStringLiteral("Save current processing settings."));
+                                   "Save"_L1);
+    p_saveButton->setToolTip("Save current processing settings."_L1);
 
     auto *btnRow = new QHBoxLayout;
     btnRow->setContentsMargins(0,0,0,0);
@@ -175,8 +180,6 @@ FtmwProcessingPanel::FtmwProcessingPanel(bool mainWin, QWidget *parent) :
     outer->setContentsMargins(4,4,4,4);
     outer->addWidget(p_table,0);
     outer->addLayout(btnRow,0);
-    outer->addStretch(1);
-    fitTableToContents(p_table);
     setLayout(outer);
 
     auto onDouble = [this](){ readSettings(); };

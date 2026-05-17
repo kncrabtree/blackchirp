@@ -12,7 +12,7 @@ class QDoubleSpinBox;
 class QComboBox;
 class QCheckBox;
 class QPushButton;
-class QTableWidget;
+class SettingsTable;
 
 namespace BC::Key {
 inline constexpr QLatin1StringView ftmwProcWidget{"ftmwProcessingWidget"};
@@ -45,7 +45,7 @@ public slots:
     void readSettings();
 
 private:
-    QTableWidget *p_table;
+    SettingsTable *p_table;
     QDoubleSpinBox *p_startBox, *p_endBox, *p_expBox, *p_autoScaleIgnoreBox;
     QSpinBox *p_zeroPadBox;
     QCheckBox *p_removeDCBox;

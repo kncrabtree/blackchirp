@@ -10,6 +10,8 @@
 #include <gui/style/themecolors.h>
 #include <gui/widget/settingstable.h>
 
+using namespace Qt::StringLiterals;
+
 FtmwAcquisitionPanel::FtmwAcquisitionPanel(bool main, QWidget *parent) :
     QWidget(parent), d_main(main)
 {
@@ -22,11 +24,17 @@ FtmwAcquisitionPanel::FtmwAcquisitionPanel(bool main, QWidget *parent) :
     p_refreshBox = new QSpinBox;
     p_refreshBox->setRange(500,60000);
     p_refreshBox->setSingleStep(500);
-    p_refreshBox->setSuffix(" ms");
+    p_refreshBox->setSuffix(" ms"_L1);
     p_refreshBox->setAlignment(Qt::AlignCenter);
     p_refreshBox->setKeyboardTracking(false);
     p_refreshBox->setEnabled(false);
-    int refreshRow = table->addSettingRow("Refresh Interval", p_refreshBox);
+    {
+        const auto tip = "How often the live FID and FT plots refresh during acquisition."_L1;
+        p_refreshBox->setToolTip(tip);
+        int refreshRow = table->addSettingRow("Refresh Interval"_L1, p_refreshBox, tip);
+        if(!d_main)
+            table->setRowHidden(refreshRow, true);
+    }
 
     p_averagesBox = new QSpinBox;
     p_averagesBox->setRange(1,INT_MAX);
@@ -34,10 +42,9 @@ FtmwAcquisitionPanel::FtmwAcquisitionPanel(bool main, QWidget *parent) :
     p_averagesBox->setAlignment(Qt::AlignCenter);
     p_averagesBox->setKeyboardTracking(false);
     p_averagesBox->setEnabled(false);
-    table->addSettingRow("Peak Up Averages", p_averagesBox);
-
-    if(!d_main)
-        table->setRowHidden(refreshRow, true);
+    p_averagesBox->setToolTip("Number of shots in the rolling (peak-up) average shown on the live plots."_L1);
+    table->addSettingRow("Peak Up Averages"_L1, p_averagesBox,
+                         "Number of shots in the rolling (peak-up) average shown on the live plots."_L1);
 
     outer->addWidget(table,0);
 
@@ -46,14 +53,14 @@ FtmwAcquisitionPanel::FtmwAcquisitionPanel(bool main, QWidget *parent) :
     // settings rows.
     p_resetAveragesButton = new QPushButton(
         ThemeColors::createThemedIcon(":/icons/arrow-path.svg",ThemeColors::IconSecondary,this),
-        "Reset");
-    p_resetAveragesButton->setToolTip("Reset the rolling average (peak-up) accumulation.");
+        "Reset"_L1);
+    p_resetAveragesButton->setToolTip("Reset the rolling average (peak-up) accumulation."_L1);
     p_resetAveragesButton->setEnabled(false);
 
     p_manualBackupButton = new QPushButton(
         ThemeColors::createThemedIcon(":/icons/archive-box-arrow-down.svg",ThemeColors::IconSecondary,this),
-        "Backup");
-    p_manualBackupButton->setToolTip("Save a backup snapshot of the current FID list.");
+        "Backup"_L1);
+    p_manualBackupButton->setToolTip("Save a backup snapshot of the current FID list."_L1);
     p_manualBackupButton->setEnabled(false);
     p_manualBackupButton->setVisible(d_main);
 
