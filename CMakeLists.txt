@@ -395,6 +395,7 @@ if(BC_BUILD_TESTS)
         src/gui/plot/curveappearancewidget.cpp
         src/gui/plot/curveappearancepresetmanager.cpp
         src/gui/plot/presetsavedialog.cpp
+        src/gui/widget/settingstable.cpp
         src/gui/style/themecolors.cpp
         src/gui/util/numericformat.cpp
     )
