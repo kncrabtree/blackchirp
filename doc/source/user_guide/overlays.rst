@@ -1,5 +1,6 @@
 .. index::
    single: Overlays
+   single: Overlay Manager
    single: Catalog data
    single: SPCAT
    single: XIAM
@@ -9,103 +10,97 @@
 Overlays
 ========
 
-An overlay is an additional curve that is drawn on top of an FT plot for comparison with the experimental spectrum. Overlays are used to compare two experiments side-by-side, to display predicted line lists from spectroscopic fitting programs, and to import arbitrary XY data from other sources. Overlays are saved with the experiment and are restored automatically the next time the experiment is opened. The on-disk format is described on the :doc:`data_storage` page.
+An overlay is an additional curve drawn on top of an FT plot for comparison with the experimental spectrum. Overlays compare two experiments side by side, display predicted line lists from spectroscopic fitting programs, and import arbitrary XY data from other sources. Overlays are saved with the experiment and restored automatically the next time it is opened; the on-disk format is described on the :doc:`data_storage` page.
 
-The Overlay Manager is opened from the squares-plus icon on the CP-FTMW toolbar. See :doc:`cp-ftmw` for the toolbar context.
-
-.. image:: /_static/user_guide/overlays-overlay_types_comparison.png
+.. image:: /_static/user_guide/overlays-overlay_overview.png
    :width: 800
    :align: center
-   :alt: Example showing different types of overlays on an FTMW spectrum
-
-
-Overlay Types
-.............
-
-Blackchirp supports three overlay types, each backed by a different file format. The type is selected by the user when the overlay is created; the settings panel in the creation dialog adapts to the chosen type.
-
-Blackchirp Experiment
----------------------
-
-Loads the FT data from another Blackchirp experiment. The experiment metadata (LO frequency, shot counts, FT processing settings) is preserved, and the FT can be reprocessed using the standard processing controls. This is the most direct way to compare two experiments acquired under different conditions (e.g., discharge on vs. off, or different sample backing pressures).
-
-Catalog
--------
-
-Displays a stick spectrum or convolved lineshape from a spectroscopic fitting program. SPCAT and XIAM output formats are supported. Each transition retains its quantum numbers and source-program metadata, which are shown in the curve tooltip.
-
-For comparison with experimental data, the stick spectrum can be convolved with a Lorentzian or Gaussian lineshape of user-defined FWHM. Convolution runs in a background thread; for large catalogs it may take a minute or more, and progress is reported in a cancellable dialog. Convolution results are cached so that repeating the same parameters returns immediately.
-
-.. image:: /_static/user_guide/overlays-catalog_convolution_settings.png
-   :width: 800
-   :align: center
-   :alt: Catalog overlay convolution settings dialog
-
-The overlay's frequency range can be limited to a subset of the catalog. Restricting the range before convolution reduces both processing time and memory usage. For very large catalogs (>100,000 transitions), pre-filtering the file to the relevant frequency range is recommended.
-
-Generic XY
-----------
-
-Loads arbitrary XY data from a delimited text file. Comma-, semicolon-, tab-, and space-separated formats are recognized, and a custom delimiter may be specified manually. The dialog displays the parsed file in a preview table so the column mapping can be verified before the overlay is created.
-
-.. image:: /_static/user_guide/overlays-generic_xy_preview.png
-   :width: 800
-   :align: center
-   :alt: Generic XY data preview showing parsed file contents
-
-The X and Y columns are selected explicitly, the number of header lines to skip is configurable, and the X range can be filtered to a subset of the file. Numeric values must use the period as the decimal separator.
-
-
-Creating an Overlay
-...................
-
-To create an overlay:
-
-1. Click the ``Overlays`` button on the CP-FTMW toolbar.
-2. In the Overlay Manager, click the ``Add`` button (plus icon). The unified overlay creation dialog opens.
-3. Choose the overlay type. The settings panel updates to match the selection.
-4. Click ``Browse`` and select a data file.
-5. For Catalog overlays, configure the lineshape, linewidth, and frequency range. For Generic XY overlays, choose the X and Y columns, the number of header lines, and the X range. For Blackchirp Experiment overlays, the standard FT processing controls are available.
-6. The plot updates with a live preview as settings change.
-7. Click ``OK`` to create the overlay, or ``Cancel`` to discard it.
-
-.. image:: /_static/user_guide/overlays-overlay_creation_dialog.png
-   :width: 800
-   :align: center
-   :alt: Unified overlay creation dialog
+   :target: /_static/user_guide/overlays-overlay_overview.png
+   :alt: CP-FTMW view with several overlays drawn on the main FT plot
 
 
 Overlay Manager
 ...............
 
-Once created, overlays appear in a table in the Overlay Manager. Each row corresponds to one overlay.
+The Overlay Manager is opened from the ``Overlays`` button on the CP-FTMW toolbar; see :doc:`cp-ftmw` for the toolbar context. It lists every overlay defined for the experiment, one per row, and carries a toolbar with three actions:
 
-.. image:: /_static/user_guide/overlays-overlay_manager_main.png
+* ``Add Overlay``: Opens a menu of overlay types; choosing one opens the creation dialog for that type.
+* ``Remove Overlay``: Deletes the selected overlay(s).
+* ``Show Parent``: Raises the FTMW view that the manager belongs to.
+
+.. image:: /_static/user_guide/overlays-overlay_toolbar.png
    :align: center
-   :alt: Overlay Manager interface
+   :alt: Overlay Manager listing several overlays
 
-The columns are:
+Each row has the following columns:
 
-* ``Configure``: Gear icon. Opens the same dialog used during creation; changes apply on close.
-* ``Enabled``: Checkbox. Toggles the overlay's visibility on the plot without deleting it.
-* ``Label``: User-editable name for the overlay. Must be unique within the experiment. Edited via the Configure dialog. Special characters (including semicolons) are replaced with underscores when the label is written to disk.
-* ``Plot``: Identifies which plot the overlay is drawn on. The same source can be added multiple times to display on different plots.
-* ``Type``: Catalog, Generic XY, or Blackchirp Experiment.
+* Configure (gear icon): Opens the same dialog used during creation; changes apply on close.
+* Enabled (eye icon): Toggles the overlay's visibility on the plot without deleting it.
+* ``Label``: Editable name for the overlay, unique within the experiment. Special characters (including semicolons) are replaced with underscores when the label is written to disk.
+* ``Plot ID``: Which plot the overlay is drawn on. The same source can be added more than once to display on different plots.
+* ``Type``: Catalog, Generic XY, or BC Experiment.
 * ``Comment``: Free-form notes. May not contain semicolons.
 
-Right-clicking on a row provides additional actions:
+Right-clicking a row offers ``Configure...``, ``Edit Comment...``, a ``Curve Appearance`` submenu, and copy/paste of the overlay's data settings (Y scale, offset, frequency filtering) and its curve appearance (color, line style, thickness). ``Undo`` reverts the most recent paste. The copy/paste actions also have keyboard shortcuts:
 
-* ``Copy Settings``: Copies the overlay's data and processing settings (Y scale, offset, frequency filtering) to the clipboard.
-* ``Paste Settings``: Applies copied data settings to the selected overlay.
-* ``Copy Appearance``: Copies the curve appearance (color, line style, thickness).
-* ``Paste Appearance``: Applies copied appearance settings to the selected overlay.
-* ``Remove``: Deletes the selected overlay(s).
-
-Keyboard shortcuts are available for the copy/paste actions:
-
+* ``Ctrl+C`` / ``Ctrl+V``: Copy/paste curve appearance.
 * ``Ctrl+Shift+C`` / ``Ctrl+Shift+V``: Copy/paste data settings.
-* ``Ctrl+C`` / ``Ctrl+V``: Copy/paste appearance.
 * ``Ctrl+Z``: Undo the most recent paste.
+
+
+Creating an Overlay
+...................
+
+Click ``Add Overlay`` and choose a type from the menu. The creation dialog opens for that type, titled ``Create <Type> Overlay (Preview)``, with three panels: a type-specific source panel on the left (described under `Overlay Types`_ below), ``Base Options`` in the center, and ``Curve Appearance`` on the right. The plot shows a live preview as settings change. Click ``Create Overlay`` to add the overlay or ``Cancel`` to discard it.
+
+``Base Options`` holds settings common to every type: the label, comment, and target plot; the Y scale (with ``Invert`` and ``Autoscale``); X and Y offsets; and an optional ``Frequency Limits`` group that restricts the drawn curve to a frequency window. ``Curve Appearance`` is the standard per-curve control described in :ref:`curve-configuration-options`, including appearance presets.
+
+The configuration in the source panel differs by overlay type, as described below. The same dialog is reused by the ``Configure`` action to edit an existing overlay.
+
+
+Overlay Types
+.............
+
+Blackchirp supports three overlay types, each backed by a different file format.
+
+BC Experiment
+-------------
+
+Loads the FT data from another Blackchirp experiment, selected by experiment number or by browsing to a custom path. The experiment metadata (LO frequency, shot counts, FT processing settings) is preserved, and the FT can be reprocessed with the standard processing controls. This is the most direct way to compare two experiments acquired under different conditions (e.g., discharge on vs. off, or different sample backing pressures).
+
+.. image:: /_static/user_guide/overlays-bcexperiment_settings.png
+   :width: 800
+   :align: center
+   :target: /_static/user_guide/overlays-bcexperiment_settings.png
+   :alt: BC Experiment overlay creation dialog
+
+Catalog
+-------
+
+Displays a stick spectrum or convolved lineshape from a spectroscopic fitting program. SPCAT and XIAM output formats are supported. Each transition retains its quantum numbers and source-program metadata, shown in the curve tooltip.
+
+.. image:: /_static/user_guide/overlays-catalog_convolution_settings.png
+   :width: 800
+   :align: center
+   :target: /_static/user_guide/overlays-catalog_convolution_settings.png
+   :alt: Catalog overlay creation dialog with convolution enabled
+
+The ``Filtering`` section limits the overlay to a subset of the catalog by frequency. Restricting the range reduces both processing time and memory use; for very large catalogs (>100,000 transitions), pre-filtering the file to the relevant range is recommended.
+
+Enabling ``Convolution Enabled`` convolves the stick spectrum with a Lorentzian or Gaussian lineshape of a user-defined FWHM for direct comparison with experimental data. Convolution runs on a background thread; for large catalogs it may take a minute or more, and progress is reported in a cancellable dialog. Results are cached, so repeating the same parameters returns immediately.
+
+Generic XY
+----------
+
+Loads arbitrary XY data from a delimited text file. Comma-, semicolon-, tab-, and space-separated formats are recognized, and a custom delimiter may be set manually. ``Auto-Detect Format`` infers the delimiter and header line count; the X and Y columns are then chosen explicitly under ``Column Mapping``. ``Preview Data...`` opens the parsed rows in a separate window so the column mapping can be verified before the overlay is created.
+
+.. image:: /_static/user_guide/overlays-generic_xy_preview.png
+   :width: 800
+   :align: center
+   :target: /_static/user_guide/overlays-generic_xy_preview.png
+   :alt: Generic XY overlay creation dialog
+
+The number of header lines to skip is configurable, and the optional ``Data Filtering`` section restricts the import to a subset of the X range. Numeric values must use the period as the decimal separator.
 
 
 Troubleshooting
@@ -113,6 +108,6 @@ Troubleshooting
 
 If a catalog file is not recognized, verify that it is the unmodified output of a supported program (SPCAT or XIAM) and that the file is complete and UTF-8 encoded. To request support for an additional catalog format, file an issue on `GitHub <https://github.com/kncrabtree/blackchirp/issues>`_.
 
-If a Generic XY file fails to parse or its columns are misaligned, set the delimiter manually rather than relying on auto-detection, verify that the column mapping in the preview table is correct, and confirm that the numeric values use periods as the decimal separator. Comment lines or partial header rows embedded within the data can cause silent column misalignment; they should be removed or the header line count should be increased.
+If a Generic XY file fails to parse or its columns are misaligned, set the delimiter manually rather than relying on auto-detection, verify the ``X Column`` / ``Y Column`` selection with ``Preview Data...``, and confirm that the numeric values use periods as the decimal separator. Comment lines or partial header rows embedded within the data can cause silent column misalignment; remove them or increase the header line count.
 
-If a Blackchirp Experiment overlay fails to load, confirm that the experiment directory contains a complete set of FID files and that the experiment number is reachable from the configured data storage location. Loading the experiment directly via :menuselection:`File --> View Experiment` first is a useful way to verify that the data is intact.
+If a BC Experiment overlay fails to load, confirm that the experiment directory contains a complete set of FID files and that the experiment number is reachable from the configured data storage location. Loading the experiment directly via :menuselection:`File --> View Experiment` first is a useful way to verify that the data is intact.
