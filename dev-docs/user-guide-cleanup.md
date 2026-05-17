@@ -234,7 +234,9 @@ Inspecting Data:
   `lif/`)
 - [ ] `rolling-aux-data.rst`
 - [ ] `log_tab.rst` (retitled "Application Log")
-- [ ] `overlays.rst`
+- [x] `overlays.rst` — restructured (hero / Overlay Manager / thin
+  creation shell / per-type sections); UI-matched; four captures
+  refreshed; curve appearance deferred to `plot_controls.rst`.
 - [ ] `plot_controls.rst`
 - [ ] `python.rst`
 
