@@ -89,8 +89,9 @@ image so users can click through. Match the existing rendered pages.
 
 Prefer `.. doxygenclass::` over `.. doxygenfile::` so each class gets a
 focused page and member documentation is grouped by member. The
-canonical procedure for editing an API page is
-`doc/source/developer_guide/api_style.rst`.
+canonical procedure for editing an API page is the
+`api-reference-style` section of
+`doc/source/developer_guide/conventions.rst`.
 
 ### Settings registry
 
@@ -113,7 +114,8 @@ set; do not commit a notebook with stripped or partial outputs.
 For any non-trivial doc edit, the canonical references on the docs'
 own conventions are:
 
-- `doc/source/developer_guide/api_style.rst` — API page structure,
+- the `api-reference-style` section of
+  `doc/source/developer_guide/conventions.rst` — API page structure,
   Doxygen prose vs. `.rst` page balance, the per-class refresh
   checklist.
 - The existing pages in the section you are editing — match their

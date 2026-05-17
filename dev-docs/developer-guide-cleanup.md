@@ -239,12 +239,50 @@ Python Module:
 
 Navigation / cross-cutting:
 
-- [ ] `doc/source/index.rst` — replace the Project-Reference
-  `developer_guide` line with the captioned band above; reduce
-  Project Reference to `migration` + `changelog`; move `classes`
-  to its own `API Reference` caption; update "Where to start".
-- [ ] `developer_guide.rst` toctree dissolved; inbound
-  `:doc:`/developer_guide`` links re-skimmed.
+- [x] `doc/source/index.rst` — replaced the Project-Reference
+  `developer_guide` line with the captioned band (Contributing /
+  Architecture / Hardware Subsystem / Acquisition Pipelines /
+  Extending Blackchirp / API Reference / Project Reference);
+  Project Reference reduced to `migration` + `changelog`; `classes`
+  in its own `API Reference` caption. "Where to start" bullets left
+  intact — they still resolve and read accurately (sound prose,
+  structure-only discipline).
+- [x] `developer_guide.rst` toctree dissolved; landing prose kept
+  and given a short sidebar-grouping paragraph in place of the old
+  toctree. Inbound `:doc:`/developer_guide`` links re-skimmed — all
+  use absolute paths to unchanged page locations; none broken.
+
+Sub-decisions settled with the user this session: first caption is
+**"Contributing"** with the `developer_guide` overview as its lead
+page; `python_module` **folds under Contributing** (no separate
+caption). The `doc/source/AGENTS.md` referenced in "Concrete
+defects" does not exist — the only stale `api_style.rst` pointers
+were in `doc/AGENTS.md` (lines 93, 116), both retargeted to the
+`api-reference-style` section of `conventions.rst`.
+
+Single-page-section refinement (review feedback, same session;
+sphinx_rtd_theme cannot collapse caption groups, so single-page
+captions were eliminated instead):
+
+- The user-guide `python` page moved out of **Inspecting Data**
+  (which now holds only live in-app UI pages) and paired with
+  `user_guide/viewer` under a new **Offline Analysis** caption,
+  placed directly after Inspecting Data and before Data Format and
+  Diagnostics. The old single-page **Blackchirp Viewer** caption is
+  gone.
+- `classes` folded into the **Architecture** caption (appended after
+  `crash_handling`); the standalone **API Reference** caption is
+  gone. `developer_guide.rst`'s sidebar-grouping paragraph updated
+  to note the API reference now sits under Architecture.
+- **Project Reference** retitled **Version History** (still
+  `migration` + `changelog`).
+
+Resulting band order: Getting Started / Hardware Setup / Running
+Experiments / Inspecting Data / Offline Analysis / Data Format and
+Diagnostics / Contributing / Architecture / Hardware Subsystem /
+Acquisition Pipelines / Extending Blackchirp / Version History. No
+single-page captions remain. Clean build, known nbsphinx warning
+only.
 
 ## Diagrams / architecture accuracy
 

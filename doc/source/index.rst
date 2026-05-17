@@ -39,7 +39,13 @@
    user_guide/log_tab
    user_guide/overlays
    user_guide/plot_controls
+
+.. toctree::
+   :hidden:
+   :caption: Offline Analysis
+
    python
+   user_guide/viewer
 
 .. toctree::
    :hidden:
@@ -50,18 +56,54 @@
 
 .. toctree::
    :hidden:
-   :caption: Blackchirp Viewer
+   :caption: Contributing
 
-   user_guide/viewer
+   developer_guide
+   developer_guide/conventions
+   developer_guide/build_system
+   developer_guide/packaging
+   developer_guide/python_module
 
 .. toctree::
    :hidden:
-   :caption: Project Reference
+   :caption: Architecture
+
+   developer_guide/architecture
+   developer_guide/experiment_lifecycle
+   developer_guide/persistence
+   developer_guide/crash_handling
+   classes
+
+.. toctree::
+   :hidden:
+   :caption: Hardware Subsystem
+
+   developer_guide/hardware_configuration
+   developer_guide/hardware_runtime
+   developer_guide/python_hardware
+   developer_guide/vendor_libraries
+
+.. toctree::
+   :hidden:
+   :caption: Acquisition Pipelines
+
+   developer_guide/ftmw_acquisition
+   developer_guide/lif_acquisition
+
+.. toctree::
+   :hidden:
+   :caption: Extending Blackchirp
+
+   developer_guide/adding_a_driver
+   developer_guide/adding_a_hardware_type
+   developer_guide/adding_an_experiment_mode
+
+.. toctree::
+   :hidden:
+   :caption: Version History
 
    migration
    changelog
-   developer_guide
-   classes
 
 Blackchirp Documentation
 ========================

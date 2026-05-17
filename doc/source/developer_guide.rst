@@ -43,24 +43,12 @@ Python), and the Sphinx pages that surface them is documented in the
 :ref:`api-reference-style` section of
 :doc:`/developer_guide/conventions`.
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Developer Guide
-
-   developer_guide/build_system
-   developer_guide/packaging
-   developer_guide/conventions
-   developer_guide/python_module
-   developer_guide/architecture
-   developer_guide/hardware_configuration
-   developer_guide/hardware_runtime
-   developer_guide/experiment_lifecycle
-   developer_guide/ftmw_acquisition
-   developer_guide/lif_acquisition
-   developer_guide/persistence
-   developer_guide/python_hardware
-   developer_guide/vendor_libraries
-   developer_guide/crash_handling
-   developer_guide/adding_a_driver
-   developer_guide/adding_a_hardware_type
-   developer_guide/adding_an_experiment_mode
+The pages of this chapter are grouped in the sidebar: **Contributing**
+(this overview, prose and API conventions, the build system, packaging,
+and the Python module), **Architecture** (the C++ application structure,
+experiment lifecycle, persistence, crash handling, and the generated
+API reference), **Hardware
+Subsystem** (configuration, runtime, the Python hardware bridge, and
+vendor libraries), **Acquisition Pipelines** (the FTMW and LIF
+data-flow paths), and **Extending Blackchirp** (the recipes for adding
+a driver, a hardware type, or an experiment mode).
