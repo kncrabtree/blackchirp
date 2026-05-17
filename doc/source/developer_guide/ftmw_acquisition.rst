@@ -396,6 +396,15 @@ processing settings alongside the FID data on disk lets the
 experiment without re-asking the user. The user-facing meaning of
 each knob is described in :doc:`/user_guide/data_storage`.
 
+The peak-find parameters travel the same way through a sibling pair,
+:cpp:func:`FidStorageBase::writePeakFindSettings` /
+``readPeakFindSettings``, which serialize a ``PeakFindSettings``
+aggregate (min/max frequency, SNR, neighborhood half-width, window
+size, polynomial order — keys in ``BC::Key::PeakStorage``) to
+``fid/peakfind.csv`` via the same ``writeMetadata`` helper. The
+viewer reloads it so a re-opened experiment restores the peak-search
+configuration as well as the FT view.
+
 Pointers
 --------
 

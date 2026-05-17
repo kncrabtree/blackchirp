@@ -280,10 +280,25 @@ Hardware Subsystem: **done.**
   the sole platform gate, which the case study already describes
   correctly)
 
-Acquisition Pipelines:
+Acquisition Pipelines: **done.**
 
-- [ ] `developer_guide/ftmw_acquisition.rst`
-- [ ] `developer_guide/lif_acquisition.rst`
+- [x] `developer_guide/ftmw_acquisition.rst` (rename reflected,
+  mermaid matches prose. Verified the 8-field FidProcessingSettings
+  / `BC::Key::FidStorage` enumeration is accurate — an earlier grep
+  false-negative on the namespace was a bad pattern, not a drift.
+  Documented the sibling `fid/peakfind.csv` persistence
+  (`BC::Key::PeakStorage`, same `writeMetadata` path) per the user
+  decision. The 05-12 manual-backup / backup-logging commits are
+  UI/log additions below the pipeline-flow abstraction — no edit)
+- [x] `developer_guide/lif_acquisition.rst` (rename reflected,
+  diagrams match. Drift fix: `842ac6f4` moved
+  `LifDisplayWidget::reprocess` off the UI thread — now a
+  `QtConcurrent` worker + `QFutureWatcher` + modal cancelable
+  `QProgressDialog`, main-thread finished slot, re-entrancy guard,
+  plus O(1) cached `lifparams.csv`. The page described it as a
+  synchronous on-thread walk — corrected. `298cdd47` (read laser
+  units/decimals from saved record) is a reopen-path addition the
+  page doesn't cover — no false claim, no edit)
 
 Extending Blackchirp:
 

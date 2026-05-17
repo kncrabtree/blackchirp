@@ -441,10 +441,20 @@ single-pole IIR low-pass filter, an enable check plus window/order
 spins for the Savitzky-Golay filter, and three buttons:
 
 - **Reprocess All** triggers
-  :cpp:func:`LifDisplayWidget::reprocess`, which iterates every
-  ``(di, li)`` cell in storage, recomputes the integrated value with
-  the current ``LifProcSettings``, rewrites
-  ``d_currentIntegratedData``, and redraws.
+  :cpp:func:`LifDisplayWidget::reprocess`, which re-integrates every
+  ``(di, li)`` cell in storage with the current ``LifProcSettings``.
+  The grid walk runs on a ``QtConcurrent`` worker tracked by a
+  ``QFutureWatcher<QVector<double>>`` (``p_reprocessWatcher``), not
+  on the UI thread: a 50×50 sweep would otherwise block the GUI for
+  seconds. A modal ``QProgressDialog`` (200 ms minimum duration)
+  reports progress and a Cancel button flips
+  ``QPromise::isCanceled()`` so the worker bails between traces. The
+  watcher's ``finished`` slot writes the result into
+  ``d_currentIntegratedData`` and redraws on the main thread; a
+  cancelled pass leaves the spectrogram empty. A re-entrancy guard
+  ignores a second trigger while a pass is still in flight. The
+  per-cell parameter lookup is O(1) because :cpp:class:`LifStorage`
+  caches the parsed ``lifparams.csv`` on first trace load.
 - **Reset** triggers :cpp:func:`LifDisplayWidget::resetProc`, which
   re-reads ``processing.csv`` via
   :cpp:func:`LifStorage::readProcessingSettings` and pushes the
