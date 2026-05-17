@@ -331,8 +331,8 @@ actually visible at the capture frame:
   the Check for Updates row). Debug-toggle is 658×653 ≤ 800, so it
   stays 1:1 (no `:width:`/`:target:`).
 - [x] `plot_controls-contextmenu.png` — refreshed for the
-  flattened curve appearance panel (preset bar + SettingsTable).
-  560×471 ≤ 800 → 1:1, `:width:` removed.
+  flattened curve appearance panel and the ``Export XY`` +
+  delimiter row (715×481 ≤ 800 → 1:1, no `:width:`/`:target:`).
 
 ## Reference
 

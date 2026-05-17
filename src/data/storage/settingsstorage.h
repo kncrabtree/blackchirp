@@ -34,6 +34,7 @@ inline constexpr QLatin1StringView versionRelease{"versionRelease"};
 inline constexpr QLatin1StringView exptDir{"experiments"};
 inline constexpr QLatin1StringView logDir{"log"};
 inline constexpr QLatin1StringView exportDir{"textexports"};
+inline constexpr QLatin1StringView exportDelimiter{"exportDelimiter"};
 inline constexpr QLatin1StringView trackingDir{"rollingdata"};
 }
 

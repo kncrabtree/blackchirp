@@ -40,19 +40,56 @@ BlackchirpCSV::BlackchirpCSV(const int num, const QString path)
     }
 }
 
-bool BlackchirpCSV::writeXY(QIODevice &device, const QVector<QPointF> d, const QString prefix)
+bool BlackchirpCSV::writeXY(QIODevice &device, const QVector<QPointF> d, const QString prefix, XYFormat fmt)
 {
     using namespace BC::CSV;
 
     QTextStream t(&device);
 
-    if(prefix.isEmpty())
-        t << x << del << y;
-    else
-        t << prefix << sep << x << del << prefix << sep << y;
+    const QString xh = prefix.isEmpty() ? QString(x)
+                                        : prefix + QString(sep) + QString(x);
+    const QString yh = prefix.isEmpty() ? QString(y)
+                                        : prefix + QString(sep) + QString(y);
+
+    if(fmt == XYFormat::Aligned)
+    {
+        // Two in-memory columns: render every value, find the widest in
+        // the first column (header included), then left-justify it so the
+        // second column lines up for a human reader. Left- (not right-)
+        // justified, and the last column is unpadded, so no whitespace
+        // ever precedes a value — the file still parses cleanly with a
+        // whitespace separator (pandas: sep=r"\s+").
+        QStringList xs, ys;
+        xs.reserve(d.size());
+        ys.reserve(d.size());
+        int wx = xh.size();
+        for(const auto &p : d)
+        {
+            const QString sx = QVariant{p.x()}.toString();
+            wx = qMax(wx, static_cast<int>(sx.size()));
+            xs << sx;
+            ys << QVariant{p.y()}.toString();
+        }
+        t << xh.leftJustified(wx) << "  " << yh;
+        for(int i = 0; i < xs.size(); ++i)
+            t << nl << xs.at(i).leftJustified(wx) << "  " << ys.at(i);
+        return true;
+    }
+
+    QString cd;
+    switch(fmt)
+    {
+    case XYFormat::Comma: cd = QString(","); break;
+    case XYFormat::Tab:   cd = QString("\t"); break;
+    case XYFormat::Aligned: // handled above
+    case XYFormat::Semicolon:
+    default:              cd = QString(del); break;
+    }
+
+    t << xh << cd << yh;
 
     for(auto it = d.constBegin(); it != d.constEnd(); it++)
-        t << nl << QVariant{it->x()}.toString() << del << QVariant{it->y()}.toString();
+        t << nl << QVariant{it->x()}.toString() << cd << QVariant{it->y()}.toString();
 
     return true;
 }

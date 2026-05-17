@@ -1,4 +1,5 @@
 #include <QtTest>
+#include <QRegularExpression>
 
 #include <src/data/storage/blackchirpcsv.h>
 
@@ -21,6 +22,7 @@ private slots:
     void initTestCase();
     void cleanupTestCase();
     void testExportXY();
+    void testExportXYFormats();
     void testExportMultiple();
     void testExportMultipleDiffLength();
     void testExportY();
@@ -68,6 +70,58 @@ void BlackchirpCSVTest::testExportXY()
     f.close();
     QCOMPARE(b.startsWith("sin_x;sin_y"),true);
     t << "\n\n" << b << "\n\n";
+}
+
+void BlackchirpCSVTest::testExportXYFormats()
+{
+    using XYFormat = BlackchirpCSV::XYFormat;
+
+    // Small fixed dataset whose QVariant string forms are stable and of
+    // differing width (1 vs 10) so column alignment is exercised.
+    QVector<QPointF> d{ {1.0, 2.0}, {10.0, 3.0} };
+    const QString x0 = QVariant{1.0}.toString();
+    const QString y0 = QVariant{2.0}.toString();
+    const QString x1 = QVariant{10.0}.toString();
+    const QString y1 = QVariant{3.0}.toString();
+
+    BlackchirpCSV csv;
+
+    auto run = [&](XYFormat fmt) -> QString {
+        QByteArray b;
+        QBuffer f(&b);
+        f.open(QIODevice::WriteOnly|QIODevice::Text);
+        const bool ok = csv.writeXY(f,d,QString(),fmt);
+        f.close();
+        return ok ? QString::fromUtf8(b) : QString();
+    };
+
+    // Literal-delimiter formats: exact round-trip of header + rows.
+    QCOMPARE(run(XYFormat::Semicolon),
+             QString("x;y\n%1;%2\n%3;%4").arg(x0,y0,x1,y1));
+    QCOMPARE(run(XYFormat::Comma),
+             QString("x,y\n%1,%2\n%3,%4").arg(x0,y0,x1,y1));
+    QCOMPARE(run(XYFormat::Tab),
+             QString("x\ty\n%1\t%2\n%3\t%4").arg(x0,y0,x1,y1));
+
+    // Aligned: first column left-justified to its widest entry, second
+    // column unpadded. Critically, no line may begin with whitespace.
+    const int wx = qMax(qMax(1, x0.size()), x1.size()); // header "x" vs values
+    const QString aligned = run(XYFormat::Aligned);
+    const QString expected =
+        QString("x").leftJustified(wx) + "  " + "y" + "\n" +
+        x0.leftJustified(wx) + "  " + y0 + "\n" +
+        x1.leftJustified(wx) + "  " + y1;
+    QCOMPARE(aligned, expected);
+
+    const QStringList lines = aligned.split('\n');
+    for(const QString &ln : lines)
+    {
+        QVERIFY2(!ln.isEmpty() && !ln.front().isSpace(),
+                 "aligned export line must not start with whitespace");
+        // Whitespace-split yields exactly two fields (pandas sep=r"\s+").
+        QCOMPARE(ln.split(QRegularExpression("\\s+"),
+                          Qt::SkipEmptyParts).size(), 2);
+    }
 }
 
 void BlackchirpCSVTest::testExportMultiple()

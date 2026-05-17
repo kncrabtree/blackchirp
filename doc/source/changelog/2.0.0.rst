@@ -236,6 +236,11 @@ User interface
   falling back to the application-wide defaults when none has been
   saved, mirroring the FID processing-settings behavior. See
   :doc:`/user_guide/cp-ftmw`.
+- Added a selectable column delimiter for curve XY exports: a
+  drop-down beside the right-click ``Export XY`` action chooses
+  semicolon, comma, tab, or aligned whitespace. The choice is
+  persisted application-wide and shared between Blackchirp and the
+  viewer. See :doc:`/user_guide/plot_controls`.
 - Relaxed the experiment-setup dialog minimum size. See
   :doc:`/user_guide/experiment_setup`.
 - Streamlined the overlay creation and configuration dialog:

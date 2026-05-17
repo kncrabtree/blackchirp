@@ -42,6 +42,6 @@ textexports/
 
 This folder is the default location for the XY export files produced by
 the ``Export XY`` plot action (see :ref:`curve-configuration-options`).
-Each export
-is a standalone semicolon-delimited CSV; nothing in this folder is read
-back by Blackchirp.
+Each export is a standalone text file whose column delimiter is chosen
+beside the ``Export XY`` button — semicolon, comma, tab, or aligned
+whitespace. Nothing in this folder is read back by Blackchirp.

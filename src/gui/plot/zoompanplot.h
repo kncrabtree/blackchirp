@@ -17,6 +17,8 @@ class QMenu;
 class CustomTracker;
 class QMutex;
 class QTimer;
+class QComboBox;
+class QPushButton;
 
 
 /// \brief Settings keys used by ZoomPanPlot and its per-axis configuration.
@@ -39,6 +41,31 @@ inline constexpr QLatin1StringView majorGridStyle{"majorGridStyle"};   ///< Qt::
 inline constexpr QLatin1StringView minorGridColor{"minorGridColor"};   ///< Color of minor grid lines.
 inline constexpr QLatin1StringView minorGridStyle{"minorGridStyle"};   ///< Qt::PenStyle of minor grid lines.
 }
+
+/// \brief "Export XY" button plus a delimiter selector, shown as one row
+/// at the top of each curve's context submenu.
+///
+/// The selected format persists application-wide via
+/// \c BC::Key::exportDelimiter; because blackchirp and blackchirp-viewer
+/// share one QSettings store, a change in either application is seen by
+/// both.
+class XYExportBar : public QWidget, public SettingsStorage
+{
+    Q_OBJECT
+public:
+    explicit XYExportBar(QWidget *parent = nullptr);
+
+    /// Enable/disable the export button (disabled when the curve has no data).
+    void setExportEnabled(bool en);
+
+signals:
+    /// Emitted when the user clicks the export button.
+    void exportRequested();
+
+private:
+    QPushButton *p_button{nullptr};
+    QComboBox *p_combo{nullptr};
+};
 
 /// \brief QwtPlot subclass providing interactive zoom, pan, and curve management.
 ///

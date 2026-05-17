@@ -103,14 +103,25 @@ public:
     BlackchirpCSV(const int num, const QString path);
 
     /*!
-     * \brief Writes a single XY data set to \a device as a two-column CSV.
+     * \brief Output format for writeXY().
+     *
+     * \c Semicolon, \c Comma, and \c Tab write a plain two-column file with
+     * the corresponding delimiter. \c Aligned writes right-justified,
+     * whitespace-padded columns for human readability (and is read back
+     * with a \c \\s+ separator).
+     */
+    enum class XYFormat { Semicolon, Comma, Tab, Aligned };
+
+    /*!
+     * \brief Writes a single XY data set to \a device as a two-column file.
      * \param device Output device, which must not already be open.
      * \param d Vector of points to write.
      * \param prefix Optional column-name prefix; when non-empty, column headers
      *        become \c prefix_x and \c prefix_y instead of \c x and \c y.
+     * \param fmt Column delimiter / layout (see \c XYFormat).
      * \return \c true on success.
      */
-    static bool writeXY(QIODevice &device, const QVector<QPointF> d, const QString prefix = "");
+    static bool writeXY(QIODevice &device, const QVector<QPointF> d, const QString prefix = "", XYFormat fmt = XYFormat::Semicolon);
 
     /*!
      * \brief Writes multiple XY data sets side by side as a multi-column CSV.

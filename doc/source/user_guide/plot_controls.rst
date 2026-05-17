@@ -81,12 +81,19 @@ Curve Configuration Options
 
 The ``Curves`` entry in the context menu opens a submenu listing every
 curve on the plot. Selecting a curve opens its submenu, which contains,
-top to bottom: an ``Export XY`` action, the curve appearance panel (a
+top to bottom: an ``Export XY`` row, the curve appearance panel (a
 preset bar above an appearance table), and — on the Rolling and Aux
 Data plots only — a ``Change plot`` submenu. Changes made in the
 appearance panel are applied to the curve immediately.
 
-- ``Export XY``: Generate a CSV file containing the data currently displayed for this curve.
+- ``Export XY``: Writes the data currently displayed for this curve to
+  a text file. The drop-down beside the button selects the column
+  delimiter, applied to every subsequent export and remembered
+  application-wide (shared between Blackchirp and the
+  :doc:`viewer </user_guide/viewer>`): ``Semicolon``, ``Comma``,
+  ``Tab``, or ``Whitespace (aligned)`` — the last left-justifies the
+  columns for easy reading without any leading whitespace, so it still
+  loads with a whitespace separator (e.g. pandas ``sep=r"\s+"``).
 
 The preset bar carries a ``Preset`` drop-down and save/delete buttons;
 it is described under `Curve Presets`_ below. The appearance table has

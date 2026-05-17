@@ -10,10 +10,14 @@
 #include <QCheckBox>
 #include <QDoubleSpinBox>
 #include <QComboBox>
+#include <QPushButton>
+#include <QHBoxLayout>
 #include <QCheckBox>
 #include <QSpinBox>
 #include <QLabel>
 #include <QMenu>
+#include <QStyle>
+#include <QStyleOptionMenuItem>
 #include <QColorDialog>
 #include <QFileDialog>
 #include <QSaveFile>
@@ -541,6 +545,45 @@ void ZoomPanPlot::setTrackerScientific(QwtPlot::Axis a, bool sci)
     p_tracker->setScientific(a,sci);
 }
 
+XYExportBar::XYExportBar(QWidget *parent)
+    : QWidget(parent), SettingsStorage()
+{
+    auto *lay = new QHBoxLayout(this);
+    lay->setContentsMargins(4,2,4,2);
+    lay->setSpacing(4);
+
+    p_button = new QPushButton(QString("Export XY"),this);
+
+    p_combo = new QComboBox(this);
+    // Item order matches BlackchirpCSV::XYFormat.
+    p_combo->addItem(QString("Semicolon  ;"));
+    p_combo->addItem(QString("Comma  ,"));
+    p_combo->addItem(QString("Tab"));
+    p_combo->addItem(QString("Whitespace (aligned)"));
+    p_combo->setToolTip(QString("Column delimiter for exported XY files"));
+
+    int idx = get(BC::Key::exportDelimiter,
+                   static_cast<int>(BlackchirpCSV::XYFormat::Semicolon));
+    if(idx < 0 || idx >= p_combo->count())
+        idx = 0;
+    p_combo->setCurrentIndex(idx);
+
+    lay->addWidget(p_button);
+    lay->addWidget(p_combo,1);
+
+    connect(p_button,&QPushButton::clicked,this,&XYExportBar::exportRequested);
+    connect(p_combo,qOverload<int>(&QComboBox::currentIndexChanged),this,
+            [this](int i){
+        set(BC::Key::exportDelimiter,i);
+        SettingsStorage::save();
+    });
+}
+
+void XYExportBar::setExportEnabled(bool en)
+{
+    p_button->setEnabled(en);
+}
+
 void ZoomPanPlot::exportCurve(BlackchirpPlotCurveBase *curve)
 {
     QDir d = BlackchirpCSV::textExportDir();
@@ -556,7 +599,12 @@ void ZoomPanPlot::exportCurve(BlackchirpPlotCurveBase *curve)
         return;
     }
 
-    BlackchirpCSV::writeXY(f,curve->curveData(),name);
+    SettingsStorage s;
+    const int fmt = s.get(BC::Key::exportDelimiter,
+                          static_cast<int>(BlackchirpCSV::XYFormat::Semicolon));
+
+    BlackchirpCSV::writeXY(f,curve->curveData(),name,
+                           static_cast<BlackchirpCSV::XYFormat>(fmt));
     f.commit();
 }
 
@@ -1315,6 +1363,59 @@ QMenu *ZoomPanPlot::buildCurveAppearanceMenu(BlackchirpPlotCurveBase *curve, QWi
     return menu;
 }
 
+namespace {
+/*!
+ * \brief Floor a menu's width at its widest style-measured item, recursing
+ *        into submenus.
+ *
+ * Qt under-reserves the submenu-arrow column when a QMenu also holds
+ * QWidgetActions, so the arrow can paint over the widest text label
+ * (the long curve names under "Curves", the grid/zoom sub-panels, …).
+ * Re-derive each item's width through the active style — the same
+ * QStyle::CT_MenuItem path QMenu itself uses, so the arrow column is
+ * included — and floor the menu width at the maximum. This only ever
+ * grows the menu, so it is a harmless no-op where Qt already sized it
+ * correctly.
+ */
+void reserveSubmenuArrowSpace(QMenu *menu)
+{
+    if(!menu)
+        return;
+
+    QStyle *st = menu->style();
+    const QFontMetrics fm = menu->fontMetrics();
+    int wMax = 0;
+    for(QAction *a : menu->actions())
+    {
+        if(a->menu())
+            reserveSubmenuArrowSpace(a->menu());
+
+        // QWidgetAction rows are sized by their embedded widget and carry
+        // no arrow; they already drive width on their own.
+        if(a->isSeparator() || qobject_cast<QWidgetAction *>(a))
+            continue;
+
+        QStyleOptionMenuItem opt;
+        opt.initFrom(menu);
+        opt.menuItemType = a->menu() ? QStyleOptionMenuItem::SubMenu
+                                     : QStyleOptionMenuItem::Normal;
+        opt.text = a->text();
+        opt.icon = a->icon();
+        const QSize content(fm.horizontalAdvance(a->text()), fm.height());
+        wMax = qMax(wMax, st->sizeFromContents(QStyle::CT_MenuItem, &opt,
+                                               content, menu).width());
+    }
+
+    if(wMax > 0)
+    {
+        const int frame =
+            st->pixelMetric(QStyle::PM_MenuPanelWidth, nullptr, menu)
+            + st->pixelMetric(QStyle::PM_MenuHMargin, nullptr, menu);
+        menu->setMinimumWidth(wMax + 2 * frame);
+    }
+}
+}
+
 QMenu *ZoomPanPlot::contextMenu()
 {
     QMenu *menu = new QMenu();
@@ -1497,14 +1598,17 @@ QMenu *ZoomPanPlot::contextMenu()
             m->setTitle(curve->title().text());
             curveMenu->addMenu(m);
 
-            // Export XY precedes the appearance widget in the submenu;
-            // the appearance widget action is the menu's first (and only)
-            // entry after buildCurveAppearanceMenu(), so insert before it.
-            auto exportAct = new QAction(QString("Export XY"),m);
-            if(curve->curveData().isEmpty())
-                exportAct->setEnabled(false);
-            connect(exportAct,&QAction::triggered,[this,curve](){ exportCurve(curve); });
-            m->insertAction(m->actions().constFirst(),exportAct);
+            // Export XY (button + delimiter selector) precedes the
+            // appearance widget in the submenu; the appearance widget
+            // action is the menu's first (and only) entry after
+            // buildCurveAppearanceMenu(), so insert before it.
+            auto *exportBar = new XYExportBar(m);
+            exportBar->setExportEnabled(!curve->curveData().isEmpty());
+            connect(exportBar,&XYExportBar::exportRequested,this,
+                    [this,curve](){ exportCurve(curve); });
+            auto *exportWa = new QWidgetAction(m);
+            exportWa->setDefaultWidget(exportBar);
+            m->insertAction(m->actions().constFirst(),exportWa);
 
             auto c = dynamic_cast<BlackchirpPlotCurve*>(curve);
             if(c && d_maxIndex > 0)
@@ -1536,6 +1640,8 @@ QMenu *ZoomPanPlot::contextMenu()
     }
     if(count == 0)
         curveMenu->setEnabled(false);
+
+    reserveSubmenuArrowSpace(menu);
 
     return menu;
 
