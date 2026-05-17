@@ -7,11 +7,15 @@
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QFormLayout>
+#include <QSplitter>
 #include <QGroupBox>
-#include <QPushButton>
+#include <QToolButton>
 #include <QLabel>
 #include <QSpinBox>
+
+#include <gui/style/themecolors.h>
+
+using namespace Qt::StringLiterals;
 
 LifControlWidget::LifControlWidget(const QString& digitizerHwKey, const QString& laserHwKey, QWidget *parent) :
     QWidget(parent), SettingsStorage(BC::Key::LifControl::key),
@@ -26,7 +30,6 @@ void LifControlWidget::initializeWidget()
 
     p_lifTracePlot = new LifTracePlot(this);
     p_lifTracePlot->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-    vbl->addWidget(p_lifTracePlot,1);
 
 
     auto hbl = new QHBoxLayout;
@@ -54,14 +57,22 @@ void LifControlWidget::initializeWidget()
     registerGetter(BC::Key::LifControl::avgs,p_avgBox,&QSpinBox::value);
     hbl2->addWidget(p_avgBox);
 
-    p_resetButton = new QPushButton("Reset");
-    connect(p_resetButton,&QPushButton::clicked,p_lifTracePlot,&LifTracePlot::reset);
+    // Compact icon-only controls; tooltips carry the meaning.
+    p_resetButton = new QToolButton(this);
+    p_resetButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-path.svg",ThemeColors::IconSecondary,this));
+    p_resetButton->setToolTip("Reset the averaged trace."_L1);
+    connect(p_resetButton,&QToolButton::clicked,p_lifTracePlot,&LifTracePlot::reset);
     hbl2->addWidget(p_resetButton);
 
     hbl2->addSpacerItem(new QSpacerItem(1,1));
 
-    p_startAcqButton = new QPushButton("Start Acquisition",this);
-    p_stopAcqButton = new QPushButton("Stop Acquisition",this);
+    p_startAcqButton = new QToolButton(this);
+    p_startAcqButton->setIcon(ThemeColors::createThemedIcon(":/icons/play.svg",ThemeColors::IconPrimary,this));
+    p_startAcqButton->setToolTip("Start Acquisition"_L1);
+
+    p_stopAcqButton = new QToolButton(this);
+    p_stopAcqButton->setIcon(ThemeColors::createThemedIcon(":/icons/stop.svg",ThemeColors::IconPrimary,this));
+    p_stopAcqButton->setToolTip("Stop Acquisition"_L1);
 
     p_stopAcqButton->setEnabled(false);
     hbl2->addWidget(p_startAcqButton);
@@ -93,11 +104,25 @@ void LifControlWidget::initializeWidget()
 
     hbl->addLayout(rightvbl,1);
 
-    vbl->addLayout(hbl,0);
+    // Plot over controls in a splitter so the plot can be dragged
+    // larger/smaller; it gets the larger initial share and the bottom
+    // stays at its compact size hint.
+    auto bottomWidget = new QWidget;
+    bottomWidget->setLayout(hbl);
+
+    auto splitter = new QSplitter(Qt::Vertical,this);
+    splitter->addWidget(p_lifTracePlot);
+    splitter->addWidget(bottomWidget);
+    splitter->setStretchFactor(0,1);
+    splitter->setStretchFactor(1,0);
+    splitter->setChildrenCollapsible(false);
+    splitter->setSizes({600,250});
+
+    vbl->addWidget(splitter);
     setLayout(vbl);
 
-    connect(p_startAcqButton,&QPushButton::clicked,this,&LifControlWidget::startAcquisition);
-    connect(p_stopAcqButton,&QPushButton::clicked,this,&LifControlWidget::stopAcquisition);
+    connect(p_startAcqButton,&QToolButton::clicked,this,&LifControlWidget::startAcquisition);
+    connect(p_stopAcqButton,&QToolButton::clicked,this,&LifControlWidget::stopAcquisition);
 
     connect(p_procWidget,&LifProcessingWidget::settingChanged,this,[this](){
         p_lifTracePlot->setAllProcSettings(p_procWidget->getSettings());
@@ -198,5 +223,5 @@ void LifControlWidget::toConfig(LifConfig &cfg)
 
 QSize LifControlWidget::sizeHint() const
 {
-    return {1000,900};
+    return {1000,700};
 }

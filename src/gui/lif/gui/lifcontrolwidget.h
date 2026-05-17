@@ -15,7 +15,7 @@ class LifTracePlot;
 class DigitizerConfigWidget;
 class LifLaserWidget;
 class LifProcessingWidget;
-class QPushButton;
+class QToolButton;
 class QSpinBox;
 
 namespace BC::Key::LifControl {
@@ -57,10 +57,10 @@ private:
     LifLaserWidget *p_laserWidget;
     LifProcessingWidget *p_procWidget;
 
-    QPushButton *p_startAcqButton;
-    QPushButton *p_stopAcqButton;
+    QToolButton *p_startAcqButton;
+    QToolButton *p_stopAcqButton;
     QSpinBox *p_avgBox;
-    QPushButton *p_resetButton;
+    QToolButton *p_resetButton;
 
     std::shared_ptr<LifConfig> ps_cfg;
     QString d_laserHwKey;
