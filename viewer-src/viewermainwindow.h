@@ -86,7 +86,6 @@ private:
     void setupMenuBar();
     void updateButtonStates();
     void removeExperimentFromList(const QString& displayText);
-    QString createDisplayText(int expNum, const QString& path = QString()) const;
     void openExperimentByNumPath(int num, const QString &path);
     void addToRecentExperiments(int num, const QString &path);
     void updateRecentMenu();

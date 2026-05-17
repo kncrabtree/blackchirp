@@ -31,6 +31,7 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/bcsavepathdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/communicationdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/crashreportdialog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/experimentchooserdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/hwarrayeditdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/hwdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/peaklistexportdialog.cpp
@@ -119,6 +120,7 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificspinbox.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificinputwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/util/numericformat.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/util/recentexperiments.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/temperaturecontrolwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/temperaturestatusbox.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/toolbarwidgetaction.cpp
@@ -154,6 +156,7 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/bcsavepathdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/communicationdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/crashreportdialog.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/experimentchooserdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/hwarrayeditdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/hwdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/peaklistexportdialog.h
@@ -242,6 +245,7 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificspinbox.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificinputwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/util/numericformat.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/util/recentexperiments.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/temperaturecontrolwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/temperaturestatusbox.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/toolbarwidgetaction.h

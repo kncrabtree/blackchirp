@@ -1,8 +1,6 @@
 #include "mainwindow.h"
 #include "mainwindow_ui.h"
 
-#include <climits>
-#include <algorithm>
 
 #include <QThread>
 #include <QDialogButtonBox>
@@ -52,6 +50,8 @@
 #include <gui/dialog/ftmwconfigdialog.h>
 #include <gui/dialog/runtimehardwareconfigdialog.h>
 #include <gui/dialog/updateavailabledialog.h>
+#include <gui/dialog/experimentchooserdialog.h>
+#include <gui/util/recentexperiments.h>
 
 // #include <gui/wizard/experimentwizard.h>
 #include <gui/expsetup/experimentsetupdialog.h>
@@ -97,13 +97,6 @@ struct ViewExptStore : public SettingsStorage {
     using SettingsStorage::set;
     using SettingsStorage::setArray;
 };
-
-QString recentDisplayText(int num, const QString &path)
-{
-    if(path.isEmpty())
-        return QString("Experiment %1").arg(num);
-    return QDir(path).absolutePath();
-}
 }
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -1429,158 +1422,36 @@ void MainWindow::sleep(bool s)
 
 void MainWindow::viewExperiment()
 {
-    QDialog d(this);
-    d.setWindowTitle(QString("View experiment"));
-    QVBoxLayout *vbl = new QVBoxLayout;
-    QFormLayout *fl = new QFormLayout;
-    QHBoxLayout *hl = new QHBoxLayout;
-
-    QSpinBox *numBox = new QSpinBox(&d);
-    QCheckBox *pathBox = new QCheckBox(QString("Specify path"),&d);
-    QLineEdit *pathEdit = new QLineEdit(&d);
-
-    // Recent experiments, newest first. Selecting an entry fills the
-    // number / path controls; the user still presses Open to confirm.
-    SettingsStorage recentStore;
-    auto recentEntries = recentStore.getArray(BC::Key::ViewExpt::recent);
-    if(!recentEntries.empty())
-    {
-        QComboBox *recentBox = new QComboBox(&d);
-        recentBox->addItem(QString("Select a recent experiment..."));
-        for(const auto &e : recentEntries)
-        {
-            int n = 0;
-            QString p;
-            auto nit = e.find(BC::Key::ViewExpt::recentNum);
-            if(nit != e.end()) n = nit->second.toInt();
-            auto pit = e.find(BC::Key::ViewExpt::recentPath);
-            if(pit != e.end()) p = pit->second.toString();
-            recentBox->addItem(recentDisplayText(n,p));
-        }
-        connect(recentBox,qOverload<int>(&QComboBox::activated),this,
-                [=](int idx){
-            if(idx < 1)
-                return;
-            const auto &e = recentEntries[idx-1];
-            int n = 0;
-            QString p;
-            auto nit = e.find(BC::Key::ViewExpt::recentNum);
-            if(nit != e.end()) n = nit->second.toInt();
-            auto pit = e.find(BC::Key::ViewExpt::recentPath);
-            if(pit != e.end()) p = pit->second.toString();
-            if(p.isEmpty())
-            {
-                pathBox->setChecked(false);
-                numBox->setValue(n);
-            }
-            else
-            {
-                pathBox->setChecked(true);
-                pathEdit->setText(p);
-            }
-        });
-        fl->addRow(QString("Recent"),recentBox);
-    }
-
-    fl->addRow(QString("Experiment Number"),numBox);
-    fl->addRow(pathBox);
-
-    QToolButton *browseButton = new QToolButton(&d);
-    browseButton->setIcon(ThemeColors::createThemedIcon(":/icons/document-magnifying-glass.svg", ThemeColors::IconSecondary, this));
-
-    connect(browseButton,&QToolButton::clicked,this,[this,pathEdit](){
-        QString startDir = SettingsStorage().get(BC::Key::ViewExpt::lastDir, QDir::homePath());
-        QString path = QFileDialog::getExistingDirectory(this,QString("Select experiment directory"),startDir);
-        if(!path.isEmpty())
-        {
-            ViewExptStore store;
-            store.set(BC::Key::ViewExpt::lastDir, path, true);
-            store.discardChanges(true);
-            pathEdit->setText(path);
-        }
-    });
-
-    hl->addWidget(pathEdit,1);
-    hl->addWidget(browseButton,0);
-    fl->addRow(hl);
-
+    // The latest selectable experiment is the last completed one. While
+    // a batch is running, the in-progress experiment is not yet
+    // viewable, so it is excluded from the upper bound.
     int lastCompletedExperiment = ui->exptValueLabel->text().toInt();
     if(p_batchManager && !p_batchManager->isComplete()
             && d_currentExptNum == lastCompletedExperiment)
         lastCompletedExperiment--;
 
-    if(lastCompletedExperiment < 1)
+    std::vector<ExperimentChooserDialog::RecentEntry> recent;
+    for(const auto &e : SettingsStorage().getArray(BC::Key::ViewExpt::recent))
     {
-        numBox->setRange(0,INT_MAX);
-        numBox->setSpecialValueText(QString("Select..."));
-        numBox->setEnabled(false);
-        pathBox->setChecked(true);
-        pathBox->setEnabled(true);
-    }
-    else
-    {
-        numBox->setRange(1,lastCompletedExperiment);
-        numBox->setValue(lastCompletedExperiment);
-        pathBox->setChecked(false);
-        pathEdit->setEnabled(false);
-        browseButton->setEnabled(false);
+        int n;
+        QString p;
+        BC::RecentExperiments::decode(e, n, p);
+        recent.push_back({n, p});
     }
 
-    connect(pathBox,&QCheckBox::toggled,[=](bool checked){
-       if(checked)
-       {
-           pathEdit->setEnabled(true);
-           browseButton->setEnabled(true);
-           numBox->setEnabled(false);
-       }
-       else
-       {
-           numBox->setEnabled(true);
-           pathEdit->clear();
-           pathEdit->setEnabled(false);
-           browseButton->setEnabled(false);
-       }
+    const QString startDir = SettingsStorage().get(BC::Key::ViewExpt::lastDir,
+                                                   QDir::homePath());
+
+    ExperimentChooserDialog d(lastCompletedExperiment, startDir, recent, this);
+    connect(&d, &ExperimentChooserDialog::browseDirChanged, this,
+            [](const QString &dir){
+        ViewExptStore store;
+        store.set(BC::Key::ViewExpt::lastDir, dir, true);
+        store.discardChanges(true);
     });
 
-    QDialogButtonBox *bb = new QDialogButtonBox(QDialogButtonBox::Open|QDialogButtonBox::Cancel,&d);
-
-    connect(bb->button(QDialogButtonBox::Open),&QPushButton::clicked,&d,&QDialog::accept);
-    connect(bb->button(QDialogButtonBox::Cancel),&QPushButton::clicked,&d,&QDialog::reject);
-
-    vbl->addLayout(fl);
-    vbl->addWidget(bb);
-
-    d.setLayout(vbl);
-
     if(d.exec() == QDialog::Accepted)
-    {
-        QString path = QString("");
-        if(pathBox->isChecked())
-        {
-            path = pathEdit->text();
-            if(path.isEmpty())
-            {
-                QMessageBox::critical(this,QString("Load error"),QString("Cannot open experiment with an empty path."),QMessageBox::Ok);
-                return;
-            }
-
-            QDir dir(path);
-            if(!dir.exists())
-            {
-                QMessageBox::critical(this,QString("Load error"),QString("The directory %1 does not exist. Could not load experiment.").arg(dir.absolutePath()),QMessageBox::Ok);
-                return;
-            }
-        }
-
-        int num = pathBox->isChecked() ? 0 : numBox->value();
-        if(!pathBox->isChecked() && num < 1)
-        {
-            QMessageBox::critical(this,QString("Load error"),QString("Cannot open an experiment numbered below 1. (You chose %1)").arg(num),QMessageBox::Ok);
-            return;
-        }
-
-        openExperimentNumPath(num, path);
-    }
+        openExperimentNumPath(d.experimentNumber(), d.experimentPath());
 }
 
 void MainWindow::openExperimentNumPath(int num, const QString &path)
@@ -1627,28 +1498,9 @@ void MainWindow::addToRecentExperiments(int num, const QString &path)
     using namespace BC::Key::ViewExpt;
 
     ViewExptStore store;
-    auto entries = store.getArray(recent);
-
-    const QString display = recentDisplayText(num, path);
-    entries.erase(std::remove_if(entries.begin(), entries.end(),
-        [&](const SettingsStorage::SettingsMap &m) {
-            int n = 0;
-            QString p;
-            auto nit = m.find(recentNum);
-            if(nit != m.end()) n = nit->second.toInt();
-            auto pit = m.find(recentPath);
-            if(pit != m.end()) p = pit->second.toString();
-            return recentDisplayText(n, p) == display;
-        }), entries.end());
-
-    SettingsStorage::SettingsMap entry;
-    entry[recentNum] = num;
-    entry[recentPath] = path;
-    entries.insert(entries.begin(), entry);
-
-    if(static_cast<int>(entries.size()) > MaxRecentExperiments)
-        entries.resize(MaxRecentExperiments);
-
+    auto entries = BC::RecentExperiments::prepend(store.getArray(recent),
+                                                  num, path,
+                                                  MaxRecentExperiments);
     store.setArray(recent, entries, true);
     store.discardChanges(true);
     updateRecentMenu();
@@ -1673,13 +1525,11 @@ void MainWindow::updateRecentMenu()
 
     for(const auto &e : entries)
     {
-        int n = 0;
+        int n;
         QString p;
-        auto nit = e.find(recentNum);
-        if(nit != e.end()) n = nit->second.toInt();
-        auto pit = e.find(recentPath);
-        if(pit != e.end()) p = pit->second.toString();
-        QAction *act = p_openRecentMenu->addAction(recentDisplayText(n, p));
+        BC::RecentExperiments::decode(e, n, p);
+        QAction *act = p_openRecentMenu->addAction(
+            BC::RecentExperiments::displayText(n, p));
         connect(act, &QAction::triggered, this, [this, n, p]() {
             openExperimentNumPath(n, p);
         });
