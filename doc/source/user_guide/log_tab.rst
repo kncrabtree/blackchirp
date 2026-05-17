@@ -18,6 +18,7 @@ of what the program is doing.
 .. figure:: /_static/user_guide/log_tab-overview.png
    :width: 800
    :align: center
+   :target: /_static/user_guide/log_tab-overview.png
    :alt: Log tab showing normal, highlight, warning, and error messages
 
    The Log tab during a session that mixes routine status messages, bold-green
@@ -25,7 +26,7 @@ of what the program is doing.
    entries.
 
 The Log tab is a read-only text view that scrolls as new messages arrive.
-When you are on a different tab, the Log tab's title shows a counter of
+While another tab is active, the Log tab's title shows a counter of
 unread messages. Switching to the Log tab clears the counter.
 
 
@@ -48,7 +49,7 @@ the message is rendered in the Log tab and how it is recorded on disk.
 **Error**
    Failures that require attention. Rendered in bold red. When an error
    message is logged, the Log tab's title gains an alert icon so the error
-   is visible even when you are on a different tab.
+   is visible even when another tab is active.
 
 **Debug**
    Diagnostic detail intended for troubleshooting. Debug messages are
@@ -95,7 +96,7 @@ On-Disk Log Files
 -----------------
 
 Blackchirp writes log messages to disk automatically. Log files are stored in
-the ``log/`` subdirectory of your Data Storage Location (see
+the ``log/`` subdirectory of the Data Storage Location (see
 :ref:`first-run-data-path`).
 
 **Monthly log files**

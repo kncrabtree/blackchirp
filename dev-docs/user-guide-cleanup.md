@@ -228,52 +228,27 @@ Running Experiments:
 
 Inspecting Data:
 
-- [x] `cp-ftmw.rst` (retitled "Viewing FTMW Data") — rewrote for
-  the FtmwViewWidget dock refactor: toolbar now toggles dockable
-  Acquisition / FID Processing / Plot Settings / Overlays / Peak
-  Find panels; folded the old "Refresh Interval", "Peak Up
-  Options", and "Manual Backup" prose into an Acquisition-panel
-  section; corrected panel row labels (``Window``, ``FT Units``,
-  ``Plot N`` / ``SB`` prefixes, underscored Main-plot mode
-  enumerators); rewrote Peak Find for the side-dock panel
-  (toolbar + list-management bar + double-click / context-menu /
-  arrow-key navigation, Up/Down vs Left/Right); dropped the
-  forward-looking "improvements envisioned" note; added
-  `:target:` click-through to both screenshots.
+- [x] `cp-ftmw.rst` (retitled "Viewing FTMW Data") — UI-matched
+  to the FtmwViewWidget dock refactor; Peak Find rewritten.
 - [x] `lif/lif_tab.rst` (retitled "Viewing LIF Data"; top-level
-  sibling of `cp-ftmw` via the chapter toctree, file still under
-  `lif/`) — UI-matched to the LifDisplayWidget/LifProcessingWidget
-  refactor: corrected the plot geometry (upper row trace / delay
-  slice / laser slice; lower row processing panel + spectrogram),
-  rewrote the processing-panel controls for the ``Gates`` matrix
-  table, the ``Low Pass Filter`` ``α`` row, and the checkable
-  ``Savitzky-Golay Smoothing`` section, documented that the panel
-  is disabled during acquisition and that slice/spectrogram values
-  refresh only on ``Reprocess All``, and noted the ``Display``
-  section hosting ``Refresh Interval``. Added the experiment-folder
-  link and in-canvas trace legend. Section "Plot areas" → "Layout"
-  (no inbound `:ref:`; `_lif-tab` / `_lif-tab-refresh` anchors
-  preserved). Code side (same branch): ported the LifDisplayWidget
-  ``Display`` group box / ``QFormLayout`` onto a ``SettingsTable``
-  section row, replaced the LifProcessingWidget ``Gates``
-  ``QGroupBox`` title with a ``SettingsTable`` section band (matrix
-  and Start/End headers kept), dropped the now-redundant outer
-  ``Processing`` ``QGroupBox`` wrapper (the inner section bands
-  self-title, matching the FTMW side panels), and fixed the
-  "Refresh Inteval" → "Refresh Interval" label typo. Also made
-  ``SettingsTable`` honor its documented "borderless" contract
-  (``setFrameShape(QFrame::NoFrame)`` in the ctor; the raw LIF gate
-  matrix matched). **App-wide:** every ``SettingsTable`` consumer
-  (FTMW dock panels, overlay/hardware-settings tables) loses the
-  per-table frame. Implication: the committed ``cp-ftmw-*.png``
-  screenshots show the old framed panels and are now slightly
-  stale — re-capture or accept as negligible at 800 px.
-- [ ] `rolling-aux-data.rst`
-- [ ] `log_tab.rst` (retitled "Application Log")
+  sibling of `cp-ftmw`, file still under `lif/`) — UI-matched to
+  the LifDisplayWidget/LifProcessingWidget refactor. Code side:
+  flattened the LIF panels onto `SettingsTable` bands and made
+  `SettingsTable` honor its borderless contract (app-wide; the
+  committed `cp-ftmw-*.png` are mildly stale but accepted).
+- [x] `rolling-aux-data.rst` — `hw/*.html` → `:doc:`, present
+  tense; screenshot renamed to the `<page>-<topic>` convention.
+  "Rolling Data Storage" CSV section left for the
+  `data_storage.rst` split.
+- [x] `log_tab.rst` (retitled "Application Log") — light pass;
+  on-disk claims verified against `loghandler.cpp`; no UI-match
+  needed.
 - [x] `overlays.rst` — restructured (hero / Overlay Manager / thin
   creation shell / per-type sections); UI-matched; four captures
   refreshed; curve appearance deferred to `plot_controls.rst`.
-- [ ] `plot_controls.rst`
+- [x] `plot_controls.rst` — UI-matched to the flattened
+  CurveAppearanceWidget (preset bar + appearance `SettingsTable`);
+  `curve-configuration-options` anchor preserved for `overlays`.
 - [ ] `python.rst`
 
 Data Format and Diagnostics:
@@ -317,7 +292,7 @@ several screenshots:
 Screenshots that need a refresh as the cleanup pass reaches each
 page:
 
-- [ ] `ui_overview-window.png` — main UI; shows the updated
+- [x] `ui_overview-window.png` — main UI; shows the updated
   PulseStatusBox.
 - [x] `ftmw_configuration-digitizer.png` — refreshed alongside the
   Data Transfer / Trigger / Acquisition Setup QTableWidget refactor.
@@ -334,6 +309,16 @@ actually visible at the capture frame:
   toolbar layout.
 - [x] `cp-ftmw-peakfind.png` — refreshed for the side-dock Peak
   Find panel with the peak-list table and on-plot markers.
+- [x] `rolling-aux-data-overview.png` (renamed from
+  `rolling_aux_data-rollingdata.png`) — refreshed for the new
+  PulseStatusBox layout in the status sidebar.
+- [x] `log_tab-overview.png` / `log_tab-debug_toggle.png` —
+  refreshed (PulseStatusBox; Application Settings dialog now shows
+  the Check for Updates row). Debug-toggle is 658×653 ≤ 800, so it
+  stays 1:1 (no `:width:`/`:target:`).
+- [x] `plot_controls-contextmenu.png` — refreshed for the
+  flattened curve appearance panel (preset bar + SettingsTable).
+  560×471 ≤ 800 → 1:1, `:width:` removed.
 - [ ] `experiment-quickexpt_1.png`, `experiment-quickexpt_2.png`,
   `experiment-sequence.png` — all live inside ExperimentSetupDialog;
   dialog chrome (nav tree, status area) changed even if the

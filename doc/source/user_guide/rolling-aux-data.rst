@@ -7,14 +7,15 @@
 Rolling/Aux Data
 ================
 
-.. image:: /_static/user_guide/rolling_aux_data-rollingdata.png
+.. image:: /_static/user_guide/rolling-aux-data-overview.png
    :width: 800
    :align: center
-   :alt: Rolling data screenshot
+   :target: /_static/user_guide/rolling-aux-data-overview.png
+   :alt: Rolling/Aux Data tab with flow and temperature curves across four plots
 
 **Rolling data** and **Aux data** both refer to signals that are periodically recorded as a function of time, and they are plotted against the date and time the measurement was taken.
 Rolling data is taken as long as Blackchirp is running, while aux data is associated with a particular experiment, and is only recorded during the time that the experiment is active.
-An example is shown in the screenshot above, with several curves from a `FlowController <hw/flowcontroller.html>`_ and a `TemperatureController <hw/temperaturecontroller.html>`_ plotted side by side across four panels.
+An example is shown in the screenshot above, with several curves from a :doc:`FlowController <hw/flowcontroller>` and a :doc:`TemperatureController <hw/temperaturecontroller>` plotted side by side across four panels.
 Only some pieces of hardware support rolling/aux data; details are available on each item's entry on the :doc:`hardware_details` page.
 
 Entries on the main toolbar (see :doc:`ui_overview`) for both rolling and aux data allow customization of the number of plots and offer a control to autoscale all plots.
@@ -27,7 +28,7 @@ Each particular curve that appears on these plots is associated with an identifi
 
 The Label is the user-defined name assigned to the hardware entry in the active loadout (for example, ``Main`` or ``default``), distinguishing one device from another when more than one of the same kind is configured.
 The DisplayName, if present, is the name that is displayed in the legend of the plot where the curve appears.
-For example, in the TemperatureController object, the DisplayName is set to the name entered in the `TemperatureController <hw/temperaturecontroller.html>`_ hardware control settings, and likewise for the `FlowController <hw/flowcontroller.html>`_ and `IOBoard <hw/ioboard.html>`_.
+For example, in the TemperatureController object, the DisplayName is set to the name entered in the :doc:`TemperatureController <hw/temperaturecontroller>` hardware control settings, and likewise for the :doc:`FlowController <hw/flowcontroller>` and :doc:`IOBoard <hw/ioboard>`.
 The identifier is used to refer to the particular trace when data are logged to disk, as discussed further below.
 Examples of identifiers are::
 
@@ -42,11 +43,11 @@ Configuring Rolling Data
 By default, rolling data is disabled.
 Enabling rolling data is accomplished by selecting the appropriate hardware entry in the :doc:`hardware_menu`, enabling channels if applicable, and setting the ``rollingDataIntervalSec`` setting to a positive integer.
 The value entered for that setting is the time between data points, in seconds, and it can be set to different values for each piece of hardware if desired.
-Keep in mind that rolling data is continually logged to disk, so setting a short interval between readings will increase the disk usage.
+Rolling data is continually logged to disk, so a short interval between readings increases disk usage.
 The interval can be changed at any time as needed, except during an experiment.
 
 In addition, in the Rolling Data menu on the main toolbar (see :doc:`ui_overview`), the minimum amount of history displayed in the program can be changed.
-Blackchirp will record data until the amount of displayed history reaches 150% of the selected history duration.
+Blackchirp records data until the amount of displayed history reaches 150% of the selected history duration.
 At that time, all data points older than the requested history duration are discarded.
 For example, if the history is set to 12 hours, then once 18 hours worth of data have been recorded, the oldest 6 hours' worth of points are discarded.
 This only applies to the data shown on screen; the discarded data points are still available for later viewing on disk.
@@ -62,7 +63,7 @@ Rolling Data Storage
 Blackchirp logs rolling data in the ``rollingdata`` subdirectory of the current Data Storage Location (see :ref:`first-run-data-path`).
 Inside that folder, data are organized into one folder per year that contains folders for each month.
 Within the folder for a particular month, Blackchirp writes a csv file per rolling data source.
-If the identifier contains an optional display name, data will be appended to the existing CSV file if the same display name has been previously used.
+If the identifier contains an optional display name, data is appended to the existing CSV file if the same display name was previously used.
 Otherwise, a new file is created when the display name changes.
 
 The data format of the rolling data CSV file is shown below for a file titled ``TemperatureController.default.He shield.Temperature1.csv``::

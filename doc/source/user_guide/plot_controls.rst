@@ -5,9 +5,9 @@ All plots in Blackchirp share a common set of zoom/pan controls and
 customization options.
 Each plot is configured individually, and the most recent settings are
 recalled when the program starts.
-You can configure the appearance of each curve, change which vertical
-axis a curve is plotted against, control the appearance of the plot
-grid, and apply or save reusable curve presets.
+The appearance of each curve, the vertical axis a curve is plotted
+against, the plot grid, and reusable curve presets are all configurable
+per plot.
 
 Zooming and Panning
 -------------------
@@ -51,9 +51,8 @@ Plot Configuration Options
 --------------------------
 
 .. image:: /_static/user_guide/plot_controls-contextmenu.png
-   :width: 800
    :align: center
-   :alt: Plot context menu
+   :alt: Plot context menu with the Curves submenu and a curve's appearance panel open
 
 The right-click context menu contains options that control the
 appearance and behavior of the plot as a whole:
@@ -81,38 +80,34 @@ Curve Configuration Options
 ---------------------------
 
 The ``Curves`` entry in the context menu opens a submenu listing every
-curve on the plot.
-Selecting a curve opens its configuration submenu, which contains an
-``Export XY`` action at the top, a ``Presets`` group, and an
-``Appearance`` group.
-On the Rolling and Aux Data plots, an additional ``Change plot``
-submenu appears at the bottom for moving the curve between plots.
-Changes made through the appearance controls are applied to the curve
-immediately.
+curve on the plot. Selecting a curve opens its submenu, which contains,
+top to bottom: an ``Export XY`` action, the curve appearance panel (a
+preset bar above an appearance table), and — on the Rolling and Aux
+Data plots only — a ``Change plot`` submenu. Changes made in the
+appearance panel are applied to the curve immediately.
 
 - ``Export XY``: Generate a CSV file containing the data currently displayed for this curve.
 
-The ``Appearance`` group exposes the following controls:
+The preset bar carries a ``Preset`` drop-down and save/delete buttons;
+it is described under `Curve Presets`_ below. The appearance table has
+one row per setting:
 
-- ``Color``: Open a color picker to set the curve color.
-- ``Type``: Select how the curve is rendered: ``Line Plot``, ``Stick Plot``, ``Step Plot``, ``Scatter Dots``, or ``No Curve``.
-- ``Width``: Set the line thickness.
-- ``Style``: Set the line style (solid, dashed, dotted, etc.). Choose ``None`` to suppress the line.
-- ``Marker``: Set the plot marker drawn at each data point. Choose ``None`` to suppress markers.
-- ``Size``: Set the marker size.
-- ``Visible``: Toggle whether the curve is drawn.
-- ``Autoscale``: Toggle whether the curve is included when the axis limits are computed during an autoscale operation.
-- ``Y Axis``: Choose which Y axis the curve is plotted against (``Left`` or ``Right``).
+- ``Color``: Opens a color picker for the curve color.
+- ``Type``: How the curve is rendered — ``Line Plot``, ``Stick Plot``, ``Step Plot``, ``Scatter Dots``, or ``No Curve``.
+- ``Style``: The line style (solid, dashed, dotted, etc.; ``None`` suppresses the line) and, beside it, the line width in pixels.
+- ``Marker``: The symbol drawn at each data point (``None`` suppresses markers) and, beside it, the marker size in pixels.
+- ``Y Axis``: Which Y axis the curve is plotted against (``Left`` or ``Right``).
+- ``Display``: Two checkboxes — ``Visible`` (whether the curve is drawn) and ``Autoscale`` (whether the curve is included when the axis limits are computed during an autoscale operation).
 
 On the Rolling and Aux Data plots, the ``Change plot`` submenu moves
-the curve to a different plot in the grid.
-The plots are numbered from left to right, then top to bottom.
+the curve to a different plot in the grid. The plots are numbered from
+left to right, then top to bottom.
 
 
 Curve Presets
 -------------
 
-The ``Presets`` group at the top of each curve's submenu saves a full
+The preset bar at the top of the curve appearance panel saves a full
 set of appearance settings — color, type, width, line style, marker,
 marker size, visibility, autoscale flag, and Y axis assignment — under
 a name and applies that combination to any curve in any plot.
@@ -132,23 +127,23 @@ time the program is run:
 Default presets cannot be deleted or renamed, but their contents can be
 overwritten (see :ref:`saving-a-preset` below).
 When a default preset is selected in the ``Preset`` drop-down, the
-``Delete`` button is disabled.
+delete button is disabled.
 
 Applying a Preset
 ^^^^^^^^^^^^^^^^^
 
 To apply a preset to the current curve, choose its name from the
 ``Preset`` drop-down.
-The curve updates immediately, and the controls in the ``Appearance``
-group below reflect the preset's values.
+The curve updates immediately, and the appearance table below reflects
+the preset's values.
 
 .. _saving-a-preset:
 
 Saving a Preset
 ^^^^^^^^^^^^^^^
 
-Click ``Save`` to open the **Save Curve Appearance Preset** dialog,
-which offers two modes:
+The save button (disk icon) opens the **Save Curve Appearance Preset**
+dialog, which offers two modes:
 
 - **Create new preset**: Enter a name for a new preset. A suggestion derived from the current appearance settings is pre-filled and may be edited. If the chosen name matches an existing preset, a confirmation prompt appears before the existing preset is overwritten.
 - **Overwrite existing preset**: Choose an existing preset from the drop-down (default presets are tagged ``(default)``) and replace its contents with the current appearance. This is the only way to modify a default preset.
@@ -159,8 +154,8 @@ drop-down.
 Deleting a Preset
 ^^^^^^^^^^^^^^^^^
 
-To delete a custom preset, select it in the drop-down and click
-``Delete``.
+To delete a custom preset, select it in the drop-down and click the
+delete button (trash icon).
 A confirmation dialog appears before the preset is removed.
-The ``Delete`` button is disabled when no preset is selected or when
-the selected preset is a default.
+The delete button is disabled when no preset is selected or when the
+selected preset is a default.
