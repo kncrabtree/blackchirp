@@ -3,12 +3,14 @@
 #include <climits>
 
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QTableWidget>
 #include <QHeaderView>
 #include <QSpinBox>
 #include <QPushButton>
 
 #include <gui/style/themecolors.h>
+#include <gui/widget/tablefit.h>
 
 FtmwAcquisitionPanel::FtmwAcquisitionPanel(bool main, QWidget *parent) :
     QWidget(parent), d_main(main)
@@ -46,21 +48,30 @@ FtmwAcquisitionPanel::FtmwAcquisitionPanel(bool main, QWidget *parent) :
     if(!d_main)
         table->hideRow(0);
 
+    fitTableToContents(table);
     outer->addWidget(table,0);
 
+    // Reset / Backup share one row with short labels; the tooltips
+    // carry the full meaning. Keeps the panel as compact as its two
+    // settings rows.
     p_resetAveragesButton = new QPushButton(
         ThemeColors::createThemedIcon(":/icons/arrow-path.svg",ThemeColors::IconSecondary,this),
-        "Reset Averages");
+        "Reset");
+    p_resetAveragesButton->setToolTip("Reset the rolling average (peak-up) accumulation.");
     p_resetAveragesButton->setEnabled(false);
-    outer->addWidget(p_resetAveragesButton,0);
 
     p_manualBackupButton = new QPushButton(
         ThemeColors::createThemedIcon(":/icons/archive-box-arrow-down.svg",ThemeColors::IconSecondary,this),
-        "Manual Backup");
+        "Backup");
     p_manualBackupButton->setToolTip("Save a backup snapshot of the current FID list.");
     p_manualBackupButton->setEnabled(false);
     p_manualBackupButton->setVisible(d_main);
-    outer->addWidget(p_manualBackupButton,0);
+
+    auto *btnRow = new QHBoxLayout;
+    btnRow->setContentsMargins(0,0,0,0);
+    btnRow->addWidget(p_resetAveragesButton);
+    btnRow->addWidget(p_manualBackupButton);
+    outer->addLayout(btnRow,0);
 
     outer->addStretch(1);
     setLayout(outer);

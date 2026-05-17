@@ -13,6 +13,7 @@
 #include <QMetaEnum>
 
 #include <gui/widget/cellwidgethelpers.h>
+#include <gui/widget/tablefit.h>
 
 using BC::Gui::centerCellWidget;
 
@@ -135,13 +136,15 @@ FtmwPlotPanel::FtmwPlotPanel(QWidget *parent) : QWidget(parent)
     buildPlotControls(1, d_rowPlot1Seg, d_rowPlot1Frame, d_rowPlot1Backup, d_rowPlot1Diff);
     buildPlotControls(2, d_rowPlot2Seg, d_rowPlot2Frame, d_rowPlot2Backup, d_rowPlot2Diff);
 
-    outer->addWidget(p_table,1);
+    outer->addWidget(p_table,0);
 
     p_sbReprocessButton = new QPushButton("Reprocess Sidebands");
     p_sbReprocessButton->setToolTip("Re-run sideband deconvolution with the current settings.");
     outer->addWidget(p_sbReprocessButton,0);
     connect(p_sbReprocessButton, &QPushButton::clicked, this,
             [this](){ emit mainPlotSettingChanged(); });
+
+    outer->addStretch(1);
 
     setSidebandRowsVisible(false);
 
@@ -192,6 +195,9 @@ void FtmwPlotPanel::setSidebandRowsVisible(bool visible)
     for(int row : {d_rowSbFrame, d_rowSbMin, d_rowSbMax, d_rowSbAlgo})
         p_table->setRowHidden(row, !visible);
     p_sbReprocessButton->setVisible(visible);
+
+    // Content height just changed; re-cap so the dock tracks it.
+    fitTableToContents(p_table);
 }
 
 void FtmwPlotPanel::setMainPlotItemEnabled(MainPlotMode mode, bool enabled)

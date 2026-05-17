@@ -14,6 +14,7 @@
 
 #include <gui/style/themecolors.h>
 #include <gui/widget/cellwidgethelpers.h>
+#include <gui/widget/tablefit.h>
 
 using BC::Gui::centerCellWidget;
 
@@ -172,8 +173,10 @@ FtmwProcessingPanel::FtmwProcessingPanel(bool mainWin, QWidget *parent) :
 
     auto *outer = new QVBoxLayout;
     outer->setContentsMargins(4,4,4,4);
-    outer->addWidget(p_table,1);
+    outer->addWidget(p_table,0);
     outer->addLayout(btnRow,0);
+    outer->addStretch(1);
+    fitTableToContents(p_table);
     setLayout(outer);
 
     auto onDouble = [this](){ readSettings(); };

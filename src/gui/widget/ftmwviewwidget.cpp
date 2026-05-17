@@ -10,6 +10,7 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QSizePolicy>
 #include <QSplitter>
 #include <QThread>
 #include <QToolBar>
@@ -121,8 +122,6 @@ FtmwViewWidget::FtmwViewWidget(bool main, QWidget *parent, QString path, bool ov
     }
 
     createPlotNamesList();
-
-    restoreDockLayout();
 }
 
 void FtmwViewWidget::setupInnerUi()
@@ -205,6 +204,17 @@ void FtmwViewWidget::setupInnerUi()
     if(d_main)
         p_acquisitionPanel = new FtmwAcquisitionPanel(d_main, p_innerWindow);
 
+    // Acquisition / FID Processing / Plot Settings have a natural full
+    // height (their content size hint). A Maximum vertical policy lets
+    // them shrink when space is tight but never stretch past that, so
+    // a short panel can't hog a tall column and starve the others;
+    // Peak Find / Overlays keep the default policy and absorb the
+    // slack since they want as much room as they can get.
+    p_processingPanel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+    p_plotPanel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+    if(p_acquisitionPanel)
+        p_acquisitionPanel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+
     p_processingDock  = makeDock("FtmwViewDock-Processing",  "FID Processing", p_processingPanel);
     p_plotDock        = makeDock("FtmwViewDock-Plot",        "Plot Settings",  p_plotPanel);
     if(d_main)
@@ -235,21 +245,42 @@ void FtmwViewWidget::setupInnerUi()
     p_overlayAct->setIcon(ThemeColors::createThemedIcon(":/icons/squares-plus.svg",ThemeColors::IconSecondary,this));
     p_overlayAct->setText("Overlays");
 
-    p_topToolbar->addAction(p_processingAct);
-    p_topToolbar->addAction(p_plotAct);
+    // Toolbar mirrors the dock split: left-area panels grouped on the
+    // left, an expanding spacer, then right-area panels on the right.
+    // Order within each group follows the docks' top-to-bottom order.
     if(p_acquisitionAct)
         p_topToolbar->addAction(p_acquisitionAct);
-    p_topToolbar->addAction(p_peakFindAct);
+    p_topToolbar->addAction(p_processingAct);
+    p_topToolbar->addAction(p_plotAct);
+
+    auto *toolbarSpacer = new QWidget(p_topToolbar);
+    toolbarSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    p_topToolbar->addWidget(toolbarSpacer);
+
     p_topToolbar->addAction(p_overlayAct);
+    p_topToolbar->addAction(p_peakFindAct);
 
-    p_innerWindow->addDockWidget(Qt::RightDockWidgetArea, p_processingDock);
-    p_innerWindow->addDockWidget(Qt::RightDockWidgetArea, p_plotDock);
+    // Fixed default layout (no disk persistence). Left area, top to
+    // bottom: Acquisition (main app only), FID Processing, Plot
+    // Settings. Right area, top to bottom: Overlays, Peak Find.
+    // splitDockWidget pins the vertical order deterministically.
+    QDockWidget *leftTop = p_acquisitionDock ? p_acquisitionDock
+                                              : p_processingDock;
+    p_innerWindow->addDockWidget(Qt::LeftDockWidgetArea, leftTop);
     if(p_acquisitionDock)
-        p_innerWindow->addDockWidget(Qt::RightDockWidgetArea, p_acquisitionDock);
-    p_innerWindow->addDockWidget(Qt::RightDockWidgetArea, p_peakFindDock);
-    p_innerWindow->addDockWidget(Qt::RightDockWidgetArea, p_overlayDock);
+        p_innerWindow->splitDockWidget(p_acquisitionDock, p_processingDock,
+                                       Qt::Vertical);
+    p_innerWindow->splitDockWidget(p_processingDock, p_plotDock,
+                                   Qt::Vertical);
 
-    // Default to all hidden (collapsed); restoreDockLayout() may override.
+    p_innerWindow->addDockWidget(Qt::RightDockWidgetArea, p_overlayDock);
+    p_innerWindow->splitDockWidget(p_overlayDock, p_peakFindDock,
+                                   Qt::Vertical);
+
+    // Docks start hidden; the split layout above only fixes where each
+    // one lands the first time it is shown. Re-showing a hidden dock
+    // later restores it to its last location via the toggle action
+    // (Qt default).
     p_processingDock->setVisible(false);
     p_plotDock->setVisible(false);
     if(p_acquisitionDock)
@@ -261,6 +292,17 @@ void FtmwViewWidget::setupInnerUi()
     // shown and a suitable Ft / experiment is available.
     connect(p_peakFindDock,&QDockWidget::visibilityChanged,this,&FtmwViewWidget::showPeakFinder);
     connect(p_overlayDock,&QDockWidget::visibilityChanged,this,&FtmwViewWidget::showOverlayManager);
+
+    // Showing a dock into an area that already holds one otherwise
+    // leaves the newcomer at its minimum height while the incumbent
+    // keeps all the space; re-balance the area each time.
+    const QList<QDockWidget*> docks{p_processingDock, p_plotDock,
+                                    p_acquisitionDock, p_peakFindDock,
+                                    p_overlayDock};
+    for(auto *d : docks)
+        if(d)
+            connect(d,&QDockWidget::visibilityChanged,
+                    this,&FtmwViewWidget::redistributeDockSpace);
 
     // Outer layout: just hosts the inner main window
     auto *vbl = new QVBoxLayout;
@@ -311,30 +353,39 @@ void FtmwViewWidget::resetDockToPlaceholder(QDockWidget *dock, const QString &me
         prev->deleteLater();
 }
 
-QLatin1StringView FtmwViewWidget::dockStateKey() const
+void FtmwViewWidget::redistributeDockSpace()
 {
-    return d_main ? BC::Key::FtmwView::dockStateMain
-                  : BC::Key::FtmwView::dockStateViewer;
-}
+    // Only the greedy docks (Peak Find / Overlays) need balancing —
+    // they have no natural maximum, so without help the first one
+    // shown keeps all the space. The Acquisition / FID Processing /
+    // Plot Settings panels are vertical-Maximum and the dock layout
+    // already sizes them to content; resizeDocks() ignores size
+    // policy, so including them here would re-stretch them.
+    const QList<QDockWidget*> greedy{p_overlayDock, p_peakFindDock};
+    QList<QDockWidget*> left, right;
+    for(auto *d : greedy)
+    {
+        if(!d || !d->isVisible() || d->isFloating())
+            continue;
+        switch(p_innerWindow->dockWidgetArea(d))
+        {
+        case Qt::LeftDockWidgetArea:  left  << d; break;
+        case Qt::RightDockWidgetArea: right << d; break;
+        default: break;
+        }
+    }
 
-QByteArray FtmwViewWidget::defaultDockStateBlob() const
-{
-    // Empty blob: restoreState() is a no-op and the widget keeps the
-    // post-construction default (all docks tabified on the right edge,
-    // all hidden).
-    return {};
-}
-
-void FtmwViewWidget::restoreDockLayout()
-{
-    auto blob = get<QByteArray>(dockStateKey(), defaultDockStateBlob());
-    if(!blob.isEmpty())
-        p_innerWindow->restoreState(blob);
-}
-
-void FtmwViewWidget::persistDockLayout()
-{
-    set(dockStateKey(), p_innerWindow->saveState(), false);
+    // Equal relative sizes split the area evenly between the two when
+    // they share it (Qt scales the values to fit).
+    auto equalize = [this](const QList<QDockWidget*> &docks)
+    {
+        if(docks.size() < 2)
+            return;
+        p_innerWindow->resizeDocks(docks, QList<int>(docks.size(), 1),
+                                   Qt::Vertical);
+    };
+    equalize(left);
+    equalize(right);
 }
 
 FtmwViewWidget::~FtmwViewWidget()
@@ -353,7 +404,6 @@ FtmwViewWidget::~FtmwViewWidget()
             "Peak Find panel will appear when an experiment is loaded.");
     }
 
-    persistDockLayout();
     clearGetters();
 
     saveOverlays();

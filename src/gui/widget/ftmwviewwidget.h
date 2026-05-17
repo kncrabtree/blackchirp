@@ -35,8 +35,6 @@ class FtmwAcquisitionPanel;
 namespace BC::Key::FtmwView {
 inline constexpr QLatin1StringView key{"FtmwViewWidget"};
 inline constexpr QLatin1StringView refresh{"refreshMs"};
-inline constexpr QLatin1StringView dockStateMain{"dockStateMain"};
-inline constexpr QLatin1StringView dockStateViewer{"dockStateViewer"};
 }
 
 class FtmwViewWidget : public QWidget, public SettingsStorage
@@ -170,10 +168,7 @@ private:
     void setupTopToolbar();
     QDockWidget *makeDock(const QString &objectName, const QString &title, QWidget *contents);
     void resetDockToPlaceholder(QDockWidget *dock, const QString &message);
-    void restoreDockLayout();
-    void persistDockLayout();
-    QLatin1StringView dockStateKey() const;
-    QByteArray defaultDockStateBlob() const;
+    void redistributeDockSpace();
 
     std::shared_ptr<FidStorageBase> ps_fidStorage;
     std::shared_ptr<OverlayStorage> ps_overlayStorage;
