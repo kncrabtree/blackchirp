@@ -18,6 +18,9 @@ SettingsTable::SettingsTable(QWidget *parent)
     setEditTriggers(QAbstractItemView::NoEditTriggers);
     setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    // Borderless by contract: stacked panels share one flat surface
+    // rather than each drawing the default scroll-area frame.
+    setFrameShape(QFrame::NoFrame);
 }
 
 QSize SettingsTable::minimumSizeHint() const
