@@ -121,6 +121,11 @@ void LifControlWidget::initializeWidget()
     vbl->addWidget(splitter);
     setLayout(vbl);
 
+    // Width floor so the digitizer / data-transfer / trigger boxes are
+    // not clipped; height is left to the layout so the dialog is no
+    // longer pinned tall (the splitter balances plot vs. controls).
+    setMinimumWidth(1000);
+
     connect(p_startAcqButton,&QToolButton::clicked,this,&LifControlWidget::startAcquisition);
     connect(p_stopAcqButton,&QToolButton::clicked,this,&LifControlWidget::stopAcquisition);
 
@@ -218,10 +223,4 @@ void LifControlWidget::toConfig(LifConfig &cfg)
         cfg.digitizerConfig().d_refEnabled = it->second.enabled;
     else
         cfg.digitizerConfig().d_refEnabled = false;
-}
-
-
-QSize LifControlWidget::sizeHint() const
-{
-    return {1000,700};
 }

@@ -65,11 +65,6 @@ private:
     std::shared_ptr<LifConfig> ps_cfg;
     QString d_laserHwKey;
     bool d_acquiring{ false };
-
-
-    // QWidget interface
-public:
-    QSize sizeHint() const override;
 };
 
 #endif // LIFCONTROLWIDGET_H
