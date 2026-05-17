@@ -432,13 +432,20 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # This job runs as root in the opensuse container while the
+          # checkout is owned by the runner uid; without this, git (which
+          # gh shells out to for repo detection) aborts with "detected
+          # dubious ownership". --repo on the gh calls below also avoids
+          # the git invocation entirely, but the safe.directory exception
+          # keeps any other in-container git use working too.
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           # gh CLI may not be present in opensuse container; fall back to API
           if command -v gh >/dev/null 2>&1; then
-            gh release upload "${{ github.event.release.tag_name }}" build/Blackchirp-*.rpm --clobber
+            gh release upload "${{ github.event.release.tag_name }}" build/Blackchirp-*.rpm --repo "${{ github.repository }}" --clobber
           else
             zypper -n install -y gh || true
             if command -v gh >/dev/null 2>&1; then
-              gh release upload "${{ github.event.release.tag_name }}" build/Blackchirp-*.rpm --clobber
+              gh release upload "${{ github.event.release.tag_name }}" build/Blackchirp-*.rpm --repo "${{ github.repository }}" --clobber
             else
               for f in build/Blackchirp-*.rpm; do
                 curl -fsSL -X POST \
