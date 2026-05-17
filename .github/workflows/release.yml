@@ -221,9 +221,10 @@ jobs:
           retention-days: 90
 
       - name: Attach to release
-        # The deb job is the first to run on a release event, so it owns the
-        # one-time upload of the project's public key. --clobber means a re-run
-        # is idempotent rather than failing on "asset already exists".
+        # --clobber means a re-run is idempotent rather than failing on
+        # "asset already exists". The project public key and license texts
+        # are uploaded by the independent release-assets job so they reach
+        # the release even if this build job fails.
         if: github.event_name == 'release'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -231,7 +232,6 @@ jobs:
           gh release upload "${{ github.event.release.tag_name }}" \
             build/Blackchirp-*.deb \
             build/Blackchirp-*.deb.asc \
-            packaging/blackchirp-release.asc \
             --clobber
 
   # ============================================================================
@@ -1195,3 +1195,36 @@ jobs:
           }
           Invoke-Smoke $bin    'blackchirp'
           Invoke-Smoke $viewer 'blackchirp-viewer'
+
+  # ============================================================================
+  # Release assets independent of any platform build: the project public key
+  # and the license texts. Deliberately has no `needs:` so a failure in any
+  # platform build cannot strip these from the release. The license texts are
+  # not yet bundled inside the packages (tracked in the devel roadmap for the
+  # beta); until then this job is the only path that gets them to users who
+  # download a binary artifact.
+  # ============================================================================
+  release-assets:
+    name: Release assets (key + licenses)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Bundle license texts
+        # COPYING is the project's own (MIT) license; licenses/ holds the
+        # third-party / bundled-dependency texts (Qwt, LGPL-3.0, GPL-3.0,
+        # MPL-2.0, Heroicons) that README's License section points users to.
+        run: |
+          set -euo pipefail
+          zip -r blackchirp-licenses.zip COPYING licenses/
+
+      - name: Attach to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" \
+            COPYING \
+            blackchirp-licenses.zip \
+            packaging/blackchirp-release.asc \
+            --clobber
