@@ -6,12 +6,13 @@ using namespace BC::Key::WizDR;
 
 #include <QDoubleSpinBox>
 #include <QSpinBox>
-#include <QHeaderView>
-#include <QTableWidget>
 #include <QVBoxLayout>
 
 #include <data/experiment/experiment.h>
 #include <data/experiment/ftmwconfigtypes.h>
+#include <gui/widget/settingstable.h>
+
+using namespace Qt::StringLiterals;
 
 DRScanConfigWidget::DRScanConfigWidget(Experiment *exp, QWidget *parent)
     : QWidget(parent), SettingsStorage(BC::Key::WizDR::key), p_exp(exp)
@@ -58,23 +59,18 @@ DRScanConfigWidget::DRScanConfigWidget(Experiment *exp, QWidget *parent)
     p_shotsBox->setToolTip(QString("Number of shots to acquire at each DR point."));
     p_shotsBox->setAlignment(Qt::AlignCenter);
 
-    auto table = new QTableWidget(5, 1, this);
-    table->setHorizontalHeaderLabels({"DR Scan Settings"});
-    table->setVerticalHeaderLabels({"Start", "Step Size", "Num Steps",
-                                    "End", "Shots Per Step"});
-    table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    table->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    table->setSelectionMode(QAbstractItemView::NoSelection);
+    auto table = new SettingsTable(this);
     table->setFocusPolicy(Qt::NoFocus);
 
-    table->setCellWidget(0, 0, p_startBox);
-    table->setCellWidget(1, 0, p_stepSizeBox);
-    table->setCellWidget(2, 0, p_numStepsBox);
-    table->setCellWidget(3, 0, p_endBox);
-    table->setCellWidget(4, 0, p_shotsBox);
+    table->addSectionRow("DR Scan Settings"_L1);
+    table->addSettingRow("Start"_L1, p_startBox);
+    table->addSettingRow("Step Size"_L1, p_stepSizeBox);
+    table->addSettingRow("Num Steps"_L1, p_numStepsBox);
+    table->addSettingRow("End"_L1, p_endBox);
+    table->addSettingRow("Shots Per Step"_L1, p_shotsBox);
 
     auto vbl = new QVBoxLayout;
-    vbl->addWidget(table, 1);
+    vbl->addWidget(table, 0);
     setLayout(vbl);
 
     auto vc = static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged);
