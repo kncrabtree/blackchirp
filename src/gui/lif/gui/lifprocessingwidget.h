@@ -20,8 +20,10 @@ const QString sgPoly("savGolPoly");
 
 class QSpinBox;
 class QDoubleSpinBox;
-class QGroupBox;
-class QPushButton;
+class QCheckBox;
+class QToolButton;
+class QHBoxLayout;
+class QResizeEvent;
 
 class LifProcessingWidget : public QWidget, public SettingsStorage
 {
@@ -35,6 +37,9 @@ public:
 
     void experimentComplete();
 
+protected:
+    void resizeEvent(QResizeEvent *event) override;
+
 signals:
     void settingChanged();
     void reprocessSignal();
@@ -42,10 +47,13 @@ signals:
     void saveSignal();
 
 private:
+    void adjustButtonStyle();
+
     QSpinBox *p_lgStartBox, *p_lgEndBox, *p_rgStartBox, *p_rgEndBox, *p_sgWinBox, *p_sgPolyBox;
     QDoubleSpinBox *p_lpAlphaBox;
-    QGroupBox *p_sgGroupBox;
-    QPushButton *p_reprocessButton, *p_saveButton, *p_resetButton;
+    QCheckBox *p_sgBox;
+    QToolButton *p_reprocessButton, *p_saveButton, *p_resetButton;
+    QHBoxLayout *p_btnLayout;
 };
 
 #endif // LIFPROCESSINGWIDGET_H

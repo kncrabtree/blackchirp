@@ -2,12 +2,19 @@
 
 #include <QSpinBox>
 #include <QDoubleSpinBox>
-#include <QPushButton>
+#include <QToolButton>
 #include <QGroupBox>
-#include <QLabel>
-#include <QGridLayout>
+#include <QCheckBox>
+#include <QTableWidget>
+#include <QHeaderView>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QResizeEvent>
+
+#include <gui/style/themecolors.h>
+#include <gui/widget/settingstable.h>
+
+using namespace Qt::StringLiterals;
 
 LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
     : QWidget{parent}, SettingsStorage(BC::Key::LifProcessing::key)
@@ -35,21 +42,42 @@ LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
     p_rgEndBox->setRange(1,1000000000);
     p_rgEndBox->setValue(get(rgEnd,1));
 
+    // True LIF/Reference x Start/End matrix: kept a QTableWidget but
+    // restyled so the row names sit in a regular first column rather
+    // than the vertical header, consistent with the other restyled
+    // matrix tables. The QGroupBox supplies the "Gates" heading.
     auto gateBox = new QGroupBox("Gates",this);
-    auto gateGrid = new QGridLayout;
-    auto startHdr = new QLabel("Start",this);
-    auto endHdr = new QLabel("End",this);
-    startHdr->setAlignment(Qt::AlignCenter);
-    endHdr->setAlignment(Qt::AlignCenter);
-    gateGrid->addWidget(startHdr,0,1);
-    gateGrid->addWidget(endHdr,0,2);
-    gateGrid->addWidget(new QLabel("LIF",this),1,0,Qt::AlignRight);
-    gateGrid->addWidget(p_lgStartBox,1,1);
-    gateGrid->addWidget(p_lgEndBox,1,2);
-    gateGrid->addWidget(new QLabel("Reference",this),2,0,Qt::AlignRight);
-    gateGrid->addWidget(p_rgStartBox,2,1);
-    gateGrid->addWidget(p_rgEndBox,2,2);
-    gateBox->setLayout(gateGrid);
+    auto gateTable = new QTableWidget(2,3,gateBox);
+    gateTable->setHorizontalHeaderLabels({"", "Start", "End"});
+    gateTable->horizontalHeader()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
+    gateTable->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
+    gateTable->horizontalHeader()->setSectionResizeMode(2,QHeaderView::Stretch);
+    gateTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    gateTable->verticalHeader()->setVisible(false);
+    gateTable->setSelectionMode(QAbstractItemView::NoSelection);
+    gateTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    gateTable->setFocusPolicy(Qt::NoFocus);
+    // Content-sized like SettingsTable: never grow past the two rows or
+    // show a vertical scrollbar, so the panel does not waste height.
+    gateTable->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+    gateTable->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    gateTable->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Maximum);
+
+    auto setGateRowLabel = [gateTable](int row, const QString &text) {
+        auto *it = new QTableWidgetItem(text);
+        it->setFlags(Qt::ItemIsEnabled);
+        gateTable->setItem(row, 0, it);
+    };
+    setGateRowLabel(0, "LIF"_L1);
+    setGateRowLabel(1, "Reference"_L1);
+    gateTable->setCellWidget(0,1,p_lgStartBox);
+    gateTable->setCellWidget(0,2,p_lgEndBox);
+    gateTable->setCellWidget(1,1,p_rgStartBox);
+    gateTable->setCellWidget(1,2,p_rgEndBox);
+
+    auto gateLayout = new QVBoxLayout;
+    gateLayout->addWidget(gateTable);
+    gateBox->setLayout(gateLayout);
 
     p_lpAlphaBox = new QDoubleSpinBox(this);
     p_lpAlphaBox->setDecimals(4);
@@ -58,16 +86,6 @@ LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
     p_lpAlphaBox->setSpecialValueText(QString("Disabled"));
     p_lpAlphaBox->setToolTip("Low pass filter: x_n = alpha*x_{n-1} + (1-alpha)*x_n");
     p_lpAlphaBox->setValue(get(lpAlpha,0.0));
-
-    auto lpGroupBox = new QGroupBox("Low pass filter",this);
-    auto lpHbl = new QHBoxLayout;
-    lpHbl->addWidget(new QLabel("α",this));
-    lpHbl->addWidget(p_lpAlphaBox,1);
-    lpGroupBox->setLayout(lpHbl);
-
-    p_sgGroupBox = new QGroupBox("Savitzky-Golay smoothing",this);
-    p_sgGroupBox->setCheckable(true);
-    p_sgGroupBox->setToolTip("Enable/disable Savitzky-Golay smoothing");
 
     p_sgWinBox = new QSpinBox(this);
     p_sgWinBox->setToolTip("Savitzky-Golay window size. Must be odd");
@@ -78,43 +96,60 @@ LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
     p_sgPolyBox->setToolTip("Savitzky-Golay polynomial order. Must be between 2 and window size - 1");
     p_sgPolyBox->setMinimum(2);
 
-    auto sgHbl = new QHBoxLayout;
-    sgHbl->addWidget(new QLabel("Window",this));
-    sgHbl->addWidget(p_sgWinBox,1);
-    sgHbl->addSpacing(8);
-    sgHbl->addWidget(new QLabel("Order",this));
-    sgHbl->addWidget(p_sgPolyBox,1);
-    p_sgGroupBox->setLayout(sgHbl);
+    // Low-pass and Savitzky-Golay groups become sections of one
+    // SettingsTable; the checkable Sav-Gol QGroupBox is now a checkable
+    // section row whose bound rows collapse when it is unchecked.
+    auto procTable = new SettingsTable(this);
+    procTable->setFocusPolicy(Qt::NoFocus);
+    procTable->addSectionRow("Low Pass Filter"_L1);
+    procTable->addSettingRow(u"α"_s,p_lpAlphaBox,
+        "Low pass filter: x_n = alpha*x_{n-1} + (1-alpha)*x_n"_L1);
+    int sgSection = procTable->addCheckableSectionRow(
+        "Savitzky-Golay Smoothing"_L1,get(sgEn,false),&p_sgBox);
+    p_sgBox->setToolTip("Enable/disable Savitzky-Golay smoothing"_L1);
+    int sgWinRow = procTable->addSettingRow("Window"_L1,p_sgWinBox,
+        "Savitzky-Golay window size. Must be odd"_L1);
+    int sgPolyRow = procTable->addSettingRow("Order"_L1,p_sgPolyBox,
+        "Savitzky-Golay polynomial order. Must be between 2 and window size - 1"_L1);
+    procTable->bindSectionRows(sgSection,{sgWinRow,sgPolyRow});
 
-    p_reprocessButton = new QPushButton(QString("Reprocess All"),this);
+    // Text-beside-icon tool buttons that collapse to icon-only when the
+    // row is too narrow (tooltips then carry the meaning), mirroring
+    // OverlayManagerWidget. Reset/Save reuse the FtmwProcessingPanel
+    // icons for cross-panel consistency.
+    p_reprocessButton = new QToolButton(this);
+    p_reprocessButton->setIcon(ThemeColors::createThemedIcon(":/icons/calculator.svg",ThemeColors::IconSecondary,this));
+    p_reprocessButton->setText("Reprocess All"_L1);
+    p_reprocessButton->setToolTip("Reprocess all data with the current settings."_L1);
     p_reprocessButton->setEnabled(false);
-    connect(p_reprocessButton,&QPushButton::clicked,this,&LifProcessingWidget::reprocessSignal);
+    connect(p_reprocessButton,&QToolButton::clicked,this,&LifProcessingWidget::reprocessSignal);
 
-    p_resetButton = new QPushButton(QString("Reset"),this);
-    p_resetButton->setToolTip("Reset to most recently saved values");
+    p_resetButton = new QToolButton(this);
+    p_resetButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-path.svg",ThemeColors::IconSecondary,this));
+    p_resetButton->setText("Reset"_L1);
+    p_resetButton->setToolTip("Reset to most recently saved values."_L1);
     p_resetButton->setEnabled(false);
-    connect(p_resetButton,&QPushButton::clicked,this,&LifProcessingWidget::resetSignal);
+    connect(p_resetButton,&QToolButton::clicked,this,&LifProcessingWidget::resetSignal);
 
-    p_saveButton = new QPushButton(QString("Save"),this);
-    p_saveButton->setToolTip("Save the current values. They will be the new defaults if this experiment is viewed again.");
+    p_saveButton = new QToolButton(this);
+    p_saveButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-down-tray.svg",ThemeColors::IconSecondary,this));
+    p_saveButton->setText("Save"_L1);
+    p_saveButton->setToolTip("Save the current values. They will be the new defaults if this experiment is viewed again."_L1);
     p_saveButton->setEnabled(false);
-    connect(p_saveButton,&QPushButton::clicked,this,&LifProcessingWidget::saveSignal);
+    connect(p_saveButton,&QToolButton::clicked,this,&LifProcessingWidget::saveSignal);
 
-    auto btnHbl = new QHBoxLayout;
-    btnHbl->addWidget(p_reprocessButton,1);
-    btnHbl->addWidget(p_resetButton,1);
-    btnHbl->addWidget(p_saveButton,1);
-
-    auto filtersHbl = new QHBoxLayout;
-    filtersHbl->addWidget(lpGroupBox,1);
-    filtersHbl->addWidget(p_sgGroupBox,1);
+    p_btnLayout = new QHBoxLayout;
+    p_btnLayout->addWidget(p_reprocessButton,1);
+    p_btnLayout->addWidget(p_resetButton,1);
+    p_btnLayout->addWidget(p_saveButton,1);
 
     auto vbl = new QVBoxLayout;
     vbl->addWidget(gateBox);
-    vbl->addLayout(filtersHbl);
-    vbl->addLayout(btnHbl);
+    vbl->addWidget(procTable);
+    vbl->addLayout(p_btnLayout);
     vbl->addStretch(1);
     setLayout(vbl);
+    adjustButtonStyle();
 
     connect(p_lgStartBox,qOverload<int>(&QSpinBox::valueChanged),this,[this](int n){
         auto v = p_lgEndBox->value();
@@ -153,11 +188,10 @@ LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
     connect(p_rgStartBox,qOverload<int>(&QSpinBox::valueChanged),this,&LifProcessingWidget::settingChanged);
     connect(p_rgEndBox,qOverload<int>(&QSpinBox::valueChanged),this,&LifProcessingWidget::settingChanged);
     connect(p_lpAlphaBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&LifProcessingWidget::settingChanged);
-    connect(p_sgGroupBox,&QGroupBox::toggled,this,&LifProcessingWidget::settingChanged);
+    connect(p_sgBox,&QCheckBox::toggled,this,&LifProcessingWidget::settingChanged);
     connect(p_sgWinBox,qOverload<int>(&QSpinBox::valueChanged),this,&LifProcessingWidget::settingChanged);
     connect(p_sgPolyBox,qOverload<int>(&QSpinBox::valueChanged),this,&LifProcessingWidget::settingChanged);
 
-    p_sgGroupBox->setChecked(get(sgEn,false));
     p_sgWinBox->setValue(get(sgWin,11));
     p_sgPolyBox->setValue(get(sgPoly,3));
 
@@ -168,7 +202,7 @@ LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
         registerGetter(rgStart,p_rgStartBox,&QSpinBox::value);
         registerGetter(rgEnd,p_rgEndBox,&QSpinBox::value);
         registerGetter(lpAlpha,p_lpAlphaBox,&QDoubleSpinBox::value);
-        registerGetter(sgEn,p_sgGroupBox,&QGroupBox::isChecked);
+        registerGetter(sgEn,static_cast<QAbstractButton*>(p_sgBox),&QCheckBox::isChecked);
         registerGetter(sgWin,p_sgWinBox,&QSpinBox::value);
         registerGetter(sgPoly,p_sgPolyBox,&QSpinBox::value);
     }
@@ -193,7 +227,7 @@ void LifProcessingWidget::setAll(const LifTrace::LifProcSettings &lc)
     p_rgStartBox->setValue(lc.refGateStart);
     p_rgEndBox->setValue(lc.refGateEnd);
     p_lpAlphaBox->setValue(lc.lowPassAlpha);
-    p_sgGroupBox->setChecked(lc.savGolEnabled);
+    p_sgBox->setChecked(lc.savGolEnabled);
     p_sgWinBox->setValue(lc.savGolWin);
     p_sgPolyBox->setValue(lc.savGolPoly);
     blockSignals(false);
@@ -207,7 +241,7 @@ LifTrace::LifProcSettings LifProcessingWidget::getSettings() const
                 p_rgStartBox->value(),
                 p_rgEndBox->value(),
                 p_lpAlphaBox->value(),
-                p_sgGroupBox->isChecked(),
+                p_sgBox->isChecked(),
                 p_sgWinBox->value(),
                 p_sgPolyBox->value()
     };
@@ -219,4 +253,24 @@ void LifProcessingWidget::experimentComplete()
     p_reprocessButton->setEnabled(true);
     p_resetButton->setEnabled(true);
     p_saveButton->setEnabled(true);
+}
+
+void LifProcessingWidget::adjustButtonStyle()
+{
+    // Measure with labels shown; if the row would overflow the widget
+    // width, fall back to icon-only (tooltips already describe each).
+    for(auto *b : {p_reprocessButton,p_resetButton,p_saveButton})
+        b->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+
+    const auto style = (p_btnLayout->sizeHint().width() <= width())
+                           ? Qt::ToolButtonTextBesideIcon
+                           : Qt::ToolButtonIconOnly;
+    for(auto *b : {p_reprocessButton,p_resetButton,p_saveButton})
+        b->setToolButtonStyle(style);
+}
+
+void LifProcessingWidget::resizeEvent(QResizeEvent *event)
+{
+    QWidget::resizeEvent(event);
+    adjustButtonStyle();
 }
