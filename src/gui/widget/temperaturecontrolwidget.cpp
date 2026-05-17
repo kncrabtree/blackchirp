@@ -11,8 +11,9 @@
 using BC::Gui::centerCellWidget;
 
 namespace {
-constexpr int NameCol = 0;
-constexpr int EnabledCol = 1;
+constexpr int LabelCol = 0;
+constexpr int NameCol = 1;
+constexpr int EnabledCol = 2;
 }
 
 TemperatureControlWidget::TemperatureControlWidget(const TemperatureControllerConfig &cfg, QWidget *parent) :
@@ -22,18 +23,22 @@ TemperatureControlWidget::TemperatureControlWidget(const TemperatureControllerCo
 {
     const auto numChannels = cfg.numChannels();
 
-    p_table = new QTableWidget(static_cast<int>(numChannels), 2, this);
-    p_table->setHorizontalHeaderLabels({"Name", "Enabled"});
+    p_table = new QTableWidget(static_cast<int>(numChannels), 3, this);
+    p_table->setHorizontalHeaderLabels({"Ch", "Name", "Enabled"});
+    p_table->horizontalHeader()->setSectionResizeMode(LabelCol, QHeaderView::ResizeToContents);
     p_table->horizontalHeader()->setSectionResizeMode(NameCol, QHeaderView::Stretch);
     p_table->horizontalHeader()->setSectionResizeMode(EnabledCol, QHeaderView::ResizeToContents);
     p_table->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    p_table->verticalHeader()->setVisible(false);
     p_table->setSelectionMode(QAbstractItemView::NoSelection);
     p_table->setFocusPolicy(Qt::NoFocus);
 
-    QStringList rowLabels;
     for(uint i=0; i<numChannels; ++i)
     {
-        rowLabels << QString("Ch %1").arg(i+1);
+        auto labelItem = new QTableWidgetItem(QString::number(i+1));
+        labelItem->setFlags(Qt::ItemIsEnabled);
+        labelItem->setTextAlignment(Qt::AlignCenter);
+        p_table->setItem(static_cast<int>(i), LabelCol, labelItem);
 
         auto nameItem = new QTableWidgetItem(cfg.channelName(i));
         p_table->setItem(static_cast<int>(i), NameCol, nameItem);
@@ -46,7 +51,6 @@ TemperatureControlWidget::TemperatureControlWidget(const TemperatureControllerCo
 
         d_channelWidgets.push_back({cb});
     }
-    p_table->setVerticalHeaderLabels(rowLabels);
 
     connect(p_table, &QTableWidget::itemChanged, this, [this](QTableWidgetItem *item){
         if(!item || item->column() != NameCol)

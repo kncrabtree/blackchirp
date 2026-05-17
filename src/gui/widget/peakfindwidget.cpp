@@ -34,6 +34,8 @@
 #include <gui/dialog/peaklistexportdialog.h>
 #include <data/storage/fidstoragebase.h>
 
+using namespace Qt::StringLiterals;
+
 PeakFindWidget::PeakFindWidget(Ft ft, int number,
                                std::shared_ptr<FidStorageBase> storage,
                                QWidget *parent):
@@ -248,20 +250,29 @@ void PeakFindWidget::setupUI()
     p_minIntBox->setMinimumWidth(40);
     p_maxIntBox->setMinimumWidth(40);
 
-    p_filterGrid = new QTableWidget(2,2,this);
-    p_filterGrid->setHorizontalHeaderLabels({"Min","Max"});
-    p_filterGrid->setVerticalHeaderLabels({"Freq","Intensity"});
-    p_filterGrid->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    p_filterGrid = new QTableWidget(2,3,this);
+    p_filterGrid->setHorizontalHeaderLabels({"","Min","Max"});
+    p_filterGrid->horizontalHeader()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
+    p_filterGrid->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
+    p_filterGrid->horizontalHeader()->setSectionResizeMode(2,QHeaderView::Stretch);
     p_filterGrid->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+    p_filterGrid->verticalHeader()->setVisible(false);
     p_filterGrid->setEditTriggers(QAbstractItemView::NoEditTriggers);
     p_filterGrid->setSelectionMode(QAbstractItemView::NoSelection);
     p_filterGrid->setFocusPolicy(Qt::NoFocus);
     p_filterGrid->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     p_filterGrid->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    p_filterGrid->setCellWidget(0,0,p_minFreqBox);
-    p_filterGrid->setCellWidget(0,1,p_maxFreqBox);
-    p_filterGrid->setCellWidget(1,0,p_minIntBox);
-    p_filterGrid->setCellWidget(1,1,p_maxIntBox);
+    auto setRowLabel = [this](int row, const QString &text) {
+        auto *it = new QTableWidgetItem(text);
+        it->setFlags(Qt::ItemIsEnabled);
+        p_filterGrid->setItem(row,0,it);
+    };
+    setRowLabel(0,"Freq"_L1);
+    setRowLabel(1,"Intensity"_L1);
+    p_filterGrid->setCellWidget(0,1,p_minFreqBox);
+    p_filterGrid->setCellWidget(0,2,p_maxFreqBox);
+    p_filterGrid->setCellWidget(1,1,p_minIntBox);
+    p_filterGrid->setCellWidget(1,2,p_maxIntBox);
 
     // Pin the grid height to header + the two cell-widget rows so it
     // never claims more vertical space than it needs.

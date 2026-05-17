@@ -15,9 +15,10 @@
 using BC::Gui::centerCellWidget;
 
 namespace {
-constexpr int NameCol = 0;
-constexpr int SetpointCol = 1;
-constexpr int EnabledCol = 2;
+constexpr int LabelCol = 0;
+constexpr int NameCol = 1;
+constexpr int SetpointCol = 2;
+constexpr int EnabledCol = 3;
 }
 
 GasControlWidget::GasControlWidget(const FlowConfig &cfg, QWidget *parent) :
@@ -28,19 +29,23 @@ GasControlWidget::GasControlWidget(const FlowConfig &cfg, QWidget *parent) :
     SettingsStorage fc(cfg.headerKey(),Hardware);
     auto flowChannels = fc.get(BC::Key::Flow::flowChannels,4);
 
-    p_table = new QTableWidget(flowChannels, 3, this);
-    p_table->setHorizontalHeaderLabels({"Gas Name", "Setpoint", "Enabled"});
+    p_table = new QTableWidget(flowChannels, 4, this);
+    p_table->setHorizontalHeaderLabels({"Ch", "Gas Name", "Setpoint", "Enabled"});
+    p_table->horizontalHeader()->setSectionResizeMode(LabelCol, QHeaderView::ResizeToContents);
     p_table->horizontalHeader()->setSectionResizeMode(NameCol, QHeaderView::Stretch);
     p_table->horizontalHeader()->setSectionResizeMode(SetpointCol, QHeaderView::ResizeToContents);
     p_table->horizontalHeader()->setSectionResizeMode(EnabledCol, QHeaderView::ResizeToContents);
     p_table->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    p_table->verticalHeader()->setVisible(false);
     p_table->setSelectionMode(QAbstractItemView::NoSelection);
     p_table->setFocusPolicy(Qt::NoFocus);
 
-    QStringList rowLabels;
     for(int i=0; i<flowChannels; ++i)
     {
-        rowLabels << QString("Ch %1").arg(i+1);
+        auto labelItem = new QTableWidgetItem(QString::number(i+1));
+        labelItem->setFlags(Qt::ItemIsEnabled);
+        labelItem->setTextAlignment(Qt::AlignCenter);
+        p_table->setItem(i, LabelCol, labelItem);
 
         auto nameItem = new QTableWidgetItem(
             fc.getArrayValue(BC::Key::Flow::channels,i,BC::Key::Flow::chName,QString("")));
@@ -61,7 +66,6 @@ GasControlWidget::GasControlWidget(const FlowConfig &cfg, QWidget *parent) :
 
         d_widgets.append({controlBox, enableBox});
     }
-    p_table->setVerticalHeaderLabels(rowLabels);
 
     connect(p_table, &QTableWidget::itemChanged, this, [this](QTableWidgetItem *item){
         if(!item || item->column() != NameCol)

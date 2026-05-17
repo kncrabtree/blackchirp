@@ -28,34 +28,29 @@
 using BC::Gui::centerCellWidget;
 
 namespace {
-constexpr int StdEnabledCol  = 0;
-constexpr int StdDelayCol    = 1;
-constexpr int StdWidthCol    = 2;
-constexpr int StdInvCol      = 3;
-constexpr int StdRoleCol     = 4;
-constexpr int StdNameCol     = 5;
-constexpr int StdNumCols     = 6;
+// Column 0 of each table holds the per-channel row label (was the
+// vertical header), for consistency with the restyled tables.
+constexpr int StdLabelCol    = 0;
+constexpr int StdEnabledCol  = 1;
+constexpr int StdDelayCol    = 2;
+constexpr int StdWidthCol    = 3;
+constexpr int StdInvCol      = 4;
+constexpr int StdRoleCol     = 5;
+constexpr int StdNameCol     = 6;
+constexpr int StdNumCols     = 7;
 
-constexpr int AdvSyncCol      = 0;
-constexpr int AdvModeCol      = 1;
-constexpr int AdvDutyOnCol    = 2;
-constexpr int AdvDutyOffCol   = 3;
-constexpr int AdvDelayStepCol = 4;
-constexpr int AdvWidthStepCol = 5;
-constexpr int AdvNumCols      = 6;
+constexpr int AdvSyncCol      = 1;
+constexpr int AdvModeCol      = 2;
+constexpr int AdvDutyOnCol    = 3;
+constexpr int AdvDutyOffCol   = 4;
+constexpr int AdvDelayStepCol = 5;
+constexpr int AdvWidthStepCol = 6;
+constexpr int AdvNumCols      = 7;
 
 const QString lockedWhilePulsingTip{
     "Locked while pulsing is enabled. Toggle Pulsing Enabled off "
     "in System Settings to change this setting."};
 
-QStringList channelRowLabels(int n)
-{
-    QStringList out;
-    out.reserve(n);
-    for(int i=0; i<n; ++i)
-        out << QString::number(i+1);
-    return out;
-}
 
 void applyOnIcon(QToolButton *b, bool on)
 {
@@ -143,20 +138,20 @@ PulseConfigWidget::PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent)
 
     p_standardTable = new QTableWidget(numChannels, StdNumCols, tabs);
     p_standardTable->setHorizontalHeaderLabels(
-        {"On", "Delay", "Width", "Inv?", "Role", "Name"});
+        {"Ch", "On", "Delay", "Width", "Inv?", "Role", "Name"});
     for(int c=0; c<StdNumCols; ++c)
         p_standardTable->horizontalHeader()->setSectionResizeMode(c,
             (c == StdNameCol) ? QHeaderView::Stretch : QHeaderView::ResizeToContents);
-    p_standardTable->setVerticalHeaderLabels(channelRowLabels(numChannels));
+    p_standardTable->verticalHeader()->setVisible(false);
     p_standardTable->setSelectionMode(QAbstractItemView::NoSelection);
     p_standardTable->setFocusPolicy(Qt::NoFocus);
 
     p_advancedTable = new QTableWidget(numChannels, AdvNumCols, tabs);
     p_advancedTable->setHorizontalHeaderLabels(
-        {"Sync", "Mode", "Duty On", "Duty Off", "Delay Step", "Width Step"});
+        {"Ch", "Sync", "Mode", "Duty On", "Duty Off", "Delay Step", "Width Step"});
     for(int c=0; c<AdvNumCols; ++c)
         p_advancedTable->horizontalHeader()->setSectionResizeMode(c, QHeaderView::ResizeToContents);
-    p_advancedTable->setVerticalHeaderLabels(channelRowLabels(numChannels));
+    p_advancedTable->verticalHeader()->setVisible(false);
     p_advancedTable->setSelectionMode(QAbstractItemView::NoSelection);
     p_advancedTable->setFocusPolicy(Qt::NoFocus);
 
@@ -173,6 +168,15 @@ PulseConfigWidget::PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent)
             appendArrayMap(BC::Key::PulseWidget::channels, {});
 
         ChWidgets ch;
+
+        // --- Row label (channel number) in column 0 of both tables ---
+        for(auto *t : {p_standardTable, p_advancedTable})
+        {
+            auto *lbl = new QTableWidgetItem(QString::number(i+1));
+            lbl->setFlags(Qt::ItemIsEnabled);
+            lbl->setTextAlignment(Qt::AlignCenter);
+            t->setItem(i, StdLabelCol, lbl);
+        }
 
         // --- Name (table item; source of truth for the channel name) ---
         auto nameItem = new QTableWidgetItem(cfg.setting(i, PulseGenConfig::NameSetting).toString());
