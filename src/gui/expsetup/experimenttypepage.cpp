@@ -326,22 +326,36 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
         p_lEndBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
         p_lEndBox->setAlignment(Qt::AlignCenter);
 
-        auto scanTable = new QTableWidget(4, 2, this);
-        scanTable->setHorizontalHeaderLabels({"Delay", "Laser"});
-        scanTable->setVerticalHeaderLabels({"Start", "Step", "Points", "End"});
-        scanTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+        auto scanTable = new QTableWidget(4, 3, this);
+        scanTable->setHorizontalHeaderLabels({"", "Delay", "Laser"});
+        scanTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+        scanTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+        scanTable->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
         scanTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+        scanTable->verticalHeader()->setVisible(false);
         scanTable->setSelectionMode(QAbstractItemView::NoSelection);
+        scanTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
         scanTable->setFocusPolicy(Qt::NoFocus);
 
-        scanTable->setCellWidget(0, 0, p_dStartBox);
-        scanTable->setCellWidget(1, 0, p_dStepBox);
-        scanTable->setCellWidget(2, 0, p_dNumStepsBox);
-        scanTable->setCellWidget(3, 0, p_dEndBox);
-        scanTable->setCellWidget(0, 1, p_lStartBox);
-        scanTable->setCellWidget(1, 1, p_lStepBox);
-        scanTable->setCellWidget(2, 1, p_lNumStepsBox);
-        scanTable->setCellWidget(3, 1, p_lEndBox);
+        // Row labels live in a regular first column (mirroring
+        // SettingsTable's label cells) rather than the vertical header,
+        // for visual consistency with the ported settings tables.
+        const QStringList scanRowLabels{"Start"_L1, "Step"_L1,
+                                        "Points"_L1, "End"_L1};
+        for (int r = 0; r < scanRowLabels.size(); ++r) {
+            auto *it = new QTableWidgetItem(scanRowLabels.at(r));
+            it->setFlags(Qt::ItemIsEnabled);
+            scanTable->setItem(r, 0, it);
+        }
+
+        scanTable->setCellWidget(0, 1, p_dStartBox);
+        scanTable->setCellWidget(1, 1, p_dStepBox);
+        scanTable->setCellWidget(2, 1, p_dNumStepsBox);
+        scanTable->setCellWidget(3, 1, p_dEndBox);
+        scanTable->setCellWidget(0, 2, p_lStartBox);
+        scanTable->setCellWidget(1, 2, p_lStepBox);
+        scanTable->setCellWidget(2, 2, p_lNumStepsBox);
+        scanTable->setCellWidget(3, 2, p_lEndBox);
 
         lvbl->addWidget(scanTable, 1);
 
