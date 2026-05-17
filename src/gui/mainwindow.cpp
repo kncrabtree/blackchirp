@@ -2037,7 +2037,10 @@ void MainWindow::updateSavePathLabel()
 {
     SettingsStorage s;
     d_savePath = s.get(BC::Key::savePath, QString(""));
-    ui->savePathLabel->setToolTip(d_savePath);
+    // Hover/click-to-open behavior is handled by ClickableLabel; this
+    // also sets the tooltip to the full path. Resize-eliding of the
+    // displayed text stays here / in eventFilter.
+    ui->savePathLabel->setFolderPath(d_savePath);
     const QFontMetrics fm(ui->savePathLabel->font());
     const int w = ui->savePathLabel->width();
     ui->savePathLabel->setText(fm.elidedText(d_savePath, Qt::ElideMiddle, w > 0 ? w : 200));
@@ -2045,32 +2048,13 @@ void MainWindow::updateSavePathLabel()
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
+    // Only the resize-elide of the path text is handled here; the
+    // hover-underline / pointer-cursor / click-to-open behavior lives
+    // in ClickableLabel.
     if(watched == ui->savePathLabel && event->type() == QEvent::Resize)
     {
         const QFontMetrics fm(ui->savePathLabel->font());
         ui->savePathLabel->setText(fm.elidedText(d_savePath, Qt::ElideMiddle, ui->savePathLabel->width()));
-    }
-    else if(watched == ui->savePathLabel && event->type() == QEvent::Enter)
-    {
-        setCursor(Qt::PointingHandCursor);
-        auto f = ui->savePathLabel->font();
-        f.setUnderline(true);
-        ui->savePathLabel->setFont(f);
-    }
-    else if(watched == ui->savePathLabel && event->type() == QEvent::Leave)
-    {
-        unsetCursor();
-        auto f = ui->savePathLabel->font();
-        f.setUnderline(false);
-        ui->savePathLabel->setFont(f);
-    }
-    else if(watched == ui->savePathLabel && event->type() == QEvent::MouseButtonRelease)
-    {
-        auto me = static_cast<QMouseEvent*>(event);
-        
-        if(me->button() == Qt::LeftButton && 
-        ui->savePathLabel->rect().contains(me->pos()))
-            QDesktopServices::openUrl(QUrl::fromLocalFile(d_savePath));
     }
     return QMainWindow::eventFilter(watched, event);
 }

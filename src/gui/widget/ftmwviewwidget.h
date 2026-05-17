@@ -16,6 +16,7 @@
 class QToolBar;
 class QSplitter;
 class QLabel;
+class ClickableLabel;
 class QMainWindow;
 class QDockWidget;
 class QAction;
@@ -132,7 +133,7 @@ private:
     // Inner main window hosting the plot area (central) and dock panels
     QMainWindow *p_innerWindow{nullptr};
     QToolBar *p_topToolbar{nullptr};
-    QLabel *p_exptLabel{nullptr};
+    ClickableLabel *p_exptLabel{nullptr};
     QSplitter *p_splitter{nullptr};
 
     // Plot widgets

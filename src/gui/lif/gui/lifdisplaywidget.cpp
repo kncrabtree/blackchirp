@@ -10,6 +10,8 @@
 #include <QtConcurrent/QtConcurrent>
 
 #include <data/storage/settingsstorage.h>
+#include <data/storage/blackchirpcsv.h>
+#include <gui/widget/clickablelabel.h>
 #include <gui/lif/gui/lifsliceplot.h>
 #include <gui/lif/gui/liftraceplot.h>
 #include <gui/lif/gui/lifspectrogramplot.h>
@@ -79,7 +81,15 @@ LifDisplayWidget::LifDisplayWidget(QWidget *parent) :
     auto hbl2 = new QHBoxLayout;
     hbl2->addLayout(lvbl);
     hbl2->addWidget(p_spectrogramPlot,1);
+    p_exptLabel = new ClickableLabel(this);
+    QFont boldFont;
+    boldFont.setBold(true);
+    p_exptLabel->setFont(boldFont);
+    p_exptLabel->setAlignment(Qt::AlignCenter);
+    p_exptLabel->setText("Experiment");
+
     auto vbl = new QVBoxLayout;
+    vbl->addWidget(p_exptLabel,0);
     vbl->addLayout(hbl,2);
     vbl->addLayout(hbl2,3);
 
@@ -93,6 +103,10 @@ LifDisplayWidget::~LifDisplayWidget()
 
 void LifDisplayWidget::prepareForExperiment(const Experiment &e)
 {
+    p_exptLabel->setText(QString("Experiment %1").arg(e.d_number));
+    p_exptLabel->setFolderPath(
+        BlackchirpCSV::exptDir(e.d_number, e.path()).absolutePath());
+
     p_lifTracePlot->clearPlot();
     p_delaySlicePlot->prepareForExperiment();
     p_laserSlicePlot->prepareForExperiment();

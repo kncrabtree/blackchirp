@@ -19,10 +19,12 @@
 #include <QtConcurrent/QtConcurrent>
 
 #include <data/analysis/ftworker.h>
+#include <data/storage/blackchirpcsv.h>
 #include <data/storage/fidsinglestorage.h>
 #include <data/storage/fidpeakupstorage.h>
 #include <data/storage/fidmultistorage.h>
 #include <gui/overlay/overlaymanagerwidget.h>
+#include <gui/widget/clickablelabel.h>
 #include <gui/plot/fidplot.h>
 #include <gui/plot/ftplot.h>
 #include <gui/plot/mainftplot.h>
@@ -141,7 +143,7 @@ void FtmwViewWidget::setupInnerUi()
     auto *centralLay = new QVBoxLayout(central);
     centralLay->setContentsMargins(0,0,0,0);
 
-    p_exptLabel = new QLabel(central);
+    p_exptLabel = new ClickableLabel(central);
     QFont boldFont;
     boldFont.setBold(true);
     p_exptLabel->setFont(boldFont);
@@ -512,9 +514,17 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         }
         ps_fidStorage = e.ftmwConfig()->storage();
         if(e.ftmwConfig()->d_type == FtmwConfig::Peak_Up)
+        {
+            // Peak-Up has no stored data: a flat, non-interactive label.
             p_exptLabel->setText(QString("Peak Up Mode"));
+            p_exptLabel->setFolderPath(QString());
+        }
         else
+        {
             p_exptLabel->setText(QString("Experiment %1").arg(e.d_number));
+            p_exptLabel->setFolderPath(
+                BlackchirpCSV::exptDir(e.d_number, e.path()).absolutePath());
+        }
 
         d_currentExptNum = e.d_number;
 
@@ -548,6 +558,8 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         ps_fidStorage.reset();
         ps_overlayStorage.reset();
         p_exptLabel->setText(QString("Experiment %1").arg(e.d_number));
+        p_exptLabel->setFolderPath(
+            BlackchirpCSV::exptDir(e.d_number, e.path()).absolutePath());
         if(p_acquisitionPanel)
         {
             p_acquisitionPanel->setPeakUpControlsEnabled(false);

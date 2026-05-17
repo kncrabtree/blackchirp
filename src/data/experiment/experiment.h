@@ -113,6 +113,9 @@ public:
     /// \brief Returns true if this is a dummy (Peak Up, no-save) experiment.
     inline bool isDummy() const { return d_isDummy; }
 
+    /// \brief The storage path override ("" follows the configured save path).
+    inline QString path() const { return d_path; }
+
     /// \brief Returns true when all active experiment objectives have completed.
     bool isComplete() const;
 

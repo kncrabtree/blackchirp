@@ -15,6 +15,7 @@ class LifTracePlot;
 class LifSpectrogramPlot;
 class LifProcessingWidget;
 class QSpinBox;
+class ClickableLabel;
 
 namespace BC::Key::LifDW {
 inline constexpr QLatin1StringView lifDwKey{"LifDisplayWidget"};
@@ -56,6 +57,7 @@ private:
     LifTracePlot *p_lifTracePlot;
     LifSpectrogramPlot *p_spectrogramPlot;
     LifProcessingWidget *p_procWidget;
+    ClickableLabel *p_exptLabel{nullptr};
     
     QSpinBox *p_refreshBox;
 

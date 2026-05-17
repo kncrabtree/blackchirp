@@ -58,6 +58,7 @@ set(BLACKCHIRP_VIEWER_GUI_SOURCES
     
     # Basic widgets (no hardware dependencies)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/cellwidgethelpers.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/clickablelabel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/settingstable.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/experimentsummarywidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwacquisitionpanel.cpp
@@ -127,6 +128,7 @@ set(BLACKCHIRP_VIEWER_GUI_HEADERS
     
     # Basic widgets (no hardware dependencies)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/cellwidgethelpers.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/clickablelabel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/settingstable.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/enumcombobox.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/experimentsummarywidget.h

@@ -114,6 +114,7 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/pulsestatusbox.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/rfconfigwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/hwsettingswidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/clickablelabel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/settingstable.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificspinbox.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificinputwidget.cpp
@@ -236,6 +237,7 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/pulsestatusbox.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/rfconfigwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/hwsettingswidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/clickablelabel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/settingstable.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificspinbox.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificinputwidget.h

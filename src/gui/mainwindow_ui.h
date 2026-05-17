@@ -34,6 +34,7 @@
 #include <gui/widget/auxdataviewwidget.h>
 #include <gui/widget/clockdisplaybox.h>
 #include <gui/widget/toolbarwidgetaction.h>
+#include <gui/widget/clickablelabel.h>
 #include <gui/style/themecolors.h>
 
 #include <gui/lif/gui/lifdisplaywidget.h>
@@ -75,7 +76,7 @@ public:
     QLabel *exptValueLabel;
     QToolButton *exptConfigButton;
     QLabel *dataLabel;
-    QLabel *savePathLabel;
+    ClickableLabel *savePathLabel;
     ClockDisplayBox *clockBox;
     QLabel *ftmwProgressLabel;
     QProgressBar *ftmwProgressBar;
@@ -325,7 +326,7 @@ public:
 
         statusLayout->addWidget(dataLabel,1,0);
 
-        savePathLabel = new QLabel(centralWidget);
+        savePathLabel = new ClickableLabel(centralWidget);
         savePathLabel->setObjectName(QString::fromUtf8("savePathLabel"));
         savePathLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
 
