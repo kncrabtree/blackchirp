@@ -30,8 +30,10 @@
 #include <hardware/core/liflaser/liflaser.h>
 #include <data/storage/applicationconfigmanager.h>
 #include <hardware/core/runtimehardwareconfig.h>
+#include <gui/widget/settingstable.h>
 
 using namespace BC::Key::WizStart;
+using namespace Qt::StringLiterals;
 
 ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     ExperimentConfigPage(key,title,exp,parent)
@@ -62,25 +64,23 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
 
     p_ftmwConfigStack = new QStackedWidget(this);
 
-    auto makeStackTable = [this](int rows, const QString &columnHeader,
-                                 const QStringList &rowHeaders) {
-        auto *table = new QTableWidget(rows, 1, this);
-        table->setHorizontalHeaderLabels({columnHeader});
-        table->setVerticalHeaderLabels(rowHeaders);
-        table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-        table->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-        table->setSelectionMode(QAbstractItemView::NoSelection);
+    // Builds a content-sized SettingsTable whose title band is a leading
+    // section row (the QStackedWidget pages each label one FTMW mode);
+    // callers append the value rows.
+    auto makeStackTable = [this](const QString &title) {
+        auto *table = new SettingsTable(this);
         table->setFocusPolicy(Qt::NoFocus);
+        table->addSectionRow(title);
         return table;
     };
 
     p_foreverWidget = new QWidget(this);
-    auto *foreverTable = makeStackTable(1, QString("Forever"), {QString("Notes")});
+    auto *foreverTable = makeStackTable("Forever"_L1);
     auto *foreverNote = new QLabel(QString("Runs until aborted"), this);
     foreverNote->setAlignment(Qt::AlignCenter);
-    foreverTable->setCellWidget(0, 0, foreverNote);
+    foreverTable->addSettingRow("Notes"_L1, foreverNote);
     auto *foreverl = new QVBoxLayout;
-    foreverl->addWidget(foreverTable, 1);
+    foreverl->addWidget(foreverTable, 0);
     p_foreverWidget->setLayout(foreverl);
     p_ftmwConfigStack->addWidget(p_foreverWidget);
     ftmwl->addWidget(p_ftmwConfigStack, 1);
@@ -97,11 +97,10 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     registerGetter(ftmwShots,p_ftmwShotsBox,&QSpinBox::value);
 
     p_ftmwShotsWidget = new QWidget(this);
-    auto *shotsTable = makeStackTable(1, QString("Shot Settings"),
-                                      {QString("Shots")});
-    shotsTable->setCellWidget(0, 0, p_ftmwShotsBox);
+    auto *shotsTable = makeStackTable("Shot Settings"_L1);
+    shotsTable->addSettingRow("Shots"_L1, p_ftmwShotsBox);
     auto *shotsouterl = new QVBoxLayout;
-    shotsouterl->addWidget(shotsTable, 1);
+    shotsouterl->addWidget(shotsTable, 0);
     p_ftmwShotsWidget->setLayout(shotsouterl);
     p_ftmwConfigStack->addWidget(p_ftmwShotsWidget);
 
@@ -122,12 +121,11 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     connect(p_ftmwTargetDurationBox,qOverload<int>(&QSpinBox::valueChanged),this,&ExperimentTypePage::updateLabel);
 
     p_ftmwTargetDurationWidget = new QWidget(this);
-    auto *durTable = makeStackTable(2, QString("Duration Settings"),
-                                    {QString("Duration"), QString("Est. End")});
-    durTable->setCellWidget(0, 0, p_ftmwTargetDurationBox);
-    durTable->setCellWidget(1, 0, p_endTimeLabel);
+    auto *durTable = makeStackTable("Duration Settings"_L1);
+    durTable->addSettingRow("Duration"_L1, p_ftmwTargetDurationBox);
+    durTable->addSettingRow("Est. End"_L1, p_endTimeLabel);
     auto *durl = new QVBoxLayout;
-    durl->addWidget(durTable, 1);
+    durl->addWidget(durTable, 0);
     p_ftmwTargetDurationWidget->setLayout(durl);
     p_ftmwConfigStack->addWidget(p_ftmwTargetDurationWidget);
 
