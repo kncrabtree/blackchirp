@@ -9,30 +9,22 @@ class QCheckBox;
 class QLabel;
 
 /*!
- * \brief Compact two-column "Setting / Value" table shared across the
- *        hardware-settings and overlay-configuration UIs.
+ * \brief Compact, borderless two-column "Setting / Value" table.
  *
- * Consolidates the makeSettingsTable/addTableRow idiom that was
- * previously hand-rolled in several widgets. The table is borderless,
- * non-selectable, read-only, sizes to its contents, and never shows a
- * vertical scrollbar.
- *
- * Rows come in three flavors:
+ * Non-selectable, read-only, sizes to its contents, and never shows a
+ * vertical scrollbar. Rows come in three flavors:
  * - a label + value-widget row (single widget, or a pair laid out side
  *   by side in the value cell);
- * - a bold, spanned, theme-shaded section/heading row that replaces the
- *   nested QGroupBox titles of the old layout;
+ * - a bold, spanned, theme-shaded section/heading row;
  * - a spanned checkable section row whose bound child rows collapse
- *   (via setRowHidden) when the box is unchecked, reproducing the old
- *   checkable-QGroupBox behavior.
+ *   (via setRowHidden) when the box is unchecked.
  *
  * A checkable section row can be retitled, switched between a checkbox
  * and a plain centered heading, and have its bound rows enabled or
- * disabled without hiding them, so a single row can stand in for the
- * Creation (non-checkable) and Settings (checkable) states of the
- * overlay source-file-configuration QGroupBox it replaces. The checkbox
- * object is created once and outlives every mode change, so external
- * connections to it survive.
+ * disabled without hiding them, so one row can serve both a
+ * non-checkable and a checkable state. The backing QCheckBox is created
+ * once and outlives every mode change, so external connections to it
+ * survive.
  */
 class SettingsTable : public QTableWidget
 {

@@ -4,18 +4,16 @@
 #include <QLabel>
 
 /*!
- * \brief A QLabel that links to a folder.
+ * \brief A QLabel that acts as a link to a folder.
  *
- * When given a non-empty folder path the label behaves as a link: over
- * the text the pointer becomes a hand and the text underlines, and a
- * left click there opens the folder in the system file manager
- * (mirroring the data-path label in the main window status bar). The
- * interactive region is just the rendered text, not the full widget
- * width, so a centered label stretched across a tab does not swallow
- * clicks aimed elsewhere. With an empty path it is an ordinary,
- * non-interactive label, so a caller can switch a single label between
- * the two states (e.g. a numbered experiment vs. Peak-Up mode, which
- * has no stored data).
+ * With a non-empty folder path the rendered text behaves as a link:
+ * the pointer becomes a hand and the text underlines on hover, and a
+ * left click on the text opens the folder in the system file manager.
+ * The interactive region is only the rendered text (honoring the
+ * label's alignment), not the full widget width, so a stretched
+ * centered label does not swallow unrelated clicks. An empty path
+ * makes it an ordinary, non-interactive label, so one label can be
+ * switched between the two states at runtime.
  */
 class ClickableLabel : public QLabel
 {
