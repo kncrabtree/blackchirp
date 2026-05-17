@@ -80,5 +80,5 @@ The data format of the rolling data CSV file is shown below for a file titled ``
 The first column contains the date and time of the data point in string format, while the second is the `Unix epoch time <https://en.wikipedia.org/wiki/Unix_time>`_.
 The final column contains the data value.
 There may be gaps in time within the files if Blackchirp was shut down, or if the name assigned to this channel of the temperature controller was changed and later reset to the same value (``He shield``).
-Aux data has a similar format, and it is discussed on the :doc:`data_storage` page.
+Aux data has a similar format, and it is discussed on the :doc:`/user_guide/data_storage/experiment` page.
 

@@ -31,7 +31,7 @@ from the ``refsize`` column of ``lifparams.csv``.
 The on-disk format that ``BCLIF`` reads — the ``lif/`` subdirectory
 layout, the meaning of each ``lifparams.csv`` column, the
 ``processing.csv`` integration-gate settings — is documented in detail
-on the :doc:`LIF Data Storage </user_guide/lif/data_storage>`
+on the :doc:`LIF Data Storage </user_guide/data_storage/lif>`
 user-guide page.
 
 API Reference

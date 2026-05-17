@@ -351,14 +351,14 @@ keys declared in ``BC::Key::LifStorage`` —
 :cpp:func:`LifStorage::readProcessingSettings` and pushes the result
 back onto ``d_procSettings``, so the viewer reproduces the same
 spectrum without re-asking the user. The user-facing semantics of
-each key are documented in :doc:`/user_guide/lif/data_storage`.
+each key are documented in :doc:`/user_guide/data_storage/lif`.
 
 The recorded trace files on disk are never modified by the
 processing-gate workflow. **Save** in the LIF tab's processing panel
 overwrites only ``processing.csv``; **Reprocess All** re-integrates
 the in-memory traces using the new gate but does not touch the
 ``lif/<index>.csv`` files. The trace-file format itself is
-documented on :doc:`/user_guide/lif/data_storage`.
+documented on :doc:`/user_guide/data_storage/lif`.
 
 There is no LIF analog to :cpp:class:`FidPeakUpStorage`. A
 "LIF peak-up" mode is implicit in :cpp:class:`LifControlWidget`'s
@@ -528,7 +528,7 @@ Pointers
 --------
 
 **LIF storage layout, on-disk format, base-36 encoding, and
-``processing.csv`` semantics.** See :doc:`/user_guide/lif/data_storage`
+``processing.csv`` semantics.** See :doc:`/user_guide/data_storage/lif`
 and :doc:`/classes/lifstorage`.
 
 **Per-class API contracts.** :doc:`/classes/lifconfig`,

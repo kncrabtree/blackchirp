@@ -39,9 +39,9 @@ digitizer configuration can be recovered from the experiment's
 ``header.csv``. Two sections are written:
 
 - **LifConfig** — the scan parameters set on the wizard's LIF group (see
-  :doc:`experiment_setup`).
+  :doc:`/user_guide/lif/experiment_setup`).
 - **LifDigitizer.<key>** — the digitizer settings set on the
-  :doc:`configuration` (the section name embeds the configured digitizer
+  :doc:`/user_guide/lif/configuration` (the section name embeds the configured digitizer
   hardware key, e.g. ``LifDigitizer.Default``).
 
 For example, an experiment with a 6×6 (delay × laser) grid, 10 shots per
@@ -176,7 +176,7 @@ lif/processing.csv
 This file records the integration gate positions and waveform-filter
 settings associated with the experiment. It is **always present**: when an
 experiment begins, Blackchirp writes the gate and filter values active on
-the :doc:`configuration` at that moment, so the file captures the
+the :doc:`/user_guide/lif/configuration` at that moment, so the file captures the
 processing state used during acquisition. Clicking **Save** in the LIF
 tab's processing panel (see :ref:`lif-tab`) overwrites the file with the
 current values, making them the new defaults when the experiment is

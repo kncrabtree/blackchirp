@@ -80,7 +80,7 @@ The **Options** panel controls the order and behavior of the scan.
 
    Scan Order affects only the order in which points are visited; it does
    not change the on-disk data layout, which is always indexed by delay and
-   laser axes independently. See :doc:`data_storage` for the storage layout.
+   laser axes independently. See :doc:`/user_guide/data_storage/lif` for the storage layout.
 
 **Complete Mode**
    Controls what happens when all grid points have been acquired once.

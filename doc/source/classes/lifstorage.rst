@@ -18,7 +18,7 @@ is used as the stem for the per-cell CSV files written under the
 
 ``LifStorage`` is owned by :cpp:class:`LifConfig` alongside the
 digitizer configuration. The on-disk layout written by this class is
-described in :doc:`/user_guide/lif/data_storage`; the surrounding
+described in :doc:`/user_guide/data_storage/lif`; the surrounding
 experiment-setup and viewing workflow is covered by
 :doc:`/user_guide/lif/experiment_setup` and :doc:`/user_guide/lif/lif_tab`.
 

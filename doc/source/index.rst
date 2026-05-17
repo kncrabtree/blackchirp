@@ -46,7 +46,6 @@
    :caption: Data Format and Diagnostics
 
    user_guide/data_storage
-   user_guide/lif/data_storage
    user_guide/crash_reports
 
 .. toctree::

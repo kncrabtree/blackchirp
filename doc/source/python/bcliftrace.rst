@@ -30,7 +30,7 @@ reference integrals.
 
 The integration-gate semantics, the reference-channel ratio behaviour,
 and the on-disk layout of the trace files are described on the
-:doc:`LIF Data Storage </user_guide/lif/data_storage>` user-guide page.
+:doc:`LIF Data Storage </user_guide/data_storage/lif>` user-guide page.
 The :class:`~blackchirp.BCLIF` aggregating helpers
 (``delay_slice``, ``laser_slice``, ``image``) call ``integrate`` on every
 present scan point with a single shared processing-override surface.

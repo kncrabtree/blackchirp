@@ -255,12 +255,21 @@ Inspecting Data:
 
 Data Format and Diagnostics:
 
-- [ ] `data_storage.rst` — split into four pages: general experiment
-  files (header.csv, hardware.csv, etc.), CP-FTMW data
-  (clocks.csv, markers.csv, chirp.csv, fid/), other data files
-  (rollingdata, log files, debug_log), with `lif/data_storage.rst`
-  becoming the LIF page.
-- [ ] `lif/data_storage.rst`
+- [x] `data_storage.rst` — kept at its path as a chapter landing
+  (storage location, `experiments/Z/Y/X` scheme, `;` convention,
+  toctree); split the per-file content into
+  `data_storage/{experiment,ftmw,other}.rst`. `ftmw.rst` carries
+  the new `peakfind.csv` docs (in the `fid/` subsection) and the
+  overlay-storage docs. Raw `hardware_menu.html#rf-configuration`
+  / `cp-ftmw.html` links converted to `:ref:`/`:doc:`. Generic
+  inbound `:doc:`data_storage`` precision-retargeted (cp-ftmw,
+  overlays → ftmw; rolling-aux-data → experiment); the lone
+  `:ref:`…:FID CSV Files`` retargeted to the ftmw page.
+- [x] `lif/data_storage.rst` — `git mv`'d to
+  `data_storage/lif.rst` for naming consistency; `_lif-data-storage:`
+  label kept (no `:ref:` users affected), its own relative
+  `:doc:` links absolutized, and ~7 inbound `:doc:` paths
+  swept across classes/python/developer_guide.
 - [x] `crash_reports.rst` — already in good shape; added
   `:ref:` cross-links (`first-run-data-path`, `application-config`),
   de-duplicated the privacy statement into a forward-pointer, and

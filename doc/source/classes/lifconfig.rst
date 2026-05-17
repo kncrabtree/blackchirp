@@ -28,7 +28,7 @@ further sweeps to accumulate.
 The dialog that drives this configuration is described in
 :doc:`/user_guide/lif/configuration`; the experiment-wizard page in
 :doc:`/user_guide/lif/experiment_setup`; the on-disk layout in
-:doc:`/user_guide/lif/data_storage`.
+:doc:`/user_guide/data_storage/lif`.
 
 .. highlight:: cpp
 

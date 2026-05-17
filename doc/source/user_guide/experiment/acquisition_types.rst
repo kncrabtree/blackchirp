@@ -70,7 +70,7 @@ The ``Forever`` table in place of an acquisition-objective field carries only an
 Like Target Shots and Target Duration, this is a **single segment** acquisition.
 
 .. note::
-   Blackchirp supports averaging up to :math:`2^{64} - 1 = 18446744073709551615` shots. However, each FID data point is stored as the sum of raw digitizer counts and therefore overflow of an FID data point may occur before this limit is reached. See :ref:`user_guide/data_storage:FID CSV Files` for more details.
+   Blackchirp supports averaging up to :math:`2^{64} - 1 = 18446744073709551615` shots. However, each FID data point is stored as the sum of raw digitizer counts and therefore overflow of an FID data point may occur before this limit is reached. See :ref:`FID CSV files <ftmw-fid-files>` for more details.
 
 Peak Up
 -------

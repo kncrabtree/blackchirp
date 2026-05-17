@@ -10,7 +10,7 @@
 Overlays
 ========
 
-An overlay is an additional curve drawn on top of an FT plot for comparison with the experimental spectrum. Overlays compare two experiments side by side, display predicted line lists from spectroscopic fitting programs, and import arbitrary XY data from other sources. Overlays are saved with the experiment and restored automatically the next time it is opened; the on-disk format is described on the :doc:`data_storage` page.
+An overlay is an additional curve drawn on top of an FT plot for comparison with the experimental spectrum. Overlays compare two experiments side by side, display predicted line lists from spectroscopic fitting programs, and import arbitrary XY data from other sources. Overlays are saved with the experiment and restored automatically the next time it is opened; the on-disk format is described on the :doc:`/user_guide/data_storage/ftmw` page.
 
 .. image:: /_static/user_guide/overlays-overlay_overview.png
    :width: 800
