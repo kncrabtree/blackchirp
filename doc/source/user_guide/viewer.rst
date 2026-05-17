@@ -23,10 +23,10 @@ Building from source produces both via the ``blackchirp`` and
    :alt: Blackchirp Viewer launcher window with a saved experiment opened in a separate experiment view window
 
    The Blackchirp Viewer launcher (right) lists previously opened experiments
-   and shows the active data directory on a clickable label at the bottom of
-   the window; loading an experiment opens it in its own experiment view
-   window (left), with the FID and FT plots, processing controls, overlays,
-   and peak-find tools.
+   and shows the active data directory, with a cog button to change it, at
+   the bottom of the window; loading an experiment opens it in its own
+   experiment view window (left), with the FID and FT plots, processing
+   controls, overlays, and peak-find tools.
 
 
 Purpose
@@ -68,12 +68,13 @@ order:
 2. ``blackchirp``'s configured save path, read from the same per-user
    settings file the acquisition application writes.
 
-The active directory appears on the clickable label at the bottom of the
-launcher window. Clicking the label, or selecting **Settings → Set Data
-Path…**, opens a directory picker that records an override in the viewer's
-own settings without touching ``blackchirp``'s configuration. **Settings →
-Reset to Blackchirp Default** discards the override and re-reads
-``blackchirp``'s save path.
+The active directory appears on a label at the bottom of the launcher
+window; clicking the label opens that directory in the system file manager.
+The cog button beside it — or **Settings → Set Data Path…** — opens a
+directory picker that records an override in the viewer's own settings
+without touching ``blackchirp``'s configuration. **Settings → Reset to
+Blackchirp Default** discards the override and re-reads ``blackchirp``'s
+save path.
 
 The data directory governs only experiments opened by number — those loaded
 through the **Experiment → Open** dialog with *Specify custom path*
