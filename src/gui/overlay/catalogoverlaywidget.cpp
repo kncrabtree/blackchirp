@@ -1096,7 +1096,9 @@ void CatalogOverlayWidget::populateSourceFileConfigRows(SettingsTable *table)
 
 void CatalogOverlayWidget::populateSourceFileSettingsRows(SettingsTable *table)
 {
-    table->addSectionRow("Filtering");
+    // Single sub-group: name the base-provided tier rather than
+    // stacking a second heading directly under it.
+    table->setSectionTitle(d_sourceFileSettingsSection, "Filtering");
 
     // Save range only option (source-dependent)
     p_saveRangeOnlyCheckBox = new QCheckBox("(recommended)", table);
@@ -1141,27 +1143,15 @@ void CatalogOverlayWidget::populateSourceFileSettingsRows(SettingsTable *table)
 
 void CatalogOverlayWidget::populateTypeSpecificRows(SettingsTable *table)
 {
-    // Retitle the base-provided tier heading.
-    table->setSectionTitle(d_typeSpecificSection, "Catalog Settings");
-
-    // Convolution enable is a checkable section row nested in the
-    // shared table. Its bound rows (the Line Shape / Frequency Range
-    // sub-headings, value rows, and the Convolve button) collapse with
-    // the section, reproducing the old checkable-QGroupBox behavior.
-    // The convolution state machine talks to the section checkbox
-    // through isConvolutionEnabled()/setConvolutionEnabled() and the
-    // convolutionEnabledChanged() relay. setSectionVisible() on the
-    // enclosing tier is collapse-aware, so showing the tier does not
-    // fight this collapse.
-    d_convolutionSection = table->addCheckableSectionRow(
-        "Convolution Enabled",
-        get(BC::Key::CatalogWidget::convolutionEnabled, DEFAULT_CONVOLUTION_ENABLED),
-        &p_convolutionSectionBox);
-
-    const int firstConvRow = table->rowCount();
-
-    // --- Line Shape ---
-    table->addSectionRow("Line Shape");
+    // The type-specific tier itself is the checkable "Convolution
+    // Enabled" section (created by the base via the
+    // typeSpecificSection* overrides); every row added here is bound to
+    // it by the base, so the whole block collapses when convolution is
+    // disabled. The convolution state machine talks to the section
+    // checkbox through isConvolutionEnabled()/setConvolutionEnabled()
+    // and the convolutionEnabledChanged() relay.
+    d_convolutionSection = d_typeSpecificSection;
+    p_convolutionSectionBox = table->sectionCheckBox(d_typeSpecificSection);
 
     p_lineshapeComboBox = new QComboBox(table);
     p_lineshapeComboBox->addItems({"Lorentzian", "Gaussian"});
@@ -1177,9 +1167,6 @@ void CatalogOverlayWidget::populateTypeSpecificRows(SettingsTable *table)
     p_linewidthSpinBox->setValue(get(BC::Key::CatalogWidget::linewidthKHz, DEFAULT_LINEWIDTH));
     p_linewidthSpinBox->setKeyboardTracking(false);
     table->addSettingRow("Width (FWHM)", p_linewidthSpinBox);
-
-    // --- Frequency Range & Resolution ---
-    table->addSectionRow("Frequency Range & Resolution");
 
     p_convMinFreqSpinBox = new QDoubleSpinBox(table);
     configureSpinBox(p_convMinFreqSpinBox,
@@ -1225,12 +1212,6 @@ void CatalogOverlayWidget::populateTypeSpecificRows(SettingsTable *table)
     p_convolveButton->setEnabled(false);
     p_convolveButton->setMinimumHeight(30);
     table->addSettingRow("Action", p_convolveButton);
-
-    const int lastConvRow = table->rowCount();
-    d_convolutionRows.clear();
-    for (int r = firstConvRow; r < lastConvRow; ++r)
-        d_convolutionRows.append(r);
-    table->bindSectionRows(d_convolutionSection, d_convolutionRows);
 
     // Relay the section checkbox toggle through one internal slot, the
     // single point the convolution state machine connects to.

@@ -60,6 +60,9 @@ void UnifiedOverlayDialog::initializeCommon(OverlayBase::OverlayType type,
                                            std::shared_ptr<OverlayBase> overlay,
                                            std::shared_ptr<OverlayStorage> overlayStorage)
 {
+    setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg",
+                                                ThemeColors::IconPrimary, this));
+
     // Initialize UI component pointers
     p_widget = nullptr;
     p_buttonBox = nullptr;

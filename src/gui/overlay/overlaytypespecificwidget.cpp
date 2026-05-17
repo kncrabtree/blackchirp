@@ -216,10 +216,17 @@ void OverlayTypeSpecificWidget::setupUI()
         [this](SettingsTable *t) { populateSourceFileSettingsRows(t); });
 
     // Type-Specific Settings — added only when the subclass actually
-    // has any (BCExp has none); a subclass may retitle the section.
+    // has any (BCExp has none). A subclass may retitle the section, or
+    // make the tier row itself the checkable section gating its rows
+    // (catalog convolution) so there is no generic heading stacked
+    // directly on top of the subclass's own.
     if (hasTypeSpecificSettings()) {
-        d_typeSpecificSection =
-            p_settingsTable->addSectionRow("Type-Specific Settings");
+        if (typeSpecificSectionCheckable())
+            d_typeSpecificSection = p_settingsTable->addCheckableSectionRow(
+                typeSpecificSectionTitle(), typeSpecificSectionInitiallyChecked());
+        else
+            d_typeSpecificSection = p_settingsTable->addSectionRow(
+                typeSpecificSectionTitle());
         bindTier(d_typeSpecificSection,
             [this](SettingsTable *t) { populateTypeSpecificRows(t); });
     }

@@ -190,6 +190,14 @@ protected:
     void refreshSourceFileConfigState() override;
     void populateSourceFileSettingsRows(SettingsTable *table) override;
     void populateTypeSpecificRows(SettingsTable *table) override;
+
+    // The type-specific tier is the checkable "Convolution Enabled"
+    // section itself, so its rows sit directly under it with no
+    // redundant heading stacked above.
+    bool typeSpecificSectionCheckable() const override { return true; }
+    QString typeSpecificSectionTitle() const override { return QString("Convolution Enabled"); }
+    bool typeSpecificSectionInitiallyChecked() const override
+    { return get(BC::Key::CatalogWidget::convolutionEnabled, DEFAULT_CONVOLUTION_ENABLED); }
     
     // OverlayTypeSpecificWidget interface
     void setupConnections() override;
@@ -241,13 +249,12 @@ private:
     QDoubleSpinBox *p_filterMinFreqSpinBox;
     QDoubleSpinBox *p_filterMaxFreqSpinBox;
     
-    // Overlay Settings tier (Convolution - source-independent).
-    // Convolution lives in the shared base table as a checkable
-    // "Convolution Enabled" section row; its bound rows (including the
-    // Convolve button) collapse with the section.
+    // Overlay Settings tier (Convolution - source-independent). The
+    // type-specific tier row itself is the checkable "Convolution
+    // Enabled" section; its bound rows (including the Convolve button)
+    // collapse with the section.
     QCheckBox *p_convolutionSectionBox;
     int d_convolutionSection;
-    QList<int> d_convolutionRows;  // bound rows, for region enable-gating
     QComboBox *p_lineshapeComboBox;
     QDoubleSpinBox *p_linewidthSpinBox;
     QDoubleSpinBox *p_convMinFreqSpinBox;

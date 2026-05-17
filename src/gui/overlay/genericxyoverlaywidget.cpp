@@ -633,8 +633,11 @@ void GenericXYOverlayWidget::populateSourceFileConfigRows(SettingsTable *table)
 
 void GenericXYOverlayWidget::populateSourceFileSettingsRows(SettingsTable *table)
 {
-    // --- Format Detection ---
-    table->addSectionRow("Format Detection");
+    // First sub-group: name the base-provided tier rather than
+    // stacking a second heading directly under it. The later
+    // Column Mapping / Data Filtering sub-sections are preceded by
+    // value rows, so they band cleanly on their own.
+    table->setSectionTitle(d_sourceFileSettingsSection, "Format Detection");
 
     p_delimiterCombo = new QComboBox(table);
     populateDelimiterComboBox();

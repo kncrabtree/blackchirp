@@ -140,6 +140,15 @@ protected:
     // Type-specific settings visibility
     virtual bool hasTypeSpecificSettings() const { return true; } // Default implementation - show settings by default
 
+    // Type-specific tier presentation. By default the base adds a
+    // plain "Type-Specific Settings" heading. A subclass whose tier is
+    // a single gated group (e.g. catalog convolution) overrides these
+    // so the tier row *is* the checkable section, instead of a generic
+    // heading immediately followed by the subclass's own one.
+    virtual bool typeSpecificSectionCheckable() const { return false; }
+    virtual QString typeSpecificSectionTitle() const { return QString("Type-Specific Settings"); }
+    virtual bool typeSpecificSectionInitiallyChecked() const { return false; }
+
 signals:
     void settingsChanged();
     void sourceConfigToggled(bool enabled); // relayed to onSourceFileConfigToggled
@@ -155,10 +164,12 @@ protected:
     // heading row for each tier, then calls the matching hook so the
     // subclass appends its rows beneath it. The base binds the appended
     // rows to that section so the whole tier can be shown/hidden and
-    // enabled/disabled as a unit. Subclasses may add their own nested
-    // checkable sub-sections (e.g. catalog convolution, generic-xy
-    // filtering); setSectionVisible() is collapse-aware so a tier
-    // wrapper never fights a nested sub-section's collapse.
+    // enabled/disabled as a unit. A tier may itself be the checkable
+    // section gating its rows (catalog convolution, via the
+    // typeSpecificSection* overrides), or contain nested checkable
+    // sub-sections (generic-xy filtering); setSectionVisible() is
+    // collapse-aware so a tier wrapper never fights a nested
+    // sub-section's collapse.
     virtual void populateSourceFileConfigRows(SettingsTable *table) = 0;
     virtual void populateSourceFileSettingsRows(SettingsTable *table) = 0;
     virtual void populateTypeSpecificRows(SettingsTable *table) = 0;
