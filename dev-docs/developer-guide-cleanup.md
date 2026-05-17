@@ -366,6 +366,22 @@ captions were eliminated instead):
 - **Project Reference** retitled **Version History** (still
   `migration` + `changelog`).
 
+Root README.md (final cross-cutting check): the Documentation list
+linked `user_guide.html`, which no longer exists (the user-guide
+landing page was removed in the prior pass; the chapter starts at
+`user_guide/installation`). Retargeted to
+`user_guide/installation.html`, matching the pattern the README
+already uses for the installation links. All other README doc
+links (`developer_guide`, `classes`, `migration`, `changelog`,
+`python`) still resolve — the restructure changed sidebar placement
+only, not page paths.
+
+**Pass complete.** All six batches committed (navigation
+restructure + five section sweeps). At release-cleanup time, per
+the note at the top of this file, delete this file and
+`.claude/commands/developer-guide-cleanup.md` — not done here
+(mid-branch; left for the maintainer).
+
 Resulting band order: Getting Started / Hardware Setup / Running
 Experiments / Inspecting Data / Offline Analysis / Data Format and
 Diagnostics / Contributing / Architecture / Hardware Subsystem /

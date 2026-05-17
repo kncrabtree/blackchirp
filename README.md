@@ -61,7 +61,7 @@ Release-by-release detail is in the
 
 ## Documentation
 
-- [User Guide](https://blackchirp.readthedocs.io/page/user_guide.html) — installation, configuration, and day-to-day use.
+- [User Guide](https://blackchirp.readthedocs.io/page/user_guide/installation.html) — installation, configuration, and day-to-day use.
 - [Developer Guide](https://blackchirp.readthedocs.io/page/developer_guide.html) — architecture, conventions, build system, Python module, and contribution workflow.
 - [Migration Guide](https://blackchirp.readthedocs.io/page/migration.html) — upgrading from 1.x.
 - [Changelog](https://blackchirp.readthedocs.io/page/changelog.html).
