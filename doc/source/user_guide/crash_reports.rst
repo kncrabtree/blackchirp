@@ -11,16 +11,17 @@ Crash Reports
 If Blackchirp terminates unexpectedly because of a fault inside the
 program (a segmentation fault, an unhandled exception, or a similar
 internal error), it writes a diagnostic crash report to disk before the
-process exits. The report does not include any acquired experiment
-data; it captures only the information a developer needs to identify
-the failing function in the source code.
+process exits. It captures only what a developer needs to identify the
+failing function in the source code; no acquired experiment data is
+included (see `What a Report Contains`_).
 
 Where Crash Reports Are Stored
 ------------------------------
 
 Crash reports are written to ``<savePath>/log/crashes/`` where
-``<savePath>`` is the data storage location chosen on the first run
-and shown on the Application Configuration dialog. Each report is a
+``<savePath>`` is the data storage location chosen on the
+:ref:`first run <first-run-data-path>` and shown on the
+:ref:`Application Configuration dialog <application-config>`. Each report is a
 small file named ``crash-<UTC timestamp>-<build SHA>.log`` (Linux,
 macOS) or a pair ``crash-<UTC timestamp>-<build SHA>.dmp`` plus
 ``.log`` (Windows). Reports survive program restarts; the directory
@@ -59,8 +60,8 @@ When Blackchirp starts and finds one or more crash reports in
 clean shutdown, it shows a notification dialog after the main window
 appears. The dialog offers three actions:
 
-* **Open Folder** opens the crash directory in your file manager.
-* **View Most Recent** opens the newest report in your default text
+* **Open Folder** opens the crash directory in the system file manager.
+* **View Most Recent** opens the newest report in the default text
   editor.
 * **Dismiss** closes the dialog. Reports remain in the directory.
 

@@ -249,7 +249,9 @@ Inspecting Data:
 - [x] `plot_controls.rst` — UI-matched to the flattened
   CurveAppearanceWidget (preset bar + appearance `SettingsTable`);
   `curve-configuration-options` anchor preserved for `overlays`.
-- [ ] `python.rst`
+- [x] `python.rst` — hub page (auto-doc lives in the toctree'd
+  sub-pages, untouched); already present-tense/impersonal, trimmed
+  one design-rationale aside. Pre-release install admonition kept.
 
 Data Format and Diagnostics:
 
@@ -259,7 +261,10 @@ Data Format and Diagnostics:
   (rollingdata, log files, debug_log), with `lif/data_storage.rst`
   becoming the LIF page.
 - [ ] `lif/data_storage.rst`
-- [ ] `crash_reports.rst`
+- [x] `crash_reports.rst` — already in good shape; added
+  `:ref:` cross-links (`first-run-data-path`, `application-config`),
+  de-duplicated the privacy statement into a forward-pointer, and
+  removed two stray "your". No UI-match needed.
 
 Blackchirp Viewer:
 
@@ -319,12 +324,6 @@ actually visible at the capture frame:
 - [x] `plot_controls-contextmenu.png` — refreshed for the
   flattened curve appearance panel (preset bar + SettingsTable).
   560×471 ≤ 800 → 1:1, `:width:` removed.
-- [ ] `experiment-quickexpt_1.png`, `experiment-quickexpt_2.png`,
-  `experiment-sequence.png` — all live inside ExperimentSetupDialog;
-  dialog chrome (nav tree, status area) changed even if the
-  page-specific contents did not.
-- [ ] No new TemperatureControlWidget screenshot exists in the doc
-  set; flag if a user-guide page is added that surfaces it.
 
 ## Reference
 

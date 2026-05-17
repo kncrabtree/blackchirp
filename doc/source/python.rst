@@ -20,9 +20,8 @@ is published on the `Python Package Index
 
     pip install blackchirp
 
-The package depends only on numpy, scipy, and pandas; matplotlib and
-other plotting libraries are intentionally excluded so that downstream
-analysis pipelines can pick their own visualization stack.
+The package depends only on numpy, scipy, and pandas and bundles no
+plotting library, leaving visualization to the downstream pipeline.
 
 Five top-level classes are exported from the package root —
 :class:`~blackchirp.BCExperiment`, :class:`~blackchirp.BCFTMW`,
