@@ -19,6 +19,7 @@ Building from source produces both via the ``blackchirp`` and
 .. figure:: /_static/user_guide/viewer-main_window.png
    :width: 800
    :align: center
+   :target: /_static/user_guide/viewer-main_window.png
    :alt: Blackchirp Viewer launcher window with a saved experiment opened in a separate experiment view window
 
    The Blackchirp Viewer launcher (right) lists previously opened experiments
@@ -31,8 +32,8 @@ Building from source produces both via the ``blackchirp`` and
 Purpose
 -------
 
-The viewer is designed for situations where you need to inspect data without
-access to the configured hardware:
+The viewer inspects saved data without access to the configured hardware.
+Typical uses:
 
 - **Reviewing data on a laptop** or any machine that does not have the
   spectrometer hardware attached.
@@ -82,34 +83,21 @@ opened by checking *Specify custom path* in the Open dialog and browsing to
 their folder, regardless of where the active data directory points.
 
 
-Relationship to the Main Program
----------------------------------
+Inspecting Loaded Experiments
+-----------------------------
 
-The main ``blackchirp`` program already provides a **View Experiment** workflow
-that loads a saved experiment in a viewer window. The view presented by that
-in-application window and the view presented by the standalone
-``blackchirp-viewer`` are the same: the same FT and FID plots, the same overlay
-tools, the same peak finder, and the same per-experiment summary panel. The
-standalone viewer is simply that view running as an independent process, which
-means it does not require the main program to be open and does not compete for
-hardware resources.
+An experiment view window is the same surface the main ``blackchirp``
+program opens through its **View Experiment** workflow: the same FT and
+FID plots, processing controls, overlay tools, peak finder, aux-data
+browser, and per-experiment summary. Those tools are documented in the
+:doc:`Inspecting Data </user_guide/cp-ftmw>` chapter —
+:doc:`/user_guide/cp-ftmw`, :doc:`/user_guide/overlays`, and
+:doc:`/user_guide/plot_controls` apply unchanged here.
 
-
-What You Can Do in the Viewer
-------------------------------
-
-- View the FT and FID plots for a saved experiment.
-- Apply processing options to recompute the Fourier transform from the saved
-  FIDs (window functions, zero-padding, etc.) and save the updated processing
-  settings back to the experiment so they are applied automatically the next
-  time the experiment is opened.
-- Browse aux data recorded during the experiment.
-- Open spectral overlays (catalog lines, custom data files) and compare them
-  against the measured spectrum, and save the configured overlays to the
-  experiment for later reuse.
-- Export plotted data in plain XY (text) format for use in external analysis
-  tools.
-- Run peak finding and export the resulting peak list.
+Recomputed processing settings and configured overlays can be saved
+back to the experiment, so they are reapplied the next time it is
+opened. The captured FIDs and aux-data records themselves are not
+modified.
 
 
 Limitations
@@ -119,12 +107,9 @@ The viewer is intentionally hardware-free and does not modify acquired data:
 
 - **Acquired data is read-only**: the FIDs and aux-data records captured at
   acquisition time cannot be altered or re-acquired from the viewer.
-  (Processing settings and overlay configurations associated with an
-  experiment can be saved and updated; only the underlying measurements are
-  fixed.)
 - **No hardware**: the viewer does not communicate with any instrument. There
   is no Hardware menu, no communication setup, and no status panel.
-- **No acquisition-time tabs**: the Log tab and Rolling/Aux Data tab are absent
-  because they reflect live session activity. Only the saved experiment view
-  is available.
+- **No live-session tabs**: the Log tab and the live Rolling Data view are
+  absent because they reflect activity during an acquisition. An Aux Data tab
+  is present whenever the experiment recorded aux data.
 - **No experiment wizard**: new experiments cannot be started from the viewer.

@@ -277,7 +277,13 @@ Data Format and Diagnostics:
 
 Blackchirp Viewer:
 
-- [ ] `viewer.rst`
+- [x] `viewer.rst` — verified menu/dialog labels against
+  `viewermainwindow.cpp`; added the `:target:` click-through to the
+  1920×1047 launcher figure; collapsed the duplicative "Relationship
+  to the Main Program" + "What You Can Do in the Viewer" sections
+  into one orientation block that defers to the Inspecting Data
+  chapter pages; trimmed the read-only/save-back point out of
+  Limitations now that save-back is stated once above.
 
 ## Screenshots to refresh
 
