@@ -22,15 +22,11 @@ An overlay is an additional curve drawn on top of an FT plot for comparison with
 Overlay Manager
 ...............
 
-The Overlay Manager is opened from the ``Overlays`` button on the CP-FTMW toolbar; see :doc:`cp-ftmw` for the toolbar context. It lists every overlay defined for the experiment, one per row, and carries a toolbar with three actions:
+The Overlay Manager is opened from the ``Overlays`` button on the CP-FTMW toolbar; see :doc:`cp-ftmw` for the toolbar context. It docks alongside the FT plots (shown open in the overview above) and lists every overlay defined for the experiment, one per row, with a toolbar of actions:
 
 * ``Add Overlay``: Opens a menu of overlay types; choosing one opens the creation dialog for that type.
 * ``Remove Overlay``: Deletes the selected overlay(s).
-* ``Show Parent``: Raises the FTMW view that the manager belongs to.
-
-.. image:: /_static/user_guide/overlays-overlay_toolbar.png
-   :align: center
-   :alt: Overlay Manager listing several overlays
+* ``Show Parent``: Raises the FTMW view the manager belongs to. This action appears only when the manager is floating (detached from the main window into its own top-level window).
 
 Each row has the following columns:
 
