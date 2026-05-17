@@ -20,6 +20,15 @@ SettingsTable::SettingsTable(QWidget *parent)
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 }
 
+QSize SettingsTable::minimumSizeHint() const
+{
+    // sizeHint() already tracks the visible content height through
+    // AdjustToContents; adopt it as the vertical floor so the dock
+    // layout cannot squeeze rows off the bottom.
+    QSize base = QTableWidget::minimumSizeHint();
+    return QSize(base.width(), sizeHint().height());
+}
+
 int SettingsTable::addSettingRow(const QString &label, QWidget *value,
                                  const QString &tooltip)
 {

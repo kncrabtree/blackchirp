@@ -41,6 +41,17 @@ public:
     explicit SettingsTable(QWidget *parent = nullptr);
 
     /*!
+     * \brief Floor the vertical minimum at the content height.
+     *
+     * The table never shows a vertical scrollbar, so it must never be
+     * laid out shorter than its (visible) rows or the bottom rows are
+     * silently clipped. This matters inside a QMainWindow dock area,
+     * where a panel shown next to an existing one is otherwise pinned
+     * at the widget minimum. Width still defers to the base class.
+     */
+    QSize minimumSizeHint() const override;
+
+    /*!
      * \brief Append a label + single value widget.
      * \return the new row index.
      */

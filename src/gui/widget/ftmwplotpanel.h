@@ -12,7 +12,7 @@ class QDoubleSpinBox;
 class QComboBox;
 class QCheckBox;
 class QPushButton;
-class QTableWidget;
+class SettingsTable;
 
 class FtmwPlotPanel : public QWidget
 {
@@ -52,7 +52,7 @@ signals:
     void plotSettingChanged(int id);
 
 private:
-    QTableWidget *p_table{nullptr};
+    SettingsTable *p_table{nullptr};
 
     QComboBox *p_mainPlotBox{nullptr};
 
@@ -70,24 +70,15 @@ private:
     };
     std::map<int,PlotControls> d_plotControls;
 
-    // Row indices into p_table.
-    static constexpr int d_rowMainMode      = 0;
-    static constexpr int d_rowSbFrame       = 1;
-    static constexpr int d_rowSbMin         = 2;
-    static constexpr int d_rowSbMax         = 3;
-    static constexpr int d_rowSbAlgo        = 4;
-    static constexpr int d_rowPlot1Seg      = 5;
-    static constexpr int d_rowPlot1Frame    = 6;
-    static constexpr int d_rowPlot1Backup   = 7;
-    static constexpr int d_rowPlot1Diff     = 8;
-    static constexpr int d_rowPlot2Seg      = 9;
-    static constexpr int d_rowPlot2Frame    = 10;
-    static constexpr int d_rowPlot2Backup   = 11;
-    static constexpr int d_rowPlot2Diff     = 12;
-    static constexpr int d_rowCount         = 13;
+    // Sideband row indices, assigned as the rows are appended; the
+    // sideband group collapses as a unit for non-LO_Scan experiments.
+    int d_rowSbFrame{-1};
+    int d_rowSbMin{-1};
+    int d_rowSbMax{-1};
+    int d_rowSbAlgo{-1};
 
     void setMainPlotItemEnabled(MainPlotMode mode, bool enabled);
-    void buildPlotControls(int id, int segRow, int frameRow, int backupRow, int diffRow);
+    void buildPlotControls(int id);
     void setSidebandRowsVisible(bool visible);
 };
 
