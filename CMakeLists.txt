@@ -15,7 +15,7 @@ project(Blackchirp
 # silently sticky across releases — a checkout that switched from
 # `release` back to `alpha` would still emit packages stamped `release`
 # until someone manually cleared the cache.
-set(BC_RELEASE_VERSION "alpha")
+set(BC_RELEASE_VERSION "beta")
 
 # Get git build version
 execute_process(
@@ -30,16 +30,22 @@ if(NOT BC_BUILD_VERSION)
     set(BC_BUILD_VERSION "unknown")
 endif()
 
-# Version definitions
+# Version definitions. The numeric version has a single source of
+# truth — the project() VERSION above — and the release-stage tag has
+# a single source of truth — BC_RELEASE_VERSION above. Everything
+# else, including the viewer-specific (BCV_*) version, is derived so a
+# release bump touches exactly those two lines (and conf.py, the CI
+# workflow, and the on-disk schema all read back from project()).
 set(BC_MAJOR_VERSION ${PROJECT_VERSION_MAJOR})
 set(BC_MINOR_VERSION ${PROJECT_VERSION_MINOR})
 set(BC_PATCH_VERSION ${PROJECT_VERSION_PATCH})
 
-# Viewer-specific versioning
-set(BCV_MAJOR_VERSION 2)
-set(BCV_MINOR_VERSION 0)
-set(BCV_PATCH_VERSION 0)
-set(BCV_RELEASE_VERSION "alpha")
+# The viewer ships from this same tree and is versioned in lockstep
+# with the acquisition app; alias rather than duplicate.
+set(BCV_MAJOR_VERSION ${PROJECT_VERSION_MAJOR})
+set(BCV_MINOR_VERSION ${PROJECT_VERSION_MINOR})
+set(BCV_PATCH_VERSION ${PROJECT_VERSION_PATCH})
+set(BCV_RELEASE_VERSION ${BC_RELEASE_VERSION})
 
 # ============================================================================
 # Build Options and Configuration

@@ -45,10 +45,10 @@ env:
   QT_VERSION: '6.9.1'
   QWT_VERSION: '6.3.0'
   CMAKE_BUILD_TYPE: Release
-  # Blackchirp version (matches BC_MAJOR/MINOR/PATCH in CMakeLists.txt). The
-  # built executables are version-suffixed (e.g., blackchirp-2.0.0) and the
-  # CPack output filename embeds it. Bump in sync with CMakeLists.txt.
-  BC_VERSION: '2.0.0'
+  # The Blackchirp numeric version is not hardcoded here: CMakeLists.txt's
+  # project(... VERSION ...) is the single source of truth. The macos-dmg
+  # job (the only consumer — it locates the version-suffixed bundle
+  # binaries) resolves it into BC_VERSION via the "Resolve version" step.
 
 jobs:
   # ============================================================================
@@ -700,6 +700,22 @@ jobs:
       MACOSX_DEPLOYMENT_TARGET: "13.3"
     steps:
       - uses: actions/checkout@v5
+
+      - name: Resolve version from CMakeLists
+        # Single source of truth: parse the numeric version out of the
+        # project() block (the first VERSION token after `project(`, so
+        # cmake_minimum_required's VERSION is not matched) and export it
+        # for the symbol-capture step, which needs the version-suffixed
+        # bundle binary names.
+        run: |
+          set -euo pipefail
+          ver=$(awk '/^project\(/{p=1}
+                     p && match($0, /VERSION[ \t]+[0-9]+\.[0-9]+\.[0-9]+/) {
+                       s=substr($0, RSTART, RLENGTH); sub(/^VERSION[ \t]+/, "", s);
+                       print s; exit }' CMakeLists.txt)
+          test -n "$ver"
+          echo "BC_VERSION=$ver" >> "$GITHUB_ENV"
+          echo "Resolved BC_VERSION=$ver"
 
       - name: Install system dependencies
         run: |
