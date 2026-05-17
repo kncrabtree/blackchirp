@@ -448,9 +448,12 @@ Three direct subclasses cover the bulk-data domains:
   concrete subclasses cover the standard acquisition modes:
   ``FidSingleStorage`` (single segment),
   ``FidMultiStorage`` (multi-segment / LO scan),
-  ``FidPeakUpStorage`` (peak-up / rolling-average mode). The
-  in-memory cache and the FT processing-settings persistence are
-  the topic of :doc:`/developer_guide/ftmw_acquisition`.
+  ``FidPeakUpStorage`` (peak-up / rolling-average mode). It also
+  persists the FT processing settings and the peak-search
+  parameters as sibling metadata files in ``fid/`` (see the
+  experiment-directory layout below); the in-memory cache and the
+  processing-settings model are the topic of
+  :doc:`/developer_guide/ftmw_acquisition`.
 - :cpp:class:`LifStorage` — LIF trace data on the
   ``(delay, laser)`` scan grid. The flat-index encoding from grid
   cells to per-cell CSV files is documented in
@@ -542,9 +545,15 @@ constant for each filename appears in parentheses):
 Subdirectories:
 
 - ``fid/`` (``BC::CSV::fidDir``) — FTMW FID data. Contains
-  ``fidparams.csv`` (``BC::CSV::fidparams``) plus the per-segment
+  ``fidparams.csv`` (``BC::CSV::fidparams``) and the per-segment
   ``<i>.csv`` files in base-36 encoding (see
-  :cpp:class:`BlackchirpCSV` for the format).
+  :cpp:class:`BlackchirpCSV` for the format), plus two
+  metadata files written through
+  :cpp:class:`FidStorageBase`'s ``writeMetadata`` helper:
+  ``processing.csv`` (the FT processing settings) and
+  ``peakfind.csv`` (the peak-search parameters). Both follow the
+  same two-column ``ObjKey;Value`` metadata shape and are reloaded
+  when the experiment is opened.
 - ``lif/`` (``BC::CSV::lifDir``) — LIF data. Contains
   ``lifparams.csv`` (``BC::CSV::lifparams``) plus per-cell trace
   files keyed on the flat index from
@@ -598,12 +607,18 @@ launch by ``BcSavePathWidget`` and exposed through
   (``ZoomPanPlot::exportCurve``) and similar one-shot exports such
   as the peak-list export dialog. These are user-initiated writes
   routed through the static ``BlackchirpCSV::writeXY`` /
-  ``writeMultiple`` helpers.
+  ``writeMultiple`` helpers, which take a column-delimiter format
+  argument: the user chooses semicolon, comma, tab, or aligned
+  whitespace from the export control, and the choice is persisted
+  application-wide via a root-scope settings key shared between
+  ``blackchirp`` and the viewer.
 
-All three of these streams use ``BlackchirpCSV::writeLine`` /
-``writeXY`` for their CSV formatting, so the semicolon delimiter
-and the column conventions match the rest of the persistence
-subsystem.
+Rolling data and application logs use ``BlackchirpCSV::writeLine``
+with the standard semicolon delimiter, so they match the column
+conventions of the rest of the persistence subsystem. Text exports
+deliberately do not: they exist to hand data to external tools, so
+their delimiter is the user's choice rather than the internal
+``BC::CSV::del``.
 
 File parsers
 ------------

@@ -217,7 +217,10 @@ To fetch:
    $ gh run download $run_id --name blackchirp-symbols-<platform>
 
 Where ``<platform>`` is one of ``linux-deb``, ``linux-rpm``,
-``linux-appimage``, ``macos``, or ``windows-nsis``. The downloaded
+``linux-appimage``, ``macos-arm64``, ``macos-x86_64``, or
+``windows`` (the macOS build is an ``arm64`` / ``x86_64`` matrix, so
+its symbol artifact is per-architecture; match the slice the user is
+running). The downloaded
 files plug directly into the resolution steps above (Linux:
 ``addr2line -e <basename>.debug``; macOS: ``atos -o
 <basename>.dSYM/Contents/Resources/DWARF/<binary>``; Windows: open

@@ -222,14 +222,35 @@ Contributing: **done.**
   reviewed — clean, the 05-12 LIF-notebook `imshow` addition is
   consistent with existing prose)
 
-Architecture:
+Architecture: **done.**
 
-- [ ] `developer_guide/architecture.rst` (has a Diagram section —
-  verify it matches the current orchestration/threading layout)
-- [ ] `developer_guide/experiment_lifecycle.rst`
-- [ ] `developer_guide/persistence.rst` (check the `subKey`
-  legacy-fixture line)
-- [ ] `developer_guide/crash_handling.rst`
+- [x] `developer_guide/architecture.rst` (reviewed — clean; the
+  `FtmwDigitizer` rename is reflected, the mermaid diagram matches
+  the wiring-hub prose, post-update commits are widget refactors
+  below this page's orchestration-level abstraction. No edits)
+- [x] `developer_guide/experiment_lifecycle.rst` (reviewed — clean;
+  `previously-connected device` is legitimate runtime/state
+  language, `FtmwViewWidget`/`backupComplete` contract unchanged by
+  the dockable-panels refactor. No edits)
+- [x] `developer_guide/persistence.rst` (the `subKey` /
+  numeric-to-name / delimiter-history lines are legitimate
+  back-compat runtime/state language — kept. Drift fix: `b6c8e55e`
+  made the curve XY-export delimiter user-selectable, so the
+  closing-paragraph claim that all auxiliary streams use the
+  semicolon delimiter was false for text exports — corrected.
+  `9332af5b` added `fid/peakfind.csv`; a later PeakFindWidget-series
+  commit wired it, so it is live (confirmed against an on-disk
+  experiment directory — the page's commit-message-derived "not yet
+  wired" read was stale). Documented it, and also `fid/processing.csv`
+  which the layout listing was likewise missing; both are
+  `ObjKey;Value` metadata files written via `writeMetadata`)
+- [x] `developer_guide/crash_handling.rst` (drift fix: the release
+  workflow's symbol-artifact names changed after this page's last
+  update — macOS is now an `arm64`/`x86_64` matrix
+  (`blackchirp-symbols-macos-<arch>`) and Windows is
+  `blackchirp-symbols-windows`; the documented `<platform>` set
+  would break the `gh run download` command. Corrected. Source:
+  `b6273ec9`)
 
 Hardware Subsystem:
 
