@@ -2,8 +2,6 @@
 
 #include <QHBoxLayout>
 #include <QVBoxLayout>
-#include <QFormLayout>
-#include <QGroupBox>
 #include <QProgressDialog>
 #include <QSpinBox>
 #include <QTimerEvent>
@@ -16,6 +14,7 @@
 #include <gui/lif/gui/liftraceplot.h>
 #include <gui/lif/gui/lifspectrogramplot.h>
 #include <gui/lif/gui/lifprocessingwidget.h>
+#include <gui/widget/settingstable.h>
 #include <math.h>
 
 #include <qwt6/qwt_matrix_raster_data.h>
@@ -41,18 +40,20 @@ LifDisplayWidget::LifDisplayWidget(QWidget *parent) :
     connect(p_procWidget,&LifProcessingWidget::saveSignal,this,&LifDisplayWidget::saveProc);
     p_procWidget->setEnabled(false);
 
+    // No umbrella group box: the processing widget's own SettingsTable
+    // section bands (Gates / Low Pass Filter / Savitzky-Golay) and the
+    // Display section below are self-titling, matching the FTMW side
+    // panels. A wrapping "Processing" frame would just double-head it.
     auto lvbl = new QVBoxLayout;
-    auto pgb = new QGroupBox("Processing",this);
-    auto pvbl = new QVBoxLayout;
-    pgb->setLayout(pvbl);
-    pvbl->addWidget(p_procWidget);
-    
+
     p_refreshBox = new QSpinBox(this);
     p_refreshBox->setRange(500,10000);
     p_refreshBox->setSingleStep(500);
     p_refreshBox->setValue(get(BC::Key::LifDW::refresh,500));
     registerGetter(BC::Key::LifDW::refresh,p_refreshBox,&QSpinBox::value);
     p_refreshBox->setSuffix(" ms");
+    p_refreshBox->setAlignment(Qt::AlignCenter);
+    p_refreshBox->setKeyboardTracking(false);
     connect(p_refreshBox,qOverload<int>(&QSpinBox::valueChanged),this,[this](int v){
         if(d_refreshTimerId >= 0)
         {
@@ -61,13 +62,15 @@ LifDisplayWidget::LifDisplayWidget(QWidget *parent) :
         }
     });
     p_refreshBox->setEnabled(false);
-    
-    auto db = new QGroupBox("Display",this);
-    auto dbfl = new QFormLayout;
-    dbfl->addRow("Refresh Inteval",p_refreshBox);
-    db->setLayout(dbfl);
-    
-    lvbl->addWidget(pgb,1);
+
+    const auto refreshTip = QString("How often the plots refresh during an acquisition.");
+    p_refreshBox->setToolTip(refreshTip);
+    auto db = new SettingsTable(this);
+    db->setFocusPolicy(Qt::NoFocus);
+    db->addSectionRow("Display");
+    db->addSettingRow("Refresh Interval",p_refreshBox,refreshTip);
+
+    lvbl->addWidget(p_procWidget,1);
     lvbl->addWidget(db,0);
 
     connect(p_spectrogramPlot,&LifSpectrogramPlot::laserSlice,this,&LifDisplayWidget::changeLaserSlice);

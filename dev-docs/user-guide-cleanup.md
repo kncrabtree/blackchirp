@@ -240,9 +240,34 @@ Inspecting Data:
   arrow-key navigation, Up/Down vs Left/Right); dropped the
   forward-looking "improvements envisioned" note; added
   `:target:` click-through to both screenshots.
-- [ ] `lif/lif_tab.rst` (retitled "Viewing LIF Data"; top-level
+- [x] `lif/lif_tab.rst` (retitled "Viewing LIF Data"; top-level
   sibling of `cp-ftmw` via the chapter toctree, file still under
-  `lif/`)
+  `lif/`) — UI-matched to the LifDisplayWidget/LifProcessingWidget
+  refactor: corrected the plot geometry (upper row trace / delay
+  slice / laser slice; lower row processing panel + spectrogram),
+  rewrote the processing-panel controls for the ``Gates`` matrix
+  table, the ``Low Pass Filter`` ``α`` row, and the checkable
+  ``Savitzky-Golay Smoothing`` section, documented that the panel
+  is disabled during acquisition and that slice/spectrogram values
+  refresh only on ``Reprocess All``, and noted the ``Display``
+  section hosting ``Refresh Interval``. Added the experiment-folder
+  link and in-canvas trace legend. Section "Plot areas" → "Layout"
+  (no inbound `:ref:`; `_lif-tab` / `_lif-tab-refresh` anchors
+  preserved). Code side (same branch): ported the LifDisplayWidget
+  ``Display`` group box / ``QFormLayout`` onto a ``SettingsTable``
+  section row, replaced the LifProcessingWidget ``Gates``
+  ``QGroupBox`` title with a ``SettingsTable`` section band (matrix
+  and Start/End headers kept), dropped the now-redundant outer
+  ``Processing`` ``QGroupBox`` wrapper (the inner section bands
+  self-title, matching the FTMW side panels), and fixed the
+  "Refresh Inteval" → "Refresh Interval" label typo. Also made
+  ``SettingsTable`` honor its documented "borderless" contract
+  (``setFrameShape(QFrame::NoFrame)`` in the ctor; the raw LIF gate
+  matrix matched). **App-wide:** every ``SettingsTable`` consumer
+  (FTMW dock panels, overlay/hardware-settings tables) loses the
+  per-table frame. Implication: the committed ``cp-ftmw-*.png``
+  screenshots show the old framed panels and are now slightly
+  stale — re-capture or accept as negligible at 800 px.
 - [ ] `rolling-aux-data.rst`
 - [ ] `log_tab.rst` (retitled "Application Log")
 - [x] `overlays.rst` — restructured (hero / Overlay Manager / thin
@@ -298,8 +323,9 @@ page:
   Data Transfer / Trigger / Acquisition Setup QTableWidget refactor.
 - [x] `lif-lif_config.png` — refreshed alongside the prose pass on
   `lif/configuration.rst`.
-- [ ] `lif-lif_tab.png` — LIF Display tab (processing panel and
-  in-canvas legend).
+- [x] `lif-lif_tab.png` — refreshed for the restyled processing
+  panel (Gates matrix, SettingsTable sections) and in-canvas
+  trace legend.
 
 Check on the next pass — refresh only if the affected widget is
 actually visible at the capture frame:

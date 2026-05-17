@@ -26,24 +26,29 @@ data. It is visible in the main window whenever the LIF module is enabled
    :width: 800
    :alt: LIF Display tab showing time trace, slice plots, 2D spectrogram, and processing panel
 
-Plot areas
-----------
+Layout
+------
 
-The tab contains four plot areas:
+A bold header at the top names the loaded experiment and links to its data
+folder. Below the header are two rows: an upper row of three plots side by
+side, and a lower row holding the processing panel on the left and the 2D
+spectrogram on the right.
 
-**Time trace (upper left)**
+**Time trace (upper row, left)**
    Displays the digitizer waveform for the scan point selected on the 2D
    spectrogram. During an acquisition it updates at the rate set by the
    :ref:`refresh interval <lif-tab-refresh>` control, showing the accumulated
-   average waveform at the current scan position. Colored regions mark the
-   LIF and reference integration gates. Both the LIF channel waveform and
-   the reference channel waveform (when enabled) are drawn on the same plot.
+   average waveform at the current scan position. Shaded regions mark the
+   LIF and reference integration gates. The LIF waveform and, when the
+   reference channel is enabled, the reference waveform are drawn on the
+   same plot and distinguished by an in-canvas legend in the lower-right
+   corner.
 
-**Delay slice (upper right)**
+**Delay slice (upper row, center)**
    Plots integrated LIF signal as a function of delay time, evaluated at the
    laser-frequency column currently selected on the 2D spectrogram.
 
-**Laser slice (upper right, second panel)**
+**Laser slice (upper row, right)**
    Plots integrated LIF signal as a function of laser position, evaluated at
    the delay row currently selected on the 2D spectrogram.
 
@@ -77,53 +82,54 @@ display from live-following; choose **Follow live data** to re-attach.
 Processing panel
 ----------------
 
-The processing panel sits on the left side of the tab and exposes the
+The processing panel occupies the lower-left of the tab. It exposes the
 integration gate positions, optional smoothing filters, and the
-post-acquisition workflow buttons. Changes to gate or filter values take
-effect immediately on the displayed plots.
+post-acquisition workflow buttons, grouped under the **Gates**, **Low Pass
+Filter**, and **Savitzky-Golay Smoothing** section headings.
 
-**LIF Gate Start / LIF Gate End**
-   Sample-point indices defining the integration window for the LIF channel.
-   The gate is applied to the running accumulated waveform before computing
-   the integrated value. Units are digitizer sample points; hold Ctrl while
-   scrolling to adjust in steps of 10. See :ref:`lif-configuration` for the
+The panel is disabled during an acquisition: while data is being collected,
+the live plots integrate using the gate and filter values from the
+:doc:`configuration`. The panel becomes editable once the acquisition
+completes. After that, changing any value redraws the time trace and its
+shaded gates immediately, but the integrated values on the slice plots and
+the 2D spectrogram are recomputed only when **Reprocess All** is pressed.
+
+**Gates**
+   A table with **LIF** and **Reference** rows and **Start** and **End**
+   columns. Each cell is a sample-point index into the running accumulated
+   waveform; the gate it defines is applied before the integrated value is
+   computed. Hold Ctrl while scrolling a value to adjust in steps of 10. The
+   **Reference** row is editable only when the reference channel is enabled
+   in the :doc:`configuration`. See :ref:`lif-configuration` for the
    relationship between sample points and time.
 
-**Reference Gate Start / Reference Gate End**
-   Sample-point indices for the reference channel gate. Active only when the
-   reference channel is enabled in the :doc:`configuration`.
-
-**Low Pass Filter Alpha**
-   Applies a single-pole IIR low-pass filter to each waveform before
-   integration:
+**Low Pass Filter**
+   The **α** value applies a single-pole IIR low-pass filter to each
+   waveform before integration:
 
    .. math::
 
       x_n = \alpha \, x_{n-1} + (1 - \alpha) \, x_n
 
-   Setting alpha to 0 (the special value displayed as **Disabled**) bypasses
+   Setting α to 0 (the special value displayed as **Disabled**) bypasses
    the filter. Higher values increase smoothing at the cost of temporal
    resolution within the waveform.
 
-**Savitzky-Golay Filter Enabled**
-   When checked, applies a `Savitzky-Golay
+**Savitzky-Golay Smoothing**
+   A checkable section. When enabled, a `Savitzky-Golay
    <https://en.wikipedia.org/wiki/Savitzky%E2%80%93Golay_filter>`_
-   polynomial smoothing filter to each waveform before integration.
-
-**Savitzky-Golay Window**
-   Window size for the Savitzky-Golay filter. Must be an odd number and at
-   least 3.
-
-**Savitzky-Golay Polynomial Order**
-   Polynomial order for the Savitzky-Golay filter. Must be at least 2 and
-   strictly less than the window size.
+   polynomial smoothing filter is applied to each waveform before
+   integration, and two settings appear: **Window** (the filter window
+   size; forced to an odd number and at least 3) and **Order** (the
+   polynomial order; at least 2 and strictly less than the window size).
+   When the section is unchecked, the two settings are hidden.
 
 The three buttons at the bottom of the processing panel operate on the
-stored data and on ``processing.csv``:
+stored data and on ``processing.csv``. They are enabled only after the
+acquisition completes:
 
 - **Reprocess All** — re-integrates every stored waveform using the current
-  gate and filter settings, then redraws all plots. Available after the
-  acquisition completes.
+  gate and filter settings, then redraws all plots.
 - **Reset** — restores the gate and filter settings to the values most
   recently saved to ``processing.csv``.
 - **Save** — writes the current gate and filter settings to
@@ -143,9 +149,11 @@ stored data and on ``processing.csv``:
 Refresh interval
 ----------------
 
-The **Refresh Interval** spin box sets how frequently the plots are updated
-during an acquisition, in milliseconds. Shorter intervals give a more
-responsive display at the cost of additional processing overhead. The plots
-are also redrawn whenever a processing setting changes. Multiple refresh
-requests that arrive while a previous update is still being processed are
-coalesced; only the most recent request is acted upon.
+Below the processing panel, a **Display** section holds the **Refresh
+Interval** spin box, which sets how frequently the plots are updated during
+an acquisition, in milliseconds. It is active only while data is being
+collected. Shorter intervals give a more responsive display at the cost of
+additional processing overhead. The plots are also redrawn whenever a
+processing setting changes. Multiple refresh requests that arrive while a
+previous update is still being processed are coalesced; only the most
+recent request is acted upon.

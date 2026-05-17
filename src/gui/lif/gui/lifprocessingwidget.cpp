@@ -3,7 +3,6 @@
 #include <QSpinBox>
 #include <QDoubleSpinBox>
 #include <QToolButton>
-#include <QGroupBox>
 #include <QCheckBox>
 #include <QTableWidget>
 #include <QHeaderView>
@@ -42,12 +41,17 @@ LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
     p_rgEndBox->setRange(1,1000000000);
     p_rgEndBox->setValue(get(rgEnd,1));
 
-    // True LIF/Reference x Start/End matrix: kept a QTableWidget but
-    // restyled so the row names sit in a regular first column rather
-    // than the vertical header, consistent with the other restyled
-    // matrix tables. The QGroupBox supplies the "Gates" heading.
-    auto gateBox = new QGroupBox("Gates",this);
-    auto gateTable = new QTableWidget(2,3,gateBox);
+    // The "Gates" heading is a SettingsTable section band so it matches
+    // the Low Pass Filter / Savitzky-Golay headings below; the gate
+    // values stay a true LIF/Reference x Start/End matrix (a QTableWidget
+    // restyled so the row names sit in a regular first column rather than
+    // the vertical header, consistent with the other restyled matrix
+    // tables).
+    auto gateHeader = new SettingsTable(this);
+    gateHeader->setFocusPolicy(Qt::NoFocus);
+    gateHeader->addSectionRow("Gates"_L1);
+
+    auto gateTable = new QTableWidget(2,3,this);
     gateTable->setHorizontalHeaderLabels({"", "Start", "End"});
     gateTable->horizontalHeader()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
     gateTable->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
@@ -57,6 +61,8 @@ LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
     gateTable->setSelectionMode(QAbstractItemView::NoSelection);
     gateTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     gateTable->setFocusPolicy(Qt::NoFocus);
+    // Frameless to match the SettingsTable bands it sits between.
+    gateTable->setFrameShape(QFrame::NoFrame);
     // Content-sized like SettingsTable: never grow past the two rows or
     // show a vertical scrollbar, so the panel does not waste height.
     gateTable->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
@@ -75,9 +81,13 @@ LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
     gateTable->setCellWidget(1,1,p_rgStartBox);
     gateTable->setCellWidget(1,2,p_rgEndBox);
 
+    // Header band sits flush on the matrix (no inter-widget gap), the
+    // way a SettingsTable section row abuts its bound rows.
     auto gateLayout = new QVBoxLayout;
+    gateLayout->setContentsMargins(0,0,0,0);
+    gateLayout->setSpacing(0);
+    gateLayout->addWidget(gateHeader);
     gateLayout->addWidget(gateTable);
-    gateBox->setLayout(gateLayout);
 
     p_lpAlphaBox = new QDoubleSpinBox(this);
     p_lpAlphaBox->setDecimals(4);
@@ -144,7 +154,7 @@ LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
     p_btnLayout->addWidget(p_saveButton,1);
 
     auto vbl = new QVBoxLayout;
-    vbl->addWidget(gateBox);
+    vbl->addLayout(gateLayout);
     vbl->addWidget(procTable);
     vbl->addLayout(p_btnLayout);
     vbl->addStretch(1);
