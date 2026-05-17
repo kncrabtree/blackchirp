@@ -193,17 +193,34 @@ Grouped by the target cluster. Each page: timeless sweep, heading
 hierarchy + `.. index::` check, API-duplication check, code-accuracy
 spot-check, fix any stale cross-refs. Do not rewrite sound prose.
 
-Contributing:
+Working method addition (user instruction, mid-pass): for every
+page touched, find the last commit that modified it before the
+current pass, scan commits since then that touch the code/config the
+page documents, and verify factual claims have not drifted. Surface
+gaps for user review rather than silently rewriting.
 
-- [ ] `developer_guide.rst` (landing/overview — dissolve toctree
-  into `index.rst`; keep the three-audience routing prose; retitle
-  if needed)
-- [ ] `developer_guide/conventions.rst` (SPEC — light prose only,
-  preserve all anchors, do not loosen rules; fix the
-  `api_style.rst` pointer references in `doc/AGENTS.md` and
-  `doc/source/AGENTS.md` alongside this)
-- [ ] `developer_guide/build_system.rst`
-- [ ] `developer_guide/packaging.rst`
+Contributing: **done.**
+
+- [x] `developer_guide.rst` (toctree dissolved into `index.rst` in
+  the nav commit; three-audience prose kept; added missing
+  `.. index::` block and the sidebar-grouping paragraph, reflowed)
+- [x] `developer_guide/conventions.rst` (SPEC — reviewed; already
+  clean, no prose change. `api_style.rst` pointers fixed in
+  `doc/AGENTS.md`; `doc/source/AGENTS.md` does not exist)
+- [x] `developer_guide/build_system.rst` (Packaging + CI sections
+  condensed to a pointer at `:doc:\`packaging\`` per user decision;
+  drift check clean — licenses/ split was repo-root not
+  `python/blackchirp/`, labjack commit didn't touch the globs)
+- [x] `developer_guide/packaging.rst` (drift fix: macOS bundle is
+  now ad-hoc codesigned — corrected the false "not configured"
+  claim and the signing table, added the symlink-collapse/codesign
+  detail to the `QtDeployment.cmake` entry and the per-job
+  skeleton, added the `MACOSX_DEPLOYMENT_TARGET=13.3` rationale to
+  *Non-intuitive constructions*. Source: commits `cb91d54c`,
+  `76639949`, `cb2d452d` postdated the page's last update)
+- [x] `developer_guide/python_module.rst` (folded into Contributing;
+  reviewed — clean, the 05-12 LIF-notebook `imshow` addition is
+  consistent with existing prose)
 
 Architecture:
 

@@ -1,3 +1,7 @@
+.. index::
+   single: developer guide
+   single: contributing
+
 Developer Guide
 ===============
 
@@ -45,10 +49,10 @@ Python), and the Sphinx pages that surface them is documented in the
 
 The pages of this chapter are grouped in the sidebar: **Contributing**
 (this overview, prose and API conventions, the build system, packaging,
-and the Python module), **Architecture** (the C++ application structure,
-experiment lifecycle, persistence, crash handling, and the generated
-API reference), **Hardware
-Subsystem** (configuration, runtime, the Python hardware bridge, and
-vendor libraries), **Acquisition Pipelines** (the FTMW and LIF
-data-flow paths), and **Extending Blackchirp** (the recipes for adding
-a driver, a hardware type, or an experiment mode).
+and the Python module), **Architecture** (the C++ application
+structure, experiment lifecycle, persistence, crash handling, and the
+generated API reference), **Hardware Subsystem** (configuration,
+runtime, the Python hardware bridge, and vendor libraries),
+**Acquisition Pipelines** (the FTMW and LIF data-flow paths), and
+**Extending Blackchirp** (the recipes for adding a driver, a hardware
+type, or an experiment mode).

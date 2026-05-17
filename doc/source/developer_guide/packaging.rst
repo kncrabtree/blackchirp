@@ -269,7 +269,11 @@ attestations cover all five platforms.
    * - AppImage
      - detached ``.asc``
      - ``gpg --verify Blackchirp-*.AppImage.asc``
-   * - ``.dmg`` / ``.exe``
+   * - ``.dmg``
+     - ad-hoc codesign (``codesign --force --deep --sign -``)
+     - launches on a clean Mac after ``xattr -d
+       com.apple.quarantine`` (no notarization yet — see below)
+   * - ``.exe``
      - unsigned
      - (build-provenance only — see below)
    * - any of the above
@@ -296,13 +300,25 @@ form. RPM uses embedded signing because that is exactly what
 ``rpm --checksig`` and ``zypper`` / ``dnf install`` consult at
 install time.
 
-macOS DMG and Windows NSIS are not GPG-signed. OS-level signing on
-those platforms uses Apple Developer ID + notarization (macOS) or
-Authenticode (Windows); self-signing on Windows makes SmartScreen
-warn harder rather than less, and ad-hoc signing on macOS does not
-satisfy Gatekeeper, so neither is configured. Build-provenance
-attestations apply to the unsigned binaries regardless of OS-level
-signing.
+Neither macOS nor Windows uses GPG signing. The Windows NSIS
+installer is unsigned: Authenticode would need a purchased
+certificate, and self-signing makes SmartScreen warn harder rather
+than less.
+
+The macOS bundle **is** ad-hoc codesigned. ``macdeployqt`` rewrites
+``LC_LOAD_DYLIB`` / ``install_name`` entries and copies framework
+dylibs into the bundle, which invalidates the linker-applied ad-hoc
+signature on the arm64 main executable and the upstream signatures
+on the copied frameworks; the kernel ``SIGKILL``\ s an
+invalidly-signed arm64 binary outright. ``cmake/QtDeployment.cmake``
+therefore runs ``codesign --force --deep --sign -`` over the whole
+bundle *after* ``macdeployqt``, and the ``macos-smoke`` job verifies
+it with ``codesign --verify --deep --strict``. This is an ad-hoc
+signature, not Apple Developer ID notarization: Gatekeeper still
+flags the downloaded app as "damaged" until notarization is in
+place, and users clear that with ``xattr -d com.apple.quarantine``
+(documented in :doc:`/user_guide/installation`). Build-provenance
+attestations apply to every artifact regardless of OS-level signing.
 
 The RPM-signing step writes ``rpm-sign`` macros into
 ``~/.rpmmacros`` so ``rpmsign --addsign`` can drive GPG
@@ -344,7 +360,12 @@ CMake modules and packaging files
    ``IMPORTED_LOCATION`` and registers ``install(CODE)`` hooks that
    run the right tool against the installed binary at packaging
    time. macOS derives ``-libpath=`` from ``QWT_LIBRARY`` so the
-   from-source libqwt bundles correctly. No-op on Linux.
+   from-source libqwt bundles correctly, then — because the
+   ``VERSION`` target property leaves ``Contents/MacOS/<target>`` a
+   symlink and ``codesign`` refuses a symlinked main executable —
+   collapses that symlink onto the versioned binary and runs the
+   ad-hoc ``codesign --force --deep --sign -`` pass over the bundle.
+   No-op on Linux.
 
 ``cmake/BlackchirpApplication.cmake`` / ``cmake/BlackchirpViewerApplication.cmake``
    Per-app target wiring. Each sets ``MACOSX_BUNDLE_*`` properties
@@ -413,7 +434,10 @@ Per-job skeleton:
 #. Install Qt (per the sourcing matrix above).
 #. Restore or build Qwt 6.3.0 from source (cached per OS).
 #. ``cmake → cmake --build → ctest``.
-#. ``cpack`` (or ``linuxdeploy`` for AppImage).
+#. ``cpack`` (or ``linuxdeploy`` for AppImage). On macOS the
+   ``QtDeployment.cmake`` install hook ad-hoc codesigns the bundle
+   here, after ``macdeployqt``; the matching ``macos-smoke`` job
+   later runs ``codesign --verify --deep --strict``.
 #. Sign Linux artifacts (detached for DEB/AppImage, embedded for
    RPM).
 #. ``actions/attest-build-provenance@v2``.
@@ -467,6 +491,15 @@ look the way they do.
   root; with ``DESTDIR=ON``, CPack stages the ``.app`` under
   ``${DESTDIR}/usr/local/blackchirp.app`` and both the deploy hook
   and the DragNDrop file walk miss it.
+* ``MACOSX_DEPLOYMENT_TARGET`` is pinned to ``13.3`` on both macOS
+  jobs, not left at the runner default. Apple's libc++ marks the
+  floating-point ``std::to_chars`` overloads ``introduced=13.3``, so
+  a lower target fails to compile the shortest-roundtrip formatting
+  in ``src/gui/util/numericformat.cpp`` and
+  ``src/gui/widget/scientificspinbox.cpp``. 13.3 is therefore the
+  binary's minimum macOS; the user-facing per-artifact minimum-OS
+  table in :doc:`/user_guide/installation` is the single source of
+  truth for the published floors.
 * Distro package names are not hard-coded. DEB dependencies come
   from ``dpkg-shlibdeps``; RPM dependencies come from ``AUTOREQ``.
   Hard-coded ``Depends:`` lines drift across Ubuntu/Debian releases
