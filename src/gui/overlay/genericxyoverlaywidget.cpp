@@ -504,6 +504,9 @@ void GenericXYOverlayWidget::onFileDialogRequested()
     );
     
     if (!selectedFile.isEmpty()) {
+        // Persist immediately so the directory is remembered even if the
+        // dialog is cancelled before the overlay is created.
+        set(BC::Key::GenericXYWidget::lastFilePath, selectedFile, true);
         setSourceFilePath(selectedFile);
     }
 }

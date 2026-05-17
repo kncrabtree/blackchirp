@@ -393,6 +393,9 @@ void CatalogOverlayWidget::onBrowseButtonClicked()
                                                    filters.join(";;"));
     
     if (!filePath.isEmpty()) {
+        // Persist immediately so the directory is remembered even if the
+        // dialog is cancelled before the overlay is created.
+        set(BC::Key::CatalogWidget::lastFilePath, filePath, true);
         updatePathDisplayAndTooltip(p_filePathLineEdit, filePath);
         onFilePathChanged();
     }

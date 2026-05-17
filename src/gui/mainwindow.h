@@ -26,6 +26,8 @@ class QLineEdit;
 class QDoubleSpinBox;
 class QProgressBar;
 class QAction;
+class QMenu;
+class QComboBox;
 class HWDialog;
 class QuickExptDialog;
 class LifControlWidget;
@@ -38,6 +40,16 @@ namespace Ui {
 class MainWindow;
 inline constexpr QLatin1StringView actionStr{"Action"};
 inline constexpr QLatin1StringView sbStr{"StatusBox"};
+}
+
+// Recent / last-directory state for the View Experiment dialog. These
+// live in the acquisition app's [Blackchirp] settings group, kept
+// separate from the viewer's [BlackchirpViewer] recent history.
+namespace BC::Key::ViewExpt {
+inline constexpr QLatin1StringView recent{"viewExperimentRecent"};
+inline constexpr QLatin1StringView lastDir{"viewExperimentLastDir"};
+inline constexpr QLatin1StringView recentNum{"num"};
+inline constexpr QLatin1StringView recentPath{"path"};
 }
 
 class MainWindow : public QMainWindow
@@ -121,6 +133,15 @@ private:
     void removeExperimentWidget(const QString& path);
     void updateViewExperimentMenu();
     void showExistingExperiment(const QString& path);
+
+    // View Experiment recent-history helpers. openExperimentNumPath()
+    // is the single entry point used by the dialog, the Recent combo,
+    // and the Open Recent menu.
+    void openExperimentNumPath(int num, const QString &path);
+    void addToRecentExperiments(int num, const QString &path);
+    void updateRecentMenu();
+    static constexpr int MaxRecentExperiments = 10;
+    QMenu *p_openRecentMenu{nullptr};
     void setupThemeAwareIconStyling();
     
     // Factory method for creating experiments with proper hardware data

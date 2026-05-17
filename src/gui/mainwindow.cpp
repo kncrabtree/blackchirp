@@ -2,6 +2,7 @@
 #include "mainwindow_ui.h"
 
 #include <climits>
+#include <algorithm>
 
 #include <QThread>
 #include <QDialogButtonBox>
@@ -14,6 +15,8 @@
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QCheckBox>
+#include <QComboBox>
+#include <QMenu>
 #include <QToolButton>
 #include <QFileDialog>
 #include <QDir>
@@ -55,6 +58,7 @@
 
 #include <data/loghandler.h>
 #include <data/storage/blackchirpcsv.h>
+#include <data/storage/settingsstorage.h>
 #include <data/updatechecker.h>
 #include <acquisition/acquisitionmanager.h>
 #include <acquisition/batch/batchmanager.h>
@@ -82,6 +86,25 @@
 
 #define _BC_STR(x) #x
 #define BC_STRINGIFY(x) _BC_STR(x)
+
+namespace {
+// Default-group SettingsStorage ([Blackchirp]) that exposes the
+// protected mutators so the View Experiment recent history can be
+// written from MainWindow (which is not itself a SettingsStorage).
+// discardChanges(true) is set by callers after a flushed write so the
+// destructor does not re-save the whole group.
+struct ViewExptStore : public SettingsStorage {
+    using SettingsStorage::set;
+    using SettingsStorage::setArray;
+};
+
+QString recentDisplayText(int num, const QString &path)
+{
+    if(path.isEmpty())
+        return QString("Experiment %1").arg(num);
+    return QDir(path).absolutePath();
+}
+}
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -246,6 +269,20 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->sleepButton,&QToolButton::toggled,this,&MainWindow::sleep);
     connect(ui->actionTest_All_Connections,&QAction::triggered,p_hwm,&HardwareManager::testAll);
     connect(ui->viewExperimentAction,&QAction::triggered,this,&MainWindow::viewExperiment);
+
+    // Open Recent submenu, inserted ahead of the separator that divides
+    // the fixed actions from the dynamic open-experiment-window list.
+    p_openRecentMenu = new QMenu(QString("Open Recent"), this);
+    {
+        QAction *sepAct = nullptr;
+        for(QAction *a : ui->viewExperimentMenu->actions())
+            if(a->isSeparator()) { sepAct = a; break; }
+        if(sepAct)
+            ui->viewExperimentMenu->insertMenu(sepAct, p_openRecentMenu);
+        else
+            ui->viewExperimentMenu->addMenu(p_openRecentMenu);
+    }
+    updateRecentMenu();
 
     if(ui->actionLifConfig)
         connect(ui->actionLifConfig,&QAction::triggered,this,&MainWindow::launchLifConfigDialog);
@@ -1399,20 +1436,68 @@ void MainWindow::viewExperiment()
     QHBoxLayout *hl = new QHBoxLayout;
 
     QSpinBox *numBox = new QSpinBox(&d);
+    QCheckBox *pathBox = new QCheckBox(QString("Specify path"),&d);
+    QLineEdit *pathEdit = new QLineEdit(&d);
+
+    // Recent experiments, newest first. Selecting an entry fills the
+    // number / path controls; the user still presses Open to confirm.
+    SettingsStorage recentStore;
+    auto recentEntries = recentStore.getArray(BC::Key::ViewExpt::recent);
+    if(!recentEntries.empty())
+    {
+        QComboBox *recentBox = new QComboBox(&d);
+        recentBox->addItem(QString("Select a recent experiment..."));
+        for(const auto &e : recentEntries)
+        {
+            int n = 0;
+            QString p;
+            auto nit = e.find(BC::Key::ViewExpt::recentNum);
+            if(nit != e.end()) n = nit->second.toInt();
+            auto pit = e.find(BC::Key::ViewExpt::recentPath);
+            if(pit != e.end()) p = pit->second.toString();
+            recentBox->addItem(recentDisplayText(n,p));
+        }
+        connect(recentBox,qOverload<int>(&QComboBox::activated),this,
+                [=](int idx){
+            if(idx < 1)
+                return;
+            const auto &e = recentEntries[idx-1];
+            int n = 0;
+            QString p;
+            auto nit = e.find(BC::Key::ViewExpt::recentNum);
+            if(nit != e.end()) n = nit->second.toInt();
+            auto pit = e.find(BC::Key::ViewExpt::recentPath);
+            if(pit != e.end()) p = pit->second.toString();
+            if(p.isEmpty())
+            {
+                pathBox->setChecked(false);
+                numBox->setValue(n);
+            }
+            else
+            {
+                pathBox->setChecked(true);
+                pathEdit->setText(p);
+            }
+        });
+        fl->addRow(QString("Recent"),recentBox);
+    }
 
     fl->addRow(QString("Experiment Number"),numBox);
-
-    QCheckBox *pathBox = new QCheckBox(QString("Specify path"),&d);
     fl->addRow(pathBox);
 
-    QLineEdit *pathEdit = new QLineEdit(&d);
     QToolButton *browseButton = new QToolButton(&d);
     browseButton->setIcon(ThemeColors::createThemedIcon(":/icons/document-magnifying-glass.svg", ThemeColors::IconSecondary, this));
 
     connect(browseButton,&QToolButton::clicked,this,[this,pathEdit](){
-        QString path = QFileDialog::getExistingDirectory(this,QString("Select experiment directory"),QString("~"));
+        QString startDir = SettingsStorage().get(BC::Key::ViewExpt::lastDir, QDir::homePath());
+        QString path = QFileDialog::getExistingDirectory(this,QString("Select experiment directory"),startDir);
         if(!path.isEmpty())
+        {
+            ViewExptStore store;
+            store.set(BC::Key::ViewExpt::lastDir, path, true);
+            store.discardChanges(true);
             pathEdit->setText(path);
+        }
     });
 
     hl->addWidget(pathEdit,1);
@@ -1494,36 +1579,120 @@ void MainWindow::viewExperiment()
             return;
         }
 
-        // Get the full path for tracking
-        QString fullPath = BlackchirpCSV::exptDir(num, path).absolutePath();
-        
-        // Check if experiment is already open
-        auto it = d_openExperiments.find(fullPath);
-        if (it != d_openExperiments.end()) {
-            // Experiment already open, raise existing window
-            ExperimentViewWidget* existingWidget = it->second.get();
-            existingWidget->show();
-            existingWidget->raise();
-            existingWidget->notifyAlreadyOpen();
-            return;
-        }
-        
-        // Create new experiment view widget
-        auto evw = std::make_unique<ExperimentViewWidget>(num, path, true);
-        ExperimentViewWidget* evwPtr = evw.get();
-        
-        // Connect signals for cleanup and window management
-        connect(this, &MainWindow::closing, evwPtr, &ExperimentViewWidget::close);
-        connect(evwPtr, &ExperimentViewWidget::widgetClosing, this, [this, fullPath]() {
-            removeExperimentWidget(fullPath);
-        });
-        
-        // Store in tracking map and show
-        d_openExperiments[fullPath] = std::move(evw);
-        updateViewExperimentMenu();
-        evwPtr->show();
-        evwPtr->raise();
+        openExperimentNumPath(num, path);
     }
+}
+
+void MainWindow::openExperimentNumPath(int num, const QString &path)
+{
+    if(!path.isEmpty() && !QDir(path).exists())
+    {
+        QMessageBox::critical(this,QString("Load error"),QString("The directory %1 does not exist. Could not load experiment.").arg(QDir(path).absolutePath()),QMessageBox::Ok);
+        return;
+    }
+    if(path.isEmpty() && num < 1)
+        return;
+
+    // Full path used as the open-experiment tracking key.
+    QString fullPath = BlackchirpCSV::exptDir(num, path).absolutePath();
+
+    auto it = d_openExperiments.find(fullPath);
+    if (it != d_openExperiments.end()) {
+        // Experiment already open, raise existing window
+        ExperimentViewWidget* existingWidget = it->second.get();
+        existingWidget->show();
+        existingWidget->raise();
+        existingWidget->notifyAlreadyOpen();
+        addToRecentExperiments(num, path);
+        return;
+    }
+
+    auto evw = std::make_unique<ExperimentViewWidget>(num, path, true);
+    ExperimentViewWidget* evwPtr = evw.get();
+
+    connect(this, &MainWindow::closing, evwPtr, &ExperimentViewWidget::close);
+    connect(evwPtr, &ExperimentViewWidget::widgetClosing, this, [this, fullPath]() {
+        removeExperimentWidget(fullPath);
+    });
+
+    d_openExperiments[fullPath] = std::move(evw);
+    updateViewExperimentMenu();
+    addToRecentExperiments(num, path);
+    evwPtr->show();
+    evwPtr->raise();
+}
+
+void MainWindow::addToRecentExperiments(int num, const QString &path)
+{
+    using namespace BC::Key::ViewExpt;
+
+    ViewExptStore store;
+    auto entries = store.getArray(recent);
+
+    const QString display = recentDisplayText(num, path);
+    entries.erase(std::remove_if(entries.begin(), entries.end(),
+        [&](const SettingsStorage::SettingsMap &m) {
+            int n = 0;
+            QString p;
+            auto nit = m.find(recentNum);
+            if(nit != m.end()) n = nit->second.toInt();
+            auto pit = m.find(recentPath);
+            if(pit != m.end()) p = pit->second.toString();
+            return recentDisplayText(n, p) == display;
+        }), entries.end());
+
+    SettingsStorage::SettingsMap entry;
+    entry[recentNum] = num;
+    entry[recentPath] = path;
+    entries.insert(entries.begin(), entry);
+
+    if(static_cast<int>(entries.size()) > MaxRecentExperiments)
+        entries.resize(MaxRecentExperiments);
+
+    store.setArray(recent, entries, true);
+    store.discardChanges(true);
+    updateRecentMenu();
+}
+
+void MainWindow::updateRecentMenu()
+{
+    if(!p_openRecentMenu)
+        return;
+
+    using namespace BC::Key::ViewExpt;
+    p_openRecentMenu->clear();
+
+    SettingsStorage store;
+    auto entries = store.getArray(recent);
+    if(entries.empty())
+    {
+        QAction *a = p_openRecentMenu->addAction(QString("(No recent experiments)"));
+        a->setEnabled(false);
+        return;
+    }
+
+    for(const auto &e : entries)
+    {
+        int n = 0;
+        QString p;
+        auto nit = e.find(recentNum);
+        if(nit != e.end()) n = nit->second.toInt();
+        auto pit = e.find(recentPath);
+        if(pit != e.end()) p = pit->second.toString();
+        QAction *act = p_openRecentMenu->addAction(recentDisplayText(n, p));
+        connect(act, &QAction::triggered, this, [this, n, p]() {
+            openExperimentNumPath(n, p);
+        });
+    }
+
+    p_openRecentMenu->addSeparator();
+    QAction *clear = p_openRecentMenu->addAction(QString("Clear Recent"));
+    connect(clear, &QAction::triggered, this, [this]() {
+        ViewExptStore store;
+        store.setArray(BC::Key::ViewExpt::recent, {}, true);
+        store.discardChanges(true);
+        updateRecentMenu();
+    });
 }
 
 bool MainWindow::isDialogOpen(const QString key)
@@ -1748,25 +1917,31 @@ void MainWindow::removeExperimentWidget(const QString& path)
 
 void MainWindow::updateViewExperimentMenu()
 {
-    // Get current actions (skip first action and separator)
     QList<QAction*> actions = ui->viewExperimentMenu->actions();
-    
+
+    // The open-experiment-window entries live after the first
+    // separator; everything before it (View Experiment..., the Open
+    // Recent submenu) is fixed and must not be touched.
+    int start = 0;
+    for (int i = 0; i < actions.size(); ++i) {
+        if (actions[i]->isSeparator()) { start = i + 1; break; }
+    }
+
     // Remove actions for experiments that are no longer open
-    // Start from index 2 to skip "View Experiment..." action and separator
-    for (int i = actions.size() - 1; i >= 2; --i) {
+    for (int i = actions.size() - 1; i >= start; --i) {
         QAction* action = actions[i];
         QString actionPath = action->data().toString();
-        
+
         if (d_openExperiments.find(actionPath) == d_openExperiments.end()) {
             ui->viewExperimentMenu->removeAction(action);
             action->deleteLater();
         }
     }
-    
+
     // Add actions for new experiments that aren't in the menu yet
     for (const auto& [path, widget] : d_openExperiments) {
         bool actionExists = false;
-        for (int i = 2; i < actions.size(); ++i) {
+        for (int i = start; i < actions.size(); ++i) {
             if (actions[i]->data().toString() == path) {
                 actionExists = true;
                 break;

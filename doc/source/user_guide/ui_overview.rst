@@ -41,7 +41,7 @@ current program state.
 
 - ``Hardware`` opens a menu that provides access to hardware controls, communication settings, loadout and preset switching, and per-device dialogs. These are discussed in detail on the :doc:`Hardware Menu <hardware_menu>` page.
 - ``Rolling Data`` and ``Aux Data`` are menus with settings pertaining to the :doc:`Rolling/Aux Data <rolling-aux-data>` tabs. Here you can control the number of plots on each tab and, for rolling data, the minimum amount of retained history.
-- ``View Experiment`` loads and displays any previously-completed experiment in a new window.
+- ``View Experiment`` loads and displays any previously-completed experiment in a new window. The dialog offers a list of recently-opened experiments and remembers the last directory browsed; the same recent list is also available from the ``Open Recent`` submenu of the ``View Experiment`` toolbar button.
 - ``Settings`` contains miscellaneous program settings, including the program :ref:`Data Storage Location <first-run-data-path>`.
 - ``Help`` opens a menu with links to online resources and the About dialog (see :ref:`ui-help-menu` below).
 

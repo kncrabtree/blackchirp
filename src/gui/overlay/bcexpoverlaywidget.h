@@ -15,10 +15,16 @@
 
 #include <data/analysis/ft.h>
 #include <data/experiment/overlaytypes.h>
+#include <data/storage/settingsstorage.h>
 #include "overlaytypespecificwidget.h"
 
 class ExperimentViewWidget;
 class FtmwViewWidget;
+
+namespace BC::Key::BCExpWidget {
+inline constexpr QLatin1StringView key{"BCExpOverlayWidget"};
+inline constexpr QLatin1StringView lastBrowseDir{"lastBrowseDir"};
+}
 
 /**
  * @brief Type-specific widget for BCExperiment overlays
@@ -28,7 +34,7 @@ class FtmwViewWidget;
  * FT configuration, and source file management specifically for BlackChirp
  * experiment data.
  */
-class BCExpOverlayWidget : public OverlayTypeSpecificWidget
+class BCExpOverlayWidget : public OverlayTypeSpecificWidget, public SettingsStorage
 {
     Q_OBJECT
 

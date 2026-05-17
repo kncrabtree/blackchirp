@@ -43,6 +43,7 @@ using namespace BC::Store;
 
 BCExpOverlayWidget::BCExpOverlayWidget(const Ft &currentFt, QWidget *parent)
     : OverlayTypeSpecificWidget(currentFt, parent),
+      SettingsStorage(BC::Key::BCExpWidget::key),
       d_experimentValid(false),
       d_hasFtData(false)
 {
@@ -280,11 +281,15 @@ void BCExpOverlayWidget::onBrowseButtonClicked()
 {
     QString startPath = p_pathLineEdit->text();
     if (startPath.isEmpty()) {
-        startPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+        startPath = get(BC::Key::BCExpWidget::lastBrowseDir,
+                        QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation));
     }
-    
+
     QString path = QFileDialog::getExistingDirectory(this, "Select Experiment Directory", startPath);
     if (!path.isEmpty()) {
+        // Persist immediately so the directory is remembered even if the
+        // dialog is cancelled before the overlay is created.
+        set(BC::Key::BCExpWidget::lastBrowseDir, path, true);
         updatePathDisplayAndTooltip(p_pathLineEdit, path);
     }
 }
