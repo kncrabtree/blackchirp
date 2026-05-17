@@ -3,6 +3,7 @@
 #include <climits>
 
 using namespace BC::Key::WizLoScan;
+using namespace Qt::StringLiterals;
 
 #include <QGroupBox>
 #include <QSpinBox>
@@ -18,8 +19,9 @@ using namespace BC::Key::WizLoScan;
 #include <data/experiment/experiment.h>
 #include <data/experiment/ftmwconfigtypes.h>
 namespace {
-constexpr int UpCol = 0;
-constexpr int DownCol = 1;
+constexpr int LabelCol = 0;
+constexpr int UpCol = 1;
+constexpr int DownCol = 2;
 constexpr int StartRow = 0;
 constexpr int EndRow = 1;
 constexpr int MinorStepsRow = 2;
@@ -83,16 +85,32 @@ LOScanConfigWidget::LOScanConfigWidget(Experiment *exp, QWidget *parent)
     p_downNumMajorBox = makeCountBox(get<int>(downNumMajor, 2), 2, 100000,
         QString("Number of major steps desired.\nChanging this will update the major step size."));
 
-    p_loTable = new QTableWidget(6, 2, this);
-    p_loTable->setHorizontalHeaderLabels({"Up LO", "Down LO"});
-    p_loTable->setVerticalHeaderLabels({"Start", "End",
-                                        "Minor Steps/pt", "Minor Step Size",
-                                        "Major Steps", "Major Step Size"});
-    p_loTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    p_loTable = new QTableWidget(6, 3, this);
+    p_loTable->setHorizontalHeaderLabels({"", "Up LO", "Down LO"});
+    p_loTable->horizontalHeader()->setSectionResizeMode(LabelCol, QHeaderView::ResizeToContents);
+    p_loTable->horizontalHeader()->setSectionResizeMode(UpCol, QHeaderView::Stretch);
+    p_loTable->horizontalHeader()->setSectionResizeMode(DownCol, QHeaderView::Stretch);
     p_loTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    p_loTable->verticalHeader()->setVisible(false);
     p_loTable->setSelectionMode(QAbstractItemView::NoSelection);
+    p_loTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     p_loTable->setFocusPolicy(Qt::NoFocus);
     p_loTable->setShowGrid(true);
+
+    // Row labels live in a regular first column (mirroring SettingsTable's
+    // label cells) rather than the vertical header, for visual
+    // consistency with the ported settings tables.
+    auto setRowLabel = [this](int row, const QString &text) {
+        auto *it = new QTableWidgetItem(text);
+        it->setFlags(Qt::ItemIsEnabled);
+        p_loTable->setItem(row, LabelCol, it);
+    };
+    setRowLabel(StartRow,      "Start"_L1);
+    setRowLabel(EndRow,        "End"_L1);
+    setRowLabel(MinorStepsRow, "Minor Steps/pt"_L1);
+    setRowLabel(MinorSizeRow,  "Minor Step Size"_L1);
+    setRowLabel(MajorStepsRow, "Major Steps"_L1);
+    setRowLabel(MajorSizeRow,  "Major Step Size"_L1);
 
     p_loTable->setCellWidget(StartRow,      UpCol,   p_upStartBox);
     p_loTable->setCellWidget(EndRow,        UpCol,   p_upEndBox);
