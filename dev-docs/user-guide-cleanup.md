@@ -228,7 +228,18 @@ Running Experiments:
 
 Inspecting Data:
 
-- [ ] `cp-ftmw.rst` (retitled "Viewing FTMW Data")
+- [x] `cp-ftmw.rst` (retitled "Viewing FTMW Data") — rewrote for
+  the FtmwViewWidget dock refactor: toolbar now toggles dockable
+  Acquisition / FID Processing / Plot Settings / Overlays / Peak
+  Find panels; folded the old "Refresh Interval", "Peak Up
+  Options", and "Manual Backup" prose into an Acquisition-panel
+  section; corrected panel row labels (``Window``, ``FT Units``,
+  ``Plot N`` / ``SB`` prefixes, underscored Main-plot mode
+  enumerators); rewrote Peak Find for the side-dock panel
+  (toolbar + list-management bar + double-click / context-menu /
+  arrow-key navigation, Up/Down vs Left/Right); dropped the
+  forward-looking "improvements envisioned" note; added
+  `:target:` click-through to both screenshots.
 - [ ] `lif/lif_tab.rst` (retitled "Viewing LIF Data"; top-level
   sibling of `cp-ftmw` via the chapter toctree, file still under
   `lif/`)
@@ -293,10 +304,10 @@ page:
 Check on the next pass — refresh only if the affected widget is
 actually visible at the capture frame:
 
-- [ ] `cp-ftmw-overview.png` — CP-FTMW tab; PulseStatusBox is in the
-  status sidebar.
-- [ ] `cp-ftmw-peakfind.png` — peak-find panel; status sidebar may
-  be in frame.
+- [x] `cp-ftmw-overview.png` — refreshed for the dockable-panel
+  toolbar layout.
+- [x] `cp-ftmw-peakfind.png` — refreshed for the side-dock Peak
+  Find panel with the peak-list table and on-plot markers.
 - [ ] `experiment-quickexpt_1.png`, `experiment-quickexpt_2.png`,
   `experiment-sequence.png` — all live inside ExperimentSetupDialog;
   dialog chrome (nav tree, status area) changed even if the

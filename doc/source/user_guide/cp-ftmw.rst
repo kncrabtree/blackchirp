@@ -19,60 +19,83 @@ Viewing FTMW Data
 .. image:: /_static/user_guide/cp-ftmw-overview.png
    :align: center
    :width: 800
+   :target: /_static/user_guide/cp-ftmw-overview.png
    :alt: CP-FTMW tab overview
 
 
-The CP-FTMW tab allows for visualization and processing of FID and Fourier Transform data. An example of the tab is shown above. During an acquisition, 7 plots are visible. The uppermost pair labeled "FID Live" and "FT Live" always display the most current data, and these plots are removed when the acquisition completes. The pairs labeled "FID 1"/"FT 1" and "FID 2"/"FT 2" display user-controllable views of the spectrum (discussed further below). Most user interaction takes place with the large "Main FT" plot. By default, the Main FT plot is configured to display the "Live FT" which shows the data being collected. When an experiment ends, the plot shows the contents of the "FT 1" plot. Interaction with the plot (zooming, panning, peak finding, etc) can be done during and after an acquisition. More details are available on the :doc:`plot_controls` page.
+The CP-FTMW tab visualizes and processes FID and Fourier-transform data, both during an acquisition and when reviewing a completed experiment. During an acquisition, seven plots are shown. The uppermost pair, ``FID Live`` and ``FT Live``, always display the most current data and are removed when the acquisition completes. The pairs ``FID 1``/``FT 1`` and ``FID 2``/``FT 2`` display user-selectable views of the data (see `Plot Settings`_). Most interaction takes place on the large ``Main FT`` plot, which by default follows the live data during an acquisition and switches to the ``FT 1`` view when the experiment ends. Zooming, panning, peak finding, and other plot interactions are available both during and after an acquisition; see the :doc:`plot_controls` page for details. The bold header above the plots names the loaded experiment and, except in Peak-Up mode, links to that experiment's data folder.
 
-The main toolbar at the top allows access to various data processing settings which are discussed in the sections of the page below. Finally, the "Refresh Interval" box controls how frequently Blackchirp updates the plots on the screen during an acquisition. The processing is queued and occurs in a separate thread from the real-time averaging. In addition, plots are updated anytime a setting affecting the data shown on the plot is adjusted by the user. If multiple update requests are made while Blackchirp is processing an FT, Blackchirp will discard all but the most recent request.
+The toolbar across the top toggles a set of dockable side panels. ``Acquisition``, ``FID Processing``, and ``Plot Settings`` open on the left; ``Overlays`` and ``Peak Find`` open on the right. Each panel is a separate dock that can be resized, dragged to either side, tabbed with another panel, floated into its own window, or closed; clicking its toolbar button again hides it. The panels are described in the sections below.
+
+Plot processing is queued and runs on a separate thread from the real-time averaging, so during a fast acquisition the displayed data lag the accumulated data slightly. Plots also refresh whenever a setting that affects them changes. If several refresh requests arrive while an FT is being computed, Blackchirp keeps only the most recent.
+
+Acquisition
+...........
+
+The ``Acquisition`` panel collects the controls that apply while data is being collected. It is not present in the :doc:`viewer`, where no acquisition is in progress.
+
+* ``Refresh Interval``: How often the live FID and FT plots are redrawn during an acquisition.
+* ``Peak Up Averages``: The number of shots in the rolling average shown on the live plots. Enabled only in Peak-Up mode, where it can be changed on the fly. The adjacent ``Reset`` button discards the current rolling-average accumulation and restarts it.
+* ``Backup``: Writes a snapshot of the current FID list to disk on demand (see `Manual Backup`_).
+
+Manual Backup
+.............
+
+The ``Backup`` button in the ``Acquisition`` panel (archive-box icon) writes a snapshot of the current FID list to disk on demand. It is enabled during a live acquisition in the single-segment, backup-capable modes — ``Target Shots``, ``Target Duration``, and ``Forever`` — and is disabled for ``Peak Up``, ``LO Scan``, and ``DR Scan``, which either do not produce on-disk backups (Peak Up) or write a backup automatically at each segment boundary (LO Scan and DR Scan). Because the ``Acquisition`` panel is absent in the Experiment Viewer, the button is unavailable there as well.
+
+The manual backup uses the same on-disk format and numbering as periodic backups configured via the ``Backup Interval`` setting in :ref:`user_guide/experiment_setup:Common Settings` — backups are saved as ``1.csv``, ``2.csv``, etc. in the experiment's ``fid`` directory, with the final FID list saved as ``0.csv`` when the experiment ends. Once written, a manual backup is selectable from the ``Backup`` row on the ``Plot Settings`` panel, and ``Differential`` mode shows the data accumulated since that checkpoint.
+
+When the button is clicked the status bar briefly displays ``Manual backup requested``. When the write completes — typically within a fraction of a second — the status bar updates to ``Manual backup complete (backup N)`` and a corresponding ``Highlight``-level entry is added to the log so the backup number can be recalled later. After the status-bar message expires, the bar reverts to ``Acquiring`` or ``Paused`` as appropriate.
+
+If a periodic backup is already in flight when the button is clicked, the request is folded into the in-flight write rather than queued — the periodic backup is the same snapshot the manual request would produce, so it is simply relabeled in the completion message.
 
 FID Processing Settings
 .......................
 
-By clicking on the "FID Processing Settings" button, a toolbar will appear with various settings that can alter processing and/or display of the CP-FTMW data. These settings are applied to the data displayed on all plots. These are:
+The ``FID Processing`` panel holds the settings that control how each FID is transformed before it is displayed. They apply to the data shown on every plot:
 
-* ``FT Start``: The starting time for the data to be Fourier transformed. Points before this time are zeroed out. This setting is useful when the digitizer is triggered prior to the excitation chirp. In this case, the FT Start can be set to 0 to view the chirp and monitor phase coherence. The FT start can also be adjusted to exclude signals from ringing of the excitation pulse or switch bounce.
-* ``FT End``: The ending time for the FT. Points after this time are zeroed out. Can be useful in conjunction with FT start to assess the T2 relaxation time of the FID.
+* ``FT Start``: The starting time for the data to be Fourier transformed. Points before this time are zeroed out. This setting is useful when the digitizer is triggered prior to the excitation chirp. In this case, FT Start can be set to 0 to view the chirp and monitor phase coherence. FT Start can also be adjusted to exclude signals from ringing of the excitation pulse or switch bounce.
+* ``FT End``: The ending time for the FT. Points after this time are zeroed out. Useful in conjunction with FT Start to assess the T2 relaxation time of the FID.
 * ``Exp Filter``: Time constant for an exponential filter applied to the FID prior to the FT. Matching the filter time constant to the natural T2 relaxation time provides noise suppression.
-* ``VScale Ignore``: A frequency range near the LO to ignore when computing the autoscale range. Often CP-FTMW data have large uninteresting signals near DC, and this setting prevents those from overwhelming the default vertical scale.
-* ``Zero Pad``: Appends zeros to the FID to artificially increase the digital resolution of the FT. A setting of 1 appends zeros until the length of the array is double the next power of two. For example, for a record length of 750,000 points, the next power of two is 2^20, or 1,048,576 points. With zero pad = 1, zeros are appended until the data length is 2^21, or 2,097,152 points. Each subsequent increase of the zero pad setting increases the length by another factor of 2.
+* ``VScale Ignore``: A frequency range near the LO to ignore when computing the autoscale range. CP-FTMW data often have large uninteresting signals near DC, and this setting prevents those from overwhelming the default vertical scale.
+* ``Zero Pad``: Appends zeros to the FID to artificially increase the digital resolution of the FT. A setting of 1 appends zeros until the length of the array is double the next power of two. For example, for a record length of 750,000 points, the next power of two is 2^20, or 1,048,576 points. With Zero Pad = 1, zeros are appended until the data length is 2^21, or 2,097,152 points. Each subsequent increase of the Zero Pad setting increases the length by another factor of 2.
 * ``Remove DC``: Subtracts the average value of the FID prior to the Fourier transform. Removes large-envelope DC artifacts.
-* ``Window Function``: Applies a window function prior to Fourier transformation. Window functions are useful for suppressing spectral leakage from strong signals, which tend to obscure nearby weaker transitions. A window function cuts down on these sidelobes at the expense of reducing the signal-to-noise ratio slightly and decreasing the spectral resolution. See the :doc:`data_storage` page for the definitions of the window functions implemented in Blackchirp.
-* ``FT units``: Changes the vertical scaling of the FT.
-* ``Reset``: Restores processing settings to the most recently-saved values.
-* ``Save``: Writes current processing settings to a processing.csv file. By default, processing settings are written when an experiment first starts, but may be overwritten at any time.
+* ``Window``: Applies a window function prior to Fourier transformation. Window functions suppress spectral leakage from strong signals, which tends to obscure nearby weaker transitions. A window cuts down on these sidelobes at the expense of reducing the signal-to-noise ratio slightly and decreasing the spectral resolution. See the :doc:`data_storage` page for the definitions of the window functions implemented in Blackchirp.
+* ``FT Units``: Changes the vertical scaling of the FT.
+* ``Reset``: Restores processing settings to the most recently saved values.
+* ``Save``: Writes the current processing settings to a ``processing.csv`` file. Processing settings are written when an experiment first starts and may be overwritten at any time.
 
-The FID plot shows the post-processed FID data.
+The FID plots show the post-processed FID; the FT plots show its Fourier transform.
 
 Plot Settings
 .............
 
-Clicking on the "Plot Settings" button opens a menu which controls what data are displayed on the various plots on the CP-FTMW tab. The menu is organized into three sections: one for the main plot, then one each for plots FT1 and FT2.
+The ``Plot Settings`` panel controls what data each plot displays.
 
-For the main plot, the primary control is the Mode selection box, which controls the data displayed on the main plot. The available options are:
+``Main Plot Mode`` selects the source for the large Main FT plot:
 
-* ``Live``: Main plot shows the data on the "Live" set of plots. For acquisition modes that involve changing the clock settings (LO Scan, DR Scan), the main plot will follow the acquisition settings as they change. At the end of an acquisition, this option is disabled and the setting is changed to FT1 if Live was selected.
-* ``FT1``: Main plot shows the data selected for display on the FT1 plot, which includes its segment, frame, and backup options.
-* ``FT2``: Main plot shows the data selected for display on the FT2 plot, which includes its segment, frame, and backup options.
-* ``FT1_minus_FT2``: Main plot shows the result of subtracting FT2 from FT1.
-* ``FT2_minus_FT1``: Main plot shows the result of subtracting FT1 from FT2.
-* ``Upper Sideband``: Only available in LO Scan mode. Performs sideband deconvolution using only the higher-frequency sideband.
-* ``Lower Sideband``: Only available in LO Scan mode. Performs sideband deconvolution using only the lower-frequency sideband.
-* ``Both Sidebands``: Only available in LO Scan mode. Performs sideband deconvolution using both sidebands.
+* ``Live``: The Main plot shows the live data. For acquisition modes that change the clock settings (LO Scan, DR Scan), it follows the acquisition settings as they change. At the end of an acquisition this option is disabled and the mode changes to ``FT1`` if ``Live`` was selected.
+* ``FT1``: The Main plot mirrors the ``FT 1`` plot, including its segment, frame, and backup selections.
+* ``FT2``: The Main plot mirrors the ``FT 2`` plot, including its segment, frame, and backup selections.
+* ``FT1_minus_FT2``: The Main plot shows the result of subtracting ``FT 2`` from ``FT 1``.
+* ``FT2_minus_FT1``: The Main plot shows the result of subtracting ``FT 1`` from ``FT 2``.
+* ``Upper_SideBand``: Available only in LO Scan mode. Performs sideband deconvolution using only the higher-frequency sideband.
+* ``Lower_SideBand``: Available only in LO Scan mode. Performs sideband deconvolution using only the lower-frequency sideband.
+* ``Both_SideBands``: Available only in LO Scan mode. Performs sideband deconvolution using both sidebands.
 
-In addition to the mode selection box, in LO scan mode an additional "Sideband Processing" menu is available. These settings are discussed in the `Sideband Deconvolution`_ section below.
+Below the mode selector, the ``Plot 1`` and ``Plot 2`` rows independently choose what the ``FT 1`` and ``FT 2`` plots show:
 
-For Plot 1 and Plot 2, the segment, frame, and backup boxes allow for selection of different data to be shown in the FT1 and FT2 plots, respectively. The meanings are:
+* ``Segment``: For acquisition modes that involve multiple hardware settings in a single experiment (e.g., LO Scan, DR Scan), each individual hardware setting is associated with a "Segment." The nomenclature comes from segmented CP-FTMW spectroscopy, which is implemented as an LO Scan in Blackchirp. Changing the segment shows the data associated with each individual LO tuning in such a scan.
+* ``Frame``: For "Multiple Record" acquisitions (see the :doc:`ftmw_configuration/digitizer_setup` page for more detail), this controls which individual record is displayed, indexed starting from 1. The special value ``Average`` co-averages the individual records.
+* ``Backup``: For long acquisitions in which backups are enabled, this selects the FID and FT associated with each backup checkpoint.
+* ``Differential``: If checked, the selected backup is subtracted from the current FID, allowing recent signal levels to be viewed during long integrations.
 
-* ``Segment``: For acquisition modes which involve multiple different hardware settings in a single experiment (e.g., LO scan, DR scan), each individual hardware setting is associated with a "Segment." The nomenclature comes from segmented CP-FTMW spectroscopy, which is implemented as an LO Scan in Blackchirp. By changing the segment box, the indicated plot would show the data associated with each individual LO tuning in such a scan.
-* ``Frame``: For "Multiple Record" acquisitions (see the :doc:`ftmw_configuration/digitizer_setup` page for more detail), this box controls which individual record is displayed, indexed starting from 1. With a value of 0 (default), the box will display the word "Average" and Blackchirp will co-average the individual records.
-* ``Backup``: For long acquisitions in which backups are enabled, the backup box will display the FID and FT associated with each backup checkpoint.
-* ``Differential``: If checked, the selected backup is subtracted from the current FID, allowing for viewing recent signal levels during long integrations.
+In LO Scan mode the panel also shows the sideband-deconvolution controls — ``SB Frame``, ``SB Min Offset``, ``SB Max Offset``, ``SB Avg Algorithm``, and a ``Reprocess Sidebands`` button. Their meaning is described in `Sideband Deconvolution`_ below.
 
 Overlays
 ........
 
-The toolbar includes an ``Overlays`` button (identified by the squares-plus icon) that opens the Overlay Manager. Overlays allow additional data to be superimposed on the FT plots for comparison and analysis. For detailed information on creating and managing overlays, see :doc:`overlays`.
+The toolbar's ``Overlays`` button (squares-plus icon) shows the Overlay Manager panel. Overlays superimpose additional data on the FT plots for comparison and analysis. For detailed information on creating and managing overlays, see :doc:`overlays`.
 
 .. note::
    Overlay settings are saved with the experiment and restored when the experiment is reopened.
@@ -80,25 +103,9 @@ The toolbar includes an ``Overlays`` button (identified by the squares-plus icon
 Curve Autoscale
 ...............
 
-Each curve displayed on the FT plots has an ``Autoscale`` attribute that controls whether that curve participates in the vertical autoscale computation. By default, all curves are included in autoscaling. To toggle the autoscale participation of an individual curve, right-click on the plot to open the context menu, expand the ``Curves`` submenu, select the curve of interest, and check or uncheck the ``Autoscale`` checkbox in the curve's appearance panel.
+Each curve displayed on the FT plots has an ``Autoscale`` attribute that controls whether that curve participates in the vertical autoscale computation. By default, all curves are included. To toggle the autoscale participation of an individual curve, right-click on the plot to open the context menu, expand the ``Curves`` submenu, select the curve of interest, and check or uncheck the ``Autoscale`` checkbox in the curve's appearance panel.
 
 Disabling autoscale for a curve causes the vertical scale to be computed from the remaining autoscale-enabled curves only. This is useful when one curve (for example, an overlay) has a much larger amplitude than the primary FT data and would otherwise compress the vertical range.
-
-Peak Up Options
-...............
-
-During a peak-up mode acquisition, the number of averages can be changed on-the-fly, and the current average can be reset using the options in this menu.
-
-Manual Backup
-.............
-
-The ``Manual Backup`` toolbar button (identified by the archive-arrow-down icon) writes a snapshot of the current FID list to disk on demand. The button is enabled during a live acquisition in the single-segment, backup-capable modes — ``Target Shots``, ``Target Duration``, and ``Forever`` — and is disabled for ``Peak Up``, ``LO Scan``, and ``DR Scan``, which either do not produce on-disk backups (Peak Up) or write a backup automatically at each segment boundary (LO Scan and DR Scan). The button is not shown at all in the Experiment Viewer, where no acquisition is in progress.
-
-The manual backup uses the same on-disk format and numbering as periodic backups configured via the ``Backup Interval`` setting in :ref:`user_guide/experiment_setup:Common Settings` — backups are saved as ``1.csv``, ``2.csv``, etc. in the experiment's ``fid`` directory, with the final FID list saved as ``0.csv`` when the experiment ends. Once written, a manual backup is selectable from the ``Backup`` combobox on the ``Plot Settings`` toolbar, and ``Differential`` mode shows the data accumulated since that checkpoint.
-
-When the button is clicked the status bar briefly displays ``Manual backup requested``. When the write completes — typically within a fraction of a second — the status bar updates to ``Manual backup complete (backup N)`` and a corresponding ``Highlight``-level entry is added to the log so the backup number can be recalled later. After the status-bar message expires, the bar reverts to ``Acquiring`` or ``Paused`` as appropriate.
-
-If a periodic backup is already in flight when the button is clicked, the request is folded into the in-flight write rather than queued — the periodic backup is the same snapshot the manual request would produce, so it is simply relabeled in the completion message.
 
 Peak Find
 .........
@@ -106,20 +113,38 @@ Peak Find
 .. image:: /_static/user_guide/cp-ftmw-peakfind.png
    :align: center
    :width: 800
-   :alt: Peak find panel
+   :target: /_static/user_guide/cp-ftmw-peakfind.png
+   :alt: Peak Find panel
 
-The Peak Find menu has an implementation of a rough peak finding algorithm. In the peak finding routine, the FT data is run through a `Savitsky-Golay filter <https://en.wikipedia.org/wiki/Savitzky%E2%80%93Golay_filter>`_ which returns the second derivative of a smoothed version of the FT, determined by the window size (which must be odd) and a polynomial order which is used to fit the points within the window (must be less than the window size). A peak is identified when a 5-point local minimum in the second derivative is located and the corresponding point in the FT is at least SNR times an estimate of the local noise level.
+The ``Peak Find`` panel runs a rough peak-finding algorithm over the current FT and lists the detected peaks. The FT is passed through a `Savitzky-Golay filter <https://en.wikipedia.org/wiki/Savitzky%E2%80%93Golay_filter>`_ that returns the second derivative of a smoothed copy of the spectrum, determined by a window size (which must be odd) and a polynomial order used to fit the points within the window (which must be less than the window size). A peak is reported where the second derivative has a five-point local minimum and the corresponding point in the FT exceeds an estimate of the local noise level by at least the configured SNR.
 
-The search parameters — frequency range, SNR, window size, polynomial order, and the navigation window half-width — are set in the Peak Finding Options dialog and are remembered per experiment. Each experiment stores its own values in a ``peakfind.csv`` file; an experiment with no saved file uses the application-wide defaults, which are updated whenever the options are changed.
+Detected peaks are marked on the FT plots and listed in the panel's table by frequency and intensity. The panel's toolbar provides:
+
+* ``Find Now``: Runs the search once on the current FT.
+* ``Live Update``: Re-runs the search automatically whenever the FT changes.
+* ``Appearance``: Edits the peak-marker appearance.
+* ``Filter``: Shows a display-filter grid that hides listed peaks outside a frequency or intensity range. The filter affects only what the table and markers show; it does not change the search.
+* ``In view``: Restricts the list to peaks within the Main FT plot's currently visible frequency range.
+
+A second row of actions manages the list:
+
+* ``Options...``: Opens the Peak Finding Options dialog (frequency range, SNR, window size, polynomial order, and the navigation-window half-width).
+* ``Export...``: Exports the list (see below).
+* ``Remove``: Removes the selected peaks from the list.
+* ``Show Parent``: Raises the FTMW view; shown when the panel is floating.
+
+The list also drives plot navigation. Acting on a peak frames it on a plot, centering the view on the peak's frequency with a window whose half-width is set by ``Navigation Half-Width`` in the Peak Finding Options dialog:
+
+* Double-clicking a row centers the Main FT plot on that peak.
+* Right-clicking a row opens a context menu with ``Center main plot`` and a ``Center on`` submenu that lists every plot (Main, ``FT 1``, ``FT 2``) so a specific plot can be centered instead.
+* The arrow keys navigate from the keyboard, with the Main FT plot re-centering on each step. ``Up`` and ``Down`` move one row at a time through the list *as displayed*, following the current sort and display filter. ``Left`` and ``Right`` instead step to the next *lower-* or *higher-frequency* peak in the full list, regardless of how the table is sorted or filtered; with no peak yet selected, ``Left`` jumps to the lowest-frequency peak and ``Right`` to the highest. ``Enter`` re-centers on the current peak.
+
+The search parameters are remembered per experiment. Each experiment stores its own values in a ``peakfind.csv`` file; an experiment with no saved file uses the application-wide defaults, which are updated whenever the options are changed.
 
 .. note::
-   This peak finding algorithm works reasonably well for windowed data, but often finds many false positives in the absence of a window function in the vicinity of strong signals with significant spectral leakage.
+   This peak-finding algorithm works reasonably well for windowed data, but often finds many false positives in the absence of a window function in the vicinity of strong signals with significant spectral leakage.
 
-
-.. note::
-   Significant improvements to analysis algorithms are envisioned in the future.
-
-The export menu allows for the peak find list to be exported to a CSV file or an FTB file, the latter of which is an input for the cavity FTMW software `QtFTM <https://github.com/kncrabtree/qtftm>`_.
+``Export...`` writes the peak list to a CSV file or to an FTB file, the latter of which is an input for the cavity FTMW software `QtFTM <https://github.com/kncrabtree/qtftm>`_.
 
 
 Sideband Deconvolution
@@ -138,14 +163,14 @@ In "Both Sidebands" mode, both sideband deconvolutions are computed and a compos
 .. warning::
    If the effective sensitivity of the two sidebands is very different (which could be caused by variable mixer efficiency or by choosing LO tunings too close to the limits of the amplifier bandwidth), then "Both Sidebands" mode could result in artificial signal suppression.
 
-Various processing options are available for controlling details of the deconvolution algorithm:
+The sideband controls in the ``Plot Settings`` panel — shown only in LO Scan mode — tune the deconvolution. After changing any of them, click ``Reprocess Sidebands`` to re-run the deconvolution with the current settings.
 
-* ``Frame``: If multiple FIDs are acquired per pulse, this box controls which frame is shown. Setting this to 0 will cause Blackchirp to average all frames.
-* ``Min Offset``: Minimum offset frequency (relative to the LO frequency) of the FT to include when processing each sideband. By default, this should be set to the minimum chirp frequency relative to the LO. Blackchirp calculates this value automatically from the Rf Configuration and Chirp Configuration.
-* ``Max Offset``: Maximum offset frequency (relative to the LO frequency) of the FT to include when processing each sideband.
-* ``Avg Algorithm``: The co-averaging algorithm to use when "overlapping" the frequency-shifted spectra. Blackchirp does not calculate the arithmetic mean of the spectra; this would provide very poor image suppression. The available options are:
+* ``SB Frame``: If multiple FIDs are acquired per pulse, this selects which frame is used. The special value ``Average`` averages all frames.
+* ``SB Min Offset``: Minimum offset frequency (relative to the LO frequency) of the FT to include when processing each sideband. By default this should be set to the minimum chirp frequency relative to the LO. Blackchirp calculates this value automatically from the Rf Configuration and Chirp Configuration.
+* ``SB Max Offset``: Maximum offset frequency (relative to the LO frequency) of the FT to include when processing each sideband.
+* ``SB Avg Algorithm``: The co-averaging algorithm used when overlapping the frequency-shifted spectra. Blackchirp does not calculate the arithmetic mean of the spectra; this would provide very poor image suppression. The available options are:
 
-   - ``Harmonic Mean``: A shots-weighted harmonic mean, which is a measure of central tendency which  is strongly biased toward the lowest value in the set. This is desirable for sideband suppression, as we wish for the spectrum to average strongly toward 0 if a line is present in only one of the shifted spectra. For this reason, it is the default algorithm. Let s\ :sub:`1` and s\ :sub:`2` be the numbers of shots for the two data points y\ :sub:`1` and y\ :sub:`2`, respectively. Assuming all samples and shots are positive and nonzero, the weighted harmonic mean is:
+   - ``Harmonic Mean``: A shots-weighted harmonic mean, a measure of central tendency strongly biased toward the lowest value in the set. This is desirable for sideband suppression, as the spectrum should average strongly toward 0 if a line is present in only one of the shifted spectra. For this reason it is the default. Let s\ :sub:`1` and s\ :sub:`2` be the numbers of shots for the two data points y\ :sub:`1` and y\ :sub:`2`, respectively. Assuming all samples and shots are positive and nonzero, the weighted harmonic mean is:
 
    .. math::
       y_{\text{avg}} = \frac{s_1 + s_2}{\frac{s_1}{y_1} + \frac{s_2}{y_2}}
