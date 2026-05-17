@@ -4,13 +4,11 @@
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QTableWidget>
-#include <QHeaderView>
 #include <QSpinBox>
 #include <QPushButton>
 
 #include <gui/style/themecolors.h>
-#include <gui/widget/tablefit.h>
+#include <gui/widget/settingstable.h>
 
 FtmwAcquisitionPanel::FtmwAcquisitionPanel(bool main, QWidget *parent) :
     QWidget(parent), d_main(main)
@@ -18,15 +16,8 @@ FtmwAcquisitionPanel::FtmwAcquisitionPanel(bool main, QWidget *parent) :
     auto *outer = new QVBoxLayout;
     outer->setContentsMargins(4,4,4,4);
 
-    auto *table = new QTableWidget(2,1,this);
-    table->setVerticalHeaderLabels({"Refresh Interval","Peak Up Averages"});
-    table->horizontalHeader()->setVisible(false);
-    table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    table->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    table->setSelectionMode(QAbstractItemView::NoSelection);
+    auto *table = new SettingsTable(this);
     table->setFocusPolicy(Qt::NoFocus);
-    table->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-    table->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     p_refreshBox = new QSpinBox;
     p_refreshBox->setRange(500,60000);
@@ -35,7 +26,7 @@ FtmwAcquisitionPanel::FtmwAcquisitionPanel(bool main, QWidget *parent) :
     p_refreshBox->setAlignment(Qt::AlignCenter);
     p_refreshBox->setKeyboardTracking(false);
     p_refreshBox->setEnabled(false);
-    table->setCellWidget(0,0,p_refreshBox);
+    int refreshRow = table->addSettingRow("Refresh Interval", p_refreshBox);
 
     p_averagesBox = new QSpinBox;
     p_averagesBox->setRange(1,INT_MAX);
@@ -43,12 +34,11 @@ FtmwAcquisitionPanel::FtmwAcquisitionPanel(bool main, QWidget *parent) :
     p_averagesBox->setAlignment(Qt::AlignCenter);
     p_averagesBox->setKeyboardTracking(false);
     p_averagesBox->setEnabled(false);
-    table->setCellWidget(1,0,p_averagesBox);
+    table->addSettingRow("Peak Up Averages", p_averagesBox);
 
     if(!d_main)
-        table->hideRow(0);
+        table->setRowHidden(refreshRow, true);
 
-    fitTableToContents(table);
     outer->addWidget(table,0);
 
     // Reset / Backup share one row with short labels; the tooltips
@@ -73,7 +63,6 @@ FtmwAcquisitionPanel::FtmwAcquisitionPanel(bool main, QWidget *parent) :
     btnRow->addWidget(p_manualBackupButton);
     outer->addLayout(btnRow,0);
 
-    outer->addStretch(1);
     setLayout(outer);
 
     connect(p_refreshBox, qOverload<int>(&QSpinBox::valueChanged), this,

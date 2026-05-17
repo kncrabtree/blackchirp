@@ -5,7 +5,6 @@
 
 class QSpinBox;
 class QPushButton;
-class QTableWidget;
 
 class FtmwAcquisitionPanel : public QWidget
 {
