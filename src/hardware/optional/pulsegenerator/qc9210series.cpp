@@ -25,8 +25,6 @@ Qc9210Series::~Qc9210Series()
 
 void Qc9210Series::initializePGen()
 {
-    setDefault(BC::Key::Comm::timeout, 200);
-    setDefault(BC::Key::Comm::termChar, QString("\r\n"));
 }
 
 void Qc9210Series::beginAcquisition()

@@ -131,7 +131,7 @@ protected:
     inline QString trigEdgeBase() override { return te; }
 
 private:
-    const QString id{"952"};
+    const QString id{"QC,952"};
     const QString sys{"PULSE0"};
     const QString clock{"EXT10"};
     const QString tb{":PULSE:TRIG:MODE"};
@@ -166,7 +166,7 @@ protected:
     inline QString trigEdgeBase() override { return te; }
 
 private:
-    const QString id{"921"};
+    const QString id{"QC,921"};
     const QString sys{"PULSE0"};
     const QString clock{"EXT10"};
     const QString tb{":PULSE0:EXT:MOD"};

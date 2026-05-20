@@ -28,8 +28,6 @@ Qc9520Series::~Qc9520Series()
 
 void Qc9520Series::initializePGen()
 {
-    setDefault(BC::Key::Comm::timeout, 200);
-    setDefault(BC::Key::Comm::termChar, QString("\r\n"));
 }
 
 void Qc9520Series::beginAcquisition()

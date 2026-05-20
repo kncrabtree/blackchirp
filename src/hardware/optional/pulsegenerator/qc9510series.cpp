@@ -25,8 +25,6 @@ Qc9510Series::~Qc9510Series()
 
 void Qc9510Series::initializePGen()
 {
-    setDefault(BC::Key::Comm::timeout, 100);
-    setDefault(BC::Key::Comm::termChar, QString("\r\n"));
 }
 
 bool Qc9510Series::pGenWriteCmd(const QString &cmd)
