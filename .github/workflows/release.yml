@@ -375,7 +375,7 @@ jobs:
           # Populate rpm's own keyring as well — `rpm --checksig` consults
           # rpm's DB, not gpg's, so without this the post-sign verification
           # reports "SIGNATURES NOT OK" even on a perfectly-good signature.
-          rpm --import packaging/blackchirp-release.asc
+          rpm --import packaging/blackchirp.asc
 
       - name: Sign RPM (embedded)
         # `rpmsign --addsign` writes the signature into the RPM lead/header
@@ -678,7 +678,7 @@ jobs:
     # Two macOS builds per release: Apple Silicon (arm64) and Intel
     # (x86_64). CMake does not produce universal binaries by default, so
     # the host runner's architecture dictates the output slice and CPack
-    # emits Blackchirp-<version>-Darwin-{arm64,x86_64}.{dmg,tar.gz}
+    # emits Blackchirp-<version>-macOS-{arm64,x86_64}.{dmg,tar.gz}
     # accordingly. macos-15-intel is the most recent macOS-15 Intel
     # runner GitHub publishes; macos-26-intel exists but its newer SDK
     # would silently raise the deployment-target floor and exclude the
@@ -823,16 +823,16 @@ jobs:
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: |
-            build/Blackchirp-*-Darwin-${{ matrix.arch }}.dmg
-            build/Blackchirp-*-Darwin-${{ matrix.arch }}.tar.gz
+            build/Blackchirp-*-macOS-${{ matrix.arch }}.dmg
+            build/Blackchirp-*-macOS-${{ matrix.arch }}.tar.gz
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: blackchirp-macos-${{ matrix.arch }}
           path: |
-            build/Blackchirp-*-Darwin-${{ matrix.arch }}.dmg
-            build/Blackchirp-*-Darwin-${{ matrix.arch }}.tar.gz
+            build/Blackchirp-*-macOS-${{ matrix.arch }}.dmg
+            build/Blackchirp-*-macOS-${{ matrix.arch }}.tar.gz
 
       - name: Upload symbols
         uses: actions/upload-artifact@v4
@@ -847,8 +847,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload "${{ github.event.release.tag_name }}" \
-            build/Blackchirp-*-Darwin-${{ matrix.arch }}.dmg \
-            build/Blackchirp-*-Darwin-${{ matrix.arch }}.tar.gz --clobber
+            build/Blackchirp-*-macOS-${{ matrix.arch }}.dmg \
+            build/Blackchirp-*-macOS-${{ matrix.arch }}.tar.gz --clobber
 
   # ============================================================================
   # Windows NSIS / ZIP
@@ -1063,7 +1063,7 @@ jobs:
         run: |
           set -e
           zypper -n refresh
-          rpm --import packaging/blackchirp-release.asc
+          rpm --import packaging/blackchirp.asc
           for f in Blackchirp-*.rpm; do
             rpm --checksig "$f"
             zypper -n install -y "./$f"
@@ -1133,7 +1133,7 @@ jobs:
       - name: Mount, install, and run --version
         run: |
           set -euxo pipefail
-          DMG=$(ls Blackchirp-*-Darwin-${{ matrix.arch }}.dmg | head -1)
+          DMG=$(ls Blackchirp-*-macOS-${{ matrix.arch }}.dmg | head -1)
           # -nobrowse keeps the volume out of Finder; -mountpoint pins the
           # path so we don't have to scrape `hdiutil info` for it.
           # No `yes |` prefix: with CPACK_DMG_SLA_USE_RESOURCE_FILE_LICENSE
@@ -1249,5 +1249,5 @@ jobs:
           gh release upload "${{ github.event.release.tag_name }}" \
             COPYING \
             blackchirp-licenses.zip \
-            packaging/blackchirp-release.asc \
+            packaging/blackchirp.asc \
             --clobber

@@ -46,9 +46,9 @@ Linux — any other distribution
    Linux system without installing system dependencies.
 
 macOS
-   ``Blackchirp-<version>-Darwin-arm64.dmg`` for Apple Silicon
+   ``Blackchirp-<version>-macOS-arm64.dmg`` for Apple Silicon
    (M1/M2/M3/M4) and
-   ``Blackchirp-<version>-Darwin-x86_64.dmg`` for pre-2022 Intel
+   ``Blackchirp-<version>-macOS-x86_64.dmg`` for pre-2022 Intel
    Macs. Requires macOS 13.3 (Ventura) or newer.
 
 Windows
@@ -201,9 +201,9 @@ The release key ID is ``898734DF7EDBDE45``. It is published in three
 identical channels — pick whichever is convenient:
 
 * the ``keys.openpgp.org`` keyserver,
-* the ``blackchirp-release.asc`` file attached to every GitHub
+* the ``blackchirp.asc`` file attached to every GitHub
   release, or
-* ``packaging/blackchirp-release.asc`` in the source repository.
+* ``packaging/blackchirp.asc`` in the source repository.
 
 Import the key once per system. ``rpm`` and ``gpg`` keep separate
 keyrings, so import into both if you plan to verify both formats:
@@ -211,8 +211,8 @@ keyrings, so import into both if you plan to verify both formats:
 .. code-block:: console
 
     $ gpg --keyserver keys.openpgp.org --recv-keys 898734DF7EDBDE45
-    $ gpg --export --armor 898734DF7EDBDE45 > blackchirp-release.asc
-    $ sudo rpm --import blackchirp-release.asc
+    $ gpg --export --armor 898734DF7EDBDE45 > blackchirp.asc
+    $ sudo rpm --import blackchirp.asc
 
 For an RPM, the signature is embedded — ``zypper install`` and
 ``dnf install`` verify it automatically once the key is imported, and

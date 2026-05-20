@@ -26,9 +26,18 @@ set(CPACK_PACKAGE_VERSION_MINOR ${BC_MINOR_VERSION})
 set(CPACK_PACKAGE_VERSION_PATCH ${BC_PATCH_VERSION})
 set(CPACK_PACKAGE_VERSION "${BC_MAJOR_VERSION}.${BC_MINOR_VERSION}.${BC_PATCH_VERSION}")
 
-# Package file name
-set(CPACK_PACKAGE_FILE_NAME 
-    "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+# Package file name. CMAKE_SYSTEM_NAME reports the kernel identifier,
+# which is "Darwin" on macOS — useful to a developer but opaque to a
+# user downloading a .dmg. Override the macOS label to the
+# distribution-facing "macOS"; "Linux" and "Windows" already match
+# what users expect.
+if(APPLE)
+    set(_bc_system_label "macOS")
+else()
+    set(_bc_system_label "${CMAKE_SYSTEM_NAME}")
+endif()
+set(CPACK_PACKAGE_FILE_NAME
+    "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${_bc_system_label}-${CMAKE_SYSTEM_PROCESSOR}")
 
 # License and readme
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")

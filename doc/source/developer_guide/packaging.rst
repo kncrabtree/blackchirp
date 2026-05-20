@@ -16,7 +16,7 @@
    single: attestation; build provenance
    single: attestation; Sigstore
    single: GitHub Actions; release workflow
-   single: blackchirp-release.asc
+   single: blackchirp.asc
 
 Packaging and Release CI
 ========================
@@ -260,11 +260,11 @@ attestations cover all five platforms.
      - How users verify
    * - ``.rpm``
      - embedded (``rpmsign --addsign``)
-     - ``rpm --import …blackchirp-release.asc`` → ``rpm --checksig``
+     - ``rpm --import …blackchirp.asc`` → ``rpm --checksig``
        / ``zypper install`` / ``dnf install``
    * - ``.deb``
      - detached ``.asc``
-     - ``gpg --import …blackchirp-release.asc`` →
+     - ``gpg --import …blackchirp.asc`` →
        ``gpg --verify Blackchirp-*.deb.asc``
    * - AppImage
      - detached ``.asc``
@@ -282,7 +282,7 @@ attestations cover all five platforms.
 
 The release key is a 4096-bit RSA GPG key, ID ``898734DF7EDBDE45``,
 dedicated to release signing. Public key:
-``packaging/blackchirp-release.asc``, also attached to every GitHub
+``packaging/blackchirp.asc``, also attached to every GitHub
 release by the deb job and published on ``keys.openpgp.org``. The
 private key and passphrase live in repository Actions secrets
 (``GPG_PRIVATE_KEY``, ``GPG_PASSPHRASE``, ``GPG_KEY_ID``). Offline
@@ -405,7 +405,7 @@ CMake modules and packaging files
           ``configure_file``)
       * - ``packaging/blackchirp-viewer.desktop.in``
         - XDG desktop file for the viewer
-      * - ``packaging/blackchirp-release.asc``
+      * - ``packaging/blackchirp.asc``
         - Public half of the GPG release signing key, attached to
           every GitHub release by the deb job
       * - ``icons/blackchirp.icns``
