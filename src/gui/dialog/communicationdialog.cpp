@@ -32,6 +32,58 @@
 #include <hardware/core/hardwareregistry.h>
 #include <data/storage/settingsstorage.h>
 
+namespace {
+
+// User-facing termination strings use C-style escape sequences so that
+// non-printing bytes can be entered in a QLineEdit. The bytes that actually
+// reach the hardware are the decoded form; storage uses the decoded form too
+// for consistency with hardware-registered defaults (which already declare
+// real control characters via QString("\n"), QString("\r\n"), ...).
+QString decodeTermCharEscapes(const QString &input)
+{
+    QString out;
+    out.reserve(input.size());
+    for (int i = 0; i < input.size(); ++i) {
+        const QChar c = input.at(i);
+        if (c == QLatin1Char('\\') && i + 1 < input.size()) {
+            const QChar n = input.at(i + 1);
+            switch (n.toLatin1()) {
+            case 'n':  out.append(QLatin1Char('\n')); ++i; continue;
+            case 'r':  out.append(QLatin1Char('\r')); ++i; continue;
+            case 't':  out.append(QLatin1Char('\t')); ++i; continue;
+            case '0':  out.append(QChar(QChar::Null)); ++i; continue;
+            case '\\': out.append(QLatin1Char('\\')); ++i; continue;
+            default: break; // Unknown escape: pass the backslash through verbatim.
+            }
+        }
+        out.append(c);
+    }
+    return out;
+}
+
+QString encodeTermCharEscapes(const QString &stored)
+{
+    QString out;
+    out.reserve(stored.size() * 2);
+    for (const QChar c : stored) {
+        switch (c.toLatin1()) {
+        case '\n': out.append("\\n"_L1); break;
+        case '\r': out.append("\\r"_L1); break;
+        case '\t': out.append("\\t"_L1); break;
+        case '\\': out.append("\\\\"_L1); break;
+        default:
+            if (c == QChar(QChar::Null))
+                out.append("\\0"_L1);
+            else
+                out.append(c);
+            break;
+        }
+    }
+    return out;
+}
+
+} // namespace
+
 CommunicationDialog::CommunicationDialog(QWidget *parent) :
      QDialog(parent), p_hardwareManager(nullptr)
 {
@@ -140,6 +192,10 @@ void CommunicationDialog::setupRightPanel()
     
     p_termCharEdit = new QLineEdit(this);
     p_termCharEdit->setPlaceholderText("Leave empty to disable");
+    p_termCharEdit->setToolTip(
+        "Termination character sequence sent to/expected from the device.\n"
+        "Escape sequences are interpreted: \\n (LF), \\r (CR), \\t (tab), \\0 (NUL).\n"
+        "Enter \\\\ for a literal backslash."_L1);
     readLayout->addRow("Termination Character:", p_termCharEdit);
     
     layout->addWidget(p_readOptionsGroup);
@@ -431,7 +487,8 @@ void CommunicationDialog::saveDeviceSettings()
     auto currentWidget = d_protocolWidgets.value(widgetKey, nullptr);
     if(currentWidget) {
         // Save through protocol widget (handles protocol type, read options, and protocol-specific settings)
-        currentWidget->saveProtocolSettings(currentProtocol, p_timeoutSpinBox->value(), p_termCharEdit->text());
+        currentWidget->saveProtocolSettings(currentProtocol, p_timeoutSpinBox->value(),
+                                            decodeTermCharEscapes(p_termCharEdit->text()));
     }
     
     // Update local info
@@ -482,7 +539,7 @@ void CommunicationDialog::loadReadOptions(CommunicationProtocol::CommType protoc
     
     // Update UI controls
     p_timeoutSpinBox->setValue(timeout);
-    p_termCharEdit->setText(termChar);
+    p_termCharEdit->setText(encodeTermCharEscapes(termChar));
 }
 
 void CommunicationDialog::updateDeviceListItem(const QString& hwKey)
