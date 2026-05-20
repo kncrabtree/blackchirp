@@ -211,7 +211,8 @@ keyrings, so import into both if you plan to verify both formats:
 .. code-block:: console
 
     $ gpg --keyserver keys.openpgp.org --recv-keys 898734DF7EDBDE45
-    $ gpg --export --armor 898734DF7EDBDE45 | sudo rpm --import /dev/stdin
+    $ gpg --export --armor 898734DF7EDBDE45 > blackchirp-release.asc
+    $ sudo rpm --import blackchirp-release.asc
 
 For an RPM, the signature is embedded — ``zypper install`` and
 ``dnf install`` verify it automatically once the key is imported, and
