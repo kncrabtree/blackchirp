@@ -154,8 +154,15 @@ Hardware drivers
   termination character, surfaced in the Communication Settings
   dialog as the single source of truth. Hardware drivers no longer
   seed these values from their constructors; the dialog is the only
-  place where they are configured. See
-  :ref:`hardware-menu-communication`.
+  place where they are configured. The on-disk layout for these
+  keys also changed: v1.x stored ``timeout`` and ``termChar`` at the
+  top of each hardware group, while 2.0 stores them under a
+  per-protocol sub-group (``rs232``, ``tcp``, ``gpib``, ``custom``,
+  ``virtual``) so a single device can carry different communication
+  parameters for each protocol it supports. See
+  :ref:`hardware-menu-communication`; users migrating from v1.x can
+  recover their previous values from the
+  :ref:`v1.x settings file <v1tov2-comm-defaults>`.
 - Modernized the GPIB controller architecture so multiple GPIB
   controllers (mixed LAN and RS232) cohabitate in one
   installation. See :doc:`/user_guide/hardware_details`.

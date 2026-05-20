@@ -15,7 +15,7 @@ project(Blackchirp
 # silently sticky across releases — a checkout that switched from
 # `release` back to `alpha` would still emit packages stamped `release`
 # until someone manually cleared the cache.
-set(BC_RELEASE_VERSION "beta")
+set(BC_RELEASE_VERSION "alpha1")
 
 # Get git build version
 execute_process(

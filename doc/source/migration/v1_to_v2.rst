@@ -39,15 +39,15 @@ Do the following on your existing v1.x installation before installing
    down (or screenshot) the values you depend on: the hardware list
    compiled into the binary, your current ``config.pri`` settings, the
    per-device communication parameters (port, baud, IP address, GPIB
-   address), and your AWG protection / gate timings. Blackchirp 2.0
-   does not read your v1.x QSettings file (see
-   :ref:`v1tov2-qsettings` below), so this list is your reference for
-   recreating the configuration in 2.0. Your v1.x settings are not
-   lost even if you skip this step: 2.0 writes its settings into a
-   separate namespace and never overwrites the v1.x file. The v1.x
-   configuration file (or registry key on Windows) remains on disk
-   and can be inspected at any time; see :ref:`v1tov2-qsettings`
-   below for the per-platform location.
+   address, read timeout, and termination character), and your AWG
+   protection / gate timings. Blackchirp 2.0 does not read your v1.x
+   QSettings file (see :ref:`v1tov2-qsettings` below), so this list
+   is your reference for recreating the configuration in 2.0. Your
+   v1.x settings are not lost even if you skip this step: 2.0 writes
+   its settings into a separate namespace and never overwrites the
+   v1.x file. The v1.x configuration file (or registry key on
+   Windows) remains on disk and can be inspected at any time; see
+   :ref:`v1tov2-qsettings` below for the per-platform location.
 #. **Back up your data directory** as a precaution. Existing
    experiment files remain readable in 2.0, but a backup protects
    against any operator error during the transition.
@@ -151,7 +151,22 @@ QSettings application name, so 2.x stores its settings under
 ``CrabtreeLab/Blackchirp2`` (and a future 3.x release would write
 ``Blackchirp3``). Settings written by v1.x are not read by 2.0; the
 two versions remain isolated even on the same machine. See
-:ref:`app-config-settings-isolation` for the per-platform file paths.
+:ref:`app-config-settings-isolation` for the per-platform 2.0 file
+paths.
+
+The v1.x settings live under the unversioned ``Blackchirp``
+namespace at the per-platform path that matches your operating
+system:
+
+- **Linux** — ``~/.config/CrabtreeLab/Blackchirp.conf`` (plain INI,
+  readable with any text editor).
+- **macOS** — ``~/Library/Preferences/CrabtreeLab.Blackchirp.plist``
+  (binary plist; open with ``plutil -p <path>`` or the *Preferences
+  Editor* from Xcode's Additional Tools).
+- **Windows** — registry key
+  ``HKEY_CURRENT_USER\Software\CrabtreeLab\Blackchirp`` (open
+  ``regedit`` and navigate to the path; export the subtree to a
+  ``.reg`` file for safe-keeping).
 
 **What to do.** No action is *required*; 2.0 simply does not see your
 old settings file. Your v1.x settings are not lost — they remain in
@@ -162,6 +177,30 @@ scratch on 2.0. Use the configuration notes you took during the
 reference. Do not attempt to copy the v1.x QSettings file into the
 2.0 namespace; the schema has changed in too many places for a
 direct copy to be valid.
+
+.. _v1tov2-comm-defaults:
+
+If you need to recover the per-device read timeout or termination
+character from a v1.x installation, the values live at the top of
+each hardware group in the v1.x file:
+
+.. code-block:: ini
+
+   [PGen.qc9528]
+   timeout=200
+   termChar=\r\n
+   ...
+
+The 2.0 Communication Settings dialog
+(:ref:`hardware-menu-communication`) stores these per-protocol
+instead — a single device has independent ``timeout`` and
+``termChar`` entries for each communication protocol it supports
+(``rs232``, ``tcp``, ``gpib``, ``custom``, ``virtual``), so the same
+keys appear under sub-groups like ``[PGen.main/rs232]`` in the 2.0
+settings file. When you build each new hardware profile, copy the
+v1.x timeout and termination character into the dialog under the
+protocol you intend to use; the dialog's defaults (200 ms, ``\n``)
+otherwise apply.
 
 Hardware Selection: Compile-Time Lists to Runtime Profiles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
