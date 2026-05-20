@@ -95,6 +95,12 @@ The screenshot above shows the Advanced sub-tab for the PulseGenerator;
 the Settings sub-tab would render the Required and Important groups
 described below.
 
+Each row's tooltip shows the registered description followed by the
+native settings key on its own line (``Key: <key>``). The key is the
+string passed to ``self.settings.get`` / ``self.settings.set`` from a
+:doc:`Python hardware driver <python_hardware/writing_a_driver>` and
+to ``SettingsStorage::get`` / ``set`` from C++.
+
 **Required**
    Parameters that must be set correctly at profile creation time (for
    example, the number of digitizer input channels or the AWG output

@@ -104,6 +104,12 @@ booleans, strings, lists, and dicts pass through cleanly. Cast to the
 expected Python type if the stored value may have come from a Qt
 ``QVariant`` whose runtime type does not match.
 
+The native key string that :meth:`get` and :meth:`set` expect for any
+registered setting is shown in the tooltip of that setting's row on
+the :ref:`Settings tab <hwdialog-settings>` of the Hardware Dialog.
+Hover the label or value cell to read the key off the bottom of the
+tooltip.
+
 .. _python-hardware-log-proxy:
 
 ``self.log`` — logging

@@ -19,6 +19,18 @@
 #include <gui/dialog/hwarrayeditdialog.h>
 #include <data/storage/settingsstorage.h>
 
+namespace {
+
+// The native settings key is appended so users writing Python hardware
+// drivers can read off the string to pass to self.settings.get / .set.
+template <class Def>
+QString settingTooltip(const Def &def)
+{
+    return def.description + "\nKey: "_L1 + def.key;
+}
+
+} // namespace
+
 // ---------------------------------------------------------------------------
 
 HwSettingsWidget::HwSettingsWidget(const QString &hwType,
@@ -103,19 +115,20 @@ void HwSettingsWidget::populate(const QString &storageKey)
     for (const auto &def : settingDefs) {
         QVariant val = currentValue(def);
 
+        const QString tooltip = settingTooltip(def);
         switch (def.priority) {
         case HwSettingPriority::Required:
             if (d_mode == HwSettingsMode::Create) {
                 auto *w = makeScalarWidget(def, val);
                 if (w) {
-                    w->setToolTip(def.description);
+                    w->setToolTip(tooltip);
                     d_scalarWidgets[def.key] = w;
                     p_requiredLayout->addRow(def.label + ":", w);
                 }
             } else {
                 // Edit mode: read-only text
                 auto *lbl = new QLabel(val.toString(), this);
-                lbl->setToolTip(def.description);
+                lbl->setToolTip(tooltip);
                 p_requiredLayout->addRow(def.label + ":", lbl);
             }
             hasRequired = true;
@@ -124,9 +137,9 @@ void HwSettingsWidget::populate(const QString &storageKey)
         case HwSettingPriority::Important: {
             auto *w = makeScalarWidget(def, val);
             if (w) {
-                w->setToolTip(def.description);
+                w->setToolTip(tooltip);
                 d_scalarWidgets[def.key] = w;
-                p_importantTable->addSettingRow(def.label, w, def.description);
+                p_importantTable->addSettingRow(def.label, w, tooltip);
             }
             hasImportant = true;
             break;
@@ -135,9 +148,9 @@ void HwSettingsWidget::populate(const QString &storageKey)
         case HwSettingPriority::Optional: {
             auto *w = makeScalarWidget(def, val);
             if (w) {
-                w->setToolTip(def.description);
+                w->setToolTip(tooltip);
                 d_scalarWidgets[def.key] = w;
-                p_advancedTable->addSettingRow(def.label, w, def.description);
+                p_advancedTable->addSettingRow(def.label, w, tooltip);
             }
             hasAdvanced = true;
             break;
@@ -164,7 +177,7 @@ void HwSettingsWidget::populate(const QString &storageKey)
             {
                 QString summary = QString("%1 entries").arg(entries.size());
                 auto *lbl = new QLabel(summary, this);
-                lbl->setToolTip(def.description);
+                lbl->setToolTip(settingTooltip(def));
                 if (d_mode == HwSettingsMode::Create) {
                     // Add an Edit button alongside the summary
                     auto *container = new QWidget(this);
@@ -315,7 +328,7 @@ void HwSettingsWidget::addArrayTableRow(SettingsTable *table, const HwArraySetti
         }
     });
 
-    table->addSettingRow(def.label, countLabel, btn, def.description);
+    table->addSettingRow(def.label, countLabel, btn, settingTooltip(def));
 }
 
 QStringList HwSettingsWidget::subKeysForArray(const HwArraySettingDef &def) const
