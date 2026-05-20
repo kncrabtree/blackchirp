@@ -48,22 +48,15 @@ MSO64B::MSO64B(const QString& label, QObject *parent) :
     d_waitingForReply(false), d_foundHeader(false),
     d_headerNumBytes(0), d_waveformBytes(0)
 {
-
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 3000);
-    setDefault(BC::Key::Comm::termChar, QString("\n"));
-
     save();
 }
 
 MSO64B::~MSO64B()
 {
-
 }
 
 bool MSO64B::testConnection()
 {
-
     p_comm->writeCmd(QString("DCL\n"));
     p_comm->writeCmd(QString("*CLS\n"));
     QByteArray resp = scopeQueryCmd(QString("*IDN?\n"));
@@ -621,7 +614,6 @@ void MSO64B::beginAcquisition()
 
 void MSO64B::endAcquisition()
 {
-
     if(d_enabledForExperiment)
     {
         //stop parsing waveforms

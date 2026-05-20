@@ -76,9 +76,6 @@ SirahCobra::SirahCobra(const QString& label, QObject *parent)
                  });
     }
 
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 200);
-    setDefault(BC::Key::Comm::termChar, QString(""));
 
     save();
 
@@ -88,7 +85,6 @@ SirahCobra::SirahCobra(const QString& label, QObject *parent)
 
 void SirahCobra::initialize()
 {
-
     if(get(hasExtStage,false))
     {
         p_extStagePort = new Rs232Instrument(d_key+"ExtStage",this);

@@ -39,16 +39,12 @@ Mks647c::Mks647c(const QString& label, QObject *parent) :
         d_gcfList.append(0.0);
     }
 
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 1000);
-    setDefault(BC::Key::Comm::termChar, QString("\r\n"));
 
     save();
 }
 
 bool Mks647c::fcTestConnection()
 {
-
     QByteArray resp = p_comm->queryCmd(QString("ID;\r\n"),true);
 
     if(resp.isEmpty())

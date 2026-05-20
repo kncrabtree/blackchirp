@@ -10,10 +10,6 @@ REGISTER_HARDWARE_PROTOCOLS(Opolette, CommunicationProtocol::Tcp)
 Opolette::Opolette(const QString& label, QObject *parent)
     : LifLaser(QString(Opolette::staticMetaObject.className()), label, parent)
 {
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 20000);
-    setDefault(BC::Key::Comm::termChar, QString("\n"));
-
     save();
 }
 

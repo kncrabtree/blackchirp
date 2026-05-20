@@ -16,17 +16,12 @@ REGISTER_HARDWARE_SETTINGS(IntellisysIQPlus,
 IntellisysIQPlus::IntellisysIQPlus(const QString& label, QObject *parent) :
     PressureController(QString(IntellisysIQPlus::staticMetaObject.className()), label, false, parent)
 {
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 1000);
-    setDefault(BC::Key::Comm::termChar, QString("\r\n"));
-
     save();
 }
 
 
 bool IntellisysIQPlus::pcTestConnection()
 {
-
     QByteArray resp = p_comm->queryCmd(QString("R38\n"));
     if(resp.isEmpty())
     {

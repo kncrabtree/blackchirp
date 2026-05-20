@@ -10,8 +10,6 @@ PrologixGpibController::PrologixGpibController(const QString& impl, const QStrin
     setDefault(BC::Key::HW::commType, static_cast<int>(commType));
     
     // Common communication defaults
-    setDefault(BC::Key::Comm::timeout, 1000);
-    setDefault(BC::Key::Comm::termChar, QString("\n"));
 
     save();
 }

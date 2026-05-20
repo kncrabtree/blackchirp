@@ -12,10 +12,6 @@ REGISTER_HARDWARE_SETTINGS(HP83712B,
 HP83712B::HP83712B(const QString& label, QObject *parent)
     : Clock{1, true, QString(HP83712B::staticMetaObject.className()), label, parent}
 {
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 500);
-    setDefault(BC::Key::Comm::termChar, QString("\n"));
-
     save();
 }
 

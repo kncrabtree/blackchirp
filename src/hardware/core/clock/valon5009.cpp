@@ -13,10 +13,6 @@ REGISTER_HARDWARE_SETTINGS(Valon5009,
 Valon5009::Valon5009(const QString& label, QObject *parent) :
     Clock(2, true, QString(Valon5009::staticMetaObject.className()), label, parent)
 {
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 500);
-    setDefault(BC::Key::Comm::termChar, QString("\n\r"));
-
     save();
 }
 
@@ -69,7 +65,6 @@ bool Valon5009::valonWriteCmd(const QString &cmd)
 
 QByteArray Valon5009::valonQueryCmd(const QString &cmd)
 {
-
     QByteArray resp = p_comm->queryCmd(cmd);
     resp = resp.trimmed();
     while(true)

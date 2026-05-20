@@ -15,11 +15,6 @@ REGISTER_HARDWARE_SETTINGS(AWG70002a,
 AWG70002a::AWG70002a(const QString& label, QObject *parent) :
     AWG(QString(AWG70002a::staticMetaObject.className()), label, parent)
 {
-
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 10000);
-    setDefault(BC::Key::Comm::termChar, QString("\n"));
-
     save();
 }
 

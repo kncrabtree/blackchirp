@@ -39,17 +39,11 @@ REGISTER_HARDWARE_ARRAY_ENTRY(DSOx92004A, sampleRates,
 DSOx92004A::DSOx92004A(const QString& label, QObject *parent) :
     FtmwDigitizer(QString(DSOx92004A::staticMetaObject.className()), label, parent)
 {
-
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 1000);
-    setDefault(BC::Key::Comm::termChar, QString("\n"));
-
     save();
 }
 
 bool DSOx92004A::testConnection()
 {
-
     QByteArray resp = p_comm->queryCmd(QString("*IDN?\n"));
 
     if(resp.isEmpty())

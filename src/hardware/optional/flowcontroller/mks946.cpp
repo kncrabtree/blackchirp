@@ -31,10 +31,6 @@ REGISTER_HARDWARE_SETTINGS(Mks946,
 Mks946::Mks946(const QString& label, QObject *parent) :
     FlowController(QString(Mks946::staticMetaObject.className()), label, parent)
 {
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 100);
-    setDefault(BC::Key::Comm::termChar, QString(";FF"));
-
     save();
 }
 

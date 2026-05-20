@@ -19,11 +19,6 @@ REGISTER_HARDWARE_SETTINGS(M8195A,
 
 M8195A::M8195A(const QString& label, QObject *parent) : AWG(QString(M8195A::staticMetaObject.className()), label, parent)
 {
-
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 10000);
-    setDefault(BC::Key::Comm::termChar, QString("\n"));
-
     save();
 }
 
@@ -31,7 +26,6 @@ M8195A::M8195A(const QString& label, QObject *parent) : AWG(QString(M8195A::stat
 
 bool M8195A::testConnection()
 {
-
     QByteArray resp = p_comm->queryCmd(QString("*IDN?\n"));
 
     if(resp.isEmpty())

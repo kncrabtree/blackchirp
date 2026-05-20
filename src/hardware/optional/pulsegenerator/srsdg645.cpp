@@ -24,9 +24,6 @@ REGISTER_HARDWARE_SETTINGS(SRSDG645,
 SRSDG645::SRSDG645(const QString& label, QObject *parent)
     : PulseGenerator{QString(SRSDG645::staticMetaObject.className()), label, 4, parent}
 {
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 500);
-    setDefault(BC::Key::Comm::termChar, QString("\r\n"));
 }
 
 

@@ -41,11 +41,6 @@ REGISTER_HARDWARE_ARRAY_ENTRY(DSOv204A, sampleRates,
 DSOv204A::DSOv204A(const QString& label, QObject *parent)
     : FtmwDigitizer{QString(DSOv204A::staticMetaObject.className()), label, parent}
 {
-
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 1000);
-    setDefault(BC::Key::Comm::termChar, QString("\n"));
-
     save();
 }
 
@@ -411,7 +406,6 @@ bool DSOv204A::testConnection()
 
 void DSOv204A::readWaveform()
 {
-
     QByteArray resp = p_socket->readAll();
 //    hwDebug(u"%1: In readWaveform. Response: %2"_s.arg(d_key, QString(resp)));
 

@@ -10,10 +10,6 @@ REGISTER_HARDWARE_PROTOCOLS(Lakeshore218, CommunicationProtocol::Rs232)
 Lakeshore218::Lakeshore218(const QString& label, QObject *parent) :
     TemperatureController(QString(Lakeshore218::staticMetaObject.className()), label, 8, parent)
 {
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 500);
-    setDefault(BC::Key::Comm::termChar, QString("\r\n"));
-
     save();
 }
 

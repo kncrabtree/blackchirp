@@ -150,6 +150,12 @@ Hardware drivers
   object via the per-device dialog, with protocol-specific
   widgets backed by group-based settings storage. See
   :doc:`/user_guide/hwdialog`.
+- Communication read defaults are 200 ms timeout and ``\n``
+  termination character, surfaced in the Communication Settings
+  dialog as the single source of truth. Hardware drivers no longer
+  seed these values from their constructors; the dialog is the only
+  place where they are configured. See
+  :ref:`hardware-menu-communication`.
 - Modernized the GPIB controller architecture so multiple GPIB
   controllers (mixed LAN and RS232) cohabitate in one
   installation. See :doc:`/user_guide/hardware_details`.

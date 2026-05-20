@@ -232,18 +232,13 @@ void CommunicationProtocol::loadCommReadOptions()
         break;
     default:
         // No read options for None or unknown protocols, use defaults
-        setReadOptions(1000, "");
+        setReadOptions(200, "\n");
         return;
     }
-    
-    // Load read options using native SettingsStorage group support
-    // Use hardware-specific defaults if user hasn't configured protocol settings
-    int defaultTimeout = s.get<int>(BC::Key::Comm::timeout, 1000);
-    QString defaultTermChar = s.get<QString>(BC::Key::Comm::termChar, QString(""));
-    
-    int timeout = s.getGroupValue<int>(protocolKey, BC::Key::Comm::timeout, defaultTimeout);
-    QString termChar = s.getGroupValue<QString>(protocolKey, BC::Key::Comm::termChar, defaultTermChar);
-    
+
+    int timeout = s.getGroupValue<int>(protocolKey, BC::Key::Comm::timeout, 200);
+    QString termChar = s.getGroupValue<QString>(protocolKey, BC::Key::Comm::termChar, QString("\n"));
+
     setReadOptions(timeout, termChar);
 }
 

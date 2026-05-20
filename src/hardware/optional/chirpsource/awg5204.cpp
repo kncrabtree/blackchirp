@@ -18,11 +18,6 @@ REGISTER_HARDWARE_SETTINGS(AWG5204,
 AWG5204::AWG5204(const QString& label, QObject *parent) :
     AWG(QString(AWG5204::staticMetaObject.className()), label, parent)
 {
-
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 10000);
-    setDefault(BC::Key::Comm::termChar, QString("\n"));
-
     save();
 }
 

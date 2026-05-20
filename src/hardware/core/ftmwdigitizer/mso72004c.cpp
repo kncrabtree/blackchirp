@@ -36,17 +36,11 @@ MSO72004C::MSO72004C(const QString& label, QObject *parent) :
     d_waitingForReply(false), d_foundHeader(false),
     d_headerNumBytes(0), d_waveformBytes(0)
 {
-
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 1000);
-    setDefault(BC::Key::Comm::termChar, QString("\n"));
-
     save();
 }
 
 MSO72004C::~MSO72004C()
 {
-
 }
 
 
@@ -605,7 +599,6 @@ void MSO72004C::beginAcquisition()
 
 void MSO72004C::endAcquisition()
 {
-
     if(d_enabledForExperiment)
     {
         //stop parsing waveforms

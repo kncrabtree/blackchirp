@@ -37,22 +37,15 @@ Dpo71254b::Dpo71254b(const QString& label, QObject *parent) :
     d_waitingForReply(false), d_foundHeader(false),
     d_headerNumBytes(0), d_waveformBytes(0)
 {
-
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 1000);
-    setDefault(BC::Key::Comm::termChar, QString("\n"));
-
     save();
 }
 
 Dpo71254b::~Dpo71254b()
 {
-
 }
 
 bool Dpo71254b::testConnection()
 {
-
     p_comm->writeCmd(QString("*CLS\n"));
     p_comm->writeCmd(QString("*CLS\n"));
     QByteArray resp = scopeQueryCmd(QString("*IDN?\n"));
@@ -612,7 +605,6 @@ void Dpo71254b::beginAcquisition()
 
 void Dpo71254b::endAcquisition()
 {
-
     if(d_enabledForExperiment)
     {
         //stop parsing waveforms

@@ -34,22 +34,15 @@ Dsa71604c::Dsa71604c(const QString& label, QObject *parent) :
     d_waitingForReply(false), d_foundHeader(false),
     d_headerNumBytes(0), d_waveformBytes(0)
 {
-
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 3000);
-    setDefault(BC::Key::Comm::termChar, QString("\n"));
-
     save();
 }
 
 Dsa71604c::~Dsa71604c()
 {
-
 }
 
 bool Dsa71604c::testConnection()
 {
-
     p_comm->writeCmd(QString("*CLS\n"));
     p_comm->writeCmd(QString("*CLS\n"));
     QByteArray resp = scopeQueryCmd(QString("*IDN?\n"));
@@ -602,7 +595,6 @@ void Dsa71604c::beginAcquisition()
 
 void Dsa71604c::endAcquisition()
 {
-
     if(d_enabledForExperiment)
     {
         //stop parsing waveforms

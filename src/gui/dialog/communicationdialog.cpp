@@ -500,8 +500,8 @@ void CommunicationDialog::loadReadOptions(CommunicationProtocol::CommType protoc
 {
     if(d_currentDeviceKey.isEmpty()) {
         // Use defaults if no device selected
-        p_timeoutSpinBox->setValue(1000);
-        p_termCharEdit->clear();
+        p_timeoutSpinBox->setValue(200);
+        p_termCharEdit->setText("\\n"_L1);
         return;
     }
     
@@ -528,14 +528,14 @@ void CommunicationDialog::loadReadOptions(CommunicationProtocol::CommType protoc
         break;
     default:
         // Use defaults for None or unknown protocols
-        p_timeoutSpinBox->setValue(1000);
-        p_termCharEdit->clear();
+        p_timeoutSpinBox->setValue(200);
+        p_termCharEdit->setText("\\n"_L1);
         return;
     }
-    
+
     // Load read options from group settings with sensible defaults
-    int timeout = storage.getGroupValue<int>(protocolKey, BC::Key::Comm::timeout, 1000);
-    QString termChar = storage.getGroupValue<QString>(protocolKey, BC::Key::Comm::termChar, QString());
+    int timeout = storage.getGroupValue<int>(protocolKey, BC::Key::Comm::timeout, 200);
+    QString termChar = storage.getGroupValue<QString>(protocolKey, BC::Key::Comm::termChar, QString("\n"));
     
     // Update UI controls
     p_timeoutSpinBox->setValue(timeout);

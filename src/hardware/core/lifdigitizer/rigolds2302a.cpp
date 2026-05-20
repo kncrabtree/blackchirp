@@ -50,9 +50,6 @@ RigolDS2302A::RigolDS2302A(const QString& label, QObject *parent)
                      {{srText,"1000 MSa/s"},{srValue,1e9}}
                  });
 
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 1000);
-    setDefault(BC::Key::Comm::termChar, QString("\n"));
 
     save();
 }
