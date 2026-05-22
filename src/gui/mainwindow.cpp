@@ -1278,23 +1278,29 @@ void MainWindow::launchRuntimeHardwareConfigDialog()
 
     auto d = new RuntimeHardwareConfigDialog(this);
     
-    // Phase 3.4.3 - Dynamic UI integration with runtime hardware configuration
-    // Check if configuration changed when dialog closes (regardless of accept/reject)
-    // and rebuild UI before hardware synchronization
-    connect(d, &QDialog::finished, [this, initialHardware]() {
+    // Rebuild UI and resync hardware after the dialog closes, but only
+    // when something actually needs applying. The dialog's reject handler
+    // restores the original RuntimeHardwareConfig and reverts staged
+    // library changes, so a plain Cancel leaves currentHardware equal to
+    // initialHardware and must not trigger a redundant sync.
+    connect(d, &QDialog::finished, [this, initialHardware](int result) {
         const auto& config = RuntimeHardwareConfig::constInstance();
         auto currentHardware = config.getCurrentHardware();
-        
-        // Check if hardware configuration actually changed
-        if (initialHardware != currentHardware) {
+        const bool hardwareChanged = (initialHardware != currentHardware);
+
+        if (hardwareChanged) {
             // UI must be rebuilt BEFORE hardware synchronization so that
             // UI elements exist to receive connectionResult signals during testing
             clearHardwareUI();
             buildHardwareUI();
         }
-        
-        // Trigger hardware synchronization - UI elements ready to receive signals
-        QMetaObject::invokeMethod(p_hwm, &HardwareManager::syncWithRuntimeConfig, Qt::QueuedConnection);
+
+        // Sync on accept (library-only changes may not show in the hardware
+        // diff) or whenever the hardware set actually differs from what was
+        // captured before the dialog opened.
+        if (result == QDialog::Accepted || hardwareChanged) {
+            QMetaObject::invokeMethod(p_hwm, &HardwareManager::syncWithRuntimeConfig, Qt::QueuedConnection);
+        }
     });
     
     connect(d, &QDialog::finished, [this](int result) {
