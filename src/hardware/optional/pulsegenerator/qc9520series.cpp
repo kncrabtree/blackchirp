@@ -7,6 +7,15 @@ REGISTER_HARDWARE_PROTOCOLS(Qc9520Series,
     CommunicationProtocol::Rs232,
     CommunicationProtocol::Tcp,
     CommunicationProtocol::Gpib)
+REGISTER_COMM_DEFAULTS(Qc9520Series, CommunicationProtocol::Rs232,
+    {BC::Key::Comm::timeout, 200},
+    {BC::Key::Comm::termChar, QString("\r\n")})
+REGISTER_COMM_DEFAULTS(Qc9520Series, CommunicationProtocol::Tcp,
+    {BC::Key::Comm::timeout, 200},
+    {BC::Key::Comm::termChar, QString("\r\n")})
+REGISTER_COMM_DEFAULTS(Qc9520Series, CommunicationProtocol::Gpib,
+    {BC::Key::Comm::timeout, 200},
+    {BC::Key::Comm::termChar, QString("\r\n")})
 REGISTER_HARDWARE_SETTINGS(Qc9520Series,
     {BC::Key::PGen::minWidth, "Min Pulse Width (us)",
      "Minimum pulse width in microseconds",

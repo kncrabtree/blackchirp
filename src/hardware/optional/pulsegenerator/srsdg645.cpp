@@ -6,6 +6,9 @@ using namespace BC::Key::PGen;
 // Register hardware implementation
 REGISTER_HARDWARE_META(SRSDG645, "Stanford Research Systems DG645 delay generator")
 REGISTER_HARDWARE_PROTOCOLS(SRSDG645, CommunicationProtocol::Rs232)
+REGISTER_COMM_DEFAULTS(SRSDG645, CommunicationProtocol::Rs232,
+    {BC::Key::Comm::timeout, 500},
+    {BC::Key::Comm::termChar, QString("\r\n")})
 REGISTER_HARDWARE_SETTINGS(SRSDG645,
     {BC::Key::PGen::numChannels, "Number of Channels",
      "Number of pulse output channels",

@@ -4,6 +4,9 @@
 // Register hardware implementation
 REGISTER_HARDWARE_META(HP83712B, "Hewlett-Packard 83712B Synthesized Signal Generator (1-20000 MHz)")
 REGISTER_HARDWARE_PROTOCOLS(HP83712B, CommunicationProtocol::Gpib)
+REGISTER_COMM_DEFAULTS(HP83712B, CommunicationProtocol::Gpib,
+    {BC::Key::Comm::timeout, 500},
+    {BC::Key::Comm::termChar, QString("\n")})
 REGISTER_HARDWARE_SETTINGS(HP83712B,
     {BC::Key::Clock::minFreq, "Min Frequency (MHz)", "Minimum output frequency in MHz", 1.0, 0.0, QVariant{}, HwSettingPriority::Important},
     {BC::Key::Clock::maxFreq, "Max Frequency (MHz)", "Maximum output frequency in MHz", 20000.0, 0.0, QVariant{}, HwSettingPriority::Important}

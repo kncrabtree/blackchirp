@@ -76,6 +76,20 @@ void HardwareObject::applyRegisteredSettings(const QString& hwType)
         if (!containsArray(it.key()) && !it.value().entries.empty())
             setArray(it.key(), it.value().entries);
     }
+
+    // Seed per-protocol communication defaults registered via REGISTER_COMM_DEFAULTS.
+    // setGroupDefault is write-if-absent, so a value the user has already
+    // configured in the Communication dialog is never overwritten. Protocols and
+    // keys with no registered default fall back to the global literals in
+    // CommunicationProtocol::loadCommReadOptions().
+    auto commDefaults = reg.getCommDefaults(hwType, d_model);
+    for (auto it = commDefaults.cbegin(); it != commDefaults.cend(); ++it) {
+        const QString group = CommunicationProtocol::protocolGroupKey(it.key());
+        if (group.isEmpty())
+            continue;
+        for (const auto& cd : it.value())
+            setGroupDefault(group, cd.key, cd.value);
+    }
 }
 
 QString HardwareObject::errorString()

@@ -6,6 +6,9 @@
 // Register hardware implementation
 REGISTER_HARDWARE_META(RigolDS2302A, "Rigol DS2302A LIF Scope")
 REGISTER_HARDWARE_PROTOCOLS(RigolDS2302A, CommunicationProtocol::Tcp)
+REGISTER_COMM_DEFAULTS(RigolDS2302A, CommunicationProtocol::Tcp,
+    {BC::Key::Comm::timeout, 1000},
+    {BC::Key::Comm::termChar, QString("\n")})
 REGISTER_HARDWARE_SETTINGS(RigolDS2302A,
     {BC::Key::Digi::maxFullScale,       "Max Full Scale (V)",  "Maximum full-scale voltage range",                          2.5,     QVariant{}, QVariant{}, HwSettingPriority::Important},
     {BC::Key::Digi::maxBytes,           "Max Bytes/Point",     "Maximum bytes per sample",                                  1,       1,          4,          HwSettingPriority::Optional},

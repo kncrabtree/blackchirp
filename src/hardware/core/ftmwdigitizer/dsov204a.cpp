@@ -10,6 +10,9 @@ using namespace BC::Key::Digi;
 // Register this hardware implementation
 REGISTER_HARDWARE_META(DSOv204A, "Keysight DSOv204A FTMW Digitizer (20 GHz, 80 GS/s)")
 REGISTER_HARDWARE_PROTOCOLS(DSOv204A, CommunicationProtocol::Tcp)
+REGISTER_COMM_DEFAULTS(DSOv204A, CommunicationProtocol::Tcp,
+    {BC::Key::Comm::timeout, 1000},
+    {BC::Key::Comm::termChar, QString("\n")})
 REGISTER_HARDWARE_SETTINGS(DSOv204A,
     {maxFullScale,       "Max Full Scale (V)", "Maximum full scale voltage",
      4.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},

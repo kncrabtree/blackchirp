@@ -11,6 +11,9 @@ using namespace BC::Key::Digi;
 // Register this hardware implementation
 REGISTER_HARDWARE_META(MSO64B, "Tektronix MSO64B FTMW Digitizer (10 GHz, 50 GS/s)")
 REGISTER_HARDWARE_PROTOCOLS(MSO64B, CommunicationProtocol::Tcp)
+REGISTER_COMM_DEFAULTS(MSO64B, CommunicationProtocol::Tcp,
+    {BC::Key::Comm::timeout, 3000},
+    {BC::Key::Comm::termChar, QString("\n")})
 REGISTER_HARDWARE_SETTINGS(MSO64B,
     {minFullScale,       "Min Full Scale (V)", "Minimum full scale voltage",
      5e-3, QVariant{}, QVariant{}, HwSettingPriority::Optional},

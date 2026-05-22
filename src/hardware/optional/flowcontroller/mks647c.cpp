@@ -8,6 +8,9 @@ using namespace BC::Key::Flow;
 // Register hardware implementation using new metaobject system
 REGISTER_HARDWARE_META(Mks647c, "MKS 647C mass flow controller")
 REGISTER_HARDWARE_PROTOCOLS(Mks647c, CommunicationProtocol::Rs232)
+REGISTER_COMM_DEFAULTS(Mks647c, CommunicationProtocol::Rs232,
+    {BC::Key::Comm::timeout, 1000},
+    {BC::Key::Comm::termChar, QString("\r\n")})
 
 Mks647c::Mks647c(const QString& label, QObject *parent) :
     FlowController(QString(Mks647c::staticMetaObject.className()), label, parent),

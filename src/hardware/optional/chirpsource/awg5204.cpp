@@ -8,6 +8,9 @@
 // Register hardware implementation
 REGISTER_HARDWARE_META(AWG5204, "Tektronix AWG5204 AWG")
 REGISTER_HARDWARE_PROTOCOLS(AWG5204, CommunicationProtocol::Tcp)
+REGISTER_COMM_DEFAULTS(AWG5204, CommunicationProtocol::Tcp,
+    {BC::Key::Comm::timeout, 10000},
+    {BC::Key::Comm::termChar, QString("\n")})
 REGISTER_HARDWARE_SETTINGS(AWG5204,
     {BC::Key::AWG::rate, "Sample Rate (Hz)", "DAC output sample rate",
      10e9, 1e6, 1000e9, HwSettingPriority::Important},

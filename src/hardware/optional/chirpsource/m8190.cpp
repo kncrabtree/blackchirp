@@ -6,6 +6,9 @@
 // Register hardware implementation
 REGISTER_HARDWARE_META(M8190, "Keysight M8190 AWG")
 REGISTER_HARDWARE_PROTOCOLS(M8190, CommunicationProtocol::Tcp)
+REGISTER_COMM_DEFAULTS(M8190, CommunicationProtocol::Tcp,
+    {BC::Key::Comm::timeout, 10000},
+    {BC::Key::Comm::termChar, QString("\n")})
 REGISTER_HARDWARE_SETTINGS(M8190,
     {BC::Key::AWG::rate, "Sample Rate (Hz)", "DAC output sample rate",
      9.375e9, 1e6, 1000e9, HwSettingPriority::Important},

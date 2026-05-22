@@ -150,19 +150,18 @@ Hardware drivers
   object via the per-device dialog, with protocol-specific
   widgets backed by group-based settings storage. See
   :doc:`/user_guide/hwdialog`.
-- Communication read defaults are 200 ms timeout and ``\n``
-  termination character, surfaced in the Communication Settings
-  dialog as the single source of truth. Hardware drivers no longer
-  seed these values from their constructors; the dialog is the only
-  place where they are configured. The on-disk layout for these
-  keys also changed: v1.x stored ``timeout`` and ``termChar`` at the
-  top of each hardware group, while 2.0 stores them under a
+- Communication read settings — timeout and termination character —
+  are now per-protocol. v1.x stored ``timeout`` and ``termChar`` at
+  the top of each hardware group; 2.0 stores them under a
   per-protocol sub-group (``rs232``, ``tcp``, ``gpib``, ``custom``,
   ``virtual``) so a single device can carry different communication
-  parameters for each protocol it supports. See
-  :ref:`hardware-menu-communication`; users migrating from v1.x can
-  recover their previous values from the
-  :ref:`v1.x settings file <v1tov2-comm-defaults>`.
+  parameters for each protocol it supports. Drivers register
+  known-good per-protocol defaults, seeded when a device is first
+  configured and overridable in the Communication Settings dialog;
+  anything unregistered falls back to 200 ms timeout and ``\n``
+  termination character. See :ref:`hardware-menu-communication`;
+  users migrating from v1.x can recover their previous values from
+  the :ref:`v1.x settings file <v1tov2-comm-defaults>`.
 - Modernized the GPIB controller architecture so multiple GPIB
   controllers (mixed LAN and RS232) cohabitate in one
   installation. See :doc:`/user_guide/hardware_details`.

@@ -10,6 +10,9 @@ using namespace BC::Key::Digi;
 // Register this hardware implementation
 REGISTER_HARDWARE_META(DSOx92004A, "Keysight DSOx92004A FTMW Digitizer (20 GHz, 80 GS/s)")
 REGISTER_HARDWARE_PROTOCOLS(DSOx92004A, CommunicationProtocol::Tcp)
+REGISTER_COMM_DEFAULTS(DSOx92004A, CommunicationProtocol::Tcp,
+    {BC::Key::Comm::timeout, 1000},
+    {BC::Key::Comm::termChar, QString("\n")})
 REGISTER_HARDWARE_SETTINGS(DSOx92004A,
     {bandwidth,          "Bandwidth (MHz)",     "Analog bandwidth",
      20000.0, QVariant{}, QVariant{}, HwSettingPriority::Important}

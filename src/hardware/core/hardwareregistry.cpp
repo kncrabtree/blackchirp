@@ -428,6 +428,38 @@ bool HardwareRegistry::addBaseCustomCommDefs(const QString& className,
     return true;
 }
 
+bool HardwareRegistry::addCommDefaults(const QString& key, const QString& subKey,
+                                       CommunicationProtocol::CommType protocol,
+                                       const QVector<CommDefault>& defaults)
+{
+    QMutexLocker locker(&d_registryMutex);
+
+    QString registryKey = makeRegistryKey(key, subKey);
+    auto it = d_registrations.find(registryKey);
+
+    if (it == d_registrations.end()) {
+        qWarning() << "Cannot add comm defaults - hardware not registered:" << key << subKey;
+        return false;
+    }
+
+    it.value().commDefaults[protocol].append(defaults);
+    return true;
+}
+
+QMap<CommunicationProtocol::CommType, QVector<CommDefault>> HardwareRegistry::getCommDefaults(
+    const QString& key, const QString& subKey) const
+{
+    QMutexLocker locker(&d_registryMutex);
+
+    QString registryKey = makeRegistryKey(key, subKey);
+    auto it = d_registrations.find(registryKey);
+
+    if (it == d_registrations.end())
+        return {};
+
+    return it.value().commDefaults;
+}
+
 bool HardwareRegistry::addLibraryDependency(const QString& key, const QString& subKey, const QString& libraryName,
                                            std::function<VendorLibrary*()> libraryGetter)
 {

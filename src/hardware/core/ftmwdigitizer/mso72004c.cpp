@@ -11,6 +11,9 @@ using namespace BC::Key::Digi;
 // Register this hardware implementation
 REGISTER_HARDWARE_META(MSO72004C, "Tektronix MSO72004C FTMW Digitizer (20 GHz, 50 GS/s)")
 REGISTER_HARDWARE_PROTOCOLS(MSO72004C, CommunicationProtocol::Tcp)
+REGISTER_COMM_DEFAULTS(MSO72004C, CommunicationProtocol::Tcp,
+    {BC::Key::Comm::timeout, 1000},
+    {BC::Key::Comm::termChar, QString("\n")})
 REGISTER_HARDWARE_SETTINGS(MSO72004C,
     {maxRecordLength,    "Max Record Length",   "Maximum record length in samples",
      100000000, 0, QVariant{}, HwSettingPriority::Important}

@@ -203,41 +203,38 @@ bool CommunicationProtocol::bcTestConnection()
     return success;
 }
 
+QString CommunicationProtocol::protocolGroupKey(CommType type)
+{
+    switch(type) {
+    case Rs232:   return BC::Key::Comm::rs232;
+    case Tcp:     return BC::Key::Comm::tcp;
+    case Gpib:    return BC::Key::Comm::gpib;
+    case Custom:  return BC::Key::Comm::custom;
+    case Virtual: return BC::Key::Comm::hwVirtual;
+    case None:    break;
+    }
+    return {};
+}
+
 void CommunicationProtocol::loadCommReadOptions()
 {
     SettingsStorage s(d_key, SettingsStorage::Hardware);
-    
+
     // Get current communication type to determine which protocol settings to load
     auto commType = static_cast<CommunicationProtocol::CommType>(
         s.get(BC::Key::HW::commType, static_cast<int>(CommunicationProtocol::Virtual))
     );
-    
-    // Get the protocol key name for settings lookup
-    QString protocolKey;
-    switch(commType) {
-    case CommunicationProtocol::Rs232:
-        protocolKey = BC::Key::Comm::rs232;
-        break;
-    case CommunicationProtocol::Tcp:
-        protocolKey = BC::Key::Comm::tcp;
-        break;
-    case CommunicationProtocol::Gpib:
-        protocolKey = BC::Key::Comm::gpib;
-        break;
-    case CommunicationProtocol::Custom:
-        protocolKey = BC::Key::Comm::custom;
-        break;
-    case CommunicationProtocol::Virtual:
-        protocolKey = BC::Key::Comm::hwVirtual;
-        break;
-    default:
-        // No read options for None or unknown protocols, use defaults
-        setReadOptions(200, "\n");
+
+    const QString protocolKey = protocolGroupKey(commType);
+    if(protocolKey.isEmpty()) {
+        // No read options for None or unrecognized protocols, use fallbacks
+        setReadOptions(defaultReadTimeout, QString(defaultReadTermChar));
         return;
     }
 
-    int timeout = s.getGroupValue<int>(protocolKey, BC::Key::Comm::timeout, 200);
-    QString termChar = s.getGroupValue<QString>(protocolKey, BC::Key::Comm::termChar, QString("\n"));
+    int timeout = s.getGroupValue<int>(protocolKey, BC::Key::Comm::timeout, defaultReadTimeout);
+    QString termChar = s.getGroupValue<QString>(protocolKey, BC::Key::Comm::termChar,
+                                                QString(defaultReadTermChar));
 
     setReadOptions(timeout, termChar);
 }

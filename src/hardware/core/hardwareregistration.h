@@ -294,11 +294,47 @@ inline QStringList buildInheritanceChain(const QMetaObject* metaObj) {
             QVector<CustomCommDef>{__VA_ARGS__} \
         );
 
+/*!
+ * \brief Register default communication settings for a hardware implementation
+ *
+ * Declares per-protocol defaults for communication settings (timeout,
+ * termination character, and any other key within a protocol settings group).
+ * The defaults are seeded into the device's settings the first time the
+ * hardware object is constructed, via SettingsStorage::setGroupDefault — a
+ * value the user has already configured in the Communication dialog is never
+ * overwritten. Protocols/keys with no registered default fall back to the
+ * global literals.
+ *
+ * Invoke once per protocol; a driver supporting several transports calls the
+ * macro several times.
+ *
+ * Example:
+ * \code
+ *   REGISTER_COMM_DEFAULTS(Mks946, CommunicationProtocol::Rs232,
+ *       {BC::Key::Comm::timeout,  100},
+ *       {BC::Key::Comm::termChar, QString(";FF")})
+ * \endcode
+ *
+ * \param CLASS Hardware class name (must already be registered via REGISTER_HARDWARE_META)
+ * \param PROTOCOL CommunicationProtocol::CommType the defaults apply to
+ * \param ... One or more CommDefault initializer lists: {key, value}
+ */
+#define REGISTER_COMM_DEFAULTS(CLASS, PROTOCOL, ...) \
+    static bool BC_COMMDEF_VAR(CLASS, __COUNTER__) = \
+        HardwareRegistry::instance().addCommDefaults( \
+            findHardwareBaseType(&CLASS::staticMetaObject), \
+            QString(CLASS::staticMetaObject.className()), \
+            PROTOCOL, \
+            QVector<CommDefault>{__VA_ARGS__} \
+        );
+
 // Helpers for unique static variable names in array macros
 #define BC_ARRDEF_CONCAT(a, b) a##b
 #define BC_ARRDEF_VAR(CLASS, KEY) BC_ARRDEF_CONCAT(arraydef_##CLASS##_, __LINE__)
 #define BC_ARRENTRY_CONCAT(a, b) a##b
 #define BC_ARRENTRY_VAR(CLASS, N) BC_ARRENTRY_CONCAT(arrayentry_##CLASS##_, N)
+#define BC_COMMDEF_CONCAT(a, b) a##b
+#define BC_COMMDEF_VAR(CLASS, N) BC_COMMDEF_CONCAT(commdef_##CLASS##_, N)
 
 /*!
  * \brief Register hardware implementation using introspection (legacy)

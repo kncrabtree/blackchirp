@@ -12,6 +12,9 @@ using namespace BC::Key::Digi;
 // Register this hardware implementation
 REGISTER_HARDWARE_META(Dpo71254b, "Tektronix DPO71254B FTMW Digitizer (12.5 GHz, 50 GS/s)")
 REGISTER_HARDWARE_PROTOCOLS(Dpo71254b, CommunicationProtocol::Tcp)
+REGISTER_COMM_DEFAULTS(Dpo71254b, CommunicationProtocol::Tcp,
+    {BC::Key::Comm::timeout, 1000},
+    {BC::Key::Comm::termChar, QString("\n")})
 REGISTER_HARDWARE_SETTINGS(Dpo71254b,
     {multiBlock,         "Multi Block",         "Can block average and multi-record simultaneously",
      true, QVariant{}, QVariant{}, HwSettingPriority::Optional},

@@ -54,6 +54,7 @@ private slots:
     void testGroupConflicts();
     void testGroupMultipleValues();
     void testGroupKeys();
+    void testGroupDefault();
     void testCrossContamination();
 
 
@@ -900,6 +901,48 @@ void SettingsStorageTest::testGroupKeys()
     QVERIFY(!gk2.contains("groupB"));
     QVERIFY(gk2.contains("groupA"));
     QVERIFY(gk2.contains("groupC"));
+}
+
+void SettingsStorageTest::testGroupDefault()
+{
+    initSettingsFile();
+    clearGetters(false);
+    readAll();
+
+    const QString group = "defaultGroup";
+
+    // Seeds a value when the group key is absent
+    setGroupDefault(group, "timeout", 200);
+    QCOMPARE(getGroupValue<int>(group, "timeout", -1), 200);
+
+    // Does not overwrite an existing value (write-if-absent)
+    setGroupDefault(group, "timeout", 9999);
+    QCOMPARE(getGroupValue<int>(group, "timeout", -1), 200);
+
+    // Does not overwrite a value the user explicitly set, even afterward
+    QVERIFY(setGroupValue(group, "termChar", QString(";FF")));
+    setGroupDefault(group, "termChar", QString("\n"));
+    QCOMPARE(getGroupValue<QString>(group, "termChar", QString()), QString(";FF"));
+
+    // Distinct groups (e.g. per-protocol) are seeded independently
+    setGroupDefault("rs232", "timeout", 100);
+    setGroupDefault("tcp", "timeout", 20000);
+    QCOMPARE(getGroupValue<int>("rs232", "timeout", -1), 100);
+    QCOMPARE(getGroupValue<int>("tcp", "timeout", -1), 20000);
+
+    // Template overload type round-trips for non-int types
+    setGroupDefault(group, "termCharTemplate", QString("\r\n"));
+    QCOMPARE(getGroupValue<QString>(group, "termCharTemplate", QString()), QString("\r\n"));
+
+    // Default value of QVariant::Type 0 still counts as present (no re-seed)
+    setGroupDefault(group, "zero", 0);
+    setGroupDefault(group, "zero", 5);
+    QCOMPARE(getGroupValue<int>(group, "zero", -1), 0);
+
+    // write=true persists immediately and is visible to a fresh reader
+    setGroupDefault("persistGroup", "timeout", 500, true);
+    SettingsStorage readOnly;
+    QCOMPARE(readOnly.getGroupValue<int>("persistGroup", "timeout", -1), 500);
 }
 
 void SettingsStorageTest::testCrossContamination()

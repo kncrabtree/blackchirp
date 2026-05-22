@@ -6,6 +6,9 @@ using namespace BC::Key::TC;
 // Register hardware implementation
 REGISTER_HARDWARE_META(Lakeshore218, "Lakeshore 218 Temperature Controller")
 REGISTER_HARDWARE_PROTOCOLS(Lakeshore218, CommunicationProtocol::Rs232)
+REGISTER_COMM_DEFAULTS(Lakeshore218, CommunicationProtocol::Rs232,
+    {BC::Key::Comm::timeout, 500},
+    {BC::Key::Comm::termChar, QString("\r\n")})
 
 Lakeshore218::Lakeshore218(const QString& label, QObject *parent) :
     TemperatureController(QString(Lakeshore218::staticMetaObject.className()), label, 8, parent)

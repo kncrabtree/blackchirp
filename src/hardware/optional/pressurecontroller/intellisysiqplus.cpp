@@ -7,6 +7,9 @@ using namespace BC::Key::PController;
 // Register hardware implementation
 REGISTER_HARDWARE_META(IntellisysIQPlus, "Intellisys IQ+ Pressure Controller")
 REGISTER_HARDWARE_PROTOCOLS(IntellisysIQPlus, CommunicationProtocol::Rs232)
+REGISTER_COMM_DEFAULTS(IntellisysIQPlus, CommunicationProtocol::Rs232,
+    {BC::Key::Comm::timeout, 1000},
+    {BC::Key::Comm::termChar, QString("\r\n")})
 REGISTER_HARDWARE_SETTINGS(IntellisysIQPlus,
     {BC::Key::PController::min, "Min Pressure",
      "Minimum pressure reading (display range lower bound).",

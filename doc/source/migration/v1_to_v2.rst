@@ -197,10 +197,12 @@ instead — a single device has independent ``timeout`` and
 ``termChar`` entries for each communication protocol it supports
 (``rs232``, ``tcp``, ``gpib``, ``custom``, ``virtual``), so the same
 keys appear under sub-groups like ``[PGen.main/rs232]`` in the 2.0
-settings file. When you build each new hardware profile, copy the
-v1.x timeout and termination character into the dialog under the
-protocol you intend to use; the dialog's defaults (200 ms, ``\n``)
-otherwise apply.
+settings file. When you build each new hardware profile, Blackchirp
+seeds the communication settings with the driver's known-good
+defaults — for most devices these match the v1.x values, so no
+action is needed. Adjust them in the Communication Settings dialog
+only if your instrument is configured differently; a driver with no
+registered default falls back to 200 ms / ``\n``.
 
 Hardware Selection: Compile-Time Lists to Runtime Profiles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

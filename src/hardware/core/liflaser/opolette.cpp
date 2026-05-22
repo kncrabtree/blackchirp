@@ -4,6 +4,9 @@
 // Register hardware implementation
 REGISTER_HARDWARE_META(Opolette, "Opolette LIF Laser")
 REGISTER_HARDWARE_PROTOCOLS(Opolette, CommunicationProtocol::Tcp)
+REGISTER_COMM_DEFAULTS(Opolette, CommunicationProtocol::Tcp,
+    {BC::Key::Comm::timeout, 20000},
+    {BC::Key::Comm::termChar, QString("\n")})
 
 
 

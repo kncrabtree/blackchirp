@@ -6,6 +6,9 @@
 // Register hardware implementation
 REGISTER_HARDWARE_META(AWG7122B, "Tektronix AWG7122B AWG")
 REGISTER_HARDWARE_PROTOCOLS(AWG7122B, CommunicationProtocol::Tcp)
+REGISTER_COMM_DEFAULTS(AWG7122B, CommunicationProtocol::Tcp,
+    {BC::Key::Comm::timeout, 10000},
+    {BC::Key::Comm::termChar, QString("\n")})
 REGISTER_HARDWARE_SETTINGS(AWG7122B,
     {BC::Key::AWG::rate, "Sample Rate (Hz)", "DAC output sample rate",
      24e9, 1e6, 1000e9, HwSettingPriority::Important},

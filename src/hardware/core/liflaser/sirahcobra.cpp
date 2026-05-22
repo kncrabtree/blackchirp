@@ -14,6 +14,11 @@ using namespace BC::Key::LifLaser;
 // Register hardware implementation
 REGISTER_HARDWARE_META(SirahCobra, "Sirah Cobra LIF Laser")
 REGISTER_HARDWARE_PROTOCOLS(SirahCobra, CommunicationProtocol::Rs232)
+// The Cobra speaks a binary protocol with no text terminator, so the
+// termination character is deliberately empty.
+REGISTER_COMM_DEFAULTS(SirahCobra, CommunicationProtocol::Rs232,
+    {BC::Key::Comm::timeout, 200},
+    {BC::Key::Comm::termChar, QString("")})
 
 REGISTER_HARDWARE_SETTINGS(SirahCobra,
     {minPos,   "Min Position",     "Minimum laser wavelength/position",             450.0, QVariant{}, QVariant{}, HwSettingPriority::Important},

@@ -498,45 +498,26 @@ void CommunicationDialog::saveDeviceSettings()
 
 void CommunicationDialog::loadReadOptions(CommunicationProtocol::CommType protocolType)
 {
-    if(d_currentDeviceKey.isEmpty()) {
-        // Use defaults if no device selected
-        p_timeoutSpinBox->setValue(200);
-        p_termCharEdit->setText("\\n"_L1);
-        return;
-    }
-    
-    // Create a temporary SettingsStorage to access the current device's settings
-    SettingsStorage storage(d_currentDeviceKey, SettingsStorage::Hardware);
-    
-    // Get the protocol key for group access
-    QString protocolKey;
-    switch(protocolType) {
-    case CommunicationProtocol::Rs232:
-        protocolKey = BC::Key::Comm::rs232;
-        break;
-    case CommunicationProtocol::Tcp:
-        protocolKey = BC::Key::Comm::tcp;
-        break;
-    case CommunicationProtocol::Gpib:
-        protocolKey = BC::Key::Comm::gpib;
-        break;
-    case CommunicationProtocol::Custom:
-        protocolKey = BC::Key::Comm::custom;
-        break;
-    case CommunicationProtocol::Virtual:
-        protocolKey = BC::Key::Comm::hwVirtual;
-        break;
-    default:
-        // Use defaults for None or unknown protocols
-        p_timeoutSpinBox->setValue(200);
-        p_termCharEdit->setText("\\n"_L1);
+    const QString protocolKey = d_currentDeviceKey.isEmpty()
+        ? QString() : CommunicationProtocol::protocolGroupKey(protocolType);
+
+    if(protocolKey.isEmpty()) {
+        // No device selected, or None/unrecognized protocol: show the fallbacks
+        p_timeoutSpinBox->setValue(CommunicationProtocol::defaultReadTimeout);
+        p_termCharEdit->setText(
+            encodeTermCharEscapes(QString(CommunicationProtocol::defaultReadTermChar)));
         return;
     }
 
-    // Load read options from group settings with sensible defaults
-    int timeout = storage.getGroupValue<int>(protocolKey, BC::Key::Comm::timeout, 200);
-    QString termChar = storage.getGroupValue<QString>(protocolKey, BC::Key::Comm::termChar, QString("\n"));
-    
+    // Create a temporary SettingsStorage to access the current device's settings
+    SettingsStorage storage(d_currentDeviceKey, SettingsStorage::Hardware);
+
+    // Load read options from group settings, falling back to the global defaults
+    int timeout = storage.getGroupValue<int>(protocolKey, BC::Key::Comm::timeout,
+                                             CommunicationProtocol::defaultReadTimeout);
+    QString termChar = storage.getGroupValue<QString>(protocolKey, BC::Key::Comm::termChar,
+                                                      QString(CommunicationProtocol::defaultReadTermChar));
+
     // Update UI controls
     p_timeoutSpinBox->setValue(timeout);
     p_termCharEdit->setText(encodeTermCharEscapes(termChar));

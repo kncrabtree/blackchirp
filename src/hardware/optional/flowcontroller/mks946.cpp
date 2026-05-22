@@ -6,6 +6,9 @@ using namespace BC::Key::Flow;
 // Register hardware implementation using new metaobject system
 REGISTER_HARDWARE_META(Mks946, "MKS 946 vacuum transducer controller")
 REGISTER_HARDWARE_PROTOCOLS(Mks946, CommunicationProtocol::Rs232)
+REGISTER_COMM_DEFAULTS(Mks946, CommunicationProtocol::Rs232,
+    {BC::Key::Comm::timeout, 100},
+    {BC::Key::Comm::termChar, QString(";FF")})
 REGISTER_HARDWARE_ARRAY(Mks946, BC::Key::Flow::channels,
     "Flow Channels", "Per-channel mass flow controller configuration.", HwSettingPriority::Important)
 REGISTER_HARDWARE_ARRAY_ENTRY(Mks946, BC::Key::Flow::channels,

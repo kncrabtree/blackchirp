@@ -63,6 +63,8 @@ private slots:
     void testGetRegistration();
     void testIsRegistered();
     void testAllExpectedImplementationsRegistered();
+    void testCommDefaults();
+    void testCommDefaultsUnregistered();
     
     // Thread safety tests
     void testConcurrentRegistration();
@@ -346,6 +348,62 @@ void HardwareRegistryTest::testAllExpectedImplementationsRegistered()
                      "\"Windows hardware-registry truncation\".")
                      .arg(type, impl)));
     }
+}
+
+namespace {
+// Look up a CommDefault by key within a protocol's default list.
+QVariant commDefaultValue(const QMap<CommunicationProtocol::CommType, QVector<CommDefault>>& defs,
+                          CommunicationProtocol::CommType protocol, const QString& key)
+{
+    auto it = defs.find(protocol);
+    if (it == defs.end())
+        return {};
+    for (const auto& d : it.value()) {
+        if (d.key == key)
+            return d.value;
+    }
+    return {};
+}
+}
+
+void HardwareRegistryTest::testCommDefaults()
+{
+    QString testKey = QString("TestType_%1").arg(d_testCounter);
+    QString testSubKey = "commdefaults_test";
+    registerTestHardware(testKey, testSubKey, "Comm Defaults Test Hardware");
+
+    // Register per-protocol defaults
+    QVERIFY(d_registry->addCommDefaults(testKey, testSubKey, CommunicationProtocol::Rs232,
+        {{"timeout", 100}, {"termChar", QString(";FF")}}));
+    QVERIFY(d_registry->addCommDefaults(testKey, testSubKey, CommunicationProtocol::Tcp,
+        {{"timeout", 20000}}));
+
+    auto defs = d_registry->getCommDefaults(testKey, testSubKey);
+
+    QCOMPARE(defs.value(CommunicationProtocol::Rs232).size(), 2);
+    QCOMPARE(commDefaultValue(defs, CommunicationProtocol::Rs232, "timeout").toInt(), 100);
+    QCOMPARE(commDefaultValue(defs, CommunicationProtocol::Rs232, "termChar").toString(), QString(";FF"));
+    QCOMPARE(commDefaultValue(defs, CommunicationProtocol::Tcp, "timeout").toInt(), 20000);
+
+    // Protocols with no registered defaults are simply absent
+    QVERIFY(!defs.contains(CommunicationProtocol::Gpib));
+
+    // A second call for the same protocol appends rather than replaces
+    QVERIFY(d_registry->addCommDefaults(testKey, testSubKey, CommunicationProtocol::Tcp,
+        {{"termChar", QString("\n")}}));
+    defs = d_registry->getCommDefaults(testKey, testSubKey);
+    QCOMPARE(defs.value(CommunicationProtocol::Tcp).size(), 2);
+    QCOMPARE(commDefaultValue(defs, CommunicationProtocol::Tcp, "termChar").toString(), QString("\n"));
+}
+
+void HardwareRegistryTest::testCommDefaultsUnregistered()
+{
+    // Adding defaults to hardware that was never registered fails.
+    QVERIFY(!d_registry->addCommDefaults("NonExistentType", "none",
+        CommunicationProtocol::Rs232, {{"timeout", 100}}));
+
+    // Querying unregistered hardware yields an empty map.
+    QVERIFY(d_registry->getCommDefaults("NonExistentType", "none").isEmpty());
 }
 
 void HardwareRegistryTest::testConcurrentRegistration()

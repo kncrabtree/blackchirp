@@ -10,6 +10,7 @@
    single: REGISTER_HARDWARE_ARRAY
    single: REGISTER_LIBRARY
    single: REGISTER_CUSTOM_COMM
+   single: REGISTER_COMM_DEFAULTS
    single: HwSettingPriority
    single: HwSettingsWidget; create vs edit mode
    single: AddProfileDialog
@@ -146,6 +147,14 @@ static-initialization. Eight macros cover the registration surface:
    driver supports (``Rs232``, ``Tcp``, ``Gpib``, ``Custom``,
    ``Virtual``).
 
+``REGISTER_COMM_DEFAULTS(CLASS, PROTOCOL, ...)``
+   Declares :cpp:struct:`CommDefault` descriptors — communication
+   settings (read timeout, termination character) seeded into the
+   driver's per-protocol settings group when the device is first
+   configured. Invoked once per protocol; a driver supporting several
+   transports calls the macro several times. See `Communication
+   defaults`_ below.
+
 ``REGISTER_HARDWARE_SETTINGS(CLASS, ...)``
    Declares :cpp:struct:`HwSettingDef` descriptors for the
    driver's scalar settings: key, label, description,
@@ -240,6 +249,47 @@ profile must be deleted and recreated to change a Required value. See
 :doc:`/classes/hwsettingswidget` for the per-mode behavior and
 :doc:`/classes/hardwareregistry` for the full
 :cpp:struct:`HwSettingDef` field reference.
+
+.. _comm-defaults:
+
+Communication defaults
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Read timeout and termination character are per-protocol settings: they
+live in a settings group named for the transport (``rs232``, ``tcp``,
+``gpib``, …) so one device can carry different values for each protocol
+it supports. When no value has been configured, the fallbacks are
+``CommunicationProtocol::defaultReadTimeout`` (200 ms) and
+``CommunicationProtocol::defaultReadTermChar`` (``\n``).
+
+Many instruments need something other than the fallback to communicate
+at all — a 20 s timeout for a slow laser, a ``;FF`` terminator for an
+MKS gauge controller. ``REGISTER_COMM_DEFAULTS`` registers those values
+against a protocol:
+
+.. code-block:: cpp
+
+   REGISTER_COMM_DEFAULTS(Mks946, CommunicationProtocol::Rs232,
+       {BC::Key::Comm::timeout,  100},
+       {BC::Key::Comm::termChar, QString(";FF")})
+
+:cpp:func:`HardwareObject::applyRegisteredSettings` seeds the registered
+values the first time the hardware object is constructed, via
+:cpp:func:`SettingsStorage::setGroupDefault` — a write-if-absent
+operation, so a value the user has changed in the Communication Settings
+dialog is never overwritten. A protocol or key with no registered
+default simply falls back to the global literal.
+
+Defaults are deliberately **per-driver only** — they are not inherited
+from base classes. Communication framing is a property of a specific
+instrument's firmware, not of a hardware category; even sibling models
+sharing a base class can differ (the QuantumComposers 9510 series wants
+a 100 ms timeout where its 9210 and 9520 siblings want 200 ms). A model
+that genuinely shares a value declares it explicitly.
+
+The value's ``QVariant`` type must match what the reader expects for the
+key — ``int`` for ``BC::Key::Comm::timeout``, ``QString`` for
+``BC::Key::Comm::termChar``; the macro cannot enforce this.
 
 HardwareProfileManager — profile metadata
 -----------------------------------------
