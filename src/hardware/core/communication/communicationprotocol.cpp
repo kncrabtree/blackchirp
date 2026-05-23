@@ -69,6 +69,17 @@ QByteArray CommunicationProtocol::queryCmd(const QString &cmd, bool suppressErro
     if(_device() == nullptr)
         return QByteArray();
 
+    if(!_device()->isOpen())
+    {
+        if(!suppressError)
+        {
+            emit hardwareFailure();
+            bcError(u"%1: Could not query. Device is not open."_s.arg(d_key));
+            bcDebug(u"%1 queryCmd: Could not query. Device is not open. Query = %2"_s.arg(d_key, cmd));
+        }
+        return QByteArray();
+    }
+
     if(_device()->bytesAvailable())
         _device()->readAll();
 
@@ -154,6 +165,16 @@ QByteArray CommunicationProtocol::readBytes(qint64 n, bool suppressError)
 
     if(n<1)
         return QByteArray();
+
+    if(!_device()->isOpen())
+    {
+        if(!suppressError)
+        {
+            emit hardwareFailure();
+            bcError(u"%1: Could not read %2 bytes. Device is not open."_s.arg(d_key).arg(n));
+        }
+        return QByteArray();
+    }
 
     auto ba = _device()->bytesAvailable();
 

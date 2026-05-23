@@ -173,6 +173,13 @@ void TemperatureController::hwReadSettings()
 
 void TemperatureController::poll()
 {
+    // Defence-in-depth against the readTimer firing while the device is not
+    // responsive. The timer is supposed to be stopped on testConnection
+    // failure and hardwareFailure, but a tick already queued when the failure
+    // signal arrives will still fire — guarding here keeps that tick from
+    // hitting the device.
+    if(!isConnected())
+        return;
     readAll();
 }
 
