@@ -40,6 +40,12 @@ bool Rs232Instrument::testConnection()
                                                             s.get<int>(flowControl, static_cast<int>(NoFlowControl))));
     auto name = s.getGroupValue<QString>(BC::Key::Comm::rs232, id, s.get<QString>(id, ""));
 
+    if(name.isEmpty())
+    {
+        setErrorString("No serial port configured. Set the device path in the Communication Settings dialog."_L1);
+        return false;
+    }
+
     auto p_sp = dynamic_cast<QSerialPort*>(p_device);
     p_sp->setPortName(name);
 
@@ -52,8 +58,13 @@ bool Rs232Instrument::testConnection()
         p_sp->setFlowControl(static_cast<QSerialPort::FlowControl>(fc));
         return true;
     }
-    else
-        return false;
+
+    // Bare QSerialPort errorString ("Is a directory", "Permission denied",
+    // "No such file or directory") does not name the offending path; pair it
+    // with the configured port so a misconfigured device is immediately
+    // identifiable.
+    setErrorString(QString("Could not open serial port '%1': %2").arg(name, p_device->errorString()));
+    return false;
 }
 
 bool Rs232Instrument::testManual(QString name, qint32 br)

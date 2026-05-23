@@ -149,7 +149,7 @@ void HardwareManager::handleConnectionResult(const QString& hwKey, bool success,
             code = LogHandler::Warning;
         bcLog(u"%1: Connection failed!"_s.arg(obj->d_key), code);
         if(!msg.isEmpty())
-            bcLog(msg, code);
+            bcLog(u"%1: %2"_s.arg(obj->d_key, msg), code);
     }
 
     // Emit unified connectionResult signal for both test results and connection changes
