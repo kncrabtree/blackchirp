@@ -4,6 +4,33 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 
 ## Medium
 
+### Chirp jitter monitor (sub-sample trigger-timing diagnostics)
+
+The phase-correction hill-climb in `FtmwConfig::preprocessChirp`
+already evaluates the chirp-correlation FOM at three adjacent lags and
+discards the sub-sample information they contain. Parabolic
+interpolation of those three values gives each shot's trigger-timing
+offset at picosecond resolution — and the per-shot offsets `dt_k`
+determine, exactly, the filter `Phi(f) = (1/N) sum exp(-i 2 pi f dt_k)`
+that the averaging process applies to the stored spectrum. Recording
+them turns an invisible band-dependent intensity attenuation (10% at
+14.5 GHz baseband for 5 ps rms jitter, vs 2% at 5 GHz) into a
+deconvolvable, exactly-known correction, and answers per-acquisition
+whether deep averages are jitter-limited.
+
+Plan: monitor-only mode decoupled from the correction (no shift
+applied, no shot rejection, clip-tolerant `sign()` FOM option), aux-data
+aggregates per tick (mean/rms of the offset), and an accumulated
+`Phi(f)` on a coarse frequency grid written as `jitterphi.csv` at
+experiment completion for the analysis pipeline to divide out. Full
+per-shot series deferred. ~150–300 LOC + tests (virtual digitizer
+gains a configurable per-shot delay). Details:
+[`chirp-jitter-monitor.md`](chirp-jitter-monitor.md).
+
+Trigger: the first campaign where cross-band relative intensities
+matter, or when the companion `ftmwpipeline` timebase/deconvolution
+analysis is ready to consume `jitterphi.csv`.
+
 ### Sirah Cobra integration refresh
 
 A new Sirah Cobra dye laser coming online triggers a rework of the
