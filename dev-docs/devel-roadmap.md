@@ -6,58 +6,71 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 
 ### Sirah Cobra integration refresh
 
-A new Sirah Cobra dye laser is coming online in late May / early June
-2026. Use that hardware as the trigger for revisiting the
-`SirahCobra` driver: the existing TODO in
-`src/hardware/core/liflaser/sirahcobra.cpp:112` flags that the
-external-stage communication settings need a different solution
-(separate baud / read terminator from the laser comm port). Today the
-driver works around it by ad-hoc instantiating a second
-`Rs232Instrument` alongside the inherited `p_comm`; this is the only
-multi-port driver in the tree.
-
-**Direction (chosen 2026-05-06):** Approach A — single
-`HardwareObject` with multiple managed `CommunicationProtocol`
-objects, formalized into reusable infrastructure. Approach B (a
-composite manager over multiple `HardwareObject` subsystems) was
-rejected for this device because wavelength, doubling crystal, and
-compensator share calibration polynomials and move-direction state
-that don't survive a thread boundary cleanly. A genuinely independent
-device (the pump laser) should land as a sibling `HardwareObject` in
-the loadout rather than as a child subsystem.
-
-Implementation plan:
-
-1. **Driver-declared aux ports.** Add a `REGISTER_HARDWARE_AUX_PORT`
-   macro alongside `REGISTER_HARDWARE_PROTOCOLS`, declaring each
-   secondary port's name and supported communication protocols. Adds a
-   base-class hook (`auxPorts()` or similar) for the lifecycle to
-   iterate.
-2. **`HardwareObject` lifecycle plumbing.** Before the driver's
-   `initialize()` runs, the base class builds each declared port's
-   `CommunicationProtocol` from settings, wires its
-   `hardwareFailure()` into the device's, and exposes it as
-   `auxPort(name)`. Symmetric teardown on destruction.
-3. **Comm-config UI.** Extend the existing comm-config dialog so it
-   shows one tab per port (primary + each aux). The per-protocol
-   widgets are reused unchanged.
-4. **Settings hierarchy.** Aux-port settings nest under the device
-   key: e.g. `LifLaser.sirah/extStage/rs232/baud`. The existing
-   `BC::Key::Comm::*` constants stay; per-port nesting is one extra
-   level.
-5. **Sirah migration.** `p_extStagePort` becomes
-   `auxPort("extStage")`. The `hasExtStage`, `extStagePort`,
-   `extStageBaud` ad-hoc settings collapse into the auto-managed comm
-   subgroup. The line-112 TODO (read options on the secondary port)
-   becomes a property on the declared port descriptor.
-
-Rough scope: ~200–400 LOC in `HardwareObject` / `buildCommunication`
-/ comm-config dialog plus the macro, and a small Sirah migration on
-top. Plan the dev-doc draft (settings layout, dialog mockups, macro
-signature) when the new instrument is on the bench and after the
-2.0.0-alpha packaging work is finished.
+A new Sirah Cobra dye laser coming online triggers a rework of the
+`SirahCobra` driver: move its hand-rolled second serial port and
+frequency-conversion logic into a first-class `LifFreqConversionStage`
+hardware type, add a hardware-independent conversion topology to the
+`LifLaser` base so the LIF axis reads in the final (converted)
+wavelength, and migrate the driver's ad-hoc settings to the registry.
+Full plan (which supersedes the earlier "Approach A" multi-port
+direction) in [sirah-cobra-refresh.md](sirah-cobra-refresh.md); pick it
+up once the new instrument is on the bench and the 2.0.0-alpha packaging
+work is finished.
 
 ## Large
+
+### RF configuration as a flexible frequency-conversion DAG
+
+Generalize the RF signal-chain configuration from its current **fixed
+topology** to a flexible DAG, reusing the frequency-conversion topology
+model designed for the LIF laser
+([sirah-cobra-refresh.md](sirah-cobra-refresh.md)). Today the chain is a
+single hardcoded 3-stage formula — `chirpFreq = (awgFreq × awgMult ±
+upLO) × chirpMult` in `RfConfig::calculateChirpFreq`/`calculateAwgFreq`
+(`rfconfig.cpp:204-228`) — over a closed six-value role enum
+(`RfConfig::ClockType`) used as `QHash` keys. A DAG would model nodes
+(sources, `Multiplier`, `Divider`, `Mixer`), let the user enter the
+final RF frequency, and back-solve the AWG/clock setpoints.
+
+Feasibility (from an architecture map): the deep, risky assumptions are
+just two — (1) the `ClockType` `Q_ENUM` consumed reflectively and as
+hash keys across ~4 layers, and (2) the linear 3-stage formula treated
+as a pure `double→double` at ~8 call sites. Everything around them is
+already node-shaped and generalizes cheaply: per-output ×/÷ exists
+(`Clock::d_multFactors` + `MultOperation`), logical/un-owned nodes exist
+(`FixedClock`), the `header.csv` RfConfig scalars are additive/default-
+tolerant, and — critically — the **Python analyzer is insulated**: it
+consumes only the collapsed per-FID `probefreq`+`sideband` from
+`fidparams.csv` (`bcfid.py:40-41,165-202`), never the upconversion
+topology.
+
+Why it can be robust: every RF element is **affine in frequency** and
+each acquisition point has **one tunable variable** (the AWG chirp; LO/DR
+scans re-parameterize fixed LOs between steps), so the solve is
+closed-form and unit-testable — the same complexity class as the LIF
+topology. Robustness levers: keep the collapsed per-FID `probeFreq`+
+`sideband` as the acquisition/analysis invariant (bounds blast radius,
+leaves `Fid` and Python untouched); model transmit and receive as two
+DAGs sharing source nodes (the one step beyond LIF, which has a single
+chain); and migrate the current fixed chain into a canonical graph so
+old experiments load losslessly.
+
+Suggested sequencing: (1) build the affine single-tunable-source solver
+as the shared `FreqConversion` abstraction while doing the LIF work — the
+lower-stakes proving ground; (2) drop the graph in *behind* the existing
+`RfConfig` API so `calculateChirpFreq` delegates to `graph.solve()` with
+byte-identical output — a pure refactor of the deepest spot, zero
+behavior change; (3) only then open the role enum, GUI
+(`RfConfigWidget` + `ClockTableModel`), scan builders, and the
+`clocks.csv` 7-column schema to arbitrary graphs.
+
+Rough scope: step 2 is a contained refactor; step 3 is a new DAG-editor
+GUI plus a `clocks.csv` schema version bump and generalized LO/DR scan
+builders — a multi-week effort. Trigger to pick it up: a real
+instrument whose RF topology the fixed 3-stage model cannot express
+(e.g. a second up-mixer stage, an IF divider, or a non-`UpLO`/`DownLO`
+mixing role), or the LIF conversion work landing and proving the shared
+abstraction. Not release-blocking.
 
 ### Async PythonProcess + hardware base contracts
 
