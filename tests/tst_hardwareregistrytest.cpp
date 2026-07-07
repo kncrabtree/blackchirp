@@ -6,6 +6,10 @@
 
 #include <src/hardware/core/hardwareregistry.h>
 #include <src/hardware/core/hardwareobject.h>
+#include <hardware/core/liflaser/liflaser.h>
+#include <hardware/core/liflaser/virtualliflaser.h>
+#include <data/lif/lifunits.h>
+#include <data/storage/enumcsvconvert.h>
 
 // Mock hardware classes for testing
 class MockHardware : public HardwareObject
@@ -54,6 +58,7 @@ private slots:
     void testSingletonAccess();
     void testHardwareRegistration();
     void testHardwareCreation();
+    void testEnumSettingDefaultSeededAsKeyName();
     void testDuplicateRegistration();
     void testInvalidRegistration();
     
@@ -168,6 +173,23 @@ void HardwareRegistryTest::testHardwareCreation()
     
     // Clean up
     delete hw;
+}
+
+void HardwareRegistryTest::testEnumSettingDefaultSeededAsKeyName()
+{
+    using namespace BC::LifConv;
+
+    // Construct a real driver whose LifLaser base registers an enum-valued
+    // setting (units, a LaserUnit). HardwareObject::applyRegisteredSettings
+    // seeds every registered default at construction; an enum default must
+    // land in storage as its Q_ENUM key-name string, never as a raw
+    // enum-typed QVariant (which QSettings serializes as an opaque blob).
+    VirtualLifLaser laser("enumSeedTest");
+
+    auto stored = laser.get(BC::Key::LifLaser::units, QVariant{});
+    QCOMPARE(stored.typeId(), QMetaType::QString);
+    QCOMPARE(stored.toString(), QStringLiteral("Nm"));
+    QCOMPARE(BC::CSV::enumFromVariant<LaserUnit>(stored, LaserUnit::Cm1), LaserUnit::Nm);
 }
 
 void HardwareRegistryTest::testDuplicateRegistration()

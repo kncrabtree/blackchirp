@@ -3,6 +3,7 @@
 
 #include <QVariant>
 #include <QMetaEnum>
+#include <QMetaObject>
 
 /*!
  * \file enumcsvconvert.h
@@ -60,6 +61,58 @@ E enumFromVariant(const QVariant &v, E defaultValue)
         return static_cast<E>(idx);
 
     return defaultValue;
+}
+
+/*!
+ * \brief Resolve the \c QMetaEnum for a runtime metatype, or an invalid
+ *        \c QMetaEnum when \a mt is not a \c Q_ENUM/\c Q_ENUM_NS type.
+ *
+ * The runtime counterpart to \c QMetaEnum::fromType<E>() for code that only
+ * has a type-erased \c QVariant/\c QMetaType (e.g. reflective settings
+ * rendering). \c QMetaType::name() is namespace-qualified
+ * (e.g. \c "BC::LifConv::LaserUnit"); the enclosing meta-object indexes the
+ * enumerator by its unqualified name.
+ */
+inline QMetaEnum metaEnumFromType(QMetaType mt)
+{
+    if(!(mt.flags() & QMetaType::IsEnumeration))
+        return {};
+
+    const QMetaObject *mo = mt.metaObject();
+    if(!mo)
+        return {};
+
+    const QByteArray name(mt.name());
+    const auto sepIdx = name.lastIndexOf("::");
+    const QByteArray unqualified = sepIdx >= 0 ? name.mid(sepIdx + 2) : name;
+
+    const int eidx = mo->indexOfEnumerator(unqualified.constData());
+    if(eidx < 0)
+        return {};
+
+    return mo->enumerator(eidx);
+}
+
+/*!
+ * \brief Convert a \c Q_ENUM/\c Q_ENUM_NS-typed \c QVariant to its key-name
+ *        string; pass any non-enum value through unchanged.
+ *
+ * The canonical on-disk form for enum settings (read back by
+ * \c enumFromVariant). Persisting the raw enum-typed \c QVariant instead
+ * lets \c QSettings fall back to an opaque \c QDataStream blob with no
+ * human-readable text.
+ */
+inline QVariant enumKeyName(const QVariant &v)
+{
+    auto me = metaEnumFromType(v.metaType());
+    if(!me.isValid())
+        return v;
+
+    const char *key = me.valueToKey(v.toInt());
+    if(!key)
+        return v;
+
+    return QString::fromUtf8(key);
 }
 
 }

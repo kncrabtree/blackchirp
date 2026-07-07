@@ -13,13 +13,14 @@
 #include <QLineEdit>
 #include <QComboBox>
 #include <QPushButton>
-#include <QMetaEnum>
 #include <limits>
 
 #include <gui/widget/scientificspinbox.h>
 #include <gui/widget/settingstable.h>
+#include <gui/widget/enumcombobox.h>
 #include <gui/dialog/hwarrayeditdialog.h>
 #include <data/storage/settingsstorage.h>
+#include <data/storage/enumcsvconvert.h>
 
 namespace {
 
@@ -271,28 +272,16 @@ QWidget *HwSettingsWidget::makeScalarWidget(const HwSettingDef &def,
         widget = cb;
     } else if (QMetaType mt = def.defaultValue.metaType(); mt.flags() & QMetaType::IsEnumeration) {
         // Q_ENUM/Q_ENUM_NS setting (e.g. BC::LifConv::LaserUnit): render a
-        // combobox of the enum's keys, keyed by the key-name string so the
-        // persisted form matches BC::CSV::enumFromVariant's read side.
-        auto *combo = new QComboBox(this);
+        // combobox of the enum's keys via the shared EnumComboBoxBase, whose
+        // item data is the key-name string so the persisted form matches
+        // BC::CSV::enumFromVariant's read side.
+        auto me = BC::CSV::metaEnumFromType(mt);
+        auto *combo = new EnumComboBoxBase(me, this);
 
-        const QMetaObject *mo = mt.metaObject();
-        const QByteArray typeName(mt.name());
-        auto sepIdx = typeName.lastIndexOf("::");
-        const QByteArray unqualified = sepIdx >= 0 ? typeName.mid(sepIdx + 2) : typeName;
-        int eidx = mo ? mo->indexOfEnumerator(unqualified.constData()) : -1;
-
-        if (eidx >= 0) {
-            auto me = mo->enumerator(eidx);
-            for (int i = 0; i < me.keyCount(); ++i) {
-                const QString key = QString::fromUtf8(me.key(i));
-                combo->addItem(key, key);
-            }
-
-            const QString keyName = (currentValue.metaType() == mt)
-                ? QString::fromUtf8(me.valueToKey(currentValue.toInt()))
-                : currentValue.toString();
-            combo->setCurrentIndex(combo->findData(keyName));
-        }
+        const QString keyName = (currentValue.metaType() == mt)
+            ? QString::fromUtf8(me.valueToKey(currentValue.toInt()))
+            : currentValue.toString();
+        combo->setCurrentKey(keyName);
 
         widget = combo;
     } else {
