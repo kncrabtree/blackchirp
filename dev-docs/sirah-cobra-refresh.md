@@ -118,6 +118,29 @@ the near-term doubler but forgoes both properties.
 
 ## Design detail
 
+> **Interface contract & unit standardization (supersedes the framing
+> below on units).** The frozen cross-task interface is in
+> [`sirah-cobra-refresh-contract.md`](sirah-cobra-refresh-contract.md);
+> consult it for exact signatures, key names, and enum names. Two
+> decisions made during sequencing refine this plan:
+>
+> - **Internal representation is vacuum wavenumber (cm⁻¹)** everywhere in
+>   the LIF laser/axis pipeline (laser positions, `minPos`/`maxPos`,
+>   stage setpoints, `LifConversion`, `LifConfig` axis, `HardwareManager`
+>   dispatch). cm⁻¹ is proportional to frequency, so the affine/exact
+>   inversion property below holds unchanged. There are exactly two unit
+>   boundaries — the driver (native hardware unit ↔ cm⁻¹) and the display
+>   (cm⁻¹ → the user-selected unit). Where the text below says "frequency"
+>   or "wavelength", read "vacuum wavenumber (cm⁻¹)"; wavelength/eV/GHz are
+>   display conversions via a `toCm1`/`fromCm1` utility.
+> - **`LaserUnit` is a `Q_ENUM`** (`{ Cm1, Nm, GHz, eV }`), not the old
+>   free-text `units` string, so the display unit is type-safe and renders
+>   as a combobox. The conversion-topology `Op` (`NHG`/`SFG`/`DFG`) and
+>   input `RefType` (`Laser`/`Stage`/`Fixed`) are likewise `Q_ENUM`s
+>   persisted by name — no raw string sentinels. Migrating `units` to an
+>   enum hardware setting also requires teaching `HwSettingsWidget` to
+>   render enum-valued settings as comboboxes.
+
 ### 1. Conversion topology — `LifConversion` value type
 
 The conversion chain is a small DAG of beams and operations from the dye
