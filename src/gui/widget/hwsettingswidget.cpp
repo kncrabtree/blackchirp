@@ -11,7 +11,9 @@
 #include <QDoubleSpinBox>
 #include <QCheckBox>
 #include <QLineEdit>
+#include <QComboBox>
 #include <QPushButton>
+#include <QMetaEnum>
 #include <limits>
 
 #include <gui/widget/scientificspinbox.h>
@@ -267,6 +269,32 @@ QWidget *HwSettingsWidget::makeScalarWidget(const HwSettingDef &def,
         auto *cb = new QCheckBox(this);
         cb->setChecked(currentValue.toBool());
         widget = cb;
+    } else if (QMetaType mt = def.defaultValue.metaType(); mt.flags() & QMetaType::IsEnumeration) {
+        // Q_ENUM/Q_ENUM_NS setting (e.g. BC::LifConv::LaserUnit): render a
+        // combobox of the enum's keys, keyed by the key-name string so the
+        // persisted form matches BC::CSV::enumFromVariant's read side.
+        auto *combo = new QComboBox(this);
+
+        const QMetaObject *mo = mt.metaObject();
+        const QByteArray typeName(mt.name());
+        auto sepIdx = typeName.lastIndexOf("::");
+        const QByteArray unqualified = sepIdx >= 0 ? typeName.mid(sepIdx + 2) : typeName;
+        int eidx = mo ? mo->indexOfEnumerator(unqualified.constData()) : -1;
+
+        if (eidx >= 0) {
+            auto me = mo->enumerator(eidx);
+            for (int i = 0; i < me.keyCount(); ++i) {
+                const QString key = QString::fromUtf8(me.key(i));
+                combo->addItem(key, key);
+            }
+
+            const QString keyName = (currentValue.metaType() == mt)
+                ? QString::fromUtf8(me.valueToKey(currentValue.toInt()))
+                : currentValue.toString();
+            combo->setCurrentIndex(combo->findData(keyName));
+        }
+
+        widget = combo;
     } else {
         auto *le = new QLineEdit(this);
         le->setText(currentValue.toString());
@@ -289,6 +317,8 @@ QVariant HwSettingsWidget::readWidget(QWidget *widget, const QVariant &defaultVa
         return dsb->value();
     if (auto *cb = qobject_cast<QCheckBox*>(widget))
         return cb->isChecked();
+    if (auto *combo = qobject_cast<QComboBox*>(widget))
+        return combo->currentData();
     if (auto *le = qobject_cast<QLineEdit*>(widget))
         return le->text();
 

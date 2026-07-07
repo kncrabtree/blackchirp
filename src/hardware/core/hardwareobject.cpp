@@ -8,6 +8,43 @@
 #include <hardware/optional/gpibcontroller/gpibcontroller.h>
 #include <hardware/core/communication/gpibinstrument.h>
 
+namespace {
+/*!
+ * \brief Registered Q_ENUM/Q_ENUM_NS setting defaults are persisted by
+ *        their key-name string (the enum-setting convention read back by
+ *        BC::CSV::enumFromVariant), never as a raw enum-typed QVariant --
+ *        QSettings has no plain-text encoding for an arbitrary registered
+ *        metatype and instead falls back to an opaque QDataStream blob.
+ *
+ * Non-enumeration values pass through unchanged.
+ */
+QVariant settingStorageValue(const QVariant &v)
+{
+    QMetaType mt = v.metaType();
+    if (!(mt.flags() & QMetaType::IsEnumeration))
+        return v;
+
+    const QMetaObject *mo = mt.metaObject();
+    if (!mo)
+        return v;
+
+    QByteArray name(mt.name());
+    auto sepIdx = name.lastIndexOf("::");
+    QByteArray unqualified = sepIdx >= 0 ? name.mid(sepIdx + 2) : name;
+
+    int eidx = mo->indexOfEnumerator(unqualified.constData());
+    if (eidx < 0)
+        return v;
+
+    auto me = mo->enumerator(eidx);
+    const char *key = me.valueToKey(v.toInt());
+    if (!key)
+        return v;
+
+    return QString::fromUtf8(key);
+}
+} // namespace
+
 REGISTER_HARDWARE_BASE(HardwareObject,
     {BC::Key::HW::critical, "Critical Hardware",
      "If enabled, a communication failure with this device will abort any running experiment.",
@@ -69,7 +106,7 @@ void HardwareObject::applyRegisteredSettings(const QString& hwType)
     auto& reg = HardwareRegistry::instance();
 
     for (const auto& s : reg.getSettingDefs(hwType, d_model))
-        setDefault(s.key, s.defaultValue);
+        setDefault(s.key, settingStorageValue(s.defaultValue));
 
     auto arrays = reg.getArraySettingDefs(hwType, d_model);
     for (auto it = arrays.cbegin(); it != arrays.cend(); ++it) {

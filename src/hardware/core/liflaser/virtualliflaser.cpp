@@ -16,7 +16,7 @@ void VirtualLifLaser::initialize()
 
 bool VirtualLifLaser::testConnection()
 {
-    d_pos = 500.0;
+    d_pos = 20000.0;
     d_fl = false;
 
     readPosition();
