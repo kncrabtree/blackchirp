@@ -180,6 +180,8 @@ list(APPEND BLACKCHIRP_DATA_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/lifstorage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/liftrace.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/lifdigitizerconfig.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/lifunits.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/lifconversion.cpp
 )
 
 list(APPEND BLACKCHIRP_DATA_HEADERS
@@ -188,6 +190,8 @@ list(APPEND BLACKCHIRP_DATA_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/lifstorage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/liftrace.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/lifdigitizerconfig.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/lifunits.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/lifconversion.h
 )
 
 # ============================================================================
