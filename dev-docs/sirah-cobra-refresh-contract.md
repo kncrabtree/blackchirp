@@ -90,8 +90,12 @@ dependency**. Must be unit-testable from hand-built node lists alone.
 `LifConversion` interface itself is cm⁻¹ end to end.
 
 `Op` and `RefType` are `Q_ENUM`s persisted by name (no raw string
-sentinels anywhere — the enum key names are the canonical tokens). Put
-them in the same `BC::LifConv` `Q_NAMESPACE` as `LaserUnit` (§0):
+sentinels anywhere — the enum key names are the canonical tokens). They
+are declared in **`lifunits.h`** alongside `LaserUnit`, because a single
+`Q_NAMESPACE` can have only one moc-owning header; `lifconversion.h`
+includes `lifunits.h`. Downstream tasks needing `Op`/`RefType` should
+include `data/lif/lifunits.h` (or `lifconversion.h`, which re-exports it).
+Logical shape:
 
 ```cpp
 namespace BC::LifConv {
