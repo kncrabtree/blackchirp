@@ -10,6 +10,84 @@ comm model or the comm-config dialog, and it solves a problem Approach A
 did not address at all — the LIF spectrum axis for a frequency-converted
 laser.
 
+## Implementation status (resume here)
+
+Work is proceeding on branch **`feature/sirah-cobra-refresh`** as a
+sequence of tasks (see [Sequencing](#sequencing)), each dispatched to a
+single Sonnet subagent, reviewed, then committed. The frozen cross-task
+interface — exact signatures, key names, enum names — lives in
+[`sirah-cobra-refresh-contract.md`](sirah-cobra-refresh-contract.md) and
+is authoritative; read it before resuming.
+
+**Done (committed):**
+
+- **Task 1 — keystone** (`fafa44de`): `BC::LifConv::LaserUnit`/`Op`/
+  `RefType` `Q_ENUM`s + cm⁻¹↔nm/GHz/eV utility (`data/lif/lifunits.*`) and
+  the `LifConversion` value type (`data/lif/lifconversion.*`), with
+  `tst_lifconversion`. Contract §0/§A.
+- **Task 2 — `LifLaser` cm⁻¹ + enum UI** (`5dd2ce57`): `LifLaser`
+  driver-hooks work in the grating fundamental (cm⁻¹); public
+  `setPosition`/`readPosition` work in output-beam cm⁻¹ and bridge via a
+  held `LifConversion` (identity until `setConversion`); `units` migrated
+  to the `LaserUnit` enum; `minPos`/`maxPos` defaults now cm⁻¹
+  (5000–40000); `HwSettingsWidget` renders enum settings as comboboxes;
+  Opolette + virtual laser updated to the cm⁻¹ boundary. Contract §E.
+- **Enum-reflection consolidation** (`a7e796ae`): shared
+  `BC::CSV::metaEnumFromType`/`enumKeyName`; `EnumComboBoxBase` reused by
+  both `EnumComboBox<T>` and `HwSettingsWidget`; construction-path test
+  that a built `LifLaser` seeds `units` as the `"Nm"` key string.
+- **Task 3 — `LifFreqConversionStage` base + Virtual/Fixed impls**:
+  new base `LifFreqConversionStage : HardwareObject`
+  (`hardware/core/liflaser/liffreqconversionstage.*`), a `d_threaded`
+  sibling of `LifLaser` earning its own `hwType`. Owns only the generic
+  node-descriptor contract — `BC::Key::LifConvStage` scalars
+  (`op`/`harmonic`/`isFinal`/`verify`/`tolerance`) + the `conversionInputs`
+  array via `REGISTER_HARDWARE_BASE`/`_BASE_ARRAY`, `conversionNode()`
+  reading them into a `BC::LifConv::Node` (`stageKey = d_key`), and
+  `setPosition`/`readPosition` with a verify/best-effort split. The
+  move-verification window is the registered `tolerance` setting (default
+  1.0 cm⁻¹, min 0), not a hardcoded constant, so a coarse mount can widen
+  it. `VirtualLifFreqConversionStage` (CI vehicle) and
+  `FixedLifFreqConversionStage` (`FixedClock` motif; the `Fixed<Type>`
+  system-profile device for uncontrolled stages) added; both registered in
+  `cmake/BlackchirpHardware.cmake` (base type + `fixed*` globs).
+  `tst_hardwareregistrytest` gains a construction-path test and both impls
+  in the whole-archive guard table. Contract §B/§C. Neither new impl calls
+  `save()` in its constructor — the `HardwareObject` base ctor already
+  persists the seeded defaults and the impls mutate no settings;
+  deliberately dropped rather than mirroring the vestigial
+  `VirtualLifLaser`/`FixedClock` calls.
+
+**Uncommitted:** only this status note in this file (intentionally — the
+next session picks up from the modified file).
+
+**Remaining:** Tasks 4–6 below (Sequencing). **Task 4 is next** and its
+dependencies (Tasks 1–3) are in place.
+
+**Carry-forward notes for the remaining tasks:**
+
+- `Op`/`RefType` are declared in `data/lif/lifunits.h` beside `LaserUnit`
+  (one `Q_NAMESPACE` = one moc owner); include that (or `lifconversion.h`,
+  which re-exports it) to use them.
+- `SirahCobra` is deliberately untouched and remains a self-consistent
+  **nm island**: its own `minPos`/`maxPos` (450/700) and `setPos`/`readPos`
+  are still nm, so under the default identity `LifConversion` it works
+  numerically but is mislabeled until **Task 6** rewrites it. Do not
+  "fix" it before Task 6.
+- `minPos`/`maxPos` now render as raw cm⁻¹ spin boxes in the
+  profile-creation dialog (not display-unit-aware). A UX rough edge
+  **Task 5** may address alongside display-unit-aware axis presentation.
+- Enum-valued hardware settings (`units`, and the stage `op`/`refType`)
+  persist as their `Q_ENUM` key-name string and read back via
+  `BC::CSV::enumFromVariant`; `HwSettingsWidget` already renders them.
+
+**Orchestration conventions (keep on resume):** dispatch each remaining
+task to a Sonnet subagent (set the model explicitly to Sonnet), one at a
+time; the agent must reach a clean `blackchirp` build + full `ctest`
+green (plus, for Tasks 3–4, the virtual-laser + virtual-stage integration
+path through `setLifParameters`) before returning; the orchestrator
+reviews the diff and commits per task with a timeless message.
+
 ## Problems being solved
 
 1. **Second serial port lives outside the comm system.** `SirahCobra`

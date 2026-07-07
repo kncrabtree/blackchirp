@@ -8,7 +8,10 @@
 #include <src/hardware/core/hardwareobject.h>
 #include <hardware/core/liflaser/liflaser.h>
 #include <hardware/core/liflaser/virtualliflaser.h>
+#include <hardware/core/liflaser/liffreqconversionstage.h>
+#include <hardware/core/liflaser/virtualliffreqconversionstage.h>
 #include <data/lif/lifunits.h>
+#include <data/lif/lifconversion.h>
 #include <data/storage/enumcsvconvert.h>
 
 // Mock hardware classes for testing
@@ -59,6 +62,7 @@ private slots:
     void testHardwareRegistration();
     void testHardwareCreation();
     void testEnumSettingDefaultSeededAsKeyName();
+    void testFreqConversionStageConstructionPath();
     void testDuplicateRegistration();
     void testInvalidRegistration();
     
@@ -190,6 +194,28 @@ void HardwareRegistryTest::testEnumSettingDefaultSeededAsKeyName()
     QCOMPARE(stored.typeId(), QMetaType::QString);
     QCOMPARE(stored.toString(), QStringLiteral("Nm"));
     QCOMPARE(BC::CSV::enumFromVariant<LaserUnit>(stored, LaserUnit::Cm1), LaserUnit::Nm);
+}
+
+void HardwareRegistryTest::testFreqConversionStageConstructionPath()
+{
+    using namespace BC::LifConv;
+
+    // Same construction-path guarantee as testEnumSettingDefaultSeededAsKeyName,
+    // for the LifFreqConversionStage base's enum-valued conversionOp setting,
+    // plus a check that conversionNode() reads the registered node descriptor
+    // (op/inputs) back into a BC::LifConv::Node keyed by the stage's own d_key.
+    VirtualLifFreqConversionStage stage("enumSeedTest");
+
+    auto stored = stage.get(BC::Key::LifConvStage::op, QVariant{});
+    QCOMPARE(stored.typeId(), QMetaType::QString);
+    QCOMPARE(stored.toString(), QStringLiteral("NHG"));
+    QCOMPARE(BC::CSV::enumFromVariant<Op>(stored, Op::SFG), Op::NHG);
+
+    auto node = stage.conversionNode();
+    QCOMPARE(node.stageKey, stage.d_key);
+    QCOMPARE(node.op, Op::NHG);
+    QCOMPARE(node.inputs.size(), std::size_t(1));
+    QCOMPARE(node.inputs.at(0).type, RefType::Laser);
 }
 
 void HardwareRegistryTest::testDuplicateRegistration()
@@ -346,6 +372,8 @@ void HardwareRegistryTest::testAllExpectedImplementationsRegistered()
         {"TemperatureController", "VirtualTemperatureController"},
         {"LifDigitizer",          "VirtualLifDigitizer"},
         {"LifLaser",              "VirtualLifLaser"},
+        {"LifFreqConversionStage", "VirtualLifFreqConversionStage"},
+        {"LifFreqConversionStage", "FixedLifFreqConversionStage"},
     };
 
     const QStringList types = d_registry->getHardwareTypes();
