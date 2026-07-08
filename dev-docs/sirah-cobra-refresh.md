@@ -57,12 +57,33 @@ is authoritative; read it before resuming.
   persists the seeded defaults and the impls mutate no settings;
   deliberately dropped rather than mirroring the vestigial
   `VirtualLifLaser`/`FixedClock` calls.
+- **Task 4 — `HardwareManager` conversion-stage fan-out**: `HardwareManager`
+  holds a cached `d_lifConversion` assembled at `initializeExperiment`
+  prep from the active laser + every active `LifFreqConversionStage`'s
+  `conversionNode()`; `LifConversion::assemble` failure is surfaced as a
+  prep-time error that aborts before `experimentInitialized` (empty stage
+  set → identity, not special-cased), and the assembled conversion is
+  pushed to the laser via `setConversion` (thread-aware). New
+  `setLifConversionStages(outputCm1)` dispatches each stage's local setpoint
+  (`stageInput(key, outputToLaser(outputCm1))`) **non-blocking** via a
+  per-stage `std::promise`/`future` + `Qt::QueuedConnection` so moves run
+  concurrently, then AND-joins; empty stage set returns `true`. Spliced into
+  `setLifParameters` between the laser and pulse-generator legs (flat join,
+  no two-tier assumption). Connect-ladder gains a documented no-op
+  `LifFreqConversionStage` branch — the stage forwards no type-specific
+  signal and `hardwareFailure` is already wired generically in
+  `handleConnectionResult`. Contract §D. **Integration test deferred**: no
+  existing harness constructs a `HardwareManager`, and a real
+  virtual-laser + virtual-stage `setLifParameters` test needs a friend-class
+  seam to author stage node-descriptor settings plus a multi-device async
+  harness (pulse generator, `Experiment`/`LifConfig`, event-loop pumping) —
+  a deliberate follow-up, not built here.
 
 **Uncommitted:** only this status note in this file (intentionally — the
 next session picks up from the modified file).
 
-**Remaining:** Tasks 4–6 below (Sequencing). **Task 4 is next** and its
-dependencies (Tasks 1–3) are in place.
+**Remaining:** Tasks 5–6 below (Sequencing). **Task 5 is next** and its
+dependencies (Tasks 1–4) are in place.
 
 **Carry-forward notes for the remaining tasks:**
 

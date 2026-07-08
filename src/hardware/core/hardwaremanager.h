@@ -19,6 +19,7 @@
 #include <data/experiment/hardware/optional/ioboard/ioboardconfig.h>
 
 #include <data/lif/lifconfig.h>
+#include <data/lif/lifconversion.h>
 #include <hardware/core/communication/communicationprotocol.h>
 
 class HardwareObject;
@@ -554,6 +555,21 @@ public slots:
     /// \return \c true if the laser reported a non-negative achieved position.
     bool setLifLaserPos(double pos);
 
+    /// \brief Moves every active LIF frequency-conversion stage to the local
+    /// input wavenumber implied by the cached LifConversion for the given
+    /// output-beam setpoint, dispatched in parallel and AND-joined.
+    ///
+    /// Resolves each active stage's local setpoint via
+    /// \c d_lifConversion.stageInput() and posts \c setPosition() to the
+    /// stage's own thread with a non-blocking \c Qt::QueuedConnection so all
+    /// stages move concurrently; this thread then blocks only on collecting
+    /// every result. An empty active-stage set (no FCUs configured) is not
+    /// an error and returns \c true immediately.
+    ///
+    /// \param outputCm1 Desired output-beam wavenumber (cm⁻¹).
+    /// \return \c true if every active stage reported a successful move.
+    bool setLifConversionStages(double outputCm1);
+
     /// \brief Starts configuration-mode acquisition on the LIF digitizer.
     /// \param c LIF configuration describing the acquisition parameters.
     void startLifConfigAcq(const LifConfig &c);
@@ -776,6 +792,13 @@ private:
     /// \brief Clock subsystem manager; owned by HardwareManager, lives on the
     /// same thread.
     std::unique_ptr<ClockManager> pu_clockManager;
+
+    /// \brief Cached LIF frequency-conversion topology, assembled at
+    /// experiment prep (initializeExperiment()) from the active LifLaser and
+    /// every active LifFreqConversionStage's node descriptor, and pushed to
+    /// the laser via LifLaser::setConversion(). Identity (output ==
+    /// fundamental) until a LIF-enabled experiment has been initialized.
+    LifConversion d_lifConversion;
 
     /// \brief Raw pointer to the single live instance, set in the constructor
     /// and cleared in the destructor, used by constInstance().

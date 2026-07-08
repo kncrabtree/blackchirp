@@ -12,6 +12,7 @@
 #include <hardware/core/hardwareobject.h>
 #include <hardware/python/pythonhardwarebase.h>
 #include <hardware/core/clock/clockmanager.h>
+#include <hardware/core/liflaser/liffreqconversionstage.h>
 #include <hardware/core/hw_h.h> // Generated at build time
 
 #include <QThread>
@@ -19,6 +20,8 @@
 #include <QtConcurrent/QtConcurrent>
 #include <QFuture>
 #include <QFutureWatcher>
+#include <future>
+#include <memory>
 #include <vector>
 
 // Static instance for const access
@@ -224,6 +227,48 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
                 bcError("Could not perform LIF experiment because no laser is available."_L1);
                 emit lifSettingsComplete(false);
                 exp->d_hardwareSuccess = false;
+            }
+            else
+            {
+                // Assemble the frequency-conversion topology from every active
+                // stage's node descriptor (an empty stage set yields the
+                // identity conversion) and cache it for setLifConversionStages().
+                // A malformed topology is a prep-time error that aborts the
+                // experiment before acquisition rather than surfacing later.
+                auto stageKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifFreqConversionStage>();
+                std::vector<BC::LifConv::Node> nodes;
+                nodes.reserve(static_cast<std::size_t>(stageKeys.size()));
+                for(const auto &key : stageKeys)
+                {
+                    auto stage = findHardware<LifFreqConversionStage>(key);
+                    if(!stage)
+                        continue;
+
+                    BC::LifConv::Node node;
+                    if(stage->thread() == QThread::currentThread())
+                        node = stage->conversionNode();
+                    else
+                        QMetaObject::invokeMethod(stage,[stage](){ return stage->conversionNode(); },
+                                                  Qt::BlockingQueuedConnection,&node);
+                    nodes.push_back(node);
+                }
+
+                auto result = LifConversion::assemble(nodes);
+                if(!result.ok)
+                {
+                    bcError(u"Could not assemble LIF frequency-conversion topology: %1"_s.arg(result.errorString));
+                    emit lifSettingsComplete(false);
+                    exp->d_hardwareSuccess = false;
+                }
+                else
+                {
+                    d_lifConversion = result.conversion;
+                    if(ll->thread() == QThread::currentThread())
+                        ll->setConversion(d_lifConversion);
+                    else
+                        QMetaObject::invokeMethod(ll,[ll,c=d_lifConversion](){ ll->setConversion(c); },
+                                                  Qt::BlockingQueuedConnection);
+                }
             }
         }
     }
@@ -623,6 +668,8 @@ void HardwareManager::setLifParameters(double delay, double pos)
     bool success = true;
     success &= setLifLaserPos(pos);
     if(success)
+        success &= setLifConversionStages(pos);
+    if(success)
         success &= setPGenLifDelay(delay);
 
     // Flush any scope-internal buffered waveform from the old trigger, then ungate
@@ -688,6 +735,56 @@ bool HardwareManager::setLifLaserPos(double pos)
         QMetaObject::invokeMethod(ll,[ll,pos](){ return ll->setPosition(pos); },Qt::BlockingQueuedConnection,&newPos);
 
     return newPos >= 0.0;
+}
+
+bool HardwareManager::setLifConversionStages(double outputCm1)
+{
+    auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifFreqConversionStage>();
+    if(activeKeys.isEmpty())
+        return true;
+
+    double fundamental = d_lifConversion.outputToLaser(outputCm1);
+
+    // Launch every stage's move non-blocking (Qt::QueuedConnection, not
+    // BlockingQueuedConnection) so the moves run concurrently on their own
+    // threads; this thread joins only once all have been posted, by waiting
+    // on each stage's future in turn. A per-stage std::promise, fulfilled
+    // inside the queued lambda once setPosition() returns, carries the
+    // result back across the thread boundary.
+    std::vector<std::future<bool>> futures;
+    futures.reserve(static_cast<std::size_t>(activeKeys.size()));
+
+    for(const auto &key : activeKeys)
+    {
+        auto stage = findHardware<LifFreqConversionStage>(key);
+        if(!stage)
+            continue;
+
+        double localCm1 = d_lifConversion.stageInput(key, fundamental);
+
+        if(stage->thread() == QThread::currentThread())
+        {
+            // Safety net: stages are always d_threaded, so this should not
+            // normally be reached; handle it directly rather than queuing a
+            // call back onto the thread that is already blocked joining.
+            std::promise<bool> pr;
+            pr.set_value(stage->setPosition(localCm1));
+            futures.push_back(pr.get_future());
+            continue;
+        }
+
+        auto pr = std::make_shared<std::promise<bool>>();
+        futures.push_back(pr->get_future());
+        QMetaObject::invokeMethod(stage,[stage,localCm1,pr](){
+            pr->set_value(stage->setPosition(localCm1));
+        }, Qt::QueuedConnection);
+    }
+
+    bool success = true;
+    for(auto &f : futures)
+        success &= f.get();
+
+    return success;
 }
 
 void HardwareManager::startLifConfigAcq(const LifConfig &c)
@@ -1049,6 +1146,14 @@ void HardwareManager::setupHardwareSpecificConnectionsWithTracking(HardwareObjec
     else if (auto lifLaser = qobject_cast<LifLaser*>(obj)) {
         storeConnection(hwKey, connect(lifLaser, &LifLaser::laserPosUpdate, this, &HardwareManager::lifLaserPosUpdate));
         storeConnection(hwKey, connect(lifLaser, &LifLaser::laserFlashlampUpdate, this, &HardwareManager::lifLaserFlashlampUpdate));
+    }
+    else if (qobject_cast<LifFreqConversionStage*>(obj)) {
+        // A conversion stage forwards no type-specific signal: it reports no
+        // output-position update of its own (only LifLaser::laserPosUpdate
+        // drives the display axis), and its failure/lifecycle notifications
+        // are already covered by the generic connections set up for every
+        // hardware object in setupHardwareObjectWithTracking(). The branch
+        // exists so the type is explicitly accounted for in this ladder.
     }
 }
 
