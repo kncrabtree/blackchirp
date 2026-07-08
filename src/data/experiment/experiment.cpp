@@ -158,7 +158,10 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
     }
 
     if(lifEnabled())
+    {
         ps_lifCfg->loadLifData();
+        ps_lifCfg->readTopologyFile();
+    }
 
     //load aux data
     if(!headerOnly)

@@ -38,6 +38,13 @@ private slots:
     void testRenameFtmwPresetRewritesPointers();
     void testRemoveLoadoutCascadesFtmwPresets();
 
+    void testRoundTripWithLifPresets();
+    void testLifPresetCrud();
+    void testCurrentLifPresetPointers();
+    void testRenameLifPresetRewritesPointers();
+    void testRemoveLoadoutCascadesLifPresets();
+    void testLifConversionWiringArrayRoundTrip();
+
 private:
     LoadoutManager *makeLm() const;
 
@@ -47,6 +54,10 @@ private:
     static void verifyClocksEqual(const QHash<RfConfig::ClockType, RfConfig::ClockFreq> &a,
                                   const QHash<RfConfig::ClockType, RfConfig::ClockFreq> &b);
     static void verifyPresetEqual(const FtmwPreset &a, const FtmwPreset &b);
+
+    static LifPreset makeLifPreset(const QString &laserKey);
+    static HardwareLoadout makeWithLifPresets();
+    static void verifyLifPresetEqual(const LifPreset &a, const LifPreset &b);
 
     QTemporaryDir *d_tempDir{nullptr};
     static constexpr auto s_org = "CrabtreeLab";
@@ -246,6 +257,70 @@ void LoadoutManagerTest::verifyPresetEqual(const FtmwPreset &a, const FtmwPreset
     QCOMPARE(ad.d_fidChannel,       bd.d_fidChannel);
     QCOMPARE(ad.d_analogChannels.size(),  bd.d_analogChannels.size());
     QCOMPARE(ad.d_digitalChannels.size(), bd.d_digitalChannels.size());
+}
+
+LifPreset LoadoutManagerTest::makeLifPreset(const QString &laserKey)
+{
+    using namespace Qt::StringLiterals;
+    using namespace BC::LifConv;
+
+    StageWiring doubler;
+    doubler.stageKey = u"LifFreqConversionStage.doubler"_s;
+    doubler.inputs = {InputRef{RefType::Laser, {}, 0.0}};
+    doubler.isFinal = false;
+
+    StageWiring tripler;
+    tripler.stageKey = u"LifFreqConversionStage.tripler"_s;
+    tripler.inputs = {InputRef{RefType::Stage, u"LifFreqConversionStage.doubler"_s, 0.0},
+                      InputRef{RefType::Fixed, {}, 50.0}};
+    tripler.isFinal = true;
+
+    LifConversionSnapshot snap;
+    snap.laserKey = laserKey;
+    snap.wiring = {doubler, tripler};
+
+    LifPreset preset;
+    preset.conversion = snap;
+    return preset;
+}
+
+HardwareLoadout LoadoutManagerTest::makeWithLifPresets()
+{
+    using namespace Qt::StringLiterals;
+
+    HardwareLoadout lo;
+    lo.name = u"LifAlpha"_s;
+    lo.hardwareMap = {
+        {u"LifLaser.default"_s,                    u"VirtualLifLaser"_s},
+        {u"LifFreqConversionStage.doubler"_s,       u"VirtualLifFreqConversionStage"_s},
+        {u"LifFreqConversionStage.tripler"_s,       u"VirtualLifFreqConversionStage"_s},
+    };
+
+    lo.lifPresets[u"Primary"_s]   = makeLifPreset(u"LifLaser.default"_s);
+    lo.lifPresets[u"Secondary"_s] = makeLifPreset(u"LifLaser.default"_s);
+    lo.lifPresets[lastUsedLifPresetName.toString()] = makeLifPreset(u"LifLaser.default"_s);
+
+    lo.currentLifPresetName = u"Secondary"_s;
+
+    return lo;
+}
+
+void LoadoutManagerTest::verifyLifPresetEqual(const LifPreset &a, const LifPreset &b)
+{
+    QCOMPARE(a.conversion.laserKey, b.conversion.laserKey);
+    QCOMPARE(a.conversion.wiring.size(), b.conversion.wiring.size());
+    for (std::size_t i = 0; i < a.conversion.wiring.size(); ++i) {
+        const auto &wa = a.conversion.wiring[i];
+        const auto &wb = b.conversion.wiring[i];
+        QCOMPARE(wa.stageKey, wb.stageKey);
+        QCOMPARE(wa.isFinal, wb.isFinal);
+        QCOMPARE(wa.inputs.size(), wb.inputs.size());
+        for (std::size_t j = 0; j < wa.inputs.size(); ++j) {
+            QCOMPARE(wa.inputs[j].type,     wb.inputs[j].type);
+            QCOMPARE(wa.inputs[j].stageKey, wb.inputs[j].stageKey);
+            QCOMPARE(wa.inputs[j].fixedCm1, wb.inputs[j].fixedCm1);
+        }
+    }
 }
 
 // ── test cases ────────────────────────────────────────────────────────────────
@@ -681,6 +756,243 @@ void LoadoutManagerTest::testRemoveLoadoutCascadesFtmwPresets()
     std::unique_ptr<LoadoutManager> lm2(makeLm());
     QVERIFY(!lm2->loadoutExists(u"CascadeTest"_s));
     QCOMPARE(lm2->ftmwPresetNames(u"CascadeTest"_s).size(), 0);
+}
+
+void LoadoutManagerTest::testRoundTripWithLifPresets()
+{
+    using namespace Qt::StringLiterals;
+    const HardwareLoadout original = makeWithLifPresets();
+
+    {
+        std::unique_ptr<LoadoutManager> lm(makeLm());
+        QVERIFY(lm->putLoadout(original));
+    }
+
+    std::unique_ptr<LoadoutManager> lm2(makeLm());
+    QVERIFY(lm2->loadoutExists(original.name));
+
+    const auto got = lm2->getLoadout(original.name);
+    QVERIFY(got.has_value());
+    QCOMPARE(got->name,                original.name);
+    QCOMPARE(got->hardwareMap,         original.hardwareMap);
+    QCOMPARE(got->currentLifPresetName, original.currentLifPresetName);
+
+    // All three presets present
+    QCOMPARE(got->lifPresets.size(), std::size_t(3));
+    QVERIFY(got->lifPresets.count(u"Primary"_s));
+    QVERIFY(got->lifPresets.count(u"Secondary"_s));
+    QVERIFY(got->lifPresets.count(lastUsedLifPresetName.toString()));
+
+    verifyLifPresetEqual(got->lifPresets.at(u"Primary"_s),
+                         original.lifPresets.at(u"Primary"_s));
+    verifyLifPresetEqual(got->lifPresets.at(u"Secondary"_s),
+                         original.lifPresets.at(u"Secondary"_s));
+}
+
+void LoadoutManagerTest::testLifPresetCrud()
+{
+    using namespace Qt::StringLiterals;
+
+    HardwareLoadout lo;
+    lo.name = u"LifCrudTest"_s;
+    lo.hardwareMap = {{u"LifLaser.default"_s, u"VirtualLifLaser"_s}};
+
+    std::unique_ptr<LoadoutManager> lm(makeLm());
+    lm->putLoadout(lo);
+
+    // put and get
+    const LifPreset p1 = makeLifPreset(u"LifLaser.default"_s);
+    QVERIFY(lm->putLifPreset(u"LifCrudTest"_s, u"Alpha"_s, p1));
+    QVERIFY(lm->lifPresetExists(u"LifCrudTest"_s, u"Alpha"_s));
+
+    auto got = lm->getLifPreset(u"LifCrudTest"_s, u"Alpha"_s);
+    QVERIFY(got.has_value());
+    verifyLifPresetEqual(*got, p1);
+
+    // put __LastUsed__
+    QVERIFY(lm->putLifPreset(u"LifCrudTest"_s, lastUsedLifPresetName.toString(), p1));
+    QVERIFY(lm->lifPresetExists(u"LifCrudTest"_s, lastUsedLifPresetName.toString()));
+
+    // lifPresetNames excludes __LastUsed__ by default
+    QStringList names = lm->lifPresetNames(u"LifCrudTest"_s);
+    QVERIFY(names.contains(u"Alpha"_s));
+    QVERIFY(!names.contains(lastUsedLifPresetName.toString()));
+
+    // includeLastUsed = true includes it
+    QStringList allNames = lm->lifPresetNames(u"LifCrudTest"_s, true);
+    QVERIFY(allNames.contains(lastUsedLifPresetName.toString()));
+
+    // second put emits changed, not added
+    QSignalSpy changedSpy(lm.get(), &LoadoutManager::lifPresetChanged);
+    QSignalSpy addedSpy(lm.get(),   &LoadoutManager::lifPresetAdded);
+    lm->putLifPreset(u"LifCrudTest"_s, u"Alpha"_s, p1);
+    QCOMPARE(changedSpy.count(), 1);
+    QCOMPARE(addedSpy.count(), 0);
+
+    // remove
+    QSignalSpy removedSpy(lm.get(), &LoadoutManager::lifPresetRemoved);
+    QVERIFY(lm->removeLifPreset(u"LifCrudTest"_s, u"Alpha"_s));
+    QVERIFY(!lm->lifPresetExists(u"LifCrudTest"_s, u"Alpha"_s));
+    QCOMPARE(removedSpy.count(), 1);
+
+    // persistence
+    lm->putLifPreset(u"LifCrudTest"_s, u"Beta"_s, p1);
+    lm.reset();
+
+    std::unique_ptr<LoadoutManager> lm2(makeLm());
+    QVERIFY(lm2->lifPresetExists(u"LifCrudTest"_s, u"Beta"_s));
+    QVERIFY(!lm2->lifPresetExists(u"LifCrudTest"_s, u"Alpha"_s));
+    verifyLifPresetEqual(*lm2->getLifPreset(u"LifCrudTest"_s, u"Beta"_s), p1);
+}
+
+void LoadoutManagerTest::testCurrentLifPresetPointers()
+{
+    using namespace Qt::StringLiterals;
+
+    HardwareLoadout lo;
+    lo.name = u"LifPointerTest"_s;
+    lo.hardwareMap = {{u"LifLaser.default"_s, u"VirtualLifLaser"_s}};
+
+    std::unique_ptr<LoadoutManager> lm(makeLm());
+    lm->putLoadout(lo);
+
+    const LifPreset p = makeLifPreset(u"LifLaser.default"_s);
+    lm->putLifPreset(u"LifPointerTest"_s, u"A"_s, p);
+    lm->putLifPreset(u"LifPointerTest"_s, u"B"_s, p);
+
+    // set and get current
+    QVERIFY(lm->setCurrentLifPresetName(u"LifPointerTest"_s, u"A"_s));
+    QCOMPARE(lm->currentLifPresetName(u"LifPointerTest"_s), u"A"_s);
+
+    // currentLifPreset() resolves to the current preset
+    auto resolved = lm->currentLifPreset(u"LifPointerTest"_s);
+    QVERIFY(resolved.has_value());
+
+    // active preset cannot be removed
+    QVERIFY(!lm->removeLifPreset(u"LifPointerTest"_s, u"A"_s));
+    QVERIFY(lm->lifPresetExists(u"LifPointerTest"_s, u"A"_s));
+
+    // non-active preset can be removed
+    QVERIFY(lm->removeLifPreset(u"LifPointerTest"_s, u"B"_s));
+    QVERIFY(!lm->lifPresetExists(u"LifPointerTest"_s, u"B"_s));
+    QCOMPARE(lm->currentLifPresetName(u"LifPointerTest"_s), u"A"_s);
+
+    // currentLifPreset() returns nullopt when current is empty
+    lm->setCurrentLifPresetName(u"LifPointerTest"_s, {});
+    QVERIFY(!lm->currentLifPreset(u"LifPointerTest"_s).has_value());
+
+    // pointer persistence
+    lm->putLifPreset(u"LifPointerTest"_s, u"C"_s, p);
+    lm->setCurrentLifPresetName(u"LifPointerTest"_s, u"C"_s);
+    lm.reset();
+
+    std::unique_ptr<LoadoutManager> lm2(makeLm());
+    QCOMPARE(lm2->currentLifPresetName(u"LifPointerTest"_s), u"C"_s);
+}
+
+void LoadoutManagerTest::testRenameLifPresetRewritesPointers()
+{
+    using namespace Qt::StringLiterals;
+
+    HardwareLoadout lo;
+    lo.name = u"LifRenameTest"_s;
+    lo.hardwareMap = {{u"LifLaser.default"_s, u"VirtualLifLaser"_s}};
+
+    std::unique_ptr<LoadoutManager> lm(makeLm());
+    lm->putLoadout(lo);
+
+    const LifPreset p = makeLifPreset(u"LifLaser.default"_s);
+    lm->putLifPreset(u"LifRenameTest"_s, u"OldName"_s, p);
+    lm->setCurrentLifPresetName(u"LifRenameTest"_s, u"OldName"_s);
+
+    // successful rename
+    QVERIFY(lm->renameLifPreset(u"LifRenameTest"_s, u"OldName"_s, u"NewName"_s));
+    QVERIFY(!lm->lifPresetExists(u"LifRenameTest"_s, u"OldName"_s));
+    QVERIFY(lm->lifPresetExists(u"LifRenameTest"_s, u"NewName"_s));
+    QCOMPARE(lm->currentLifPresetName(u"LifRenameTest"_s), u"NewName"_s);
+
+    // cannot rename __LastUsed__
+    lm->putLifPreset(u"LifRenameTest"_s, lastUsedLifPresetName.toString(), p);
+    QVERIFY(!lm->renameLifPreset(u"LifRenameTest"_s,
+                                  lastUsedLifPresetName.toString(), u"SomeName"_s));
+
+    // cannot rename to __LastUsed__
+    QVERIFY(!lm->renameLifPreset(u"LifRenameTest"_s, u"NewName"_s,
+                                  lastUsedLifPresetName.toString()));
+
+    // cannot rename to a duplicate
+    lm->putLifPreset(u"LifRenameTest"_s, u"Other"_s, p);
+    QVERIFY(!lm->renameLifPreset(u"LifRenameTest"_s, u"NewName"_s, u"Other"_s));
+
+    // persistence
+    lm.reset();
+    std::unique_ptr<LoadoutManager> lm2(makeLm());
+    QVERIFY(lm2->lifPresetExists(u"LifRenameTest"_s, u"NewName"_s));
+    QVERIFY(!lm2->lifPresetExists(u"LifRenameTest"_s, u"OldName"_s));
+    QCOMPARE(lm2->currentLifPresetName(u"LifRenameTest"_s), u"NewName"_s);
+}
+
+void LoadoutManagerTest::testRemoveLoadoutCascadesLifPresets()
+{
+    using namespace Qt::StringLiterals;
+
+    HardwareLoadout lo;
+    lo.name = u"LifCascadeTest"_s;
+    lo.hardwareMap = {{u"LifLaser.default"_s, u"VirtualLifLaser"_s}};
+
+    std::unique_ptr<LoadoutManager> lm(makeLm());
+    lm->putLoadout(lo);
+    lm->putLifPreset(u"LifCascadeTest"_s, u"P1"_s, makeLifPreset(u"LifLaser.default"_s));
+    lm->putLifPreset(u"LifCascadeTest"_s, u"P2"_s, makeLifPreset(u"LifLaser.default"_s));
+    QCOMPARE(lm->lifPresetNames(u"LifCascadeTest"_s).size(), 2);
+
+    QVERIFY(lm->removeLoadout(u"LifCascadeTest"_s));
+    QVERIFY(!lm->loadoutExists(u"LifCascadeTest"_s));
+
+    // After reload the loadout and its presets are gone
+    lm.reset();
+    std::unique_ptr<LoadoutManager> lm2(makeLm());
+    QVERIFY(!lm2->loadoutExists(u"LifCascadeTest"_s));
+    QCOMPARE(lm2->lifPresetNames(u"LifCascadeTest"_s).size(), 0);
+}
+
+void LoadoutManagerTest::testLifConversionWiringArrayRoundTrip()
+{
+    using namespace Qt::StringLiterals;
+    using namespace BC::LifConv;
+
+    LifConversionSnapshot snap;
+    snap.laserKey = u"LifLaser.default"_s;
+
+    StageWiring doubler;
+    doubler.stageKey = u"doubler"_s;
+    doubler.inputs = {InputRef{RefType::Laser, {}, 0.0}};
+    doubler.isFinal = false;
+    snap.wiring.push_back(doubler);
+
+    StageWiring sfg;
+    sfg.stageKey = u"sfg"_s;
+    sfg.inputs = {InputRef{RefType::Stage, u"doubler"_s, 0.0},
+                 InputRef{RefType::Fixed, {}, 123.456}};
+    sfg.isFinal = true;
+    snap.wiring.push_back(sfg);
+
+    const auto scalars = lifConversionScalarsMap(snap);
+    const auto wiring  = lifConversionWiringArray(snap);
+    const LifConversionSnapshot back = lifConversionSnapshotFromMaps(scalars, wiring);
+
+    QCOMPARE(back.laserKey, snap.laserKey);
+    QCOMPARE(back.wiring.size(), snap.wiring.size());
+    for (std::size_t i = 0; i < snap.wiring.size(); ++i) {
+        QCOMPARE(back.wiring[i].stageKey, snap.wiring[i].stageKey);
+        QCOMPARE(back.wiring[i].isFinal,  snap.wiring[i].isFinal);
+        QCOMPARE(back.wiring[i].inputs.size(), snap.wiring[i].inputs.size());
+        for (std::size_t j = 0; j < snap.wiring[i].inputs.size(); ++j) {
+            QCOMPARE(back.wiring[i].inputs[j].type,     snap.wiring[i].inputs[j].type);
+            QCOMPARE(back.wiring[i].inputs[j].stageKey, snap.wiring[i].inputs[j].stageKey);
+            QCOMPARE(back.wiring[i].inputs[j].fixedCm1, snap.wiring[i].inputs[j].fixedCm1);
+        }
+    }
 }
 
 QTEST_GUILESS_MAIN(LoadoutManagerTest)

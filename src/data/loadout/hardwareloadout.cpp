@@ -1,5 +1,7 @@
 #include <data/loadout/hardwareloadout.h>
 
+#include <optional>
+
 namespace BC::Loadout {
 
 using namespace BC::Store::RFC;
@@ -75,6 +77,91 @@ void copyRfScalars(const RfConfigSnapshot &source, RfConfigSnapshot &dest)
     dest.upMixSideband   = source.upMixSideband;
     dest.chirpMult       = source.chirpMult;
     dest.downMixSideband = source.downMixSideband;
+}
+
+Map lifConversionScalarsMap(const LifConversionSnapshot &snap)
+{
+    using namespace BC::Store::LIFC;
+    Map map;
+    map[laserKey] = snap.laserKey;
+    return map;
+}
+
+Maps lifConversionWiringArray(const LifConversionSnapshot &snap)
+{
+    using namespace BC::Store::LIFC;
+    Maps array;
+    array.reserve(snap.wiring.size());
+    for(const auto &w : snap.wiring)
+    {
+        Map map;
+        map[stageKey] = w.stageKey;
+        map[isFinal]  = w.isFinal;
+
+        if(w.inputs.size() > 0)
+        {
+            const auto &in0 = w.inputs[0];
+            map[in0Type]  = static_cast<int>(in0.type);
+            map[in0Key]   = in0.stageKey;
+            map[in0Fixed] = in0.fixedCm1;
+        }
+        if(w.inputs.size() > 1)
+        {
+            const auto &in1 = w.inputs[1];
+            map[in1Type]  = static_cast<int>(in1.type);
+            map[in1Key]   = in1.stageKey;
+            map[in1Fixed] = in1.fixedCm1;
+        }
+
+        array.push_back(std::move(map));
+    }
+    return array;
+}
+
+LifConversionSnapshot lifConversionSnapshotFromMaps(const Map &scalars, const Maps &wiring)
+{
+    using namespace BC::Store::LIFC;
+
+    LifConversionSnapshot snap;
+    if(scalars.contains(laserKey))
+        snap.laserKey = scalars.at(laserKey).value<QString>();
+
+    // One ordered input slot: present iff the row recorded a RefType for it.
+    auto readInput = [](const Map &m, QLatin1StringView typeKey, QLatin1StringView refKey,
+                        QLatin1StringView fixedKey) -> std::optional<BC::LifConv::InputRef>
+    {
+        if(!m.contains(typeKey))
+            return std::nullopt;
+
+        BC::LifConv::InputRef ref;
+        ref.type = static_cast<BC::LifConv::RefType>(m.at(typeKey).value<int>());
+        if(m.contains(refKey))
+            ref.stageKey = m.at(refKey).value<QString>();
+        if(m.contains(fixedKey))
+            ref.fixedCm1 = m.at(fixedKey).value<double>();
+        return ref;
+    };
+
+    snap.wiring.reserve(wiring.size());
+    for(const auto &m : wiring)
+    {
+        if(!m.contains(stageKey))
+            continue;
+
+        BC::LifConv::StageWiring w;
+        w.stageKey = m.at(stageKey).value<QString>();
+        if(m.contains(isFinal))
+            w.isFinal = m.at(isFinal).value<bool>();
+
+        if(auto in0 = readInput(m, in0Type, in0Key, in0Fixed))
+            w.inputs.push_back(*in0);
+        if(auto in1 = readInput(m, in1Type, in1Key, in1Fixed))
+            w.inputs.push_back(*in1);
+
+        snap.wiring.push_back(std::move(w));
+    }
+
+    return snap;
 }
 
 Maps hardwareMapArray(const std::map<QString, QString, std::less<>> &hwMap)

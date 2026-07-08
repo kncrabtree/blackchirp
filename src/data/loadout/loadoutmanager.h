@@ -60,6 +60,19 @@ inline constexpr QLatin1StringView currentFtmwPresetKey{"currentFtmwPreset"};
 inline constexpr QLatin1StringView lastModifiedKey{"lastModified"};
 /// \brief Reserved preset name used for the per-loadout last-used sentinel.
 inline constexpr QLatin1StringView lastUsedFtmwPresetName{"__LastUsed__"};
+
+/// \brief Sub-group that holds a LIF preset's conversion-provenance scalar fields (the captured laser hwKey).
+inline constexpr QLatin1StringView lifConversionScalarsKey{"lifConversionScalars"};
+/// \brief Array group that holds a LIF preset's conversion wiring entries.
+inline constexpr QLatin1StringView lifConversionWiringKey{"lifConversionWiring"};
+/// \brief Sub-group under each loadout that holds its LIF presets.
+inline constexpr QLatin1StringView lifPresetsKey{"lifPresets"};
+/// \brief Array group that lists the LIF preset names owned by a loadout.
+inline constexpr QLatin1StringView lifPresetNamesKey{"lifPresetNames"};
+/// \brief Field that names a loadout's currently active LIF preset.
+inline constexpr QLatin1StringView currentLifPresetKey{"currentLifPreset"};
+/// \brief Reserved preset name used for the per-loadout LIF last-used sentinel.
+inline constexpr QLatin1StringView lastUsedLifPresetName{"__LastUsed__"};
 }
 
 class LoadoutManagerTest;
@@ -146,6 +159,32 @@ public:
     /// \brief Convenience accessor that returns the named loadout's active preset, if any.
     std::optional<FtmwPreset> currentFtmwPreset(const QString &loadoutName) const;
 
+    // LIF preset CRUD
+
+    /// \brief Fetch a copy of a named LIF preset from the named loadout.
+    std::optional<LifPreset> getLifPreset(const QString &loadoutName, const QString &presetName) const;
+    /// \brief Insert or replace a LIF preset in the named loadout.
+    bool putLifPreset(const QString &loadoutName, const QString &presetName, const LifPreset &preset);
+    /// \brief Remove the named LIF preset from the named loadout. Cannot remove the active preset.
+    bool removeLifPreset(const QString &loadoutName, const QString &presetName);
+    /// \brief Rename a LIF preset within the named loadout, updating the current-preset pointer if needed.
+    bool renameLifPreset(const QString &loadoutName, const QString &oldName, const QString &newName);
+    /// \brief Whether the named loadout contains a LIF preset with the given name.
+    bool lifPresetExists(const QString &loadoutName, const QString &presetName) const;
+    /// \brief Names of the LIF presets owned by the named loadout.
+    /// \param loadoutName Loadout whose preset names should be returned.
+    /// \param includeLastUsed If true, the `__LastUsed__` sentinel is included in the returned list.
+    QStringList lifPresetNames(const QString &loadoutName, bool includeLastUsed = false) const;
+
+    // Current/default LIF preset
+
+    /// \brief Name of the named loadout's currently active LIF preset.
+    QString currentLifPresetName(const QString &loadoutName) const;
+    /// \brief Set the active LIF preset for the named loadout, emitting `currentLifPresetChanged`.
+    bool setCurrentLifPresetName(const QString &loadoutName, const QString &presetName);
+    /// \brief Convenience accessor that returns the named loadout's active LIF preset, if any.
+    std::optional<LifPreset> currentLifPreset(const QString &loadoutName) const;
+
 signals:
     /// \brief Emitted after a new loadout is inserted into the cache.
     void loadoutAdded(QString name);
@@ -166,6 +205,15 @@ signals:
     void ftmwPresetChanged(QString loadoutName, QString presetName);
     /// \brief Emitted after a loadout's active FTMW preset selection changes.
     void currentFtmwPresetChanged(QString loadoutName, QString presetName);
+
+    /// \brief Emitted after a new LIF preset is added to a loadout.
+    void lifPresetAdded(QString loadoutName, QString presetName);
+    /// \brief Emitted after a LIF preset is removed from a loadout.
+    void lifPresetRemoved(QString loadoutName, QString presetName);
+    /// \brief Emitted after a LIF preset's contents are replaced.
+    void lifPresetChanged(QString loadoutName, QString presetName);
+    /// \brief Emitted after a loadout's active LIF preset selection changes.
+    void currentLifPresetChanged(QString loadoutName, QString presetName);
 
 private:
     LoadoutManager();
@@ -189,6 +237,12 @@ private:
     void p_removeFtmwPresetFromSettings(const QString &loadoutName, const QString &presetName);
     void p_syncFtmwPresetIndex(const QString &loadoutName);
     void p_writeFtmwPresetPointers(const QString &loadoutName);
+
+    LifPreset p_readLifPreset(const QString &loadoutName, const QString &presetName) const;
+    void p_writeLifPreset(const QString &loadoutName, const QString &presetName, const LifPreset &preset);
+    void p_removeLifPresetFromSettings(const QString &loadoutName, const QString &presetName);
+    void p_syncLifPresetIndex(const QString &loadoutName);
+    void p_writeLifPresetPointers(const QString &loadoutName);
 
     QHash<QString, HardwareLoadout> d_loadouts;
     QString d_current;

@@ -215,18 +215,50 @@ public:
     int laserDecimals() const { return d_laserDecimals; }
 
     /*!
-     * \brief Record the assembled frequency-conversion topology for
-     *        serialization.
+     * \brief Record the per-experiment conversion-topology node list and
+     *        rebuild the cached assembled conversion from it.
      *
-     * Seeded at experiment prep by HardwareManager once the active laser +
-     * stage node descriptors have been assembled and validated into \a conv.
-     * \a nodes is the ordered node-descriptor list (empty for the identity /
-     * bare-laser case, where the output beam is the grating fundamental and
-     * no topology file is written); \a conv supplies each node's resolved
-     * output-beam affine coefficients via LifConversion::stageOutput().
-     * \a laserKey is the active LifLaser's hwKey, used to serialize a
-     * tunable-source (RefType::Laser) input by its real hwKey rather than a
-     * sentinel.
+     * \a nodes is the authoritative, already-joined node-descriptor list
+     * (op/n from each stage's hardware, inputs/isFinal from the
+     * per-experiment wiring); empty for the identity / bare-laser case,
+     * where the output beam is the grating fundamental and no topology
+     * file is written. \a laserKey is the active LifLaser's hwKey, used to
+     * serialize a tunable-source (RefType::Laser) input by its real hwKey
+     * rather than a sentinel.
+     *
+     * Rebuilds the cached conversion() via LifConversion::assemble(); on
+     * assembly failure the cache falls back to the identity conversion
+     * (mirroring the tolerant fallback used elsewhere when a topology
+     * cannot yet be assembled, e.g. mid-edit).
+     */
+    void setConversionNodes(std::vector<BC::LifConv::Node> nodes, const QString &laserKey);
+
+    /*!
+     * \brief Return the current conversion-topology node list (empty =
+     *        identity/no stages).
+     */
+    const std::vector<BC::LifConv::Node> &conversionNodes() const { return d_conversionNodes; }
+
+    /*!
+     * \brief Return the conversion assembled from conversionNodes() by the
+     *        most recent setConversionNodes() call (identity if never set,
+     *        or if assembly failed).
+     */
+    const LifConversion &conversion() const { return d_conversion; }
+
+    /*!
+     * \brief Return \c true when conversionNodes() is non-empty.
+     */
+    bool hasConversion() const { return !d_conversionNodes.empty(); }
+
+    /*!
+     * \brief Deprecated shim for setConversionNodes(): drops \a conv (the
+     *        cached conversion is now rebuilt internally via assemble())
+     *        and forwards \a nodes/\a laserKey.
+     *
+     * \deprecated Retained only so the existing HardwareManager prep call
+     * site continues to link; callers should switch to setConversionNodes()
+     * directly.
      */
     void setConversionTopology(const std::vector<BC::LifConv::Node> &nodes,
                                const LifConversion &conv,
@@ -246,7 +278,20 @@ public:
      */
     bool writeTopologyFile() const;
 
-
+    /*!
+     * \brief Read liftopology.csv, if present, and reconstruct the
+     *        conversion-topology node list via setConversionNodes().
+     *
+     * Mirrors RfConfig::loadClockSteps(): resolves the file from this
+     * config's own d_number/d_path. A missing file means the identity case
+     * (writeTopologyFile() skips writing one) and is not an error. Input
+     * tokens are classified as \c Fixed:<cm1> -> Fixed, a token matching
+     * another row's StageKey -> Stage, and anything else -> Laser (that
+     * token is the laser hwKey, captured as the config's conversion laser
+     * key). OutCoeffA/B are derived data recomputed via assembly, not read.
+     * Returns \c false only when the file exists but cannot be opened.
+     */
+    bool readTopologyFile();
 
 private:
     std::shared_ptr<LifStorage> ps_storage;

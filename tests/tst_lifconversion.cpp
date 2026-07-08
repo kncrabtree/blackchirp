@@ -2,6 +2,7 @@
 
 #include <data/lif/lifconversion.h>
 #include <data/lif/lifunits.h>
+#include <data/loadout/lifconversionsnapshot.h>
 
 using namespace BC::LifConv;
 
@@ -34,6 +35,12 @@ private slots:
     void testRejectCycle();
     void testRejectDuplicateStageKey();
     void testRejectNoNetTunableDependence();
+
+    // LifConversionSnapshot (data/loadout/lifconversionsnapshot.h)
+    void testSnapshotFromNodesRoundTrip();
+    void testSnapshotFromNodesEmpty();
+    void testSnapshotToNodesJoinsOpAndHarmonic();
+    void testSnapshotToNodesDefaultsWithoutCallbacks();
 
 private:
     static bool close(double a, double b, double eps = 1e-6) { return std::abs(a - b) < eps; }
@@ -444,6 +451,116 @@ void LifConversionTest::testRejectNoNetTunableDependence()
     auto res = LifConversion::assemble({cancel});
     QVERIFY(!res.ok);
     QVERIFY(!res.errorString.isEmpty());
+}
+
+void LifConversionTest::testSnapshotFromNodesRoundTrip()
+{
+    // NHG doubler (not final) feeding an SFG (final) with a Fixed second
+    // input. op/n are hardware-owned and must NOT survive into the
+    // snapshot's wiring; only inputs/isFinal do.
+    Node doubler;
+    doubler.stageKey = QStringLiteral("doubler");
+    doubler.op = Op::NHG;
+    doubler.n = 2;
+    doubler.inputs = {InputRef{RefType::Laser, {}, 0.0}};
+    doubler.isFinal = false;
+
+    Node sfg;
+    sfg.stageKey = QStringLiteral("sfg");
+    sfg.op = Op::SFG;
+    sfg.n = 7; // ignored for non-NHG; must not leak into the snapshot either
+    sfg.inputs = {InputRef{RefType::Stage, QStringLiteral("doubler"), 0.0},
+                  InputRef{RefType::Fixed, {}, 50.0}};
+    sfg.isFinal = true;
+
+    const auto snap = LifConversionSnapshot::fromNodes({doubler, sfg}, QStringLiteral("LifLaser.default"));
+
+    QCOMPARE(snap.laserKey, QStringLiteral("LifLaser.default"));
+    QCOMPARE(snap.wiring.size(), std::size_t(2));
+
+    QCOMPARE(snap.wiring[0].stageKey, QStringLiteral("doubler"));
+    QVERIFY(!snap.wiring[0].isFinal);
+    QCOMPARE(snap.wiring[0].inputs.size(), std::size_t(1));
+    QCOMPARE(snap.wiring[0].inputs[0].type, RefType::Laser);
+
+    QCOMPARE(snap.wiring[1].stageKey, QStringLiteral("sfg"));
+    QVERIFY(snap.wiring[1].isFinal);
+    QCOMPARE(snap.wiring[1].inputs.size(), std::size_t(2));
+    QCOMPARE(snap.wiring[1].inputs[0].type, RefType::Stage);
+    QCOMPARE(snap.wiring[1].inputs[0].stageKey, QStringLiteral("doubler"));
+    QCOMPARE(snap.wiring[1].inputs[1].type, RefType::Fixed);
+    QCOMPARE(snap.wiring[1].inputs[1].fixedCm1, 50.0);
+
+    // toNodes() rejoins op/n from the supplied callbacks and reproduces an
+    // assemblable, behaviorally-identical graph.
+    auto opOf = [](const QString &k) {
+        return k == QStringLiteral("doubler") ? Op::NHG : Op::SFG;
+    };
+    auto harmonicOf = [](const QString &k) {
+        return k == QStringLiteral("doubler") ? 2 : 7;
+    };
+    auto nodes = snap.toNodes(opOf, harmonicOf);
+    QCOMPARE(nodes.size(), std::size_t(2));
+    QCOMPARE(nodes[0].op, Op::NHG);
+    QCOMPARE(nodes[0].n, 2);
+    QCOMPARE(nodes[1].op, Op::SFG);
+
+    auto res = LifConversion::assemble(nodes);
+    QVERIFY2(res.ok, qPrintable(res.errorString));
+    QCOMPARE(res.conversion.laserToOutput(100.0), 250.0);
+}
+
+void LifConversionTest::testSnapshotFromNodesEmpty()
+{
+    const auto snap = LifConversionSnapshot::fromNodes({}, QStringLiteral("LifLaser.default"));
+    QVERIFY(snap.wiring.empty());
+    QCOMPARE(snap.laserKey, QStringLiteral("LifLaser.default"));
+
+    auto nodes = snap.toNodes({}, {});
+    QVERIFY(nodes.empty());
+
+    auto res = LifConversion::assemble(nodes);
+    QVERIFY(res.ok);
+    QVERIFY(res.conversion.isIdentity());
+}
+
+void LifConversionTest::testSnapshotToNodesJoinsOpAndHarmonic()
+{
+    Node doubler;
+    doubler.stageKey = QStringLiteral("doubler");
+    doubler.op = Op::NHG;
+    doubler.n = 3;
+    doubler.inputs = {InputRef{RefType::Laser, {}, 0.0}};
+    doubler.isFinal = true;
+
+    const auto snap = LifConversionSnapshot::fromNodes({doubler}, QStringLiteral("LifLaser.default"));
+
+    auto nodes = snap.toNodes(
+        [](const QString &) { return Op::NHG; },
+        [](const QString &) { return 5; });
+
+    QCOMPARE(nodes.size(), std::size_t(1));
+    QCOMPARE(nodes[0].op, Op::NHG);
+    QCOMPARE(nodes[0].n, 5); // rejoined from harmonicOf, not the original node's 3
+}
+
+void LifConversionTest::testSnapshotToNodesDefaultsWithoutCallbacks()
+{
+    Node doubler;
+    doubler.stageKey = QStringLiteral("doubler");
+    doubler.op = Op::NHG;
+    doubler.n = 3;
+    doubler.inputs = {InputRef{RefType::Laser, {}, 0.0}};
+    doubler.isFinal = true;
+
+    const auto snap = LifConversionSnapshot::fromNodes({doubler}, QStringLiteral("LifLaser.default"));
+
+    // Empty std::function callbacks: op defaults to NHG, n keeps the
+    // Node{} default (2) rather than dereferencing an empty std::function.
+    auto nodes = snap.toNodes({}, {});
+    QCOMPARE(nodes.size(), std::size_t(1));
+    QCOMPARE(nodes[0].op, Op::NHG);
+    QCOMPARE(nodes[0].n, 2);
 }
 
 QTEST_APPLESS_MAIN(LifConversionTest)

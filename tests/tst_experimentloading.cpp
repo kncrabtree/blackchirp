@@ -1,9 +1,12 @@
 #include <QtTest>
 #include <QCoreApplication>
+#include <QTemporaryDir>
 
 #include "src/data/experiment/hardwaredatacontainer.h"
 #include "src/data/experiment/experiment.h"
 #include "src/data/lif/lifunits.h"
+#include "src/data/lif/lifconversion.h"
+#include "src/data/storage/blackchirpcsv.h"
 
 using namespace BC::Data;
 
@@ -55,6 +58,11 @@ private slots:
     // LifConfig header store/retrieve round trip for a non-Nm display
     // unit (contract §F: the scan axis is stored in the display unit).
     void lifConfigLaserAxisRoundTrip();
+
+    // liftopology.csv write -> read round trip for LifConfig (C-5):
+    // no on-disk fixture exists yet, so the topology is generated in-test.
+    void lifTopologyFileRoundTrip();
+    void lifTopologyFileMissingIsIdentity();
 
 private:
     QString testDataDir() const;
@@ -542,6 +550,98 @@ void ExperimentLoadingTest::lifConfigLaserAxisRoundTrip()
     QCOMPARE(dst.d_laserPosStart, 20000.50);
     QCOMPARE(dst.d_laserPosStep, -10.25);
     QCOMPARE(dst.d_laserPosPoints, 5);
+}
+
+void ExperimentLoadingTest::lifTopologyFileRoundTrip()
+{
+    using namespace BC::LifConv;
+
+    QTemporaryDir srcDir, dstDir;
+    QVERIFY(srcDir.isValid());
+    QVERIFY(dstDir.isValid());
+
+    // NHG doubler (not final) feeding an SFG (final) with a Fixed second
+    // input, exercising all three input-token classifications (Laser,
+    // Stage, Fixed) in a single topology.
+    Node doubler;
+    doubler.stageKey = QStringLiteral("doubler");
+    doubler.op = Op::NHG;
+    doubler.n = 2;
+    doubler.inputs = {InputRef{RefType::Laser, {}, 0.0}};
+    doubler.isFinal = false;
+
+    Node tripler;
+    tripler.stageKey = QStringLiteral("tripler");
+    tripler.op = Op::SFG;
+    tripler.inputs = {InputRef{RefType::Stage, QStringLiteral("doubler"), 0.0},
+                      InputRef{RefType::Fixed, {}, 50.0}};
+    tripler.isFinal = true;
+
+    LifConfig src(QStringLiteral("LifDigitizer.default"));
+    src.d_number = 1;
+    src.d_path = srcDir.path();
+    src.setConversionNodes({doubler, tripler}, QStringLiteral("LifLaser.default"));
+    QVERIFY(src.hasConversion());
+    QVERIFY(!src.conversion().isIdentity());
+    QVERIFY(src.writeTopologyFile());
+
+    LifConfig dst(QStringLiteral("LifDigitizer.default"));
+    dst.d_number = 1;
+    dst.d_path = srcDir.path();
+    QVERIFY(dst.readTopologyFile());
+
+    QVERIFY(dst.hasConversion());
+    const auto &nodes = dst.conversionNodes();
+    QCOMPARE(nodes.size(), std::size_t(2));
+
+    QCOMPARE(nodes[0].stageKey, QStringLiteral("doubler"));
+    QCOMPARE(nodes[0].op, Op::NHG);
+    QCOMPARE(nodes[0].n, 2);
+    QVERIFY(!nodes[0].isFinal);
+    QCOMPARE(nodes[0].inputs.size(), std::size_t(1));
+    QCOMPARE(nodes[0].inputs[0].type, RefType::Laser);
+
+    QCOMPARE(nodes[1].stageKey, QStringLiteral("tripler"));
+    QCOMPARE(nodes[1].op, Op::SFG);
+    QVERIFY(nodes[1].isFinal);
+    QCOMPARE(nodes[1].inputs.size(), std::size_t(2));
+    QCOMPARE(nodes[1].inputs[0].type, RefType::Stage);
+    QCOMPARE(nodes[1].inputs[0].stageKey, QStringLiteral("doubler"));
+    QCOMPARE(nodes[1].inputs[1].type, RefType::Fixed);
+    QCOMPARE(nodes[1].inputs[1].fixedCm1, 50.0);
+
+    // The re-assembled conversion behaves identically to the source.
+    QCOMPARE(dst.conversion().laserToOutput(100.0), src.conversion().laserToOutput(100.0));
+    QCOMPARE(dst.conversion().outputToLaser(250.0), src.conversion().outputToLaser(250.0));
+
+    // Re-writing the read-back config reproduces byte-identical output,
+    // which also exercises that the Laser input's captured hwKey
+    // ("LifLaser.default", not observable via a public accessor) survived
+    // the read.
+    dst.d_path = dstDir.path();
+    QVERIFY(dst.writeTopologyFile());
+
+    QFile f1(QDir(srcDir.path()).absoluteFilePath(BC::CSV::lifTopologyFile));
+    QFile f2(QDir(dstDir.path()).absoluteFilePath(BC::CSV::lifTopologyFile));
+    QVERIFY(f1.open(QIODevice::ReadOnly | QIODevice::Text));
+    QVERIFY(f2.open(QIODevice::ReadOnly | QIODevice::Text));
+    QCOMPARE(QString(f1.readAll()), QString(f2.readAll()));
+}
+
+void ExperimentLoadingTest::lifTopologyFileMissingIsIdentity()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+
+    LifConfig cfg(QStringLiteral("LifDigitizer.default"));
+    cfg.d_number = 1;
+    cfg.d_path = dir.path();
+
+    // No liftopology.csv on disk: identity, not an error (mirrors
+    // writeTopologyFile()'s "skip for the identity case" contract).
+    QVERIFY(cfg.readTopologyFile());
+    QVERIFY(!cfg.hasConversion());
+    QVERIFY(cfg.conversion().isIdentity());
 }
 
 QTEST_MAIN(ExperimentLoadingTest)

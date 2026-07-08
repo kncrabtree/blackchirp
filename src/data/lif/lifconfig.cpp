@@ -2,12 +2,14 @@
 
 #include <data/lif/liftrace.h>
 #include <data/storage/blackchirpcsv.h>
+#include <data/storage/enumcsvconvert.h>
 #include <QDir>
 #include <QFile>
 #include <QRandomGenerator>
 #include <QSaveFile>
 #include <QTextStream>
-#include <cmath>
+#include <optional>
+#include <set>
 
 using namespace Qt::Literals::StringLiterals;
 
@@ -27,13 +29,21 @@ void LifConfig::setLaserDecimals(int decimals)
     d_laserDecimals = qMax(0, decimals);
 }
 
+void LifConfig::setConversionNodes(std::vector<BC::LifConv::Node> nodes, const QString &laserKey)
+{
+    d_conversionNodes = std::move(nodes);
+    d_conversionLaserKey = laserKey;
+
+    auto result = LifConversion::assemble(d_conversionNodes);
+    d_conversion = result.ok ? result.conversion : LifConversion();
+}
+
 void LifConfig::setConversionTopology(const std::vector<BC::LifConv::Node> &nodes,
                                       const LifConversion &conv,
                                       const QString &laserKey)
 {
-    d_conversionNodes = nodes;
-    d_conversion = conv;
-    d_conversionLaserKey = laserKey;
+    Q_UNUSED(conv);
+    setConversionNodes(nodes, laserKey);
 }
 
 bool LifConfig::writeTopologyFile() const
@@ -93,6 +103,118 @@ bool LifConfig::writeTopologyFile() const
         });
     }
     return f.commit();
+}
+
+bool LifConfig::readTopologyFile()
+{
+    QDir dir(BlackchirpCSV::exptDir(d_number,d_path));
+    QFile f(dir.absoluteFilePath(BC::CSV::lifTopologyFile));
+    if(!f.exists())
+        return true; // no topology file: identity case, not an error
+
+    if(!f.open(QIODevice::ReadOnly|QIODevice::Text))
+        return false;
+
+    struct RawRow {
+        QString stageKey;
+        BC::LifConv::Op op;
+        int n;
+        bool isFinal;
+        QString in0;
+        QString in1;
+    };
+
+    BlackchirpCSV csv;
+    std::vector<RawRow> rows;
+    std::set<QString> stageKeys;
+
+    while(!f.atEnd())
+    {
+        auto l = csv.readLine(f);
+        if(l.isEmpty())
+            continue;
+
+        if(l.constFirst().toString() == "Index"_L1)
+            continue;
+
+        if(l.size() != 9)
+            continue;
+
+        bool ok = false;
+        l.at(0).toInt(&ok);
+        if(!ok)
+            continue;
+
+        RawRow row;
+        row.stageKey = l.at(1).toString();
+        row.op = BC::CSV::enumFromVariant<BC::LifConv::Op>(l.at(2),BC::LifConv::Op::NHG);
+        bool nOk = false;
+        int n = l.at(3).toString().toInt(&nOk);
+        row.n = nOk ? n : 2;
+        row.isFinal = QVariant(l.at(4)).toBool();
+        row.in0 = l.at(5).toString();
+        row.in1 = l.at(6).toString();
+        // Columns 7/8 (OutCoeffA/B) are derived data, recomputed via
+        // assemble() below rather than trusted from disk.
+
+        stageKeys.insert(row.stageKey);
+        rows.push_back(std::move(row));
+    }
+
+    if(rows.empty())
+    {
+        setConversionNodes({},QString());
+        return true;
+    }
+
+    // Classify one input token per the reader-notes contract: Fixed:<cm1> ->
+    // Fixed; a token matching another row's StageKey -> Stage; anything
+    // else -> Laser (and that token IS the laser hwKey the writer emitted).
+    QString laserKey;
+    auto classify = [&](const QString &tok) -> std::optional<BC::LifConv::InputRef>
+    {
+        if(tok.isEmpty())
+            return std::nullopt;
+
+        BC::LifConv::InputRef ref;
+        if(tok.startsWith(u"Fixed:"_s))
+        {
+            ref.type = BC::LifConv::RefType::Fixed;
+            ref.fixedCm1 = tok.mid(6).toDouble();
+        }
+        else if(stageKeys.count(tok))
+        {
+            ref.type = BC::LifConv::RefType::Stage;
+            ref.stageKey = tok;
+        }
+        else
+        {
+            ref.type = BC::LifConv::RefType::Laser;
+            laserKey = tok;
+        }
+        return ref;
+    };
+
+    std::vector<BC::LifConv::Node> nodes;
+    nodes.reserve(rows.size());
+    for(const auto &row : rows)
+    {
+        BC::LifConv::Node node;
+        node.stageKey = row.stageKey;
+        node.op = row.op;
+        node.n = row.n;
+        node.isFinal = row.isFinal;
+
+        if(auto in0 = classify(row.in0))
+            node.inputs.push_back(*in0);
+        if(auto in1 = classify(row.in1))
+            node.inputs.push_back(*in1);
+
+        nodes.push_back(std::move(node));
+    }
+
+    setConversionNodes(std::move(nodes),laserKey);
+    return true;
 }
 
 namespace {
