@@ -370,6 +370,16 @@ void ExperimentSetupDialog::accept()
             ftmwPage->commitFtmwPreset();
     }
 
+    if(ApplicationConfigManager::instance().isLifEnabled())
+    {
+        auto lifIt = d_pages.find(BC::Key::WizLif::key);
+        if (lifIt != d_pages.end() && lifIt->second.page->isEnabled())
+        {
+            if (auto *lifPage = dynamic_cast<ExperimentLifConfigPage*>(lifIt->second.page))
+                lifPage->commitLifPreset();
+        }
+    }
+
     if(validateAll(true))
         QDialog::accept();
 }

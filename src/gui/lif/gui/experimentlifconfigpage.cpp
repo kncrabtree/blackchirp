@@ -1,11 +1,17 @@
 #include "experimentlifconfigpage.h"
 
+#include <QAbstractButton>
+#include <QInputDialog>
+#include <QLineEdit>
+#include <QMessageBox>
+#include <QPushButton>
 #include <QTabWidget>
 #include <QVBoxLayout>
 
+#include <data/experiment/hardwaredatacontainer.h>
+#include <data/loadout/loadoutmanager.h>
 #include <gui/lif/gui/lifcontrolwidget.h>
 #include <gui/lif/gui/lifconversionwidget.h>
-#include <data/experiment/hardwaredatacontainer.h>
 
 using namespace BC::Key::WizLif;
 using namespace Qt::StringLiterals;
@@ -76,5 +82,93 @@ void ExperimentLifConfigPage::apply()
     {
         p_lcw->toConfig(*p_exp->lifConfig());
         p_conversionWidget->toConfig(*p_exp->lifConfig());
+    }
+}
+
+void ExperimentLifConfigPage::commitLifPreset()
+{
+    if(!isEnabled() || !p_conversionWidget->isDirty())
+        return;
+
+    const auto activeName = LoadoutManager::instance().currentLoadoutName();
+    if(activeName.isEmpty())
+        return;
+
+    const auto currentPresetName = LoadoutManager::instance().currentLifPresetName(activeName);
+    const bool canOverwrite = !currentPresetName.isEmpty()
+        && currentPresetName != BC::Store::LM::lastUsedLifPresetName;
+
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle(u"Save LIF changes?"_s);
+    msgBox.setText(u"The LIF configuration has unsaved changes."_s);
+
+    const QString overwriteLabel = canOverwrite
+        ? QString(u"Overwrite \"%1\""_s).arg(currentPresetName)
+        : u"Overwrite current preset"_s;
+    QAbstractButton *overwriteBtn = static_cast<QAbstractButton*>(
+        msgBox.addButton(overwriteLabel, QMessageBox::AcceptRole));
+    overwriteBtn->setEnabled(canOverwrite);
+    QAbstractButton *saveAsBtn = static_cast<QAbstractButton*>(
+        msgBox.addButton(u"Save as new preset..."_s, QMessageBox::ActionRole));
+    msgBox.addButton(u"Proceed without saving"_s, QMessageBox::DestructiveRole);
+
+    msgBox.exec();
+    auto *clicked = msgBox.clickedButton();
+    const auto preset = p_conversionWidget->toLifPreset();
+
+    if(clicked == overwriteBtn)
+    {
+        LoadoutManager::instance().putLifPreset(activeName, currentPresetName, preset);
+        LoadoutManager::instance().putLifPreset(
+            activeName, BC::Store::LM::lastUsedLifPresetName, preset);
+        p_conversionWidget->clearDirty();
+    }
+    else if(clicked == saveAsBtn)
+    {
+        bool ok;
+        auto name = QInputDialog::getText(
+            this, u"Save LIF Preset As"_s, u"Preset name:"_s,
+            QLineEdit::Normal, {}, &ok).trimmed();
+
+        bool saved = false;
+        if(ok && !name.isEmpty() && name != BC::Store::LM::lastUsedLifPresetName)
+        {
+            bool doSave = true;
+            if(LoadoutManager::instance().lifPresetExists(activeName, name))
+            {
+                const auto r = QMessageBox::question(
+                    this, u"Overwrite Preset"_s,
+                    QString(u"Preset \"%1\" already exists. Overwrite?"_s).arg(name),
+                    QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+                doSave = (r == QMessageBox::Yes);
+            }
+            if(doSave)
+            {
+                LoadoutManager::instance().putLifPreset(activeName, name, preset);
+                LoadoutManager::instance().putLifPreset(
+                    activeName, BC::Store::LM::lastUsedLifPresetName, preset);
+                LoadoutManager::instance().setCurrentLifPresetName(activeName, name);
+                saved = true;
+            }
+        }
+
+        if(!saved)
+        {
+            // Sub-dialog cancelled, invalid name, or overwrite declined — proceed without saving
+            LoadoutManager::instance().putLifPreset(
+                activeName, BC::Store::LM::lastUsedLifPresetName, preset);
+            LoadoutManager::instance().setCurrentLifPresetName(
+                activeName, BC::Store::LM::lastUsedLifPresetName);
+        }
+        p_conversionWidget->clearDirty();
+    }
+    else
+    {
+        // Proceed without saving
+        LoadoutManager::instance().putLifPreset(
+            activeName, BC::Store::LM::lastUsedLifPresetName, preset);
+        LoadoutManager::instance().setCurrentLifPresetName(
+            activeName, BC::Store::LM::lastUsedLifPresetName);
+        p_conversionWidget->clearDirty();
     }
 }

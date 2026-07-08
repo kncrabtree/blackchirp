@@ -43,6 +43,8 @@ public:
     void setFromConfig(const LifConfig &cfg);
     //! Write the table's joined node list into \a cfg.
     void toConfig(LifConfig &cfg) const;
+    //! Snapshot the table's current wiring into a LifPreset (mirrors FtmwConfigWidget::toFtmwPreset()).
+    LifPreset toLifPreset() const;
 
     bool isDirty() const { return d_dirty; }
 
@@ -74,7 +76,6 @@ private slots:
 
 private:
     void initializeFromLifPreset(const LifPreset &preset);
-    LifPreset toLifPreset() const;
     QString buildChainExpression() const;
 
     QTableView *p_tableView;

@@ -25,6 +25,7 @@ public slots:
     void initialize() override;
     bool validate() override;
     void apply() override;
+    void commitLifPreset();
 
 signals:
     //! Forwarded from LifConversionWidget::edited(): the conversion topology
