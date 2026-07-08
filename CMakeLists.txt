@@ -602,6 +602,16 @@ if(BC_BUILD_TESTS)
     add_blackchirp_definitions(tst_lifconversion)
     add_test(NAME LifConversionTest COMMAND tst_lifconversion)
 
+    # FCU Calibration Test
+    add_executable(tst_fcucalibration tests/tst_fcucalibration.cpp)
+    target_link_libraries(tst_fcucalibration
+        blackchirp-data
+        Qt6::Test
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_fcucalibration)
+    add_test(NAME FcuCalibrationTest COMMAND tst_fcucalibration)
+
     # Hardware Communication Test
     # Disabled: HardwareObject carries HardwareManager dependencies that conflict
     # with the test hardware library; re-enable once that coupling is resolved.
@@ -628,6 +638,7 @@ if(BC_BUILD_TESTS)
         tst_zoompanplotthreadsafety
         tst_spcatparser
         tst_lifconversion
+        tst_fcucalibration
         tst_xiamparser
         tst_hardwareregistrytest
         tst_runtimehardwareconfigtest
