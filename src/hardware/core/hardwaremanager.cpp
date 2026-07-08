@@ -263,11 +263,7 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
                 else
                 {
                     d_lifConversion = result.conversion;
-                    if(ll->thread() == QThread::currentThread())
-                        ll->setConversion(d_lifConversion);
-                    else
-                        QMetaObject::invokeMethod(ll,[ll,c=d_lifConversion](){ ll->setConversion(c); },
-                                                  Qt::BlockingQueuedConnection);
+                    pushLifConversionToLaser(ll);
                 }
             }
         }
@@ -628,6 +624,10 @@ void HardwareManager::checkStatus()
         }
     }
 
+    // Refresh the cached LIF conversion so the live jog/status path reflects
+    // the active topology before any experiment is initialized.
+    updateLifConversion();
+
     emit allHardwareConnected(success);
 }
 
@@ -735,6 +735,33 @@ bool HardwareManager::setLifLaserPos(double pos)
         QMetaObject::invokeMethod(ll,[ll,pos](){ return ll->setPosition(pos); },Qt::BlockingQueuedConnection,&newPos);
 
     return newPos >= 0.0;
+}
+
+void HardwareManager::pushLifConversionToLaser(LifLaser *ll)
+{
+    if(!ll)
+        return;
+
+    if(ll->thread() == QThread::currentThread())
+        ll->setConversion(d_lifConversion);
+    else
+        QMetaObject::invokeMethod(ll,[ll,c=d_lifConversion](){ ll->setConversion(c); },
+                                  Qt::BlockingQueuedConnection);
+}
+
+void HardwareManager::updateLifConversion()
+{
+    // Assemble the current topology from the active stage settings (identity
+    // when none are active) so the live jog/status path converts output<->
+    // fundamental correctly outside of an experiment. Experiment prep
+    // re-assembles with validation.
+    d_lifConversion = assembleActiveLifConversion();
+
+    auto laserKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifLaser>();
+    if(laserKeys.isEmpty())
+        return;
+
+    pushLifConversionToLaser(findHardware<LifLaser>(laserKeys.first()));
 }
 
 bool HardwareManager::setLifConversionStages(double outputCm1)

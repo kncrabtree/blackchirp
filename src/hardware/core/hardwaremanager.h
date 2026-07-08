@@ -23,6 +23,7 @@
 #include <hardware/core/communication/communicationprotocol.h>
 
 class HardwareObject;
+class LifLaser;
 class ClockManager;
 class Experiment;
 class GpibController;
@@ -793,12 +794,23 @@ private:
     /// same thread.
     std::unique_ptr<ClockManager> pu_clockManager;
 
-    /// \brief Cached LIF frequency-conversion topology, assembled at
-    /// experiment prep (initializeExperiment()) from the active LifLaser and
-    /// every active LifFreqConversionStage's node descriptor, and pushed to
-    /// the laser via LifLaser::setConversion(). Identity (output ==
-    /// fundamental) until a LIF-enabled experiment has been initialized.
+    /// \brief Cached LIF frequency-conversion topology, assembled from the
+    /// active LifLaser and every active LifFreqConversionStage's node
+    /// descriptor and pushed to the laser via LifLaser::setConversion().
+    /// Refreshed whenever hardware connection completes (updateLifConversion(),
+    /// so live control reflects the topology) and re-validated at experiment
+    /// prep. Identity (output == fundamental) when no stages are active.
     LifConversion d_lifConversion;
+
+    /// \brief Push the cached d_lifConversion to \a ll, thread-aware (direct
+    /// call when on the laser thread, else a blocking queued invocation).
+    void pushLifConversionToLaser(LifLaser *ll);
+
+    /// \brief Re-assemble d_lifConversion from the active stage settings and
+    /// push it to the active laser, so the live jog/status path uses the
+    /// current topology outside of an experiment. Invoked when connection
+    /// testing completes.
+    void updateLifConversion();
 
     /// \brief Raw pointer to the single live instance, set in the constructor
     /// and cleared in the destructor, used by constInstance().
