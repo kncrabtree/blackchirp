@@ -14,6 +14,7 @@
 #include <hardware/core/clock/clockmanager.h>
 #include <hardware/core/liflaser/liffreqconversionstage.h>
 #include <data/lif/lifconfig.h>
+#include <data/loadout/loadoutmanager.h>
 #include <hardware/core/hw_h.h> // Generated at build time
 
 #include <QThread>
@@ -231,28 +232,18 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
             }
             else
             {
-                // Assemble the frequency-conversion topology from every active
-                // stage's node descriptor (an empty stage set yields the
-                // identity conversion) and cache it for setLifConversionStages().
-                // A malformed topology is a prep-time error that aborts the
-                // experiment before acquisition rather than surfacing later.
-                auto stageKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifFreqConversionStage>();
+                // Node wiring is owned by the current LIF preset
+                // (LifConversionSnapshot), not by the stages' hardware
+                // settings; op/harmonic order are read from each wiring
+                // entry's active hardware settings snapshot (never a live
+                // device). No preset selected yields an empty node list,
+                // i.e. the identity conversion. A malformed topology is a
+                // prep-time error that aborts the experiment before
+                // acquisition rather than surfacing later.
                 std::vector<BC::LifConv::Node> nodes;
-                nodes.reserve(static_cast<std::size_t>(stageKeys.size()));
-                for(const auto &key : stageKeys)
-                {
-                    auto stage = findHardware<LifFreqConversionStage>(key);
-                    if(!stage)
-                        continue;
-
-                    BC::LifConv::Node node;
-                    if(stage->thread() == QThread::currentThread())
-                        node = stage->conversionNode();
-                    else
-                        QMetaObject::invokeMethod(stage,[stage](){ return stage->conversionNode(); },
-                                                  Qt::BlockingQueuedConnection,&node);
-                    nodes.push_back(node);
-                }
+                auto loadoutName = LoadoutManager::instance().currentLoadoutName();
+                if(auto preset = LoadoutManager::instance().currentLifPreset(loadoutName))
+                    nodes = lifConversionNodesFromSnapshot(preset->conversion);
 
                 auto result = LifConversion::assemble(nodes);
                 if(!result.ok)
@@ -758,11 +749,12 @@ void HardwareManager::pushLifConversionToLaser(LifLaser *ll)
 
 void HardwareManager::updateLifConversion()
 {
-    // Assemble the current topology from the active stage settings (identity
-    // when none are active) so the live jog/status path converts output<->
-    // fundamental correctly outside of an experiment. Experiment prep
-    // re-assembles with validation.
-    d_lifConversion = assembleActiveLifConversion();
+    // Assemble the current preset's topology (identity when no preset is
+    // selected) so the live jog/status path converts output<->fundamental
+    // correctly outside of an experiment. Experiment prep re-assembles with
+    // validation, hard-failing the experiment on a malformed topology
+    // instead of tolerating one.
+    d_lifConversion = assembleCurrentLifConversion().conversion;
 
     auto laserKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifLaser>();
     if(laserKeys.isEmpty())

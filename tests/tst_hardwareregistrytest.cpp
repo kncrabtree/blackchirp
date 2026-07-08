@@ -232,8 +232,8 @@ void HardwareRegistryTest::testFreqConversionStageConstructionPath()
 
     // Same construction-path guarantee as testEnumSettingDefaultSeededAsKeyName,
     // for the LifFreqConversionStage base's enum-valued conversionOp setting,
-    // plus a check that conversionNode() reads the registered node descriptor
-    // (op/inputs) back into a BC::LifConv::Node keyed by the stage's own d_key.
+    // plus a check that conversionOp()/harmonicOrder() read the registered
+    // op/harmonic settings back for the stage.
     VirtualLifFreqConversionStage stage("enumSeedTest");
 
     auto stored = stage.get(BC::Key::LifConvStage::op, QVariant{});
@@ -241,11 +241,8 @@ void HardwareRegistryTest::testFreqConversionStageConstructionPath()
     QCOMPARE(stored.toString(), QStringLiteral("NHG"));
     QCOMPARE(BC::CSV::enumFromVariant<Op>(stored, Op::SFG), Op::NHG);
 
-    auto node = stage.conversionNode();
-    QCOMPARE(node.stageKey, stage.d_key);
-    QCOMPARE(node.op, Op::NHG);
-    QCOMPARE(node.inputs.size(), std::size_t(1));
-    QCOMPARE(node.inputs.at(0).type, RefType::Laser);
+    QCOMPARE(stage.conversionOp(), Op::NHG);
+    QCOMPARE(stage.harmonicOrder(), 2);
 }
 
 void HardwareRegistryTest::testDuplicateRegistration()

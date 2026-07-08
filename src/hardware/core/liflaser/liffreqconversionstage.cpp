@@ -1,8 +1,8 @@
 #include <hardware/core/liflaser/liffreqconversionstage.h>
 
 #include <hardware/core/hardwareregistration.h>
-#include <hardware/core/runtimehardwareconfig.h>
 #include <data/storage/enumcsvconvert.h>
+#include <data/loadout/loadoutmanager.h>
 
 using namespace BC::Key::LifConvStage;
 using namespace BC::LifConv;
@@ -12,8 +12,6 @@ REGISTER_HARDWARE_BASE(LifFreqConversionStage,
      QVariant::fromValue(Op::NHG), QVariant{}, QVariant{}, HwSettingPriority::Important},
     {harmonic, "Harmonic Order",      "Harmonic order N for an NHG node (ignored for SFG/DFG)",
      2, 1, QVariant{}, HwSettingPriority::Important},
-    {isFinal,  "Final Beam",          "This node's output is the LIF excitation (output) beam",
-     false, QVariant{}, QVariant{}, HwSettingPriority::Important},
     {verify,   "Verify Move",         "Confirm the achieved position after a move; a mismatch "
                                        "fails the move instead of only logging a warning",
      true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
@@ -21,11 +19,6 @@ REGISTER_HARDWARE_BASE(LifFreqConversionStage,
                                        "many cm-1 of the requested local input wavenumber",
      1.0, 0.0, QVariant{}, HwSettingPriority::Optional}
 )
-REGISTER_HARDWARE_BASE_ARRAY(LifFreqConversionStage, inputs,
-    "Conversion Inputs", "Ordered input references for this node (NHG needs one; SFG/DFG need two)",
-    HwSettingPriority::Important)
-REGISTER_HARDWARE_BASE_ARRAY_ENTRY(LifFreqConversionStage, inputs,
-    {{refType, QVariant::fromValue(RefType::Laser)}, {refKey, QString()}, {refFixedCm1, 0.0}})
 
 LifFreqConversionStage::LifFreqConversionStage(const QString& impl, const QString& label, QObject *parent) :
     HardwareObject(QString(LifFreqConversionStage::staticMetaObject.className()), impl, label, parent)
@@ -38,31 +31,16 @@ LifFreqConversionStage::~LifFreqConversionStage()
 
 }
 
-BC::LifConv::Node LifFreqConversionStage::conversionNode() const
+BC::LifConv::Op LifFreqConversionStage::conversionOp() const
 {
-    return nodeFromSettings(*this, d_key);
+    return BC::CSV::enumFromVariant<Op>(get(op, QVariant::fromValue(Op::NHG)), Op::NHG);
 }
 
-BC::LifConv::Node LifFreqConversionStage::nodeFromSettings(const SettingsStorage &s, const QString &stageKey)
+bool LifFreqConversionStage::setHarmonicOrder(int n)
 {
-    Node node;
-    node.stageKey = stageKey;
-    node.op = BC::CSV::enumFromVariant<Op>(s.get(op, QVariant::fromValue(Op::NHG)), Op::NHG);
-    node.n = s.get(harmonic, 2);
-    node.isFinal = s.get(isFinal, false);
-
-    auto count = s.getArraySize(inputs);
-    for(std::size_t i=0; i<count; ++i)
-    {
-        InputRef ref;
-        ref.type = BC::CSV::enumFromVariant<RefType>(
-                    s.getArrayValue(inputs, i, refType, QVariant::fromValue(RefType::Laser)), RefType::Laser);
-        ref.stageKey = s.getArrayValue(inputs, i, refKey, QString());
-        ref.fixedCm1 = s.getArrayValue(inputs, i, refFixedCm1, 0.0);
-        node.inputs.push_back(ref);
-    }
-
-    return node;
+    set(harmonic, n);
+    save();
+    return true;
 }
 
 double LifFreqConversionStage::readPosition()
@@ -101,26 +79,43 @@ bool LifFreqConversionStage::setPosition(double localCm1)
     return true;
 }
 
-LifConversion assembleActiveLifConversion()
+std::vector<BC::LifConv::Node> lifConversionNodesFromSnapshot(const LifConversionSnapshot &snap)
 {
-    auto stageKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifFreqConversionStage>();
+    // op/harmonic are read from a SettingsStorage snapshot constructed
+    // directly on each wiring entry's stage key, never a live device: the
+    // caller may be running on the GUI/data-layer thread, and a stage's
+    // conversionOp()/harmonicOrder() are virtuals on a threaded HardwareObject.
+    auto opOf = [](const QString &stageKey) -> Op {
+        SettingsStorage s(stageKey, SettingsStorage::Hardware);
+        return BC::CSV::enumFromVariant<Op>(s.get(op, QVariant::fromValue(Op::NHG)), Op::NHG);
+    };
+    auto harmonicOf = [](const QString &stageKey) -> int {
+        SettingsStorage s(stageKey, SettingsStorage::Hardware);
+        return s.get(harmonic, 2);
+    };
 
-    std::vector<BC::LifConv::Node> nodes;
-    nodes.reserve(static_cast<std::size_t>(stageKeys.size()));
-    for(const auto &key : stageKeys)
+    return snap.toNodes(opOf, harmonicOf);
+}
+
+LifConversion::AssemblyResult assembleLifConversion(const LifConversionSnapshot &snap)
+{
+    return LifConversion::assemble(lifConversionNodesFromSnapshot(snap));
+}
+
+LifConversion::AssemblyResult assembleCurrentLifConversion()
+{
+    auto loadoutName = LoadoutManager::instance().currentLoadoutName();
+    auto preset = LoadoutManager::instance().currentLifPreset(loadoutName);
+    if(!preset)
     {
-        SettingsStorage s(key, SettingsStorage::Hardware);
-        nodes.push_back(LifFreqConversionStage::nodeFromSettings(s, key));
+        // No loadout/LIF preset selected: identity, not an error, matching
+        // the tolerant fallback GUI callers rely on to stay responsive
+        // before a topology has been configured.
+        LifConversion::AssemblyResult identity;
+        identity.ok = true;
+        identity.conversion = LifConversion();
+        return identity;
     }
 
-    auto result = LifConversion::assemble(nodes);
-    if(result.ok)
-        return result.conversion;
-
-    // Config-time topology may be mid-edit (e.g. an input ref pointing at a
-    // not-yet-configured stage); HardwareManager's prep-time assemble() is
-    // the authoritative validator and aborts the experiment on failure.
-    // Here, falling back to the identity keeps the GUI responsive instead
-    // of surfacing a transient error.
-    return LifConversion();
+    return assembleLifConversion(preset->conversion);
 }

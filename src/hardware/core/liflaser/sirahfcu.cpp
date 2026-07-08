@@ -23,14 +23,12 @@ REGISTER_COMM_DEFAULTS(SirahFcu, CommunicationProtocol::Rs232,
     {BC::Key::Comm::timeout, 200},
     {BC::Key::Comm::termChar, QString("")})
 
-// Override the base LifFreqConversionStage node-descriptor defaults for the
-// common lone-doubler case. op (NHG) and conversionInputs (one Laser input)
-// stay the inherited base defaults.
+// Override the base LifFreqConversionStage harmonic-order default for the
+// common lone-doubler case. The registered op setting stays the inherited
+// base default (NHG), matching conversionOp()'s pinned override below.
 REGISTER_HARDWARE_SETTINGS(SirahFcu,
     {harmonic, "Harmonic Order", "Harmonic order N for this doubler; set once at profile creation",
-     2,    1,          QVariant{}, HwSettingPriority::Required},
-    {isFinal,  "Final Beam",     "This doubler's output is the LIF excitation (output) beam",
-     true, QVariant{}, QVariant{}, HwSettingPriority::Important}
+     2,    1,          QVariant{}, HwSettingPriority::Required}
 )
 
 // Placeholder sine-bar geometry: SirahCobra's grating-stage values, copied
@@ -57,6 +55,13 @@ REGISTER_HARDWARE_ARRAY_ENTRY(SirahFcu, stages,
 SirahFcu::SirahFcu(const QString& label, QObject *parent) :
     LifFreqConversionStage(QString(SirahFcu::staticMetaObject.className()), label, parent)
 {
+}
+
+BC::LifConv::Op SirahFcu::conversionOp() const
+{
+    // A Sirah FCU is an N-th-harmonic-generation doubling crystal by device
+    // identity, not a user-selectable operation.
+    return Op::NHG;
 }
 
 void SirahFcu::initialize()

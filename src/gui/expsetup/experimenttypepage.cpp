@@ -263,9 +263,9 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
         }
 
         // GUI-thread-only assembly over settings snapshots (no threaded
-        // device access); falls back to the identity conversion if the
-        // topology is mid-edit or invalid.
-        auto conv = assembleActiveLifConversion();
+        // device access); falls back to the identity conversion if no
+        // preset is selected or the topology is mid-edit or invalid.
+        auto conv = assembleCurrentLifConversion().conversion;
         auto [outLoCm1, outHiCm1] = conv.outputRange(minPos, maxPos);
         auto dlo = BC::LifConv::fromCm1(outLoCm1, unit);
         auto dhi = BC::LifConv::fromCm1(outHiCm1, unit);

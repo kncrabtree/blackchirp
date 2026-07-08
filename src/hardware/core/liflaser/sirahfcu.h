@@ -32,11 +32,11 @@ inline constexpr QLatin1StringView sMotorResolution{"stageMotorResolutionStepsPe
  * than shared, since that hardware equivalence has not been bench-verified
  * (see sirahprotocol.h).
  *
- * The node-descriptor defaults are overridden for the common lone-doubler
- * case: harmonic order N defaults to 2 and is Required (set once at
- * profile creation), and isFinal defaults to true (a single FCU with no
- * further downstream stage is the FINAL beam). op stays the base default
- * (NHG) and conversionInputs stays the base default (one Laser input).
+ * The registered harmonic-order default is overridden for the common
+ * lone-doubler case: N defaults to 2 and is Required (set once at profile
+ * creation). This is an NHG device by identity — conversionOp() is pinned
+ * to Op::NHG — though the base op setting (already defaulting to NHG)
+ * stays registered so it remains snapshot-visible.
  *
  * The sine-bar geometry defaults below are placeholders copied from
  * SirahCobra's grating stage (the actual doubler-crystal geometry is
@@ -57,6 +57,9 @@ public:
     };
 
     explicit SirahFcu(const QString& label, QObject *parent = nullptr);
+
+    // LifFreqConversionStage interface
+    BC::LifConv::Op conversionOp() const override;
 
     // HardwareObject interface
 protected:

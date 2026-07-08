@@ -24,12 +24,12 @@ LifLaserWidget::LifLaserWidget(const QString& lifLaserKey, QWidget *parent)
 
     // minPos/maxPos are the grating fundamental's native range (cm⁻¹);
     // the box presents the FINAL-beam output range in the display unit,
-    // assembled from the active laser + frequency-conversion topology
+    // assembled from the current LIF preset's conversion topology
     // (GUI-thread settings snapshot, no threaded device access).
     auto fundMin = s.get(minPos, 5000.0);
     auto fundMax = s.get(maxPos, 40000.0);
     d_unit = BC::CSV::enumFromVariant<LaserUnit>(s.get(units, QVariant::fromValue(LaserUnit::Nm)), LaserUnit::Nm);
-    auto conv = assembleActiveLifConversion();
+    auto conv = assembleCurrentLifConversion().conversion;
     auto [outLoCm1, outHiCm1] = conv.outputRange(fundMin, fundMax);
     auto dlo = fromCm1(outLoCm1, d_unit);
     auto dhi = fromCm1(outHiCm1, d_unit);
