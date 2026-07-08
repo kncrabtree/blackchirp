@@ -525,6 +525,25 @@ QStringList LoadoutManager::lifPresetNames(const QString &loadoutName, bool incl
     return names;
 }
 
+bool LoadoutManager::clearLifPresets(const QString &loadoutName)
+{
+    {
+        QMutexLocker lk(&d_mutex);
+        auto it = d_loadouts.find(loadoutName);
+        if (it == d_loadouts.end())
+            return false;
+        it->lifPresets.clear();
+        it->currentLifPresetName.clear();
+    }
+
+    SettingsStorage::purgeGroup({key.toString(), loadoutName, lifPresetsKey.toString()});
+    p_writeLifPresetPointers(loadoutName);
+    p_syncLifPresetIndex(loadoutName);
+
+    emit loadoutChanged(loadoutName);
+    return true;
+}
+
 // ── LIF preset current/default ────────────────────────────────────────────────
 
 QString LoadoutManager::currentLifPresetName(const QString &loadoutName) const

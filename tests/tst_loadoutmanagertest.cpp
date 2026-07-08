@@ -44,6 +44,8 @@ private slots:
     void testRenameLifPresetRewritesPointers();
     void testRemoveLoadoutCascadesLifPresets();
     void testLifConversionWiringArrayRoundTrip();
+    void testClearLifPresets();
+    void testPutLoadoutPreservesLifPresetsAcrossResave();
 
 private:
     LoadoutManager *makeLm() const;
@@ -993,6 +995,83 @@ void LoadoutManagerTest::testLifConversionWiringArrayRoundTrip()
             QCOMPARE(back.wiring[i].inputs[j].fixedCm1, snap.wiring[i].inputs[j].fixedCm1);
         }
     }
+}
+
+void LoadoutManagerTest::testClearLifPresets()
+{
+    using namespace Qt::StringLiterals;
+
+    HardwareLoadout lo = makeWithLifPresets();
+    lo.name = u"LifClearTest"_s;
+
+    std::unique_ptr<LoadoutManager> lm(makeLm());
+    QVERIFY(lm->putLoadout(lo));
+    QCOMPARE(lm->lifPresetNames(u"LifClearTest"_s, true).size(), 3);
+    QCOMPARE(lm->currentLifPresetName(u"LifClearTest"_s), u"Secondary"_s);
+
+    QSignalSpy changedSpy(lm.get(), &LoadoutManager::loadoutChanged);
+    QVERIFY(lm->clearLifPresets(u"LifClearTest"_s));
+    QCOMPARE(changedSpy.count(), 1);
+
+    // In-memory state is cleared, hardware map is untouched
+    QVERIFY(lm->lifPresetNames(u"LifClearTest"_s, true).isEmpty());
+    QVERIFY(lm->currentLifPresetName(u"LifClearTest"_s).isEmpty());
+    const auto got = lm->getLoadout(u"LifClearTest"_s);
+    QVERIFY(got.has_value());
+    QCOMPARE(got->hardwareMap, lo.hardwareMap);
+
+    // Clearing an unknown loadout fails
+    QVERIFY(!lm->clearLifPresets(u"NoSuchLoadout"_s));
+
+    // Persistence: the on-disk subtree is actually purged, not just the index
+    lm.reset();
+    std::unique_ptr<LoadoutManager> lm2(makeLm());
+    QVERIFY(lm2->lifPresetNames(u"LifClearTest"_s, true).isEmpty());
+    QVERIFY(lm2->currentLifPresetName(u"LifClearTest"_s).isEmpty());
+    QVERIFY(!lm2->lifPresetExists(u"LifClearTest"_s, u"Primary"_s));
+    QCOMPARE(lm2->getLoadout(u"LifClearTest"_s)->hardwareMap, lo.hardwareMap);
+}
+
+void LoadoutManagerTest::testPutLoadoutPreservesLifPresetsAcrossResave()
+{
+    // Regression test for the loadout Save handlers wiping lifPresets: as
+    // long as the caller carries `lifPresets`/`currentLifPresetName` forward
+    // from the existing loadout into the struct passed to putLoadout(),
+    // presets survive a re-save exactly like ftmwPresets already do.
+    using namespace Qt::StringLiterals;
+
+    const HardwareLoadout original = makeWithLifPresets();
+    std::unique_ptr<LoadoutManager> lm(makeLm());
+    QVERIFY(lm->putLoadout(original));
+
+    const auto existing = lm->getLoadout(original.name);
+    QVERIFY(existing.has_value());
+
+    // Simulate a hardware-config re-save that rebuilds a fresh struct (as
+    // onLoadoutSave() does) but correctly forwards the LIF preset family.
+    HardwareLoadout resaved;
+    resaved.name = original.name;
+    resaved.hardwareMap = existing->hardwareMap;
+    resaved.lifPresets = existing->lifPresets;
+    resaved.currentLifPresetName = existing->currentLifPresetName;
+    resaved.lastModified = QDateTime::currentDateTimeUtc();
+
+    QVERIFY(lm->putLoadout(resaved));
+
+    const auto got = lm->getLoadout(original.name);
+    QVERIFY(got.has_value());
+    QCOMPARE(got->currentLifPresetName, original.currentLifPresetName);
+    QCOMPARE(got->lifPresets.size(), original.lifPresets.size());
+    verifyLifPresetEqual(got->lifPresets.at(u"Primary"_s), original.lifPresets.at(u"Primary"_s));
+    verifyLifPresetEqual(got->lifPresets.at(u"Secondary"_s), original.lifPresets.at(u"Secondary"_s));
+
+    // Persistence after reload
+    lm.reset();
+    std::unique_ptr<LoadoutManager> lm2(makeLm());
+    const auto got2 = lm2->getLoadout(original.name);
+    QVERIFY(got2.has_value());
+    QCOMPARE(got2->lifPresets.size(), original.lifPresets.size());
+    QCOMPARE(got2->currentLifPresetName, original.currentLifPresetName);
 }
 
 QTEST_GUILESS_MAIN(LoadoutManagerTest)

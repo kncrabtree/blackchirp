@@ -20,6 +20,7 @@
 #include <data/loadout/loadoutmanager.h>
 #include <hardware/core/hardwareregistry.h>
 #include <hardware/core/hardwareprofilemanager.h>
+#include <hardware/core/liflaser/liffreqconversionstage.h>
 #include <gui/style/themecolors.h>
 #include <gui/widget/pythonsettingswidget.h>
 #include <gui/widget/librarystatuswidget.h>
@@ -37,6 +38,23 @@ static QSet<QString> ftmwRelevantHwKeys(const std::map<QString, QString, std::le
         FtmwDigitizer::staticMetaObject.className(),
         AWG::staticMetaObject.className(),
         Clock::staticMetaObject.className()
+    };
+    QSet<QString> keys;
+    for (const auto &[hwKey, impl] : hwMap) {
+        auto [type, label] = BC::Key::parseKey(hwKey);
+        if (relevantTypes.contains(type))
+            keys.insert(hwKey);
+    }
+    return keys;
+}
+
+// Returns the set of hwKeys that LIF presets care about (LifLaser, LifFreqConversionStage).
+// Implementations are intentionally excluded; only the key identity matters for drift.
+static QSet<QString> lifRelevantHwKeys(const std::map<QString, QString, std::less<>> &hwMap)
+{
+    static const QSet<QString> relevantTypes {
+        LifLaser::staticMetaObject.className(),
+        LifFreqConversionStage::staticMetaObject.className()
     };
     QSet<QString> keys;
     for (const auto &[hwKey, impl] : hwMap) {
@@ -1411,6 +1429,13 @@ void RuntimeHardwareConfigDialog::onLoadoutActivate()
 
 void RuntimeHardwareConfigDialog::onLoadoutSave()
 {
+    // Preset-family drift decision, resolved before any settings are mutated.
+    // FTMW and LIF drift independently, so both prompts (if any) must run and
+    // be resolved to Preserve/Discard before either family's presets are
+    // touched — otherwise a Cancel/SaveAs on the second prompt would leave
+    // the first family's presets already cleared but the loadout unsaved.
+    enum class PresetDriftDecision { Preserve, Discard, SaveAs, Cancel };
+
     auto &lm = LoadoutManager::instance();
 
     HardwareLoadout loadout;
@@ -1418,12 +1443,13 @@ void RuntimeHardwareConfigDialog::onLoadoutSave()
     loadout.hardwareMap = std::map<QString,QString,std::less<>>(d_previewRuntimeConfig.begin(), d_previewRuntimeConfig.end());
 
     const auto existing = lm.getLoadout(d_activeLoadoutName);
+
+    PresetDriftDecision ftmwDecision = PresetDriftDecision::Preserve;
     if (existing.has_value()) {
         const bool drift = ftmwRelevantHwKeys(loadout.hardwareMap) != ftmwRelevantHwKeys(existing->hardwareMap);
 
         if (!drift) {
-            loadout.ftmwPresets = existing->ftmwPresets;
-            loadout.currentFtmwPresetName = existing->currentFtmwPresetName;
+            ftmwDecision = PresetDriftDecision::Preserve;
         } else if (!lm.ftmwPresetNames(d_activeLoadoutName, false).isEmpty()) {
             QMessageBox msgBox(this);
             msgBox.setWindowTitle(u"Hardware Configuration Changed"_s);
@@ -1437,18 +1463,71 @@ void RuntimeHardwareConfigDialog::onLoadoutSave()
             msgBox.exec();
 
             const auto *clicked = msgBox.clickedButton();
-            if (clicked == discardBtn) {
-                lm.clearFtmwPresets(d_activeLoadoutName);
-            } else if (clicked == saveAsBtn) {
-                onLoadoutSaveAs();
-                return;
-            } else {
-                return;
-            }
+            if (clicked == discardBtn)
+                ftmwDecision = PresetDriftDecision::Discard;
+            else if (clicked == saveAsBtn)
+                ftmwDecision = PresetDriftDecision::SaveAs;
+            else
+                ftmwDecision = PresetDriftDecision::Cancel;
         } else {
-            // Drift with no named presets: clear __LastUsed__ defensively
-            lm.clearFtmwPresets(d_activeLoadoutName);
+            // Drift with no named presets: discard __LastUsed__ defensively
+            ftmwDecision = PresetDriftDecision::Discard;
         }
+    }
+
+    PresetDriftDecision lifDecision = PresetDriftDecision::Preserve;
+    if (existing.has_value()) {
+        const bool drift = lifRelevantHwKeys(loadout.hardwareMap) != lifRelevantHwKeys(existing->hardwareMap);
+
+        if (!drift) {
+            lifDecision = PresetDriftDecision::Preserve;
+        } else if (!lm.lifPresetNames(d_activeLoadoutName, false).isEmpty()) {
+            QMessageBox msgBox(this);
+            msgBox.setWindowTitle(u"Hardware Configuration Changed"_s);
+            msgBox.setText(
+                u"The LIF laser or conversion-stage hardware has changed for loadout \"%1\". "
+                u"The existing LIF presets may no longer be compatible."_s.arg(d_activeLoadoutName));
+            auto *discardBtn = msgBox.addButton(u"Discard LIF presets and save"_s, QMessageBox::DestructiveRole);
+            auto *saveAsBtn  = msgBox.addButton(u"Save As instead"_s, QMessageBox::ResetRole);
+            msgBox.addButton(QMessageBox::Cancel);
+            msgBox.setDefaultButton(QMessageBox::Cancel);
+            msgBox.exec();
+
+            const auto *clicked = msgBox.clickedButton();
+            if (clicked == discardBtn)
+                lifDecision = PresetDriftDecision::Discard;
+            else if (clicked == saveAsBtn)
+                lifDecision = PresetDriftDecision::SaveAs;
+            else
+                lifDecision = PresetDriftDecision::Cancel;
+        } else {
+            // Drift with no named presets: discard __LastUsed__ defensively
+            lifDecision = PresetDriftDecision::Discard;
+        }
+    }
+
+    // Both families are now decided; nothing has been mutated yet.
+    if (ftmwDecision == PresetDriftDecision::Cancel || lifDecision == PresetDriftDecision::Cancel)
+        return;
+
+    if (ftmwDecision == PresetDriftDecision::SaveAs || lifDecision == PresetDriftDecision::SaveAs) {
+        onLoadoutSaveAs();
+        return;
+    }
+
+    // Apply phase: all prompts are resolved, so it is now safe to mutate settings.
+    if (ftmwDecision == PresetDriftDecision::Preserve && existing.has_value()) {
+        loadout.ftmwPresets = existing->ftmwPresets;
+        loadout.currentFtmwPresetName = existing->currentFtmwPresetName;
+    } else if (ftmwDecision == PresetDriftDecision::Discard) {
+        lm.clearFtmwPresets(d_activeLoadoutName);
+    }
+
+    if (lifDecision == PresetDriftDecision::Preserve && existing.has_value()) {
+        loadout.lifPresets = existing->lifPresets;
+        loadout.currentLifPresetName = existing->currentLifPresetName;
+    } else if (lifDecision == PresetDriftDecision::Discard) {
+        lm.clearLifPresets(d_activeLoadoutName);
     }
 
     loadout.lastModified = QDateTime::currentDateTimeUtc();
@@ -1509,6 +1588,27 @@ void RuntimeHardwareConfigDialog::onLoadoutSaveAs()
                     lm.setCurrentFtmwPresetName(name, curPreset);
             }
         }
+
+        // Offer LIF preset copy when the previous loadout shares hardware and has named presets
+        const auto namedLifPresets = lm.lifPresetNames(prevName, false);
+        if (!namedLifPresets.isEmpty() &&
+            lifRelevantHwKeys(loadout.hardwareMap) == lifRelevantHwKeys(prevLoadout->hardwareMap)) {
+            const auto copyReply = QMessageBox::question(
+                this, u"Copy LIF Presets"_s,
+                u"Copy LIF presets from \"%1\" to \"%2\"?"_s.arg(prevName, name),
+                QMessageBox::Yes | QMessageBox::No);
+            if (copyReply == QMessageBox::Yes) {
+                for (const auto &pName : namedLifPresets) {
+                    auto preset = lm.getLifPreset(prevName, pName);
+                    if (preset.has_value())
+                        lm.putLifPreset(name, pName, *preset);
+                }
+                const auto curPreset = lm.currentLifPresetName(prevName);
+                if (!curPreset.isEmpty()
+                    && curPreset != BC::Store::LM::lastUsedLifPresetName)
+                    lm.setCurrentLifPresetName(name, curPreset);
+            }
+        }
     }
 }
 
@@ -1559,6 +1659,24 @@ void RuntimeHardwareConfigDialog::onLoadoutCopy()
             const auto curPreset = lm.currentFtmwPresetName(sourceName);
             if (!curPreset.isEmpty() && curPreset != BC::Store::LM::lastUsedFtmwPresetName)
                 lm.setCurrentFtmwPresetName(name, curPreset);
+        }
+    }
+
+    const auto namedLifPresets = lm.lifPresetNames(sourceName, false);
+    if (!namedLifPresets.isEmpty()) {
+        const auto copyReply = QMessageBox::question(
+            this, u"Copy LIF Presets"_s,
+            u"Copy LIF presets from \"%1\" to \"%2\"?"_s.arg(sourceName, name),
+            QMessageBox::Yes | QMessageBox::No);
+        if (copyReply == QMessageBox::Yes) {
+            for (const auto &pName : namedLifPresets) {
+                auto preset = lm.getLifPreset(sourceName, pName);
+                if (preset.has_value())
+                    lm.putLifPreset(name, pName, *preset);
+            }
+            const auto curPreset = lm.currentLifPresetName(sourceName);
+            if (!curPreset.isEmpty() && curPreset != BC::Store::LM::lastUsedLifPresetName)
+                lm.setCurrentLifPresetName(name, curPreset);
         }
     }
 

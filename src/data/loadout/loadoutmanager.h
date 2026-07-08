@@ -175,6 +175,8 @@ public:
     /// \param loadoutName Loadout whose preset names should be returned.
     /// \param includeLastUsed If true, the `__LastUsed__` sentinel is included in the returned list.
     QStringList lifPresetNames(const QString &loadoutName, bool includeLastUsed = false) const;
+    /// \brief Remove every LIF preset from the named loadout.
+    bool clearLifPresets(const QString &loadoutName);
 
     // Current/default LIF preset
 
