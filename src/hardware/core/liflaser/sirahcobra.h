@@ -2,11 +2,9 @@
 #define SIRAHCOBRA_H
 
 #include "liflaser.h"
-
-class QSerialPort;
+#include "sirahprotocol.h"
 
 namespace BC::Key::LifLaser {
-inline constexpr QLatin1StringView mFactor{"multFactor"};
 inline constexpr QLatin1StringView stages{"stages"};
 inline constexpr QLatin1StringView sStart{"stageStartFreqHz"};
 inline constexpr QLatin1StringView sHigh{"stageHighFreqHz"};
@@ -20,35 +18,23 @@ inline constexpr QLatin1StringView sGrazingAngle{"stageGrazingAngleDeg"};
 inline constexpr QLatin1StringView sGrooves{"stageGratingGroovesPerMm"};
 inline constexpr QLatin1StringView sPitch{"stageScrewPitchmmPerRev"};
 inline constexpr QLatin1StringView sMotorResolution{"stageMotorResolutionStepsPerRev"};
-inline constexpr QLatin1StringView hasExtStage{"hasExternalStage"};
-inline constexpr QLatin1StringView extStagePort{"externalStagePort"};
-inline constexpr QLatin1StringView extStageBaud{"externalStageBaudRate"};
-inline constexpr QLatin1StringView extStageCrystalAddress{"externalStageCrystalAddress"};
-inline constexpr QLatin1StringView extStageCompAddress{"externalStageCompensatorAddress"};
-inline constexpr QLatin1StringView extStageCrystalTheta0{"externalStageCrystalAngle0deg"};
-inline constexpr QLatin1StringView extStageCrystalSlope{"externalStageCrystalSlopeDegPerNm"};
-inline constexpr QLatin1StringView extStageCompTheta0{"externalStageCompensatorAngle0deg"};
-inline constexpr QLatin1StringView extStageCompSlope{"externalStageCompensatorSlopeDegPerNm"};
-inline constexpr QLatin1StringView extStageCrystalPoly{"externalStageCrystalPolynomial"};
-inline constexpr QLatin1StringView extStageCompPoly{"externalStageCompPolynomial"};
-inline constexpr QLatin1StringView polyOrder{"order"};
-inline constexpr QLatin1StringView polyValue{"value"};
 }
 
+/*!
+ * \brief Sirah Cobra dye-laser grating driver.
+ *
+ * Speaks the binary command/status protocol (BC::Sirah::buildCommand()/
+ * parseStatus()) on its own RS232 port to drive the grating's sine-bar
+ * tuning mechanism. minPos/maxPos/setPos()/readPos() work in the grating
+ * fundamental (vacuum wavenumber, cm-1, per the LifLaser base contract);
+ * the sine-bar geometry itself (posToWavelength()/wavelengthToPos()) is
+ * evaluated in nm, so those two functions are the driver's nm<->cm-1
+ * boundary.
+ */
 class SirahCobra : public LifLaser
 {
     Q_OBJECT
 public:
-    struct SirahStatus {
-        quint8 err;
-        quint8 cStatus;
-        quint8 m1Status;
-        qint32 m1Pos;
-        quint8 m2Status;
-        qint32 m2Pos;
-        int lastMoveDir{0};
-    };
-
     struct TuningParameters {
         double lLen;
         double linOff;
@@ -57,19 +43,6 @@ public:
         double grooves;
         double pitch;
         double mRes;
-    };
-
-    struct StageStatus {
-        double pos{0.0};
-        double stepsPerDeg{100};
-        double theta0{0.0};
-        double slope{1.0};
-    };
-    
-    struct PolyStageStatus {
-        double pos{0.0};
-        double stepsPerDeg{100};
-        std::map<double,double> coefs;
     };
 
     explicit SirahCobra(const QString& label, QObject *parent = nullptr);
@@ -86,10 +59,9 @@ private:
     bool readFl() override;
     bool setFl(bool en) override;
 
-    SirahStatus d_status;
+    BC::Sirah::Status d_status;
     std::vector<TuningParameters> d_params;
 
-    QByteArray buildCommand(char cmd, QByteArray args = {});
     bool prompt();
     double posToWavelength(qint32 pos, uint stage=0);
     qint32 wavelengthToPos(double wl, uint stage=0);
@@ -99,11 +71,6 @@ private:
     // LifLaser interface
 private:
     void lifLaserReadSettings() override;
-
-    Rs232Instrument *p_extStagePort{ nullptr };
-    PolyStageStatus d_crystalStatus, d_compStatus;
-
-
 };
 
 #endif // SIRAHCOBRA_H

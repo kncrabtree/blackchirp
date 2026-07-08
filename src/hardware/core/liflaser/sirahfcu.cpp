@@ -1,4 +1,5 @@
-#include "sirahcobra.h"
+#include <hardware/core/liflaser/sirahfcu.h>
+
 #include <hardware/core/hardwareregistration.h>
 #include <data/lif/lifunits.h>
 
@@ -9,32 +10,36 @@
 #define M_PI 3.1415926535897323846
 #endif
 
-using namespace BC::Key::LifLaser;
+using namespace BC::Key::SirahFcu;
+using namespace BC::Key::LifConvStage;
 using namespace BC::LifConv;
 
 // Register hardware implementation
-REGISTER_HARDWARE_META(SirahCobra, "Sirah Cobra LIF Laser")
-REGISTER_HARDWARE_PROTOCOLS(SirahCobra, CommunicationProtocol::Rs232)
-// The Cobra speaks a binary protocol with no text terminator, so the
-// termination character is deliberately empty.
-REGISTER_COMM_DEFAULTS(SirahCobra, CommunicationProtocol::Rs232,
+REGISTER_HARDWARE_META(SirahFcu, "Sirah Frequency Conversion Unit")
+REGISTER_HARDWARE_PROTOCOLS(SirahFcu, CommunicationProtocol::Rs232)
+// Same binary protocol, no text terminator, as SirahCobra; the FCU has its
+// own comm settings group via the normal comm-config dialog.
+REGISTER_COMM_DEFAULTS(SirahFcu, CommunicationProtocol::Rs232,
     {BC::Key::Comm::timeout, 200},
     {BC::Key::Comm::termChar, QString("")})
 
-// minPos/maxPos are the grating fundamental (cm-1); the driver's native
-// range is 450-700 nm, which is 1e7/700 = 14285.7 cm-1 (long-wavelength
-// end) to 1e7/450 = 22222.2 cm-1 (short-wavelength end) — cm-1 grows as
-// wavelength shrinks, so the nm bounds invert.
-REGISTER_HARDWARE_SETTINGS(SirahCobra,
-    {minPos,   "Min Position",     "Minimum grating fundamental position (cm-1; 700 nm)", 14285.7143, QVariant{}, QVariant{}, HwSettingPriority::Important},
-    {maxPos,   "Max Position",     "Maximum grating fundamental position (cm-1; 450 nm)", 22222.2222, QVariant{}, QVariant{}, HwSettingPriority::Important},
-    {decimals, "Display Decimals", "Number of decimal places for position display",       4,          0,          8,          HwSettingPriority::Optional},
-    {hasFl,    "Has Flashlamp",    "Laser has a software-controlled flashlamp",           false,      QVariant{}, QVariant{}, HwSettingPriority::Optional}
+// Override the base LifFreqConversionStage node-descriptor defaults for the
+// common lone-doubler case. op (NHG) and conversionInputs (one Laser input)
+// stay the inherited base defaults.
+REGISTER_HARDWARE_SETTINGS(SirahFcu,
+    {harmonic, "Harmonic Order", "Harmonic order N for this doubler; set once at profile creation",
+     2,    1,          QVariant{}, HwSettingPriority::Required},
+    {isFinal,  "Final Beam",     "This doubler's output is the LIF excitation (output) beam",
+     true, QVariant{}, QVariant{}, HwSettingPriority::Important}
 )
-REGISTER_HARDWARE_ARRAY(SirahCobra, stages,
-    "Grating Stage Geometry", "Sine-bar tuning geometry for the grating motor stage",
+
+// Placeholder sine-bar geometry: SirahCobra's grating-stage values, copied
+// here because the FCU's actual doubling-crystal geometry is unknown until
+// the unit is calibrated on the bench.
+REGISTER_HARDWARE_ARRAY(SirahFcu, stages,
+    "Crystal Stage Geometry", "Sine-bar tuning geometry for the doubling-crystal motor stage",
     HwSettingPriority::Important)
-REGISTER_HARDWARE_ARRAY_ENTRY(SirahCobra, stages,
+REGISTER_HARDWARE_ARRAY_ENTRY(SirahFcu, stages,
     {{sStart,3000.0},
      {sHigh,12000.0},
      {sRamp,2400},
@@ -49,16 +54,16 @@ REGISTER_HARDWARE_ARRAY_ENTRY(SirahCobra, stages,
      {sMotorResolution,4800},
     })
 
-SirahCobra::SirahCobra(const QString& label, QObject *parent)
-    : LifLaser(QString(SirahCobra::staticMetaObject.className()), label, parent)
+SirahFcu::SirahFcu(const QString& label, QObject *parent) :
+    LifFreqConversionStage(QString(SirahFcu::staticMetaObject.className()), label, parent)
 {
 }
 
-void SirahCobra::initialize()
+void SirahFcu::initialize()
 {
 }
 
-bool SirahCobra::testConnection()
+bool SirahFcu::testConnection()
 {
     bool out = prompt();
     if(out)
@@ -71,26 +76,31 @@ bool SirahCobra::testConnection()
     return out;
 }
 
-double SirahCobra::readPos()
+void SirahFcu::hwReadSettings()
 {
-    if(!prompt())
+    d_params.clear();
+    for(uint i=0; i<getArraySize(stages); i++)
     {
-        hwError("Could not read position."_L1);
-        return -1.0;
+        TuningParameters tp;
+        tp.angOff = getArrayValue(stages,i,sAngleOffset).toDouble()/180*M_PI;
+        tp.grazAng = getArrayValue(stages,i,sGrazingAngle).toDouble()/180*M_PI;
+        tp.grooves = getArrayValue(stages,i,sGrooves).toDouble();
+        tp.lLen = getArrayValue(stages,i,sLeverLength).toDouble();
+        tp.linOff = getArrayValue(stages,i,sLinearOffset).toDouble();
+        tp.mRes = getArrayValue(stages,i,sMotorResolution).toDouble();
+        tp.pitch = getArrayValue(stages,i,sPitch).toDouble();
+        d_params.push_back(tp);
     }
-
-    auto wl = posToWavelength(d_status.m1Pos);
-    return toCm1(wl, LaserUnit::Nm);
 }
 
-void SirahCobra::setPos(double pos)
+void SirahFcu::setPos(double localCm1)
 {
-    auto wl = fromCm1(pos, LaserUnit::Nm);
+    auto wl = fromCm1(localCm1, LaserUnit::Nm);
 
     if(!prompt())
     {
         hwError(u"Could not set position to %1 cm-1 (%2 nm)."_s
-                    .arg(pos,0,'f',3).arg(wl,0,'f',get(decimals,2)));
+                    .arg(localCm1,0,'f',3).arg(wl,0,'f',4));
         return;
     }
 
@@ -130,36 +140,19 @@ void SirahCobra::setPos(double pos)
     }
 }
 
-bool SirahCobra::readFl()
+double SirahFcu::readPos()
 {
-    return true;
-}
-
-bool SirahCobra::setFl(bool en)
-{
-    Q_UNUSED(en)
-    return true;
-}
-
-
-void SirahCobra::lifLaserReadSettings()
-{
-    d_params.clear();
-    for(uint i=0; i<getArraySize(stages); i++)
+    if(!prompt())
     {
-        TuningParameters tp;
-        tp.angOff = getArrayValue(stages,i,sAngleOffset).toDouble()/180*M_PI;
-        tp.grazAng = getArrayValue(stages,i,sGrazingAngle).toDouble()/180*M_PI;
-        tp.grooves = getArrayValue(stages,i,sGrooves).toDouble();
-        tp.lLen = getArrayValue(stages,i,sLeverLength).toDouble();
-        tp.linOff = getArrayValue(stages,i,sLinearOffset).toDouble();
-        tp.mRes = getArrayValue(stages,i,sMotorResolution).toDouble();
-        tp.pitch = getArrayValue(stages,i,sPitch).toDouble();
-        d_params.push_back(tp);
+        hwError("Could not read position."_L1);
+        return -1.0;
     }
+
+    auto wl = posToWavelength(d_status.m1Pos);
+    return toCm1(wl, LaserUnit::Nm);
 }
 
-bool SirahCobra::prompt()
+bool SirahFcu::prompt()
 {
     auto rp = BC::Sirah::buildCommand(0x17);
     p_comm->writeBinary(rp);
@@ -174,7 +167,7 @@ bool SirahCobra::prompt()
     return true;
 }
 
-double SirahCobra::posToWavelength(qint32 pos, uint stage)
+double SirahFcu::posToWavelength(qint32 pos, uint stage)
 {
     if(stage >= d_params.size())
         return 0.0;
@@ -187,7 +180,7 @@ double SirahCobra::posToWavelength(qint32 pos, uint stage)
     return wl *1e6;
 }
 
-qint32 SirahCobra::wavelengthToPos(double wl, uint stage)
+qint32 SirahFcu::wavelengthToPos(double wl, uint stage)
 {
     if(stage >= d_params.size())
         return 0;
@@ -200,7 +193,7 @@ qint32 SirahCobra::wavelengthToPos(double wl, uint stage)
     return static_cast<qint32>(round(p));
 }
 
-void SirahCobra::moveRelative(qint32 steps)
+void SirahFcu::moveRelative(qint32 steps)
 {
     quint8 dir = 0x01;
     if(steps < 0)
@@ -229,8 +222,6 @@ void SirahCobra::moveRelative(qint32 steps)
         if(!prompt())
             break;
 
-        // hwDebug(u"Target (rel): %1, Current: %2"_s.arg(steps).arg(d_status.m1Pos));
-
         //bit 0 tells whether the motor is running
         if(d_status.m1Status % 2)
         {
@@ -254,7 +245,7 @@ void SirahCobra::moveRelative(qint32 steps)
 
 }
 
-bool SirahCobra::moveAbsolute(qint32 targetPos)
+bool SirahFcu::moveAbsolute(qint32 targetPos)
 {
     QByteArray dat;
     dat.append(0x01);
@@ -288,7 +279,6 @@ bool SirahCobra::moveAbsolute(qint32 targetPos)
             }
             lastDiff = d;
         }
-        // hwDebug(u"Target: %1, Current: %2"_s.arg(targetPos).arg(d_status.m1Pos));
 
         //bit 0 tells whether the motor is running
         if(d_status.m1Status % 2)

@@ -97,38 +97,47 @@ is authoritative; read it before resuming.
   topology; `HardwareManager` prep-time `assemble` stays the authoritative
   validator). Minor known quirk: before the first `laserPosUpdate`, the
   status box renders the `fromCm1(0, Nm)` sentinel rather than a placeholder.
+- **Task 6 — `SirahFcu` driver + `SirahCobra` cleanup**: the decommissioned
+  Harvey-Mudd external-doubling-stage rig (second serial port, `"%1ma%2"`
+  ASCII commands, `"in"` query, crystal/compensator polynomials, all
+  `extStage*`/`poly*` keys, `p_extStagePort`) was **deleted** from
+  `SirahCobra`, not carried forward — the plan §3's compensator-preservation
+  direction was wrong. `SirahCobra` is now a pure grating driver: its `stages`
+  geometry array + scalars migrated from the imperative constructor to
+  `REGISTER_HARDWARE_ARRAY`/`_SETTINGS`, and `minPos`/`maxPos` re-expressed in
+  cm⁻¹ (14285.7/22222.2 = 700/450 nm) with `setPos`/`readPos` converting
+  nm↔cm⁻¹ at the sine-bar boundary. New `SirahFcu : LifFreqConversionStage`
+  models the doubler as an `NHG` node (harmonic `N` Required, default 2;
+  `isFinal` default true) on its own RS232 port, reusing the grating's sine-bar
+  tuning + binary protocol. The pure wire-format layer (`BC::Sirah::Status`,
+  `buildCommand`, `parseStatus`) is shared via `sirahprotocol.{h,cpp}`; the
+  comm-driving loops and tuning math are deliberately duplicated per driver
+  (flagged for consolidation once the two units are bench-confirmed identical).
+  Placeholder FCU crystal geometry copied from the grating pending real
+  calibration.
 
-**Uncommitted:** only this status note in this file (intentionally — the
-next session picks up from the modified file).
+**Sequence complete.** All six tasks are committed on
+`feature/sirah-cobra-refresh`. What remains is **manual bench validation**
+(no virtual Sirah / hardware in CI): drive a virtual laser first, then a test
+deployment against the live Opolette, then grating + doubling-stage co-tuning
+across the OH band on the new Sirah, verifying the LIF axis reads in the
+doubled excitation wavelength. See [Testing](#testing).
 
-**Remaining:** Task 6 below (Sequencing). **Task 6 is next** — the
-`SirahDoublingStage` driver plus stripping `SirahCobra` of its external
-stage and migrating its remaining settings — with dependencies (Tasks 1–5)
-in place.
+**Working notes for future work on this area:**
 
-**Carry-forward notes for the remaining tasks:**
-
-- `Op`/`RefType` are declared in `data/lif/lifunits.h` beside `LaserUnit`
-  (one `Q_NAMESPACE` = one moc owner); include that (or `lifconversion.h`,
-  which re-exports it) to use them.
-- `SirahCobra` is deliberately untouched and remains a self-consistent
-  **nm island**: its own `minPos`/`maxPos` (450/700) and `setPos`/`readPos`
-  are still nm, so under the default identity `LifConversion` it works
-  numerically but is mislabeled until **Task 6** rewrites it. Do not
-  "fix" it before Task 6.
-- `minPos`/`maxPos` now render as raw cm⁻¹ spin boxes in the
-  profile-creation dialog (not display-unit-aware). A UX rough edge
-  **Task 5** may address alongside display-unit-aware axis presentation.
-- Enum-valued hardware settings (`units`, and the stage `op`/`refType`)
-  persist as their `Q_ENUM` key-name string and read back via
-  `BC::CSV::enumFromVariant`; `HwSettingsWidget` already renders them.
-
-**Orchestration conventions (keep on resume):** dispatch each remaining
-task to a Sonnet subagent (set the model explicitly to Sonnet), one at a
-time; the agent must reach a clean `blackchirp` build + full `ctest`
-green (plus, for Tasks 3–4, the virtual-laser + virtual-stage integration
-path through `setLifParameters`) before returning; the orchestrator
-reviews the diff and commits per task with a timeless message.
+- `Op`/`RefType`/`LaserUnit` are declared in `data/lif/lifunits.h` (one
+  `Q_NAMESPACE` = one moc owner); include that (or `lifconversion.h`, which
+  re-exports it) to use them. Enum-valued hardware settings persist as their
+  `Q_ENUM` key-name string and read back via `BC::CSV::enumFromVariant`;
+  `HwSettingsWidget` renders them as comboboxes.
+- `minPos`/`maxPos` render as raw cm⁻¹ spin boxes in the profile-creation
+  dialog (not display-unit-aware) — an unaddressed UX rough edge.
+- The `setLifParameters` fan-out blocks the `HardwareManager` thread on the
+  parallel-move join (consistent with the pre-existing laser/pgen dispatch);
+  revisit if/when the roadmap's manager-wide async delivery lands.
+- No automated `HardwareManager` integration test exists for the LIF fan-out;
+  a harness would need a friend-class seam to author stage node-descriptor
+  settings plus a multi-device async setup.
 
 ## Problems being solved
 
