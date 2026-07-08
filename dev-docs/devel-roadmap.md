@@ -44,6 +44,22 @@ direction) in [sirah-cobra-refresh.md](sirah-cobra-refresh.md); pick it
 up once the new instrument is on the bench and the 2.0.0-alpha packaging
 work is finished.
 
+### Sirah FCU calibration schemes
+
+The `SirahFcu` doubling stage from the refresh above still tunes with
+`SirahCobra`'s **grating** diffraction math as a placeholder — wrong for
+a phase-matched doubling crystal. Replace it with a user-selectable
+calibration scheme: a best-effort BBO/KDP Type-I SHG physical model
+(cut angle, temperature, sine-bar offsets, screw pitch — the parameter
+set confirmed by the Sirah Autotracker service manual §6), plus
+polynomial and spline fallbacks. Blackchirp evaluates only; the fits are
+produced offline and imported (a generic "Import CSV…" button is added
+to `HwArrayEditDialog`). The tuning law moves to a hardware-free
+`FcuCalibration` value type (sibling of `LifConversion`), unit-tested in
+CI. Full plan in
+[sirah-fcu-calibration.md](sirah-fcu-calibration.md). Being picked up on
+`feature/sirah-cobra-refresh`, starting with the value type and tests.
+
 ## Large
 
 ### RF configuration as a flexible frequency-conversion DAG
