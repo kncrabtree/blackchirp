@@ -103,6 +103,10 @@ class BCExperiment:
             Marker channel configuration for the experiment's pulse pattern.
             Columns: ``Channel``, ``Name``, ``Role``, ``TimingMode``,
             ``StartUs``, ``EndUs``, ``Enabled``.
+        liftopology (pd.DataFrame, optional): Contents of liftopology.csv, the
+            LIF frequency-conversion DAG (one row per stage). ``None`` for the
+            identity/no-conversion case, where no file is written. Consumed by
+            :class:`~blackchirp.BCLIF`, whose accessors walk this graph.
         ftmw (BCFTMW, optional): Contents of fid directory.
             This object provides an interface for accessing CP-FTMW data.
         lif (BCLIF, optional): Contents of lif directory.
@@ -196,6 +200,16 @@ class BCExperiment:
             self.clocks = None
 
         try:
+            self.liftopology = pd.read_csv(
+                os.path.join(self.path, "liftopology.csv"),
+                sep=self._sep,
+                header=0,
+                keep_default_na=False,
+            )
+        except FileNotFoundError:
+            self.liftopology = None
+
+        try:
             self.auxdata = pd.read_csv(
                 os.path.join(self.path, "auxdata.csv"),
                 sep=self._sep,
@@ -234,7 +248,7 @@ class BCExperiment:
             self.ftmw = BCFTMW(self.path, self._sep, ftmw_type)
 
         if os.path.exists(os.path.join(self.path, "lif")):
-            self.lif = BCLIF(self.path, self._sep, self.header)
+            self.lif = BCLIF(self.path, self._sep, self.header, self.liftopology)
 
         if hasattr(self, "ftmw") and self.clocks is None:
             raise FileNotFoundError(
