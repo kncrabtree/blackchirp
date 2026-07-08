@@ -12,6 +12,7 @@
    single: experiment setup page; new type
    single: HARDWARE_TYPE_HEADERS
    single: blackchirp-test-hardware; new type
+   single: LifFreqConversionStage; worked example
 
 Adding a New Hardware Type
 ==========================
@@ -182,6 +183,29 @@ driver. The merge is described in
 driver override pattern*). Pick which keys go in
 ``BC::Key::<TypeName>::`` versus which belong on a per-driver
 sub-namespace at the same time you draft the registration block.
+
+:cpp:class:`LifFreqConversionStage`
+(``hardware/core/liflaser/liffreqconversionstage.{h,cpp}``) is a
+worked example of a type whose device-identity settings are pinned by
+concrete drivers rather than merely overridden. It is a direct
+:cpp:class:`HardwareObject` child (a sibling of :cpp:class:`LifLaser`,
+not a subtype of an existing type) that registers a conversion
+operation and a harmonic order on the base class, both snapshot-visible
+via :cpp:class:`SettingsStorage` so a GUI or data-layer caller can read
+them without touching a live threaded device. A doubler-only driver
+such as ``SirahFcu`` overrides
+:cpp:func:`LifFreqConversionStage::conversionOp` to a hardware-frozen
+constant while leaving the registered ``op`` setting itself in place,
+and re-registers the ``harmonic`` key only to change its default and
+priority — the setting stays live, not overridden away. The harmonic
+order is also the type's example of a *gated* setting: a driver that
+can retune its harmonic output overrides
+:cpp:func:`LifFreqConversionStage::setHarmonicOrder` to issue the
+hardware command and persist the value only on confirmed success,
+rather than letting a caller poke the setting directly. See the
+*gated setting* callout on :doc:`/developer_guide/hardware_configuration`
+and the *Frequency conversion* section of
+:doc:`/developer_guide/lif_acquisition` for the full pattern.
 
 If the type produces values that should be range-checked during
 acquisition (a temperature that must stay below a threshold, a

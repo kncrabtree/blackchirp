@@ -16,7 +16,7 @@ Settings
 Most LIF laser settings are exposed in the :doc:`hardware dialog </user_guide/hwdialog>` with inline labels and tooltips, so they need no additional explanation here. A few items are worth highlighting:
 
 * ``minPos`` / ``maxPos`` define the allowable position range. Blackchirp refuses values outside this window, so the values must reflect the actual hardware capability and the chosen ``units``.
-* ``units`` is a free-form string used only for display and text-file headers; it is not parsed by Blackchirp and does not trigger any unit conversion.
+* ``units`` selects the display unit from a fixed set — ``Cm1``, ``Nm``, ``GHz``, or ``eV`` — shown under those literal names in the Position Units combo box. Position values elsewhere in the UI (spin boxes, previews) are converted to and from the internal cm⁻¹ representation and labeled with the corresponding pretty unit (cm⁻¹, nm, GHz, eV).
 * ``decimals`` controls the number of decimal places shown on UI controls and in error messages.
 * ``hasFlashlampControl`` advertises whether the laser exposes a software-controlled flashlamp. When true, the flashlamp is enabled at the start of an acquisition and is disabled at the end if the LIF configuration's *Disable Flashlamp* option is set.
 
@@ -41,14 +41,15 @@ Sirah Cobra
 
 The Sirah Cobra is one of a series of tunable pulsed dye lasers. For maximum cross-platform compatibility, Blackchirp talks directly to the internal stepper motor through a serial port, emulating the behavior of the Sirah drivers (including the backlash correction for wavelength tuning). The Sirah drivers themselves are not required. The Sirah Cobra has no integrated flashlamp control; use a :doc:`/user_guide/hw/pulsegenerator` channel to drive the flashlamp instead.
 
-The driver controls only the fundamental laser position; frequency-conversion units are not supported, though the driver leaves room to add them. Operating the laser requires several parameters per "stage" to be entered in the LIF Laser hardware dialog. These parameters are supplied with the laser's datasheets and should also be available in an ini file shipped with the Sirah library. A ``stages`` array contains entries for the resonator (stage 0) and any attached frequency-conversion units (stages 1+); for each stage, the following entries should be defined:
+The driver controls only the fundamental laser (resonator) position; it does not itself handle frequency conversion. If the laser's output passes through a doubling or mixing stage before reaching the sample, add a :doc:`LIF Conversion Stage <liffreqconversionstage>` device (for example, the Sirah FCU driver for a Sirah frequency-conversion unit) and wire it into the :doc:`frequency-conversion chain </user_guide/lif/conversion>`; the fundamental position reported by this driver is then the input to that chain rather than the sample-facing wavelength.
+
+Operating the laser requires several parameters describing the resonator's stepper motor to be entered in the LIF Laser hardware dialog. These parameters are supplied with the laser's datasheets and should also be available in an ini file shipped with the Sirah library:
 
 - ``stageStartFreqHz``: starting motor frequency (Hz). Defaults to 3000.
 - ``stageHighFreqHz``: final motor frequency (Hz). Defaults to 12000.
 - ``stageRampLength``: steps for motor acceleration. Defaults to 2400.
-- ``stageMax``: maximum motor position. Defaults to 3300000.
+- ``stageMaxPos``: maximum motor position. Defaults to 3300000.
 - ``stageBacklashSteps``: number of steps for backlash correction.
-- ``stageWavelengthDataCsv``: path to a csv file containing motor calibration data.
-- ``stagePolyOrder``: order of the polynomial fit to motor/wavelength position data.
+- ``stageLeverLengthMm``, ``stageLinearOffsetMm``, ``stageAngleOffsetDeg``, ``stageGrazingAngleDeg``, ``stageGratingGroovesPerMm``, ``stageScrewPitchmmPerRev``, ``stageMotorResolutionStepsPerRev``: the sine-bar tuning geometry for the grating motor stage.
 
-Wavelength calibration uses an interpolated lookup table. A csv file containing motor positions and the corresponding wavelengths across the laser's operating range must be provided, with all wavelengths given with respect to the resonator (not any multiples thereof). Blackchirp fits the supplied data to a polynomial of the indicated order in both directions (motor vs. wavelength and wavelength vs. motor) and uses the derived polynomials for conversion. A ``multFactor`` key sets the multiplication afforded by any FCU stages and is used to convert the position entered in the user interface to the resonator wavelength: with ``multFactor`` set to 2, an entry of 300 nm corresponds to a resonator wavelength of 600 nm.
+Wavelength calibration is computed directly from the sine-bar geometry parameters via the grating equation, rather than from a lookup table; the geometry values above must reflect the specific unit's as-built mechanics for the conversion to be accurate.

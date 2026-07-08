@@ -25,7 +25,12 @@ If the experiment folder contains an ``fid/`` subdirectory, a
 :class:`~blackchirp.BCFTMW` is constructed and exposed as ``ftmw``. If it
 contains a ``lif/`` subdirectory, a :class:`~blackchirp.BCLIF` is
 constructed and exposed as ``lif``. Both attributes are present on a
-combined CP-FTMW + LIF experiment; either may be present alone.
+combined CP-FTMW + LIF experiment; either may be present alone. When a
+root-level ``liftopology.csv`` is present — recording the LIF
+frequency-conversion topology, if one was configured — it is loaded
+into the ``liftopology`` DataFrame attribute (``None`` otherwise) and
+handed to the constructed :class:`~blackchirp.BCLIF`; see
+:doc:`/python/bclif`.
 
 The header table — by far the largest and most useful of the loaded
 DataFrames — is queried through the ``header_unique_keys``,

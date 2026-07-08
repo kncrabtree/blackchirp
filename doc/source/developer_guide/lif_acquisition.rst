@@ -16,6 +16,15 @@
    single: LifSpectrogramPlot
    single: LifSlicePlot
    single: LifTracePlot
+   single: LifConversion; frequency-conversion topology
+   single: LifFreqConversionStage
+   single: LifConversionSnapshot
+   single: LifPreset
+   single: liftopology.csv
+   single: LifConversionTableModel
+   single: LifConversionWidget
+   single: ExperimentLifConfigPage
+   single: HardwareManager; configureLifHarmonic
 
 LIF Acquisition and Visualization
 =================================
@@ -48,10 +57,18 @@ A LIF acquisition sweeps a two-dimensional grid:
   laser firing. Blackchirp programs the delay onto the LIF channel of
   every active :cpp:class:`PulseGenerator` via
   :cpp:func:`HardwareManager::setPGenLifDelay`.
-- The **laser axis** is the laser position commanded to the active
-  :cpp:class:`LifLaser`. The units are determined by the laser driver
-  — typically wavelength in nanometers — and surface in the wizard
-  through ``BC::Key::LifLaser::units`` and ``::decimals``.
+- The **laser axis** is the excitation-beam position commanded to the
+  active :cpp:class:`LifLaser`, gridded in the display unit selected on
+  the laser's hardware profile (``BC::LifConv::LaserUnit`` —
+  ``Cm1``, ``Nm``, ``GHz``, or ``eV`` — surfaced in the wizard through
+  ``BC::Key::LifLaser::units`` and ``::decimals``). Internally, every
+  value in the LIF pipeline is vacuum wavenumber (cm⁻¹); the display
+  unit is a presentation-layer conversion applied only at the axis's
+  read/write boundary (:cpp:func:`LifConfig::currentLaserPos`,
+  :cpp:func:`LifConfig::laserRange`). When the experiment's
+  frequency-conversion topology is non-identity, this axis is the
+  *excitation* (output) beam reaching the sample, not necessarily the
+  laser's own native tuning value — see *Frequency conversion* below.
 
 At each ``(delay, laser)`` grid point the LIF digitizer records a
 fluorescence trace. The magnitude inside a configurable integration
@@ -123,18 +140,320 @@ values by
 
 .. code-block:: cpp
 
-   currentDelay()    = d_currentDelayIndex * d_delayStepUs   + d_delayStartUs;
-   currentLaserPos() = d_currentLaserIndex * d_laserPosStep  + d_laserPosStart;
+   currentDelay()    = d_currentDelayIndex * d_delayStepUs  + d_delayStartUs;
+   // displayPos is gridded in the display LaserUnit (d_laserUnits);
+   // currentLaserPos() converts it to output-beam cm⁻¹ at this boundary.
+   displayPos        = d_currentLaserIndex * d_laserPosStep + d_laserPosStart;
+   currentLaserPos() = BC::LifConv::toCm1(displayPos, d_laserUnits);
 
 These two values are what the AM emits in the ``nextLifPoint`` signal
-described next. Negative ``d_delayStepUs`` or ``d_laserPosStep`` is
-permitted (the user can scan high-to-low); the storage indices remain
-0-based, but the visualization layer reverses indices on the fly so
-the rendered axes are monotonic. See *Visualization* below.
+described next; ``currentLaserPos()`` always returns an output-beam
+wavenumber in cm⁻¹, so every hardware-dispatch call downstream of it
+(the laser, any conversion stage) works in cm⁻¹ without a further unit
+lookup. Negative ``d_delayStepUs`` or ``d_laserPosStep`` is permitted
+(the user can scan high-to-low); the storage indices remain 0-based,
+but the visualization layer reverses indices on the fly so the
+rendered axes are monotonic. See *Visualization* below. What turns an
+output-beam value into a laser fundamental and a set of
+conversion-stage setpoints is covered in *Frequency conversion* below.
 
 The class-level contract — every method, every storage key — is on
 :doc:`/classes/lifconfig` and :doc:`/classes/lifstorage`. This page
 covers the cross-system flow.
+
+Frequency conversion
+---------------------
+
+Many LIF setups do not aim the tunable laser directly at the sample:
+the laser output passes through one or more optical conversion stages
+— a doubling crystal, a sum- or difference-frequency mixing crystal —
+before reaching the interaction region. Blackchirp models that optical
+path as an assembled directed acyclic graph (DAG) so it can report the
+actual excitation-beam frequency reaching the sample, not just the
+laser's own tuning value, and drive any motorized conversion stages to
+track the laser as it scans. The pipeline is cm⁻¹ end to end; the
+display unit selected on the laser's hardware profile surfaces at
+exactly one crossing point, :cpp:func:`LifConfig::currentLaserPos`
+(see *The LIF scan model* above).
+
+Architecture layers
+~~~~~~~~~~~~~~~~~~~~
+
+1. **Hardware stage** — :cpp:class:`LifFreqConversionStage`
+   (``hardware/core/liflaser/liffreqconversionstage.{h,cpp}``) is a
+   :cpp:class:`HardwareObject` sibling of :cpp:class:`LifLaser`,
+   registered like any other hardware type. It owns only
+   device-identity state: the conversion operation
+   (:cpp:func:`LifFreqConversionStage::conversionOp`, NHG/SFG/DFG), the
+   harmonic order for an NHG stage
+   (:cpp:func:`LifFreqConversionStage::harmonicOrder`), and a verify
+   flag/tolerance pair used by
+   :cpp:func:`LifFreqConversionStage::setPosition` to confirm a move.
+   A doubler or mixer *is* its operation by hardware identity, not a
+   free choice, so a concrete driver such as :cpp:class:`SirahFcu`
+   overrides :cpp:func:`LifFreqConversionStage::conversionOp` to a
+   constant while leaving the registered setting itself in place, so
+   it stays snapshot-visible (see *Key invariants* below).
+   ``VirtualLifFreqConversionStage`` and ``FixedLifFreqConversionStage``
+   are the uncontrolled/CI implementations.
+2. **DAG value type and assembly** — :cpp:class:`LifConversion`
+   (``data/lif/lifconversion.{h,cpp}``) is a pure value type with no
+   :cpp:class:`HardwareObject` or :cpp:class:`SettingsStorage`
+   dependency. A ``BC::LifConv::Node`` describes one conversion node
+   (``op``, harmonic ``n``, one or two ``BC::LifConv::InputRef``
+   inputs, an ``isFinal`` marker); :cpp:func:`LifConversion::assemble`
+   validates a node list and resolves it into an affine
+   (``output = a·fundamental + b``) model per stage. Free helpers
+   declared alongside :cpp:class:`LifFreqConversionStage` join a node
+   list from a settings snapshot without ever touching a live threaded
+   device: ``lifConversionNodesFromSnapshot`` builds a fresh
+   :cpp:class:`SettingsStorage` on each stage's hardware key to read
+   ``op``/``n``, ``assembleLifConversion`` assembles the result, and
+   ``assembleCurrentLifConversion`` resolves the current loadout's
+   current ``LifPreset``, falling back to the identity
+   conversion when none is selected.
+3. **Per-experiment LifConfig** — ``d_conversionNodes`` on
+   :cpp:class:`LifConfig` is the authoritative, already-joined node
+   list for the experiment: op/harmonic order came from hardware,
+   wiring came from the table.
+   :cpp:func:`LifConfig::setConversionNodes` stores the list and
+   rebuilds the cached :cpp:func:`LifConfig::conversion` via
+   :cpp:func:`LifConversion::assemble`, falling back to identity on
+   failure. :cpp:func:`LifConfig::writeTopologyFile` /
+   :cpp:func:`LifConfig::readTopologyFile` are the disk boundary — see
+   *On-disk format* below.
+4. **Preset and loadout stack** — mirrors the FTMW
+   :cpp:class:`RfConfig`/``FtmwPreset`` stack (see *The FTMW mirror*
+   below), so a developer already familiar with FTMW presets can
+   transfer that model directly. :cpp:struct:`LifConversionSnapshot`
+   (``data/loadout/lifconversionsnapshot.{h,cpp}``) is the wiring-only
+   persistable form (inputs/``isFinal`` plus the laser hwKey the
+   wiring was captured against — never op/harmonic, which are
+   hardware-owned); ``LifPreset`` (``hardwareloadout.h``)
+   wraps a snapshot with a timestamp; :cpp:class:`LoadoutManager`
+   performs per-loadout preset CRUD under
+   ``Loadouts/<loadout>/lifPresets/<name>``.
+5. **GUI** — :cpp:class:`LifConversionTableModel` /
+   ``LifConversionTableDelegate``
+   (``data/model/lifconversiontablemodel.{h,cpp}``) own the in-memory
+   joined node list; :cpp:class:`LifConversionWidget`
+   (``gui/lif/gui/lifconversionwidget.{h,cpp}``) hosts the table, the
+   LIF preset bar, and a live preview footer; ``ExperimentLifConfigPage``
+   (``gui/lif/gui/experimentlifconfigpage.{h,cpp}``) tabs the
+   conversion widget alongside the acquisition control widget — see
+   *Configuration UI* below.
+6. **HardwareManager** — caches the currently assembled conversion as
+   ``d_lifConversion``, re-derives it at experiment-prep and at
+   connection-complete under different error-tolerance policies (see
+   *Data flow by moment* below), and fans the resolved setpoints out
+   to the laser and to every active conversion stage during
+   acquisition.
+
+Data flow by moment
+~~~~~~~~~~~~~~~~~~~~
+
+- **Config time** (wizard open/edit). :cpp:func:`Experiment::enableLif`
+  seeds :cpp:class:`LifConfig` from the current ``LifPreset``
+  of the current loadout, joining the preset's wiring with op/harmonic
+  order read from each stage's own settings snapshot. It calls
+  :cpp:func:`LifConversionSnapshot::toNodes` with local lambdas rather
+  than the hardware-library free function
+  ``lifConversionNodesFromSnapshot``, because ``data/`` cannot depend
+  on ``hardware/`` (see the layering note in *Key invariants* below).
+  This seeding runs before ``ExperimentLifConfigPage`` exists, so
+  :cpp:class:`ExperimentTypePage`'s scan-axis bounds
+  (:cpp:func:`ExperimentTypePage::updateLifLaserBounds`) have a real,
+  non-identity output range on first paint. :cpp:class:`LifConversionWidget`'s
+  own constructor performs the same self-seeding from the current
+  preset, for the case where the widget is built directly rather than
+  through this path. Table edits update :cpp:class:`LifConfig` only
+  when ``ExperimentLifConfigPage::apply`` runs (on wizard **Next**);
+  nothing is pushed to hardware from the table itself except a gated
+  harmonic-order change (*Key invariants* below).
+- **Prep time** (:cpp:func:`HardwareManager::initializeExperiment`).
+  Re-assembles from ``exp->lifConfig()->conversionNodes()`` — the
+  already-joined per-experiment list, not live device state — and
+  **hard-fails** the experiment (``d_hardwareSuccess = false``) when
+  assembly does not succeed. On success it caches ``d_lifConversion``
+  and calls ``HardwareManager::pushLifConversionToLaser``.
+  :cpp:func:`Experiment::initialize` then writes ``liftopology.csv``
+  from the same node list.
+- **Connection-complete** (:cpp:func:`HardwareManager::checkStatus` via
+  ``HardwareManager::updateLifConversion``). Re-assembles from
+  ``assembleCurrentLifConversion`` — the current **preset**, not the
+  experiment — and **tolerates** assembly failure by falling back to
+  the identity conversion, so the live jog/status path stays
+  responsive even while the topology is mid-edit or unconfigured. Prep
+  hard-fails; connection-complete tolerates. The two call sites share
+  the same assembly machinery but apply opposite error policies — do
+  not conflate them when documenting or debugging a topology error.
+- **Acquisition.** :cpp:func:`HardwareManager::setLifParameters` (see
+  *Acquisition flow* below) dispatches
+  ``HardwareManager::setLifLaserPos``, then
+  ``HardwareManager::setLifConversionStages``, then
+  ``HardwareManager::setPGenLifDelay``. ``setLifConversionStages``
+  resolves the fundamental from the requested output-beam value via
+  :cpp:func:`LifConversion::outputToLaser`, computes each active
+  stage's local input wavenumber via
+  :cpp:func:`LifConversion::stageInput`, and dispatches every stage's
+  :cpp:func:`LifFreqConversionStage::setPosition` concurrently
+  (``Qt::QueuedConnection`` plus a per-stage
+  ``std::promise``/``std::future`` pair, not
+  ``Qt::BlockingQueuedConnection``) so stages with independent motors
+  move in parallel; the calling thread joins by waiting on every
+  future and AND-combines the per-stage results.
+
+The FTMW mirror
+~~~~~~~~~~~~~~~~
+
+The LIF preset/conversion stack was built as a structural mirror of
+the FTMW :cpp:class:`RfConfig`/``FtmwPreset`` stack documented on
+:doc:`/developer_guide/hardware_configuration` (*LoadoutManager —
+named maps and FTMW presets*). A developer already familiar with one
+side can read the other by substitution:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 30 40
+
+   * - FTMW
+     - LIF
+     - Notes
+   * - :cpp:struct:`RfConfigSnapshot`
+     - :cpp:struct:`LifConversionSnapshot`
+     - LIF's snapshot carries wiring and laser-key provenance only —
+       never op/harmonic, which stay hardware-owned.
+   * - ``FtmwPreset``
+     - ``LifPreset``
+     - LIF's preset is narrower by design: conversion wiring only.
+   * - ``.ftmwPresets`` / ``currentFtmwPresetName``
+     - ``.lifPresets`` / ``currentLifPresetName``
+     - Both live on ``HardwareLoadout``.
+   * - ``getFtmwPreset`` / ``putFtmwPreset`` / … CRUD
+     - ``getLifPreset`` / ``putLifPreset`` / ``removeLifPreset`` /
+       ``renameLifPreset`` / ``lifPresetExists`` / ``lifPresetNames`` /
+       ``currentLifPresetName`` / ``setCurrentLifPresetName`` /
+       ``currentLifPreset``
+     - On :cpp:class:`LoadoutManager`. No ``clearLifPresets``
+       counterpart to ``clearFtmwPresets`` exists — the mirror is not
+       total.
+   * - ``rfConfigScalarsMap`` / ``rfConfigClocksArray`` /
+       ``rfConfigSnapshotFromMaps``
+     - ``lifConversionScalarsMap`` / ``lifConversionWiringArray`` /
+       ``lifConversionSnapshotFromMaps``
+     - Free functions in ``BC::Loadout``, declared alongside
+       ``HardwareLoadout``.
+   * - ``ClockTableModel`` / ``Delegate``
+     - :cpp:class:`LifConversionTableModel` / ``LifConversionTableDelegate``
+     -
+   * - ``RfConfigWidget``
+     - :cpp:class:`LifConversionWidget`
+     - LIF's widget adds a live preview footer (assembled chain
+       expression, output range, validation error).
+   * - ``applyClocks`` → ``connectRfConfigWidget`` → ``configureClocks``
+     - ``applyHarmonic`` → ``MainWindow::connectLifConversionWidget`` →
+       ``HardwareManager::configureLifHarmonic``
+     - Identical gated-setting channel; see *Key invariants* below and
+       the *gated setting* callout on
+       :doc:`/developer_guide/hardware_configuration`.
+   * - ``ExperimentFtmwConfigPage::apply`` / ``commitFtmwPreset``
+     - ``ExperimentLifConfigPage::apply`` /
+       ``ExperimentLifConfigPage::commitLifPreset``
+     - Both ``commit*Preset`` calls run from
+       ``ExperimentSetupDialog::accept``.
+   * - ``LOScanConfigWidget`` reads ``d_rfConfig``
+     - :cpp:class:`ExperimentTypePage` reads
+       ``exp->lifConfig()->conversion()``
+     - Drives the scan-axis bounds (*Configuration UI* below).
+
+One deliberate asymmetry beyond the table: FTMW's ``RfConfigWidget``
+seeds itself from the GUI side (the widget constructor); LIF's seeding
+happens in :cpp:func:`Experiment::enableLif`, on the data-layer side,
+because the scan-axis bounds are needed before
+:cpp:class:`LifConversionWidget` exists — see *Data flow by moment*
+above.
+
+Key invariants
+~~~~~~~~~~~~~~
+
+- **op/harmonic ownership is split from wiring ownership.** Conversion
+  operation and harmonic order are hardware identity / registered
+  settings, always read from a :cpp:class:`SettingsStorage` snapshot
+  on the stage's hardware key — never from a live threaded device,
+  never stored in a snapshot or preset. Wiring (``inputs``,
+  ``isFinal``) is per-experiment/per-preset state. Nothing constructs
+  a ``BC::LifConv::Node`` except ``lifConversionNodesFromSnapshot``,
+  :cpp:func:`LifConversionSnapshot::toNodes`, or a caller-supplied
+  joined list handed to :cpp:func:`LifConfig::setConversionNodes` —
+  that is the one join point in the codebase.
+- **A harmonic-order change always routes through the device.** This
+  is the type's worked example of the *gated setting* pattern
+  described on :doc:`/developer_guide/hardware_configuration`:
+  :cpp:func:`LifConversionTableModel::requestHarmonicChange` emits
+  ``applyHarmonic(stageKey, n)`` rather than editing the model;
+  ``MainWindow::connectLifConversionWidget`` hops that signal onto the
+  :cpp:class:`HardwareManager` thread into
+  ``HardwareManager::configureLifHarmonic``, which calls
+  :cpp:func:`LifFreqConversionStage::setHarmonicOrder` on the device
+  and only then emits ``lifHarmonicApplied(stageKey)``; the table
+  model's own state updates only once that confirmation reaches
+  :cpp:func:`LifConversionTableModel::harmonicApplied`. The Harmonic
+  column is read-only in the table proper for exactly this reason.
+- **Assembly is snapshot-only and safe from any thread.** Every
+  assembly helper builds a fresh :cpp:class:`SettingsStorage` per
+  stage hardware key rather than dereferencing a live
+  :cpp:class:`HardwareObject` — conversion stages are always
+  ``d_threaded`` — so GUI code and data-layer code can call
+  ``assembleLifConversion`` / ``assembleCurrentLifConversion`` directly
+  without cross-thread machinery.
+- **Prep hard-fails; connection-complete tolerates.** Same assembly
+  call, different error policy — see *Data flow by moment* above. Do
+  not conflate the two.
+- **Identity = empty node list = no file.** An empty
+  ``d_conversionNodes`` is the universal "no conversion configured"
+  sentinel: :cpp:func:`LifConfig::hasConversion` is ``false``,
+  :cpp:func:`LifConfig::writeTopologyFile` writes nothing (returns
+  ``true`` without touching disk), :cpp:func:`LifConversion::assemble`
+  returns the identity conversion without requiring a FINAL node, and
+  the Python reader's ``has_topology`` is ``False`` for the same case.
+- **The scan axis is the one deliberate exception to
+  cm⁻¹-everywhere.** Every other value in the conversion pipeline is
+  cm⁻¹ end to end, but ``LifConfig::d_laserPosStart``/``d_laserPosStep``
+  are stored and gridded in the display ``BC::LifConv::LaserUnit`` (a
+  uniform cm⁻¹ grid would round unevenly on a laser whose actuator
+  resolution is native-unit-limited). :cpp:func:`LifConfig::currentLaserPos`
+  is the single crossing point back into output-beam cm⁻¹ for hardware
+  dispatch — see *The LIF scan model* above.
+
+On-disk format
+~~~~~~~~~~~~~~
+
+:cpp:func:`LifConfig::writeTopologyFile` writes ``liftopology.csv``
+(``BC::CSV::lifTopologyFile``) into the experiment directory from
+:cpp:func:`Experiment::initialize`, one row per conversion node:
+``Index, StageKey, Op, Harmonic, IsFinal, Input0, Input1, OutCoeffA,
+OutCoeffB``. ``OutCoeffA``/``OutCoeffB`` are the node's resolved
+affine output mapping (``output = OutCoeffA·fundamental + OutCoeffB``,
+cm⁻¹) — derived data, recomputed from two evaluations of
+:cpp:func:`LifConversion::stageOutput` at write time, and re-derived
+by :cpp:func:`LifConversion::assemble` on read rather than trusted
+from disk, mirroring ``RfConfig::loadClockSteps``. An input token is
+self-describing: ``Fixed:<cm-1>`` is a
+``BC::LifConv::RefType::Fixed`` input; a token matching another row's
+``StageKey`` is a ``BC::LifConv::RefType::Stage`` input; anything else
+is a ``BC::LifConv::RefType::Laser`` input, and the token itself is
+the laser's hardware key (captured into the config's conversion laser
+key on read). The identity case (no conversion nodes) writes nothing,
+and a missing file reads back as identity — the same "no file = no
+conversion" sentinel described in *Key invariants* above.
+:cpp:class:`Experiment`'s disk constructor reads the file alongside
+:cpp:func:`LifConfig::loadLifData`, so ``blackchirp-viewer`` recovers
+the topology for free.
+
+The Python reader and the shared fixture format are documented on
+:doc:`/developer_guide/python_module` and :doc:`/python/bclif`; the
+user-facing column reference lives on
+:doc:`/user_guide/data_storage/lif`.
 
 Acquisition flow
 ----------------
@@ -181,17 +500,23 @@ The handshake at each grid point runs in five steps:
    :cpp:func:`AcquisitionManager::processLifDigitizerShot` fires every
    subsequent one. The signal lands queued on the HM.
 
-#. **HM gates the digitizer and reprograms the laser and pulse
-   generator.** :cpp:func:`HardwareManager::setLifParameters` calls
-   :cpp:func:`LifDigitizer::setAcquisitionGated` to suppress any in-flight
-   waveform, then issues blocking-queued
-   :cpp:func:`LifLaser::setPosition` and
-   :cpp:func:`PulseGenerator::setLifDelay` calls (one per active
-   pulse generator). After both return, the digitizer's pre-trigger
-   buffer is flushed via :cpp:func:`LifDigitizer::flushAcquisitionBuffer`
-   and the gate is released. The blocking-queued idiom is what
-   guarantees that no shot from the previous grid point can leak into
-   the new one.
+#. **HM gates the digitizer and reprograms the laser, any conversion
+   stages, and the pulse generator.**
+   :cpp:func:`HardwareManager::setLifParameters` calls
+   :cpp:func:`LifDigitizer::setAcquisitionGated` to suppress any
+   in-flight waveform, then issues a blocking-queued
+   :cpp:func:`LifLaser::setPosition` call, dispatches
+   ``HardwareManager::setLifConversionStages`` to move every active
+   :cpp:class:`LifFreqConversionStage` in parallel (see *Frequency
+   conversion* above), and issues blocking-queued
+   :cpp:func:`PulseGenerator::setLifDelay` calls (one per active pulse
+   generator) — each step runs only after the previous one succeeds.
+   After all three return, the digitizer's pre-trigger buffer is
+   flushed via :cpp:func:`LifDigitizer::flushAcquisitionBuffer` and the
+   gate is released. The blocking-queued idiom — and, for the
+   conversion stages, waiting on every per-stage future before
+   proceeding — is what guarantees that no shot from the previous grid
+   point can leak into the new one.
 
 #. **HM emits** ``lifSettingsComplete(success)``.
    :cpp:func:`AcquisitionManager::lifHardwareReady` is the slot. On
@@ -491,32 +816,55 @@ point, processing gate).
    page and contains the FTMW group plus, when the LIF module is
    enabled in :cpp:class:`ApplicationConfigManager`, an LIF group.
    The LIF group hosts the **Delay** panel (start / step / points /
-   read-only end), the **Laser** panel (laser-driver-supplied range
-   and units), and an **Options** panel (scan order, complete mode,
-   auto-disable-flashlamp checkbox, randomize-delay checkbox).
-   :cpp:func:`ExperimentTypePage::apply` writes every one of those
-   knobs onto the experiment's :cpp:class:`LifConfig`:
+   read-only end), the **Laser** panel (start / step / points /
+   read-only end, in the laser's display unit), and an **Options**
+   panel (scan order, complete mode, auto-disable-flashlamp checkbox,
+   randomize-delay checkbox). The Laser panel's bounds are not simply
+   the laser hardware's native range: ``ExperimentTypePage::updateLifLaserBounds``
+   passes the laser's native cm⁻¹ range through the experiment's
+   current frequency-conversion topology
+   (:cpp:func:`LifConversion::outputRange`) before converting to the
+   display unit, so the spin boxes show the *excitation-beam* range
+   reaching the sample rather than the laser's own tuning range — see
+   *Frequency conversion* above.
+   :cpp:func:`ExperimentTypePage::apply` writes every one of the
+   panel's values onto the experiment's :cpp:class:`LifConfig`, already
+   in the display unit (no cm⁻¹ conversion happens at this boundary —
+   see the scan-axis exception in *Frequency conversion*):
    ``d_delayStartUs``, ``d_delayStepUs``, ``d_delayPoints``,
    ``d_laserPosStart``, ``d_laserPosStep``, ``d_laserPosPoints``,
    ``d_completeMode``, ``d_order``, ``d_disableFlashlamp``,
    ``d_delayRandom``.
 
-#. **LIF configuration page** —
-   :cpp:class:`ExperimentLifConfigPage`
+#. **LIF configuration page** — ``ExperimentLifConfigPage``
    (``gui/lif/gui/experimentlifconfigpage.{cpp,h}``) is the per-LIF
-   wizard page that wraps a :cpp:class:`LifControlWidget`. The
-   control widget is shared with the live **Hardware → LIF
-   Configuration** dialog (see :cpp:func:`MainWindow::launchLifConfigDialog`)
-   and hosts: the live :cpp:class:`LifTracePlot`, a
-   :cpp:class:`DigitizerConfigWidget` keyed against the active
-   :cpp:class:`LifDigitizer`, the laser control
-   (:cpp:class:`LifLaserWidget`), a shots-per-point spin,
-   :cpp:class:`LifProcessingWidget`, and Start / Stop / Reset
-   buttons. :cpp:func:`LifControlWidget::toConfig` writes
-   ``d_shotsPerPoint``, ``d_procSettings``, and the digitizer
-   configuration onto :cpp:class:`LifConfig`;
-   :cpp:func:`LifControlWidget::setFromConfig` is the inverse for
-   loading a saved experiment.
+   wizard page. It hosts a ``QTabWidget`` with two tabs:
+
+   - **Acquisition** wraps a :cpp:class:`LifControlWidget`, shared with
+     the live **Hardware → LIF Configuration** dialog (see
+     :cpp:func:`MainWindow::launchLifConfigDialog`), hosting: the live
+     :cpp:class:`LifTracePlot`, a :cpp:class:`DigitizerConfigWidget`
+     keyed against the active :cpp:class:`LifDigitizer`, the laser
+     control (:cpp:class:`LifLaserWidget`), a shots-per-point spin,
+     :cpp:class:`LifProcessingWidget`, and Start / Stop / Reset
+     buttons. :cpp:func:`LifControlWidget::toConfig` writes
+     ``d_shotsPerPoint``, ``d_procSettings``, and the digitizer
+     configuration onto :cpp:class:`LifConfig`;
+     :cpp:func:`LifControlWidget::setFromConfig` is the inverse for
+     loading a saved experiment.
+   - **Conversion** wraps a :cpp:class:`LifConversionWidget`, with its
+     Delete-preset button hidden — the wizard is the only place this
+     widget is instantiated (with ``showDeleteButton = false``) — for
+     editing the experiment's frequency-conversion topology; see
+     *Frequency conversion* above for the widget's internals.
+
+   ``ExperimentLifConfigPage::apply`` runs both tabs' ``toConfig`` on
+   wizard **Next**. Accepting the wizard additionally calls
+   ``ExperimentLifConfigPage::commitLifPreset`` from
+   ``ExperimentSetupDialog::accept``, which — only when the Conversion
+   tab has unsaved edits — prompts to overwrite the active LIF preset,
+   save the edits as a new preset, or proceed without saving,
+   mirroring ``ExperimentFtmwConfigPage::commitFtmwPreset``.
 
 The Hardware → LIF Configuration dialog uses the same
 :cpp:class:`LifControlWidget` outside of an experiment to drive the
@@ -546,6 +894,17 @@ and :doc:`/classes/lifstorage`.
 :doc:`/classes/acquisitionmanager`. The LIF plot widgets do not
 currently have dedicated API pages; they are documented inline on
 this page only.
+
+**Frequency-conversion API contracts and user-facing workflow.**
+:doc:`/classes/lifconversion`, :doc:`/classes/lifconversionsnapshot`,
+:doc:`/classes/liffreqconversionstage`, :doc:`/classes/loadoutmanager`,
+:doc:`/classes/hardwareloadout`. The *gated setting* pattern shared
+with FTMW clock configuration is on
+:doc:`/developer_guide/hardware_configuration`. The user-facing
+Conversion tab and LIF preset bar are documented on
+:doc:`/user_guide/lif/conversion` and :doc:`/user_guide/lif/presets`;
+the ``liftopology.csv`` column reference is on
+:doc:`/user_guide/data_storage/lif`.
 
 **The cross-manager experiment lifecycle that surrounds the LIF
 loop** — wizard apply, hardware initialization, and the

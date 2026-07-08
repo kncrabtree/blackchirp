@@ -18,6 +18,11 @@ case is a lab that shares one computer between two spectrometers; each
 spectrometer has its own loadout, and switching reconfigures the
 application for the instrument currently in use.
 
+A loadout also owns a set of named presets used to seed configuration
+dialogs: :doc:`FTMW presets </user_guide/ftmw_configuration/presets>`,
+and, when the LIF module is enabled, :doc:`LIF presets
+</user_guide/lif/presets>` are stored per loadout alongside them.
+
 .. figure:: /_static/user_guide/hardware_config-loadouts_menu.png
    :alt: Hardware menu with the Loadout submenu open showing several saved loadouts
    :align: center

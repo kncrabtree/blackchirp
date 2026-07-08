@@ -28,6 +28,8 @@
    user_guide/experiment_setup
    user_guide/ftmw_configuration
    user_guide/lif/configuration
+   user_guide/lif/conversion
+   user_guide/lif/presets
 
 .. toctree::
    :hidden:

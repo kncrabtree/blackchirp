@@ -34,6 +34,28 @@ layout, the meaning of each ``lifparams.csv`` column, the
 on the :doc:`LIF Data Storage </user_guide/data_storage/lif>`
 user-guide page.
 
+When the experiment's LIF setup runs the tunable laser through one or
+more optical conversion stages — a doubling crystal, a mixing crystal —
+before the beam reaches the sample, ``BCLIF`` also exposes the recorded
+frequency-conversion topology, read from ``liftopology.csv`` via
+``BCExperiment.liftopology`` (``None`` for a bare laser with no
+conversion stages); see the file's column reference on the
+:doc:`LIF Data Storage </user_guide/data_storage/lif>` page. The
+boolean ``has_topology`` reports whether a topology was recorded;
+``stages``, ``final_stage``, and ``laser_key`` name every stage in it,
+the stage whose output is the excitation beam reaching the sample, and
+the laser the topology was built around.
+
+Three accessors translate between the laser's tuning value and any
+beam in the topology, in any of ``cm-1`` / ``nm`` / ``GHz`` / ``eV``:
+``fundamental`` answers "what laser setting produced this beam value?";
+``at_stage`` is the inverse, answering "what beam value does this laser
+setting produce?"; and ``stage_frequencies`` returns a table of every
+beam in the topology for a single laser setting or excitation-beam
+value. All three fall back to the identity relationship (the laser
+setting *is* the excitation-beam value) when ``has_topology`` is
+``False``.
+
 API Reference
 -------------
 
