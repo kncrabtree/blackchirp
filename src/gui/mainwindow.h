@@ -31,6 +31,7 @@ class QComboBox;
 class HWDialog;
 class QuickExptDialog;
 class LifControlWidget;
+class LifConversionWidget;
 class RfConfigWidget;
 class ExperimentViewWidget;
 class CommunicationDialog;
@@ -99,6 +100,7 @@ public slots:
     void launchLifConfigDialog();
     void launchRuntimeHardwareConfigDialog();
     void configureLifWidget(LifControlWidget *w);
+    void connectLifConversionWidget(LifConversionWidget *w);
     void connectRfConfigWidget(RfConfigWidget *w);
     void setLogIcon(LogHandler::MessageCode c);
     void sleep(bool s);

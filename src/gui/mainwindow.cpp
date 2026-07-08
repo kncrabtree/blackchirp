@@ -67,6 +67,7 @@
 
 #include <gui/lif/gui/lifdisplaywidget.h>
 #include <gui/lif/gui/lifcontrolwidget.h>
+#include <gui/lif/gui/lifconversionwidget.h>
 #include <gui/lif/gui/liflaserstatusbox.h>
 #include <hardware/core/liflaser/liflaser.h>
 #include <data/storage/applicationconfigmanager.h>
@@ -792,6 +793,7 @@ bool MainWindow::runExperimentWizard(Experiment *exp, QuickExptDialog *qed)
 
     if(ApplicationConfigManager::instance().isLifEnabled()) {
         configureLifWidget(d.lifControlWidget());
+        connectLifConversionWidget(d.lifConversionWidget());
     }
 
     if(d.exec() != QDialog::Accepted)
@@ -1334,6 +1336,22 @@ void MainWindow::connectRfConfigWidget(RfConfigWidget *w)
         connect(w,&RfConfigWidget::applyClocks,[this](QHash<RfConfig::ClockType, RfConfig::ClockFreq> c){
             QMetaObject::invokeMethod(p_hwm,[c,this](){ p_hwm->configureClocks(c); });
         });
+    }
+}
+
+void MainWindow::connectLifConversionWidget(LifConversionWidget *w)
+{
+    if(w)
+    {
+        // Mirrors connectRfConfigWidget's applyClocks -> configureClocks
+        // channel: the gated harmonic-order change is hopped onto the
+        // HardwareManager thread via QMetaObject::invokeMethod at this
+        // connection site rather than calling the manager slot directly
+        // cross-thread.
+        connect(w,&LifConversionWidget::applyHarmonic,[this](QString stageKey, int n){
+            QMetaObject::invokeMethod(p_hwm,[stageKey,n,this](){ p_hwm->configureLifHarmonic(stageKey,n); });
+        });
+        connect(p_hwm,&HardwareManager::lifHarmonicApplied,w,&LifConversionWidget::harmonicApplied);
     }
 }
 
