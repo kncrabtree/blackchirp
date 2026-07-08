@@ -1,6 +1,7 @@
 #include <hardware/core/liflaser/liffreqconversionstage.h>
 
 #include <hardware/core/hardwareregistration.h>
+#include <hardware/core/runtimehardwareconfig.h>
 #include <data/storage/enumcsvconvert.h>
 
 using namespace BC::Key::LifConvStage;
@@ -39,20 +40,25 @@ LifFreqConversionStage::~LifFreqConversionStage()
 
 BC::LifConv::Node LifFreqConversionStage::conversionNode() const
 {
-    Node node;
-    node.stageKey = d_key;
-    node.op = BC::CSV::enumFromVariant<Op>(get(op, QVariant::fromValue(Op::NHG)), Op::NHG);
-    node.n = get(harmonic, 2);
-    node.isFinal = get(isFinal, false);
+    return nodeFromSettings(*this, d_key);
+}
 
-    auto count = getArraySize(inputs);
+BC::LifConv::Node LifFreqConversionStage::nodeFromSettings(const SettingsStorage &s, const QString &stageKey)
+{
+    Node node;
+    node.stageKey = stageKey;
+    node.op = BC::CSV::enumFromVariant<Op>(s.get(op, QVariant::fromValue(Op::NHG)), Op::NHG);
+    node.n = s.get(harmonic, 2);
+    node.isFinal = s.get(isFinal, false);
+
+    auto count = s.getArraySize(inputs);
     for(std::size_t i=0; i<count; ++i)
     {
         InputRef ref;
         ref.type = BC::CSV::enumFromVariant<RefType>(
-                    getArrayValue(inputs, i, refType, QVariant::fromValue(RefType::Laser)), RefType::Laser);
-        ref.stageKey = getArrayValue(inputs, i, refKey, QString());
-        ref.fixedCm1 = getArrayValue(inputs, i, refFixedCm1, 0.0);
+                    s.getArrayValue(inputs, i, refType, QVariant::fromValue(RefType::Laser)), RefType::Laser);
+        ref.stageKey = s.getArrayValue(inputs, i, refKey, QString());
+        ref.fixedCm1 = s.getArrayValue(inputs, i, refFixedCm1, 0.0);
         node.inputs.push_back(ref);
     }
 
@@ -93,4 +99,28 @@ bool LifFreqConversionStage::setPosition(double localCm1)
 
     hwWarn(msg);
     return true;
+}
+
+LifConversion assembleActiveLifConversion()
+{
+    auto stageKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifFreqConversionStage>();
+
+    std::vector<BC::LifConv::Node> nodes;
+    nodes.reserve(static_cast<std::size_t>(stageKeys.size()));
+    for(const auto &key : stageKeys)
+    {
+        SettingsStorage s(key, SettingsStorage::Hardware);
+        nodes.push_back(LifFreqConversionStage::nodeFromSettings(s, key));
+    }
+
+    auto result = LifConversion::assemble(nodes);
+    if(result.ok)
+        return result.conversion;
+
+    // Config-time topology may be mid-edit (e.g. an input ref pointing at a
+    // not-yet-configured stage); HardwareManager's prep-time assemble() is
+    // the authoritative validator and aborts the experiment on failure.
+    // Here, falling back to the identity keeps the GUI responsive instead
+    // of surfacing a transient error.
+    return LifConversion();
 }

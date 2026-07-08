@@ -3,6 +3,7 @@
 
 #include "src/data/experiment/hardwaredatacontainer.h"
 #include "src/data/experiment/experiment.h"
+#include "src/data/lif/lifunits.h"
 
 using namespace BC::Data;
 
@@ -50,6 +51,10 @@ private slots:
     // the loading machine's local hardware settings).
     void loadLegacyLif883_digitizerAndGates();
     void loadLegacyLif883_laserAxisMetadata();
+
+    // LifConfig header store/retrieve round trip for a non-Nm display
+    // unit (contract §F: the scan axis is stored in the display unit).
+    void lifConfigLaserAxisRoundTrip();
 
 private:
     QString testDataDir() const;
@@ -496,10 +501,47 @@ void ExperimentLoadingTest::loadLegacyLif883_laserAxisMetadata()
     auto *lif = exp.lifConfig();
     QVERIFY(lif != nullptr);
 
-    QCOMPARE(lif->laserUnits(), QString("nm"));
+    QCOMPARE(lif->laserUnits(), BC::LifConv::LaserUnit::Nm);
     // LaserStep is "0.01" → 2 fractional digits; LaserStart is "280"
     // → 0 digits; max(0, 2) = 2.
     QCOMPARE(lif->laserDecimals(), 2);
+}
+
+void ExperimentLoadingTest::lifConfigLaserAxisRoundTrip()
+{
+    // LifConfig::storeValues()/retrieveValues() write/parse the laser
+    // axis unit cell via BC::LifConv::unitLabel()/comparison rather than
+    // a raw string (contract §F). Cm1's label is the non-ASCII "cm⁻¹",
+    // so this exercises that the peekUnit() cell comparison round-trips
+    // a non-ASCII unit label, not just the legacy "nm" case covered by
+    // loadLegacyLif883_laserAxisMetadata().
+    LifConfig src("LifDigitizer.default");
+    src.setLaserUnits(BC::LifConv::LaserUnit::Cm1);
+    src.setLaserDecimals(2);
+    src.d_laserPosStart = 20000.50;
+    src.d_laserPosStep = -10.25;
+    src.d_laserPosPoints = 5;
+
+    // Drive a write pass then feed the resulting rows into a fresh
+    // LifConfig's read pass, mirroring the CSV round trip without
+    // touching disk.
+    auto strings = src.getStrings();
+
+    LifConfig dst("LifDigitizer.default");
+    dst.prepareToStore();
+    for(auto it = strings.cbegin(); it != strings.cend(); ++it)
+    {
+        auto [arrayKey,arrayIndex,key,value,unit] = it->second;
+        QVariantList line{it->first,arrayKey,arrayIndex,key,value,unit};
+        QVERIFY(dst.storeLine(line));
+    }
+    dst.readComplete();
+
+    QCOMPARE(dst.laserUnits(), BC::LifConv::LaserUnit::Cm1);
+    QCOMPARE(dst.laserDecimals(), 2);
+    QCOMPARE(dst.d_laserPosStart, 20000.50);
+    QCOMPARE(dst.d_laserPosStep, -10.25);
+    QCOMPARE(dst.d_laserPosPoints, 5);
 }
 
 QTEST_MAIN(ExperimentLoadingTest)

@@ -343,18 +343,42 @@ Semantics:
 
 ## F. `LifConfig` / axis migration (Task 5)
 
+**The scan axis is built and stored in the display `LaserUnit`, not cm⁻¹**
+— a deliberate revision of the earlier "cm⁻¹ internal" framing for this one
+seam. Rationale: some lasers actuate only in a native unit (e.g. the
+Opolette, minimum step 0.01 nm); a uniform-cm⁻¹ grid rounds to an *uneven*
+step sequence in that native unit at the hardware resolution limit —
+strictly worse than a uniform grid in the display unit. Building the scan
+in the display unit lets the user pick the unit natural to their laser, and
+keeps the whole axis pipeline in display units with cm⁻¹ crossing only the
+single hardware-dispatch boundary. (This supersedes the "§0 internal
+representation is cm⁻¹" rule *for the `LifConfig` scan-axis scalars only*;
+`LifConversion`, laser/stage setpoints, and `HardwareManager` dispatch are
+unchanged and remain cm⁻¹.)
+
 - `LifConfig::d_laserUnits` migrates from `QString` to `BC::LifConv::LaserUnit`
-  (with `setLaserUnits`/`laserUnits` accessors updated); axis values
-  (`d_laserPosStart`/`Step`) are cm⁻¹ internally.
-- Config-page range bounds / labels seed from the **output** view:
-  assemble a `LifConversion` from active laser + stage settings snapshots
-  (GUI-thread, snapshot-only) and use `outputRange(minPos,maxPos)` for box
-  limits; present values via `fromCm1`/`unitLabel` in the configured
-  `LaserUnit`.
-- `header.csv` `LaserStart`/`LaserStep` are written as the **display-unit**
-  value + `unitLabel` (so the analysis x-axis is a physical excitation
-  unit), converting from the internal cm⁻¹ via `fromCm1`.
+  (with `setLaserUnits`/`laserUnits` accessors updated). Axis scalars
+  (`d_laserPosStart`/`Step`, and the derived range) are in that display
+  `LaserUnit`; the grid is uniform in the display unit.
+- `currentLaserPos()` converts the display-unit setpoint to **output-beam
+  cm⁻¹** at the dispatch boundary: `toCm1(start + i*step, laserUnits)`. This
+  is the one place the axis leaves display units; the returned value flows to
+  `HardwareManager::setLifParameters` as the output cm⁻¹ setpoint (§D/§E),
+  and the laser converts output→fundamental internally.
+- Config-page range **bounds** seed from the **output** view: assemble a
+  `LifConversion` from active laser + stage settings snapshots (GUI-thread,
+  snapshot-only) and use `outputRange(minPos,maxPos)` (cm⁻¹) for the box
+  limits, converting both endpoints via `fromCm1` and sorting (a reciprocal
+  unit reverses direction) to get the display-unit range. Box **values** and
+  suffix are in the display `LaserUnit`; on accept, the box values are stored
+  directly as the display-unit axis scalars (no conversion).
+- `header.csv` `LaserStart`/`LaserStep` are written **directly** as the
+  display-unit value + `unitLabel` (the internal scalars are already display
+  units — no conversion), so the analysis x-axis is a physical excitation
+  unit. Read parses the unit cell back to `LaserUnit`; decimals inference is
+  unchanged.
 - LIF status boxes / widgets that read the old string `units` as a suffix
   (`gui/lif/gui/liflaserstatusbox.cpp:45`, `liflaserwidget.cpp:25`,
-  `experimenttypepage.cpp:252`) update to the enum + `unitLabel`, and
-  convert displayed positions cm⁻¹ → unit.
+  `experimenttypepage.cpp:252`) update to the enum + `unitLabel`, and convert
+  the cm⁻¹ position delivered by `LifLaser::laserPosUpdate` to the display
+  unit via `fromCm1`.

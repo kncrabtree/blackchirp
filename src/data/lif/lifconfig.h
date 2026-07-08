@@ -11,6 +11,7 @@
 #include <data/experiment/experimentobjective.h>
 #include <data/lif/lifstorage.h>
 #include <data/lif/lifdigitizerconfig.h>
+#include <data/lif/lifunits.h>
 
 /// \brief Storage keys used to persist LifConfig fields via HeaderStorage.
 namespace BC::Store::LIF {
@@ -87,8 +88,8 @@ public:
     QVector<int> d_delayIndices;    ///< Permuted index array for randomized delay scanning.
     int d_delayScanIndex{0};        ///< Current position within d_delayIndices.
 
-    double d_laserPosStart{-1.0};   ///< Laser scan start position (units determined by hardware).
-    double d_laserPosStep{0.0};     ///< Laser scan step size.
+    double d_laserPosStart{-1.0};   ///< Laser scan start position, in the display LaserUnit.
+    double d_laserPosStep{0.0};     ///< Laser scan step size, in the display LaserUnit.
     int d_laserPosPoints{0};        ///< Number of laser scan points.
 
     LifTrace::LifProcSettings d_procSettings; ///< Gate positions and processing parameters for LIF traces.
@@ -116,7 +117,9 @@ public:
     double currentDelay() const;
 
     /*!
-     * \brief Return the current laser position.
+     * \brief Return the current laser position as an output-beam
+     *        wavenumber (cm⁻¹), converted from the display-unit scan
+     *        grid at this dispatch boundary.
      */
     double currentLaserPos() const;
 
@@ -126,7 +129,8 @@ public:
     QPair<double,double> delayRange() const;
 
     /*!
-     * \brief Return the (start, end) laser position range.
+     * \brief Return the (start, end) laser position range, in the
+     *        display LaserUnit.
      */
     QPair<double,double> laserRange() const;
 
@@ -170,10 +174,10 @@ public:
     void loadLifData();
 
     /*!
-     * \brief Set the units string used when persisting the laser position axis.
-     * \param units Unit label (e.g. "nm").
+     * \brief Set the display unit used for the laser position axis.
+     * \param units Display unit (BC::LifConv::LaserUnit).
      */
-    void setLaserUnits(const QString& units);
+    void setLaserUnits(BC::LifConv::LaserUnit units);
 
     /*!
      * \brief Set the decimal-precision hint used when serializing the laser position axis.
@@ -187,12 +191,15 @@ public:
     void setLaserDecimals(int decimals);
 
     /*!
-     * \brief Return the laser position units (e.g. "nm").
+     * \brief Return the laser position display unit.
      *
      * Populated from the column-6 unit cell of the LaserStart header
      * row on load, or from the laser hardware setting at acquisition.
+     * The laser scan axis (d_laserPosStart/Step) is uniform in this
+     * unit; see currentLaserPos() for the display->output-cm⁻¹
+     * conversion at the hardware-dispatch boundary.
      */
-    QString laserUnits() const { return d_laserUnits; }
+    BC::LifConv::LaserUnit laserUnits() const { return d_laserUnits; }
 
     /*!
      * \brief Return the laser-position display precision in fractional digits.
@@ -209,7 +216,7 @@ public:
 private:
     std::shared_ptr<LifStorage> ps_storage;
     std::shared_ptr<LifDigitizerConfig> ps_digitizerConfig;
-    QString d_laserUnits{"nm"};
+    BC::LifConv::LaserUnit d_laserUnits{BC::LifConv::LaserUnit::Nm};
     int d_laserDecimals{2};
     int d_currentDelayIndex{0};
     int d_currentLaserIndex{0};

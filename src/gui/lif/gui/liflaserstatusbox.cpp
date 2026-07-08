@@ -7,6 +7,7 @@
 #include <gui/widget/led.h>
 #include <gui/util/numericformat.h>
 #include <data/storage/settingsstorage.h>
+#include <data/storage/enumcsvconvert.h>
 
 using namespace Qt::Literals::StringLiterals;
 
@@ -40,16 +41,20 @@ LifLaserStatusBox::LifLaserStatusBox(const QString &key, QWidget *parent) : Hard
 void LifLaserStatusBox::applySettings()
 {
     using namespace BC::Key::LifLaser;
+    using namespace BC::LifConv;
     SettingsStorage s(d_key,SettingsStorage::Hardware);
     d_decimals = s.get(decimals,2);
-    d_suffix = u" "_s + s.get(units,u"nm"_s);
-    p_posLabel->setText(BC::Gui::formatNumberForDisplay(d_position, d_decimals) + d_suffix);
+    d_unit = BC::CSV::enumFromVariant<LaserUnit>(s.get(units, QVariant::fromValue(LaserUnit::Nm)), LaserUnit::Nm);
+    d_suffix = u" "_s + unitLabel(d_unit);
+    p_posLabel->setText(BC::Gui::formatNumberForDisplay(fromCm1(d_position, d_unit), d_decimals) + d_suffix);
 }
 
 void LifLaserStatusBox::setPosition(double d)
 {
+    // d is the output-beam wavenumber (cm⁻¹); stored raw so a later
+    // applySettings() (unit changed) re-renders it in the new unit.
     d_position = d;
-    p_posLabel->setText(BC::Gui::formatNumberForDisplay(d_position, d_decimals) + d_suffix);
+    p_posLabel->setText(BC::Gui::formatNumberForDisplay(BC::LifConv::fromCm1(d_position, d_unit), d_decimals) + d_suffix);
 }
 
 void LifLaserStatusBox::setFlashlampEnabled(bool en)

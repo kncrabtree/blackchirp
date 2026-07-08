@@ -11,7 +11,7 @@ LifConfig::LifConfig(const QString& digitizerHwKey) : HeaderStorage(BC::Store::L
     ps_digitizerConfig = std::make_shared<LifDigitizerConfig>(digitizerHwKey);
 }
 
-void LifConfig::setLaserUnits(const QString& units)
+void LifConfig::setLaserUnits(BC::LifConv::LaserUnit units)
 {
     d_laserUnits = units;
 }
@@ -54,7 +54,13 @@ double LifConfig::currentDelay() const
 
 double LifConfig::currentLaserPos() const
 {
-    return static_cast<double>(d_currentLaserIndex)*d_laserPosStep + d_laserPosStart;
+    // The scan grid (d_laserPosStart/Step) is uniform in the display
+    // LaserUnit (contract §F): some lasers actuate only in a native unit
+    // at a fixed resolution, and a uniform-cm⁻¹ grid would round to an
+    // uneven step sequence in that unit. This is the single point where
+    // the axis crosses into output-beam cm⁻¹ for hardware dispatch.
+    auto displayPos = static_cast<double>(d_currentLaserIndex)*d_laserPosStep + d_laserPosStart;
+    return BC::LifConv::toCm1(displayPos, d_laserUnits);
 }
 
 QPair<double, double> LifConfig::delayRange() const
@@ -118,8 +124,11 @@ void LifConfig::storeValues()
     // future reader can recover the display precision via peekValueString
     // / countFractionalDigits without a dedicated header field. The unit
     // sits in column 6 of the same row and is read back the same way.
-    store(lStart,QString::number(d_laserPosStart,'f',d_laserDecimals),d_laserUnits);
-    store(lStep,QString::number(d_laserPosStep,'f',d_laserDecimals),d_laserUnits);
+    // d_laserPosStart/Step are already in the display LaserUnit, so no
+    // conversion is needed here.
+    const auto laserUnitStr = BC::LifConv::unitLabel(d_laserUnits);
+    store(lStart,QString::number(d_laserPosStart,'f',d_laserDecimals),laserUnitStr);
+    store(lStep,QString::number(d_laserPosStep,'f',d_laserDecimals),laserUnitStr);
     store(dRandom,d_delayRandom);
     store(lPoints,d_laserPosPoints);
     store(shotsPerPoint,d_shotsPerPoint);
@@ -140,8 +149,16 @@ void LifConfig::retrieveValues()
     // LaserStart row; decimals are inferred from the maximum fractional
     // digit count across LaserStart and LaserStep.
     const auto laserUnitCell = peekUnit(lStart);
-    if(!laserUnitCell.isEmpty())
-        d_laserUnits = laserUnitCell;
+    d_laserUnits = BC::LifConv::LaserUnit::Nm;
+    for(auto u : {BC::LifConv::LaserUnit::Cm1, BC::LifConv::LaserUnit::Nm,
+                  BC::LifConv::LaserUnit::GHz, BC::LifConv::LaserUnit::eV})
+    {
+        if(laserUnitCell == BC::LifConv::unitLabel(u))
+        {
+            d_laserUnits = u;
+            break;
+        }
+    }
     const int startDecimals = countFractionalDigits(peekValueString(lStart));
     const int stepDecimals  = countFractionalDigits(peekValueString(lStep));
     const int inferred = qMax(startDecimals, stepDecimals);

@@ -28,7 +28,10 @@
 #include <hardware/core/hardwaremanager.h>
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 #include <hardware/core/liflaser/liflaser.h>
+#include <hardware/core/liflaser/liffreqconversionstage.h>
 #include <data/storage/applicationconfigmanager.h>
+#include <data/storage/enumcsvconvert.h>
+#include <data/lif/lifunits.h>
 #include <hardware/core/runtimehardwareconfig.h>
 #include <gui/widget/settingstable.h>
 
@@ -239,20 +242,37 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
 
         // Look up LifLaser settings before constructing widgets so the
         // laser column has the correct decimals, range, and units.
+        // minPos/maxPos are the grating fundamental's native range
+        // (cm⁻¹); the box bounds are the FINAL-beam output range,
+        // assembled from the active laser + frequency-conversion
+        // topology and converted to the display unit below.
         int decimals = 2;
-        double minPos = 250.0;
-        double maxPos = 2000.0;
-        QString units = "nm";
+        double minPos = 5000.0;
+        double maxPos = 40000.0;
+        auto unit = BC::LifConv::LaserUnit::Nm;
         for (auto it = p_exp->d_hardwareData.hardwareMap.cbegin(); it != p_exp->d_hardwareData.hardwareMap.cend(); ++it) {
             if (it.value().type == BC::Data::HardwareType::LifLaser) {
                 SettingsStorage lset(it.key(), SettingsStorage::Hardware);
                 decimals = lset.get(BC::Key::LifLaser::decimals, decimals);
                 minPos = lset.get(BC::Key::LifLaser::minPos, minPos);
                 maxPos = lset.get(BC::Key::LifLaser::maxPos, maxPos);
-                units = lset.get(BC::Key::LifLaser::units, units);
+                unit = BC::CSV::enumFromVariant<BC::LifConv::LaserUnit>(
+                    lset.get(BC::Key::LifLaser::units, QVariant::fromValue(unit)), unit);
                 break;
             }
         }
+
+        // GUI-thread-only assembly over settings snapshots (no threaded
+        // device access); falls back to the identity conversion if the
+        // topology is mid-edit or invalid.
+        auto conv = assembleActiveLifConversion();
+        auto [outLoCm1, outHiCm1] = conv.outputRange(minPos, maxPos);
+        auto dlo = BC::LifConv::fromCm1(outLoCm1, unit);
+        auto dhi = BC::LifConv::fromCm1(outHiCm1, unit);
+        // A reciprocal unit (e.g. nm) reverses the min/max order.
+        double displayMin = qMin(dlo, dhi);
+        double displayMax = qMax(dlo, dhi);
+        QString units = BC::LifConv::unitLabel(unit);
 
         // Delay column (microseconds)
         p_dStartBox = new QDoubleSpinBox(this);
@@ -290,11 +310,11 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
         p_dEndBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
         p_dEndBox->setAlignment(Qt::AlignCenter);
 
-        // Laser column (configured units)
+        // Laser column (display units)
         p_lStartBox = new QDoubleSpinBox(this);
         p_lStartBox->setDecimals(decimals);
         p_lStartBox->setKeyboardTracking(false);
-        p_lStartBox->setRange(minPos, maxPos);
+        p_lStartBox->setRange(displayMin, displayMax);
         p_lStartBox->setSuffix(QString(" ").append(units));
         p_lStartBox->setValue(get(lifLaserStart,p_lStartBox->minimum()));
         p_lStartBox->setAlignment(Qt::AlignCenter);
@@ -320,7 +340,7 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
 
         p_lEndBox = new QDoubleSpinBox(this);
         p_lEndBox->setDecimals(decimals);
-        p_lEndBox->setRange(minPos, maxPos);
+        p_lEndBox->setRange(displayMin, displayMax);
         p_lEndBox->setSuffix(QString(" ").append(units));
         p_lEndBox->setReadOnly(true);
         p_lEndBox->setButtonSymbols(QAbstractSpinBox::NoButtons);

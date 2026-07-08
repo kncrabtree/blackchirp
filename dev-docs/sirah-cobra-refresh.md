@@ -79,11 +79,32 @@ is authoritative; read it before resuming.
   harness (pulse generator, `Experiment`/`LifConfig`, event-loop pumping) —
   a deliberate follow-up, not built here.
 
+- **Task 5 — LIF axis migration to display units**: `LifConfig::d_laserUnits`
+  is now a `BC::LifConv::LaserUnit` (accessors updated); the scan scalars
+  `d_laserPosStart/Step` are stored in the **display unit** and the grid is
+  uniform in that unit (contract §F decision — a uniform-cm⁻¹ grid rounds to
+  uneven steps on a native-unit-limited laser like the Opolette).
+  `currentLaserPos()` is the sole display→output-cm⁻¹ boundary
+  (`toCm1(start + i*step, unit)`); `header.csv` stores display-unit values +
+  `unitLabel` directly; `retrieveValues` parses the unit cell back by
+  `unitLabel` comparison (legacy `"nm"` → `Nm`). Config page and the live
+  laser widget seed their box ranges from `outputRange(minPos,maxPos)`
+  converted through `fromCm1` (reciprocal-sorted) and emit/store in the
+  display unit; the status box stores raw cm⁻¹ and renders via `fromCm1`.
+  Two shared GUI-thread helpers on `LifFreqConversionStage`:
+  `nodeFromSettings(SettingsStorage&, key)` (also now backs `conversionNode()`)
+  and free `assembleActiveLifConversion()` (identity fallback on mid-edit
+  topology; `HardwareManager` prep-time `assemble` stays the authoritative
+  validator). Minor known quirk: before the first `laserPosUpdate`, the
+  status box renders the `fromCm1(0, Nm)` sentinel rather than a placeholder.
+
 **Uncommitted:** only this status note in this file (intentionally — the
 next session picks up from the modified file).
 
-**Remaining:** Tasks 5–6 below (Sequencing). **Task 5 is next** and its
-dependencies (Tasks 1–4) are in place.
+**Remaining:** Task 6 below (Sequencing). **Task 6 is next** — the
+`SirahDoublingStage` driver plus stripping `SirahCobra` of its external
+stage and migrating its remaining settings — with dependencies (Tasks 1–5)
+in place.
 
 **Carry-forward notes for the remaining tasks:**
 
@@ -451,25 +472,36 @@ unwind.
 
 `LifConfig` already stores `d_laserUnits`/`d_laserDecimals` and a
 `(start, step, points)` axis (`lifconfig.h:90-92,212-213`) seeded from
-the laser settings at `experiment.cpp:518-519`. Shift these to output
-units:
+the laser settings at `experiment.cpp:518-519`. Shift these to the
+**output view, expressed in the display `LaserUnit`** (see the frozen
+[contract §F](sirah-cobra-refresh-contract.md); the exact seams live
+there):
 
-- Seed `LifConfig` units/decimals and the config-page range bounds
-  (`experimenttypepage.cpp:564`, `p_lStartBox` et al.) from the
-  **output** view: assemble a `LifConversion` from the active laser +
-  stage settings snapshots and use `outputRange(minPos, maxPos)` for the
-  box limits and `laserToOutput` for labels. This is a GUI-thread
+- **The scan grid is built and stored in the display unit, not cm⁻¹.**
+  This revises the "cm⁻¹ internal" framing for the `LifConfig` scan
+  scalars only. A uniform-cm⁻¹ grid rounds to an *uneven* step sequence
+  on a laser that actuates in a native unit at a fixed resolution (the
+  Opolette: 0.01 nm minimum step) — strictly worse than a uniform grid in
+  the display unit. So the axis stays in the user's unit end to end, and
+  cm⁻¹ crosses only the single hardware-dispatch boundary.
+- Seed the config-page range bounds (`experimenttypepage.cpp:564`,
+  `p_lStartBox` et al.) from the **output** view: assemble a
+  `LifConversion` from the active laser + stage settings snapshots and use
+  `outputRange(minPos, maxPos)` (cm⁻¹) for the box limits, converted to the
+  display unit via `fromCm1` (sorting, since a reciprocal unit reverses
+  direction). Box values/suffix are the display unit. GUI-thread
   computation over settings snapshots — no call into a threaded device.
-- `currentLaserPos()` (`lifconfig.cpp:55-57`) stays a plain
-  `start + i*step`; its values are now output units and flow unchanged
-  to `HardwareManager::setLifParameters` via
-  `AcquisitionManager::nextLifPoint` (`acquisitionmanager.cpp:217`,
-  `76`). The output→fundamental conversion happens inside the laser, so
-  the acquisition layer needs no conversion logic.
+- `currentLaserPos()` (`lifconfig.cpp:55-57`) converts the display-unit
+  setpoint to output cm⁻¹ at the dispatch boundary
+  (`toCm1(start + i*step, laserUnits)`) and flows to
+  `HardwareManager::setLifParameters` via `AcquisitionManager::nextLifPoint`
+  (`acquisitionmanager.cpp:217`,`76`). The output→fundamental conversion
+  then happens inside the laser.
 - On-disk `header.csv` `LaserStart`/`LaserStep`
-  (`lifconfig.cpp:121-122,150`) now record output values with the output
-  unit label — correct for the Python/analysis side, whose x-axis should
-  be the excitation wavelength.
+  (`lifconfig.cpp:121-122,150`) record the display-unit values with the
+  `unitLabel` (no conversion — the scalars are already display units),
+  correct for the Python/analysis side whose x-axis is the excitation
+  unit.
 
 ### 7. Topology configuration & UX
 

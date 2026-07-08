@@ -2,7 +2,9 @@
 
 #include <data/storage/blackchirpcsv.h>
 #include <data/storage/settingsstorage.h>
+#include <data/storage/enumcsvconvert.h>
 #include <data/experiment/ftmwconfigtypes.h>
+#include <data/lif/lifunits.h>
 
 #include <hardware/optional/ioboard/ioboard.h>
 #include <hardware/optional/chirpsource/awg.h>
@@ -515,7 +517,9 @@ LifConfig *Experiment::enableLif()
     for (auto it = d_hardwareData.hardwareMap.cbegin(); it != d_hardwareData.hardwareMap.cend(); ++it) {
         if (it.value().type == BC::Data::HardwareType::LifLaser) {
             SettingsStorage s(it.key(), SettingsStorage::Hardware);
-            ps_lifCfg->setLaserUnits(s.get(BC::Key::LifLaser::units, QString("nm")));
+            ps_lifCfg->setLaserUnits(BC::CSV::enumFromVariant<BC::LifConv::LaserUnit>(
+                s.get(BC::Key::LifLaser::units, QVariant::fromValue(BC::LifConv::LaserUnit::Nm)),
+                BC::LifConv::LaserUnit::Nm));
             ps_lifCfg->setLaserDecimals(s.get(BC::Key::LifLaser::decimals, 2));
             break;
         }
