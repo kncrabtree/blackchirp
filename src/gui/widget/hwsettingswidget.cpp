@@ -13,6 +13,8 @@
 #include <QLineEdit>
 #include <QComboBox>
 #include <QPushButton>
+#include <QMetaEnum>
+#include <QSignalBlocker>
 #include <limits>
 
 #include <gui/widget/scientificspinbox.h>
@@ -21,6 +23,7 @@
 #include <gui/dialog/hwarrayeditdialog.h>
 #include <data/storage/settingsstorage.h>
 #include <data/storage/enumcsvconvert.h>
+#include <data/lif/lifunits.h>
 
 namespace {
 
@@ -160,6 +163,12 @@ void HwSettingsWidget::populate(const QString &storageKey)
         }
         }
     }
+
+    // Link display-unit-aware scalar boxes (HwSettingDef::displayUnitKey) to
+    // their sibling LaserUnit combo boxes. A post-pass rather than inline in
+    // the loop above because build order within d_scalarWidgets is not
+    // guaranteed — a box may be built before the combo box it depends on.
+    linkDisplayUnitScalars(settingDefs);
 
     // ---- Array settings ----
     for (auto it = arrayDefs.cbegin(); it != arrayDefs.cend(); ++it) {
@@ -314,6 +323,130 @@ QVariant HwSettingsWidget::readWidget(QWidget *widget, const QVariant &defaultVa
     return defaultValue;
 }
 
+QVariant HwSettingsWidget::scalarValueForStorage(const HwSettingDef &def) const
+{
+    auto it = d_scalarWidgets.constFind(def.key);
+    if (it == d_scalarWidgets.cend())
+        return def.defaultValue;
+
+    if (!def.displayUnitKey.isEmpty()) {
+        for (const auto &linked : d_unitLinkedScalars) {
+            if (linked.settingKey == def.key)
+                return BC::LifConv::toCm1(linked.box->value(), linked.displayedUnit);
+        }
+    }
+
+    return readWidget(it.value(), def.defaultValue);
+}
+
+// ---------------------------------------------------------------------------
+
+void HwSettingsWidget::linkDisplayUnitScalars(const QVector<HwSettingDef> &settingDefs)
+{
+    using BC::LifConv::LaserUnit;
+
+    auto laserUnitMeta = QMetaEnum::fromType<LaserUnit>();
+
+    for (const auto &def : settingDefs) {
+        if (def.displayUnitKey.isEmpty())
+            continue;
+
+        auto boxIt = d_scalarWidgets.constFind(def.key);
+        auto comboIt = d_scalarWidgets.constFind(def.displayUnitKey);
+        if (boxIt == d_scalarWidgets.cend() || comboIt == d_scalarWidgets.cend())
+            continue;
+
+        // makeScalarWidget() always renders a QMetaType::Double setting as a
+        // ScientificSpinBox (a QAbstractSpinBox, not a QDoubleSpinBox).
+        auto *box = qobject_cast<ScientificSpinBox*>(boxIt.value());
+        auto *combo = qobject_cast<QComboBox*>(comboIt.value());
+        if (!box || !combo)
+            continue;
+
+        // The combo stores the enum's key-name string as item data
+        // (EnumComboBoxBase); resolve it against LaserUnit specifically so a
+        // displayUnitKey pointing at some other enum type is left alone.
+        bool ok = false;
+        int val = laserUnitMeta.keyToValue(combo->currentData().toString().toUtf8().constData(), &ok);
+        if (!ok)
+            continue;
+
+        UnitLinkedScalar linked;
+        linked.box = box;
+        linked.unitCombo = combo;
+        linked.settingKey = def.key;
+        linked.displayedUnit = static_cast<LaserUnit>(val);
+        linked.minCm1 = def.minimum;
+        linked.maxCm1 = def.maximum;
+
+        // box->value() is still the raw registered/stored cm⁻¹ value here —
+        // makeScalarWidget() populated it before this post-pass runs.
+        applyDisplayUnit(linked, linked.displayedUnit, box->value());
+
+        d_unitLinkedScalars.push_back(linked);
+    }
+
+    // Wire live reconversion once the vector's final size for this widget is
+    // known, so the index-captured lambdas below never see a reallocation
+    // from a later push_back.
+    for (std::size_t i = 0; i < d_unitLinkedScalars.size(); ++i) {
+        auto *combo = d_unitLinkedScalars[i].unitCombo;
+        connect(combo, &QComboBox::currentIndexChanged, this, [this, i]() {
+            auto &linked = d_unitLinkedScalars[i];
+
+            bool ok = false;
+            auto me = QMetaEnum::fromType<LaserUnit>();
+            int val = me.keyToValue(linked.unitCombo->currentData().toString().toUtf8().constData(), &ok);
+            if (!ok)
+                return;
+
+            auto nu = static_cast<LaserUnit>(val);
+            if (nu == linked.displayedUnit)
+                return;
+
+            // Preserve the physical value across the unit switch: derive
+            // canonical cm⁻¹ from what the box currently shows in the unit
+            // it was *previously* configured for, then redisplay in the new
+            // unit.
+            double canon = BC::LifConv::toCm1(linked.box->value(), linked.displayedUnit);
+            applyDisplayUnit(linked, nu, canon);
+        });
+    }
+}
+
+void HwSettingsWidget::applyDisplayUnit(UnitLinkedScalar &linked, BC::LifConv::LaserUnit u,
+                                        double canonicalValue)
+{
+    using BC::LifConv::fromCm1;
+
+    // Convert the registered cm⁻¹ bounds to the new display unit; a
+    // reciprocal unit (e.g. nm) inverts min/max order, so sort ascending.
+    // Only apply a bound whose registered cm⁻¹ counterpart is valid —
+    // otherwise leave that side of the box's existing (wide default) range
+    // untouched.
+    double lo = linked.box->minimum();
+    double hi = linked.box->maximum();
+    if (linked.minCm1.isValid() && linked.maxCm1.isValid()) {
+        double a = fromCm1(linked.minCm1.toDouble(), u);
+        double b = fromCm1(linked.maxCm1.toDouble(), u);
+        lo = qMin(a, b);
+        hi = qMax(a, b);
+    } else if (linked.minCm1.isValid()) {
+        lo = fromCm1(linked.minCm1.toDouble(), u);
+    } else if (linked.maxCm1.isValid()) {
+        hi = fromCm1(linked.maxCm1.toDouble(), u);
+    }
+
+    const QSignalBlocker blocker(linked.box);
+    // Bump precision so sub-nm entry is possible; ScientificSpinBox exposes
+    // this as displayPrecision (it is not a QDoubleSpinBox).
+    linked.box->setDisplayPrecision(4);
+    linked.box->setRange(lo, hi);
+    linked.box->setSuffix(u" "_s + BC::LifConv::unitLabel(u));
+    linked.box->setValue(fromCm1(canonicalValue, u));
+    linked.displayedUnit = u;
+}
+
 // ---------------------------------------------------------------------------
 
 void HwSettingsWidget::addArrayTableRow(SettingsTable *table, const HwArraySettingDef &def)
@@ -378,7 +511,7 @@ QHash<QString, QVariant> HwSettingsWidget::values() const
         // in d_scalarWidgets — leave them untouched in storage.
         auto it = d_scalarWidgets.find(def.key);
         if (it != d_scalarWidgets.end())
-            out[def.key] = readWidget(it.value(), def.defaultValue);
+            out[def.key] = scalarValueForStorage(def);
     }
     return out;
 }
@@ -392,18 +525,15 @@ void HwSettingsWidget::saveToStorage(const QString &storageKey) const
 {
     SettingsStorage storage(storageKey, SettingsStorage::Hardware);
 
-    // Scalar settings
-    for (auto it = d_scalarWidgets.cbegin(); it != d_scalarWidgets.cend(); ++it) {
-        // Find the default value for this key from the registry
-        QVariant defaultVal;
-        auto &reg = HardwareRegistry::instance();
-        for (const auto &def : reg.getSettingDefs(d_hwType, d_impl)) {
-            if (def.key == it.key()) {
-                defaultVal = def.defaultValue;
-                break;
-            }
-        }
-        storage.set(it.key(), readWidget(it.value(), defaultVal));
+    // Scalar settings. Iterating the registry defs (rather than
+    // d_scalarWidgets directly) lets scalarValueForStorage() see each
+    // def's displayUnitKey without a second per-key registry lookup, and
+    // keeps this path and values() from being able to diverge.
+    auto &reg = HardwareRegistry::instance();
+    for (const auto &def : reg.getSettingDefs(d_hwType, d_impl)) {
+        if (d_scalarWidgets.constFind(def.key) == d_scalarWidgets.cend())
+            continue;
+        storage.set(def.key, scalarValueForStorage(def));
     }
 
     // Array settings

@@ -10,134 +10,86 @@ comm model or the comm-config dialog, and it solves a problem Approach A
 did not address at all — the LIF spectrum axis for a frequency-converted
 laser.
 
-## Implementation status (resume here)
+## Implementation status
 
-Work is proceeding on branch **`feature/sirah-cobra-refresh`** as a
-sequence of tasks (see [Sequencing](#sequencing)), each dispatched to a
-single Sonnet subagent, reviewed, then committed. The frozen cross-task
-interface — exact signatures, key names, enum names — lives in
-[`sirah-cobra-refresh-contract.md`](sirah-cobra-refresh-contract.md) and
-is authoritative; read it before resuming.
+The refresh is **implemented on branch `feature/sirah-cobra-refresh`** (not
+yet merged). The frozen cross-task interface — exact signatures, key names,
+enum names — is recorded in
+[`sirah-cobra-refresh-contract.md`](sirah-cobra-refresh-contract.md).
 
-**Done (committed):**
+### Implementation summary
 
-- **Task 1 — keystone** (`fafa44de`): `BC::LifConv::LaserUnit`/`Op`/
-  `RefType` `Q_ENUM`s + cm⁻¹↔nm/GHz/eV utility (`data/lif/lifunits.*`) and
-  the `LifConversion` value type (`data/lif/lifconversion.*`), with
-  `tst_lifconversion`. Contract §0/§A.
-- **Task 2 — `LifLaser` cm⁻¹ + enum UI** (`5dd2ce57`): `LifLaser`
-  driver-hooks work in the grating fundamental (cm⁻¹); public
-  `setPosition`/`readPosition` work in output-beam cm⁻¹ and bridge via a
-  held `LifConversion` (identity until `setConversion`); `units` migrated
-  to the `LaserUnit` enum; `minPos`/`maxPos` defaults now cm⁻¹
-  (5000–40000); `HwSettingsWidget` renders enum settings as comboboxes;
-  Opolette + virtual laser updated to the cm⁻¹ boundary. Contract §E.
-- **Enum-reflection consolidation** (`a7e796ae`): shared
-  `BC::CSV::metaEnumFromType`/`enumKeyName`; `EnumComboBoxBase` reused by
-  both `EnumComboBox<T>` and `HwSettingsWidget`; construction-path test
-  that a built `LifLaser` seeds `units` as the `"Nm"` key string.
-- **Task 3 — `LifFreqConversionStage` base + Virtual/Fixed impls**:
-  new base `LifFreqConversionStage : HardwareObject`
-  (`hardware/core/liflaser/liffreqconversionstage.*`), a `d_threaded`
-  sibling of `LifLaser` earning its own `hwType`. Owns only the generic
-  node-descriptor contract — `BC::Key::LifConvStage` scalars
-  (`op`/`harmonic`/`isFinal`/`verify`/`tolerance`) + the `conversionInputs`
-  array via `REGISTER_HARDWARE_BASE`/`_BASE_ARRAY`, `conversionNode()`
-  reading them into a `BC::LifConv::Node` (`stageKey = d_key`), and
-  `setPosition`/`readPosition` with a verify/best-effort split. The
-  move-verification window is the registered `tolerance` setting (default
-  1.0 cm⁻¹, min 0), not a hardcoded constant, so a coarse mount can widen
-  it. `VirtualLifFreqConversionStage` (CI vehicle) and
-  `FixedLifFreqConversionStage` (`FixedClock` motif; the `Fixed<Type>`
-  system-profile device for uncontrolled stages) added; both registered in
-  `cmake/BlackchirpHardware.cmake` (base type + `fixed*` globs).
-  `tst_hardwareregistrytest` gains a construction-path test and both impls
-  in the whole-archive guard table. Contract §B/§C. Neither new impl calls
-  `save()` in its constructor — the `HardwareObject` base ctor already
-  persists the seeded defaults and the impls mutate no settings;
-  deliberately dropped rather than mirroring the vestigial
-  `VirtualLifLaser`/`FixedClock` calls.
-- **Task 4 — `HardwareManager` conversion-stage fan-out**: `HardwareManager`
-  holds a cached `d_lifConversion` assembled at `initializeExperiment`
-  prep from the active laser + every active `LifFreqConversionStage`'s
-  `conversionNode()`; `LifConversion::assemble` failure is surfaced as a
-  prep-time error that aborts before `experimentInitialized` (empty stage
-  set → identity, not special-cased), and the assembled conversion is
-  pushed to the laser via `setConversion` (thread-aware). New
-  `setLifConversionStages(outputCm1)` dispatches each stage's local setpoint
-  (`stageInput(key, outputToLaser(outputCm1))`) **non-blocking** via a
-  per-stage `std::promise`/`future` + `Qt::QueuedConnection` so moves run
-  concurrently, then AND-joins; empty stage set returns `true`. Spliced into
-  `setLifParameters` between the laser and pulse-generator legs (flat join,
-  no two-tier assumption). Connect-ladder gains a documented no-op
-  `LifFreqConversionStage` branch — the stage forwards no type-specific
-  signal and `hardwareFailure` is already wired generically in
-  `handleConnectionResult`. Contract §D. **Integration test deferred**: no
-  existing harness constructs a `HardwareManager`, and a real
-  virtual-laser + virtual-stage `setLifParameters` test needs a friend-class
-  seam to author stage node-descriptor settings plus a multi-device async
-  harness (pulse generator, `Experiment`/`LifConfig`, event-loop pumping) —
-  a deliberate follow-up, not built here.
+The LIF laser/axis pipeline now works internally in vacuum wavenumber
+(cm⁻¹), with a small frequency-conversion topology so the acquisition axis
+is the final (output) excitation wavelength rather than the dye fundamental:
 
-- **Task 5 — LIF axis migration to display units**: `LifConfig::d_laserUnits`
-  is now a `BC::LifConv::LaserUnit` (accessors updated); the scan scalars
-  `d_laserPosStart/Step` are stored in the **display unit** and the grid is
-  uniform in that unit (contract §F decision — a uniform-cm⁻¹ grid rounds to
-  uneven steps on a native-unit-limited laser like the Opolette).
-  `currentLaserPos()` is the sole display→output-cm⁻¹ boundary
-  (`toCm1(start + i*step, unit)`); `header.csv` stores display-unit values +
-  `unitLabel` directly; `retrieveValues` parses the unit cell back by
-  `unitLabel` comparison (legacy `"nm"` → `Nm`). Config page and the live
-  laser widget seed their box ranges from `outputRange(minPos,maxPos)`
-  converted through `fromCm1` (reciprocal-sorted) and emit/store in the
-  display unit; the status box stores raw cm⁻¹ and renders via `fromCm1`.
-  Two shared GUI-thread helpers on `LifFreqConversionStage`:
-  `nodeFromSettings(SettingsStorage&, key)` (also now backs `conversionNode()`)
-  and free `assembleActiveLifConversion()` (identity fallback on mid-edit
-  topology; `HardwareManager` prep-time `assemble` stays the authoritative
-  validator). Minor known quirk: before the first `laserPosUpdate`, the
-  status box renders the `fromCm1(0, Nm)` sentinel rather than a placeholder.
-- **Task 6 — `SirahFcu` driver + `SirahCobra` cleanup**: the decommissioned
-  Harvey-Mudd external-doubling-stage rig (second serial port, `"%1ma%2"`
-  ASCII commands, `"in"` query, crystal/compensator polynomials, all
-  `extStage*`/`poly*` keys, `p_extStagePort`) was **deleted** from
-  `SirahCobra`, not carried forward — the plan §3's compensator-preservation
-  direction was wrong. `SirahCobra` is now a pure grating driver: its `stages`
-  geometry array + scalars migrated from the imperative constructor to
-  `REGISTER_HARDWARE_ARRAY`/`_SETTINGS`, and `minPos`/`maxPos` re-expressed in
-  cm⁻¹ (14285.7/22222.2 = 700/450 nm) with `setPos`/`readPos` converting
-  nm↔cm⁻¹ at the sine-bar boundary. New `SirahFcu : LifFreqConversionStage`
-  models the doubler as an `NHG` node (harmonic `N` Required, default 2;
-  `isFinal` default true) on its own RS232 port, reusing the grating's sine-bar
-  tuning + binary protocol. The pure wire-format layer (`BC::Sirah::Status`,
-  `buildCommand`, `parseStatus`) is shared via `sirahprotocol.{h,cpp}`; the
-  comm-driving loops and tuning math are deliberately duplicated per driver
-  (flagged for consolidation once the two units are bench-confirmed identical).
-  Placeholder FCU crystal geometry copied from the grating pending real
-  calibration.
+- **Unit foundation & topology value type** — a `BC::LifConv::LaserUnit`
+  (`{Cm1,Nm,GHz,eV}`) `Q_ENUM` with `toCm1`/`fromCm1`/`unitLabel`
+  (`data/lif/lifunits.*`), and the pure `LifConversion` value type
+  (`data/lif/lifconversion.*`): a DAG of `NHG`/`SFG`/`DFG` nodes assembled
+  and validated from per-stage node descriptors, giving closed-form
+  `laserToOutput`/`outputToLaser`/`stageInput`/`outputRange`.
+- **`LifLaser`** works the grating fundamental (cm⁻¹) in its driver hooks and
+  the output beam (cm⁻¹) in its public slots, bridging through a held
+  `LifConversion`; `units` is a `LaserUnit` enum, and `HwSettingsWidget`
+  renders enum settings as comboboxes.
+- **`LifFreqConversionStage`** (new `HardwareObject` sibling of `LifLaser`)
+  carries a registered node descriptor + verify flag/tolerance, with a
+  `setPosition`/verify split; `VirtualLifFreqConversionStage` (CI) and the
+  `FixedClock`-motif `FixedLifFreqConversionStage` (uncontrolled stages) are
+  its impls. Both the config GUI and `HardwareManager` assemble a
+  `LifConversion` from settings snapshots via `nodeFromSettings` /
+  `assembleActiveLifConversion`.
+- **`HardwareManager`** caches the assembled conversion, pushes it to the
+  laser (both at experiment prep — which validates and aborts on a malformed
+  graph — and at connection-complete, so live jog/status use the topology),
+  and fans out per-LIF-point setpoints to the laser and every active stage
+  in parallel (`std::promise`/`future` + `QueuedConnection`), AND-joining.
+- **`LifConfig`/axis** stores the scan grid in the display `LaserUnit`
+  (uniform in the user's unit — a uniform-cm⁻¹ grid rounds unevenly on a
+  native-unit-limited laser like the Opolette); `currentLaserPos()` is the
+  single display→output-cm⁻¹ boundary, and `header.csv` records display-unit
+  values + `unitLabel` for the analysis x-axis.
+- **`SirahCobra`** is now a pure grating driver (the decommissioned
+  Harvey-Mudd external doubling-stage / compensator / polynomial rig was
+  deleted, settings migrated to the registry macros, and the driver moved to
+  the cm⁻¹ boundary). The new **`SirahFcu`** models the doubler as an `NHG`
+  stage on its own RS232 port, reusing the grating's sine-bar tuning and
+  binary protocol; the pure wire-format layer is shared via
+  `sirahprotocol.{h,cpp}` while comm/tuning are duplicated per driver pending
+  bench confirmation that the two units are identical.
+- **Profile-dialog range entry** — `minPos`/`maxPos` are entered/displayed in
+  the laser's `units` (via `HwSettingDef::displayUnitKey`; internal storage
+  stays cm⁻¹), and `LifLaser`'s range check is order-agnostic so a reciprocal
+  unit (nm/eV) works.
 
-**Sequence complete.** All six tasks are committed on
-`feature/sirah-cobra-refresh`. What remains is **manual bench validation**
-(no virtual Sirah / hardware in CI): drive a virtual laser first, then a test
-deployment against the live Opolette, then grating + doubling-stage co-tuning
-across the OH band on the new Sirah, verifying the LIF axis reads in the
-doubled excitation wavelength. See [Testing](#testing).
+Key decisions and non-obvious quirks: the FCU verify tolerance and the
+harmonic order are registered settings (the latter `Required` on `SirahFcu`,
+default 2); `SirahFcu` defaults `isFinal` true so a lone doubler is a valid
+one-`FINAL` graph; `SirahFcu`'s crystal geometry is a placeholder copied from
+the grating pending calibration; multi-tunable-source conversion is rejected
+in the solver and deferred; the fan-out join blocks the `HardwareManager`
+thread (consistent with the pre-existing laser/pgen dispatch) pending the
+roadmap's manager-wide async delivery; and no automated `HardwareManager`
+integration test exists for the fan-out (a harness needs a friend-class seam
+to author stage descriptors plus a multi-device async setup).
 
-**Working notes for future work on this area:**
+### Next steps
 
-- `Op`/`RefType`/`LaserUnit` are declared in `data/lif/lifunits.h` (one
-  `Q_NAMESPACE` = one moc owner); include that (or `lifconversion.h`, which
-  re-exports it) to use them. Enum-valued hardware settings persist as their
-  `Q_ENUM` key-name string and read back via `BC::CSV::enumFromVariant`;
-  `HwSettingsWidget` renders them as comboboxes.
-- `minPos`/`maxPos` render as raw cm⁻¹ spin boxes in the profile-creation
-  dialog (not display-unit-aware) — an unaddressed UX rough edge.
-- The `setLifParameters` fan-out blocks the `HardwareManager` thread on the
-  parallel-move join (consistent with the pre-existing laser/pgen dispatch);
-  revisit if/when the roadmap's manager-wide async delivery lands.
-- No automated `HardwareManager` integration test exists for the LIF fan-out;
-  a harness would need a friend-class seam to author stage node-descriptor
-  settings plus a multi-device async setup.
+- **User testing of the LIF workflow** — exercise the end-to-end path on the
+  bench: laser + conversion-stage co-tuning, scanning across a band, the
+  output-unit axis and its `header.csv`/analysis round-trip, and unit
+  conversion in the config, status, and jog UIs. Drive a virtual laser
+  first, then the live Opolette, then the new Sirah grating + doubling stage
+  across the OH band. (See [Testing](#testing).)
+- **UI development** — a more natural way to configure the conversion
+  topology than the per-device node descriptors: the "LIF Conversion" tab
+  (§7) that lays out stages and edges graphically, over the same per-device
+  settings as the source of truth.
+- **Documentation** — bring the published Sphinx docs up to date with the LIF
+  frequency-conversion model, the cm⁻¹ internal representation and unit
+  boundaries, and the new hardware types (`LifFreqConversionStage`,
+  `SirahFcu`).
 
 ## Problems being solved
 

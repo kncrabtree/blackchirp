@@ -4,13 +4,17 @@
 #include <QWidget>
 #include <QHash>
 #include <QMap>
+#include <vector>
 #include <data/storage/settingsstorage.h>
+#include <data/lif/lifunits.h>
 #include <hardware/core/hardwareregistry.h>
 
 class QFormLayout;
 class QGroupBox;
 class QLabel;
 class QTabWidget;
+class QComboBox;
+class ScientificSpinBox;
 class SettingsTable;
 
 /*!
@@ -74,14 +78,53 @@ public:
     void saveToStorage(const QString &storageKey) const;
 
 private:
+    /*!
+     * \brief Bookkeeping for one HwSettingDef::displayUnitKey-linked scalar
+     *        box: which double box, which sibling unit combo, and the
+     *        display unit it is currently configured for (needed so a unit
+     *        change can convert from the *previous* display value rather
+     *        than re-deriving from the stale registered cm⁻¹ bounds).
+     */
+    struct UnitLinkedScalar {
+        ScientificSpinBox *box;    ///< The double-typed setting's widget (makeScalarWidget always uses ScientificSpinBox for QMetaType::Double defs; it is a QAbstractSpinBox, not a QDoubleSpinBox).
+        QComboBox *unitCombo;      ///< Sibling LaserUnit combo box (EnumComboBoxBase).
+        QString settingKey;        ///< def.key for the linked double box.
+        BC::LifConv::LaserUnit displayedUnit; ///< Unit the box is currently showing.
+        QVariant minCm1;           ///< Registered def.minimum (canonical cm⁻¹), may be invalid.
+        QVariant maxCm1;           ///< Registered def.maximum (canonical cm⁻¹), may be invalid.
+    };
+
     void populate(const QString &storageKey);
 
     QWidget *makeScalarWidget(const HwSettingDef &def, const QVariant &currentValue);
     QVariant readWidget(QWidget *widget, const QVariant &defaultValue) const;
+    QVariant scalarValueForStorage(const HwSettingDef &def) const;
 
     void addArrayTableRow(SettingsTable *table, const HwArraySettingDef &def);
 
     QStringList subKeysForArray(const HwArraySettingDef &def) const;
+
+    /*!
+     * \brief Link the display-unit-aware scalar boxes registered via
+     *        HwSettingDef::displayUnitKey to their sibling LaserUnit combo
+     *        boxes, converting the box's registered cm⁻¹ range/value to the
+     *        combo's currently-selected display unit.
+     *
+     * Called once after the scalar-widget loop in populate() so build order
+     * within d_scalarWidgets does not matter. Only settings whose
+     * displayUnitKey names a sibling widget that resolves to a
+     * BC::LifConv::LaserUnit are linked; anything else is left as a plain
+     * cm⁻¹ box.
+     */
+    void linkDisplayUnitScalars(const QVector<HwSettingDef> &settingDefs);
+
+    /*!
+     * \brief Reconfigure a display-unit-linked box (range, suffix, decimals,
+     *        value) for display unit \a u, converting the caller-supplied
+     *        canonical cm⁻¹ value \a canonicalValue into the new unit.
+     */
+    void applyDisplayUnit(UnitLinkedScalar &linked, BC::LifConv::LaserUnit u,
+                          double canonicalValue);
 
     QString d_hwType;
     QString d_impl;
@@ -103,6 +146,10 @@ private:
 
     // array key → current entries (updated by HwArrayEditDialog on accept)
     QMap<QString, std::vector<SettingsStorage::SettingsMap>> d_arrayValues;
+
+    // display-unit-linked scalar boxes (HwSettingDef::displayUnitKey), keyed
+    // implicitly by settingKey — see linkDisplayUnitScalars()
+    std::vector<UnitLinkedScalar> d_unitLinkedScalars;
 };
 
 #endif // HWSETTINGSWIDGET_H

@@ -62,6 +62,7 @@ private slots:
     void testHardwareRegistration();
     void testHardwareCreation();
     void testEnumSettingDefaultSeededAsKeyName();
+    void testLifLaserPositionDisplayUnitKey();
     void testFreqConversionStageConstructionPath();
     void testDuplicateRegistration();
     void testInvalidRegistration();
@@ -194,6 +195,35 @@ void HardwareRegistryTest::testEnumSettingDefaultSeededAsKeyName()
     QCOMPARE(stored.typeId(), QMetaType::QString);
     QCOMPARE(stored.toString(), QStringLiteral("Nm"));
     QCOMPARE(BC::CSV::enumFromVariant<LaserUnit>(stored, LaserUnit::Cm1), LaserUnit::Nm);
+}
+
+void HardwareRegistryTest::testLifLaserPositionDisplayUnitKey()
+{
+    // minPos/maxPos are internally cm⁻¹ but entered/displayed in the unit
+    // named by HwSettingDef::displayUnitKey (HwSettingsWidget converts on
+    // that basis). Confirm the field survives both the base-class merge
+    // path (VirtualLifLaser inherits minPos/maxPos from LifLaser without
+    // overriding them) and the per-driver override path (SirahCobra
+    // re-registers minPos/maxPos with its own range).
+    auto &reg = HardwareRegistry::instance();
+
+    auto checkPositionDefs = [](const QVector<HwSettingDef> &defs) {
+        bool sawMinPos = false, sawMaxPos = false;
+        for (const auto &def : defs) {
+            if (def.key == BC::Key::LifLaser::minPos) {
+                sawMinPos = true;
+                QCOMPARE(def.displayUnitKey, BC::Key::LifLaser::units);
+            } else if (def.key == BC::Key::LifLaser::maxPos) {
+                sawMaxPos = true;
+                QCOMPARE(def.displayUnitKey, BC::Key::LifLaser::units);
+            }
+        }
+        QVERIFY(sawMinPos);
+        QVERIFY(sawMaxPos);
+    };
+
+    checkPositionDefs(reg.getSettingDefs("LifLaser", "VirtualLifLaser"));
+    checkPositionDefs(reg.getSettingDefs("LifLaser", "SirahCobra"));
 }
 
 void HardwareRegistryTest::testFreqConversionStageConstructionPath()

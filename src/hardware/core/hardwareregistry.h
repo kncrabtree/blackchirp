@@ -106,6 +106,7 @@ struct HwSettingDef {
     QVariant minimum;         ///< Optional min for numeric types (invalid = no limit)
     QVariant maximum;         ///< Optional max for numeric types (invalid = no limit)
     HwSettingPriority priority = HwSettingPriority::Optional;
+    QString displayUnitKey{}; ///< If set, this (canonical-cm⁻¹) double is entered/displayed in the unit given by the named sibling LaserUnit enum setting.
 };
 
 /*!

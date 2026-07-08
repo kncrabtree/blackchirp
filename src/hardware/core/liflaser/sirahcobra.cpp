@@ -26,8 +26,8 @@ REGISTER_COMM_DEFAULTS(SirahCobra, CommunicationProtocol::Rs232,
 // end) to 1e7/450 = 22222.2 cm-1 (short-wavelength end) — cm-1 grows as
 // wavelength shrinks, so the nm bounds invert.
 REGISTER_HARDWARE_SETTINGS(SirahCobra,
-    {minPos,   "Min Position",     "Minimum grating fundamental position (cm-1; 700 nm)", 14285.7143, QVariant{}, QVariant{}, HwSettingPriority::Important},
-    {maxPos,   "Max Position",     "Maximum grating fundamental position (cm-1; 450 nm)", 22222.2222, QVariant{}, QVariant{}, HwSettingPriority::Important},
+    {minPos,   "Min Position",     "Minimum grating fundamental position (cm-1; 700 nm)", 14285.7143, QVariant{}, QVariant{}, HwSettingPriority::Important, units},
+    {maxPos,   "Max Position",     "Maximum grating fundamental position (cm-1; 450 nm)", 22222.2222, QVariant{}, QVariant{}, HwSettingPriority::Important, units},
     {decimals, "Display Decimals", "Number of decimal places for position display",       4,          0,          8,          HwSettingPriority::Optional},
     {hasFl,    "Has Flashlamp",    "Laser has a software-controlled flashlamp",           false,      QVariant{}, QVariant{}, HwSettingPriority::Optional}
 )
