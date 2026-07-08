@@ -136,6 +136,7 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/chirptablemodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/clocktablemodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/exptsummarymodel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/lifconversiontablemodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/markertablemodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/overlaytablemodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/peaklistmodel.cpp
@@ -261,6 +262,7 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/chirptablemodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/clocktablemodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/exptsummarymodel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/lifconversiontablemodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/markertablemodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/overlaytablemodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/peaklistmodel.h
@@ -288,6 +290,7 @@ list(APPEND BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifdisplaywidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/liflaserstatusbox.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/liflaserwidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifconversionwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifprocessingwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifsliceplot.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifspectrogramplot.cpp
@@ -301,6 +304,7 @@ list(APPEND BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifdisplaywidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/liflaserstatusbox.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/liflaserwidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifconversionwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifprocessingwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifsliceplot.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifspectrogramplot.h
