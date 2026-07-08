@@ -38,14 +38,6 @@ void LifConfig::setConversionNodes(std::vector<BC::LifConv::Node> nodes, const Q
     d_conversion = result.ok ? result.conversion : LifConversion();
 }
 
-void LifConfig::setConversionTopology(const std::vector<BC::LifConv::Node> &nodes,
-                                      const LifConversion &conv,
-                                      const QString &laserKey)
-{
-    Q_UNUSED(conv);
-    setConversionNodes(nodes, laserKey);
-}
-
 bool LifConfig::writeTopologyFile() const
 {
     // Identity / bare-laser case: the output beam is the grating fundamental

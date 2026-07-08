@@ -106,9 +106,8 @@ private:
  * For every BC::LifConv::StageWiring entry, builds a SettingsStorage
  * snapshot directly on the stage's hardware key (never a live device) to
  * read conversionOp()/harmonicOrder(). Shared by assembleLifConversion()
- * and by callers that need the joined node list itself (e.g.
- * HardwareManager prep, which hands the nodes to LifConfig for the
- * liftopology.csv write).
+ * and by callers that need the joined node list itself (e.g. the conversion
+ * table model, when seeding wiring from a preset snapshot).
  *
  * \return The joined node list; empty when \a snap has no wiring.
  */

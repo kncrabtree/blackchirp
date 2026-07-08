@@ -252,19 +252,6 @@ public:
     bool hasConversion() const { return !d_conversionNodes.empty(); }
 
     /*!
-     * \brief Deprecated shim for setConversionNodes(): drops \a conv (the
-     *        cached conversion is now rebuilt internally via assemble())
-     *        and forwards \a nodes/\a laserKey.
-     *
-     * \deprecated Retained only so the existing HardwareManager prep call
-     * site continues to link; callers should switch to setConversionNodes()
-     * directly.
-     */
-    void setConversionTopology(const std::vector<BC::LifConv::Node> &nodes,
-                               const LifConversion &conv,
-                               const QString &laserKey);
-
-    /*!
      * \brief Write liftopology.csv — one row per conversion node — into the
      *        experiment directory.
      *

@@ -315,6 +315,15 @@ signals:
     /// \param enabled \c true if the flashlamp is active.
     void lifLaserFlashlampUpdate(bool enabled);
 
+    /// \brief Emitted after configureLifHarmonic() successfully changes a
+    /// stage's harmonic order on hardware.
+    ///
+    /// Intended for the LIF conversion table model to re-read
+    /// LifFreqConversionStage::harmonicOrder() and re-join its node list;
+    /// never emitted on failure (see configureLifHarmonic()).
+    /// \param stageKey Hardware key of the stage whose harmonic order changed.
+    void lifHarmonicApplied(QString stageKey);
+
     // Python hardware signal
 
     /// \brief Emitted after reloadPythonScript() completes for a Python-backed
@@ -570,6 +579,25 @@ public slots:
     /// \param outputCm1 Desired output-beam wavenumber (cm⁻¹).
     /// \return \c true if every active stage reported a successful move.
     bool setLifConversionStages(double outputCm1);
+
+    /// \brief Applies a gated harmonic-order change to a single LIF
+    /// frequency-conversion stage (the conversion table's "Change harmonic…"
+    /// context-menu action).
+    ///
+    /// Mirrors the applyClocks -> configureClocks channel: the conversion
+    /// table/widget emits \c applyHarmonic(stageKey, n), hopped onto the
+    /// manager thread via \c QMetaObject::invokeMethod at the connection
+    /// site (see \c MainWindow::connectRfConfigWidget for the pattern), and
+    /// this slot drives the change. Dispatches
+    /// \c LifFreqConversionStage::setHarmonicOrder() onto the stage's own
+    /// thread (stages are \c d_threaded), the same way setLifLaserPos()
+    /// dispatches to the laser. Emits lifHarmonicApplied() on success; logs
+    /// via bcError() and emits nothing on failure or if \a stageKey does not
+    /// name an active stage.
+    ///
+    /// \param stageKey Hardware key of the target LifFreqConversionStage.
+    /// \param n Requested harmonic order.
+    void configureLifHarmonic(const QString &stageKey, int n);
 
     /// \brief Starts configuration-mode acquisition on the LIF digitizer.
     /// \param c LIF configuration describing the acquisition parameters.

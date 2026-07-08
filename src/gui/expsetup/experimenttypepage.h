@@ -71,6 +71,7 @@ private:
     QCheckBox *p_flBox, *p_delayRandomBox;
 
     void updateLifRanges();
+    void updateLifLaserBounds();
 
     QSpinBox *p_auxDataIntervalBox, *p_backupBox, *p_ftmwShotsBox, *p_ftmwTargetDurationBox;
     QWidget *p_ftmwShotsWidget, *p_ftmwTargetDurationWidget, *p_foreverWidget;

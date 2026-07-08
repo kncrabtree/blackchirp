@@ -14,7 +14,6 @@
 #include <hardware/core/clock/clockmanager.h>
 #include <hardware/core/liflaser/liffreqconversionstage.h>
 #include <data/lif/lifconfig.h>
-#include <data/loadout/loadoutmanager.h>
 #include <hardware/core/hw_h.h> // Generated at build time
 
 #include <QThread>
@@ -232,20 +231,19 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
             }
             else
             {
-                // Node wiring is owned by the current LIF preset
-                // (LifConversionSnapshot), not by the stages' hardware
-                // settings; op/harmonic order are read from each wiring
-                // entry's active hardware settings snapshot (never a live
-                // device). No preset selected yields an empty node list,
-                // i.e. the identity conversion. A malformed topology is a
-                // prep-time error that aborts the experiment before
-                // acquisition rather than surfacing later.
-                std::vector<BC::LifConv::Node> nodes;
-                auto loadoutName = LoadoutManager::instance().currentLoadoutName();
-                if(auto preset = LoadoutManager::instance().currentLifPreset(loadoutName))
-                    nodes = lifConversionNodesFromSnapshot(preset->conversion);
-
-                auto result = LifConversion::assemble(nodes);
+                // The per-experiment LifConfig already owns the joined node
+                // list (op/n snapshotted from hardware, wiring from the
+                // table/preset, at config time) -- prep only re-validates
+                // and caches it for the live push, it does not collect
+                // nodes off the stages or write them back into the config.
+                // An empty node list (LIF enabled but no topology configured
+                // yet) is the identity conversion, not an error. A malformed
+                // topology is a prep-time error that aborts the experiment
+                // before acquisition rather than surfacing later; the
+                // topology-file write (Experiment::initialize(), gated on
+                // d_hardwareSuccess) reads the same nodes straight from the
+                // config.
+                auto result = LifConversion::assemble(exp->lifConfig()->conversionNodes());
                 if(!result.ok)
                 {
                     bcError(u"Could not assemble LIF frequency-conversion topology: %1"_s.arg(result.errorString));
@@ -256,12 +254,6 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
                 {
                     d_lifConversion = result.conversion;
                     pushLifConversionToLaser(ll);
-
-                    // Hand the validated topology to LifConfig so it is
-                    // snapshotted to liftopology.csv when the experiment
-                    // header is written (Experiment::initialize()).
-                    if(auto *lc = exp->lifConfig())
-                        lc->setConversionTopology(nodes,result.conversion,activeKeys.first());
                 }
             }
         }
@@ -811,6 +803,27 @@ bool HardwareManager::setLifConversionStages(double outputCm1)
         success &= f.get();
 
     return success;
+}
+
+void HardwareManager::configureLifHarmonic(const QString &stageKey, int n)
+{
+    auto stage = findHardware<LifFreqConversionStage>(stageKey);
+    if(!stage)
+    {
+        bcError(u"Could not change harmonic order for %1 because it is not an active LIF frequency-conversion stage."_s.arg(stageKey));
+        return;
+    }
+
+    bool success = false;
+    if(stage->thread() == QThread::currentThread())
+        success = stage->setHarmonicOrder(n);
+    else
+        QMetaObject::invokeMethod(stage,[stage,n](){ return stage->setHarmonicOrder(n); },Qt::BlockingQueuedConnection,&success);
+
+    if(success)
+        emit lifHarmonicApplied(stageKey);
+    else
+        bcError(u"Could not set harmonic order %1 on %2."_s.arg(n).arg(stageKey));
 }
 
 void HardwareManager::startLifConfigAcq(const LifConfig &c)
