@@ -85,10 +85,13 @@ to author stage descriptors plus a multi-device async setup).
 
 ### Next steps
 
-- **UI development** — a more natural way to configure the conversion
-  topology than the per-device node descriptors: the "LIF Conversion" tab
-  (§7) that lays out stages and edges graphically, over the same per-device
-  settings as the source of truth.
+- **UI development & topology storage refactor** — planned in
+  [`lif-conversion-preset.md`](lif-conversion-preset.md), which **supersedes
+  §1/§7 below**: the conversion topology moves from per-device hardware
+  settings to a per-experiment `LifConfig`, edited in a table and sourced via
+  the Preset system (mirroring FTMW `RfConfig`/`FtmwPreset`). `op` (device
+  identity) and `harmonic` (gated setting) stay on the hardware; only the DAG
+  wiring + `FINAL` marker become per-experiment.
 - **Documentation** — bring the published Sphinx docs up to date with the LIF
   frequency-conversion model, the cm⁻¹ internal representation and unit
   boundaries, and the new hardware types (`LifFreqConversionStage`,
