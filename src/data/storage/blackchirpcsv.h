@@ -43,6 +43,7 @@ inline constexpr QLatin1StringView headerFile{"header.csv"};         ///< Full e
 inline constexpr QLatin1StringView chirpFile{"chirps.csv"};          ///< Chirp waveform data for the experiment.
 inline constexpr QLatin1StringView markersFile{"markers.csv"};       ///< User-defined markers placed on FID data.
 inline constexpr QLatin1StringView clockFile{"clocks.csv"};          ///< Clock frequency configuration snapshot.
+inline constexpr QLatin1StringView lifTopologyFile{"liftopology.csv"}; ///< LIF frequency-conversion topology snapshot (one row per conversion node).
 inline constexpr QLatin1StringView auxFile{"auxdata.csv"};           ///< Auxiliary time-series data (pressure, flow, temperature, etc.).
 
 // Version-key constants written to versionFile

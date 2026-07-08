@@ -50,6 +50,15 @@ is the final (output) excitation wavelength rather than the dye fundamental:
   native-unit-limited laser like the Opolette); `currentLaserPos()` is the
   single display→output-cm⁻¹ boundary, and `header.csv` records display-unit
   values + `unitLabel` for the analysis x-axis.
+- **Topology snapshot** — a non-identity conversion is recorded to a dedicated
+  `liftopology.csv` (mirroring `clocks.csv`), one row per node: the raw DAG
+  (op, harmonic order, input wiring, `FINAL` marker) plus each node's resolved
+  output-beam affine mapping (`output = A·fundamental + B`, cm⁻¹, via a new
+  `LifConversion::stageOutput`). `HardwareManager` hands the validated topology
+  (and the active laser hwKey, used to serialize a tunable-source input by its
+  real key) to `LifConfig` at prep; `Experiment::initialize` writes the file
+  alongside the other snapshots. The identity/bare-laser case is skipped —
+  `header.csv` already carries the full axis.
 - **`SirahCobra`** is now a pure grating driver (the decommissioned
   Harvey-Mudd external doubling-stage / compensator / polynomial rig was
   deleted, settings migrated to the registry macros, and the driver moved to
@@ -76,12 +85,6 @@ to author stage descriptors plus a multi-device async setup).
 
 ### Next steps
 
-- **User testing of the LIF workflow** — exercise the end-to-end path on the
-  bench: laser + conversion-stage co-tuning, scanning across a band, the
-  output-unit axis and its `header.csv`/analysis round-trip, and unit
-  conversion in the config, status, and jog UIs. Drive a virtual laser
-  first, then the live Opolette, then the new Sirah grating + doubling stage
-  across the OH band. (See [Testing](#testing).)
 - **UI development** — a more natural way to configure the conversion
   topology than the per-device node descriptors: the "LIF Conversion" tab
   (§7) that lays out stages and edges graphically, over the same per-device

@@ -13,6 +13,7 @@
 #include <hardware/python/pythonhardwarebase.h>
 #include <hardware/core/clock/clockmanager.h>
 #include <hardware/core/liflaser/liffreqconversionstage.h>
+#include <data/lif/lifconfig.h>
 #include <hardware/core/hw_h.h> // Generated at build time
 
 #include <QThread>
@@ -264,6 +265,12 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
                 {
                     d_lifConversion = result.conversion;
                     pushLifConversionToLaser(ll);
+
+                    // Hand the validated topology to LifConfig so it is
+                    // snapshotted to liftopology.csv when the experiment
+                    // header is written (Experiment::initialize()).
+                    if(auto *lc = exp->lifConfig())
+                        lc->setConversionTopology(nodes,result.conversion,activeKeys.first());
                 }
             }
         }

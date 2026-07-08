@@ -234,6 +234,17 @@ LifConversion::AssemblyResult LifConversion::assemble(const std::vector<BC::LifC
             return result;
         }
         conv.d_primaryInput.emplace(key,primary);
+
+        // Resolve every node's own OUTPUT beam (memoized), so a topology
+        // snapshot can record each node's affine mapping — not just FINAL's.
+        Coeffs out;
+        if(!resolveNode(key,nodeMap,cache,out,err))
+        {
+            // Unreachable given the validation above; kept defensive.
+            result.errorString = err;
+            return result;
+        }
+        conv.d_stageOutput.emplace(key,out);
     }
 
     result.ok = true;
@@ -255,6 +266,14 @@ double LifConversion::stageInput(const QString &stageKey, double fundamentalCm1)
 {
     auto it = d_primaryInput.find(stageKey);
     if(it == d_primaryInput.end())
+        return -1.0;
+    return it->second.a*fundamentalCm1 + it->second.b;
+}
+
+double LifConversion::stageOutput(const QString &stageKey, double fundamentalCm1) const
+{
+    auto it = d_stageOutput.find(stageKey);
+    if(it == d_stageOutput.end())
         return -1.0;
     return it->second.a*fundamentalCm1 + it->second.b;
 }

@@ -1,9 +1,15 @@
 #include <data/lif/lifconfig.h>
 
 #include <data/lif/liftrace.h>
+#include <data/storage/blackchirpcsv.h>
+#include <QDir>
 #include <QFile>
 #include <QRandomGenerator>
+#include <QSaveFile>
+#include <QTextStream>
 #include <cmath>
+
+using namespace Qt::Literals::StringLiterals;
 
 
 LifConfig::LifConfig(const QString& digitizerHwKey) : HeaderStorage(BC::Store::LIF::key)
@@ -19,6 +25,74 @@ void LifConfig::setLaserUnits(BC::LifConv::LaserUnit units)
 void LifConfig::setLaserDecimals(int decimals)
 {
     d_laserDecimals = qMax(0, decimals);
+}
+
+void LifConfig::setConversionTopology(const std::vector<BC::LifConv::Node> &nodes,
+                                      const LifConversion &conv,
+                                      const QString &laserKey)
+{
+    d_conversionNodes = nodes;
+    d_conversion = conv;
+    d_conversionLaserKey = laserKey;
+}
+
+bool LifConfig::writeTopologyFile() const
+{
+    // Identity / bare-laser case: the output beam is the grating fundamental
+    // and header.csv already records the full display-unit axis, so a
+    // topology file would add nothing.
+    if(d_conversionNodes.empty())
+        return true;
+
+    QDir dir(BlackchirpCSV::exptDir(d_number,d_path));
+    QSaveFile f(dir.absoluteFilePath(BC::CSV::lifTopologyFile));
+    if(!f.open(QIODevice::WriteOnly|QIODevice::Text))
+        return false;
+
+    // Compact self-describing token for one ordered input: the tunable
+    // source ("Laser"), a fixed mixing beam ("Fixed:<cm-1>"), or another
+    // node's output (that stage's hwKey).
+    auto refToken = [this](const BC::LifConv::InputRef &r) -> QVariant {
+        switch(r.type)
+        {
+        case BC::LifConv::RefType::Laser:
+            // The tunable source is the active LifLaser; identify it by its
+            // real hwKey (fall back to a sentinel only if unknown).
+            return d_conversionLaserKey.isEmpty() ? QVariant(u"Laser"_s)
+                                                   : QVariant(d_conversionLaserKey);
+        case BC::LifConv::RefType::Fixed:
+            return u"Fixed:%1"_s.arg(r.fixedCm1,0,'f',6);
+        case BC::LifConv::RefType::Stage:
+            return r.stageKey;
+        }
+        return QString();
+    };
+
+    QTextStream t(&f);
+    BlackchirpCSV::writeLine(t,{"Index","StageKey","Op","Harmonic","IsFinal",
+                                "Input0","Input1","OutCoeffA","OutCoeffB"});
+    for(std::size_t i=0; i<d_conversionNodes.size(); ++i)
+    {
+        const auto &node = d_conversionNodes.at(i);
+
+        // Per-node output beam: value = A*fundamental + B (cm-1). Recover the
+        // slope/intercept from two evaluations of the assembled conversion.
+        const double b = d_conversion.stageOutput(node.stageKey,0.0);
+        const double a = d_conversion.stageOutput(node.stageKey,1.0) - b;
+
+        BlackchirpCSV::writeLine(t,{
+            static_cast<int>(i),
+            node.stageKey,
+            QVariant::fromValue(node.op),
+            node.op == BC::LifConv::Op::NHG ? QVariant(node.n) : QVariant(QString()),
+            node.isFinal,
+            node.inputs.size() > 0 ? refToken(node.inputs[0]) : QVariant(QString()),
+            node.inputs.size() > 1 ? refToken(node.inputs[1]) : QVariant(QString()),
+            a,
+            b
+        });
+    }
+    return f.commit();
 }
 
 namespace {

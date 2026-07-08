@@ -12,6 +12,9 @@
 #include <data/lif/lifstorage.h>
 #include <data/lif/lifdigitizerconfig.h>
 #include <data/lif/lifunits.h>
+#include <data/lif/lifconversion.h>
+
+#include <vector>
 
 /// \brief Storage keys used to persist LifConfig fields via HeaderStorage.
 namespace BC::Store::LIF {
@@ -211,6 +214,38 @@ public:
      */
     int laserDecimals() const { return d_laserDecimals; }
 
+    /*!
+     * \brief Record the assembled frequency-conversion topology for
+     *        serialization.
+     *
+     * Seeded at experiment prep by HardwareManager once the active laser +
+     * stage node descriptors have been assembled and validated into \a conv.
+     * \a nodes is the ordered node-descriptor list (empty for the identity /
+     * bare-laser case, where the output beam is the grating fundamental and
+     * no topology file is written); \a conv supplies each node's resolved
+     * output-beam affine coefficients via LifConversion::stageOutput().
+     * \a laserKey is the active LifLaser's hwKey, used to serialize a
+     * tunable-source (RefType::Laser) input by its real hwKey rather than a
+     * sentinel.
+     */
+    void setConversionTopology(const std::vector<BC::LifConv::Node> &nodes,
+                               const LifConversion &conv,
+                               const QString &laserKey);
+
+    /*!
+     * \brief Write liftopology.csv — one row per conversion node — into the
+     *        experiment directory.
+     *
+     * Records the raw DAG (op, harmonic order, input wiring, FINAL marker)
+     * alongside each node's resolved output-beam affine mapping
+     * (\c output = A·fundamental + B, cm⁻¹). The FINAL row's coefficients are
+     * the output-axis ↔ fundamental relation. Does nothing and returns
+     * \c true for the identity case (no conversion stages): header.csv
+     * already carries the full display-unit axis. Returns \c false only on a
+     * file-write failure.
+     */
+    bool writeTopologyFile() const;
+
 
 
 private:
@@ -218,6 +253,9 @@ private:
     std::shared_ptr<LifDigitizerConfig> ps_digitizerConfig;
     BC::LifConv::LaserUnit d_laserUnits{BC::LifConv::LaserUnit::Nm};
     int d_laserDecimals{2};
+    std::vector<BC::LifConv::Node> d_conversionNodes; ///< Conversion-topology node descriptors (empty = identity/no stages).
+    LifConversion d_conversion;                       ///< Assembled conversion, for resolved per-node output coefficients.
+    QString d_conversionLaserKey;                     ///< Active LifLaser hwKey, for serializing tunable-source inputs.
     int d_currentDelayIndex{0};
     int d_currentLaserIndex{0};
     int d_completedSweeps{0};

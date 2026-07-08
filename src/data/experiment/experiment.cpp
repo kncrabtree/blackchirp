@@ -415,6 +415,17 @@ bool Experiment::initialize()
             ps_overlayStorage = std::make_shared<OverlayStorage>(num,"");
             ps_overlayStorage->save();
         }
+
+        //LIF frequency-conversion topology (skipped for a bare laser)
+        if(lifEnabled())
+        {
+            if(!ps_lifCfg->writeTopologyFile())
+            {
+                d_errorString = QString("Could not open the file %1 for writing.")
+                        .arg(BlackchirpCSV::exptDir(d_number).absoluteFilePath(BC::CSV::lifTopologyFile));
+                return false;
+            }
+        }
     }
 
     d_initSuccess = true;

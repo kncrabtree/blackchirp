@@ -137,6 +137,18 @@ public:
     double stageInput(const QString &stageKey, double fundamentalCm1) const;
 
     /*!
+     * \brief Return the OUTPUT-beam wavenumber (cm⁻¹) produced by the node
+     *        named \a stageKey, for a given grating fundamental (cm⁻¹) — the
+     *        node's own conversion applied to its inputs.
+     *
+     * Symmetric partner to \c stageInput(): for the FINAL node this equals
+     * \c laserToOutput(). Used to record each node's resolved affine
+     * mapping when snapshotting the topology. Returns a negative value if
+     * \a stageKey does not name a node in this conversion.
+     */
+    double stageOutput(const QString &stageKey, double fundamentalCm1) const;
+
+    /*!
      * \brief Return the FINAL-beam bounds (cm⁻¹) corresponding to the
      *        grating's native \a laserMinCm1 / \a laserMaxCm1, sorted
      *        ascending (the topology may reverse direction, e.g. doubling
@@ -154,6 +166,7 @@ private:
     bool d_identity{true};   ///< \c true iff assembled from an empty node list (or default-constructed).
     BC::LifConv::detail::AffineCoeffs d_output; ///< FINAL beam coefficients vs. the fundamental.
     std::map<QString,BC::LifConv::detail::AffineCoeffs> d_primaryInput; ///< Per-stage PRIMARY-input (inputs[0]) coefficients.
+    std::map<QString,BC::LifConv::detail::AffineCoeffs> d_stageOutput; ///< Per-stage OUTPUT-beam coefficients.
 };
 
 struct LifConversion::AssemblyResult {

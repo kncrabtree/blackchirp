@@ -24,6 +24,7 @@ private slots:
     void testOutputRangeInversion();
     void testTriplerWithLaserSecondInput();
     void testTriplerWithFixedSecondInput();
+    void testStageOutput();
 
     void testRejectUnresolvedStageRef();
     void testRejectWrongArity();
@@ -254,6 +255,45 @@ void LifConversionTest::testTriplerWithFixedSecondInput()
     QCOMPARE(res.conversion.laserToOutput(100.0), 250.0);
     QCOMPARE(res.conversion.outputToLaser(250.0), 100.0);
     QCOMPARE(res.conversion.stageInput(QStringLiteral("sfg"), 100.0), 200.0);
+}
+
+void LifConversionTest::testStageOutput()
+{
+    // Each node's OUTPUT beam is its own conversion applied to its inputs.
+    // For the FINAL node stageOutput must equal laserToOutput; for an
+    // intermediate node it is that beam's absolute wavenumber, which the
+    // topology snapshot records as per-node affine coefficients.
+    Node doubler;
+    doubler.stageKey = QStringLiteral("doubler");
+    doubler.op = Op::NHG;
+    doubler.n = 2;
+    doubler.inputs = {InputRef{RefType::Laser, {}, 0.0}};
+    doubler.isFinal = false;
+
+    Node tripler;
+    tripler.stageKey = QStringLiteral("tripler");
+    tripler.op = Op::SFG;
+    tripler.inputs = {InputRef{RefType::Stage, QStringLiteral("doubler"), 0.0},
+                       InputRef{RefType::Laser, {}, 0.0}};
+    tripler.isFinal = true;
+
+    auto res = LifConversion::assemble({doubler, tripler});
+    QVERIFY2(res.ok, qPrintable(res.errorString));
+    const auto &c = res.conversion;
+
+    // doubler output = 2f; tripler output = 2f + f = 3f (== FINAL).
+    QCOMPARE(c.stageOutput(QStringLiteral("doubler"), 100.0), 200.0);
+    QCOMPARE(c.stageOutput(QStringLiteral("tripler"), 100.0), 300.0);
+    QCOMPARE(c.stageOutput(QStringLiteral("tripler"), 100.0), c.laserToOutput(100.0));
+
+    // Slope/intercept recovery (as the topology writer performs it).
+    const double b = c.stageOutput(QStringLiteral("doubler"), 0.0);
+    const double a = c.stageOutput(QStringLiteral("doubler"), 1.0) - b;
+    QVERIFY(close(a, 2.0));
+    QVERIFY(close(b, 0.0));
+
+    // Unknown stage key yields a negative sentinel.
+    QVERIFY(c.stageOutput(QStringLiteral("nonexistent"), 100.0) < 0.0);
 }
 
 void LifConversionTest::testRejectUnresolvedStageRef()
