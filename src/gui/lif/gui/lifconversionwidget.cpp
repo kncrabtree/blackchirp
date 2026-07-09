@@ -441,9 +441,12 @@ void LifConversionWidget::updatePreview()
         }
     }
 
-    const auto dropped = p_model->droppedStages();
-    if(!dropped.isEmpty())
-        text += u"\nDropped stages (no longer active): %1"_s.arg(dropped.join(", "_L1));
+    const auto incompatible = p_model->incompatibleStages();
+    if(!incompatible.isEmpty())
+        text += u"\nPreset incompatible with the current hardware: %1 is no longer "
+                 "present, or its operation changed the required inputs. The saved "
+                 "topology cannot be reproduced, so the configuration was cleared — "
+                 "load a compatible preset or build a new one."_s.arg(incompatible.join(", "_L1));
 
     p_previewLabel->setText(text);
 }

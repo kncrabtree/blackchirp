@@ -1,6 +1,7 @@
 #include <data/model/lifconversiontablemodel.h>
 
 #include <algorithm>
+#include <map>
 
 #include <QComboBox>
 #include <QInputDialog>
@@ -112,59 +113,68 @@ void LifConversionTableModel::rebuildFromWiring(const std::vector<BC::LifConv::S
 
     auto stageKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifFreqConversionStage>();
 
+    // Read each active stage's live op/harmonic once (they share a settings
+    // group). op — and thus the input arity a stage requires — is hardware
+    // identity, not part of the preset (which stores only stageKey/inputs/
+    // isFinal), so it is re-read here.
+    std::map<QString,Op> liveOp;
+    std::map<QString,int> liveHarmonic;
+    for(const auto &key : stageKeys)
+    {
+        SettingsStorage s(key,SettingsStorage::Hardware);
+        liveOp[key] = BC::CSV::enumFromVariant<Op>(
+                    s.get(BC::Key::LifConvStage::op,QVariant::fromValue(Op::NHG)), Op::NHG);
+        liveHarmonic[key] = s.get(BC::Key::LifConvStage::harmonic,2);
+    }
+
+    // A preset is tied to the conversion-stage hardware it was captured
+    // against. Each stage it wires is identified by hwKey and must still be
+    // present and still require the arity its saved inputs supply. A wired
+    // hwKey that is no longer active (the stage was removed or relabeled), or
+    // one whose op now needs a different input count, means the saved topology
+    // cannot be reproduced on this hardware. (An op change that keeps the same
+    // arity — SFG<->DFG — is not detectable here, by the snapshot's design:
+    // op is hardware-owned and re-read live.) Rather than coercing the wiring
+    // into a different graph, reject the whole preset and clear to the
+    // unconfigured default below, so the user restores a compatible preset or
+    // builds a new configuration.
+    d_incompatibleStages.clear();
+    for(const auto &w : wiring)
+    {
+        auto opIt = liveOp.find(w.stageKey);
+        if(opIt == liveOp.end() || w.inputs.size() != defaultInputs(opIt->second).size())
+            d_incompatibleStages << w.stageKey;
+    }
+    const bool applyOverlay = d_incompatibleStages.isEmpty();
+
     d_nodes.clear();
     d_nodes.reserve(static_cast<std::size_t>(stageKeys.size()));
     for(const auto &key : stageKeys)
     {
-        // op and harmonic live in the same settings group; read both off one
-        // snapshot rather than opening the group twice.
-        SettingsStorage s(key,SettingsStorage::Hardware);
-
         Node node;
         node.stageKey = key;
-        node.op = BC::CSV::enumFromVariant<Op>(
-                    s.get(BC::Key::LifConvStage::op,QVariant::fromValue(Op::NHG)), Op::NHG);
-        node.n = s.get(BC::Key::LifConvStage::harmonic,2);
+        node.op = liveOp[key];
+        node.n = liveHarmonic[key];
 
-        auto it = std::find_if(wiring.cbegin(), wiring.cend(),
-                                [&key](const StageWiring &w){ return w.stageKey == key; });
-        if(it != wiring.cend())
+        auto it = applyOverlay
+            ? std::find_if(wiring.cbegin(), wiring.cend(),
+                           [&key](const StageWiring &w){ return w.stageKey == key; })
+            : wiring.cend();
+        if(applyOverlay && it != wiring.cend())
         {
-            node.inputs = it->inputs;
+            node.inputs = it->inputs; // hwKey present and arity verified above
             node.isFinal = it->isFinal;
-
-            // The op read above always comes from the live hardware
-            // snapshot, not from whatever op the wiring was saved under; a
-            // preset saved while the stage's op required a different arity
-            // (e.g. SFG, 2 inputs, applied to a stage now wired for NHG, 1
-            // input) must have its loaded inputs truncated/padded to match
-            // the current op's arity here, or assemble() fails permanently
-            // and flags() leaves the stale extra input non-editable.
-            auto expected = defaultInputs(node.op);
-            if(node.inputs.size() > expected.size())
-                node.inputs.resize(expected.size());
-            else if(node.inputs.size() < expected.size())
-            {
-                for(std::size_t i = node.inputs.size(); i < expected.size(); ++i)
-                    node.inputs.push_back(expected.at(i));
-            }
         }
         else
         {
+            // No saved wiring for this stage (a stage the preset does not
+            // cover starts unconfigured), or the preset was rejected wholesale
+            // and every stage is cleared to the default.
             node.inputs = defaultInputs(node.op);
             node.isFinal = false;
         }
 
         d_nodes.push_back(std::move(node));
-    }
-
-    // A wiring entry whose stage is no longer active is dropped; surface it in
-    // original wiring order for the preview footer.
-    d_droppedStages.clear();
-    for(const auto &w : wiring)
-    {
-        if(!stageKeys.contains(w.stageKey))
-            d_droppedStages << w.stageKey;
     }
 
     endResetModel();

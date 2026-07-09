@@ -64,8 +64,8 @@ public:
     //! Assemble the current node list; \c ok is false with errorString set when the graph is invalid.
     LifConversion::AssemblyResult assemblyResult() const;
 
-    //! Wiring entries seeded from a config/preset whose stage is no longer active (surfaced by the preview footer).
-    QStringList droppedStages() const { return d_droppedStages; }
+    //! Wired stages that cannot be reproduced on the current hardware (hwKey no longer active, or op changed the required input arity); non-empty means the loaded preset was rejected and the configuration cleared (surfaced by the preview footer).
+    QStringList incompatibleStages() const { return d_incompatibleStages; }
 
     //! Active LifLaser hwKey (used for the wiring's Laser-typed inputs and preset provenance).
     QString currentLaserKey() const;
@@ -106,7 +106,7 @@ signals:
 
 private:
     std::vector<BC::LifConv::Node> d_nodes;
-    QStringList d_droppedStages;
+    QStringList d_incompatibleStages;
 
     //! Rebuild d_nodes from the currently active stages, overlaying \a wiring where present.
     void rebuildFromWiring(const std::vector<BC::LifConv::StageWiring> &wiring);
