@@ -148,6 +148,14 @@ Clock profiles in the preview differ from those of the last saved
 hardware map, the existing presets may no longer be compatible with
 the new hardware. This is called *hardware drift*.
 
+Drift also covers a subtler case. A profile that is deleted and
+recreated under the same ``Type.label`` is a *different* physical
+device even though its key is unchanged. Blackchirp records a stable
+identity for each member profile when a loadout is saved, so replacing
+a member with such a look-alike profile is detected as drift rather
+than silently rebinding the presets to the new hardware. (LIF presets
+drift on the corresponding LIF laser and conversion-stage members.)
+
 If the loadout has any named FTMW presets when drift is detected, Blackchirp
 shows a warning dialog with three choices:
 
