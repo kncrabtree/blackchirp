@@ -59,11 +59,14 @@ Q_ENUM_NS(CrystalType)
  * \c wavelengthToPos() / \c posToWavelength() are defined for any finite
  * input regardless of \c isValid() — malformed coefficients evaluate to
  * mathematically well-defined (if meaningless) numbers, and an evaluation
- * that cannot be carried out for a structural reason (an unbracketed
+ * that cannot be carried out for a structural reason (a \c Physical
+ * fundamental outside the crystal's phase-matchable band, an unbracketed
  * \c Physical root find, an out-of-domain \c Spline query) returns NaN
- * rather than aborting or throwing. \c isValid() reports whether the
- * calibration was assembled from well-formed input, not whether a
- * particular evaluation succeeded.
+ * rather than aborting or throwing. \c Polynomial has no such structural
+ * bound — imported coefficient lists carry no fit-domain metadata, so
+ * Horner evaluation extrapolates freely for any finite input. \c isValid()
+ * reports whether the calibration was assembled from well-formed input,
+ * not whether a particular evaluation succeeded.
  */
 class FcuCalibration
 {
@@ -213,8 +216,6 @@ private:
     std::vector<double> d_forwardCoeffs;  ///< \c Polynomial: wavelength (nm) -> position.
     std::vector<double> d_inverseCoeffs;  ///< \c Polynomial: position -> wavelength (nm).
 
-    /// \c Spline: canonical point table, sorted ascending by wavelength.
-    std::vector<std::pair<double,double>> d_splinePoints;
     /// \c Spline: wavelength (nm) -> position, keyed by wavelength.
     /// \c shared_ptr (custom deleter \c gsl_spline_free) rather than
     /// \c unique_ptr so \c FcuCalibration stays a cheaply-copyable value

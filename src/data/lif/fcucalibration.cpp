@@ -8,7 +8,7 @@
 #include <gsl/gsl_interp.h>
 
 #ifndef M_PI
-#define M_PI 3.1415926535897323846
+#define M_PI 3.14159265358979323846
 #endif
 
 using namespace Qt::Literals::StringLiterals;
@@ -219,8 +219,6 @@ FcuCalibration FcuCalibration::spline(std::vector<std::pair<double,double>> poin
         return cal;
     }
 
-    cal.d_splinePoints = points;
-
     std::vector<double> lamX, lamY;
     lamX.reserve(points.size());
     lamY.reserve(points.size());
@@ -271,6 +269,9 @@ double FcuCalibration::wavelengthToPos(double lamNm) const
     case Scheme::Physical:
         return physicalForward(lamNm);
     case Scheme::Polynomial:
+        // Imported coefficient lists carry no fit-domain metadata, so unlike
+        // Physical and Spline there is no band to bound against; Horner
+        // evaluation extrapolates freely for any finite input.
         return horner(d_forwardCoeffs, lamNm);
     case Scheme::Spline:
         return splineEval(ps_wavelengthToPosSpline, d_splineWavelengthMin, d_splineWavelengthMax, lamNm);
@@ -285,6 +286,7 @@ double FcuCalibration::posToWavelength(double pos) const
     case Scheme::Physical:
         return physicalInverse(pos);
     case Scheme::Polynomial:
+        // See wavelengthToPos(): no fit-domain metadata to bound against.
         return horner(d_inverseCoeffs, pos);
     case Scheme::Spline:
         return splineEval(ps_posToWavelengthSpline, d_splinePosMin, d_splinePosMax, pos);
@@ -310,6 +312,14 @@ double FcuCalibration::phaseMatchAngleDeg(CrystalType crystal, double lamFundNm,
 
 double FcuCalibration::physicalForward(double lamNm) const
 {
+    // phaseMatchAngleDeg() clamps sin^2(theta_pm) to [0,1] so it can always
+    // report a boundary angle; the forward map itself must not silently
+    // extrapolate past the crystal's phase-matchable band, so check the
+    // unclamped value here and report the structural failure as NaN instead.
+    const double s2 = rawPhaseMatchS2(d_physical.crystal, lamNm, d_physical.temperature);
+    if(s2 < 0.0 || s2 > 1.0)
+        return std::numeric_limits<double>::quiet_NaN();
+
     const double thetaPmRad = phaseMatchAngleDeg(d_physical.crystal, lamNm, d_physical.temperature) * kDegToRad;
     const double sign = d_physical.invert ? -1.0 : 1.0;
     const double alphaInt = sign * (thetaPmRad - d_physical.cutAngleDeg*kDegToRad);
@@ -385,7 +395,7 @@ double FcuCalibration::physicalInverse(double pos) const
 double FcuCalibration::splineEval(const std::shared_ptr<gsl_spline> &spline, double domainMin, double domainMax,
                                    double x) const
 {
-    if(!spline || x < domainMin || x > domainMax)
+    if(!spline || !std::isfinite(x) || x < domainMin || x > domainMax)
         return std::numeric_limits<double>::quiet_NaN();
     return gsl_spline_eval(spline.get(), x, nullptr);
 }
