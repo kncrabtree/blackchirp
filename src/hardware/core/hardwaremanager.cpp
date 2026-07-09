@@ -21,6 +21,7 @@
 #include <QtConcurrent/QtConcurrent>
 #include <QFuture>
 #include <QFutureWatcher>
+#include <chrono>
 #include <future>
 #include <memory>
 #include <vector>
@@ -40,6 +41,14 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     pu_clockManager = std::make_unique<ClockManager>(this);
     connect(pu_clockManager.get(), &ClockManager::clockFrequencyUpdate, this, &HardwareManager::clockFrequencyUpdate);
     connect(pu_clockManager.get(), &ClockManager::clockHardwareUpdate, this, &HardwareManager::clockHardwareUpdate);
+
+    // Self-connections on the manager's own beginAcquisition()/endAcquisition()
+    // signals (already broadcast to every HardwareObject; see
+    // setupHardwareObject()) so d_experimentInProgress tracks exactly the
+    // window during which an experiment is running, without requiring any
+    // other class to call back into HardwareManager.
+    connect(this, &HardwareManager::beginAcquisition, this, [this](){ d_experimentInProgress = true; });
+    connect(this, &HardwareManager::endAcquisition, this, [this](){ d_experimentInProgress = false; });
 
     // Phase 3.3.6: Clean constructor - all hardware creation now goes through dynamic system
     // HardwareManager starts with empty d_hardwareMap and will be populated via syncWithRuntimeConfig()
@@ -615,8 +624,13 @@ void HardwareManager::checkStatus()
     }
 
     // Refresh the cached LIF conversion so the live jog/status path reflects
-    // the active topology before any experiment is initialized.
-    updateLifConversion();
+    // the active topology before any experiment is initialized. Skipped
+    // while an experiment is in progress: d_lifConversion currently holds
+    // the copy validated at prep, and a connection-result cycle mid-scan
+    // (e.g. a transient hardwareFailure()) must not silently replace it
+    // with whatever preset the GUI happens to have selected.
+    if(!d_experimentInProgress)
+        updateLifConversion();
 
     emit allHardwareConnected(success);
 }
@@ -643,7 +657,10 @@ void HardwareManager::finalizeConnectionTesting()
 void HardwareManager::setLifParameters(double delay, double pos)
 {
     auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifDigitizer>();
-    auto lsc = findHardware<LifDigitizer>(activeKeys.first());
+    // lsc is used only conditionally below (to gate/flush the digitizer), so
+    // an absent digitizer is not fatal here; just skip it, same as every
+    // sibling LIF accessor guards its own empty-key case.
+    auto lsc = activeKeys.isEmpty() ? nullptr : findHardware<LifDigitizer>(activeKeys.first());
 
     // Gate the digitizer so no waveforms are emitted while hardware parameters change
     if(lsc)
@@ -768,8 +785,9 @@ bool HardwareManager::setLifConversionStages(double outputCm1)
     // threads; this thread joins only once all have been posted, by waiting
     // on each stage's future in turn. A per-stage std::promise, fulfilled
     // inside the queued lambda once setPosition() returns, carries the
-    // result back across the thread boundary.
-    std::vector<std::future<bool>> futures;
+    // result back across the thread boundary. Paired with its stage key so
+    // a wait timeout below can be reported against the specific stage.
+    std::vector<std::pair<QString,std::future<bool>>> futures;
     futures.reserve(static_cast<std::size_t>(activeKeys.size()));
 
     for(const auto &key : activeKeys)
@@ -780,6 +798,22 @@ bool HardwareManager::setLifConversionStages(double outputCm1)
 
         double localCm1 = d_lifConversion.stageInput(key, fundamental);
 
+        if(localCm1 < 0.0)
+        {
+            // stageInput() returns a negative sentinel when this active
+            // stage has no corresponding node in the assembled conversion
+            // -- an identity conversion with no topology configured, or a
+            // stage present in hardware but absent from the topology that
+            // was validated (at prep, or via updateLifConversion() for live
+            // control). Driving the motor to a negative wavenumber is
+            // meaningless; fail this stage's move instead of dispatching it.
+            bcError(u"LIF frequency-conversion stage %1 has no resolved input in the current conversion topology; not moving it."_s.arg(key));
+            std::promise<bool> pr;
+            pr.set_value(false);
+            futures.emplace_back(key, pr.get_future());
+            continue;
+        }
+
         if(stage->thread() == QThread::currentThread())
         {
             // Safety net: stages are always d_threaded, so this should not
@@ -787,20 +821,37 @@ bool HardwareManager::setLifConversionStages(double outputCm1)
             // call back onto the thread that is already blocked joining.
             std::promise<bool> pr;
             pr.set_value(stage->setPosition(localCm1));
-            futures.push_back(pr.get_future());
+            futures.emplace_back(key, pr.get_future());
             continue;
         }
 
         auto pr = std::make_shared<std::promise<bool>>();
-        futures.push_back(pr->get_future());
+        futures.emplace_back(key, pr->get_future());
         QMetaObject::invokeMethod(stage,[stage,localCm1,pr](){
             pr->set_value(stage->setPosition(localCm1));
         }, Qt::QueuedConnection);
     }
 
+    // A queued move whose target thread never runs the event (e.g. the
+    // stage's thread is quiescing during shutdown) would otherwise leave
+    // f.get() blocking this thread forever. Bound the wait instead: 30 s is
+    // generous enough to cover a real full-range motor sweep (see the poll
+    // loop in SirahCobra::moveAbsolute(), which has no wait cap of its own)
+    // under normal operation, while still guaranteeing this thread cannot
+    // hang indefinitely on a stage that will never respond.
+    constexpr auto stageMoveTimeout = std::chrono::seconds(30);
+
     bool success = true;
-    for(auto &f : futures)
+    for(auto &[key,f] : futures)
+    {
+        if(f.wait_for(stageMoveTimeout) != std::future_status::ready)
+        {
+            bcError(u"Timed out waiting for LIF frequency-conversion stage %1 to report its move result."_s.arg(key));
+            success = false;
+            continue;
+        }
         success &= f.get();
+    }
 
     return success;
 }

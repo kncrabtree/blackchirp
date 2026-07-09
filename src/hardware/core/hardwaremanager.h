@@ -573,8 +573,12 @@ public slots:
     /// \c d_lifConversion.stageInput() and posts \c setPosition() to the
     /// stage's own thread with a non-blocking \c Qt::QueuedConnection so all
     /// stages move concurrently; this thread then blocks only on collecting
-    /// every result. An empty active-stage set (no FCUs configured) is not
-    /// an error and returns \c true immediately.
+    /// every result, bounded by a per-stage timeout so a stage whose thread
+    /// never processes the queued move cannot hang this thread forever. An
+    /// empty active-stage set (no FCUs configured) is not an error and
+    /// returns \c true immediately. A stage for which \c stageInput()
+    /// returns its negative not-found sentinel is not moved at all and
+    /// counts as a failed stage.
     ///
     /// \param outputCm1 Desired output-beam wavenumber (cm⁻¹).
     /// \return \c true if every active stage reported a successful move.
@@ -828,6 +832,12 @@ private:
     /// Refreshed whenever hardware connection completes (updateLifConversion(),
     /// so live control reflects the topology) and re-validated at experiment
     /// prep. Identity (output == fundamental) when no stages are active.
+    ///
+    /// \warning Do not refresh this from the live GUI preset
+    /// (updateLifConversion()) while d_experimentInProgress is \c true: the
+    /// copy in place during an experiment is the one validated at prep, and
+    /// a connection-test cycle mid-scan must not silently swap it out from
+    /// under the running acquisition.
     LifConversion d_lifConversion;
 
     /// \brief Push the cached d_lifConversion to \a ll, thread-aware (direct
@@ -837,8 +847,21 @@ private:
     /// \brief Re-assemble d_lifConversion from the active stage settings and
     /// push it to the active laser, so the live jog/status path uses the
     /// current topology outside of an experiment. Invoked when connection
-    /// testing completes.
+    /// testing completes; a no-op call site should check
+    /// d_experimentInProgress first (see checkStatus()).
     void updateLifConversion();
+
+    /// \brief \c true from the manager's own beginAcquisition() signal until
+    /// its endAcquisition() signal (each self-connected to an internal
+    /// lambda in the constructor), i.e. for exactly the window during which
+    /// HardwareObjects have been told to enter acquisition mode.
+    ///
+    /// Used by checkStatus() to withhold updateLifConversion()'s live-preset
+    /// refresh while an experiment is running, so a connection-result cycle
+    /// (e.g. a transient hardwareFailure()) cannot overwrite the
+    /// experiment-validated d_lifConversion with whatever preset the GUI
+    /// currently has selected.
+    bool d_experimentInProgress{false};
 
     /// \brief Raw pointer to the single live instance, set in the constructor
     /// and cleared in the destructor, used by constInstance().
