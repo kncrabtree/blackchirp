@@ -3,7 +3,9 @@
 
 #include <gui/expsetup/experimentconfigpage.h>
 
+class LifConfigWidget;
 class LifControlWidget;
+class LifConversionWidget;
 
 namespace BC::Key::WizLif {
 inline constexpr QLatin1StringView key{"WizardLifConfigPage"};
@@ -16,16 +18,24 @@ class ExperimentLifConfigPage : public ExperimentConfigPage
 public:
     ExperimentLifConfigPage(Experiment *exp, QWidget *parent = nullptr);
 
-    LifControlWidget *lifControlWidget() { return p_lcw; }
+    LifControlWidget *lifControlWidget();
+    LifConversionWidget *lifConversionWidget();
 
     // ExperimentConfigPage interface
 public slots:
     void initialize() override;
     bool validate() override;
     void apply() override;
+    void commitLifPreset();
+
+signals:
+    //! Forwarded from LifConversionWidget::edited(): the conversion topology
+    //! changed in a way that may affect other pages' validation (mirrors
+    //! ExperimentFtmwConfigPage::presetChanged).
+    void presetChanged();
 
 private:
-    LifControlWidget *p_lcw;
+    LifConfigWidget *p_widget;
 };
 
 #endif // EXPERIMENTLIFCONFIGPAGE_H

@@ -1,15 +1,16 @@
 #include "sirahcobra.h"
 #include <hardware/core/hardwareregistration.h>
+#include <data/lif/lifunits.h>
 
-#include <QtEndian>
 #include <math.h>
 #include <QThread>
 
 #ifndef M_PI
-#define M_PI 3.1415926535897323846
+#define M_PI 3.14159265358979323846
 #endif
 
 using namespace BC::Key::LifLaser;
+using namespace BC::LifConv;
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(SirahCobra, "Sirah Cobra LIF Laser")
@@ -20,82 +21,41 @@ REGISTER_COMM_DEFAULTS(SirahCobra, CommunicationProtocol::Rs232,
     {BC::Key::Comm::timeout, 200},
     {BC::Key::Comm::termChar, QString("")})
 
+// minPos/maxPos are the grating fundamental (cm-1); the driver's native
+// range is 450-700 nm, which is 1e7/700 = 14285.7 cm-1 (long-wavelength
+// end) to 1e7/450 = 22222.2 cm-1 (short-wavelength end) — cm-1 grows as
+// wavelength shrinks, so the nm bounds invert.
 REGISTER_HARDWARE_SETTINGS(SirahCobra,
-    {minPos,   "Min Position",     "Minimum laser wavelength/position",             450.0, QVariant{}, QVariant{}, HwSettingPriority::Important},
-    {maxPos,   "Max Position",     "Maximum laser wavelength/position",             700.0, QVariant{}, QVariant{}, HwSettingPriority::Important},
-    {decimals, "Display Decimals", "Number of decimal places for position display", 4,     0,          8,          HwSettingPriority::Optional},
-    {hasFl,    "Has Flashlamp",    "Laser has a software-controlled flashlamp",     false, QVariant{}, QVariant{}, HwSettingPriority::Optional}
+    {minPos,   "Min Position",     "Minimum grating fundamental position (cm-1; 700 nm)", 14285.7143, QVariant{}, QVariant{}, HwSettingPriority::Important, units},
+    {maxPos,   "Max Position",     "Maximum grating fundamental position (cm-1; 450 nm)", 22222.2222, QVariant{}, QVariant{}, HwSettingPriority::Important, units},
+    {decimals, "Display Decimals", "Number of decimal places for position display",       4,          0,          8,          HwSettingPriority::Optional},
+    {hasFl,    "Has Flashlamp",    "Laser has a software-controlled flashlamp",           false,      QVariant{}, QVariant{}, HwSettingPriority::Optional}
 )
+REGISTER_HARDWARE_ARRAY(SirahCobra, stages,
+    "Grating Stage Geometry", "Sine-bar tuning geometry for the grating motor stage",
+    HwSettingPriority::Important)
+REGISTER_HARDWARE_ARRAY_ENTRY(SirahCobra, stages,
+    {{sStart,3000.0},
+     {sHigh,12000.0},
+     {sRamp,2400},
+     {sMax,3300000},
+     {sbls,24000},
+     {sLeverLength,134.599318},
+     {sLinearOffset,-76.543335},
+     {sAngleOffset,31.329809},
+     {sGrazingAngle,85.0},
+     {sGrooves,2414.0},
+     {sPitch,-0.25},
+     {sMotorResolution,4800},
+    })
 
 SirahCobra::SirahCobra(const QString& label, QObject *parent)
     : LifLaser(QString(SirahCobra::staticMetaObject.className()), label, parent)
 {
-    setDefault(hasExtStage,true);
-    setDefault(extStagePort,QString("COM9"));
-    setDefault(extStageBaud,9600);
-    setDefault(extStageCrystalAddress,8);
-    setDefault(extStageCompAddress,2);
-    setDefault(extStageCrystalTheta0,123.7593111);
-    setDefault(extStageCrystalSlope,0.3219747226);
-    setDefault(extStageCompTheta0,518.1670078);
-    setDefault(extStageCompSlope,-0.3820040691);
-
-    if(!containsArray(stages))
-    {
-        appendArrayMap(stages,
-                       {{sStart,3000.0},
-                        {sHigh,12000.0},
-                        {sRamp,2400},
-                        {sMax,3300000},
-                        {sbls,24000},
-                        {sLeverLength,134.599318},
-                        {sLinearOffset,-76.543335},
-                        {sAngleOffset,31.329809},
-                        {sGrooves,2414.0},
-                        {sGrazingAngle,85.0},
-                        {sPitch,-0.25},
-                        {sGrooves,2414.0},
-                        {sMotorResolution,4800},
-                       },true);
-    }
-    
-    if(!containsArray(extStageCrystalPoly))
-    {
-        setArray(extStageCrystalPoly,{
-                     {{polyOrder,0},{polyValue,3.95707878e10}},
-                     {{polyOrder,1},{polyValue,-2.79608834e8}},
-                     {{polyOrder,2},{polyValue,6.17881467e5}},
-                     {{polyOrder,3},{polyValue,-3.48885374}},
-                     {{polyOrder,4},{polyValue,-1.91691352}},
-                     {{polyOrder,5},{polyValue,2.71068206e-3}},
-                     {{polyOrder,6},{polyValue,-1.19684033e-6}}
-                 });
-    }
-    
-    if(!containsArray(extStageCompPoly))
-    {
-        setArray(extStageCompPoly,{
-                     {{polyOrder,0},{polyValue,735434.26345}},
-                     {{polyOrder,1},{polyValue,-2083.62338}},
-                     {{polyOrder,2},{polyValue,1.80616}},
-                 });
-    }
-
-
-    save();
-
-
 }
-
 
 void SirahCobra::initialize()
 {
-    if(get(hasExtStage,false))
-    {
-        p_extStagePort = new Rs232Instrument(d_key+"ExtStage",this);
-        connect(p_extStagePort,&Rs232Instrument::hardwareFailure,this,&SirahCobra::hardwareFailure);
-        p_extStagePort->initialize();
-    }
 }
 
 bool SirahCobra::testConnection()
@@ -104,32 +64,8 @@ bool SirahCobra::testConnection()
     if(out)
     {
         //disable autoprompt
-        p_comm->writeBinary(buildCommand(0x10));
+        p_comm->writeBinary(BC::Sirah::buildCommand(0x10));
         readPosition();
-    }
-
-    if(p_extStagePort)
-    {
-        // TODO: Need different solution for external stage communication settings
-        // p_extStagePort->setReadOptions(200,QString("\r\n"));
-        if(!p_extStagePort->testManual(get(extStagePort,QString("COM9"))
-                                        ,get(extStageBaud,9600)))
-        {
-            d_errorString = "Could not open external stage port.";
-            return false;
-        }
-
-        auto dev = QString::number(get(extStageCrystalAddress,0));
-        auto resp = p_extStagePort->queryCmd(dev+"in");
-        bool ok;
-        double range = static_cast<double>(resp.mid(21,4).toInt(&ok,16));
-        double pp = static_cast<double>(resp.mid(25,8).toInt(&ok,16));
-        d_crystalStatus.stepsPerDeg = pp/range;
-        dev = QString::number(get(extStageCompAddress,0));
-        resp = p_extStagePort->queryCmd(dev+"in");
-        range = static_cast<double>(resp.mid(21,4).toInt(&ok,16));
-        pp = static_cast<double>(resp.mid(25,8).toInt(&ok,16));
-        d_compStatus.stepsPerDeg = pp/range;
     }
 
     return out;
@@ -140,23 +76,26 @@ double SirahCobra::readPos()
     if(!prompt())
     {
         hwError("Could not read position."_L1);
-        emit hardwareFailure();
-        return 0.0;
+        return -1.0;
     }
 
-    return posToWavelength(d_status.m1Pos);
+    auto wl = posToWavelength(d_status.m1Pos);
+    return toCm1(wl, LaserUnit::Nm);
 }
 
 void SirahCobra::setPos(double pos)
 {
+    auto wl = fromCm1(pos, LaserUnit::Nm);
+
     if(!prompt())
     {
-        hwError(u"Could not set position to %1"_s.arg(pos,0,'f',get(decimals,2)));
+        hwError(u"Could not set position to %1 cm-1 (%2 nm)."_s
+                    .arg(pos,0,'f',3).arg(wl,0,'f',get(decimals,2)));
         return;
     }
 
     //calculate target position
-    auto targetPos = wavelengthToPos(pos);
+    auto targetPos = wavelengthToPos(wl);
     auto currentPos = d_status.m1Pos;
     auto delta = targetPos - currentPos;
 
@@ -167,7 +106,7 @@ void SirahCobra::setPos(double pos)
     //can we just move relative?
     //Conditions: need last move to be in same direction as backlash correction,
     //and distance should be less than backlash correction.
-    auto backlash = getArrayValue(stages,0,sbls,-24000);
+    auto backlash = getArrayValue(stages,0,sbls,24000);
     if(d_status.lastMoveDir != 0 && (d_status.lastMoveDir*delta) > 0 && qAbs(delta) < qAbs(backlash))
     {
         moveRelative(delta);
@@ -188,56 +127,6 @@ void SirahCobra::setPos(double pos)
         }
         else
             d_status.lastMoveDir = 0;
-    }
-
-    if(p_extStagePort)
-    {
-        double cp = 0.0;
-        for(const auto &[o,v] : d_crystalStatus.coefs)
-            cp += pow(pos,o)*v;
-        qint32 crystalPos = static_cast<qint32>(round(cp));
-        
-        cp = 0.0;
-        for(const auto &[o,v] : d_compStatus.coefs)
-            cp += pow(pos,o)*v;
-        qint32 compPos = static_cast<qint32>(round(cp));
-
-        hwDebug(u"Crystal: %1"_s.arg(crystalPos));
-        // hwDebug(u"Compensator: %1"_s.arg(compPos));
-        
-        //calculate crystal commands
-        auto dev = QString::number(get(extStageCrystalAddress,0));
-        QString absmove = QString::number(crystalPos,16).rightJustified(8,'0').toUpper();
-        QString crysCmd1 = QString("%1ma%2").arg(dev,absmove);
-        hwDebug(u"Crystal command: %1"_s.arg(crysCmd1));
-
-        dev = QString::number(get(extStageCompAddress,0));
-        absmove = QString::number(compPos,16).rightJustified(8,'0').toUpper();
-        QString compCmd1 = QString("%1ma%2").arg(dev,absmove);
-        // hwDebug(u"Compensator command: %1"_s.arg(compCmd1));
-        
-        // std::vector<QString> cmds {crysCmd1,compCmd1};
-        std::vector<QString> cmds {crysCmd1};
-        for(const auto &c : cmds)
-        {
-           p_extStagePort->writeCmd(c);
-           // int count = 0;
-           // int ba = p_extStagePort->_device()->bytesAvailable();
-           // while(ba < 13)
-           // {
-           //     count++;
-           //     if(count > 25)
-           //     {
-           //         emit hardwareFailure();
-           //         hwError(u"Error in command %1. No response received."_s.arg(c));
-           //         return;
-           //     }
-           //     p_extStagePort->_device()->waitForReadyRead(250);
-           //     ba = p_extStagePort->_device()->bytesAvailable();
-           //}
-        
-           auto resp = p_extStagePort->_device()->readAll();
-        }
     }
 }
 
@@ -268,107 +157,21 @@ void SirahCobra::lifLaserReadSettings()
         tp.pitch = getArrayValue(stages,i,sPitch).toDouble();
         d_params.push_back(tp);
     }
-
-    if(p_extStagePort)
-    {        
-        d_crystalStatus.coefs.clear();
-        auto l = getArray(extStageCrystalPoly);
-        if(l.empty())
-        {
-            d_crystalStatus.coefs.insert({0.0,0.0});
-            d_crystalStatus.coefs.insert({1.0,1.0});
-        }
-        else
-        {
-            for(const auto &m : l)
-            {
-                double order = 0.0;
-                if(m.contains(polyOrder))
-                    order = m.at(polyOrder).toDouble();
-                
-                double val = 0.0;
-                if(m.contains(polyValue))
-                    val = m.at(polyValue).toDouble();
-                
-                d_crystalStatus.coefs.insert({order,val});
-            }
-        }
-        
-        d_compStatus.coefs.clear();
-        l = getArray(extStageCompPoly);
-        if(l.empty())
-        {
-            d_compStatus.coefs.insert({0.0,0.0});
-            d_compStatus.coefs.insert({1.0,1.0});
-        }
-        else
-        {
-            for(const auto &m : l)
-            {
-                double order = 0.0;
-                if(m.contains(polyOrder))
-                    order = m.at(polyOrder).toDouble();
-                
-                double val = 0.0;
-                if(m.contains(polyValue))
-                    val = m.at(polyValue).toDouble();
-                
-                d_compStatus.coefs.insert({order,val});
-            }
-        }
-    }
-}
-
-QByteArray SirahCobra::buildCommand(char cmd, QByteArray args)
-{
-    //work in progress
-    QByteArray out;
-    out.fill(0x00,13);
-    out[0] = 0x3c;
-    out[1] = cmd;
-    out[11] = out.at(11) + out.at(0);
-    out[11] = out.at(11) + out.at(1);
-    for(int i=0; i<args.size() && i<9; i++)
-    {
-        out[i+2] = args.at(i);
-        out[11] = out.at(11) + args.at(i);
-    }
-    out[12] = 0x3e;
-
-    return out;
 }
 
 bool SirahCobra::prompt()
 {
-    auto rp = buildCommand(0x17);
+    auto rp = BC::Sirah::buildCommand(0x17);
     p_comm->writeBinary(rp);
     auto resp = p_comm->readBytes(14,true);
 
-    if(resp.size() != 14 || !resp.startsWith(0x5b) || !resp.endsWith(0x5d))
+    if(!BC::Sirah::parseStatus(resp, d_status))
     {
         d_errorString = QString("Received unexpected response (Hex: %1)").arg(QString(resp.toHex()));
         return false;
     }
 
-    d_status.err = static_cast<quint8>(resp.at(1));
-    d_status.cStatus = static_cast<quint8>(resp.at(2));
-    d_status.m1Status = static_cast<quint8>(resp.at(3));
-    qint32 pos = 0;
-    pos |= static_cast<quint8>(resp.at(4));
-    pos |= (static_cast<quint8>(resp.at(5)) << 8);
-    pos |= (static_cast<quint8>(resp.at(6)) << 16);
-    pos |= (static_cast<quint8>(resp.at(7)) << 24);
-    d_status.m1Pos = pos;
-    d_status.m2Status = static_cast<quint8>(resp.at(8));
-    pos = 0;
-    pos |= static_cast<quint8>(resp.at(9));
-    pos |= (static_cast<quint8>(resp.at(10)) << 8);
-    pos |= (static_cast<quint8>(resp.at(11)) << 16);
-    pos |= (static_cast<quint8>(resp.at(12)) << 24);
-    d_status.m2Status = pos;
-
     return true;
-
 }
 
 double SirahCobra::posToWavelength(qint32 pos, uint stage)
@@ -412,7 +215,7 @@ void SirahCobra::moveRelative(qint32 steps)
     dat.append(static_cast<quint8>((s & 0x00ff0000) >> 16));
     dat.append(static_cast<quint8>((s & 0xff000000) >> 24));
 
-    auto cmd = buildCommand(0x06,dat);
+    auto cmd = BC::Sirah::buildCommand(0x06,dat);
 
     p_comm->writeBinary(cmd);
 
@@ -444,7 +247,7 @@ void SirahCobra::moveRelative(qint32 steps)
     if(!done)
     {
         //stop motor
-        p_comm->writeBinary(buildCommand(0x04));
+        p_comm->writeBinary(BC::Sirah::buildCommand(0x04));
         hwError("Did not set position successfully; stopped motor motion."_L1);
         emit hardwareFailure();
     }
@@ -460,7 +263,7 @@ bool SirahCobra::moveAbsolute(qint32 targetPos)
     dat.append(static_cast<quint8>((targetPos & 0x00ff0000) >> 16));
     dat.append(static_cast<quint8>((targetPos & 0xff000000) >> 24));
 
-    auto cmd = buildCommand(0x07,dat);
+    auto cmd = BC::Sirah::buildCommand(0x07,dat);
 
     p_comm->writeBinary(cmd);
 
@@ -503,11 +306,10 @@ bool SirahCobra::moveAbsolute(qint32 targetPos)
     if(!done)
     {
         //stop motor
-        p_comm->writeBinary(buildCommand(0x04));
+        p_comm->writeBinary(BC::Sirah::buildCommand(0x04));
         hwError("Did not set position successfully; stopped motor motion."_L1);
         emit hardwareFailure();
     }
 
     return done;
 }
-

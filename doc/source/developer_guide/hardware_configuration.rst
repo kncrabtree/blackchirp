@@ -21,6 +21,9 @@
    single: FTMW presets; configuration
    single: __LastUsed__
    single: drift detection
+   single: gated setting
+   single: LifFreqConversionStage; setHarmonicOrder
+   single: HardwareManager; configureLifHarmonic
 
 Hardware Configuration
 ======================
@@ -604,3 +607,23 @@ The four owners share one file but never one group. Tracing a setting
 back to its source therefore reduces to "which group does the key live
 in?", which is the question a contributor opening
 ``~/.config/CrabtreeLab/Blackchirp.conf`` actually wants answered.
+
+.. note::
+
+   *Gated settings.* Not every per-profile value is safe to change with
+   a raw :cpp:class:`SettingsStorage` write. A setting that a running
+   device must confirm before Blackchirp's own state can be considered
+   current has to route through the device instead, on whatever thread
+   the device lives on. :cpp:func:`LifFreqConversionStage::setHarmonicOrder`
+   / :cpp:func:`HardwareManager::configureLifHarmonic` is the canonical
+   example: :cpp:class:`LifConversionTableModel` never edits its
+   Harmonic column directly — it emits ``applyHarmonic(stageKey, n)``,
+   which is hopped onto the :cpp:class:`HardwareManager` thread into
+   ``configureLifHarmonic``, which calls ``setHarmonicOrder`` on the
+   live device and only updates the persisted setting (and signals the
+   model back) once the device confirms success. The RF chain's
+   ``applyClocks`` → ``connectRfConfigWidget`` →
+   :cpp:func:`HardwareManager::configureClocks` channel is the same
+   pattern for clock frequencies. See *Frequency conversion* (*Key
+   invariants*) on :doc:`/developer_guide/lif_acquisition` for the full
+   gated-harmonic call chain.

@@ -1,8 +1,11 @@
 #include <QtTest>
 #include <QCoreApplication>
 #include <QSettings>
+#include <QMetaEnum>
 
 #include <src/data/storage/settingsstorage.h>
+#include <data/lif/lifunits.h>
+#include <data/storage/enumcsvconvert.h>
 
 class SettingsStorageTest : public QObject, public SettingsStorage
 {
@@ -56,6 +59,9 @@ private slots:
     void testGroupKeys();
     void testGroupDefault();
     void testCrossContamination();
+
+    // Enum-valued hardware settings (BC::LifConv::LaserUnit et al.)
+    void testEnumSettingRoundTrip();
 
 
 private:
@@ -997,6 +1003,48 @@ void SettingsStorageTest::testCrossContamination()
 
     clearValue("groupKey");
     QVERIFY(groupKeys().isEmpty());
+}
+
+void SettingsStorageTest::testEnumSettingRoundTrip()
+{
+    using namespace BC::LifConv;
+
+    initSettingsFile();
+    clearGetters(false);
+    readAll();
+
+    // Enum-valued hardware settings (e.g. LifLaser::units, a LaserUnit) are
+    // persisted as their Q_ENUM key-name string -- the form every read site
+    // resolves via BC::CSV::enumFromVariant -- rather than a raw enum-typed
+    // QVariant, which QSettings serializes as an opaque "@Variant(...)"
+    // blob instead of human-readable text.
+    const QString key = "lifLaserUnitsTest";
+    auto meta = QMetaEnum::fromType<LaserUnit>();
+    const QString keyName = QString::fromUtf8(meta.valueToKey(static_cast<int>(LaserUnit::GHz)));
+    QCOMPARE(keyName, QString("GHz"));
+
+    set(key, keyName, false);
+    save();
+
+    // The on-disk value is the plain string, not a binary-encoded QVariant.
+    QSettings raw("CrabtreeLabTest", "BlackchirpTest");
+    raw.setFallbacksEnabled(false);
+    raw.beginGroup("Blackchirp");
+    QCOMPARE(raw.value(key).metaType(), QMetaType::fromType<QString>());
+    QCOMPARE(raw.value(key).toString(), keyName);
+    raw.endGroup();
+
+    // A fresh SettingsStorage reload resolves the stored string back to the
+    // enum value.
+    SettingsStorage readOnly;
+    QCOMPARE(BC::CSV::enumFromVariant<LaserUnit>(readOnly.get(key), LaserUnit::Cm1), LaserUnit::GHz);
+
+    // enumFromVariant also accepts a raw enum-typed QVariant directly (the
+    // in-memory form used before a value crosses a persistence boundary).
+    QCOMPARE(BC::CSV::enumFromVariant<LaserUnit>(QVariant::fromValue(LaserUnit::eV), LaserUnit::Cm1), LaserUnit::eV);
+
+    // ...and the historical integer form, for reading older data.
+    QCOMPARE(BC::CSV::enumFromVariant<LaserUnit>(QVariant(static_cast<int>(LaserUnit::Nm)), LaserUnit::Cm1), LaserUnit::Nm);
 }
 
 QTEST_MAIN(SettingsStorageTest)

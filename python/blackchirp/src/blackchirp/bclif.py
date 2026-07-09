@@ -40,6 +40,126 @@ _TIME_UNIT_SCALES = {
     "ns": 1.0e9,
 }
 
+# Laser-unit conversion factors. These MUST match the constants in the C++
+# writer (``src/data/lif/lifunits.cpp``) so that a topology read here
+# round-trips against the values Blackchirp serialized.
+_CM1_PER_EV = 8065.543937
+_EV_PER_CM1 = 1.239841984e-4
+_GHZ_PER_CM1 = 2.99792458e10 / 1.0e9  # GHz per cm^-1 (≈ 29.9792458)
+_NM_CM1 = 1.0e7  # vacuum wavelength: lambda_nm = _NM_CM1 / cm^-1
+
+# Accepted spellings for the four laser units, mapped to a canonical key.
+# Includes the exact ``header.csv`` labels emitted by C++ ``unitLabel`` (e.g.
+# the non-ASCII ``cm⁻¹``) so ``unit=lif.laser_units`` works directly.
+_UNIT_ALIASES = {
+    "cm-1": "cm-1",
+    "cm^-1": "cm-1",
+    "cm−1": "cm-1",
+    "cm⁻¹": "cm-1",
+    "1/cm": "cm-1",
+    "wavenumber": "cm-1",
+    "wavenumbers": "cm-1",
+    "nm": "nm",
+    "nanometer": "nm",
+    "nanometers": "nm",
+    "ghz": "GHz",
+    "ev": "eV",
+}
+
+
+def _normalize_unit(unit: str) -> str:
+    """Map any accepted unit spelling to its canonical key.
+
+    Args:
+        unit: A laser-unit string (case-insensitive; accepts the
+            ``header.csv`` labels including the non-ASCII ``cm⁻¹``).
+
+    Returns:
+        One of ``"cm-1"``, ``"nm"``, ``"GHz"``, ``"eV"``.
+
+    Raises:
+        ValueError: If ``unit`` is not a recognized laser unit.
+    """
+
+    key = str(unit).strip().lower()
+    try:
+        return _UNIT_ALIASES[key]
+    except KeyError:
+        raise ValueError(
+            f"Unknown laser unit {unit!r}; expected one of cm-1, nm, GHz, eV"
+        ) from None
+
+
+def _to_cm1(value, unit: str):
+    """Convert ``value`` (in ``unit``) to vacuum wavenumber (cm^-1)."""
+
+    u = _normalize_unit(unit)
+    arr = np.asarray(value, dtype=float)
+    if u == "cm-1":
+        out = arr
+    elif u == "nm":
+        # Non-positive input can't be converted (reciprocal-in-wavelength
+        # guard, matching the Nm branch of C++'s toCm1() in lifunits.cpp).
+        # Sentinel differs by language: Python returns NaN here (test with
+        # np.isnan), while C++ returns kInvalid (-1.0). Do not compare a
+        # value from one language's convention against the other's sentinel.
+        with np.errstate(divide="ignore", invalid="ignore"):
+            out = np.where(arr > 0, _NM_CM1 / arr, np.nan)
+    elif u == "GHz":
+        out = arr / _GHZ_PER_CM1
+    else:  # eV
+        out = arr * _CM1_PER_EV
+    return out if arr.ndim else float(out)
+
+
+def _from_cm1(cm1, unit: str):
+    """Convert vacuum wavenumber ``cm1`` (cm^-1) to ``unit``."""
+
+    u = _normalize_unit(unit)
+    arr = np.asarray(cm1, dtype=float)
+    if u == "cm-1":
+        out = arr
+    elif u == "nm":
+        # See the matching note in _to_cm1: NaN is this module's invalid
+        # sentinel (np.isnan), not C++ fromCm1()'s -1.0.
+        with np.errstate(divide="ignore", invalid="ignore"):
+            out = np.where(arr > 0, _NM_CM1 / arr, np.nan)
+    elif u == "GHz":
+        out = arr * _GHZ_PER_CM1
+    else:  # eV
+        out = arr * _EV_PER_CM1
+    return out if arr.ndim else float(out)
+
+
+def _apply_op(op: str, n, in_coeffs):
+    """Combine input affine coefficients per a conversion op (cm^-1).
+
+    Each beam is ``A * fundamental + B``; this returns the ``(A, B)`` of a
+    node's output given the ``(A, B)`` of its ordered inputs.
+
+    Args:
+        op: ``"NHG"``, ``"SFG"``, or ``"DFG"``.
+        n: Harmonic order for ``NHG`` (ignored otherwise).
+        in_coeffs: List of ``(A, B)`` tuples, one per input.
+
+    Returns:
+        The output ``(A, B)`` tuple.
+
+    Raises:
+        ValueError: If ``op`` is not a recognized conversion op.
+    """
+
+    if op == "NHG":
+        a0, b0 = in_coeffs[0]
+        return (n * a0, n * b0)
+    if op == "SFG":
+        (a0, b0), (a1, b1) = in_coeffs[0], in_coeffs[1]
+        return (a0 + a1, b0 + b1)
+    if op == "DFG":
+        (a0, b0), (a1, b1) = in_coeffs[0], in_coeffs[1]
+        return (a0 - a1, b0 - b1)
+    raise ValueError(f"Unknown conversion op {op!r}")
+
 
 def _parse_proc_value(key: str, raw):
     """Coerce a ``processing.csv`` cell to a typed Python value.
@@ -435,11 +555,26 @@ class BCLIF:
             ``refsize > 0``.
         numtraces (int): Number of populated scan points
             (``len(lifparams)``).
+        has_topology (bool): ``True`` if a non-identity frequency-conversion
+            topology (``liftopology.csv``) was recorded for this experiment.
+        stages (list[str]): Conversion-stage hardware keys in DAG order
+            (empty when ``has_topology`` is ``False``).
+        final_stage (str | None): Hardware key of the stage that produces
+            the output (excitation) beam, or ``None`` for the identity case.
+        laser_key (str | None): Hardware key of the tunable laser the
+            topology was captured against, or ``None`` for the identity case.
     """
 
-    def __init__(self, path: str, sep: str, header: pd.DataFrame):
+    def __init__(
+        self,
+        path: str,
+        sep: str,
+        header: pd.DataFrame,
+        liftopology: Optional[pd.DataFrame] = None,
+    ):
         self.path = path
         self._sep = sep
+        self._topology = liftopology
 
         self.lifparams = pd.read_csv(
             os.path.join(self.path, "lif/lifparams.csv"),
@@ -494,6 +629,8 @@ class BCLIF:
         for row_idx, row in self.lifparams.iterrows():
             self._index[(int(row["lIndex"]), int(row["dIndex"]))] = int(row_idx)
 
+        self._build_conversion()
+
     def _file_num(self, l_index: int, d_index: int) -> int:
         return d_index * self.laser_points + l_index
 
@@ -536,6 +673,286 @@ class BCLIF:
         """Return the laser-axis sample values and their units string."""
         arr = self.laser_start + np.arange(self.laser_points) * self.laser_step
         return arr, self.laser_units
+
+    def _build_conversion(self):
+        """Parse ``liftopology.csv`` into an affine model of the DAG.
+
+        Every beam in the frequency-conversion graph is an affine function
+        of the single tunable grating fundamental (cm^-1),
+        ``beam = A * fundamental + B``. This walks the DAG once (in
+        dependency order) to recover ``(A, B)`` for each stage's inputs and
+        output, so any beam can be evaluated from — or inverted to — the
+        fundamental in closed form. Sets ``has_topology``, ``stages``,
+        ``final_stage``, and ``laser_key``. The identity/no-conversion case
+        (absent file) leaves ``stages`` empty and treats laser == output.
+        """
+
+        df = self._topology
+        self.stages = []
+        self.final_stage = None
+        self.laser_key = None
+        self.has_topology = df is not None and len(df) > 0
+        self._out_coeff = {}
+        self._in_coeff = {}
+        self._op = {}
+        self._n = {}
+        self._final = {}
+        if not self.has_topology:
+            return
+
+        stage_keys = {str(r["StageKey"]) for _, r in df.iterrows()}
+
+        def classify(token):
+            token = str(token)
+            if token == "":
+                return None
+            if token.startswith("Fixed:"):
+                return ("fixed", float(token[len("Fixed:") :]))
+            if token in stage_keys:
+                return ("stage", token)
+            # Any other token is the tunable laser source, and the token
+            # itself is the active laser's hardware key.
+            self.laser_key = token
+            return ("laser", None)
+
+        nodes = []
+        for _, r in df.iterrows():
+            sk = str(r["StageKey"])
+            harm = str(r["Harmonic"]).strip()
+            is_final = str(r["IsFinal"]).strip().lower() == "true"
+            inputs = [
+                ref
+                for ref in (classify(r["Input0"]), classify(r["Input1"]))
+                if ref is not None
+            ]
+            nodes.append(
+                {
+                    "stageKey": sk,
+                    "op": str(r["Op"]),
+                    "n": int(harm) if harm else None,
+                    "inputs": inputs,
+                }
+            )
+            self.stages.append(sk)
+            self._op[sk] = str(r["Op"])
+            self._n[sk] = int(harm) if harm else None
+            self._final[sk] = is_final
+            if is_final:
+                self.final_stage = sk
+
+        # Resolve per-beam affine coefficients, deferring any node whose
+        # stage inputs are not yet resolved until a later pass.
+        pending = list(nodes)
+        while pending:
+            still = []
+            progressed = False
+            for node in pending:
+                deps = [ref[1] for ref in node["inputs"] if ref[0] == "stage"]
+                if not all(d in self._out_coeff for d in deps):
+                    still.append(node)
+                    continue
+                in_coeffs = []
+                for ref in node["inputs"]:
+                    if ref[0] == "laser":
+                        in_coeffs.append((1.0, 0.0))
+                    elif ref[0] == "fixed":
+                        in_coeffs.append((0.0, ref[1]))
+                    else:
+                        in_coeffs.append(self._out_coeff[ref[1]])
+                self._in_coeff[node["stageKey"]] = in_coeffs
+                self._out_coeff[node["stageKey"]] = _apply_op(
+                    node["op"], node["n"], in_coeffs
+                )
+                progressed = True
+            if not progressed:
+                raise ValueError(
+                    "liftopology.csv has an unresolvable stage reference or cycle"
+                )
+            pending = still
+
+    def _coeff(self, at: str, side: str):
+        """Return the ``(A, B)`` affine coefficients for one beam location."""
+
+        if at == "laser":
+            return (1.0, 0.0)
+        if at == "final":
+            if not self.has_topology:
+                return (1.0, 0.0)
+            at = self.final_stage
+        if at not in self._out_coeff:
+            raise KeyError(f"Unknown stage {at!r}; known stages: {self.stages}")
+        if side == "output":
+            return self._out_coeff[at]
+        if side == "input":
+            return self._in_coeff[at][0]
+        raise ValueError(f"side must be 'input' or 'output', got {side!r}")
+
+    def fundamental(self, value, at="final", side="output", unit="cm-1"):
+        """Solve for the grating fundamental from a beam value at one location.
+
+        Because every beam is affine in the tunable fundamental, this is an
+        exact inversion (no numerics). Accepts a scalar or a NumPy array and
+        matches the input shape on output.
+
+        Args:
+            value: Beam value(s) at the location, expressed in ``unit``.
+            at: A stage's hardware key, ``"final"`` (the output beam), or
+                ``"laser"`` (the fundamental itself).
+            side: ``"output"`` or ``"input"`` of the stage (the primary,
+                tunable-path input for a two-input mixing stage). Ignored
+                for ``at="laser"``.
+            unit: Unit of both ``value`` and the returned fundamental — one
+                of ``cm-1``, ``nm``, ``GHz``, ``eV`` (or a ``header.csv``
+                label such as ``cm⁻¹``).
+
+        Returns:
+            The grating fundamental in ``unit`` (scalar or array, matching
+            ``value``). For an experiment with no conversion, the
+            fundamental equals ``value`` at ``at`` in ``{"final", "laser"}``.
+
+        Raises:
+            ValueError: If the location does not depend on the tunable laser
+                (e.g. a fixed mixing beam), so it cannot be inverted.
+            KeyError: If ``at`` names an unknown stage.
+
+        Example:
+            >>> lif.fundamental(280.0, at="final", side="output", unit="nm")
+            560.0
+        """
+
+        u = _normalize_unit(unit)
+        a, b = self._coeff(at, side)
+        if a == 0.0:
+            raise ValueError(
+                f"Location at={at!r} side={side!r} does not depend on the "
+                "tunable laser; cannot solve for the fundamental"
+            )
+        return _from_cm1((_to_cm1(value, u) - b) / a, u)
+
+    def at_stage(self, fundamental, at="final", side="output", unit="cm-1"):
+        """Evaluate the beam at one location for a given grating fundamental.
+
+        Inverse of :meth:`fundamental`. Accepts a scalar or a NumPy array of
+        fundamentals and matches the input shape on output, so a whole laser
+        sweep can be mapped in one call.
+
+        Args:
+            fundamental: Grating fundamental value(s) in ``unit``.
+            at: A stage's hardware key, ``"final"``, or ``"laser"``.
+            side: ``"output"`` or ``"input"`` (primary input) of the stage.
+            unit: Unit of both ``fundamental`` and the result.
+
+        Returns:
+            The beam value(s) at ``at``/``side`` in ``unit`` (scalar or
+            array, matching ``fundamental``).
+
+        Raises:
+            KeyError: If ``at`` names an unknown stage.
+
+        Example:
+            >>> lif.at_stage(560.0, at="final", side="output", unit="nm")
+            280.0
+        """
+
+        u = _normalize_unit(unit)
+        a, b = self._coeff(at, side)
+        return _from_cm1(a * _to_cm1(fundamental, u) + b, u)
+
+    def stage_frequencies(
+        self,
+        value=None,
+        *,
+        fundamental=None,
+        at="final",
+        side="output",
+        unit="cm-1",
+    ) -> pd.DataFrame:
+        """Tabulate every stage's inputs and output for a single frequency.
+
+        Give it either a known beam ``value`` at a location (``at``/``side``)
+        or a ``fundamental`` directly; it solves for the fundamental and
+        evaluates the whole graph. This is the single-frequency, descriptive
+        counterpart to :meth:`fundamental`/:meth:`at_stage` — for a bulk
+        sweep, call those with an array (an ``(N, M)`` grid is
+        ``np.stack([lif.at_stage(f, at=s) for s in lif.stages], axis=1)``).
+
+        Args:
+            value: A known beam value at ``at``/``side``, in ``unit``.
+                Mutually exclusive with ``fundamental``.
+            fundamental: The grating fundamental in ``unit``. Mutually
+                exclusive with ``value``.
+            at: Location that ``value`` refers to (stage key, ``"final"``,
+                or ``"laser"``).
+            side: ``"output"`` or ``"input"`` that ``value`` refers to.
+            unit: Unit for the input and every value in the returned frame.
+
+        Returns:
+            A :class:`pandas.DataFrame` indexed by ``"laser"`` followed by
+            each stage's hardware key, with columns ``op``, ``isfinal``,
+            ``input0``, ``input1`` (``NaN`` for single-input stages), and
+            ``output``, all in ``unit``. For an experiment with no
+            conversion, only the ``laser`` row is returned.
+
+        Raises:
+            ValueError: If neither or both of ``value``/``fundamental`` are
+                given, or a non-scalar is passed.
+            KeyError: If ``at`` names an unknown stage.
+        """
+
+        u = _normalize_unit(unit)
+        if (value is None) == (fundamental is None):
+            raise ValueError("provide exactly one of value= or fundamental=")
+        source = value if value is not None else fundamental
+        if np.ndim(source) != 0:
+            raise ValueError(
+                "stage_frequencies is single-frequency; use fundamental() or "
+                "at_stage() for array inputs"
+            )
+        if fundamental is not None:
+            f_cm1 = _to_cm1(fundamental, u)
+        else:
+            a, b = self._coeff(at, side)
+            if a == 0.0:
+                raise ValueError(
+                    f"Location at={at!r} side={side!r} does not depend on the "
+                    "tunable laser; cannot solve for the fundamental"
+                )
+            f_cm1 = (_to_cm1(value, u) - b) / a
+
+        def evaluate(coeff):
+            ca, cb = coeff
+            return _from_cm1(ca * f_cm1 + cb, u)
+
+        f_disp = _from_cm1(f_cm1, u)
+        index = ["laser"]
+        rows = [
+            {
+                "op": None,
+                "isfinal": False,
+                "input0": f_disp,
+                "input1": np.nan,
+                "output": f_disp,
+            }
+        ]
+        for sk in self.stages:
+            in_coeffs = self._in_coeff[sk]
+            index.append(sk)
+            rows.append(
+                {
+                    "op": self._op[sk],
+                    "isfinal": self._final[sk],
+                    "input0": evaluate(in_coeffs[0]),
+                    "input1": (
+                        evaluate(in_coeffs[1]) if len(in_coeffs) > 1 else np.nan
+                    ),
+                    "output": evaluate(self._out_coeff[sk]),
+                }
+            )
+        return pd.DataFrame(
+            rows,
+            index=index,
+            columns=["op", "isfinal", "input0", "input1", "output"],
+        )
 
     def delay_slice(
         self,

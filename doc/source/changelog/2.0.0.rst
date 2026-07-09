@@ -124,6 +124,11 @@ Hardware configuration
   digitizers, FTMW digitizers, clocks, chirp sources, and pulse
   generators) were migrated onto the registry. See
   :doc:`/user_guide/hwdialog`.
+- Added value-gated visibility to the hardware settings dialog: a
+  setting can be shown only when a sibling enumerated setting holds a
+  given value, and an array-valued setting can be populated from a
+  semicolon-delimited file through a new **Import CSV…** action in the
+  array editor. See :doc:`/user_guide/hwdialog`.
 - Added per-object hardware threading configuration to the
   hardware profile. See
   :doc:`/user_guide/hardware_config/profiles`.
@@ -260,6 +265,43 @@ User interface
   moved the validity and progress indicators into the dialog button
   bar. See :doc:`/user_guide/overlays`.
 
+LIF
+---
+
+- Added the LIF Conversion Stage hardware type, representing one
+  physical stage — a doubling crystal, a sum-frequency mixing crystal,
+  a difference-frequency mixing crystal — in a LIF setup's
+  frequency-conversion chain, plus the Sirah FCU driver for Sirah's
+  doubling-stage hardware. The Sirah Cobra driver no longer handles
+  frequency conversion itself; that responsibility moved to the new
+  hardware type. See :doc:`/user_guide/hw/liffreqconversionstage`.
+- Added LIF presets: a named, saved wiring of the frequency-conversion
+  chain, scoped to the active hardware loadout and managed from an
+  Apply / Save / Save As... / Rename... bar mirroring the FTMW preset
+  bar. See :doc:`/user_guide/lif/presets`.
+- Added a Conversion tab to the LIF experiment-setup page for building
+  and previewing a LIF setup's frequency-conversion chain: a table of
+  conversion stages and how they are wired together, a live preview of
+  the assembled chain and the resulting excitation-beam range, and
+  inline validation of the wiring. See :doc:`/user_guide/lif/conversion`.
+- Added ``liftopology.csv``, a file written at the root of each
+  experiment recording the frequency-conversion chain used for the
+  acquisition (omitted when no conversion chain is configured), read
+  automatically by ``blackchirp-viewer`` and by the ``blackchirp``
+  Python module. See :doc:`/user_guide/data_storage/lif`.
+- Added selectable calibration schemes for the Sirah FCU
+  doubling-crystal tuning: a best-effort BBO/KDP second-harmonic
+  phase-matching model, or an imported polynomial or spline curve fit
+  offline, replacing the placeholder grating math. Fitting is done
+  outside Blackchirp with the ``python/tools/`` scripts in the source
+  repository. See :doc:`/user_guide/hw/liffreqconversionstage`.
+- Added a standalone LIF Configuration dialog carrying both the
+  acquisition and frequency-conversion editors, with a prompt to save
+  conversion changes as a preset, and a LIF Preset menu that switches
+  the active conversion preset from the menu bar — mirroring the FTMW
+  configuration dialog and preset menu. See
+  :doc:`/user_guide/lif/conversion`.
+
 Logging and diagnostics
 -----------------------
 
@@ -362,6 +404,16 @@ Python companion module
   helpers with configurable ``fill=np.nan|0.0`` for missing scan
   points. See :doc:`/python/bclif` and :doc:`/python/bcliftrace`
   (:commit:`dc7e7640`).
+- Added frequency-conversion topology support to ``BCLIF``: a
+  ``has_topology`` flag plus ``stages``, ``final_stage``, and
+  ``laser_key`` attributes describing a LIF setup's recorded
+  conversion chain, and ``fundamental`` / ``at_stage`` /
+  ``stage_frequencies`` methods that translate between the laser's
+  tuning value and any beam in the chain, in ``cm-1`` / ``nm`` /
+  ``GHz`` / ``eV``. ``BCExperiment`` reads the new ``liftopology.csv``
+  file into a ``liftopology`` DataFrame attribute and hands it to
+  ``BCLIF`` automatically. See :doc:`/python/bclif` and
+  :doc:`/python/bcexperiment`.
 - Restructured the Sphinx documentation into per-class pages
   matching the C++ API reference layout, refreshed
   ``single-fid.ipynb`` against the v2 schema, and added a fully
@@ -461,6 +513,11 @@ Bug fixes
   messages when switching protocols (:commit:`f7e3d6f7`).
 - Fixed optional-hardware configuration init and wizard page
   population (:commit:`be8a82e2`).
+- Fixed the hardware settings editor silently discarding an
+  enum-valued setting when its metaobject lookup failed: the field
+  rendered as an empty selector and, on save, wrote an invalid value
+  over the previously stored one. It now falls back to a text field
+  that preserves the current value (:commit:`615787a6`).
 
 **Acquisition.**
 

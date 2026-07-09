@@ -45,6 +45,7 @@ set(HARDWARE_TYPES_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/tempcontroller/temperaturecontroller.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/lifdigitizer/lifdigitizer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/liflaser.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/liffreqconversionstage.cpp
 )
 
 # Hardware implementations
@@ -81,6 +82,7 @@ file(GLOB HARDWARE_IMPLEMENTATIONS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/lifdigitizer/m4i*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/lifdigitizer/rigol*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/virtual*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/fixed*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/opolette.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/sirah*.cpp
 )
@@ -138,6 +140,7 @@ set(HARDWARE_TYPE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/tempcontroller/temperaturecontroller.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/lifdigitizer/lifdigitizer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/liflaser.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/liffreqconversionstage.h
 )
 
 file(GLOB HARDWARE_IMPLEMENTATION_HEADERS
@@ -172,6 +175,7 @@ file(GLOB HARDWARE_IMPLEMENTATION_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/lifdigitizer/m4i*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/lifdigitizer/rigol*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/virtual*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/fixed*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/opolette.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/sirah*.h
 )

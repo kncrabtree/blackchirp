@@ -4,18 +4,57 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 
 ## Medium
 
-### Sirah Cobra integration refresh
+### Chirp jitter monitor (sub-sample trigger-timing diagnostics)
 
-A new Sirah Cobra dye laser coming online triggers a rework of the
-`SirahCobra` driver: move its hand-rolled second serial port and
-frequency-conversion logic into a first-class `LifFreqConversionStage`
-hardware type, add a hardware-independent conversion topology to the
-`LifLaser` base so the LIF axis reads in the final (converted)
-wavelength, and migrate the driver's ad-hoc settings to the registry.
-Full plan (which supersedes the earlier "Approach A" multi-port
-direction) in [sirah-cobra-refresh.md](sirah-cobra-refresh.md); pick it
-up once the new instrument is on the bench and the 2.0.0-alpha packaging
-work is finished.
+The phase-correction hill-climb in `FtmwConfig::preprocessChirp`
+already evaluates the chirp-correlation FOM at three adjacent lags and
+discards the sub-sample information they contain. Parabolic
+interpolation of those three values gives each shot's trigger-timing
+offset at picosecond resolution — and the per-shot offsets `dt_k`
+determine, exactly, the filter `Phi(f) = (1/N) sum exp(-i 2 pi f dt_k)`
+that the averaging process applies to the stored spectrum. Recording
+them turns an invisible band-dependent intensity attenuation (10% at
+14.5 GHz baseband for 5 ps rms jitter, vs 2% at 5 GHz) into a
+deconvolvable, exactly-known correction, and answers per-acquisition
+whether deep averages are jitter-limited.
+
+Plan: monitor-only mode decoupled from the correction (no shift
+applied, no shot rejection, clip-tolerant `sign()` FOM option), aux-data
+aggregates per tick (mean/rms of the offset), and an accumulated
+`Phi(f)` on a coarse frequency grid written as `jitterphi.csv` at
+experiment completion for the analysis pipeline to divide out. Full
+per-shot series deferred. ~150–300 LOC + tests (virtual digitizer
+gains a configurable per-shot delay). Details:
+[`chirp-jitter-monitor.md`](chirp-jitter-monitor.md).
+
+Trigger: the first campaign where cross-band relative intensities
+matter, or when the companion `ftmwpipeline` timebase/deconvolution
+analysis is ready to consume `jitterphi.csv`.
+
+### Profile identity + preset lifecycle hardening
+
+A preset references hardware by hwKey (`"<Type>.<label>"`), which is not
+unique over time: deleting a profile and recreating one with the same label
+yields the same hwKey, so a preset silently re-binds to a different physical
+profile. Give profiles a stable identity — `hash(type + label +
+implementation + creation timestamp)`, all already persisted — carried
+alongside the implementation in each loadout's `hardwareMap` (the existing
+drift-detection field). This closes the recreate-same-label blind spot in the
+current `{ftmw,lif}RelevantHwKeys` drift dialog, which compares only hwKey
+sets. Add deletion-time pruning: when a profile is deleted, an informed
+confirmation enumerates the exact loadout→preset pairs that will be lost and
+the loadouts whose required-type member will be replaced with the system
+fallback, then presets referencing the hwKey are removed (current →
+`__LastUsed__`; a stale `__LastUsed__` removed). Covers both FTMW and LIF; the
+LIF at-load reject already on `feature/sirah-cobra-refresh` stays as a
+backstop. Full plan in
+[profile-identity-and-preset-pruning-plan.md](profile-identity-and-preset-pruning-plan.md).
+
+Trigger: after `feature/sirah-cobra-refresh` merges. Scope: profile-manager
+identity accessors, a loadout `hardwareMap` schema change (`impl` → `{impl,
+identity}`) with migration, the `RfConfigSnapshot` hardware-reference
+enumeration (the larger piece), and a preview/confirm/prune flow in the
+runtime-config dialog.
 
 ## Large
 
@@ -23,8 +62,7 @@ work is finished.
 
 Generalize the RF signal-chain configuration from its current **fixed
 topology** to a flexible DAG, reusing the frequency-conversion topology
-model designed for the LIF laser
-([sirah-cobra-refresh.md](sirah-cobra-refresh.md)). Today the chain is a
+model designed for the LIF laser. Today the chain is a
 single hardcoded 3-stage formula — `chirpFreq = (awgFreq × awgMult ±
 upLO) × chirpMult` in `RfConfig::calculateChirpFreq`/`calculateAwgFreq`
 (`rfconfig.cpp:204-228`) — over a closed six-value role enum

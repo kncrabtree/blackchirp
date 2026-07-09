@@ -9,6 +9,7 @@
 
 #include <data/storage/settingsstorage.h>
 #include <data/storage/blackchirpcsv.h>
+#include <data/lif/lifunits.h>
 #include <gui/widget/clickablelabel.h>
 #include <gui/lif/gui/lifsliceplot.h>
 #include <gui/lif/gui/liftraceplot.h>
@@ -128,7 +129,7 @@ void LifDisplayWidget::prepareForExperiment(const Experiment &e)
         // (units from column 6 of the LaserStart header row, decimals
         // inferred from its formatted value string) rather than the
         // viewing machine's local LifLaser settings.
-        d_lString.append(e.lifConfig()->laserUnits());
+        d_lString.append(BC::LifConv::unitLabel(e.lifConfig()->laserUnits()));
         d_lDec = e.lifConfig()->laserDecimals();
 
         ps_lifStorage = e.lifConfig()->storage();

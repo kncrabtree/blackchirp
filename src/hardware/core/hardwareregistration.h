@@ -186,12 +186,16 @@ inline QStringList buildInheritanceChain(const QMetaObject* metaObj) {
  * \param LABEL User-facing display label
  * \param DESC Explanatory description/tooltip
  * \param PRIORITY HwSettingPriority value
+ * \param ... Optional gate spec: a sibling enum setting key followed by the
+ *        QVariant-wrapped enum value it must hold for this array to be
+ *        visible in HwSettingsWidget (see HwArraySettingDef::gateKey).
+ *        Omit for an always-visible array.
  */
-#define REGISTER_HARDWARE_BASE_ARRAY(CLASS, ARRAY_KEY, LABEL, DESC, PRIORITY) \
-    static bool BC_ARRDEF_VAR(CLASS, ARRAY_KEY) = \
+#define REGISTER_HARDWARE_BASE_ARRAY(CLASS, ARRAY_KEY, LABEL, DESC, PRIORITY, ...) \
+    static bool BC_ARRDEF_VAR(CLASS, __COUNTER__) = \
         HardwareRegistry::instance().addBaseArraySettingDef( \
             QString(CLASS::staticMetaObject.className()), \
-            ARRAY_KEY, LABEL, DESC, PRIORITY);
+            ARRAY_KEY, LABEL, DESC, PRIORITY __VA_OPT__(,) __VA_ARGS__);
 
 /*!
  * \brief Add one entry to a base class array setting (call once per entry)
@@ -219,13 +223,17 @@ inline QStringList buildInheritanceChain(const QMetaObject* metaObj) {
  * \param LABEL User-facing display label
  * \param DESC Explanatory description/tooltip
  * \param PRIORITY HwSettingPriority value
+ * \param ... Optional gate spec: a sibling enum setting key followed by the
+ *        QVariant-wrapped enum value it must hold for this array to be
+ *        visible in HwSettingsWidget (see HwArraySettingDef::gateKey).
+ *        Omit for an always-visible array.
  */
-#define REGISTER_HARDWARE_ARRAY(CLASS, ARRAY_KEY, LABEL, DESC, PRIORITY) \
-    static bool BC_ARRDEF_VAR(CLASS, ARRAY_KEY) = \
+#define REGISTER_HARDWARE_ARRAY(CLASS, ARRAY_KEY, LABEL, DESC, PRIORITY, ...) \
+    static bool BC_ARRDEF_VAR(CLASS, __COUNTER__) = \
         HardwareRegistry::instance().addArraySettingDef( \
             findHardwareBaseType(&CLASS::staticMetaObject), \
             QString(CLASS::staticMetaObject.className()), \
-            ARRAY_KEY, LABEL, DESC, PRIORITY);
+            ARRAY_KEY, LABEL, DESC, PRIORITY __VA_OPT__(,) __VA_ARGS__);
 
 /*!
  * \brief Register one entry in an array setting (call once per entry)
@@ -244,6 +252,55 @@ inline QStringList buildInheritanceChain(const QMetaObject* metaObj) {
             QString(CLASS::staticMetaObject.className()), \
             ARRAY_KEY, \
             SettingsStorage::SettingsMap{__VA_ARGS__} \
+        );
+
+/*!
+ * \brief Look up the registered column schema for an array setting that has
+ *        no default entries and may have no stored rows yet (e.g., a table
+ *        populated entirely by CSV import).
+ *
+ * A small side registry, independent of HardwareRegistry's own array-setting
+ * bookkeeping: an array declared via REGISTER_HARDWARE_ARRAY with no
+ * REGISTER_HARDWARE_ARRAY_ENTRY calls carries no entries to derive column
+ * (sub-key) names from, so a caller (HwSettingsWidget::subKeysForArray())
+ * that also finds no stored values yet has nothing to build a column list
+ * from. Registering a schema here gives it one without seeding a spurious
+ * persisted default row.
+ *
+ * \return The sub-key names in registration order, or an empty list if no
+ *         schema was registered for (key, subKey, arrayKey).
+ */
+QStringList hardwareArraySchema(const QString& key, const QString& subKey, const QString& arrayKey);
+
+/*!
+ * \brief Register a fixed column schema for an array setting (see
+ *        hardwareArraySchema()). Called once per array key, typically
+ *        alongside its REGISTER_HARDWARE_ARRAY declaration.
+ *
+ * \param key Hardware type key
+ * \param subKey Implementation key
+ * \param arrayKey The array setting key
+ * \param subKeys Ordered sub-key names forming the array's columns
+ * \return true (always; the return value only exists so the call can sit in a static-initializer expression)
+ */
+bool registerHardwareArraySchema(const QString& key, const QString& subKey,
+                                  const QString& arrayKey, const QStringList& subKeys);
+
+/*!
+ * \brief Register a column schema for an array setting populated at
+ *        runtime rather than via REGISTER_HARDWARE_ARRAY_ENTRY.
+ *
+ * \param CLASS Hardware class name (must already be registered via REGISTER_HARDWARE_ARRAY)
+ * \param ARRAY_KEY String constant for the array key
+ * \param ... Ordered sub-key names (the array's columns)
+ */
+#define REGISTER_HARDWARE_ARRAY_SCHEMA(CLASS, ARRAY_KEY, ...) \
+    static bool BC_ARRSCHEMA_VAR(CLASS, __COUNTER__) = \
+        registerHardwareArraySchema( \
+            findHardwareBaseType(&CLASS::staticMetaObject), \
+            QString(CLASS::staticMetaObject.className()), \
+            ARRAY_KEY, \
+            QStringList{__VA_ARGS__} \
         );
 
 /*!
@@ -328,13 +385,21 @@ inline QStringList buildInheritanceChain(const QMetaObject* metaObj) {
             QVector<CommDefault>{__VA_ARGS__} \
         );
 
-// Helpers for unique static variable names in array macros
+// Helpers for unique static variable names in array macros. BC_ARRDEF_VAR's
+// N argument is expected to be __COUNTER__ passed in from the call site
+// (mirroring BC_ARRENTRY_VAR/BC_COMMDEF_VAR below): a literal __LINE__ pasted
+// directly into this macro's own body would not be macro-expanded before the
+// ## paste, so a class registering more than one array setting needs the
+// caller-supplied, already-expanded counter to keep the generated static
+// variable names distinct.
 #define BC_ARRDEF_CONCAT(a, b) a##b
-#define BC_ARRDEF_VAR(CLASS, KEY) BC_ARRDEF_CONCAT(arraydef_##CLASS##_, __LINE__)
+#define BC_ARRDEF_VAR(CLASS, N) BC_ARRDEF_CONCAT(arraydef_##CLASS##_, N)
 #define BC_ARRENTRY_CONCAT(a, b) a##b
 #define BC_ARRENTRY_VAR(CLASS, N) BC_ARRENTRY_CONCAT(arrayentry_##CLASS##_, N)
 #define BC_COMMDEF_CONCAT(a, b) a##b
 #define BC_COMMDEF_VAR(CLASS, N) BC_COMMDEF_CONCAT(commdef_##CLASS##_, N)
+#define BC_ARRSCHEMA_CONCAT(a, b) a##b
+#define BC_ARRSCHEMA_VAR(CLASS, N) BC_ARRSCHEMA_CONCAT(arrayschema_##CLASS##_, N)
 
 /*!
  * \brief Register hardware implementation using introspection (legacy)

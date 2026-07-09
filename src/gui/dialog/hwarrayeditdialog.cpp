@@ -7,6 +7,15 @@
 #include <QHBoxLayout>
 #include <QDialogButtonBox>
 #include <QLabel>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QFile>
+#include <QTextStream>
+#include <QHash>
+
+#include <data/storage/blackchirpcsv.h>
+
+using namespace Qt::Literals::StringLiterals;
 
 HwArrayEditDialog::HwArrayEditDialog(const QString &label,
                                      const QStringList &subKeys,
@@ -55,6 +64,10 @@ HwArrayEditDialog::HwArrayEditDialog(const QString &label,
     p_removeButton->setEnabled(false);
     connect(p_removeButton, &QPushButton::clicked, this, &HwArrayEditDialog::removeRow);
     hbl->addWidget(p_removeButton);
+
+    auto *importButton = new QPushButton(u"Import CSV..."_s, this);
+    connect(importButton, &QPushButton::clicked, this, &HwArrayEditDialog::importCsv);
+    hbl->addWidget(importButton);
 
     hbl->addStretch(1);
 
@@ -132,6 +145,87 @@ void HwArrayEditDialog::moveDown()
         p_table->setItem(row, col, below);
     }
     p_table->selectRow(row + 1);
+}
+
+void HwArrayEditDialog::importCsv()
+{
+    const QString path = QFileDialog::getOpenFileName(
+        this, u"Import CSV"_s, QString(),
+        u"CSV Files (*.csv);;All Files (*)"_s);
+    if (path.isEmpty())
+        return;
+
+    QFile f(path);
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::warning(this, u"Import CSV"_s,
+                              u"Could not open %1 for reading."_s.arg(path));
+        return;
+    }
+
+    QTextStream in(&f);
+
+    // The header row names the columns; tolerate leading blank lines.
+    QString headerLine;
+    while (!in.atEnd()) {
+        headerLine = in.readLine().trimmed();
+        if (!headerLine.isEmpty())
+            break;
+    }
+    if (headerLine.isEmpty()) {
+        QMessageBox::warning(this, u"Import CSV"_s, u"The selected file is empty."_s);
+        return;
+    }
+
+    // Match header columns against this array's sub-keys, order-independent;
+    // a header column with no matching sub-key is ignored (colToSubKey only
+    // records the columns that do match).
+    const QStringList headerCols = headerLine.split(BC::CSV::del);
+    QHash<int, QString> colToSubKey;
+    for (int col = 0; col < headerCols.size(); ++col) {
+        const QString name = headerCols.at(col).trimmed();
+        if (d_subKeys.contains(name))
+            colToSubKey[col] = name;
+    }
+
+    if (colToSubKey.isEmpty()) {
+        QMessageBox::warning(this, u"Import CSV"_s,
+                              u"None of the header columns matched this table's fields:\n%1"_s
+                                  .arg(d_subKeys.join(u", "_s)));
+        return;
+    }
+
+    // Parse every data row before touching the table, so a read error
+    // partway through never leaves a partial import behind.
+    std::vector<SettingsStorage::SettingsMap> rows;
+    while (!in.atEnd()) {
+        const QString line = in.readLine().trimmed();
+        if (line.isEmpty())
+            continue; // tolerate blank lines, including a trailing one
+
+        const QStringList fields = line.split(BC::CSV::del);
+        SettingsStorage::SettingsMap entry;
+        for (auto it = colToSubKey.cbegin(); it != colToSubKey.cend(); ++it) {
+            const QString value = it.key() < fields.size() ? fields.at(it.key()).trimmed() : QString();
+            entry[it.value()] = value;
+        }
+        rows.push_back(std::move(entry));
+    }
+    f.close();
+
+    // Sub-keys absent from the header are left at their default/empty text,
+    // same as addRow().
+    for (const auto &entry : rows) {
+        int row = p_table->rowCount();
+        p_table->insertRow(row);
+        for (int col = 0; col < d_subKeys.size(); ++col) {
+            auto it = entry.find(d_subKeys.at(col));
+            QString text = (it != entry.end()) ? it->second.toString() : QString();
+            p_table->setItem(row, col, new QTableWidgetItem(text));
+        }
+    }
+
+    if (!rows.empty())
+        p_table->selectRow(p_table->rowCount() - 1);
 }
 
 void HwArrayEditDialog::updateButtonStates()

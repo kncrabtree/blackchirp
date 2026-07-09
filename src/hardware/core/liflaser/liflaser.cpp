@@ -1,13 +1,19 @@
 #include <hardware/core/liflaser/liflaser.h>
 
 #include <hardware/core/hardwareregistration.h>
+#include <data/storage/enumcsvconvert.h>
 
 using namespace BC::Key::LifLaser;
+using namespace BC::LifConv;
 
+// minPos/maxPos are the grating fundamental's native range (cm⁻¹); the old
+// 250-2000 nm span becomes 5000-40000 cm⁻¹ (cm⁻¹ avoids the reciprocal
+// min/max flip nm carries). Dye-laser users think in nm, so the display
+// unit defaults to Nm even though the internal value is always cm⁻¹.
 REGISTER_HARDWARE_BASE(LifLaser,
-    {minPos,   "Min Position",     "Minimum laser wavelength/position",             250.0,      QVariant{}, QVariant{}, HwSettingPriority::Important},
-    {maxPos,   "Max Position",     "Maximum laser wavelength/position",             2000.0,     QVariant{}, QVariant{}, HwSettingPriority::Important},
-    {units,    "Position Units",   "Units for position display (e.g. nm, cm-1)",   QString("nm"), QVariant{}, QVariant{}, HwSettingPriority::Important},
+    {minPos,   "Min Position",     "Minimum laser fundamental position (cm-1)",     5000.0,     QVariant{}, QVariant{}, HwSettingPriority::Important, units},
+    {maxPos,   "Max Position",     "Maximum laser fundamental position (cm-1)",     40000.0,    QVariant{}, QVariant{}, HwSettingPriority::Important, units},
+    {units,    "Position Units",   "Units for position display (e.g. nm, cm-1)",   QVariant::fromValue(LaserUnit::Nm), QVariant{}, QVariant{}, HwSettingPriority::Important},
     {decimals, "Display Decimals", "Number of decimal places for position display", 2,          0,          8,          HwSettingPriority::Optional},
     {hasFl,    "Has Flashlamp",    "Laser has a software-controlled flashlamp",     true,       QVariant{}, QVariant{}, HwSettingPriority::Optional}
 )
@@ -25,33 +31,61 @@ LifLaser::~LifLaser()
 
 double LifLaser::readPosition()
 {
-    double out = readPos();
-    emit laserPosUpdate(out);
-    if(out < 0.0)
+    double fundamental = readPos();
+    if(fundamental < 0.0)
     {
         hwError("Could not read position."_L1);
         emit hardwareFailure();
+        return -1.0;
     }
 
+    double out = d_conversion.laserToOutput(fundamental);
+    emit laserPosUpdate(out);
     return out;
 }
 
 double LifLaser::setPosition(const double pos)
 {
-    using namespace BC::Key::LifLaser;
-    auto minp = get(minPos,200.0);
-    auto maxp = get(maxPos,2000.0);
-    if(pos < minp || pos > maxp)
+    double fundamental = d_conversion.outputToLaser(pos);
+    auto minp = get(minPos,5000.0);
+    auto maxp = get(maxPos,40000.0);
+    // minPos/maxPos are independently round-tripped through the display
+    // unit in HwSettingsWidget; for a reciprocal unit (e.g. nm) the stored
+    // minPos cm⁻¹ can end up larger than maxPos cm⁻¹, so the bound here is
+    // order-agnostic rather than assuming minp < maxp.
+    auto lo = qMin(minp,maxp);
+    auto hi = qMax(minp,maxp);
+    if(fundamental < lo || fundamental > hi)
     {
         auto d = get(decimals,2);
-        hwError(u"Requested position (%1 %2) is outside the allowed range of %3 %2 - %4 %2."_s.arg(pos,0,'f',d).arg(get(units, "nm").toString()).arg(minp,0,'f',d).arg(maxp,0,'f',d));
+        auto u = displayUnit();
+        hwError(u"Requested position (%1 %2) is outside the allowed range of %3 %2 - %4 %2."_s
+                    .arg(fromCm1(fundamental,u),0,'f',d)
+                    .arg(unitLabel(u))
+                    .arg(fromCm1(lo,u),0,'f',d)
+                    .arg(fromCm1(hi,u),0,'f',d));
         emit hardwareFailure();
         return -1.0;
     }
 
-    setPos(pos);
+    setPos(fundamental);
 
     return readPosition();
+}
+
+void LifLaser::setConversion(const LifConversion &c)
+{
+    // Requires the caller to reach this slot on the laser's own thread (a
+    // direct call already on that thread, or a cross-thread invocation via
+    // Qt::BlockingQueuedConnection as HardwareManager::pushLifConversionToLaser()
+    // does) — see the d_conversion comment in the header for why a Direct
+    // cross-thread connection would introduce a silent data race.
+    d_conversion = c;
+}
+
+BC::LifConv::LaserUnit LifLaser::displayUnit() const
+{
+    return BC::CSV::enumFromVariant<LaserUnit>(get(units, QVariant::fromValue(LaserUnit::Nm)), LaserUnit::Nm);
 }
 
 bool LifLaser::readFlashLamp()

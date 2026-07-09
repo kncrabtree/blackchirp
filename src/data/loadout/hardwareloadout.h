@@ -10,6 +10,7 @@
 
 #include <data/experiment/rfconfig.h>
 #include <data/loadout/rfconfigsnapshot.h>
+#include <data/loadout/lifconversionsnapshot.h>
 #include <data/loadout/chirpconfigloadout.h>
 #include <data/loadout/ftmwdigitizerloadout.h>
 
@@ -36,6 +37,33 @@ inline constexpr QLatin1StringView hwKey{"HwKey"};
 inline constexpr QLatin1StringView hwImpl{"Implementation"};
 }
 
+/// \brief Loadout-specific QSettings field keys for a stored LIF conversion-wiring entry.
+///
+/// These name the sub-fields of one \c BC::LifConv::StageWiring record
+/// inside a \c LifPreset's wiring array. Declared here, alongside the
+/// loadout data model, to keep the persistence vocabulary close to the
+/// structs it serializes (mirrors \c BC::Store::RFC above).
+namespace BC::Store::LIFC {
+/// \brief Owning stage's hwKey.
+inline constexpr QLatin1StringView stageKey{"StageKey"};
+/// \brief Whether this stage's output is the LIF excitation beam.
+inline constexpr QLatin1StringView isFinal{"IsFinal"};
+/// \brief \c RefType of the PRIMARY (inputs[0]) reference.
+inline constexpr QLatin1StringView in0Type{"in0Type"};
+/// \brief Target stage's hwKey for a PRIMARY reference of type \c Stage.
+inline constexpr QLatin1StringView in0Key{"in0Key"};
+/// \brief Fixed mixing-beam wavenumber (cm⁻¹) for a PRIMARY reference of type \c Fixed.
+inline constexpr QLatin1StringView in0Fixed{"in0Fixed"};
+/// \brief \c RefType of the SECONDARY (inputs[1]) reference; present only for SFG/DFG stages.
+inline constexpr QLatin1StringView in1Type{"in1Type"};
+/// \brief Target stage's hwKey for a SECONDARY reference of type \c Stage.
+inline constexpr QLatin1StringView in1Key{"in1Key"};
+/// \brief Fixed mixing-beam wavenumber (cm⁻¹) for a SECONDARY reference of type \c Fixed.
+inline constexpr QLatin1StringView in1Fixed{"in1Fixed"};
+/// \brief Active LifLaser hwKey the wiring was captured against.
+inline constexpr QLatin1StringView laserKey{"LaserKey"};
+}
+
 /// \brief Named FTMW operating point owned by a `HardwareLoadout`.
 ///
 /// An `FtmwPreset` aggregates the four pieces of state that fully
@@ -54,6 +82,20 @@ struct FtmwPreset {
     FtmwDigitizerConfig digitizer{""};
     /// \brief Hardware key of the digitizer profile this preset was captured from.
     QString digiHwKey;
+    /// \brief Timestamp of the most recent write to this preset.
+    QDateTime lastModified;
+};
+
+/// \brief Named LIF operating point owned by a `HardwareLoadout`.
+///
+/// Mirrors `FtmwPreset`, but deliberately starts out narrower: a `LifPreset`
+/// currently carries only the frequency-conversion wiring
+/// (`LifConversionSnapshot`). LIF digitizer/processing settings could join
+/// this struct later via the same machinery, with no rework required of
+/// the surrounding `LoadoutManager` API.
+struct LifPreset {
+    /// \brief Persistable conversion-topology wiring for the preset.
+    LifConversionSnapshot conversion;
     /// \brief Timestamp of the most recent write to this preset.
     QDateTime lastModified;
 };
@@ -78,6 +120,10 @@ struct HardwareLoadout {
     std::map<QString, FtmwPreset, std::less<>> ftmwPresets;
     /// \brief Name of the preset that drives initial widget population for this loadout.
     QString currentFtmwPresetName;
+    /// \brief Named LIF presets owned by this loadout, including the `__LastUsed__` sentinel when present.
+    std::map<QString, LifPreset, std::less<>> lifPresets;
+    /// \brief Name of the LIF preset that drives initial widget population for this loadout.
+    QString currentLifPresetName;
     /// \brief Timestamp of the most recent write to this loadout.
     QDateTime lastModified;
 };
@@ -109,6 +155,13 @@ void copyClocksMatching(const RfConfigSnapshot &source,
 
 /// \brief Copy the scalar (non-clock) RF-chain fields from `source` to `dest`.
 void copyRfScalars(const RfConfigSnapshot &source, RfConfigSnapshot &dest);
+
+/// \brief Flatten a `LifConversionSnapshot`'s provenance fields into the scalar persisted under a LIF preset's `lifConversionScalars` group.
+Map  lifConversionScalarsMap(const LifConversionSnapshot &snap);
+/// \brief Flatten a `LifConversionSnapshot`'s wiring into the array persisted under a LIF preset's `lifConversionWiring` group.
+Maps lifConversionWiringArray(const LifConversionSnapshot &snap);
+/// \brief Reconstruct a `LifConversionSnapshot` from the `scalars` map and `wiring` array read out of QSettings.
+LifConversionSnapshot lifConversionSnapshotFromMaps(const Map &scalars, const Maps &wiring);
 
 /// \brief Flatten a hardware map into the array persisted under a loadout's `hardwareMap` group.
 Maps hardwareMapArray(const std::map<QString, QString, std::less<>> &hwMap);

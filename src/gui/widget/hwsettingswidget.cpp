@@ -11,13 +11,20 @@
 #include <QDoubleSpinBox>
 #include <QCheckBox>
 #include <QLineEdit>
+#include <QComboBox>
 #include <QPushButton>
+#include <QMetaEnum>
+#include <QSignalBlocker>
 #include <limits>
 
 #include <gui/widget/scientificspinbox.h>
 #include <gui/widget/settingstable.h>
+#include <gui/widget/enumcombobox.h>
 #include <gui/dialog/hwarrayeditdialog.h>
 #include <data/storage/settingsstorage.h>
+#include <data/storage/enumcsvconvert.h>
+#include <data/lif/lifunits.h>
+#include <hardware/core/hardwareregistration.h>
 
 namespace {
 
@@ -124,12 +131,16 @@ void HwSettingsWidget::populate(const QString &storageKey)
                     w->setToolTip(tooltip);
                     d_scalarWidgets[def.key] = w;
                     p_requiredLayout->addRow(def.label + ":", w);
+                    pushGatedRow(def.gateKey, def.gateValue,
+                                 [this, w](bool visible) { p_requiredLayout->setRowVisible(w, visible); });
                 }
             } else {
                 // Edit mode: read-only text
                 auto *lbl = new QLabel(val.toString(), this);
                 lbl->setToolTip(tooltip);
                 p_requiredLayout->addRow(def.label + ":", lbl);
+                pushGatedRow(def.gateKey, def.gateValue,
+                             [this, lbl](bool visible) { p_requiredLayout->setRowVisible(lbl, visible); });
             }
             hasRequired = true;
             break;
@@ -139,7 +150,9 @@ void HwSettingsWidget::populate(const QString &storageKey)
             if (w) {
                 w->setToolTip(tooltip);
                 d_scalarWidgets[def.key] = w;
-                p_importantTable->addSettingRow(def.label, w, tooltip);
+                int row = p_importantTable->addSettingRow(def.label, w, tooltip);
+                pushGatedRow(def.gateKey, def.gateValue,
+                             [this, row](bool visible) { p_importantTable->setRowHidden(row, !visible); });
             }
             hasImportant = true;
             break;
@@ -150,13 +163,21 @@ void HwSettingsWidget::populate(const QString &storageKey)
             if (w) {
                 w->setToolTip(tooltip);
                 d_scalarWidgets[def.key] = w;
-                p_advancedTable->addSettingRow(def.label, w, tooltip);
+                int row = p_advancedTable->addSettingRow(def.label, w, tooltip);
+                pushGatedRow(def.gateKey, def.gateValue,
+                             [this, row](bool visible) { p_advancedTable->setRowHidden(row, !visible); });
             }
             hasAdvanced = true;
             break;
         }
         }
     }
+
+    // Link display-unit-aware scalar boxes (HwSettingDef::displayUnitKey) to
+    // their sibling LaserUnit combo boxes. A post-pass rather than inline in
+    // the loop above because build order within d_scalarWidgets is not
+    // guaranteed — a box may be built before the combo box it depends on.
+    linkDisplayUnitScalars(settingDefs);
 
     // ---- Array settings ----
     for (auto it = arrayDefs.cbegin(); it != arrayDefs.cend(); ++it) {
@@ -197,8 +218,12 @@ void HwSettingsWidget::populate(const QString &storageKey)
                         }
                     });
                     p_requiredLayout->addRow(def.label + ":", container);
+                    pushGatedRow(def.gateKey, def.gateValue,
+                                 [this, container](bool visible) { p_requiredLayout->setRowVisible(container, visible); });
                 } else {
                     p_requiredLayout->addRow(def.label + ":", lbl);
+                    pushGatedRow(def.gateKey, def.gateValue,
+                                 [this, lbl](bool visible) { p_requiredLayout->setRowVisible(lbl, visible); });
                 }
                 hasRequired = true;
             }
@@ -215,6 +240,12 @@ void HwSettingsWidget::populate(const QString &storageKey)
             break;
         }
     }
+
+    // Resolve every def/array-def with a non-empty gateKey (recorded above
+    // via pushGatedRow) against its sibling gate combo and wire it live. A
+    // post-pass, like linkDisplayUnitScalars(), since a gated row's gate
+    // widget may be built after the row itself within d_scalarWidgets.
+    applyGates();
 
     // Show/hide sections within the Settings tab
     p_requiredGroup->setVisible(hasRequired);
@@ -267,6 +298,30 @@ QWidget *HwSettingsWidget::makeScalarWidget(const HwSettingDef &def,
         auto *cb = new QCheckBox(this);
         cb->setChecked(currentValue.toBool());
         widget = cb;
+    } else if (QMetaType mt = def.defaultValue.metaType(); mt.flags() & QMetaType::IsEnumeration) {
+        // Q_ENUM/Q_ENUM_NS setting (e.g. BC::LifConv::LaserUnit): render a
+        // combobox of the enum's keys via the shared EnumComboBoxBase, whose
+        // item data is the key-name string so the persisted form matches
+        // BC::CSV::enumFromVariant's read side.
+        auto me = BC::CSV::metaEnumFromType(mt);
+        if (me.isValid()) {
+            auto *combo = new EnumComboBoxBase(me, this);
+
+            const QString keyName = (currentValue.metaType() == mt)
+                ? QString::fromUtf8(me.valueToKey(currentValue.toInt()))
+                : currentValue.toString();
+            combo->setCurrentKey(keyName);
+
+            widget = combo;
+        } else {
+            // The meta-enum lookup failed: an empty combobox would read
+            // back an invalid QVariant on save and silently clobber the
+            // previously-stored value, so fall back to a plain text box
+            // seeded with the current value's string form instead.
+            auto *le = new QLineEdit(this);
+            le->setText(currentValue.toString());
+            widget = le;
+        }
     } else {
         auto *le = new QLineEdit(this);
         le->setText(currentValue.toString());
@@ -289,10 +344,186 @@ QVariant HwSettingsWidget::readWidget(QWidget *widget, const QVariant &defaultVa
         return dsb->value();
     if (auto *cb = qobject_cast<QCheckBox*>(widget))
         return cb->isChecked();
+    if (auto *combo = qobject_cast<QComboBox*>(widget))
+        return combo->currentData();
     if (auto *le = qobject_cast<QLineEdit*>(widget))
         return le->text();
 
     return defaultValue;
+}
+
+QVariant HwSettingsWidget::scalarValueForStorage(const HwSettingDef &def) const
+{
+    auto it = d_scalarWidgets.constFind(def.key);
+    if (it == d_scalarWidgets.cend())
+        return def.defaultValue;
+
+    if (!def.displayUnitKey.isEmpty()) {
+        for (const auto &linked : d_unitLinkedScalars) {
+            if (linked.settingKey == def.key)
+                return BC::LifConv::toCm1(linked.box->value(), linked.displayedUnit);
+        }
+    }
+
+    return readWidget(it.value(), def.defaultValue);
+}
+
+// ---------------------------------------------------------------------------
+
+void HwSettingsWidget::linkDisplayUnitScalars(const QVector<HwSettingDef> &settingDefs)
+{
+    using BC::LifConv::LaserUnit;
+
+    auto laserUnitMeta = QMetaEnum::fromType<LaserUnit>();
+
+    for (const auto &def : settingDefs) {
+        if (def.displayUnitKey.isEmpty())
+            continue;
+
+        auto boxIt = d_scalarWidgets.constFind(def.key);
+        auto comboIt = d_scalarWidgets.constFind(def.displayUnitKey);
+        if (boxIt == d_scalarWidgets.cend() || comboIt == d_scalarWidgets.cend())
+            continue;
+
+        // makeScalarWidget() always renders a QMetaType::Double setting as a
+        // ScientificSpinBox (a QAbstractSpinBox, not a QDoubleSpinBox).
+        auto *box = qobject_cast<ScientificSpinBox*>(boxIt.value());
+        auto *combo = qobject_cast<QComboBox*>(comboIt.value());
+        if (!box || !combo)
+            continue;
+
+        // The combo stores the enum's key-name string as item data
+        // (EnumComboBoxBase); resolve it against LaserUnit specifically so a
+        // displayUnitKey pointing at some other enum type is left alone.
+        bool ok = false;
+        int val = laserUnitMeta.keyToValue(combo->currentData().toString().toUtf8().constData(), &ok);
+        if (!ok)
+            continue;
+
+        UnitLinkedScalar linked;
+        linked.box = box;
+        linked.unitCombo = combo;
+        linked.settingKey = def.key;
+        linked.displayedUnit = static_cast<LaserUnit>(val);
+        linked.minCm1 = def.minimum;
+        linked.maxCm1 = def.maximum;
+
+        // box->value() is still the raw registered/stored cm⁻¹ value here —
+        // makeScalarWidget() populated it before this post-pass runs.
+        applyDisplayUnit(linked, linked.displayedUnit, box->value());
+
+        d_unitLinkedScalars.push_back(linked);
+    }
+
+    // Wire live reconversion once the vector's final size for this widget is
+    // known, so the index-captured lambdas below never see a reallocation
+    // from a later push_back.
+    for (std::size_t i = 0; i < d_unitLinkedScalars.size(); ++i) {
+        auto *combo = d_unitLinkedScalars[i].unitCombo;
+        connect(combo, &QComboBox::currentIndexChanged, this, [this, i]() {
+            auto &linked = d_unitLinkedScalars[i];
+
+            bool ok = false;
+            auto me = QMetaEnum::fromType<LaserUnit>();
+            int val = me.keyToValue(linked.unitCombo->currentData().toString().toUtf8().constData(), &ok);
+            if (!ok)
+                return;
+
+            auto nu = static_cast<LaserUnit>(val);
+            if (nu == linked.displayedUnit)
+                return;
+
+            // Preserve the physical value across the unit switch: derive
+            // canonical cm⁻¹ from what the box currently shows in the unit
+            // it was *previously* configured for, then redisplay in the new
+            // unit.
+            double canon = BC::LifConv::toCm1(linked.box->value(), linked.displayedUnit);
+            applyDisplayUnit(linked, nu, canon);
+        });
+    }
+}
+
+void HwSettingsWidget::applyDisplayUnit(UnitLinkedScalar &linked, BC::LifConv::LaserUnit u,
+                                        double canonicalValue)
+{
+    using BC::LifConv::fromCm1;
+
+    // Convert the registered cm⁻¹ bounds to the new display unit; a
+    // reciprocal unit (e.g. nm) inverts min/max order, so sort ascending.
+    // Only apply a bound whose registered cm⁻¹ counterpart is valid —
+    // otherwise leave that side of the box's existing (wide default) range
+    // untouched.
+    double lo = linked.box->minimum();
+    double hi = linked.box->maximum();
+    if (linked.minCm1.isValid() && linked.maxCm1.isValid()) {
+        double a = fromCm1(linked.minCm1.toDouble(), u);
+        double b = fromCm1(linked.maxCm1.toDouble(), u);
+        lo = qMin(a, b);
+        hi = qMax(a, b);
+    } else if (linked.minCm1.isValid()) {
+        lo = fromCm1(linked.minCm1.toDouble(), u);
+    } else if (linked.maxCm1.isValid()) {
+        hi = fromCm1(linked.maxCm1.toDouble(), u);
+    }
+
+    const QSignalBlocker blocker(linked.box);
+    // Bump precision so sub-nm entry is possible; ScientificSpinBox exposes
+    // this as displayPrecision (it is not a QDoubleSpinBox).
+    linked.box->setDisplayPrecision(4);
+    linked.box->setRange(lo, hi);
+    linked.box->setSuffix(u" "_s + BC::LifConv::unitLabel(u));
+    linked.box->setValue(fromCm1(canonicalValue, u));
+    linked.displayedUnit = u;
+}
+
+// ---------------------------------------------------------------------------
+
+void HwSettingsWidget::pushGatedRow(const QString &gateKey, const QVariant &gateValue,
+                                    std::function<void(bool)> setVisible)
+{
+    if (gateKey.isEmpty())
+        return;
+
+    d_gatedRows.push_back({gateKey, gateValue, std::move(setVisible)});
+}
+
+void HwSettingsWidget::applyGates()
+{
+    // Index-based iteration (rather than a range-for capturing a reference)
+    // so the connected lambdas below stay valid even though d_gatedRows is
+    // a member vector — matches the d_unitLinkedScalars precedent in
+    // linkDisplayUnitScalars().
+    for (std::size_t i = 0; i < d_gatedRows.size(); ++i) {
+        const auto &gr = d_gatedRows[i];
+
+        auto comboIt = d_scalarWidgets.constFind(gr.gateKey);
+        if (comboIt == d_scalarWidgets.cend())
+            continue; // gateKey names an absent widget; leave the row visible
+
+        // The gate widget is always the EnumComboBoxBase built by
+        // makeScalarWidget() for a Q_ENUM/Q_ENUM_NS setting; its item data
+        // is the enum's key-name string (see makeScalarWidget()). Cast to
+        // the plain QComboBox base, as linkDisplayUnitScalars() does, since
+        // only QComboBox::currentData() is needed here.
+        auto *combo = qobject_cast<QComboBox*>(comboIt.value());
+        if (!combo)
+            continue; // gateKey names a non-enum widget; leave the row visible
+
+        auto apply = [this, i, combo]() {
+            const auto &g = d_gatedRows[i];
+            // Resolve gateValue (a Q_ENUM/Q_ENUM_NS-typed QVariant) to its
+            // key-name string so it compares against the combo's
+            // currentData() on equal footing, mirroring how
+            // linkDisplayUnitScalars() resolves LaserUnit by name rather
+            // than by underlying int value.
+            const bool visible =
+                BC::CSV::enumKeyName(g.gateValue).toString() == combo->currentData().toString();
+            g.setVisible(visible);
+        };
+
+        apply();
+        connect(combo, &QComboBox::currentIndexChanged, this, apply);
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -328,7 +559,9 @@ void HwSettingsWidget::addArrayTableRow(SettingsTable *table, const HwArraySetti
         }
     });
 
-    table->addSettingRow(def.label, countLabel, btn, settingTooltip(def));
+    int row = table->addSettingRow(def.label, countLabel, btn, settingTooltip(def));
+    pushGatedRow(def.gateKey, def.gateValue,
+                 [table, row](bool visible) { table->setRowHidden(row, !visible); });
 }
 
 QStringList HwSettingsWidget::subKeysForArray(const HwArraySettingDef &def) const
@@ -339,9 +572,17 @@ QStringList HwSettingsWidget::subKeysForArray(const HwArraySettingDef &def) cons
             out.append(k);
     } else {
         auto it = d_arrayValues.constFind(def.key);
-        if (it != d_arrayValues.cend() && !it->empty())
+        if (it != d_arrayValues.cend() && !it->empty()) {
             for (auto const &[k, v] : it->front())
                 out.append(k);
+        } else {
+            // No registered default entries and no stored rows yet (e.g. an
+            // array populated only by CSV import, such as the Sirah FCU's
+            // polyCoeffs/splinePoints): fall back to a registered column
+            // schema so the edit dialog is not a zero-column table before
+            // the first import.
+            out = hardwareArraySchema(d_hwType, d_impl, def.key);
+        }
     }
     return out;
 }
@@ -359,7 +600,7 @@ QHash<QString, QVariant> HwSettingsWidget::values() const
         // in d_scalarWidgets — leave them untouched in storage.
         auto it = d_scalarWidgets.find(def.key);
         if (it != d_scalarWidgets.end())
-            out[def.key] = readWidget(it.value(), def.defaultValue);
+            out[def.key] = scalarValueForStorage(def);
     }
     return out;
 }
@@ -373,18 +614,15 @@ void HwSettingsWidget::saveToStorage(const QString &storageKey) const
 {
     SettingsStorage storage(storageKey, SettingsStorage::Hardware);
 
-    // Scalar settings
-    for (auto it = d_scalarWidgets.cbegin(); it != d_scalarWidgets.cend(); ++it) {
-        // Find the default value for this key from the registry
-        QVariant defaultVal;
-        auto &reg = HardwareRegistry::instance();
-        for (const auto &def : reg.getSettingDefs(d_hwType, d_impl)) {
-            if (def.key == it.key()) {
-                defaultVal = def.defaultValue;
-                break;
-            }
-        }
-        storage.set(it.key(), readWidget(it.value(), defaultVal));
+    // Scalar settings. Iterating the registry defs (rather than
+    // d_scalarWidgets directly) lets scalarValueForStorage() see each
+    // def's displayUnitKey without a second per-key registry lookup, and
+    // keeps this path and values() from being able to diverge.
+    auto &reg = HardwareRegistry::instance();
+    for (const auto &def : reg.getSettingDefs(d_hwType, d_impl)) {
+        if (d_scalarWidgets.constFind(def.key) == d_scalarWidgets.cend())
+            continue;
+        storage.set(def.key, scalarValueForStorage(def));
     }
 
     // Array settings

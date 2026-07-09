@@ -19,9 +19,11 @@
 #include <data/experiment/hardware/optional/ioboard/ioboardconfig.h>
 
 #include <data/lif/lifconfig.h>
+#include <data/lif/lifconversion.h>
 #include <hardware/core/communication/communicationprotocol.h>
 
 class HardwareObject;
+class LifLaser;
 class ClockManager;
 class Experiment;
 class GpibController;
@@ -313,6 +315,15 @@ signals:
     /// \param enabled \c true if the flashlamp is active.
     void lifLaserFlashlampUpdate(bool enabled);
 
+    /// \brief Emitted after configureLifHarmonic() successfully changes a
+    /// stage's harmonic order on hardware.
+    ///
+    /// Intended for the LIF conversion table model to re-read
+    /// LifFreqConversionStage::harmonicOrder() and re-join its node list;
+    /// never emitted on failure (see configureLifHarmonic()).
+    /// \param stageKey Hardware key of the stage whose harmonic order changed.
+    void lifHarmonicApplied(QString stageKey);
+
     // Python hardware signal
 
     /// \brief Emitted after reloadPythonScript() completes for a Python-backed
@@ -554,6 +565,44 @@ public slots:
     /// \return \c true if the laser reported a non-negative achieved position.
     bool setLifLaserPos(double pos);
 
+    /// \brief Moves every active LIF frequency-conversion stage to the local
+    /// input wavenumber implied by the cached LifConversion for the given
+    /// output-beam setpoint, dispatched in parallel and AND-joined.
+    ///
+    /// Resolves each active stage's local setpoint via
+    /// \c d_lifConversion.stageInput() and posts \c setPosition() to the
+    /// stage's own thread with a non-blocking \c Qt::QueuedConnection so all
+    /// stages move concurrently; this thread then blocks only on collecting
+    /// every result, bounded by a per-stage timeout so a stage whose thread
+    /// never processes the queued move cannot hang this thread forever. An
+    /// empty active-stage set (no FCUs configured) is not an error and
+    /// returns \c true immediately. A stage for which \c stageInput()
+    /// returns its negative not-found sentinel is not moved at all and
+    /// counts as a failed stage.
+    ///
+    /// \param outputCm1 Desired output-beam wavenumber (cm⁻¹).
+    /// \return \c true if every active stage reported a successful move.
+    bool setLifConversionStages(double outputCm1);
+
+    /// \brief Applies a gated harmonic-order change to a single LIF
+    /// frequency-conversion stage (the conversion table's "Change harmonic…"
+    /// context-menu action).
+    ///
+    /// Mirrors the applyClocks -> configureClocks channel: the conversion
+    /// table/widget emits \c applyHarmonic(stageKey, n), hopped onto the
+    /// manager thread via \c QMetaObject::invokeMethod at the connection
+    /// site (see \c MainWindow::connectRfConfigWidget for the pattern), and
+    /// this slot drives the change. Dispatches
+    /// \c LifFreqConversionStage::setHarmonicOrder() onto the stage's own
+    /// thread (stages are \c d_threaded), the same way setLifLaserPos()
+    /// dispatches to the laser. Emits lifHarmonicApplied() on success; logs
+    /// via bcError() and emits nothing on failure or if \a stageKey does not
+    /// name an active stage.
+    ///
+    /// \param stageKey Hardware key of the target LifFreqConversionStage.
+    /// \param n Requested harmonic order.
+    void configureLifHarmonic(const QString &stageKey, int n);
+
     /// \brief Starts configuration-mode acquisition on the LIF digitizer.
     /// \param c LIF configuration describing the acquisition parameters.
     void startLifConfigAcq(const LifConfig &c);
@@ -776,6 +825,43 @@ private:
     /// \brief Clock subsystem manager; owned by HardwareManager, lives on the
     /// same thread.
     std::unique_ptr<ClockManager> pu_clockManager;
+
+    /// \brief Cached LIF frequency-conversion topology, assembled from the
+    /// active LifLaser and every active LifFreqConversionStage's node
+    /// descriptor and pushed to the laser via LifLaser::setConversion().
+    /// Refreshed whenever hardware connection completes (updateLifConversion(),
+    /// so live control reflects the topology) and re-validated at experiment
+    /// prep. Identity (output == fundamental) when no stages are active.
+    ///
+    /// \warning Do not refresh this from the live GUI preset
+    /// (updateLifConversion()) while d_experimentInProgress is \c true: the
+    /// copy in place during an experiment is the one validated at prep, and
+    /// a connection-test cycle mid-scan must not silently swap it out from
+    /// under the running acquisition.
+    LifConversion d_lifConversion;
+
+    /// \brief Push the cached d_lifConversion to \a ll, thread-aware (direct
+    /// call when on the laser thread, else a blocking queued invocation).
+    void pushLifConversionToLaser(LifLaser *ll);
+
+    /// \brief Re-assemble d_lifConversion from the active stage settings and
+    /// push it to the active laser, so the live jog/status path uses the
+    /// current topology outside of an experiment. Invoked when connection
+    /// testing completes; a no-op call site should check
+    /// d_experimentInProgress first (see checkStatus()).
+    void updateLifConversion();
+
+    /// \brief \c true from the manager's own beginAcquisition() signal until
+    /// its endAcquisition() signal (each self-connected to an internal
+    /// lambda in the constructor), i.e. for exactly the window during which
+    /// HardwareObjects have been told to enter acquisition mode.
+    ///
+    /// Used by checkStatus() to withhold updateLifConversion()'s live-preset
+    /// refresh while an experiment is running, so a connection-result cycle
+    /// (e.g. a transient hardwareFailure()) cannot overwrite the
+    /// experiment-validated d_lifConversion with whatever preset the GUI
+    /// currently has selected.
+    bool d_experimentInProgress{false};
 
     /// \brief Raw pointer to the single live instance, set in the constructor
     /// and cleared in the destructor, used by constInstance().

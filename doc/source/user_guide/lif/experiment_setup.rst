@@ -25,7 +25,10 @@ When the LIF module is enabled in the Application Configuration (see
 page. The LIF group defines the scan-axis parameters and options for
 the laser scan; channel and gate configuration live separately in the
 :doc:`configuration` (opened from **Hardware → LIF Configuration**),
-where shots-per-point and digitizer settings are also configured.
+where shots-per-point and digitizer settings are also configured. If
+the laser's output passes through one or more optical stages before
+reaching the sample, that frequency-conversion chain is configured on
+the wizard's own **Conversion** tab; see :doc:`conversion`.
 
 .. image:: /_static/user_guide/lif-lif_exp_setup.png
    :align: center
@@ -50,10 +53,14 @@ The scan-axes table holds four parameters for each axis:
   as the other three values change.
 
 The **Delay** column controls the timing axis (in microseconds) — the
-time between the laser pulse and the detection gate, set on a
-dedicated pulse-generator channel. The **Laser** column controls the
+delay between the experiment's trigger event (typically a discharge or
+gas-pulse trigger) and the laser firing, programmed onto the LIF-role
+channel of every active pulse generator. It is distinct from the
+digitizer's detection/integration gate, which is a separate trace
+setting configured on the :doc:`configuration`. The **Laser** column controls the
 wavelength axis; the units displayed (here **nm**) are determined by
-the connected laser hardware driver.
+the connected laser hardware driver, which selects one of four fixed
+display units (cm⁻¹, nm, GHz, or eV).
 
 To perform a fixed-delay acquisition (scanning only the laser
 frequency), set the Delay column's ``Points`` to 1 — the ``End`` row
