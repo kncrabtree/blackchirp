@@ -699,6 +699,17 @@ void LoadoutManager::p_writeLoadout(const HardwareLoadout &loadout)
     sub.discardChanges(false);
     sub.save();
 
+    // putLoadout is a wholesale insert-or-replace of a HardwareLoadout,
+    // including its full preset maps: the incoming loadout may own fewer or
+    // differently-named presets than whatever was previously persisted
+    // under this name. Purge both preset-owning subgroups before rewriting
+    // them from the incoming maps, so a preset dropped from the map does
+    // not leave its old subgroup behind. The name-index arrays written
+    // above are authoritative for iteration, but a stale subgroup can
+    // resurrect if that index is ever rebuilt from raw QSettings contents.
+    SettingsStorage::purgeGroup({key.toString(), loadout.name, ftmwPresetsKey.toString()});
+    SettingsStorage::purgeGroup({key.toString(), loadout.name, lifPresetsKey.toString()});
+
     for (const auto &[pName, preset] : loadout.ftmwPresets)
         p_writeFtmwPreset(loadout.name, pName, preset);
 
