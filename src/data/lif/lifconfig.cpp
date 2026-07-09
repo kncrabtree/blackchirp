@@ -1,6 +1,7 @@
 #include <data/lif/lifconfig.h>
 
 #include <data/lif/liftrace.h>
+#include <data/loghandler.h>
 #include <data/storage/blackchirpcsv.h>
 #include <data/storage/enumcsvconvert.h>
 #include <QDir>
@@ -228,6 +229,27 @@ int countFractionalDigits(const QString& cell)
     }
     return n;
 }
+
+/// Largest fixed-point decimal-place count ever searched for a round-trip
+/// serialization; a double has at most ~17 significant decimal digits, so
+/// nothing genuinely needs more than this to be recoverable exactly.
+constexpr int kMaxRoundTripDecimals = 17;
+
+/// Smallest decimal-place count in [\a minDecimals, kMaxRoundTripDecimals]
+/// such that formatting \a v in fixed-point notation with that many
+/// decimals and parsing it back reproduces \a v exactly. \a minDecimals
+/// (the caller's display-decimals hint) is a floor, not a cap: this only
+/// ever widens the persisted precision, never narrows it below the hint.
+/// Falls back to kMaxRoundTripDecimals if no count in range round-trips.
+int roundTripDecimals(double v, int minDecimals)
+{
+    for(int d = minDecimals; d < kMaxRoundTripDecimals; ++d)
+    {
+        if(QString::number(v,'f',d).toDouble() == v)
+            return d;
+    }
+    return kMaxRoundTripDecimals;
+}
 }
 
 bool LifConfig::isComplete() const
@@ -308,15 +330,27 @@ void LifConfig::storeValues()
     store(dStart,d_delayStartUs,BC::Unit::us);
     store(dStep,d_delayStepUs,BC::Unit::us);
     store(dPoints,d_delayPoints);
-    // Serialize laser positions with locked fractional-digit count so a
-    // future reader can recover the display precision via peekValueString
-    // / countFractionalDigits without a dedicated header field. The unit
-    // sits in column 6 of the same row and is read back the same way.
-    // d_laserPosStart/Step are already in the display LaserUnit, so no
-    // conversion is needed here.
+    // Serialize laser positions with a fractional-digit count derived from
+    // d_laserDecimals so a future reader can recover the display precision
+    // via peekValueString/countFractionalDigits without a dedicated header
+    // field. The unit sits in column 6 of the same row and is read back
+    // the same way. d_laserPosStart/Step are already in the display
+    // LaserUnit, so no conversion is needed here.
+    //
+    // d_laserDecimals is only a DISPLAY hint (seeded from the laser
+    // hardware's display-decimals setting); header.csv is the authoritative
+    // axis. Capping the persisted string at that hint would silently
+    // truncate a step/start finer than the hint (e.g. a 0.005 step at
+    // decimals=2 writes as "0.01"), corrupting the reloaded axis. Widen
+    // the serialized decimal count past the hint whenever the value
+    // actually needs more digits to round-trip exactly; values that
+    // already round-trip at the hint's width are formatted exactly as
+    // before.
     const auto laserUnitStr = BC::LifConv::unitLabel(d_laserUnits);
-    store(lStart,QString::number(d_laserPosStart,'f',d_laserDecimals),laserUnitStr);
-    store(lStep,QString::number(d_laserPosStep,'f',d_laserDecimals),laserUnitStr);
+    const int startDecimals = roundTripDecimals(d_laserPosStart,d_laserDecimals);
+    const int stepDecimals = roundTripDecimals(d_laserPosStep,d_laserDecimals);
+    store(lStart,QString::number(d_laserPosStart,'f',startDecimals),laserUnitStr);
+    store(lStep,QString::number(d_laserPosStep,'f',stepDecimals),laserUnitStr);
     store(dRandom,d_delayRandom);
     store(lPoints,d_laserPosPoints);
     store(shotsPerPoint,d_shotsPerPoint);
@@ -338,20 +372,28 @@ void LifConfig::retrieveValues()
     // digit count across LaserStart and LaserStep.
     const auto laserUnitCell = peekUnit(lStart);
     d_laserUnits = BC::LifConv::LaserUnit::Nm;
+    bool laserUnitRecognized = laserUnitCell.isEmpty(); // empty cell -> silent Nm default
     for(auto u : {BC::LifConv::LaserUnit::Cm1, BC::LifConv::LaserUnit::Nm,
                   BC::LifConv::LaserUnit::GHz, BC::LifConv::LaserUnit::eV})
     {
         if(laserUnitCell == BC::LifConv::unitLabel(u))
         {
             d_laserUnits = u;
+            laserUnitRecognized = true;
             break;
         }
     }
-    const int startDecimals = countFractionalDigits(peekValueString(lStart));
-    const int stepDecimals  = countFractionalDigits(peekValueString(lStep));
-    const int inferred = qMax(startDecimals, stepDecimals);
-    if(inferred > 0)
-        d_laserDecimals = inferred;
+    if(!laserUnitRecognized)
+        bcWarn(u"LifConfig: unrecognized laser unit \"%1\" in header.csv; defaulting to nm."_s.arg(laserUnitCell));
+
+    const QString startValueStr = peekValueString(lStart);
+    const QString stepValueStr = peekValueString(lStep);
+    // Distinguish "inferred 0 fractional digits" (an integer-formatted
+    // axis, e.g. "200") from "nothing to infer from" (both cells empty,
+    // e.g. no LaserStart/LaserStep row was ever written): only the latter
+    // should leave d_laserDecimals at its stale/default seed.
+    if(!startValueStr.isEmpty() || !stepValueStr.isEmpty())
+        d_laserDecimals = qMax(countFractionalDigits(startValueStr), countFractionalDigits(stepValueStr));
     d_laserPosStart = retrieve(lStart,0.0);
     d_laserPosStep = retrieve(lStep,0.0);
     d_laserPosPoints = retrieve(lPoints,0);

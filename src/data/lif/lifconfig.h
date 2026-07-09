@@ -185,11 +185,13 @@ public:
     /*!
      * \brief Set the decimal-precision hint used when serializing the laser position axis.
      *
-     * Controls how LaserStart/LaserStep are formatted in header.csv so the
-     * column-width of fractional digits is preserved on disk. Callers
-     * normally seed this from the LIF laser hardware's display-decimals
-     * setting at acquisition time; on load it is inferred from the
-     * on-disk formatting of LaserStart/LaserStep.
+     * A floor, not an exact width: LaserStart/LaserStep are formatted in
+     * header.csv with at least this many fractional digits, but with more
+     * whenever the actual value needs additional digits to round-trip
+     * exactly (header.csv is the authoritative axis, so precision is never
+     * truncated to this hint). Callers normally seed this from the LIF
+     * laser hardware's display-decimals setting at acquisition time; on
+     * load it is inferred from the on-disk formatting of LaserStart/LaserStep.
      */
     void setLaserDecimals(int decimals);
 

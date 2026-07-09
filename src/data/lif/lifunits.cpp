@@ -36,8 +36,16 @@ double toCm1(double value, LaserUnit u)
             return kInvalid;
         return kNmCm1/value;
     case LaserUnit::GHz:
+        // Affine (multiply, not divide) in both directions, unlike Nm's
+        // reciprocal relation, so there is no division-by-a-caller-value
+        // to guard against; a non-positive input is just an ordinary
+        // (if physically odd) linear result. See fromCm1()'s mirror
+        // branch and tst_lifconversion.cpp::testUnitGuards, which
+        // exercises a negative GHz input and expects the plain linear
+        // value, not a sentinel.
         return value/kGHzPerCm1;
     case LaserUnit::eV:
+        // Same rationale as GHz above: affine, no reciprocal, no guard.
         return value*kCm1PerEv;
     case LaserUnit::Cm1:
     default:
@@ -54,8 +62,10 @@ double fromCm1(double cm1, LaserUnit u)
             return kInvalid;
         return kNmCm1/cm1;
     case LaserUnit::GHz:
+        // See the rationale on toCm1()'s GHz branch: affine, no guard.
         return kGHzPerCm1*cm1;
     case LaserUnit::eV:
+        // See the rationale on toCm1()'s GHz branch: affine, no guard.
         return kEvPerCm1*cm1;
     case LaserUnit::Cm1:
     default:

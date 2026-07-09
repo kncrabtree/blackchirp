@@ -104,10 +104,15 @@ public:
      * \c {false, errorString, {}}) when: any \c InputRef of type \c Stage
      * fails to resolve to a \c Node in \a nodes; a node's input count does
      * not match its \c Op (NHG=1, SFG/DFG=2); the graph does not have
-     * exactly one node with \c isFinal set; the graph contains a cycle; or
-     * the assembled FINAL beam has no net dependence on the tunable laser
+     * exactly one node with \c isFinal set; the graph contains a cycle; the
+     * assembled FINAL beam has no net dependence on the tunable laser
      * source (see the comment in the .cpp on why this is the
-     * currently-representable proxy for "more than one tunable source").
+     * currently-representable proxy for "more than one tunable source");
+     * or any node's PRIMARY input (\c inputs[0]) has no net dependence on
+     * the tunable laser source — that input is what \c stageInput() (and
+     * thus the physical FCU's phase-match motion) tracks, so a stage wired
+     * with the tunable source only in \c inputs[1] would otherwise sit at a
+     * fixed angle while the beam it is supposed to phase-match scans.
      */
     static AssemblyResult assemble(const std::vector<BC::LifConv::Node> &nodes);
 
@@ -133,6 +138,14 @@ public:
      *
      * Returns a negative value if \a stageKey does not name a node in this
      * conversion.
+     *
+     * \note This "unresolved" sentinel is not out-of-band: a DFG node
+     * legitimately computing a negative beam value is indistinguishable
+     * from an unknown \a stageKey by this return value alone. Left as a
+     * plain \c <0 test (rather than e.g. NaN) because callers outside
+     * this class — \c HardwareManager and \c tst_lifconversion.cpp —
+     * already depend on the \c <0 contract; changing the sentinel would
+     * require updating those in lockstep with this class.
      */
     double stageInput(const QString &stageKey, double fundamentalCm1) const;
 
@@ -145,6 +158,9 @@ public:
      * \c laserToOutput(). Used to record each node's resolved affine
      * mapping when snapshotting the topology. Returns a negative value if
      * \a stageKey does not name a node in this conversion.
+     *
+     * \note Same sentinel caveat as \c stageInput(): a legitimately
+     * negative OUTPUT beam is not distinguishable from "unresolved" here.
      */
     double stageOutput(const QString &stageKey, double fundamentalCm1) const;
 

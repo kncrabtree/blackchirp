@@ -190,16 +190,34 @@ void LifConversionTest::testOutputRange()
 
 void LifConversionTest::testOutputRangeInversion()
 {
-    // DFG(Fixed, Laser): output = fixed - fundamental, a direction-reversing
-    // (negative-slope) topology. A larger fundamental yields a SMALLER
-    // output, so outputRange must still return its bounds sorted ascending.
+    // A direction-reversing (negative-slope) FINAL topology whose primary
+    // input still tracks the tunable source, as assembly requires: an SFG
+    // offset stage (f + 1000) and an NHG doubler (2f) both feed a final DFG
+    // whose output is (f + 1000) - 2f = 1000 - f. A larger fundamental yields
+    // a SMALLER output, so outputRange must still return its bounds sorted
+    // ascending. The final stage's inputs[0] is the offset stage, which
+    // carries the tunable dependence.
+    Node offset;
+    offset.stageKey = QStringLiteral("offset");
+    offset.op = Op::SFG;
+    offset.inputs = {InputRef{RefType::Laser, {}, 0.0}, InputRef{RefType::Fixed, {}, 1000.0}};
+    offset.isFinal = false;
+
+    Node doubler;
+    doubler.stageKey = QStringLiteral("doubler");
+    doubler.op = Op::NHG;
+    doubler.n = 2;
+    doubler.inputs = {InputRef{RefType::Laser, {}, 0.0}};
+    doubler.isFinal = false;
+
     Node dfg;
     dfg.stageKey = QStringLiteral("invert");
     dfg.op = Op::DFG;
-    dfg.inputs = {InputRef{RefType::Fixed, {}, 1000.0}, InputRef{RefType::Laser, {}, 0.0}};
+    dfg.inputs = {InputRef{RefType::Stage, QStringLiteral("offset"), 0.0},
+                  InputRef{RefType::Stage, QStringLiteral("doubler"), 0.0}};
     dfg.isFinal = true;
 
-    auto res = LifConversion::assemble({dfg});
+    auto res = LifConversion::assemble({offset, doubler, dfg});
     QVERIFY2(res.ok, qPrintable(res.errorString));
 
     QCOMPARE(res.conversion.laserToOutput(100.0), 900.0);
