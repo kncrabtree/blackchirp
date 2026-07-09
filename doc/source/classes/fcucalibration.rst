@@ -64,6 +64,82 @@ table — one keyed by wavelength, one by position — since the mapping
 must be invertible in both directions and a single spline object is
 keyed by one axis only.
 
+The physical model
+------------------
+
+The ``Physical`` scheme composes three pieces: crystal dispersion
+(Sellmeier equations), the Type-I phase-match condition, and the
+sine-bar drive geometry. The equations below are best-effort literature
+values, fit to the user's own calibration data rather than matched
+bit-for-bit to any vendor curve.
+
+**Sellmeier equations.** The ordinary and extraordinary refractive
+indices come from the crystal's Sellmeier equation (wavelength
+:math:`\lambda` in micrometres) with a linear thermo-optic term applied
+to :math:`n` about a 293-unit reference:
+
+.. math::
+   n(\lambda, T) = \sqrt{n^2(\lambda)} + \frac{dn}{dT}\,(T - 293)
+
+For BBO (Eimerl, 1987), with
+:math:`dn_o/dT = -16.6\times10^{-6}` and
+:math:`dn_e/dT = -9.3\times10^{-6}`:
+
+.. math::
+   n_o^2 = 2.7405 + \frac{0.0184}{\lambda^2 - 0.0179} - 0.0155\,\lambda^2
+
+.. math::
+   n_e^2 = 2.3730 + \frac{0.0128}{\lambda^2 - 0.0156} - 0.0044\,\lambda^2
+
+For KDP (Zernike, 1964), with
+:math:`dn_o/dT = -3.4\times10^{-5}` and
+:math:`dn_e/dT = -2.4\times10^{-5}`:
+
+.. math::
+   n_o^2 = 2.259276 + \frac{0.01008956}{\lambda^2 - 0.012942625}
+           + \frac{13.00522\,\lambda^2}{\lambda^2 - 400}
+
+.. math::
+   n_e^2 = 2.132668 + \frac{0.008637494}{\lambda^2 - 0.012281043}
+           + \frac{3.2279924\,\lambda^2}{\lambda^2 - 400}
+
+The ``temperature`` parameter is in arbitrary units — a dispersion fit
+knob rather than a controlled physical temperature — and enters only
+through the thermo-optic term above.
+
+**Phase-match condition.** For Type-I second-harmonic generation in a
+negative uniaxial crystal, the phase-match angle :math:`\theta_{pm}`
+(between the beam and the crystal optic axis) satisfies
+
+.. math::
+   \sin^2\theta_{pm} =
+   \frac{n_o(\lambda)^{-2} - n_o(\lambda/2)^{-2}}
+        {n_e(\lambda/2)^{-2} - n_o(\lambda/2)^{-2}}
+
+with the indices evaluated at the fundamental :math:`\lambda` and its
+second harmonic :math:`\lambda/2`. ``phaseMatchAngleDeg()`` returns this
+angle (clamped to :math:`[0, 90]` outside the phase-matchable band).
+
+**Sine-bar geometry.** A lead screw drives a sine bar that rotates the
+crystal. With cut angle :math:`\theta_c`, linear offset :math:`L_0`,
+angle offset :math:`\alpha_0`, lever length :math:`\ell`, screw pitch
+:math:`s`, motor resolution :math:`r`, and sign :math:`\sigma = \pm 1`
+from the ``invert`` flag, the forward map from fundamental wavelength to
+motor position :math:`p` is
+
+.. math::
+   \alpha_\mathrm{int} &= \sigma\,(\theta_{pm} - \theta_c) \\
+   \alpha_\mathrm{ext} &= \arcsin\!\big(n_o(\lambda)\,\sin\alpha_\mathrm{int}\big) \\
+   x &= L_0 - \ell\,\sin(\alpha_0 - \alpha_\mathrm{ext}) \\
+   p &= \frac{r}{s}\,x
+
+The :math:`\alpha_\mathrm{int}\!\to\!\alpha_\mathrm{ext}` step is Snell
+refraction at the crystal face (using the ordinary index at the
+fundamental), which makes the cut angle and angle offset independently
+identifiable rather than degenerate. The inverse direction (position to
+wavelength) has no closed form and is a bracketed 1-D root find over the
+crystal's phase-matchable band.
+
 .. highlight:: cpp
 
 API Reference
