@@ -129,13 +129,16 @@ void LifConversionTableModel::rebuildFromWiring(const std::vector<BC::LifConv::S
 
     // A preset is tied to the conversion-stage hardware it was captured
     // against. Each stage it wires is identified by hwKey and must still be
-    // present and still require the arity its saved inputs supply. A wired
-    // hwKey that is no longer active (the stage was removed or relabeled), or
-    // one whose op now needs a different input count, means the saved topology
-    // cannot be reproduced on this hardware. (An op change that keeps the same
-    // arity — SFG<->DFG — is not detectable here, by the snapshot's design:
-    // op is hardware-owned and re-read live.) Rather than coercing the wiring
-    // into a different graph, reject the whole preset and clear to the
+    // present and still require the arity its saved inputs supply. A stage's op
+    // is fixed for the life of its profile (set at creation, re-read live), so
+    // a surviving profile never changes arity on its own. Incompatibility
+    // therefore comes from a profile-lifecycle event: a wired hwKey is no
+    // longer active (its profile was deleted), or was deleted and recreated at
+    // the same type.label under a different op, so the hwKey is present but its
+    // arity no longer matches the saved wiring. (An op change that preserves
+    // arity — SFG<->DFG — is not detectable from the stored wiring alone, since
+    // the snapshot records only inputs/isFinal.) Rather than coercing the
+    // wiring into a different graph, reject the whole preset and clear to the
     // unconfigured default below, so the user restores a compatible preset or
     // builds a new configuration.
     d_incompatibleStages.clear();
