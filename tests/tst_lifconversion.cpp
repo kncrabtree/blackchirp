@@ -168,6 +168,16 @@ void LifConversionTest::testDfgRoundTrip()
     QCOMPARE(res.conversion.laserToOutput(1000.0), 800.0);
     QCOMPARE(res.conversion.outputToLaser(800.0), 1000.0);
     QCOMPARE(res.conversion.stageInput(QStringLiteral("dfg"), 1000.0), 1000.0);
+
+    // Output-beam coefficients are read directly, not sampled: f - 200.
+    const auto [a,b] = res.conversion.stageOutputCoeffs(QStringLiteral("dfg"));
+    QCOMPARE(a, 1.0);
+    QCOMPARE(b, -200.0);
+
+    // Unknown key: unambiguous {0,-1} sentinel evaluating to -1.0.
+    const auto [ua,ub] = res.conversion.stageOutputCoeffs(QStringLiteral("nope"));
+    QCOMPARE(ua, 0.0);
+    QCOMPARE(ub, -1.0);
 }
 
 void LifConversionTest::testOutputRange()

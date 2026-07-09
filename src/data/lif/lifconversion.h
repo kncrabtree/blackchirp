@@ -115,6 +115,16 @@ public:
      * A two-input stage may carry the tunable beam in either slot; \c
      * stageInput() reports whichever input tracks the fundamental, so there
      * is no requirement that the tunable beam be \c inputs[0].
+     *
+     * For a \c DFG the output is the difference beam \c |in0 - in1|, held as
+     * a signed affine expression rather than an absolute value (so the
+     * inverse and the persisted coefficients stay exact). A valid crystal
+     * never operates across a zero-crossing, so the higher-frequency input is
+     * fixed for the whole scan and must be wired as \c inputs[0]; the
+     * difference is then the physical (non-negative) beam. \c assemble() has
+     * no tuning range and cannot check this, so the construction UI warns
+     * when a stage's output beam would reach zero or below over the laser's
+     * range (see \c stageOutputCoeffs()).
      */
     static AssemblyResult assemble(const std::vector<BC::LifConv::Node> &nodes);
 
@@ -157,6 +167,28 @@ public:
      * physical beam wavenumber is never negative).
      */
     double stageOutput(const QString &stageKey, double fundamentalCm1) const;
+
+    /*!
+     * \brief Return the affine coefficients \c {a, b} of the OUTPUT beam
+     *        produced by the node named \a stageKey: wavenumber =
+     *        \c a*fundamentalCm1 + b (cm⁻¹).
+     *
+     * These are the exact values fixed at \c assemble() time — the same ones
+     * \c stageOutput() evaluates — so a caller that persists or analyzes a
+     * stage's mapping reads them directly instead of reconstructing them from
+     * sampled evaluations. Returns \c {0.0, -1.0} for an unknown \a stageKey;
+     * that sentinel is unambiguous (a physical beam is never negative) and
+     * makes \c stageOutput() return \c -1.0 at any fundamental for the same
+     * key.
+     */
+    std::pair<double,double> stageOutputCoeffs(const QString &stageKey) const;
+
+    /*!
+     * \brief Return the affine coefficients \c {a, b} of the tunable-tracking
+     *        INPUT beam seen by the node named \a stageKey (see \c
+     *        stageInput()). Returns \c {0.0, -1.0} for an unknown \a stageKey.
+     */
+    std::pair<double,double> stageInputCoeffs(const QString &stageKey) const;
 
     /*!
      * \brief Return the FINAL-beam bounds (cm⁻¹) corresponding to the

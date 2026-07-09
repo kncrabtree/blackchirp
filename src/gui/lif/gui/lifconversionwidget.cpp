@@ -419,6 +419,25 @@ void LifConversionWidget::updatePreview()
             const auto hi = s.get(BC::Key::LifLaser::maxPos, 40000.0);
             const auto [outLo, outHi] = result.conversion.outputRange(lo, hi);
             text += u"\nOutput range: %1 – %2 cm⁻¹"_s.arg(outLo,0,'f',3).arg(outHi,0,'f',3);
+
+            // A physical beam is positive everywhere in the scan. A stage
+            // whose output reaches zero or below over the laser range is an
+            // invalid (zero-crossing) configuration that assemble() cannot
+            // catch without the range — most often a DFG with the
+            // higher-frequency beam wired as inputs[1] instead of inputs[0].
+            QStringList nonPositive;
+            for(const auto &node : p_model->nodes())
+            {
+                const auto [a,b] = result.conversion.stageOutputCoeffs(node.stageKey);
+                const double beamLo = a*lo + b;
+                const double beamHi = a*hi + b;
+                if((beamLo < beamHi ? beamLo : beamHi) <= 0.0)
+                    nonPositive.append(node.stageKey);
+            }
+            if(!nonPositive.isEmpty())
+                text += u"\nWarning: output beam of %1 reaches zero or below over "
+                         "the tuning range — wire the higher-frequency beam as the "
+                         "first DFG input."_s.arg(nonPositive.join(", "_L1));
         }
     }
 

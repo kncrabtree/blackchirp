@@ -290,22 +290,34 @@ double LifConversion::outputToLaser(double outputCm1) const
     return (outputCm1 - d_output.b)/d_output.a;
 }
 
-double LifConversion::stageInput(const QString &stageKey, double fundamentalCm1) const
+std::pair<double,double> LifConversion::stageInputCoeffs(const QString &stageKey) const
 {
     auto it = d_primaryInput.find(stageKey);
     if(it == d_primaryInput.end())
-        return -1.0; // stageKey names no node in this conversion. A physical
-                     // beam is never negative, so this is unambiguous.
-    return it->second.a*fundamentalCm1 + it->second.b;
+        return {0.0,-1.0}; // stageKey names no node in this conversion. A
+                           // physical beam is never negative, so evaluating
+                           // this sentinel to -1.0 is unambiguous.
+    return {it->second.a, it->second.b};
+}
+
+std::pair<double,double> LifConversion::stageOutputCoeffs(const QString &stageKey) const
+{
+    auto it = d_stageOutput.find(stageKey);
+    if(it == d_stageOutput.end())
+        return {0.0,-1.0}; // See stageInputCoeffs().
+    return {it->second.a, it->second.b};
+}
+
+double LifConversion::stageInput(const QString &stageKey, double fundamentalCm1) const
+{
+    const auto [a,b] = stageInputCoeffs(stageKey);
+    return a*fundamentalCm1 + b;
 }
 
 double LifConversion::stageOutput(const QString &stageKey, double fundamentalCm1) const
 {
-    auto it = d_stageOutput.find(stageKey);
-    if(it == d_stageOutput.end())
-        return -1.0; // stageKey names no node in this conversion. A physical
-                     // beam is never negative, so this is unambiguous.
-    return it->second.a*fundamentalCm1 + it->second.b;
+    const auto [a,b] = stageOutputCoeffs(stageKey);
+    return a*fundamentalCm1 + b;
 }
 
 std::pair<double,double> LifConversion::outputRange(double laserMinCm1, double laserMaxCm1) const

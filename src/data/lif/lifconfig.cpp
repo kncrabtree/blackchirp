@@ -78,10 +78,9 @@ bool LifConfig::writeTopologyFile() const
     {
         const auto &node = d_conversionNodes.at(i);
 
-        // Per-node output beam: value = A*fundamental + B (cm-1). Recover the
-        // slope/intercept from two evaluations of the assembled conversion.
-        const double b = d_conversion.stageOutput(node.stageKey,0.0);
-        const double a = d_conversion.stageOutput(node.stageKey,1.0) - b;
+        // Per-node output beam: value = A*fundamental + B (cm-1), read
+        // directly from the assembled conversion (fixed at assembly time).
+        const auto [a,b] = d_conversion.stageOutputCoeffs(node.stageKey);
 
         BlackchirpCSV::writeLine(t,{
             static_cast<int>(i),
