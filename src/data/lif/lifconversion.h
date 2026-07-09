@@ -41,7 +41,10 @@ struct AffineCoeffs {
 }
 
 /*!
- * \brief One ordered input to a \c Node. \c inputs[0] is the PRIMARY beam.
+ * \brief One ordered input to a \c Node. For a two-input \c Op the beam
+ *        carrying the tunable dependence may occupy either slot; \c assemble()
+ *        identifies it. \c inputs[0] is used as the primary only to
+ *        disambiguate a stage whose inputs are all tunable or all Fixed.
  */
 struct InputRef {
     RefType type{RefType::Laser}; ///< Kind of reference.
@@ -104,15 +107,14 @@ public:
      * \c {false, errorString, {}}) when: any \c InputRef of type \c Stage
      * fails to resolve to a \c Node in \a nodes; a node's input count does
      * not match its \c Op (NHG=1, SFG/DFG=2); the graph does not have
-     * exactly one node with \c isFinal set; the graph contains a cycle; the
-     * assembled FINAL beam has no net dependence on the tunable laser
+     * exactly one node with \c isFinal set; the graph contains a cycle; or
+     * the assembled FINAL beam has no net dependence on the tunable laser
      * source (see the comment in the .cpp on why this is the
-     * currently-representable proxy for "more than one tunable source");
-     * or any node's PRIMARY input (\c inputs[0]) has no net dependence on
-     * the tunable laser source — that input is what \c stageInput() (and
-     * thus the physical FCU's phase-match motion) tracks, so a stage wired
-     * with the tunable source only in \c inputs[1] would otherwise sit at a
-     * fixed angle while the beam it is supposed to phase-match scans.
+     * currently-representable proxy for "more than one tunable source").
+     *
+     * A two-input stage may carry the tunable beam in either slot; \c
+     * stageInput() reports whichever input tracks the fundamental, so there
+     * is no requirement that the tunable beam be \c inputs[0].
      */
     static AssemblyResult assemble(const std::vector<BC::LifConv::Node> &nodes);
 
@@ -131,21 +133,15 @@ public:
     double outputToLaser(double outputCm1) const;
 
     /*!
-     * \brief Return the local PRIMARY-input-beam wavenumber (cm⁻¹,
-     *        \c inputs[0]) seen by the node named \a stageKey, for a given
-     *        grating fundamental (cm⁻¹) — what that FCU calibrates its
-     *        phase-match motion against.
+     * \brief Return the local tunable-tracking input-beam wavenumber (cm⁻¹)
+     *        seen by the node named \a stageKey, for a given grating
+     *        fundamental (cm⁻¹) — what that FCU calibrates its phase-match
+     *        motion against. This is whichever input carries the tunable
+     *        dependence, not necessarily \c inputs[0].
      *
-     * Returns a negative value if \a stageKey does not name a node in this
-     * conversion.
-     *
-     * \note This "unresolved" sentinel is not out-of-band: a DFG node
-     * legitimately computing a negative beam value is indistinguishable
-     * from an unknown \a stageKey by this return value alone. Left as a
-     * plain \c <0 test (rather than e.g. NaN) because callers outside
-     * this class — \c HardwareManager and \c tst_lifconversion.cpp —
-     * already depend on the \c <0 contract; changing the sentinel would
-     * require updating those in lockstep with this class.
+     * Returns \c -1.0 if \a stageKey does not name a node in this conversion.
+     * A physical beam wavenumber is never negative, so this sentinel is
+     * unambiguous.
      */
     double stageInput(const QString &stageKey, double fundamentalCm1) const;
 
@@ -156,11 +152,9 @@ public:
      *
      * Symmetric partner to \c stageInput(): for the FINAL node this equals
      * \c laserToOutput(). Used to record each node's resolved affine
-     * mapping when snapshotting the topology. Returns a negative value if
-     * \a stageKey does not name a node in this conversion.
-     *
-     * \note Same sentinel caveat as \c stageInput(): a legitimately
-     * negative OUTPUT beam is not distinguishable from "unresolved" here.
+     * mapping when snapshotting the topology. Returns \c -1.0 if \a stageKey
+     * does not name a node in this conversion (an unambiguous sentinel, as a
+     * physical beam wavenumber is never negative).
      */
     double stageOutput(const QString &stageKey, double fundamentalCm1) const;
 
@@ -181,7 +175,7 @@ public:
 private:
     bool d_identity{true};   ///< \c true iff assembled from an empty node list (or default-constructed).
     BC::LifConv::detail::AffineCoeffs d_output; ///< FINAL beam coefficients vs. the fundamental.
-    std::map<QString,BC::LifConv::detail::AffineCoeffs> d_primaryInput; ///< Per-stage PRIMARY-input (inputs[0]) coefficients.
+    std::map<QString,BC::LifConv::detail::AffineCoeffs> d_primaryInput; ///< Per-stage tunable-tracking input coefficients (see stageInput()).
     std::map<QString,BC::LifConv::detail::AffineCoeffs> d_stageOutput; ///< Per-stage OUTPUT-beam coefficients.
 };
 

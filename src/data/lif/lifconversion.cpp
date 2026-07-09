@@ -81,6 +81,13 @@ bool resolveNode(const QString &key, const std::map<QString,Node> &nodes,
         if(node.op == Op::SFG)
             result = Coeffs{c0.a+c1.a, c0.b+c1.b};
         else
+            // The DFG output beam is the difference frequency |in0 - in1|.
+            // Kept as a signed affine expression (not an absolute value) so
+            // laserToOutput()'s inverse and the two-point coefficient recovery
+            // in LifConfig stay exact; a well-formed DFG wires the larger beam
+            // as inputs[0] so the difference is the physical (non-negative)
+            // beam. Whether inputs[0] is the Fixed or the tunable beam sets the
+            // sign of the resulting slope.
             result = Coeffs{c0.a-c1.a, c0.b-c1.b};
     }
 
@@ -203,26 +210,15 @@ LifConversion::AssemblyResult LifConversion::assemble(const std::vector<BC::LifC
         return result;
     }
 
-    // Scope boundary (plan §1): the day-1 solver supports exactly one
-    // tunable scan source. The Node/InputRef schema has no way to name a
-    // second, independent tunable source in the first place (RefType::Laser
-    // always denotes the single active LifLaser's fundamental, wherever it
-    // is referenced in the graph), so the only violation representable
-    // today is the FINAL beam ending up with zero net dependence on that
-    // fundamental — e.g. a DFG of two equal multiples of it, or a graph
-    // built entirely from Fixed sources. Reject that here as "not exactly
-    // one tunable source"; genuine support for a second, independently
-    // tunable source requires both a richer InputRef/RefType and a
-    // multi-axis LifConfig acquisition model, deferred as a unit.
-    //
-    // The equality test is exact (not epsilon-bounded) because every
-    // Coeffs.a reachable here is built solely from resolveNode()'s
-    // integer NHG harmonic orders and the Laser/Fixed base cases (slope
-    // 1.0 or 0.0), summed and differenced — never scaled by a fraction or
-    // ratio. That composition is always an exact integer multiple of the
-    // base slope, so a zero net slope is a true zero, not a near-zero
-    // rounding residue. Revisit with an epsilon only if a fractional or
-    // ratio Op is ever introduced.
+    // Day-1 scope: exactly one tunable scan source. RefType::Laser always
+    // denotes the single active LifLaser fundamental wherever it appears, so
+    // the only representable violation is the FINAL beam having zero net
+    // dependence on it — e.g. a DFG of two equal multiples of it, or an
+    // all-Fixed graph. The equality test is exact (not epsilon-bounded):
+    // every Coeffs.a here is an integer combination of NHG harmonic orders
+    // and the Laser/Fixed base slopes (1.0/0.0), never scaled by a fraction
+    // or ratio, so a zero net slope is a true zero rather than a rounding
+    // residue. Revisit with an epsilon only if a fractional Op is added.
     if(outputCoeffs.a == 0.0)
     {
         result.errorString = u"Conversion graph FINAL beam has no net dependence on the "
@@ -235,27 +231,35 @@ LifConversion::AssemblyResult LifConversion::assemble(const std::vector<BC::LifC
     conv.d_output = outputCoeffs;
     for(const auto &[key,node] : nodeMap)
     {
+        // stageInput() reports the beam this stage's FCU calibrates its
+        // phase-match motion against: the input that carries the tunable
+        // dependence, in whichever slot it was wired. Take the first input
+        // whose resolved beam varies with the fundamental; a stage with only
+        // Fixed inputs does not tune, so its (constant) inputs[0] is used.
+        // The tunable beam need not be inputs[0] — an SFG/DFG may carry it in
+        // either slot (e.g. DFG(Fixed, Laser)), and the affine composition in
+        // resolveNode() is order-correct regardless.
         Coeffs primary;
-        if(!resolveRef(node.inputs[0],nodeMap,cache,primary,err))
+        bool havePrimary = false;
+        for(const auto &input : node.inputs)
         {
-            // Unreachable given the validation above; kept defensive.
-            result.errorString = err;
-            return result;
-        }
-
-        // A node's PRIMARY input is what stageInput() reports and thus what
-        // the physical FCU calibrates its phase-match motion against. If it
-        // has no net dependence on the tunable laser source (e.g. a stage
-        // authored with the tunable in inputs[1] and a Fixed inputs[0]),
-        // the FCU would sit at one fixed angle for the whole scan while the
-        // beam it phase-matches actually varies. Same exact-zero rationale
-        // as the FINAL-beam check above.
-        if(primary.a == 0.0)
-        {
-            result.errorString = u"Stage \"%1\": PRIMARY input (inputs[0]) has no net "
-                                  "dependence on the tunable laser source; wire the "
-                                  "tunable-derived beam as inputs[0]."_s.arg(key);
-            return result;
+            Coeffs c;
+            if(!resolveRef(input,nodeMap,cache,c,err))
+            {
+                // Unreachable given the validation above; kept defensive.
+                result.errorString = err;
+                return result;
+            }
+            if(!havePrimary)
+            {
+                primary = c;
+                havePrimary = true;
+            }
+            if(c.a != 0.0)
+            {
+                primary = c;
+                break;
+            }
         }
         conv.d_primaryInput.emplace(key,primary);
 
@@ -290,8 +294,8 @@ double LifConversion::stageInput(const QString &stageKey, double fundamentalCm1)
 {
     auto it = d_primaryInput.find(stageKey);
     if(it == d_primaryInput.end())
-        return -1.0; // Unresolved-key sentinel; see the \note on the declaration
-                     // for why this collides with a legitimately negative beam.
+        return -1.0; // stageKey names no node in this conversion. A physical
+                     // beam is never negative, so this is unambiguous.
     return it->second.a*fundamentalCm1 + it->second.b;
 }
 
@@ -299,8 +303,8 @@ double LifConversion::stageOutput(const QString &stageKey, double fundamentalCm1
 {
     auto it = d_stageOutput.find(stageKey);
     if(it == d_stageOutput.end())
-        return -1.0; // Unresolved-key sentinel; see the \note on the declaration
-                     // for why this collides with a legitimately negative beam.
+        return -1.0; // stageKey names no node in this conversion. A physical
+                     // beam is never negative, so this is unambiguous.
     return it->second.a*fundamentalCm1 + it->second.b;
 }
 
