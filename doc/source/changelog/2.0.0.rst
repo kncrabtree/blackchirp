@@ -124,6 +124,11 @@ Hardware configuration
   digitizers, FTMW digitizers, clocks, chirp sources, and pulse
   generators) were migrated onto the registry. See
   :doc:`/user_guide/hwdialog`.
+- Added value-gated visibility to the hardware settings dialog: a
+  setting can be shown only when a sibling enumerated setting holds a
+  given value, and an array-valued setting can be populated from a
+  semicolon-delimited file through a new **Import CSV…** action in the
+  array editor. See :doc:`/user_guide/hwdialog`.
 - Added per-object hardware threading configuration to the
   hardware profile. See
   :doc:`/user_guide/hardware_config/profiles`.
@@ -284,6 +289,18 @@ LIF
   acquisition (omitted when no conversion chain is configured), read
   automatically by ``blackchirp-viewer`` and by the ``blackchirp``
   Python module. See :doc:`/user_guide/data_storage/lif`.
+- Added selectable calibration schemes for the Sirah FCU
+  doubling-crystal tuning: a best-effort BBO/KDP second-harmonic
+  phase-matching model, or an imported polynomial or spline curve fit
+  offline, replacing the placeholder grating math. Fitting is done
+  outside Blackchirp with the ``python/tools/`` scripts in the source
+  repository. See :doc:`/user_guide/hw/liffreqconversionstage`.
+- Added a standalone LIF Configuration dialog carrying both the
+  acquisition and frequency-conversion editors, with a prompt to save
+  conversion changes as a preset, and a LIF Preset menu that switches
+  the active conversion preset from the menu bar — mirroring the FTMW
+  configuration dialog and preset menu. See
+  :doc:`/user_guide/lif/conversion`.
 
 Logging and diagnostics
 -----------------------

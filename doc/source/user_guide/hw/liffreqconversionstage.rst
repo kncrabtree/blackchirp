@@ -128,9 +128,11 @@ Offline Calibration Workflow
 
 Fitting parameters or curves for any of the three schemes happens
 outside Blackchirp, using the standalone scripts under ``python/tools/``
-in the Blackchirp repository (not part of the installable ``blackchirp``
-Python package — see that directory's ``README.md`` for the full
-command-line reference):
+in the Blackchirp source repository on GitHub. These are a
+specialty offline utility: they are **not** bundled with the Blackchirp
+application download and **not** part of the installable ``blackchirp``
+Python package — obtain them by cloning or downloading the repository.
+See that directory's ``README.md`` for the full command-line reference:
 
 #. **Record a calibration run** with ``fcu_measure.py``. At each
    fundamental wavelength, hand-tune the doubling crystal at the bench
