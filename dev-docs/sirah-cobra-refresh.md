@@ -83,16 +83,21 @@ roadmap's manager-wide async delivery; and no automated `HardwareManager`
 integration test exists for the fan-out (a harness needs a friend-class seam
 to author stage descriptors plus a multi-device async setup).
 
-### Next steps
+### Follow-on work (landed)
 
-- **UI development & topology storage refactor** — planned in
-  [`lif-conversion-preset.md`](lif-conversion-preset.md), which **supersedes
-  §1/§7 below**: the conversion topology moves from per-device hardware
+- **UI development & topology storage refactor** — implemented per
+  [`lif-conversion-preset.md`](lif-conversion-preset.md) (which **supersedes
+  §1/§7 below**): the conversion topology moved from per-device hardware
   settings to a per-experiment `LifConfig`, edited in a table and sourced via
   the Preset system (mirroring FTMW `RfConfig`/`FtmwPreset`). `op` (device
   identity) and `harmonic` (gated setting) stay on the hardware; only the DAG
-  wiring + `FINAL` marker become per-experiment.
-- **Documentation** — bring the published Sphinx docs up to date with the LIF
+  wiring + `FINAL` marker are per-experiment. A standalone `LifConfigDialog`
+  and a LIF Preset menu were added afterward for full FTMW parity.
+- **FCU calibration** — the `SirahFcu` placeholder grating math was replaced
+  with selectable SHG/polynomial/spline calibration schemes and an offline
+  fitting workflow; see
+  [`sirah-fcu-calibration.md`](sirah-fcu-calibration.md).
+- **Documentation** — the published Sphinx docs now cover the LIF
   frequency-conversion model, the cm⁻¹ internal representation and unit
   boundaries, and the new hardware types (`LifFreqConversionStage`,
   `SirahFcu`).

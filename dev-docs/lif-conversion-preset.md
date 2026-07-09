@@ -10,10 +10,24 @@ prep from per-device node descriptors). The already-landed work —
 `10db1824`) — stays; this refactor rewires the source of truth and adds the
 preset + table UI.
 
+## Implementation status
+
+**Fully implemented on `feature/sirah-cobra-refresh`** (not yet merged; only
+end-user/bench testing remains, which does not block the merge). The C-1…C-8
+contract below landed across commits `9c80ab8a`, `6d953dd9`, `9c924993`,
+`298aee45`, `c35fac19`, `44c210cb`, and `9a6e584a` (snapshot/preset/
+`LoadoutManager` API + `LifConfig` topology API; hardware strip + assembly
+helpers; table model/widget; `HardwareManager` prep rewire + harmonic channel;
+tabbed page host + `enableLif` seeding; and the accept-time `commitLifPreset`
+prompt). Follow-on work added a standalone `LifConfigDialog` and a LIF Preset
+menu (FTMW parity beyond C-8's experiment-setup tab). The
+"Orientation"/"Task breakdown"/"contract" sections below are retained as the
+as-built design record.
+
 ## Orientation (for a fresh orchestrator session)
 
-- **Status:** plan approved, **implementation not started** — no code from this
-  refactor exists yet. Branch `feature/sirah-cobra-refresh`.
+- **Status:** **implemented** on branch `feature/sirah-cobra-refresh` (see
+  Implementation status above); the breakdown below is the as-built record.
 - **Already landed, and kept as-is:** commit `10db1824` (per-experiment
   `liftopology.csv` write + `LifConversion::stageOutput`). This refactor makes
   `LifConfig` the *authoritative* source that file is written from, and adds a

@@ -191,9 +191,11 @@ the manual's calibration procedure describes.
 
 ## Open notes
 
-- Scheme-dependent settings all render at once (no conditional
-  visibility in `HwSettingsWidget`); acceptable, like the existing gated
-  `harmonic`. A scheme-aware panel is a possible later polish.
+- Scheme-dependent settings are gated: `HwSettingDef`/`HwArraySettingDef`
+  carry an optional gate key/value, and `HwSettingsWidget` shows only the
+  active scheme's settings (crystal/invert/geometry for Physical, the
+  coefficient table for Polynomial, the point table for Spline), following
+  the `displayUnitKey` linkage precedent.
 - Near-90° crystals (deep-UV `SHG-205`/`THG-200` BBO at 77°) have steep
   curves where a low-order polynomial is a poor proxy; the physical model
   or a dense spline is the answer there. The FCU's day-1 BBO doubler is

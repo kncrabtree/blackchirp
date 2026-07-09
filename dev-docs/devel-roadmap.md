@@ -40,9 +40,14 @@ hardware type, add a hardware-independent conversion topology to the
 `LifLaser` base so the LIF axis reads in the final (converted)
 wavelength, and migrate the driver's ad-hoc settings to the registry.
 Full plan (which supersedes the earlier "Approach A" multi-port
-direction) in [sirah-cobra-refresh.md](sirah-cobra-refresh.md); pick it
-up once the new instrument is on the bench and the 2.0.0-alpha packaging
-work is finished.
+direction) in [sirah-cobra-refresh.md](sirah-cobra-refresh.md).
+**Implemented on `feature/sirah-cobra-refresh`** — the driver split, the
+hardware-independent conversion topology, the per-experiment
+topology/preset refactor
+([lif-conversion-preset.md](lif-conversion-preset.md)), and the FCU
+calibration schemes ([sirah-fcu-calibration.md](sirah-fcu-calibration.md))
+have all landed. Only end-user/bench testing remains (not merge-blocking;
+likely folded into beta).
 
 ### Sirah FCU calibration schemes
 
