@@ -28,41 +28,82 @@
 #include <QInputDialog>
 #include <QSet>
 
+#include <map>
+#include <optional>
+#include <set>
+#include <tuple>
+#include <utility>
+
 using namespace Qt::StringLiterals;
 
-// Returns the set of hwKeys that FTMW presets care about (AWG, FtmwDigitizer, Clock).
-// Implementations are intentionally excluded; only the key identity matters for drift.
-static QSet<QString> ftmwRelevantHwKeys(const std::map<QString, QString, std::less<>> &hwMap)
+// The hardware types whose members an FTMW preset depends on (AWG, FtmwDigitizer, Clock).
+static const QSet<QString> &ftmwRelevantTypes()
 {
-    static const QSet<QString> relevantTypes {
+    static const QSet<QString> types {
         FtmwDigitizer::staticMetaObject.className(),
         AWG::staticMetaObject.className(),
         Clock::staticMetaObject.className()
     };
-    QSet<QString> keys;
-    for (const auto &[hwKey, impl] : hwMap) {
-        auto [type, label] = BC::Key::parseKey(hwKey);
-        if (relevantTypes.contains(type))
-            keys.insert(hwKey);
-    }
-    return keys;
+    return types;
 }
 
-// Returns the set of hwKeys that LIF presets care about (LifLaser, LifFreqConversionStage).
-// Implementations are intentionally excluded; only the key identity matters for drift.
-static QSet<QString> lifRelevantHwKeys(const std::map<QString, QString, std::less<>> &hwMap)
+// The hardware types whose members a LIF preset depends on (LifLaser, LifFreqConversionStage).
+static const QSet<QString> &lifRelevantTypes()
 {
-    static const QSet<QString> relevantTypes {
+    static const QSet<QString> types {
         LifLaser::staticMetaObject.className(),
         LifFreqConversionStage::staticMetaObject.className()
     };
-    QSet<QString> keys;
-    for (const auto &[hwKey, impl] : hwMap) {
+    return types;
+}
+
+// Returns the (hwKey -> identity) members of a loadout whose TYPE is relevant to the
+// given family. The type filter reads hardwareMap; the identity token reads the
+// parallel hardwareIdentity map (absent entries yield an empty identity, treated as a
+// wildcard by relevantMembersDrifted).
+static std::map<QString, QString> relevantIdentities(const HardwareLoadout &lo,
+                                                     const QSet<QString> &relevantTypes)
+{
+    std::map<QString, QString> members;
+    for (const auto &[hwKey, impl] : lo.hardwareMap) {
         auto [type, label] = BC::Key::parseKey(hwKey);
-        if (relevantTypes.contains(type))
-            keys.insert(hwKey);
+        if (!relevantTypes.contains(type))
+            continue;
+        QString identity;
+        if (auto it = lo.hardwareIdentity.find(hwKey); it != lo.hardwareIdentity.end())
+            identity = it->second;
+        members.emplace(hwKey, identity);
     }
-    return keys;
+    return members;
+}
+
+static std::map<QString, QString> ftmwRelevantIdentities(const HardwareLoadout &lo)
+{
+    return relevantIdentities(lo, ftmwRelevantTypes());
+}
+
+static std::map<QString, QString> lifRelevantIdentities(const HardwareLoadout &lo)
+{
+    return relevantIdentities(lo, lifRelevantTypes());
+}
+
+// Drift is true if the relevant hwKey SETS differ, or a shared member's identity
+// changed. An empty identity on EITHER side is a wildcard (no drift for that key)
+// so a loadout saved before identity tracking never reports false drift on first re-save.
+static bool relevantMembersDrifted(const std::map<QString, QString> &a,
+                                   const std::map<QString, QString> &b)
+{
+    if (a.size() != b.size())
+        return true;
+    for (const auto &[hwKey, idA] : a) {
+        auto it = b.find(hwKey);
+        if (it == b.end())
+            return true; // key sets differ
+        const QString &idB = it->second;
+        if (!idA.isEmpty() && !idB.isEmpty() && idA != idB)
+            return true;
+    }
+    return false;
 }
 
 RuntimeHardwareConfigDialog::RuntimeHardwareConfigDialog(QWidget *parent)
@@ -1064,16 +1105,78 @@ void RuntimeHardwareConfigDialog::onRemoveProfile(const QString& hardwareType)
         profilesToRemove.append(profileLabel);
     }
 
+    // Resolver that supplies the system fallback for a required-type member whose
+    // profile is being deleted, or nullopt for an optional type (dropped, not replaced).
+    auto &lm = LoadoutManager::instance();
+    const auto fallbackFor = [](const QString &type) -> std::optional<BC::Loadout::FallbackMember> {
+        if (!RuntimeHardwareConfig::isHardwareRequired(type))
+            return std::nullopt;
+        auto &pm = HardwareProfileManager::instance();
+        BC::Loadout::FallbackMember fm;
+        fm.hwKey    = BC::Key::hwKey(type, u"virtual"_s);
+        fm.impl     = pm.getImplementation(type, u"virtual"_s);
+        fm.identity = pm.getProfileIdentity(type, u"virtual"_s);
+        return fm;
+    };
+
+    // Aggregate the persisted-loadout consequences of deleting every selected profile,
+    // deduping across profiles that appear in more than one loadout or preset.
+    BC::Loadout::PruneConsequences consequences;
+    {
+        std::set<std::pair<QString, QString>> seenPresets;
+        std::set<QString> seenModified;
+        std::set<std::tuple<QString, QString, QString>> seenSubs;
+        for (const QString &label : profilesToRemove) {
+            const auto pc = lm.previewPruneReferencing(BC::Key::hwKey(hardwareType, label), fallbackFor);
+            for (const auto &lp : pc.lostPresets) {
+                if (seenPresets.emplace(lp.first, lp.second).second)
+                    consequences.lostPresets.push_back(lp);
+            }
+            for (const auto &ml : pc.modifiedLoadouts) {
+                if (seenModified.insert(ml).second)
+                    consequences.modifiedLoadouts.push_back(ml);
+            }
+            for (const auto &fs : pc.fallbackSubs) {
+                if (seenSubs.emplace(fs.loadout, fs.type, fs.fallbackHwKey).second)
+                    consequences.fallbackSubs.push_back(fs);
+            }
+        }
+    }
+
     // Confirm deletion
     QString message;
     if (profilesToRemove.size() == 1) {
-        message = QString("Are you sure you want to delete the profile '%1'?\n\nThis action cannot be undone.")
+        message = QString("Are you sure you want to delete the profile '%1'?")
                      .arg(profilesToRemove.first());
     } else {
-        message = QString("Are you sure you want to delete %1 profiles?\n\nProfiles to delete:\n%2\n\nThis action cannot be undone.")
+        message = QString("Are you sure you want to delete %1 profiles?\n\nProfiles to delete:\n%2")
                      .arg(profilesToRemove.size())
                      .arg(profilesToRemove.join("\n"));
     }
+
+    const bool hasConsequences = !consequences.lostPresets.empty()
+                                 || !consequences.modifiedLoadouts.empty()
+                                 || !consequences.fallbackSubs.empty();
+    if (hasConsequences) {
+        message += "\n\nThis affects saved loadouts:";
+        if (!consequences.lostPresets.empty()) {
+            message += "\n\nPresets that will be removed:";
+            for (const auto &[loadout, preset] : consequences.lostPresets)
+                message += QString("\n  %1 → %2").arg(loadout, preset);
+        }
+        if (!consequences.modifiedLoadouts.empty()) {
+            message += "\n\nLoadouts that will lose this hardware:";
+            for (const auto &loadout : consequences.modifiedLoadouts)
+                message += QString("\n  %1").arg(loadout);
+        }
+        if (!consequences.fallbackSubs.empty()) {
+            message += "\n\nLoadouts where a required device will be replaced with the system fallback:";
+            for (const auto &fs : consequences.fallbackSubs)
+                message += QString("\n  %1: %2 → %3").arg(fs.loadout, fs.type, fs.fallbackHwKey);
+        }
+    }
+
+    message += "\n\nThis action cannot be undone.";
 
     int result = QMessageBox::warning(this, "Remove Profile", message,
                                       QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
@@ -1090,6 +1193,8 @@ void RuntimeHardwareConfigDialog::onRemoveProfile(const QString& hardwareType)
                 QString profileKey = BC::Key::hwKey(hardwareType, label);
                 d_previewRuntimeConfig.erase(profileKey);
                 d_originalRuntimeConfig.erase(profileKey);
+                // Delete first, then prune the persisted loadouts that referenced it.
+                lm.prunePresetsReferencing(profileKey, fallbackFor);
             }
         }
 
@@ -1427,6 +1532,17 @@ void RuntimeHardwareConfigDialog::onLoadoutActivate()
     switchToLoadout(name);
 }
 
+void RuntimeHardwareConfigDialog::stampMemberIdentities(HardwareLoadout &loadout) const
+{
+    auto &pm = HardwareProfileManager::instance();
+    for (const auto &[hwKey, impl] : loadout.hardwareMap) {
+        auto [type, label] = BC::Key::parseKey(hwKey);
+        const QString identity = pm.getProfileIdentity(type, label);
+        if (!identity.isEmpty())
+            loadout.hardwareIdentity[hwKey] = identity;
+    }
+}
+
 void RuntimeHardwareConfigDialog::onLoadoutSave()
 {
     // Preset-family drift decision, resolved before any settings are mutated.
@@ -1441,12 +1557,13 @@ void RuntimeHardwareConfigDialog::onLoadoutSave()
     HardwareLoadout loadout;
     loadout.name = d_activeLoadoutName;
     loadout.hardwareMap = std::map<QString,QString,std::less<>>(d_previewRuntimeConfig.begin(), d_previewRuntimeConfig.end());
+    stampMemberIdentities(loadout);
 
     const auto existing = lm.getLoadout(d_activeLoadoutName);
 
     PresetDriftDecision ftmwDecision = PresetDriftDecision::Preserve;
     if (existing.has_value()) {
-        const bool drift = ftmwRelevantHwKeys(loadout.hardwareMap) != ftmwRelevantHwKeys(existing->hardwareMap);
+        const bool drift = relevantMembersDrifted(ftmwRelevantIdentities(loadout), ftmwRelevantIdentities(*existing));
 
         if (!drift) {
             ftmwDecision = PresetDriftDecision::Preserve;
@@ -1477,7 +1594,7 @@ void RuntimeHardwareConfigDialog::onLoadoutSave()
 
     PresetDriftDecision lifDecision = PresetDriftDecision::Preserve;
     if (existing.has_value()) {
-        const bool drift = lifRelevantHwKeys(loadout.hardwareMap) != lifRelevantHwKeys(existing->hardwareMap);
+        const bool drift = relevantMembersDrifted(lifRelevantIdentities(loadout), lifRelevantIdentities(*existing));
 
         if (!drift) {
             lifDecision = PresetDriftDecision::Preserve;
@@ -1559,6 +1676,7 @@ void RuntimeHardwareConfigDialog::onLoadoutSaveAs()
     HardwareLoadout loadout;
     loadout.name = name;
     loadout.hardwareMap = std::map<QString,QString,std::less<>>(d_previewRuntimeConfig.begin(), d_previewRuntimeConfig.end());
+    stampMemberIdentities(loadout);
     loadout.lastModified = QDateTime::currentDateTimeUtc();
     LoadoutManager::instance().putLoadout(loadout);
 
@@ -1571,7 +1689,7 @@ void RuntimeHardwareConfigDialog::onLoadoutSaveAs()
     if (prevLoadout.has_value()) {
         const auto namedPresets = lm.ftmwPresetNames(prevName, false);
         if (!namedPresets.isEmpty() &&
-            ftmwRelevantHwKeys(loadout.hardwareMap) == ftmwRelevantHwKeys(prevLoadout->hardwareMap)) {
+            !relevantMembersDrifted(ftmwRelevantIdentities(loadout), ftmwRelevantIdentities(*prevLoadout))) {
             const auto copyReply = QMessageBox::question(
                 this, u"Copy FTMW Presets"_s,
                 u"Copy FTMW presets from \"%1\" to \"%2\"?"_s.arg(prevName, name),
@@ -1592,7 +1710,7 @@ void RuntimeHardwareConfigDialog::onLoadoutSaveAs()
         // Offer LIF preset copy when the previous loadout shares hardware and has named presets
         const auto namedLifPresets = lm.lifPresetNames(prevName, false);
         if (!namedLifPresets.isEmpty() &&
-            lifRelevantHwKeys(loadout.hardwareMap) == lifRelevantHwKeys(prevLoadout->hardwareMap)) {
+            !relevantMembersDrifted(lifRelevantIdentities(loadout), lifRelevantIdentities(*prevLoadout))) {
             const auto copyReply = QMessageBox::question(
                 this, u"Copy LIF Presets"_s,
                 u"Copy LIF presets from \"%1\" to \"%2\"?"_s.arg(prevName, name),
@@ -1641,6 +1759,8 @@ void RuntimeHardwareConfigDialog::onLoadoutCopy()
     HardwareLoadout newLoadout;
     newLoadout.name = name;
     newLoadout.hardwareMap = sourceLoadout->hardwareMap;
+    newLoadout.hardwareIdentity = sourceLoadout->hardwareIdentity;
+    stampMemberIdentities(newLoadout);
     LoadoutManager::instance().putLoadout(newLoadout);
 
     auto &lm = LoadoutManager::instance();
