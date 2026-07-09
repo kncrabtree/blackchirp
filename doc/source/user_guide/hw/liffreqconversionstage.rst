@@ -39,17 +39,6 @@ Sirah FCU
 
 The Sirah Frequency Conversion Unit is a doubling-stage driver for a Sirah frequency-conversion unit — a separate Sirah instrument from the :doc:`Sirah Cobra <liflaser>` grating controller, connected on its own serial port with its own communication settings. Harmonic order defaults to 2, the common lone-doubler case, and is fixed at profile creation rather than editable afterward. The doubling crystal's angle-to-wavelength tuning curve is evaluated through a selectable :ref:`calibration scheme <sirah-fcu-calibration>` rather than a fixed formula; see that section for the schemes, their settings, and the offline calibration workflow that produces the numbers you enter here.
 
-.. note::
-   The driver assumes the FCU shares the Sirah Cobra's sine-bar tuning
-   mechanism and binary communication protocol; this is unverified
-   against real hardware. The sine-bar geometry defaults (lever length,
-   linear offset, angle offset, screw pitch, motor resolution) are
-   likewise copied from the Cobra's own grating-stage defaults as a
-   starting point, not measured from an FCU unit. Calibrate the stage
-   geometry, and fit and configure a calibration scheme, against the
-   unit's own datasheet and a bench calibration run before relying on
-   this driver for production tuning.
-
 .. _sirah-fcu-calibration:
 
 Sirah FCU Calibration

@@ -34,11 +34,14 @@ the :doc:`configuration` page) on the **LIF Configuration** page of the
 visible whenever the LIF module is enabled (see
 :ref:`application-config`).
 
-.. note:: A screenshot of the Conversion tab will be added here.
+.. figure:: /_static/user_guide/lif-conversion.png
+   :width: 800
+   :target: /_static/user_guide/lif-conversion.png
+   :alt: The Conversion tab of the LIF Configuration page
 
-.. TODO: replace the note above with a ``.. figure::`` of the LIF Conversion
-   tab once the image is available (suggested path
-   ``_static/user_guide/lif-conversion.png``).
+   The **Conversion** tab: one row per conversion stage with its
+   operation, harmonic order, input wiring, and FINAL marker, and the
+   resolved excitation-beam preview below the table.
 
 The Stage Table
 ----------------
