@@ -64,12 +64,16 @@ def read_measurements_csv(path: str) -> Tuple[List[float], List[float]]:
 
     # Tolerate a missing header (treat the first row as data if it
     # parses as two numbers); otherwise require it to match the
-    # documented column names and skip it.
+    # documented column names and skip it. A wrong column count is a
+    # malformed file, not an absent header, so it is raised rather than
+    # silently treated as a header row and dropped.
+    if len(rows[0]) < 2:
+        raise ValueError(f"{path}: expected 2 columns, got {rows[0]!r}")
     start = 0
     try:
         float(rows[0][0])
         float(rows[0][1])
-    except (ValueError, IndexError):
+    except ValueError:
         start = 1
 
     for row in rows[start:]:
@@ -143,4 +147,9 @@ def write_polynomial_csv(
         writer = csv.writer(f, delimiter=";")
         writer.writerow(POLYNOMIAL_HEADER)
         for order, (fwd, inv) in enumerate(zip(forward_coeffs_asc, inverse_coeffs_asc)):
-            writer.writerow([order, f"{fwd:.10g}", f"{inv:.10g}"])
+            # Full round-trippable precision: a high-degree fit over a narrow
+            # band produces large, heavily-cancelling coefficients, and
+            # truncating to fewer significant figures perturbs the C++
+            # Horner re-sum enough to measurably shift the achieved motor
+            # position even when the fit reports RMS ~= 0.
+            writer.writerow([order, f"{fwd:.17g}", f"{inv:.17g}"])

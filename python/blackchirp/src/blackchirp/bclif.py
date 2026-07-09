@@ -98,6 +98,11 @@ def _to_cm1(value, unit: str):
     if u == "cm-1":
         out = arr
     elif u == "nm":
+        # Non-positive input can't be converted (reciprocal-in-wavelength
+        # guard, matching the Nm branch of C++'s toCm1() in lifunits.cpp).
+        # Sentinel differs by language: Python returns NaN here (test with
+        # np.isnan), while C++ returns kInvalid (-1.0). Do not compare a
+        # value from one language's convention against the other's sentinel.
         with np.errstate(divide="ignore", invalid="ignore"):
             out = np.where(arr > 0, _NM_CM1 / arr, np.nan)
     elif u == "GHz":
@@ -115,6 +120,8 @@ def _from_cm1(cm1, unit: str):
     if u == "cm-1":
         out = arr
     elif u == "nm":
+        # See the matching note in _to_cm1: NaN is this module's invalid
+        # sentinel (np.isnan), not C++ fromCm1()'s -1.0.
         with np.errstate(divide="ignore", invalid="ignore"):
             out = np.where(arr > 0, _NM_CM1 / arr, np.nan)
     elif u == "GHz":

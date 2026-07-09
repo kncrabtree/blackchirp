@@ -130,6 +130,13 @@ def ascending(coeffs_desc: np.ndarray) -> List[float]:
     return [float(c) for c in reversed(list(coeffs_desc))]
 
 
+#: Minimum distinct-wavelength point count for Blackchirp's Spline scheme.
+#: Blackchirp fits the imported points with GSL's ``gsl_interp_steffen``
+#: (see ``makeSteffenSpline`` in ``fcucalibration.cpp``), whose documented
+#: ``gsl_interp_type_min_size`` is 3; fewer points fail at import time.
+_MIN_SPLINE_POINTS = 3
+
+
 def build_spline_points(
     wavelengths_nm: Sequence[float], positions_steps: Sequence[float]
 ) -> List[Tuple[float, float]]:
@@ -144,6 +151,15 @@ def build_spline_points(
         wavelength, with later duplicate-wavelength rows dropped (the
         first occurrence wins) so the spline scheme's imported point
         table has distinct wavelengths.
+
+    Raises:
+        ValueError: If fewer than :data:`_MIN_SPLINE_POINTS`
+            distinct-wavelength points remain, or the positions are not
+            strictly monotonic (all increasing or all decreasing) in
+            wavelength order. Both conditions mirror the validation
+            ``FcuCalibration::spline()`` performs on import
+            (``fcucalibration.cpp``); failing them here surfaces the
+            error at fit time instead of inside Blackchirp.
     """
     pts = sorted(zip(wavelengths_nm, positions_steps), key=lambda p: p[0])
     deduped: List[Tuple[float, float]] = []
@@ -153,6 +169,22 @@ def build_spline_points(
             continue
         seen.add(wl)
         deduped.append((float(wl), float(pos)))
+
+    if len(deduped) < _MIN_SPLINE_POINTS:
+        raise ValueError(
+            f"Spline scheme requires at least {_MIN_SPLINE_POINTS} "
+            f"distinct-wavelength points, got {len(deduped)}"
+        )
+
+    increasing = all(deduped[i][1] > deduped[i - 1][1] for i in range(1, len(deduped)))
+    decreasing = all(deduped[i][1] < deduped[i - 1][1] for i in range(1, len(deduped)))
+    if not increasing and not decreasing:
+        raise ValueError(
+            "Spline scheme requires positions strictly monotonic in "
+            "wavelength order (all increasing or all decreasing); the "
+            "measurements do not satisfy this"
+        )
+
     return deduped
 
 

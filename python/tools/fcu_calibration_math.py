@@ -226,7 +226,17 @@ def physical_forward(params: PhysicalParams, lam_nm: float) -> float:
 
     Returns:
         The motor position in steps.
+
+    Raises:
+        ValueError: If ``params.screw_pitch_mm`` is zero or non-finite,
+            mirroring the validation ``FcuCalibration::physical()``
+            performs before it reaches this same sine-bar division.
     """
+    if not math.isfinite(params.screw_pitch_mm) or params.screw_pitch_mm == 0.0:
+        raise ValueError(
+            "screw_pitch_mm must be a nonzero finite value, got "
+            f"{params.screw_pitch_mm!r}"
+        )
     theta_pm_rad = (
         phase_match_angle_deg(params.crystal, lam_nm, params.temperature) * DEG_TO_RAD
     )
