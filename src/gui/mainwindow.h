@@ -97,6 +97,8 @@ public slots:
     void onLoadoutActionTriggered(QAction *act);
     void rebuildFtmwPresetMenu();
     void onFtmwPresetActionTriggered(QAction *act);
+    void rebuildLifPresetMenu();
+    void onLifPresetActionTriggered(QAction *act);
     void launchLifConfigDialog();
     void launchRuntimeHardwareConfigDialog();
     void configureLifWidget(LifControlWidget *w);
@@ -162,6 +164,7 @@ private:
     QAction *p_checkForUpdatesAction{nullptr};
     QActionGroup *p_loadoutActionGroup{nullptr};
     QActionGroup *p_ftmwPresetActionGroup{nullptr};
+    QActionGroup *p_lifPresetActionGroup{nullptr};
     ProgramState d_state{Idle};
     bool d_initialHardwareTestComplete{false};
     int d_logCount{0};

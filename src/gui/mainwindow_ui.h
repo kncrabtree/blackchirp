@@ -96,6 +96,7 @@ public:
     QMenu *menuHardware;
     QMenu *menuLoadout;
     QMenu *menuFtmwPreset;
+    QMenu *menuLifPreset{nullptr};
     QMenu *menuAcquisition;
     QMenu *menuRollingData;
     QMenu *menuAuxData;
@@ -448,6 +449,8 @@ public:
         menuHardware->setObjectName(QString::fromUtf8("menuHardware"));
         menuLoadout = new QMenu("Loadout"_L1, menuHardware);
         menuFtmwPreset = new QMenu("FTMW Preset"_L1, menuHardware);
+        if(actionLifConfig)
+            menuLifPreset = new QMenu("LIF Preset"_L1, menuHardware);
         menuAcquisition = new QMenu(acquireButton);
         menuAcquisition->setObjectName(QString::fromUtf8("menuAcquisition"));
 
@@ -500,6 +503,8 @@ public:
         menuHardware->addAction(actionRuntimeHardwareConfig);
         menuHardware->addMenu(menuLoadout);
         menuHardware->addMenu(menuFtmwPreset);
+        if(menuLifPreset)
+            menuHardware->addMenu(menuLifPreset);
         menuHardware->addSeparator();
         menuHardware->addAction(actionCommunication);
         menuHardware->addAction(actionTest_All_Connections);

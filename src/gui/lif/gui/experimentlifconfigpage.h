@@ -3,6 +3,7 @@
 
 #include <gui/expsetup/experimentconfigpage.h>
 
+class LifConfigWidget;
 class LifControlWidget;
 class LifConversionWidget;
 
@@ -17,8 +18,8 @@ class ExperimentLifConfigPage : public ExperimentConfigPage
 public:
     ExperimentLifConfigPage(Experiment *exp, QWidget *parent = nullptr);
 
-    LifControlWidget *lifControlWidget() { return p_lcw; }
-    LifConversionWidget *lifConversionWidget() { return p_conversionWidget; }
+    LifControlWidget *lifControlWidget();
+    LifConversionWidget *lifConversionWidget();
 
     // ExperimentConfigPage interface
 public slots:
@@ -34,8 +35,7 @@ signals:
     void presetChanged();
 
 private:
-    LifControlWidget *p_lcw;
-    LifConversionWidget *p_conversionWidget;
+    LifConfigWidget *p_widget;
 };
 
 #endif // EXPERIMENTLIFCONFIGPAGE_H

@@ -5,11 +5,11 @@
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>
-#include <QTabWidget>
 #include <QVBoxLayout>
 
 #include <data/experiment/hardwaredatacontainer.h>
 #include <data/loadout/loadoutmanager.h>
+#include <gui/lif/gui/lifconfigwidget.h>
 #include <gui/lif/gui/lifcontrolwidget.h>
 #include <gui/lif/gui/lifconversionwidget.h>
 
@@ -30,15 +30,10 @@ ExperimentLifConfigPage::ExperimentLifConfigPage(Experiment *exp, QWidget *paren
             laserHwKey = it.key();
     }
 
-    p_lcw = new LifControlWidget(digitizerHwKey, laserHwKey);
-    p_conversionWidget = new LifConversionWidget(false, this);
-
-    auto tabs = new QTabWidget(this);
-    tabs->addTab(p_lcw, "Acquisition"_L1);
-    tabs->addTab(p_conversionWidget, "Conversion"_L1);
+    p_widget = new LifConfigWidget(digitizerHwKey, laserHwKey, false, this);
 
     auto vbl = new QVBoxLayout;
-    vbl->addWidget(tabs);
+    vbl->addWidget(p_widget);
 
     setLayout(vbl);
 
@@ -52,15 +47,21 @@ ExperimentLifConfigPage::ExperimentLifConfigPage(Experiment *exp, QWidget *paren
     // itself from the current LIF preset in that case, exactly mirroring
     // FtmwConfigWidget/ExperimentFtmwConfigPage.
     if(p_exp->d_number > 0 && p_exp->lifEnabled())
-    {
-        p_lcw->setFromConfig(*p_exp->lifConfig());
-        p_conversionWidget->setFromConfig(*p_exp->lifConfig());
-    }
+        p_widget->setFromConfig(*p_exp->lifConfig());
 
-    connect(p_conversionWidget, &LifConversionWidget::edited,
+    connect(p_widget, &LifConfigWidget::edited,
             this, &ExperimentLifConfigPage::presetChanged);
 }
 
+LifControlWidget *ExperimentLifConfigPage::lifControlWidget()
+{
+    return p_widget->lifControlWidget();
+}
+
+LifConversionWidget *ExperimentLifConfigPage::lifConversionWidget()
+{
+    return p_widget->lifConversionWidget();
+}
 
 void ExperimentLifConfigPage::initialize()
 {
@@ -79,15 +80,12 @@ bool ExperimentLifConfigPage::validate()
 void ExperimentLifConfigPage::apply()
 {
     if(isEnabled() && p_exp->lifEnabled())
-    {
-        p_lcw->toConfig(*p_exp->lifConfig());
-        p_conversionWidget->toConfig(*p_exp->lifConfig());
-    }
+        p_widget->toConfig(*p_exp->lifConfig());
 }
 
 void ExperimentLifConfigPage::commitLifPreset()
 {
-    if(!isEnabled() || !p_conversionWidget->isDirty())
+    if(!isEnabled() || !p_widget->isDirty())
         return;
 
     const auto activeName = LoadoutManager::instance().currentLoadoutName();
@@ -114,14 +112,14 @@ void ExperimentLifConfigPage::commitLifPreset()
 
     msgBox.exec();
     auto *clicked = msgBox.clickedButton();
-    const auto preset = p_conversionWidget->toLifPreset();
+    const auto preset = p_widget->toLifPreset();
 
     if(clicked == overwriteBtn)
     {
         LoadoutManager::instance().putLifPreset(activeName, currentPresetName, preset);
         LoadoutManager::instance().putLifPreset(
             activeName, BC::Store::LM::lastUsedLifPresetName, preset);
-        p_conversionWidget->clearDirty();
+        p_widget->clearDirty();
     }
     else if(clicked == saveAsBtn)
     {
@@ -160,7 +158,7 @@ void ExperimentLifConfigPage::commitLifPreset()
             LoadoutManager::instance().setCurrentLifPresetName(
                 activeName, BC::Store::LM::lastUsedLifPresetName);
         }
-        p_conversionWidget->clearDirty();
+        p_widget->clearDirty();
     }
     else
     {
@@ -169,6 +167,6 @@ void ExperimentLifConfigPage::commitLifPreset()
             activeName, BC::Store::LM::lastUsedLifPresetName, preset);
         LoadoutManager::instance().setCurrentLifPresetName(
             activeName, BC::Store::LM::lastUsedLifPresetName);
-        p_conversionWidget->clearDirty();
+        p_widget->clearDirty();
     }
 }
