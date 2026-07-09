@@ -6,7 +6,7 @@
 #include <QThread>
 
 #ifndef M_PI
-#define M_PI 3.1415926535897323846
+#define M_PI 3.14159265358979323846
 #endif
 
 using namespace BC::Key::LifLaser;
@@ -106,7 +106,7 @@ void SirahCobra::setPos(double pos)
     //can we just move relative?
     //Conditions: need last move to be in same direction as backlash correction,
     //and distance should be less than backlash correction.
-    auto backlash = getArrayValue(stages,0,sbls,-24000);
+    auto backlash = getArrayValue(stages,0,sbls,24000);
     if(d_status.lastMoveDir != 0 && (d_status.lastMoveDir*delta) > 0 && qAbs(delta) < qAbs(backlash))
     {
         moveRelative(delta);

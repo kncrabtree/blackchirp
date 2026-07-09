@@ -9,7 +9,7 @@
 #include <QThread>
 
 #ifndef M_PI
-#define M_PI 3.1415926535897323846
+#define M_PI 3.14159265358979323846
 #endif
 
 using namespace BC::Key::SirahFcu;
@@ -69,16 +69,21 @@ REGISTER_HARDWARE_ARRAY_ENTRY(SirahFcu, stages,
 
 // Polynomial calibration scheme: imported forward (wavelength (nm) ->
 // position) and inverse (position -> wavelength (nm)) coefficient lists, one
-// row per order. Registered with no entries; populated by CSV import.
+// row per order. Registered with no entries; populated by CSV import. The
+// column schema is registered separately (REGISTER_HARDWARE_ARRAY_SCHEMA) so
+// HwArrayEditDialog still has the right columns before the first import.
 REGISTER_HARDWARE_ARRAY(SirahFcu, polyCoeffs,
     "Polynomial Coefficients", "Forward/inverse coefficient lists for the Polynomial calibration scheme",
     HwSettingPriority::Optional, calScheme, QVariant::fromValue(Scheme::Polynomial))
+REGISTER_HARDWARE_ARRAY_SCHEMA(SirahFcu, polyCoeffs, pcOrder, pcForward, pcInverse)
 
 // Spline calibration scheme: imported (wavelength, position) point table.
-// Registered with no entries; populated by CSV import.
+// Registered with no entries; populated by CSV import. Column schema
+// registered separately, as for polyCoeffs above.
 REGISTER_HARDWARE_ARRAY(SirahFcu, splinePoints,
     "Spline Points", "Wavelength/position point table for the Spline calibration scheme",
     HwSettingPriority::Optional, calScheme, QVariant::fromValue(Scheme::Spline))
+REGISTER_HARDWARE_ARRAY_SCHEMA(SirahFcu, splinePoints, spWavelength, spPosition)
 
 SirahFcu::SirahFcu(const QString& label, QObject *parent) :
     LifFreqConversionStage(QString(SirahFcu::staticMetaObject.className()), label, parent)
@@ -180,31 +185,61 @@ void SirahFcu::setPos(double localCm1)
 
     if(!d_calibration.isValid())
     {
+        // A config error, not a transient mismatch: it will not resolve
+        // itself on the next point, so this must hard-fail regardless of
+        // the verify flag rather than leaving the FCU silently parked while
+        // the caller believes the move succeeded.
         hwError(u"Cannot set position to %1 cm-1 (%2 nm): %3"_s
                     .arg(localCm1,0,'f',3).arg(wl,0,'f',4).arg(d_calibration.errorString()));
+        emit hardwareFailure();
         return;
     }
 
     if(!prompt())
     {
+        // Could not even read the current status before attempting the
+        // move; treat the same as a failed move rather than silently
+        // leaving the motor at its previous position.
         hwError(u"Could not set position to %1 cm-1 (%2 nm)."_s
                     .arg(localCm1,0,'f',3).arg(wl,0,'f',4));
+        emit hardwareFailure();
         return;
     }
 
-    //calculate target position
-    auto targetPos = static_cast<qint32>(round(d_calibration.wavelengthToPos(wl)));
+    //calculate target position; guard against a Spline calibration's
+    //out-of-domain NaN sentinel before the cast below, which would
+    //otherwise be undefined behavior (typically INT_MIN, driving the motor
+    //to a hard-stop with no error).
+    auto rawTargetPos = d_calibration.wavelengthToPos(wl);
+    if(!std::isfinite(rawTargetPos))
+    {
+        hwError(u"Wavelength %1 nm (%2 cm-1) is outside the calibration's valid range; refusing to move."_s
+                    .arg(wl,0,'f',4).arg(localCm1,0,'f',3));
+        return;
+    }
+
+    auto targetPos = static_cast<qint32>(round(rawTargetPos));
     auto currentPos = d_status.m1Pos;
     auto delta = targetPos - currentPos;
 
-    //if the calculated move is too small, just assume we're good enough
-    if(qAbs(delta) < 10)
+    // Skip a redundant move only when doing so cannot violate the verify
+    // window. Rather than gating on a fixed step count (which a coarse
+    // sine-bar pitch could translate to more than the verify tolerance),
+    // convert the unmoved current position back to a wavenumber via the
+    // same calibration used above and compare it directly to the request;
+    // half the tolerance leaves headroom for the verify readback's own
+    // rounding. A non-finite currentWl (e.g. current position outside the
+    // calibration's domain) falls through to an actual move rather than
+    // risking an unsafe skip.
+    auto verifyToleranceCm1 = get(tolerance, 1.0);
+    auto currentWl = d_calibration.posToWavelength(currentPos);
+    if(std::isfinite(currentWl) && qAbs(toCm1(currentWl, LaserUnit::Nm) - localCm1) < 0.5*verifyToleranceCm1)
         return;
 
     //can we just move relative?
     //Conditions: need last move to be in same direction as backlash correction,
     //and distance should be less than backlash correction.
-    auto backlash = getArrayValue(stages,0,sbls,-24000);
+    auto backlash = getArrayValue(stages,0,sbls,24000);
     if(d_status.lastMoveDir != 0 && (d_status.lastMoveDir*delta) > 0 && qAbs(delta) < qAbs(backlash))
     {
         moveRelative(delta);

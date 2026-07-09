@@ -79,10 +79,13 @@ public slots:
      * conversion topology (LifConversion::stageInput); the stage itself
      * needs no topology. Maps the requested wavenumber to a phase-match
      * motor position via the driver's calibration, moves, then verifies via
-     * readPos(). When the verify flag (BC::Key::LifConvStage::verify) is
-     * off, a verification mismatch is logged as a warning and the call
-     * still returns true (best-effort); when it is on, a mismatch or a
-     * negative readPos() emits hardwareFailure() and returns false.
+     * readPos(). A negative readPos() is a hard communication-error
+     * sentinel, not a value the stage actually reported, so it always
+     * emits hardwareFailure() and returns false regardless of the verify
+     * flag. For an in-range readback that simply misses the requested
+     * wavenumber, the verify flag (BC::Key::LifConvStage::verify) decides
+     * the outcome: off logs a warning and returns true (best-effort); on
+     * emits hardwareFailure() and returns false.
      *
      * \return Whether the move (and, if enabled, its verification) succeeded.
      */

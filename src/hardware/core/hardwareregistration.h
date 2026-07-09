@@ -255,6 +255,55 @@ inline QStringList buildInheritanceChain(const QMetaObject* metaObj) {
         );
 
 /*!
+ * \brief Look up the registered column schema for an array setting that has
+ *        no default entries and may have no stored rows yet (e.g., a table
+ *        populated entirely by CSV import).
+ *
+ * A small side registry, independent of HardwareRegistry's own array-setting
+ * bookkeeping: an array declared via REGISTER_HARDWARE_ARRAY with no
+ * REGISTER_HARDWARE_ARRAY_ENTRY calls carries no entries to derive column
+ * (sub-key) names from, so a caller (HwSettingsWidget::subKeysForArray())
+ * that also finds no stored values yet has nothing to build a column list
+ * from. Registering a schema here gives it one without seeding a spurious
+ * persisted default row.
+ *
+ * \return The sub-key names in registration order, or an empty list if no
+ *         schema was registered for (key, subKey, arrayKey).
+ */
+QStringList hardwareArraySchema(const QString& key, const QString& subKey, const QString& arrayKey);
+
+/*!
+ * \brief Register a fixed column schema for an array setting (see
+ *        hardwareArraySchema()). Called once per array key, typically
+ *        alongside its REGISTER_HARDWARE_ARRAY declaration.
+ *
+ * \param key Hardware type key
+ * \param subKey Implementation key
+ * \param arrayKey The array setting key
+ * \param subKeys Ordered sub-key names forming the array's columns
+ * \return true (always; the return value only exists so the call can sit in a static-initializer expression)
+ */
+bool registerHardwareArraySchema(const QString& key, const QString& subKey,
+                                  const QString& arrayKey, const QStringList& subKeys);
+
+/*!
+ * \brief Register a column schema for an array setting populated at
+ *        runtime rather than via REGISTER_HARDWARE_ARRAY_ENTRY.
+ *
+ * \param CLASS Hardware class name (must already be registered via REGISTER_HARDWARE_ARRAY)
+ * \param ARRAY_KEY String constant for the array key
+ * \param ... Ordered sub-key names (the array's columns)
+ */
+#define REGISTER_HARDWARE_ARRAY_SCHEMA(CLASS, ARRAY_KEY, ...) \
+    static bool BC_ARRSCHEMA_VAR(CLASS, __COUNTER__) = \
+        registerHardwareArraySchema( \
+            findHardwareBaseType(&CLASS::staticMetaObject), \
+            QString(CLASS::staticMetaObject.className()), \
+            ARRAY_KEY, \
+            QStringList{__VA_ARGS__} \
+        );
+
+/*!
  * \brief Register custom communication parameter definitions for a hardware implementation
  *
  * Registers one or more CustomCommDef descriptors in the HardwareRegistry so that
@@ -349,6 +398,8 @@ inline QStringList buildInheritanceChain(const QMetaObject* metaObj) {
 #define BC_ARRENTRY_VAR(CLASS, N) BC_ARRENTRY_CONCAT(arrayentry_##CLASS##_, N)
 #define BC_COMMDEF_CONCAT(a, b) a##b
 #define BC_COMMDEF_VAR(CLASS, N) BC_COMMDEF_CONCAT(commdef_##CLASS##_, N)
+#define BC_ARRSCHEMA_CONCAT(a, b) a##b
+#define BC_ARRSCHEMA_VAR(CLASS, N) BC_ARRSCHEMA_CONCAT(arrayschema_##CLASS##_, N)
 
 /*!
  * \brief Register hardware implementation using introspection (legacy)

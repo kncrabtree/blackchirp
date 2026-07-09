@@ -24,6 +24,7 @@
 #include <data/storage/settingsstorage.h>
 #include <data/storage/enumcsvconvert.h>
 #include <data/lif/lifunits.h>
+#include <hardware/core/hardwareregistration.h>
 
 namespace {
 
@@ -303,14 +304,24 @@ QWidget *HwSettingsWidget::makeScalarWidget(const HwSettingDef &def,
         // item data is the key-name string so the persisted form matches
         // BC::CSV::enumFromVariant's read side.
         auto me = BC::CSV::metaEnumFromType(mt);
-        auto *combo = new EnumComboBoxBase(me, this);
+        if (me.isValid()) {
+            auto *combo = new EnumComboBoxBase(me, this);
 
-        const QString keyName = (currentValue.metaType() == mt)
-            ? QString::fromUtf8(me.valueToKey(currentValue.toInt()))
-            : currentValue.toString();
-        combo->setCurrentKey(keyName);
+            const QString keyName = (currentValue.metaType() == mt)
+                ? QString::fromUtf8(me.valueToKey(currentValue.toInt()))
+                : currentValue.toString();
+            combo->setCurrentKey(keyName);
 
-        widget = combo;
+            widget = combo;
+        } else {
+            // The meta-enum lookup failed: an empty combobox would read
+            // back an invalid QVariant on save and silently clobber the
+            // previously-stored value, so fall back to a plain text box
+            // seeded with the current value's string form instead.
+            auto *le = new QLineEdit(this);
+            le->setText(currentValue.toString());
+            widget = le;
+        }
     } else {
         auto *le = new QLineEdit(this);
         le->setText(currentValue.toString());
@@ -561,9 +572,17 @@ QStringList HwSettingsWidget::subKeysForArray(const HwArraySettingDef &def) cons
             out.append(k);
     } else {
         auto it = d_arrayValues.constFind(def.key);
-        if (it != d_arrayValues.cend() && !it->empty())
+        if (it != d_arrayValues.cend() && !it->empty()) {
             for (auto const &[k, v] : it->front())
                 out.append(k);
+        } else {
+            // No registered default entries and no stored rows yet (e.g. an
+            // array populated only by CSV import, such as the Sirah FCU's
+            // polyCoeffs/splinePoints): fall back to a registered column
+            // schema so the edit dialog is not a zero-column table before
+            // the first import.
+            out = hardwareArraySchema(d_hwType, d_impl, def.key);
+        }
     }
     return out;
 }

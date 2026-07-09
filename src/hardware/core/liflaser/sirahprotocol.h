@@ -23,12 +23,12 @@ namespace BC::Sirah {
 
 //! Parsed 14-byte status response from a Sirah binary-protocol device.
 struct Status {
-    quint8 err;
-    quint8 cStatus;
-    quint8 m1Status;
-    qint32 m1Pos;
-    quint8 m2Status;
-    qint32 m2Pos;
+    quint8 err{0};
+    quint8 cStatus{0};
+    quint8 m1Status{0};
+    qint32 m1Pos{0};
+    quint8 m2Status{0};
+    qint32 m2Pos{0};
     int lastMoveDir{0};
 };
 

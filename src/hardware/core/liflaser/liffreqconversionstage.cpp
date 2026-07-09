@@ -53,6 +53,21 @@ bool LifFreqConversionStage::setPosition(double localCm1)
     setPos(localCm1);
     double achieved = readPos();
 
+    // A negative achieved is readPos()'s hard comm-error sentinel, not a
+    // value the stage actually reported, so it must fail the move outright:
+    // unlike an in-range readback that simply misses the requested
+    // wavenumber, this is not something the verify flag should be able to
+    // downgrade to a warning, or a dead stage would report success on every
+    // point with verify off.
+    if(achieved < 0.0)
+    {
+        auto msg = u"Move to %1 cm-1 could not be read back (communication error)."_s
+                       .arg(localCm1,0,'f',3);
+        hwError(msg);
+        emit hardwareFailure();
+        return false;
+    }
+
     // The verification window is a per-device registered setting: phase-match
     // motors resolve to well under the 1 cm-1 default across the pipeline's
     // operating range (grating fundamentals span 5000-40000 cm-1, per
@@ -61,7 +76,7 @@ bool LifFreqConversionStage::setPosition(double localCm1)
     // move.
     auto verifyToleranceCm1 = get(tolerance, 1.0);
 
-    bool matched = achieved >= 0.0 && qAbs(achieved - localCm1) <= verifyToleranceCm1;
+    bool matched = qAbs(achieved - localCm1) <= verifyToleranceCm1;
     if(matched)
         return true;
 
