@@ -1,8 +1,10 @@
 #include <hardware/core/liflaser/sirahfcu.h>
 
 #include <hardware/core/hardwareregistration.h>
+#include <data/storage/enumcsvconvert.h>
 #include <data/lif/lifunits.h>
 
+#include <cmath>
 #include <math.h>
 #include <QThread>
 
@@ -13,6 +15,7 @@
 using namespace BC::Key::SirahFcu;
 using namespace BC::Key::LifConvStage;
 using namespace BC::LifConv;
+using namespace BC::FcuCal;
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(SirahFcu, "Sirah Frequency Conversion Unit")
@@ -27,13 +30,23 @@ REGISTER_COMM_DEFAULTS(SirahFcu, CommunicationProtocol::Rs232,
 // common lone-doubler case. The registered op setting stays the inherited
 // base default (NHG), matching conversionOp()'s pinned override below.
 REGISTER_HARDWARE_SETTINGS(SirahFcu,
-    {harmonic, "Harmonic Order", "Harmonic order N for this doubler; set once at profile creation",
-     2,    1,          QVariant{}, HwSettingPriority::Required}
+    {harmonic,   "Harmonic Order",       "Harmonic order N for this doubler; set once at profile creation",
+     2,    1,          QVariant{}, HwSettingPriority::Required},
+    {calScheme,  "Calibration Scheme",   "Tuning-curve model used to evaluate the doubling crystal's "
+                                          "wavelength <-> motor position mapping",
+     QVariant::fromValue(Scheme::Physical), QVariant{}, QVariant{}, HwSettingPriority::Important},
+    {calCrystal, "Crystal Type",         "Doubling-crystal species; picks the Sellmeier equations for "
+                                          "the Physical calibration scheme",
+     QVariant::fromValue(CrystalType::BBO), QVariant{}, QVariant{}, HwSettingPriority::Important},
+    {calInvert,  "Invert Phase Match",   "Select the alternate (-) branch of the Physical scheme's "
+                                          "phase-match relation",
+     false, QVariant{}, QVariant{}, HwSettingPriority::Optional}
 )
 
-// Placeholder sine-bar geometry: SirahCobra's grating-stage values, copied
-// here because the FCU's actual doubling-crystal geometry is unknown until
-// the unit is calibrated on the bench.
+// Sine-bar drive mechanics for the doubling-crystal motor stage. cutAngleDeg
+// and temperature feed the Physical calibration scheme; the remaining
+// entries are the sine-bar geometry and motor-control parameters shared by
+// every scheme.
 REGISTER_HARDWARE_ARRAY(SirahFcu, stages,
     "Crystal Stage Geometry", "Sine-bar tuning geometry for the doubling-crystal motor stage",
     HwSettingPriority::Important)
@@ -46,11 +59,24 @@ REGISTER_HARDWARE_ARRAY_ENTRY(SirahFcu, stages,
      {sLeverLength,134.599318},
      {sLinearOffset,-76.543335},
      {sAngleOffset,31.329809},
-     {sGrazingAngle,85.0},
-     {sGrooves,2414.0},
+     {sCutAngle,57.4},
+     {sTemperature,293.0},
      {sPitch,-0.25},
      {sMotorResolution,4800},
     })
+
+// Polynomial calibration scheme: imported forward (wavelength (nm) ->
+// position) and inverse (position -> wavelength (nm)) coefficient lists, one
+// row per order. Registered with no entries; populated by CSV import.
+REGISTER_HARDWARE_ARRAY(SirahFcu, polyCoeffs,
+    "Polynomial Coefficients", "Forward/inverse coefficient lists for the Polynomial calibration scheme",
+    HwSettingPriority::Optional)
+
+// Spline calibration scheme: imported (wavelength, position) point table.
+// Registered with no entries; populated by CSV import.
+REGISTER_HARDWARE_ARRAY(SirahFcu, splinePoints,
+    "Spline Points", "Wavelength/position point table for the Spline calibration scheme",
+    HwSettingPriority::Optional)
 
 SirahFcu::SirahFcu(const QString& label, QObject *parent) :
     LifFreqConversionStage(QString(SirahFcu::staticMetaObject.className()), label, parent)
@@ -83,24 +109,79 @@ bool SirahFcu::testConnection()
 
 void SirahFcu::hwReadSettings()
 {
-    d_params.clear();
-    for(uint i=0; i<getArraySize(stages); i++)
+    auto scheme = BC::CSV::enumFromVariant<Scheme>(
+                get(calScheme, QVariant::fromValue(Scheme::Physical)), Scheme::Physical);
+
+    switch(scheme)
     {
-        TuningParameters tp;
-        tp.angOff = getArrayValue(stages,i,sAngleOffset).toDouble()/180*M_PI;
-        tp.grazAng = getArrayValue(stages,i,sGrazingAngle).toDouble()/180*M_PI;
-        tp.grooves = getArrayValue(stages,i,sGrooves).toDouble();
-        tp.lLen = getArrayValue(stages,i,sLeverLength).toDouble();
-        tp.linOff = getArrayValue(stages,i,sLinearOffset).toDouble();
-        tp.mRes = getArrayValue(stages,i,sMotorResolution).toDouble();
-        tp.pitch = getArrayValue(stages,i,sPitch).toDouble();
-        d_params.push_back(tp);
+    case Scheme::Physical:
+    {
+        auto crystal = BC::CSV::enumFromVariant<CrystalType>(
+                    get(calCrystal, QVariant::fromValue(CrystalType::BBO)), CrystalType::BBO);
+        auto invert = get(calInvert, false);
+        auto cutAngleDeg = getArrayValue(stages,0,sCutAngle,57.4);
+        auto temperature = getArrayValue(stages,0,sTemperature,293.0);
+        auto linearOffsetMm = getArrayValue(stages,0,sLinearOffset,-76.543335);
+        auto angleOffsetDeg = getArrayValue(stages,0,sAngleOffset,31.329809);
+        auto screwPitchMm = getArrayValue(stages,0,sPitch,-0.25);
+        auto leverLengthMm = getArrayValue(stages,0,sLeverLength,134.599318);
+        auto motorResolution = getArrayValue(stages,0,sMotorResolution,4800.0);
+
+        d_calibration = FcuCalibration::physical(crystal, cutAngleDeg, temperature, linearOffsetMm,
+                                                  angleOffsetDeg, screwPitchMm, leverLengthMm,
+                                                  motorResolution, invert);
+        break;
     }
+    case Scheme::Polynomial:
+    {
+        std::vector<double> forwardCoeffs, inverseCoeffs;
+        for(std::size_t i=0; i<getArraySize(polyCoeffs); i++)
+        {
+            auto order = static_cast<std::size_t>(getArrayValue(polyCoeffs,i,pcOrder,0));
+            auto fwd = getArrayValue(polyCoeffs,i,pcForward,0.0);
+            auto inv = getArrayValue(polyCoeffs,i,pcInverse,0.0);
+
+            if(order >= forwardCoeffs.size())
+                forwardCoeffs.resize(order+1, 0.0);
+            if(order >= inverseCoeffs.size())
+                inverseCoeffs.resize(order+1, 0.0);
+
+            forwardCoeffs[order] = fwd;
+            inverseCoeffs[order] = inv;
+        }
+
+        d_calibration = FcuCalibration::polynomial(forwardCoeffs, inverseCoeffs);
+        break;
+    }
+    case Scheme::Spline:
+    {
+        std::vector<std::pair<double,double>> points;
+        for(std::size_t i=0; i<getArraySize(splinePoints); i++)
+        {
+            auto wl = getArrayValue(splinePoints,i,spWavelength,0.0);
+            auto pos = getArrayValue(splinePoints,i,spPosition,0.0);
+            points.emplace_back(wl, pos);
+        }
+
+        d_calibration = FcuCalibration::spline(points);
+        break;
+    }
+    }
+
+    if(!d_calibration.isValid())
+        hwWarn(d_calibration.errorString());
 }
 
 void SirahFcu::setPos(double localCm1)
 {
     auto wl = fromCm1(localCm1, LaserUnit::Nm);
+
+    if(!d_calibration.isValid())
+    {
+        hwError(u"Cannot set position to %1 cm-1 (%2 nm): %3"_s
+                    .arg(localCm1,0,'f',3).arg(wl,0,'f',4).arg(d_calibration.errorString()));
+        return;
+    }
 
     if(!prompt())
     {
@@ -110,7 +191,7 @@ void SirahFcu::setPos(double localCm1)
     }
 
     //calculate target position
-    auto targetPos = wavelengthToPos(wl);
+    auto targetPos = static_cast<qint32>(round(d_calibration.wavelengthToPos(wl)));
     auto currentPos = d_status.m1Pos;
     auto delta = targetPos - currentPos;
 
@@ -153,7 +234,13 @@ double SirahFcu::readPos()
         return -1.0;
     }
 
-    auto wl = posToWavelength(d_status.m1Pos);
+    auto wl = d_calibration.posToWavelength(d_status.m1Pos);
+    if(!std::isfinite(wl))
+    {
+        hwError(u"Could not convert motor position %1 to a wavelength."_s.arg(d_status.m1Pos));
+        return -1.0;
+    }
+
     return toCm1(wl, LaserUnit::Nm);
 }
 
@@ -170,32 +257,6 @@ bool SirahFcu::prompt()
     }
 
     return true;
-}
-
-double SirahFcu::posToWavelength(qint32 pos, uint stage)
-{
-    if(stage >= d_params.size())
-        return 0.0;
-
-    const auto &tp = d_params.at(stage);
-    auto x = tp.linOff - (tp.pitch/tp.mRes)*static_cast<double>(pos);
-    auto phi_o = tp.angOff - asin(x/tp.lLen);
-    auto wl = (sin(tp.grazAng) + sin(phi_o))/tp.grooves;
-
-    return wl *1e6;
-}
-
-qint32 SirahFcu::wavelengthToPos(double wl, uint stage)
-{
-    if(stage >= d_params.size())
-        return 0;
-
-    const auto &tp = d_params.at(stage);
-    auto phi_o = asin(tp.grooves*wl/1e6 - sin(tp.grazAng));
-    auto x = tp.linOff - tp.lLen*sin(tp.angOff - phi_o);
-    auto p = tp.mRes/tp.pitch*x;
-
-    return static_cast<qint32>(round(p));
 }
 
 void SirahFcu::moveRelative(qint32 steps)
