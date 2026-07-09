@@ -183,15 +183,15 @@ public:
     void setLaserUnits(BC::LifConv::LaserUnit units);
 
     /*!
-     * \brief Set the decimal-precision hint used when serializing the laser position axis.
+     * \brief Set the decimal precision used when serializing the laser
+     *        position axis.
      *
-     * A floor, not an exact width: LaserStart/LaserStep are formatted in
-     * header.csv with at least this many fractional digits, but with more
-     * whenever the actual value needs additional digits to round-trip
-     * exactly (header.csv is the authoritative axis, so precision is never
-     * truncated to this hint). Callers normally seed this from the LIF
-     * laser hardware's display-decimals setting at acquisition time; on
-     * load it is inferred from the on-disk formatting of LaserStart/LaserStep.
+     * LaserStart/LaserStep are formatted in header.csv with this many
+     * fractional digits. Callers seed it from the LIF laser hardware's
+     * display-decimals setting at acquisition time — the same setting that
+     * quantizes the start/step entry spin boxes the axis is built from, so a
+     * value from that path round-trips exactly at this width. On load it is
+     * inferred from the on-disk formatting of LaserStart/LaserStep.
      */
     void setLaserDecimals(int decimals);
 
