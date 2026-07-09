@@ -6,6 +6,25 @@ here. This builds on the [Sirah Cobra refresh](sirah-cobra-refresh.md),
 which introduced `SirahFcu` as an `NHG` doubling stage but left its
 tuning math as a placeholder.
 
+## Implementation status
+
+**Implemented on branch `feature/sirah-cobra-refresh`** (not yet merged;
+GUI show/hide and CSV import want a manual click-through, and the whole
+model wants co-tuning verification, once the FCU is on the bench). All
+five sequencing steps below plus UI integration have landed:
+
+- `FcuCalibration` value type (`data/lif/fcucalibration.*`) + unit tests.
+- `SirahFcu` migrated to it; grating keys dropped, scheme/crystal/invert
+  and the `polyCoeffs`/`splinePoints` arrays registered. (Surfaced and
+  fixed a latent `REGISTER_HARDWARE_ARRAY` macro bug that broke any class
+  registering more than one array.)
+- Offline tools under `python/tools/` (`fcu_measure.py`, `fcu_fit.py`).
+- Generic "Import CSV…" button on `HwArrayEditDialog`.
+- Scheme-aware **gating** — an optional `gateKey`/`gateValue` on
+  `HwSettingDef`/`HwArraySettingDef` shows only the active scheme's
+  settings, following the `displayUnitKey` linkage precedent.
+- User + reference docs.
+
 ## Problem
 
 `SirahFcu::posToWavelength`/`wavelengthToPos` (`sirahfcu.cpp:175-199`)

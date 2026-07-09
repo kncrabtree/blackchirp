@@ -57,8 +57,10 @@ produced offline and imported (a generic "Import CSV…" button is added
 to `HwArrayEditDialog`). The tuning law moves to a hardware-free
 `FcuCalibration` value type (sibling of `LifConversion`), unit-tested in
 CI. Full plan in
-[sirah-fcu-calibration.md](sirah-fcu-calibration.md). Being picked up on
-`feature/sirah-cobra-refresh`, starting with the value type and tests.
+[sirah-fcu-calibration.md](sirah-fcu-calibration.md). **Implemented on
+`feature/sirah-cobra-refresh`** (value type, driver migration, offline
+Python tools, CSV import, scheme-aware settings gating, and docs); awaits
+bench verification once the FCU is online.
 
 ## Large
 
