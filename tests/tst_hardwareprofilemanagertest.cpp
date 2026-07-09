@@ -132,6 +132,11 @@ private slots:
      * \brief Test profile metadata (creation time, description, etc.)
      */
     void testProfileMetadata();
+
+    /*!
+     * \brief Test stable profile identity token behavior
+     */
+    void testProfileIdentity();
     
     // ========================================================================
     // COLLISION HANDLING TESTS
@@ -736,6 +741,56 @@ void HardwareProfileManagerTest::testProfileMetadata()
     QDateTime modified = manager.getProfileLastModified(d_testTypeFlow, label);
     QVERIFY(modified.isValid());
     QVERIFY(modified >= created);
+}
+
+void HardwareProfileManagerTest::testProfileIdentity()
+{
+    // Non-empty for an existing profile, empty for a non-existent one.
+    QString identityA;
+    {
+        HardwareProfileManager manager(d_testOrg, d_testApp);
+        manager.createHardwareProfile(d_testTypeFlow, d_testImplVirtual, "identity");
+
+        identityA = manager.getProfileIdentity(d_testTypeFlow, "identity");
+        QVERIFY(!identityA.isEmpty());
+        QVERIFY(manager.getProfileIdentity(d_testTypeFlow, "doesNotExist").isEmpty());
+        QVERIFY(manager.getProfileIdentity("NonexistentType", "identity").isEmpty());
+
+        // Distinct labels yield distinct identities.
+        manager.createHardwareProfile(d_testTypeFlow, d_testImplVirtual, "identity2");
+        QString other = manager.getProfileIdentity(d_testTypeFlow, "identity2");
+        QVERIFY(!other.isEmpty());
+        QVERIFY(other != identityA);
+
+        manager.saveProfiles();
+    } // Manager destroyed, profiles persisted
+
+    // Stable across a save + reload cycle (derives purely from persisted fields).
+    {
+        HardwareProfileManager manager(d_testOrg, d_testApp);
+        QVERIFY(manager.profileExists(d_testTypeFlow, "identity"));
+        QCOMPARE(manager.getProfileIdentity(d_testTypeFlow, "identity"), identityA);
+    }
+
+    // Differs after delete + recreate under the same label (created timestamp differs).
+    {
+        HardwareProfileManager manager(d_testOrg, d_testApp);
+        QDateTime createdBefore = manager.getProfileCreationTime(d_testTypeFlow, "identity");
+
+        QVERIFY(manager.deleteHardwareProfile(d_testTypeFlow, "identity"));
+
+        // Creation timestamps have millisecond resolution; ensure the recreated
+        // profile lands on a distinct millisecond so the token is deterministic.
+        QTest::qSleep(5);
+
+        manager.createHardwareProfile(d_testTypeFlow, d_testImplVirtual, "identity");
+        QDateTime createdAfter = manager.getProfileCreationTime(d_testTypeFlow, "identity");
+        QVERIFY(createdAfter > createdBefore);
+
+        QString identityRecreated = manager.getProfileIdentity(d_testTypeFlow, "identity");
+        QVERIFY(!identityRecreated.isEmpty());
+        QVERIFY(identityRecreated != identityA);
+    }
 }
 
 // ========================================================================

@@ -339,6 +339,22 @@ public:
      * \return Last modified timestamp, or invalid QDateTime if profile doesn't exist
      */
     QDateTime getProfileLastModified(const QString& type, const QString& label) const;
+
+    /*!
+     * \brief Get a stable identity token for a profile
+     *
+     * The (type, label) pair is reusable: deleting a profile and creating a
+     * new one with the same label yields the same identity string. This
+     * accessor returns a token that also folds in the immutable implementation
+     * and the creation timestamp, so a delete-and-recreate under the same label
+     * produces a different token. The token is deterministic and derives purely
+     * from persisted fields, so it survives a save/reload cycle unchanged.
+     *
+     * \param type Hardware type
+     * \param label Profile label
+     * \return Hex-encoded hash token, or empty string if profile doesn't exist
+     */
+    QString getProfileIdentity(const QString& type, const QString& label) const;
     
     /*!
      * \brief Set profile description
