@@ -1,6 +1,8 @@
 #ifndef RFCONFIGSNAPSHOT_H
 #define RFCONFIGSNAPSHOT_H
 
+#include <set>
+
 #include <QHash>
 
 #include <data/experiment/rfconfig.h>
@@ -33,6 +35,9 @@ struct RfConfigSnapshot
     RfConfig::Sideband downMixSideband{RfConfig::UpperSideband};
     /// \brief Desired frequency for each populated clock role.
     QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks;
+
+    /// \brief Set of non-empty clock hardware keys this snapshot references (upconversion source and all other clock roles).
+    std::set<QString> referencedHwKeys() const;
 
     /// \brief Build a snapshot from the persistable fields of `c`.
     static RfConfigSnapshot fromRfConfig(const RfConfig &c);

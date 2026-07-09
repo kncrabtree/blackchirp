@@ -35,6 +35,8 @@ inline constexpr QLatin1StringView clockFreqMHz{"FreqMHz"};
 inline constexpr QLatin1StringView hwKey{"HwKey"};
 /// \brief Implementation key carried by the referenced profile when the loadout was last saved.
 inline constexpr QLatin1StringView hwImpl{"Implementation"};
+/// \brief Stable identity token carried by the referenced profile when the loadout was last saved.
+inline constexpr QLatin1StringView hwIdentity{"Identity"};
 }
 
 /// \brief Loadout-specific QSettings field keys for a stored LIF conversion-wiring entry.
@@ -116,6 +118,8 @@ struct HardwareLoadout {
     QString name;
     /// \brief Member profile identities (`"<Type>.<label>"`) and the implementation each profile carried at save time.
     std::map<QString, QString, std::less<>> hardwareMap;
+    /// \brief Member profile identity token (hwKey -> identity), captured at save time; empty for loadouts written before identity tracking.
+    std::map<QString, QString, std::less<>> hardwareIdentity;
     /// \brief Named FTMW presets owned by this loadout, including the `__LastUsed__` sentinel when present.
     std::map<QString, FtmwPreset, std::less<>> ftmwPresets;
     /// \brief Name of the preset that drives initial widget population for this loadout.
@@ -163,10 +167,18 @@ Maps lifConversionWiringArray(const LifConversionSnapshot &snap);
 /// \brief Reconstruct a `LifConversionSnapshot` from the `scalars` map and `wiring` array read out of QSettings.
 LifConversionSnapshot lifConversionSnapshotFromMaps(const Map &scalars, const Maps &wiring);
 
-/// \brief Flatten a hardware map into the array persisted under a loadout's `hardwareMap` group.
-Maps hardwareMapArray(const std::map<QString, QString, std::less<>> &hwMap);
-/// \brief Reconstruct a hardware map from the array read out of QSettings.
-std::map<QString, QString, std::less<>> hardwareMapFromArray(const Maps &array);
+/// \brief Flatten a hardware map (with its parallel identity map) into the array persisted under a loadout's `hardwareMap` group.
+Maps hardwareMapArray(const std::map<QString, QString, std::less<>> &hwMap,
+                      const std::map<QString, QString, std::less<>> &hwIdentity);
+/// \brief Reconstruct both the hardware map and its identity map from the array read out of QSettings; identity entries are populated only for records that carry the field.
+void hardwareMapFromArray(const Maps &array,
+                          std::map<QString, QString, std::less<>> &hwMap,
+                          std::map<QString, QString, std::less<>> &hwIdentity);
+
+/// \brief Whether an FTMW preset references the given hardware key (its digitizer or any RF-chain clock).
+bool ftmwPresetReferencesHardware(const FtmwPreset &preset, const QString &hwKey);
+/// \brief Whether a LIF preset references the given hardware key (a wired conversion stage or the captured laser).
+bool lifPresetReferencesHardware(const LifPreset &preset, const QString &hwKey);
 
 } // namespace BC::Loadout
 

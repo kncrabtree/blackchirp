@@ -635,7 +635,7 @@ HardwareLoadout LoadoutManager::p_readLoadout(const QString &name) const
 
     HardwareLoadout loadout;
     loadout.name = name;
-    loadout.hardwareMap = hardwareMapFromArray(sub.getArray(hwMapKey));
+    hardwareMapFromArray(sub.getArray(hwMapKey), loadout.hardwareMap, loadout.hardwareIdentity);
     loadout.currentFtmwPresetName = sub.get<QString>(currentFtmwPresetKey);
 
     const auto lastModStr = sub.get<QString>(lastModifiedKey);
@@ -672,7 +672,7 @@ void LoadoutManager::p_writeLoadout(const HardwareLoadout &loadout)
     LoadoutHelper sub({key.toString(), loadout.name});
     sub.discardChanges(true);
 
-    sub.setArray(hwMapKey, hardwareMapArray(loadout.hardwareMap));
+    sub.setArray(hwMapKey, hardwareMapArray(loadout.hardwareMap, loadout.hardwareIdentity));
     sub.set(currentFtmwPresetKey, loadout.currentFtmwPresetName);
     sub.set(lastModifiedKey, loadout.lastModified.isValid()
             ? loadout.lastModified.toString(Qt::ISODate)

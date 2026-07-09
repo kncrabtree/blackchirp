@@ -47,6 +47,11 @@ private slots:
     void testClearLifPresets();
     void testPutLoadoutPreservesLifPresetsAcrossResave();
 
+    void testHardwareIdentityRoundTrip();
+    void testHardwareIdentityMigration();
+    void testFtmwPresetReferencesHardware();
+    void testLifPresetReferencesHardware();
+
 private:
     LoadoutManager *makeLm() const;
 
@@ -1072,6 +1077,84 @@ void LoadoutManagerTest::testPutLoadoutPreservesLifPresetsAcrossResave()
     QVERIFY(got2.has_value());
     QCOMPARE(got2->lifPresets.size(), original.lifPresets.size());
     QCOMPARE(got2->currentLifPresetName, original.currentLifPresetName);
+}
+
+void LoadoutManagerTest::testHardwareIdentityRoundTrip()
+{
+    using namespace Qt::StringLiterals;
+
+    HardwareLoadout original = makeWithPresets();
+    original.name = u"IdentityRoundTrip"_s;
+    original.hardwareIdentity = {
+        {u"Clock.ref"_s,           u"idclock"_s},
+        {u"AWG.main"_s,            u"idawg"_s},
+        {u"FtmwDigitizer.main"_s,  u"iddigi"_s},
+    };
+
+    {
+        std::unique_ptr<LoadoutManager> lm(makeLm());
+        QVERIFY(lm->putLoadout(original));
+    }
+
+    std::unique_ptr<LoadoutManager> lm2(makeLm());
+    const auto got = lm2->getLoadout(original.name);
+    QVERIFY(got.has_value());
+    QCOMPARE(got->hardwareMap,      original.hardwareMap);
+    QCOMPARE(got->hardwareIdentity, original.hardwareIdentity);
+}
+
+void LoadoutManagerTest::testHardwareIdentityMigration()
+{
+    using namespace Qt::StringLiterals;
+
+    // A loadout written before identity tracking has a populated hardware map
+    // but no identity fields on any record. On reload the identity map must
+    // come back empty (a wildcard), with no synthesized values.
+    HardwareLoadout original = makeHardwareOnly();
+    original.name = u"IdentityMigration"_s;
+    QVERIFY(original.hardwareIdentity.empty());
+    QVERIFY(!original.hardwareMap.empty());
+
+    {
+        std::unique_ptr<LoadoutManager> lm(makeLm());
+        QVERIFY(lm->putLoadout(original));
+    }
+
+    std::unique_ptr<LoadoutManager> lm2(makeLm());
+    const auto got = lm2->getLoadout(original.name);
+    QVERIFY(got.has_value());
+    QCOMPARE(got->hardwareMap, original.hardwareMap);
+    QVERIFY(got->hardwareIdentity.empty());
+}
+
+void LoadoutManagerTest::testFtmwPresetReferencesHardware()
+{
+    using namespace Qt::StringLiterals;
+
+    const FtmwPreset preset = makeFtmwPreset(u"FtmwDigitizer.main"_s);
+
+    // Digitizer hwKey and each referenced clock hwKey match.
+    QVERIFY(ftmwPresetReferencesHardware(preset, u"FtmwDigitizer.main"_s));
+    QVERIFY(ftmwPresetReferencesHardware(preset, u"Clock.ref"_s));
+    QVERIFY(ftmwPresetReferencesHardware(preset, u"Clock.lo"_s));
+
+    // An unrelated hwKey does not.
+    QVERIFY(!ftmwPresetReferencesHardware(preset, u"Clock.unrelated"_s));
+}
+
+void LoadoutManagerTest::testLifPresetReferencesHardware()
+{
+    using namespace Qt::StringLiterals;
+
+    const LifPreset preset = makeLifPreset(u"LifLaser.default"_s);
+
+    // A wired stageKey and the captured laser match.
+    QVERIFY(lifPresetReferencesHardware(preset, u"LifFreqConversionStage.doubler"_s));
+    QVERIFY(lifPresetReferencesHardware(preset, u"LifFreqConversionStage.tripler"_s));
+    QVERIFY(lifPresetReferencesHardware(preset, u"LifLaser.default"_s));
+
+    // An unrelated hwKey does not.
+    QVERIFY(!lifPresetReferencesHardware(preset, u"LifLaser.other"_s));
 }
 
 QTEST_GUILESS_MAIN(LoadoutManagerTest)

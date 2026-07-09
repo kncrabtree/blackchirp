@@ -196,7 +196,8 @@ LifConversionSnapshot lifConversionSnapshotFromMaps(const Map &scalars, const Ma
     return snap;
 }
 
-Maps hardwareMapArray(const std::map<QString, QString, std::less<>> &hwMap)
+Maps hardwareMapArray(const std::map<QString, QString, std::less<>> &hwMap,
+                      const std::map<QString, QString, std::less<>> &hwIdentity)
 {
     Maps array;
     array.reserve(hwMap.size());
@@ -204,19 +205,56 @@ Maps hardwareMapArray(const std::map<QString, QString, std::less<>> &hwMap)
         Map map;
         map[hwKey]  = k;
         map[hwImpl] = v;
+        // Co-locate the identity token with the impl it validates. Omit the
+        // field entirely when no non-empty identity was captured for this
+        // member, so a reader can distinguish "no identity known" (absent)
+        // from any real token.
+        auto it = hwIdentity.find(k);
+        if (it != hwIdentity.end() && !it->second.isEmpty())
+            map[BC::Store::RFC::hwIdentity] = it->second;
         array.push_back(std::move(map));
     }
     return array;
 }
 
-std::map<QString, QString, std::less<>> hardwareMapFromArray(const Maps &array)
+void hardwareMapFromArray(const Maps &array,
+                          std::map<QString, QString, std::less<>> &hwMap,
+                          std::map<QString, QString, std::less<>> &hwIdentity)
 {
-    std::map<QString, QString, std::less<>> result;
+    hwMap.clear();
+    hwIdentity.clear();
     for (const auto &m : array) {
-        if (m.contains(hwKey) && m.contains(hwImpl))
-            result[m.at(hwKey).value<QString>()] = m.at(hwImpl).value<QString>();
+        if (!m.contains(hwKey) || !m.contains(hwImpl))
+            continue;
+        const auto k = m.at(hwKey).value<QString>();
+        hwMap[k] = m.at(hwImpl).value<QString>();
+        // A record written before identity tracking has no Identity field;
+        // leave that key absent from the identity map rather than synthesizing
+        // a token.
+        if (m.contains(BC::Store::RFC::hwIdentity)) {
+            const auto id = m.at(BC::Store::RFC::hwIdentity).value<QString>();
+            if (!id.isEmpty())
+                hwIdentity[k] = id;
+        }
     }
-    return result;
+}
+
+bool ftmwPresetReferencesHardware(const FtmwPreset &preset, const QString &hwKey)
+{
+    if (preset.digiHwKey == hwKey)
+        return true;
+    return preset.rfConfig.referencedHwKeys().count(hwKey) > 0;
+}
+
+bool lifPresetReferencesHardware(const LifPreset &preset, const QString &hwKey)
+{
+    if (preset.conversion.laserKey == hwKey)
+        return true;
+    for (const auto &w : preset.conversion.wiring) {
+        if (w.stageKey == hwKey)
+            return true;
+    }
+    return false;
 }
 
 } // namespace BC::Loadout
