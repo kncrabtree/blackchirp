@@ -513,6 +513,11 @@ Bug fixes
   messages when switching protocols (:commit:`f7e3d6f7`).
 - Fixed optional-hardware configuration init and wizard page
   population (:commit:`be8a82e2`).
+- Fixed the hardware settings editor silently discarding an
+  enum-valued setting when its metaobject lookup failed: the field
+  rendered as an empty selector and, on save, wrote an invalid value
+  over the previously stored one. It now falls back to a text field
+  that preserves the current value (:commit:`615787a6`).
 
 **Acquisition.**
 
