@@ -107,6 +107,8 @@ struct HwSettingDef {
     QVariant maximum;         ///< Optional max for numeric types (invalid = no limit)
     HwSettingPriority priority = HwSettingPriority::Optional;
     QString displayUnitKey{}; ///< If set, this (canonical-cm⁻¹) double is entered/displayed in the unit given by the named sibling LaserUnit enum setting.
+    QString gateKey{};        ///< If set, names a sibling Q_ENUM/Q_ENUM_NS scalar setting; this setting's row is shown in HwSettingsWidget only while that sibling's current value equals gateValue. Empty = always visible.
+    QVariant gateValue{};     ///< Enum value (as a Q_ENUM/Q_ENUM_NS-typed QVariant) that gateKey must currently hold for this setting to be visible. Ignored when gateKey is empty.
 };
 
 /*!
@@ -121,6 +123,8 @@ struct HwArraySettingDef {
     QString description;      ///< Explanatory tooltip/help text
     std::vector<SettingsStorage::SettingsMap> entries;  ///< Default entries
     HwSettingPriority priority = HwSettingPriority::Optional;
+    QString gateKey{};        ///< See HwSettingDef::gateKey; applies to this array's whole table row.
+    QVariant gateValue{};     ///< See HwSettingDef::gateValue.
 };
 
 /*!
@@ -329,11 +333,14 @@ public:
      * \param label User-facing display label
      * \param description Explanatory tooltip/help text
      * \param priority Visibility priority level
+     * \param gateKey Optional sibling enum setting key gating this array's visibility (see HwSettingDef::gateKey); empty = always visible
+     * \param gateValue Enum value gateKey must hold for this array to be visible; ignored when gateKey is empty
      * \return True if array setting definition was added successfully
      */
     bool addArraySettingDef(const QString& key, const QString& subKey,
                             const QString& arrayKey, const QString& label,
-                            const QString& description, HwSettingPriority priority);
+                            const QString& description, HwSettingPriority priority,
+                            const QString& gateKey = {}, const QVariant& gateValue = {});
 
     /*!
      * \brief Add one entry to an array setting
@@ -375,11 +382,14 @@ public:
      * \param label User-facing display label
      * \param description Explanatory tooltip/help text
      * \param priority Visibility priority level
+     * \param gateKey Optional sibling enum setting key gating this array's visibility (see HwSettingDef::gateKey); empty = always visible
+     * \param gateValue Enum value gateKey must hold for this array to be visible; ignored when gateKey is empty
      * \return True if successfully stored
      */
     bool addBaseArraySettingDef(const QString& className, const QString& arrayKey,
                                 const QString& label, const QString& description,
-                                HwSettingPriority priority);
+                                HwSettingPriority priority,
+                                const QString& gateKey = {}, const QVariant& gateValue = {});
 
     /*!
      * \brief Add one entry to a base class array setting

@@ -37,10 +37,12 @@ REGISTER_HARDWARE_SETTINGS(SirahFcu,
      QVariant::fromValue(Scheme::Physical), QVariant{}, QVariant{}, HwSettingPriority::Important},
     {calCrystal, "Crystal Type",         "Doubling-crystal species; picks the Sellmeier equations for "
                                           "the Physical calibration scheme",
-     QVariant::fromValue(CrystalType::BBO), QVariant{}, QVariant{}, HwSettingPriority::Important},
+     QVariant::fromValue(CrystalType::BBO), QVariant{}, QVariant{}, HwSettingPriority::Important,
+     {}, calScheme, QVariant::fromValue(Scheme::Physical)},
     {calInvert,  "Invert Phase Match",   "Select the alternate (-) branch of the Physical scheme's "
                                           "phase-match relation",
-     false, QVariant{}, QVariant{}, HwSettingPriority::Optional}
+     false, QVariant{}, QVariant{}, HwSettingPriority::Optional,
+     {}, calScheme, QVariant::fromValue(Scheme::Physical)}
 )
 
 // Sine-bar drive mechanics for the doubling-crystal motor stage. cutAngleDeg
@@ -49,7 +51,7 @@ REGISTER_HARDWARE_SETTINGS(SirahFcu,
 // every scheme.
 REGISTER_HARDWARE_ARRAY(SirahFcu, stages,
     "Crystal Stage Geometry", "Sine-bar tuning geometry for the doubling-crystal motor stage",
-    HwSettingPriority::Important)
+    HwSettingPriority::Important, calScheme, QVariant::fromValue(Scheme::Physical))
 REGISTER_HARDWARE_ARRAY_ENTRY(SirahFcu, stages,
     {{sStart,3000.0},
      {sHigh,12000.0},
@@ -70,13 +72,13 @@ REGISTER_HARDWARE_ARRAY_ENTRY(SirahFcu, stages,
 // row per order. Registered with no entries; populated by CSV import.
 REGISTER_HARDWARE_ARRAY(SirahFcu, polyCoeffs,
     "Polynomial Coefficients", "Forward/inverse coefficient lists for the Polynomial calibration scheme",
-    HwSettingPriority::Optional)
+    HwSettingPriority::Optional, calScheme, QVariant::fromValue(Scheme::Polynomial))
 
 // Spline calibration scheme: imported (wavelength, position) point table.
 // Registered with no entries; populated by CSV import.
 REGISTER_HARDWARE_ARRAY(SirahFcu, splinePoints,
     "Spline Points", "Wavelength/position point table for the Spline calibration scheme",
-    HwSettingPriority::Optional)
+    HwSettingPriority::Optional, calScheme, QVariant::fromValue(Scheme::Spline))
 
 SirahFcu::SirahFcu(const QString& label, QObject *parent) :
     LifFreqConversionStage(QString(SirahFcu::staticMetaObject.className()), label, parent)

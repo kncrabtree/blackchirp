@@ -264,7 +264,8 @@ QVector<HwSettingDef> HardwareRegistry::getSettingDefs(const QString& key, const
 
 bool HardwareRegistry::addArraySettingDef(const QString& key, const QString& subKey,
                                           const QString& arrayKey, const QString& label,
-                                          const QString& description, HwSettingPriority priority)
+                                          const QString& description, HwSettingPriority priority,
+                                          const QString& gateKey, const QVariant& gateValue)
 {
     QMutexLocker locker(&d_registryMutex);
 
@@ -276,7 +277,8 @@ bool HardwareRegistry::addArraySettingDef(const QString& key, const QString& sub
         return false;
     }
 
-    it.value().arraySettingDefs[arrayKey] = HwArraySettingDef{arrayKey, label, description, {}, priority};
+    it.value().arraySettingDefs[arrayKey] =
+        HwArraySettingDef{arrayKey, label, description, {}, priority, gateKey, gateValue};
     return true;
 }
 
@@ -344,10 +346,12 @@ bool HardwareRegistry::addBaseSettingDefs(const QString& className,
 
 bool HardwareRegistry::addBaseArraySettingDef(const QString& className, const QString& arrayKey,
                                               const QString& label, const QString& description,
-                                              HwSettingPriority priority)
+                                              HwSettingPriority priority,
+                                              const QString& gateKey, const QVariant& gateValue)
 {
     QMutexLocker locker(&d_registryMutex);
-    d_baseArrayDefs[className][arrayKey] = HwArraySettingDef{arrayKey, label, description, {}, priority};
+    d_baseArrayDefs[className][arrayKey] =
+        HwArraySettingDef{arrayKey, label, description, {}, priority, gateKey, gateValue};
     return true;
 }
 

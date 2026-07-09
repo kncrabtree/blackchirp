@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QHash>
 #include <QMap>
+#include <functional>
 #include <vector>
 #include <data/storage/settingsstorage.h>
 #include <data/lif/lifunits.h>
@@ -94,6 +95,22 @@ private:
         QVariant maxCm1;           ///< Registered def.maximum (canonical cm⁻¹), may be invalid.
     };
 
+    /*!
+     * \brief Bookkeeping for one gated row (HwSettingDef::gateKey /
+     *        HwArraySettingDef::gateKey): which sibling enum setting gates
+     *        it, the value it must hold, and how to show/hide the row
+     *        itself. \c setVisible is a closure over whichever widget(s)
+     *        make up that row (a QFormLayout field for Required settings,
+     *        or a SettingsTable row index for Important/Optional settings
+     *        and arrays) so applyGates() does not need to know the layout
+     *        details of each tier.
+     */
+    struct GatedRow {
+        QString gateKey;
+        QVariant gateValue;
+        std::function<void(bool)> setVisible;
+    };
+
     void populate(const QString &storageKey);
 
     QWidget *makeScalarWidget(const HwSettingDef &def, const QVariant &currentValue);
@@ -126,6 +143,35 @@ private:
     void applyDisplayUnit(UnitLinkedScalar &linked, BC::LifConv::LaserUnit u,
                           double canonicalValue);
 
+    /*!
+     * \brief Record a gated row for later processing by applyGates().
+     * \param gateKey   Sibling enum setting key (HwSettingDef::gateKey / HwArraySettingDef::gateKey).
+     * \param gateValue Enum value gateKey must hold for the row to be visible.
+     * \param setVisible Closure that shows/hides this specific row.
+     *
+     * No-op when \a gateKey is empty (the common, ungated case), so call
+     * sites do not need their own emptiness check.
+     */
+    void pushGatedRow(const QString &gateKey, const QVariant &gateValue,
+                      std::function<void(bool)> setVisible);
+
+    /*!
+     * \brief Resolve each recorded GatedRow's gate widget and wire it to
+     *        show/hide the row on change, applying the initial visibility
+     *        immediately.
+     *
+     * Called once after both the scalar and array setting loops in
+     * populate(), mirroring linkDisplayUnitScalars(): a gated row's gate
+     * widget is always a scalar (an EnumComboBoxBase-backed combo in
+     * d_scalarWidgets), and by the time this runs the scalar loop has
+     * already populated d_scalarWidgets regardless of whether the gated
+     * row itself came from the scalar or array loop. A gateKey that does
+     * not resolve to a combo box (absent, or a non-enum widget) leaves the
+     * row visible, matching linkDisplayUnitScalars's handling of a
+     * mismatched displayUnitKey.
+     */
+    void applyGates();
+
     QString d_hwType;
     QString d_impl;
     HwSettingsMode d_mode;
@@ -150,6 +196,10 @@ private:
     // display-unit-linked scalar boxes (HwSettingDef::displayUnitKey), keyed
     // implicitly by settingKey — see linkDisplayUnitScalars()
     std::vector<UnitLinkedScalar> d_unitLinkedScalars;
+
+    // rows gated on a sibling enum setting (HwSettingDef::gateKey /
+    // HwArraySettingDef::gateKey) — see applyGates()
+    std::vector<GatedRow> d_gatedRows;
 };
 
 #endif // HWSETTINGSWIDGET_H

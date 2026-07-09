@@ -130,12 +130,16 @@ void HwSettingsWidget::populate(const QString &storageKey)
                     w->setToolTip(tooltip);
                     d_scalarWidgets[def.key] = w;
                     p_requiredLayout->addRow(def.label + ":", w);
+                    pushGatedRow(def.gateKey, def.gateValue,
+                                 [this, w](bool visible) { p_requiredLayout->setRowVisible(w, visible); });
                 }
             } else {
                 // Edit mode: read-only text
                 auto *lbl = new QLabel(val.toString(), this);
                 lbl->setToolTip(tooltip);
                 p_requiredLayout->addRow(def.label + ":", lbl);
+                pushGatedRow(def.gateKey, def.gateValue,
+                             [this, lbl](bool visible) { p_requiredLayout->setRowVisible(lbl, visible); });
             }
             hasRequired = true;
             break;
@@ -145,7 +149,9 @@ void HwSettingsWidget::populate(const QString &storageKey)
             if (w) {
                 w->setToolTip(tooltip);
                 d_scalarWidgets[def.key] = w;
-                p_importantTable->addSettingRow(def.label, w, tooltip);
+                int row = p_importantTable->addSettingRow(def.label, w, tooltip);
+                pushGatedRow(def.gateKey, def.gateValue,
+                             [this, row](bool visible) { p_importantTable->setRowHidden(row, !visible); });
             }
             hasImportant = true;
             break;
@@ -156,7 +162,9 @@ void HwSettingsWidget::populate(const QString &storageKey)
             if (w) {
                 w->setToolTip(tooltip);
                 d_scalarWidgets[def.key] = w;
-                p_advancedTable->addSettingRow(def.label, w, tooltip);
+                int row = p_advancedTable->addSettingRow(def.label, w, tooltip);
+                pushGatedRow(def.gateKey, def.gateValue,
+                             [this, row](bool visible) { p_advancedTable->setRowHidden(row, !visible); });
             }
             hasAdvanced = true;
             break;
@@ -209,8 +217,12 @@ void HwSettingsWidget::populate(const QString &storageKey)
                         }
                     });
                     p_requiredLayout->addRow(def.label + ":", container);
+                    pushGatedRow(def.gateKey, def.gateValue,
+                                 [this, container](bool visible) { p_requiredLayout->setRowVisible(container, visible); });
                 } else {
                     p_requiredLayout->addRow(def.label + ":", lbl);
+                    pushGatedRow(def.gateKey, def.gateValue,
+                                 [this, lbl](bool visible) { p_requiredLayout->setRowVisible(lbl, visible); });
                 }
                 hasRequired = true;
             }
@@ -227,6 +239,12 @@ void HwSettingsWidget::populate(const QString &storageKey)
             break;
         }
     }
+
+    // Resolve every def/array-def with a non-empty gateKey (recorded above
+    // via pushGatedRow) against its sibling gate combo and wire it live. A
+    // post-pass, like linkDisplayUnitScalars(), since a gated row's gate
+    // widget may be built after the row itself within d_scalarWidgets.
+    applyGates();
 
     // Show/hide sections within the Settings tab
     p_requiredGroup->setVisible(hasRequired);
@@ -449,6 +467,56 @@ void HwSettingsWidget::applyDisplayUnit(UnitLinkedScalar &linked, BC::LifConv::L
 
 // ---------------------------------------------------------------------------
 
+void HwSettingsWidget::pushGatedRow(const QString &gateKey, const QVariant &gateValue,
+                                    std::function<void(bool)> setVisible)
+{
+    if (gateKey.isEmpty())
+        return;
+
+    d_gatedRows.push_back({gateKey, gateValue, std::move(setVisible)});
+}
+
+void HwSettingsWidget::applyGates()
+{
+    // Index-based iteration (rather than a range-for capturing a reference)
+    // so the connected lambdas below stay valid even though d_gatedRows is
+    // a member vector — matches the d_unitLinkedScalars precedent in
+    // linkDisplayUnitScalars().
+    for (std::size_t i = 0; i < d_gatedRows.size(); ++i) {
+        const auto &gr = d_gatedRows[i];
+
+        auto comboIt = d_scalarWidgets.constFind(gr.gateKey);
+        if (comboIt == d_scalarWidgets.cend())
+            continue; // gateKey names an absent widget; leave the row visible
+
+        // The gate widget is always the EnumComboBoxBase built by
+        // makeScalarWidget() for a Q_ENUM/Q_ENUM_NS setting; its item data
+        // is the enum's key-name string (see makeScalarWidget()). Cast to
+        // the plain QComboBox base, as linkDisplayUnitScalars() does, since
+        // only QComboBox::currentData() is needed here.
+        auto *combo = qobject_cast<QComboBox*>(comboIt.value());
+        if (!combo)
+            continue; // gateKey names a non-enum widget; leave the row visible
+
+        auto apply = [this, i, combo]() {
+            const auto &g = d_gatedRows[i];
+            // Resolve gateValue (a Q_ENUM/Q_ENUM_NS-typed QVariant) to its
+            // key-name string so it compares against the combo's
+            // currentData() on equal footing, mirroring how
+            // linkDisplayUnitScalars() resolves LaserUnit by name rather
+            // than by underlying int value.
+            const bool visible =
+                BC::CSV::enumKeyName(g.gateValue).toString() == combo->currentData().toString();
+            g.setVisible(visible);
+        };
+
+        apply();
+        connect(combo, &QComboBox::currentIndexChanged, this, apply);
+    }
+}
+
+// ---------------------------------------------------------------------------
+
 void HwSettingsWidget::addArrayTableRow(SettingsTable *table, const HwArraySettingDef &def)
 {
     // Value cell: "N entries" label + "Edit..." button
@@ -480,7 +548,9 @@ void HwSettingsWidget::addArrayTableRow(SettingsTable *table, const HwArraySetti
         }
     });
 
-    table->addSettingRow(def.label, countLabel, btn, settingTooltip(def));
+    int row = table->addSettingRow(def.label, countLabel, btn, settingTooltip(def));
+    pushGatedRow(def.gateKey, def.gateValue,
+                 [table, row](bool visible) { table->setRowHidden(row, !visible); });
 }
 
 QStringList HwSettingsWidget::subKeysForArray(const HwArraySettingDef &def) const

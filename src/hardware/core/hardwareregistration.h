@@ -186,12 +186,16 @@ inline QStringList buildInheritanceChain(const QMetaObject* metaObj) {
  * \param LABEL User-facing display label
  * \param DESC Explanatory description/tooltip
  * \param PRIORITY HwSettingPriority value
+ * \param ... Optional gate spec: a sibling enum setting key followed by the
+ *        QVariant-wrapped enum value it must hold for this array to be
+ *        visible in HwSettingsWidget (see HwArraySettingDef::gateKey).
+ *        Omit for an always-visible array.
  */
-#define REGISTER_HARDWARE_BASE_ARRAY(CLASS, ARRAY_KEY, LABEL, DESC, PRIORITY) \
+#define REGISTER_HARDWARE_BASE_ARRAY(CLASS, ARRAY_KEY, LABEL, DESC, PRIORITY, ...) \
     static bool BC_ARRDEF_VAR(CLASS, __COUNTER__) = \
         HardwareRegistry::instance().addBaseArraySettingDef( \
             QString(CLASS::staticMetaObject.className()), \
-            ARRAY_KEY, LABEL, DESC, PRIORITY);
+            ARRAY_KEY, LABEL, DESC, PRIORITY __VA_OPT__(,) __VA_ARGS__);
 
 /*!
  * \brief Add one entry to a base class array setting (call once per entry)
@@ -219,13 +223,17 @@ inline QStringList buildInheritanceChain(const QMetaObject* metaObj) {
  * \param LABEL User-facing display label
  * \param DESC Explanatory description/tooltip
  * \param PRIORITY HwSettingPriority value
+ * \param ... Optional gate spec: a sibling enum setting key followed by the
+ *        QVariant-wrapped enum value it must hold for this array to be
+ *        visible in HwSettingsWidget (see HwArraySettingDef::gateKey).
+ *        Omit for an always-visible array.
  */
-#define REGISTER_HARDWARE_ARRAY(CLASS, ARRAY_KEY, LABEL, DESC, PRIORITY) \
+#define REGISTER_HARDWARE_ARRAY(CLASS, ARRAY_KEY, LABEL, DESC, PRIORITY, ...) \
     static bool BC_ARRDEF_VAR(CLASS, __COUNTER__) = \
         HardwareRegistry::instance().addArraySettingDef( \
             findHardwareBaseType(&CLASS::staticMetaObject), \
             QString(CLASS::staticMetaObject.className()), \
-            ARRAY_KEY, LABEL, DESC, PRIORITY);
+            ARRAY_KEY, LABEL, DESC, PRIORITY __VA_OPT__(,) __VA_ARGS__);
 
 /*!
  * \brief Register one entry in an array setting (call once per entry)
