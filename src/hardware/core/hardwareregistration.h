@@ -188,7 +188,7 @@ inline QStringList buildInheritanceChain(const QMetaObject* metaObj) {
  * \param PRIORITY HwSettingPriority value
  */
 #define REGISTER_HARDWARE_BASE_ARRAY(CLASS, ARRAY_KEY, LABEL, DESC, PRIORITY) \
-    static bool BC_ARRDEF_VAR(CLASS, ARRAY_KEY) = \
+    static bool BC_ARRDEF_VAR(CLASS, __COUNTER__) = \
         HardwareRegistry::instance().addBaseArraySettingDef( \
             QString(CLASS::staticMetaObject.className()), \
             ARRAY_KEY, LABEL, DESC, PRIORITY);
@@ -221,7 +221,7 @@ inline QStringList buildInheritanceChain(const QMetaObject* metaObj) {
  * \param PRIORITY HwSettingPriority value
  */
 #define REGISTER_HARDWARE_ARRAY(CLASS, ARRAY_KEY, LABEL, DESC, PRIORITY) \
-    static bool BC_ARRDEF_VAR(CLASS, ARRAY_KEY) = \
+    static bool BC_ARRDEF_VAR(CLASS, __COUNTER__) = \
         HardwareRegistry::instance().addArraySettingDef( \
             findHardwareBaseType(&CLASS::staticMetaObject), \
             QString(CLASS::staticMetaObject.className()), \
@@ -328,9 +328,15 @@ inline QStringList buildInheritanceChain(const QMetaObject* metaObj) {
             QVector<CommDefault>{__VA_ARGS__} \
         );
 
-// Helpers for unique static variable names in array macros
+// Helpers for unique static variable names in array macros. BC_ARRDEF_VAR's
+// N argument is expected to be __COUNTER__ passed in from the call site
+// (mirroring BC_ARRENTRY_VAR/BC_COMMDEF_VAR below): a literal __LINE__ pasted
+// directly into this macro's own body would not be macro-expanded before the
+// ## paste, so a class registering more than one array setting needs the
+// caller-supplied, already-expanded counter to keep the generated static
+// variable names distinct.
 #define BC_ARRDEF_CONCAT(a, b) a##b
-#define BC_ARRDEF_VAR(CLASS, KEY) BC_ARRDEF_CONCAT(arraydef_##CLASS##_, __LINE__)
+#define BC_ARRDEF_VAR(CLASS, N) BC_ARRDEF_CONCAT(arraydef_##CLASS##_, N)
 #define BC_ARRENTRY_CONCAT(a, b) a##b
 #define BC_ARRENTRY_VAR(CLASS, N) BC_ARRENTRY_CONCAT(arrayentry_##CLASS##_, N)
 #define BC_COMMDEF_CONCAT(a, b) a##b
