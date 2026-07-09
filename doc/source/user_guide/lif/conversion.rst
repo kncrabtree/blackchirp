@@ -133,7 +133,10 @@ currently configured. With no conversion stages, it reads:
 
 With stages configured, each row is summarized in the form
 ``stageKey = Op(inputs)``, with ``[FINAL]`` appended to the stage
-marked as the excitation beam. Below the chain expression, when the
+marked as the excitation beam. For an NHG stage the operation label
+carries its harmonic order, rendering as ``NHG ×N`` (for example,
+``NHG ×2`` for a doubler); SFG and DFG stages show the bare ``SFG`` or
+``DFG`` label. Below the chain expression, when the
 chain fits together, Blackchirp reports the excitation-beam range that
 corresponds to the laser's full tuning range, for example:
 

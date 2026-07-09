@@ -124,10 +124,10 @@ The columns are::
 
 For example, an experiment with a single NHG doubling stage marked as
 the excitation beam, fed directly from a laser with hardware key
-``SirahCobra``, writes::
+``LifLaser.cobra``, writes::
 
    Index;StageKey;Op;Harmonic;IsFinal;Input0;Input1;OutCoeffA;OutCoeffB
-   0;LifFreqConversionStage.doubler;NHG;2;true;SirahCobra;;2;0
+   0;LifFreqConversionStage.doubler;NHG;2;true;LifLaser.cobra;;2;0
 
 lif/lifparams.csv
 -----------------

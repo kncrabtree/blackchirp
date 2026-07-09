@@ -12,10 +12,12 @@ A **LIF preset** is a named, saved configuration of the
 :doc:`frequency-conversion chain <conversion>` — analogous to an
 :doc:`FTMW preset </user_guide/ftmw_configuration/presets>`, but
 currently narrower in scope: a LIF preset captures only the conversion
-wiring (which input feeds each stage, the harmonic order of each NHG
-stage, and which stage is marked as the excitation beam), not the LIF
-digitizer, gate, or manual laser-control settings, which persist
-separately. Like FTMW presets, LIF presets are saved inside a loadout
+wiring (which input feeds each stage, and which stage is marked as the
+excitation beam), not the LIF digitizer, gate, or manual laser-control
+settings, which persist separately. The conversion operation and the
+harmonic order of each NHG stage are hardware identity, re-read from
+each stage's own profile when the chain is assembled, and are not part
+of the preset. Like FTMW presets, LIF presets are saved inside a loadout
 and cannot exist outside one; see :doc:`/user_guide/hardware_config/loadouts`.
 
 .. _lif-preset-bar:
@@ -51,6 +53,13 @@ The **LIF Preset** group box at the top of the
 **Rename...**
    Renames the currently applied preset. Disabled when no named preset
    is applied.
+
+**Delete**
+   Removes the preset selected in the combo box from the loadout, after
+   a confirmation prompt. Enabled only when the combo selects a named
+   preset other than the one currently applied. This button appears in
+   the standalone **Hardware → LIF Configuration** dialog; it is hidden
+   in the Experiment Setup wizard's Conversion tab.
 
 .. _lif-presets-current:
 

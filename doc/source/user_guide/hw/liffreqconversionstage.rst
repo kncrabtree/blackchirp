@@ -37,7 +37,7 @@ Represents a conversion-topology node that is not under Blackchirp's control —
 Sirah FCU
 .................
 
-The Sirah Frequency Conversion Unit is a doubling-stage driver for a Sirah frequency-conversion unit — a separate Sirah instrument from the :doc:`Sirah Cobra <liflaser>` grating controller, connected on its own serial port with its own communication settings. Harmonic order defaults to 2, the common lone-doubler case, and is fixed at profile creation rather than editable afterward. The doubling crystal's angle-to-wavelength tuning curve is evaluated through a selectable :ref:`calibration scheme <sirah-fcu-calibration>` rather than a fixed formula; see that section for the schemes, their settings, and the offline calibration workflow that produces the numbers you enter here.
+The Sirah Frequency Conversion Unit is a doubling-stage driver for a Sirah frequency-conversion unit — a separate Sirah instrument from the :doc:`Sirah Cobra <liflaser>` grating controller, connected on its own serial port with its own communication settings. Harmonic order defaults to 2, the common lone-doubler case; the default is set prominently at profile creation, but it remains changeable afterward through the Conversion tab's **Change harmonic…** action (see :ref:`lif-conversion-harmonic`). The doubling crystal's angle-to-wavelength tuning curve is evaluated through a selectable :ref:`calibration scheme <sirah-fcu-calibration>` rather than a fixed formula; see that section for the schemes, their settings, and the offline calibration workflow that produces the numbers you enter here.
 
 .. _sirah-fcu-calibration:
 
@@ -92,10 +92,13 @@ while it is not shown.
      mechanical constants, the same geometry documented for the
      :doc:`Sirah Cobra <liflaser>` grating stage.
 
-   These are the same five fitted numbers (cut angle, temperature,
-   linear offset, angle offset, screw pitch) that ``fcu_fit.py``
-   prints after fitting a bench calibration run; type them directly
-   into the corresponding fields rather than importing a CSV.
+   These are the same numbers that ``fcu_fit.py`` prints after fitting
+   a bench calibration run; type them directly into the corresponding
+   fields rather than importing a CSV. By default the script fits only
+   three of them — temperature, linear offset, and angle offset — and
+   holds the cut angle and screw pitch fixed at the values you supply,
+   fitting those two only when ``--fit-cut-angle`` or
+   ``--fit-screw-pitch`` is passed.
 
 **Polynomial**
    Imported forward (wavelength → position) and inverse (position →
@@ -155,10 +158,13 @@ See that directory's ``README.md`` for the full command-line reference:
        python fcu_fit.py measurements.csv --crystal bbo --cut-angle 32.3 \
            --save calibration.png
 
-   It prints the fitted Physical scheme's five parameters to the
-   console, and writes an ``order;forward;inverse`` CSV for the
-   Polynomial scheme and a ``wavelengthNm;positionSteps`` CSV for the
-   Spline scheme alongside the measurements file.
+   It prints the fitted Physical scheme's parameters to the console
+   (fitting temperature, linear offset, and angle offset by default,
+   with cut angle and screw pitch held fixed unless ``--fit-cut-angle``
+   or ``--fit-screw-pitch`` is passed), and writes an
+   ``order;forward;inverse`` CSV for the Polynomial scheme and a
+   ``wavelengthNm;positionSteps`` CSV for the Spline scheme alongside
+   the measurements file.
 
 #. **Bring the result into Blackchirp.** Open the Sirah FCU's hardware
    dialog, select the matching ``Calibration Scheme``, and either type

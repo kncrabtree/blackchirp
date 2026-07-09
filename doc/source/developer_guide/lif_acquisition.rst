@@ -469,11 +469,13 @@ two LIF hardware objects (each on its own ``"<hwKey>Thread"``).
        AM["AcquisitionManager<br/>(AM thread)"]
        HM["HardwareManager<br/>(HM thread)"]
        LL["LifLaser<br/>(hw thread)"]
+       CS["LifFreqConversionStage(s)<br/>(hw thread each)"]
        PG["PulseGenerator<br/>(hw thread)"]
        LS["LifDigitizer<br/>(hw thread)"]
        AM -- "nextLifPoint" --> HM
-       HM -- "BlockingQueued<br/>setPosition + setLifDelay" --> LL
-       HM -- " " --> PG
+       HM -- "BlockingQueued<br/>setPosition" --> LL
+       HM -- "Queued+future<br/>setLifConversionStages" --> CS
+       HM -- "BlockingQueued<br/>setLifDelay" --> PG
        HM -- "lifSettingsComplete" --> AM
        LS -- "waveformRead" --> HM
        HM -- "lifDigitizerShotAcquired" --> AM
