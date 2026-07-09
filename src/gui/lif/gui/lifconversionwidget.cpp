@@ -67,8 +67,15 @@ LifConversionWidget::LifConversionWidget(bool showDeleteButton, QWidget *parent)
     p_model = new LifConversionTableModel(this);
     p_tableView = new QTableView(this);
     p_tableView->setModel(p_model);
-    p_tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    p_tableView->horizontalHeader()->setStretchLastSection(true);
+    // Stage and the two input columns carry the long text (hardware keys and
+    // wiring descriptions), so they share the free space; op, harmonic, and the
+    // FINAL marker stay just wide enough for their contents.
+    auto *header = p_tableView->horizontalHeader();
+    header->setStretchLastSection(false);
+    header->setSectionResizeMode(QHeaderView::ResizeToContents);
+    header->setSectionResizeMode(LifConversionTableModel::StageColumn, QHeaderView::Stretch);
+    header->setSectionResizeMode(LifConversionTableModel::Input0Column, QHeaderView::Stretch);
+    header->setSectionResizeMode(LifConversionTableModel::Input1Column, QHeaderView::Stretch);
     p_tableView->setItemDelegate(new LifConversionTableDelegate(p_tableView));
     p_tableView->setContextMenuPolicy(Qt::CustomContextMenu);
     mainLayout->addWidget(p_tableView, 1);
