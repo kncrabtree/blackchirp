@@ -18,6 +18,7 @@ LifLaserWidget::LifLaserWidget(const QString& lifLaserKey, QWidget *parent)
 
     using namespace BC::Key::LifLaser;
     using namespace BC::LifConv;
+    using namespace Qt::StringLiterals;
     auto gl = new QGridLayout;
 
     SettingsStorage s(lifLaserKey, SettingsStorage::Hardware);
@@ -40,6 +41,11 @@ LifLaserWidget::LifLaserWidget(const QString& lifLaserKey, QWidget *parent)
     p_posBox->setMaximum(qMax(dlo, dhi));
     p_posBox->setSuffix(QString(" ").append(unitLabel(d_unit)));
     p_posBox->setDecimals(s.get(decimals,2));
+    // No real position has been read yet (first update arrives via
+    // setPosition() below, driven by LifLaser::laserPosUpdate); show a
+    // placeholder rather than an arbitrary boundary value until then.
+    p_posBox->setSpecialValueText(u"--"_s);
+    p_posBox->setValue(p_posBox->minimum());
 
     p_posSetButton = new QPushButton(QString("Set"));
     p_posSetButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-right-circle.svg", ThemeColors::IconPrimary, this));
@@ -82,10 +88,16 @@ LifLaserWidget::LifLaserWidget(const QString& lifLaserKey, QWidget *parent)
 void LifLaserWidget::setPosition(const double d)
 {
     // d is the output-beam wavenumber (cm⁻¹); the box and its range are
-    // in the display unit.
-    auto displayPos = BC::LifConv::fromCm1(d, d_unit);
-    if(displayPos >= p_posBox->minimum() && displayPos <= p_posBox->maximum())
-        p_posBox->setValue(displayPos);
+    // in the display unit. d<=0 is the shared "unresolved" sentinel (see
+    // LifLaser::readPos()/LifConversion::stageInput()); guard it explicitly
+    // rather than relying on the min/max range check below, which only
+    // rejects it by coincidence when the laser's own range excludes it.
+    if(d > 0.0)
+    {
+        auto displayPos = BC::LifConv::fromCm1(d, d_unit);
+        if(displayPos >= p_posBox->minimum() && displayPos <= p_posBox->maximum())
+            p_posBox->setValue(displayPos);
+    }
 
     p_posSetButton->setEnabled(true);
     p_posBox->setEnabled(true);

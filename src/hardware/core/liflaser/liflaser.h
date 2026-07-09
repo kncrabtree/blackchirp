@@ -54,6 +54,15 @@ private:
     virtual bool setFl(bool en) =0;
 
     bool d_autoDisable{false};
+    //! Fundamental->output conversion applied by readPosition()/setPosition().
+    //! Unsynchronized: correct only because every LifLaser slot runs on this
+    //! object's own (threaded) affinity, and the only cross-thread writer
+    //! (HardwareManager::pushLifConversionToLaser()) always reaches
+    //! setConversion() via Qt::BlockingQueuedConnection rather than calling
+    //! it directly. A future caller that invokes setConversion() over a
+    //! Direct connection (or from another thread without going through
+    //! invokeMethod) would race this member against
+    //! readPosition()/setPosition() with no lock to catch it.
     LifConversion d_conversion;
 
 protected:

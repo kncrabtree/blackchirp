@@ -75,6 +75,11 @@ double LifLaser::setPosition(const double pos)
 
 void LifLaser::setConversion(const LifConversion &c)
 {
+    // Requires the caller to reach this slot on the laser's own thread (a
+    // direct call already on that thread, or a cross-thread invocation via
+    // Qt::BlockingQueuedConnection as HardwareManager::pushLifConversionToLaser()
+    // does) — see the d_conversion comment in the header for why a Direct
+    // cross-thread connection would introduce a silent data race.
     d_conversion = c;
 }
 

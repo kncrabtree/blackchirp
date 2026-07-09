@@ -46,7 +46,13 @@ void LifLaserStatusBox::applySettings()
     d_decimals = s.get(decimals,2);
     d_unit = BC::CSV::enumFromVariant<LaserUnit>(s.get(units, QVariant::fromValue(LaserUnit::Nm)), LaserUnit::Nm);
     d_suffix = u" "_s + unitLabel(d_unit);
-    p_posLabel->setText(BC::Gui::formatNumberForDisplay(fromCm1(d_position, d_unit), d_decimals) + d_suffix);
+    // Before the first real laserPosUpdate, d_position's default (0.0)
+    // would hit fromCm1()'s non-positive guard and render as a negative
+    // sentinel; show a placeholder instead until a valid reading arrives.
+    if(d_hasPosition)
+        p_posLabel->setText(BC::Gui::formatNumberForDisplay(fromCm1(d_position, d_unit), d_decimals) + d_suffix);
+    else
+        p_posLabel->setText(u"--"_s);
 }
 
 void LifLaserStatusBox::setPosition(double d)
@@ -54,6 +60,7 @@ void LifLaserStatusBox::setPosition(double d)
     // d is the output-beam wavenumber (cm⁻¹); stored raw so a later
     // applySettings() (unit changed) re-renders it in the new unit.
     d_position = d;
+    d_hasPosition = true;
     p_posLabel->setText(BC::Gui::formatNumberForDisplay(BC::LifConv::fromCm1(d_position, d_unit), d_decimals) + d_suffix);
 }
 

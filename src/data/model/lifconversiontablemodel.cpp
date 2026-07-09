@@ -132,6 +132,22 @@ void LifConversionTableModel::rebuildFromWiring(const std::vector<BC::LifConv::S
         {
             node.inputs = it->inputs;
             node.isFinal = it->isFinal;
+
+            // The op read above always comes from the live hardware
+            // snapshot, not from whatever op the wiring was saved under; a
+            // preset saved while the stage's op required a different arity
+            // (e.g. SFG, 2 inputs, applied to a stage now wired for NHG, 1
+            // input) must have its loaded inputs truncated/padded to match
+            // the current op's arity here, or assemble() fails permanently
+            // and flags() leaves the stale extra input non-editable.
+            auto expected = defaultInputs(node.op);
+            if(node.inputs.size() > expected.size())
+                node.inputs.resize(expected.size());
+            else if(node.inputs.size() < expected.size())
+            {
+                for(std::size_t i = node.inputs.size(); i < expected.size(); ++i)
+                    node.inputs.push_back(expected.at(i));
+            }
         }
         else
         {
@@ -296,6 +312,15 @@ bool LifConversionTableModel::setData(const QModelIndex &index, const QVariant &
     if(role == Qt::CheckStateRole && index.column() == FinalColumn)
     {
         bool checked = (value.toInt() == Qt::Checked);
+
+        // Radio semantics: FINAL is moved by checking a different row, not
+        // by unchecking the active one. Unchecking the currently-active row
+        // would otherwise leave the graph with zero FINAL stages
+        // (unassemblable, surfaced only in the preview footer) with no
+        // in-table way to pick a new FINAL; treat it as a no-op instead.
+        if(!checked && node.isFinal)
+            return false;
+
         for(auto &n : d_nodes)
             n.isFinal = false;
         node.isFinal = checked;

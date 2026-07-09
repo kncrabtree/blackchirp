@@ -27,6 +27,7 @@ private:
     QString d_suffix;
     BC::LifConv::LaserUnit d_unit{BC::LifConv::LaserUnit::Nm};
     double d_position{0.0}; ///< Raw output-beam wavenumber (cm⁻¹); converted to d_unit for display.
+    bool d_hasPosition{false}; ///< Set once setPosition() delivers a real laserPosUpdate reading.
 
 };
 

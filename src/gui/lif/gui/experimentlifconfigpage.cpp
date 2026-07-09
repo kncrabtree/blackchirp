@@ -72,9 +72,14 @@ bool ExperimentLifConfigPage::validate()
     if(!p_exp->lifEnabled())
         return true;
 
-    //consider smarter validation?
-    return true;
+    auto result = p_widget->lifConversionWidget()->model()->assemblyResult();
+    if(!result.ok)
+    {
+        emit error(result.errorString);
+        return false;
+    }
 
+    return true;
 }
 
 void ExperimentLifConfigPage::apply()
