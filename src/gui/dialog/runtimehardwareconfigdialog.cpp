@@ -1112,9 +1112,17 @@ void RuntimeHardwareConfigDialog::onRemoveProfile(const QString& hardwareType)
         if (!RuntimeHardwareConfig::isHardwareRequired(type))
             return std::nullopt;
         auto &pm = HardwareProfileManager::instance();
+        const QString impl = pm.getImplementation(type, u"virtual"_s);
+        // A required type is expected to have a "virtual" system profile
+        // (ensureSystemProfiles creates one). If none is registered, the impl
+        // is empty and there is no valid member to substitute; drop the member
+        // rather than persist a "<Type>.virtual" entry pointing at a profile
+        // that does not exist.
+        if (impl.isEmpty())
+            return std::nullopt;
         BC::Loadout::FallbackMember fm;
         fm.hwKey    = BC::Key::hwKey(type, u"virtual"_s);
-        fm.impl     = pm.getImplementation(type, u"virtual"_s);
+        fm.impl     = impl;
         fm.identity = pm.getProfileIdentity(type, u"virtual"_s);
         return fm;
     };
@@ -1123,14 +1131,24 @@ void RuntimeHardwareConfigDialog::onRemoveProfile(const QString& hardwareType)
     // deduping across profiles that appear in more than one loadout or preset.
     BC::Loadout::PruneConsequences consequences;
     {
-        std::set<std::pair<QString, QString>> seenPresets;
+        std::set<std::pair<QString, QString>> seenLost;
+        std::set<QString> seenLostWorking;
+        std::set<std::pair<QString, QString>> seenRebound;
         std::set<QString> seenModified;
         std::set<std::tuple<QString, QString, QString>> seenSubs;
         for (const QString &label : profilesToRemove) {
             const auto pc = lm.previewPruneReferencing(BC::Key::hwKey(hardwareType, label), fallbackFor);
             for (const auto &lp : pc.lostPresets) {
-                if (seenPresets.emplace(lp.first, lp.second).second)
+                if (seenLost.emplace(lp.first, lp.second).second)
                     consequences.lostPresets.push_back(lp);
+            }
+            for (const auto &lw : pc.lostWorkingConfigLoadouts) {
+                if (seenLostWorking.insert(lw).second)
+                    consequences.lostWorkingConfigLoadouts.push_back(lw);
+            }
+            for (const auto &rp : pc.reboundPresets) {
+                if (seenRebound.emplace(rp.first, rp.second).second)
+                    consequences.reboundPresets.push_back(rp);
             }
             for (const auto &ml : pc.modifiedLoadouts) {
                 if (seenModified.insert(ml).second)
@@ -1155,15 +1173,20 @@ void RuntimeHardwareConfigDialog::onRemoveProfile(const QString& hardwareType)
     }
 
     const bool hasConsequences = !consequences.lostPresets.empty()
+                                 || !consequences.lostWorkingConfigLoadouts.empty()
+                                 || !consequences.reboundPresets.empty()
                                  || !consequences.modifiedLoadouts.empty()
                                  || !consequences.fallbackSubs.empty();
     if (hasConsequences) {
         message += "\n\nThis affects saved loadouts:";
+        // Destructive consequences first, spelled out in full.
         if (!consequences.lostPresets.empty()) {
-            message += "\n\nPresets that will be removed:";
+            message += "\n\nPresets that will be removed (their configuration cannot be preserved):";
             for (const auto &[loadout, preset] : consequences.lostPresets)
                 message += QString("\n  %1 → %2").arg(loadout, preset);
         }
+        for (const auto &loadout : consequences.lostWorkingConfigLoadouts)
+            message += QString("\n\nThe current working configuration in '%1' will be lost.").arg(loadout);
         if (!consequences.modifiedLoadouts.empty()) {
             message += "\n\nLoadouts that will lose this hardware:";
             for (const auto &loadout : consequences.modifiedLoadouts)
@@ -1173,6 +1196,16 @@ void RuntimeHardwareConfigDialog::onRemoveProfile(const QString& hardwareType)
             message += "\n\nLoadouts where a required device will be replaced with the system fallback:";
             for (const auto &fs : consequences.fallbackSubs)
                 message += QString("\n  %1: %2 → %3").arg(fs.loadout, fs.type, fs.fallbackHwKey);
+        }
+        // Non-destructive rebinds: a one-line summary rather than a full list.
+        if (!consequences.reboundPresets.empty()) {
+            std::set<QString> loadouts;
+            for (const auto &[loadout, preset] : consequences.reboundPresets)
+                loadouts.insert(loadout);
+            message += QString("\n\n%1 preset(s) across %2 loadout(s) will be re-pointed "
+                               "to the system fallback device.")
+                           .arg(consequences.reboundPresets.size())
+                           .arg(loadouts.size());
         }
     }
 
@@ -1534,6 +1567,12 @@ void RuntimeHardwareConfigDialog::onLoadoutActivate()
 
 void RuntimeHardwareConfigDialog::stampMemberIdentities(HardwareLoadout &loadout) const
 {
+    // Authoritative rebuild: discard any pre-existing entries first so a
+    // member whose profile has since been deleted (or never resolves) ends
+    // up absent from the map rather than retaining a stale identity token.
+    // An absent entry is the intended wildcard ("unknown") match.
+    loadout.hardwareIdentity.clear();
+
     auto &pm = HardwareProfileManager::instance();
     for (const auto &[hwKey, impl] : loadout.hardwareMap) {
         auto [type, label] = BC::Key::parseKey(hwKey);
@@ -1759,7 +1798,6 @@ void RuntimeHardwareConfigDialog::onLoadoutCopy()
     HardwareLoadout newLoadout;
     newLoadout.name = name;
     newLoadout.hardwareMap = sourceLoadout->hardwareMap;
-    newLoadout.hardwareIdentity = sourceLoadout->hardwareIdentity;
     stampMemberIdentities(newLoadout);
     LoadoutManager::instance().putLoadout(newLoadout);
 

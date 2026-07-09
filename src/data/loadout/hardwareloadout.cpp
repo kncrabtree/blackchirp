@@ -257,4 +257,36 @@ bool lifPresetReferencesHardware(const LifPreset &preset, const QString &hwKey)
     return false;
 }
 
+bool ftmwPresetRebindHardware(FtmwPreset &preset, const QString &fromKey, const QString &toKey)
+{
+    bool changed = false;
+    if (preset.digiHwKey == fromKey) {
+        preset.digiHwKey = toKey;
+        changed = true;
+    }
+    for (auto it = preset.rfConfig.clocks.begin(); it != preset.rfConfig.clocks.end(); ++it) {
+        if (it.value().hwKey == fromKey) {
+            it.value().hwKey = toKey;
+            changed = true;
+        }
+    }
+    return changed;
+}
+
+bool lifPresetRebindHardware(LifPreset &preset, const QString &fromKey, const QString &toKey)
+{
+    bool changed = false;
+    if (preset.conversion.laserKey == fromKey) {
+        preset.conversion.laserKey = toKey;
+        changed = true;
+    }
+    for (auto &w : preset.conversion.wiring) {
+        if (w.stageKey == fromKey) {
+            w.stageKey = toKey;
+            changed = true;
+        }
+    }
+    return changed;
+}
+
 } // namespace BC::Loadout

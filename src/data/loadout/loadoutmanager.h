@@ -93,9 +93,18 @@ struct FallbackMember {
 using FallbackResolver = std::function<std::optional<FallbackMember>(const QString &type)>;
 
 /// \brief Consequences of deleting a profile, computed without mutating anything.
+///
+/// A referencing preset is *rebound* to the fallback (non-destructive) when a
+/// fallback exists for the deleted type, and *dropped* (destructive) when none
+/// does. The categories below separate the two so a confirmation dialog can
+/// alarm only where configuration is actually lost.
 struct PruneConsequences {
-    /// \brief (loadout, named preset) pairs that will be removed because they reference the deleted hwKey.
+    /// \brief (loadout, named preset) pairs that will be dropped because they reference the deleted hwKey and no fallback exists.
     std::vector<std::pair<QString,QString>> lostPresets;
+    /// \brief Loadouts whose current working configuration (the `__LastUsed__` preset) is dropped because no fallback exists.
+    std::vector<QString> lostWorkingConfigLoadouts;
+    /// \brief (loadout, named preset) pairs that will be re-pointed to the fallback (non-destructive).
+    std::vector<std::pair<QString,QString>> reboundPresets;
     /// \brief Loadouts that lose an optional-type member (dropped, not replaced).
     std::vector<QString> modifiedLoadouts;
     /// \brief One required-type member substitution.
@@ -167,7 +176,9 @@ public:
     /// \brief Compute, without mutation, what deleting the profile named by hwKey does to every loadout.
     BC::Loadout::PruneConsequences previewPruneReferencing(const QString &hwKey,
                                                            const BC::Loadout::FallbackResolver &fallbackFor) const;
-    /// \brief Execute the pruning previewed above; returns the number of presets removed.
+    /// \brief Execute the pruning previewed above. Referencing presets are rebound to
+    /// the fallback when one exists and dropped otherwise; returns the number of
+    /// presets dropped (rebinds are not counted).
     int prunePresetsReferencing(const QString &hwKey,
                                 const BC::Loadout::FallbackResolver &fallbackFor);
 

@@ -180,6 +180,11 @@ bool ftmwPresetReferencesHardware(const FtmwPreset &preset, const QString &hwKey
 /// \brief Whether a LIF preset references the given hardware key (a wired conversion stage or the captured laser).
 bool lifPresetReferencesHardware(const LifPreset &preset, const QString &hwKey);
 
+/// \brief Rewrite every reference to `fromKey` in an FTMW preset (its digitizer and any RF-chain clock role) to `toKey`. Returns whether anything changed.
+bool ftmwPresetRebindHardware(FtmwPreset &preset, const QString &fromKey, const QString &toKey);
+/// \brief Rewrite every reference to `fromKey` in a LIF preset (the captured laser and any wired conversion stage) to `toKey`. Returns whether anything changed.
+bool lifPresetRebindHardware(LifPreset &preset, const QString &fromKey, const QString &toKey);
+
 } // namespace BC::Loadout
 
 #endif // BC_HARDWARELOADOUT_H

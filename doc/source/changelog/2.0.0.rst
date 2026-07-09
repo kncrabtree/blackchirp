@@ -109,10 +109,13 @@ Hardware configuration
   device: loadouts record each member's identity on save, and hardware
   drift is detected on identity, not just on the profile key. See
   :doc:`/user_guide/hardware_config/loadouts`.
-- Added a deletion-consequence preview: removing a profile enumerates,
-  and then prunes, the FTMW and LIF presets that reference it, dropping
-  optional-type members from affected loadouts and substituting the
-  system fallback for required-type members. See
+- Added a deletion-consequence preview: removing a profile shows how
+  each affected loadout and its FTMW and LIF presets are updated.
+  Members of a required hardware type are substituted with the system
+  fallback and their referencing presets are re-pointed to it; members
+  with no fallback are dropped, along with any preset whose topology
+  depends on them. The dialog spells out the destructive changes and
+  summarizes the rebinds before you confirm. See
   :doc:`/user_guide/hardware_config/profiles`.
 - Added the consolidated *FTMW Configuration* menu entry and
   ``FtmwConfigDialog``, replacing the v1.x scattered FTMW pages.

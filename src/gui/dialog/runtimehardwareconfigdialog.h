@@ -83,7 +83,7 @@ private:
     QString selectedLoadoutName() const;
     bool isPreviewDirty() const;
 
-    /// \brief Fill loadout.hardwareIdentity from the current profiles for every member in loadout.hardwareMap.
+    /// \brief Rebuild loadout.hardwareIdentity from scratch using the current profiles for every member in loadout.hardwareMap.
     void stampMemberIdentities(HardwareLoadout &loadout) const;
 
     struct ProfileOverrides {
