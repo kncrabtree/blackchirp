@@ -31,42 +31,6 @@ Trigger: the first campaign where cross-band relative intensities
 matter, or when the companion `ftmwpipeline` timebase/deconvolution
 analysis is ready to consume `jitterphi.csv`.
 
-### Sirah Cobra integration refresh
-
-A new Sirah Cobra dye laser coming online triggers a rework of the
-`SirahCobra` driver: move its hand-rolled second serial port and
-frequency-conversion logic into a first-class `LifFreqConversionStage`
-hardware type, add a hardware-independent conversion topology to the
-`LifLaser` base so the LIF axis reads in the final (converted)
-wavelength, and migrate the driver's ad-hoc settings to the registry.
-Full plan (which supersedes the earlier "Approach A" multi-port
-direction) in [sirah-cobra-refresh.md](sirah-cobra-refresh.md).
-**Implemented on `feature/sirah-cobra-refresh`** — the driver split, the
-hardware-independent conversion topology, the per-experiment
-topology/preset refactor
-([lif-conversion-preset.md](lif-conversion-preset.md)), and the FCU
-calibration schemes ([sirah-fcu-calibration.md](sirah-fcu-calibration.md))
-have all landed. Only end-user/bench testing remains (not merge-blocking;
-likely folded into beta).
-
-### Sirah FCU calibration schemes
-
-The `SirahFcu` doubling stage from the refresh above still tunes with
-`SirahCobra`'s **grating** diffraction math as a placeholder — wrong for
-a phase-matched doubling crystal. Replace it with a user-selectable
-calibration scheme: a best-effort BBO/KDP Type-I SHG physical model
-(cut angle, temperature, sine-bar offsets, screw pitch — the parameter
-set confirmed by the Sirah Autotracker service manual §6), plus
-polynomial and spline fallbacks. Blackchirp evaluates only; the fits are
-produced offline and imported (a generic "Import CSV…" button is added
-to `HwArrayEditDialog`). The tuning law moves to a hardware-free
-`FcuCalibration` value type (sibling of `LifConversion`), unit-tested in
-CI. Full plan in
-[sirah-fcu-calibration.md](sirah-fcu-calibration.md). **Implemented on
-`feature/sirah-cobra-refresh`** (value type, driver migration, offline
-Python tools, CSV import, scheme-aware settings gating, and docs); awaits
-bench verification once the FCU is online.
-
 ### Profile identity + preset lifecycle hardening
 
 A preset references hardware by hwKey (`"<Type>.<label>"`), which is not
@@ -98,8 +62,7 @@ runtime-config dialog.
 
 Generalize the RF signal-chain configuration from its current **fixed
 topology** to a flexible DAG, reusing the frequency-conversion topology
-model designed for the LIF laser
-([sirah-cobra-refresh.md](sirah-cobra-refresh.md)). Today the chain is a
+model designed for the LIF laser. Today the chain is a
 single hardcoded 3-stage formula — `chirpFreq = (awgFreq × awgMult ±
 upLO) × chirpMult` in `RfConfig::calculateChirpFreq`/`calculateAwgFreq`
 (`rfconfig.cpp:204-228`) — over a closed six-value role enum
