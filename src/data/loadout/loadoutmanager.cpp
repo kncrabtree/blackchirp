@@ -1,5 +1,8 @@
 #include <data/loadout/loadoutmanager.h>
 
+#include <algorithm>
+
+#include <data/bcglobals.h>
 #include <data/loadout/chirpconfigloadout.h>
 #include <data/loadout/ftmwdigitizerloadout.h>
 #include <data/settings/hardwarekeys.h>
@@ -171,6 +174,163 @@ QStringList LoadoutManager::loadoutsMatchingHwKey(const QString &hwKey) const
             result.append(it.key());
     }
     return result;
+}
+
+// ── Deletion-time preset pruning ─────────────────────────────────────────────
+
+PruneConsequences LoadoutManager::previewPruneReferencing(
+    const QString &hwKey, const FallbackResolver &fallbackFor) const
+{
+    PruneConsequences out;
+
+    const auto [type, label] = BC::Key::parseKey(hwKey);
+    const auto fb = fallbackFor(type);
+
+    {
+        QMutexLocker lk(&d_mutex);
+        for (auto it = d_loadouts.constBegin(); it != d_loadouts.constEnd(); ++it) {
+            const QString &loadoutName = it.key();
+            const HardwareLoadout &loadout = it.value();
+
+            for (const auto &[name, preset] : loadout.ftmwPresets) {
+                if (name == lastUsedFtmwPresetName)
+                    continue;
+                if (ftmwPresetReferencesHardware(preset, hwKey))
+                    out.lostPresets.emplace_back(loadoutName, name);
+            }
+            for (const auto &[name, preset] : loadout.lifPresets) {
+                if (name == lastUsedLifPresetName)
+                    continue;
+                if (lifPresetReferencesHardware(preset, hwKey))
+                    out.lostPresets.emplace_back(loadoutName, name);
+            }
+
+            if (loadout.hardwareMap.count(hwKey)) {
+                if (fb.has_value())
+                    out.fallbackSubs.push_back({loadoutName, type, fb->hwKey});
+                else
+                    out.modifiedLoadouts.push_back(loadoutName);
+            }
+        }
+    }
+
+    // d_loadouts is an unordered QHash; sort so the preview is deterministic.
+    std::sort(out.lostPresets.begin(), out.lostPresets.end());
+    std::sort(out.modifiedLoadouts.begin(), out.modifiedLoadouts.end());
+    std::sort(out.fallbackSubs.begin(), out.fallbackSubs.end(),
+              [](const PruneConsequences::FallbackSub &a,
+                 const PruneConsequences::FallbackSub &b) { return a.loadout < b.loadout; });
+
+    return out;
+}
+
+int LoadoutManager::prunePresetsReferencing(const QString &hwKey, const FallbackResolver &fallbackFor)
+{
+    const auto [type, label] = BC::Key::parseKey(hwKey);
+    const auto fb = fallbackFor(type);
+
+    // Snapshot the affected loadout names without holding d_mutex across the
+    // public getLoadout/putLoadout calls below (which lock internally). A
+    // loadout is affected if any preset — including __LastUsed__ — references
+    // hwKey, or its hardwareMap contains hwKey.
+    std::vector<QString> affected;
+    for (const QString &loadoutName : loadoutNames()) {
+        const auto lo = getLoadout(loadoutName);
+        if (!lo.has_value())
+            continue;
+
+        bool touched = lo->hardwareMap.count(hwKey) > 0;
+        for (auto pit = lo->ftmwPresets.cbegin(); !touched && pit != lo->ftmwPresets.cend(); ++pit)
+            touched = ftmwPresetReferencesHardware(pit->second, hwKey);
+        for (auto pit = lo->lifPresets.cbegin(); !touched && pit != lo->lifPresets.cend(); ++pit)
+            touched = lifPresetReferencesHardware(pit->second, hwKey);
+
+        if (touched)
+            affected.push_back(loadoutName);
+    }
+
+    int totalRemoved = 0;
+
+    for (const QString &loadoutName : affected) {
+        auto loOpt = getLoadout(loadoutName);
+        if (!loOpt.has_value())
+            continue;
+        HardwareLoadout copy = *loOpt;
+
+        // Collect and erase referencing FTMW presets (including __LastUsed__),
+        // tracking the named ones for fine-grained signal emission.
+        std::vector<QString> removedFtmwNamed;
+        for (auto pit = copy.ftmwPresets.begin(); pit != copy.ftmwPresets.end(); ) {
+            if (ftmwPresetReferencesHardware(pit->second, hwKey)) {
+                if (pit->first != lastUsedFtmwPresetName)
+                    removedFtmwNamed.push_back(pit->first);
+                pit = copy.ftmwPresets.erase(pit);
+                ++totalRemoved;
+            } else {
+                ++pit;
+            }
+        }
+
+        std::vector<QString> removedLifNamed;
+        for (auto pit = copy.lifPresets.begin(); pit != copy.lifPresets.end(); ) {
+            if (lifPresetReferencesHardware(pit->second, hwKey)) {
+                if (pit->first != lastUsedLifPresetName)
+                    removedLifNamed.push_back(pit->first);
+                pit = copy.lifPresets.erase(pit);
+                ++totalRemoved;
+            } else {
+                ++pit;
+            }
+        }
+
+        // Current-pointer retarget: a removed current named preset falls back
+        // to __LastUsed__ if it survives; a __LastUsed__ that was itself
+        // removed clears the pointer.
+        bool ftmwCurrentChanged = false;
+        if (!copy.currentFtmwPresetName.isEmpty() &&
+            !copy.ftmwPresets.count(copy.currentFtmwPresetName)) {
+            if (copy.ftmwPresets.count(lastUsedFtmwPresetName.toString()))
+                copy.currentFtmwPresetName = lastUsedFtmwPresetName.toString();
+            else
+                copy.currentFtmwPresetName = QString{};
+            ftmwCurrentChanged = true;
+        }
+
+        bool lifCurrentChanged = false;
+        if (!copy.currentLifPresetName.isEmpty() &&
+            !copy.lifPresets.count(copy.currentLifPresetName)) {
+            if (copy.lifPresets.count(lastUsedLifPresetName.toString()))
+                copy.currentLifPresetName = lastUsedLifPresetName.toString();
+            else
+                copy.currentLifPresetName = QString{};
+            lifCurrentChanged = true;
+        }
+
+        // hardwareMap fallback (required type) or drop (optional type).
+        if (copy.hardwareMap.count(hwKey)) {
+            copy.hardwareMap.erase(hwKey);
+            copy.hardwareIdentity.erase(hwKey);
+            if (fb.has_value()) {
+                copy.hardwareMap[fb->hwKey] = fb->impl;
+                if (!fb->identity.isEmpty())
+                    copy.hardwareIdentity[fb->hwKey] = fb->identity;
+            }
+        }
+
+        putLoadout(copy);
+
+        // Fine-grained signals so open preset widgets refresh.
+        for (const QString &name : removedFtmwNamed)
+            emit ftmwPresetRemoved(loadoutName, name);
+        for (const QString &name : removedLifNamed)
+            emit lifPresetRemoved(loadoutName, name);
+        if (ftmwCurrentChanged)
+            emit currentFtmwPresetChanged(loadoutName, copy.currentFtmwPresetName);
+        if (lifCurrentChanged)
+            emit currentLifPresetChanged(loadoutName, copy.currentLifPresetName);
+    }
+
+    return totalRemoved;
 }
 
 // ── FTMW preset CRUD ─────────────────────────────────────────────────────────

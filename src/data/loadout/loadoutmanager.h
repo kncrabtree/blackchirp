@@ -1,7 +1,10 @@
 #ifndef BC_LOADOUTMANAGER_H
 #define BC_LOADOUTMANAGER_H
 
+#include <functional>
 #include <optional>
+#include <utility>
+#include <vector>
 
 #include <QHash>
 #include <QMutex>
@@ -75,6 +78,34 @@ inline constexpr QLatin1StringView currentLifPresetKey{"currentLifPreset"};
 inline constexpr QLatin1StringView lastUsedLifPresetName{"__LastUsed__"};
 }
 
+namespace BC::Loadout {
+
+/// \brief Replacement member substituted for a deleted required-type member.
+struct FallbackMember {
+    QString hwKey;     ///< Replacement member hwKey (e.g. "Clock.virtual").
+    QString impl;      ///< Replacement implementation key.
+    QString identity;  ///< Replacement profile identity token (may be empty).
+};
+
+/// \brief Resolves the fallback for a hardware type: a value for a REQUIRED
+/// type (which must never be left with that type empty), or nullopt for an
+/// OPTIONAL type (the member is simply dropped).
+using FallbackResolver = std::function<std::optional<FallbackMember>(const QString &type)>;
+
+/// \brief Consequences of deleting a profile, computed without mutating anything.
+struct PruneConsequences {
+    /// \brief (loadout, named preset) pairs that will be removed because they reference the deleted hwKey.
+    std::vector<std::pair<QString,QString>> lostPresets;
+    /// \brief Loadouts that lose an optional-type member (dropped, not replaced).
+    std::vector<QString> modifiedLoadouts;
+    /// \brief One required-type member substitution.
+    struct FallbackSub { QString loadout; QString type; QString fallbackHwKey; };
+    /// \brief Loadouts whose required-type member is replaced with the system fallback.
+    std::vector<FallbackSub> fallbackSubs;
+};
+
+} // namespace BC::Loadout
+
 class LoadoutManagerTest;
 
 /// \brief Singleton that owns the persistent collection of `HardwareLoadout` records and their FTMW presets.
@@ -130,6 +161,15 @@ public:
 
     /// \brief Names of all loadouts whose member set includes the given profile identity.
     QStringList loadoutsMatchingHwKey(const QString &hwKey) const;
+
+    // Deletion-time preset pruning
+
+    /// \brief Compute, without mutation, what deleting the profile named by hwKey does to every loadout.
+    BC::Loadout::PruneConsequences previewPruneReferencing(const QString &hwKey,
+                                                           const BC::Loadout::FallbackResolver &fallbackFor) const;
+    /// \brief Execute the pruning previewed above; returns the number of presets removed.
+    int prunePresetsReferencing(const QString &hwKey,
+                                const BC::Loadout::FallbackResolver &fallbackFor);
 
     // FTMW preset CRUD
 

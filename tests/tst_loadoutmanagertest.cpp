@@ -52,8 +52,27 @@ private slots:
     void testFtmwPresetReferencesHardware();
     void testLifPresetReferencesHardware();
 
+    void testPreviewPruneReferencing();
+    void testPrunePreviewCancelLeavesStateIntact();
+    void testPrunePresetsReferencingOptionalDrop();
+    void testPrunePresetsReferencingRequiredFallbackAndRetarget();
+    void testPrunePresetsReferencingLastUsedOnly();
+    void testPrunePresetsReferencingLif();
+    void testPrunePresetsReferencingReturnCount();
+    void testPrunePresetsReferencingNoop();
+
 private:
     LoadoutManager *makeLm() const;
+
+    // Deletion-time pruning fixture helpers.
+    static FtmwPreset makeFtmwRef(const QString &digiHwKey, const QString &clockKey);
+    static LifPreset makeLifRef(const QString &laserKey, const QString &stageKey);
+    static HardwareLoadout makeLoA();
+    static HardwareLoadout makeLoB();
+    void seedPruneFixture(LoadoutManager *lm) const;
+    static BC::Loadout::FallbackResolver pruneResolver();
+    static QStringList lostPresetStrings(const BC::Loadout::PruneConsequences &pc);
+    static QStringList fallbackSubStrings(const BC::Loadout::PruneConsequences &pc);
 
     static FtmwPreset makeFtmwPreset(const QString &digiHwKey);
     static HardwareLoadout makeHardwareOnly();
@@ -1155,6 +1174,434 @@ void LoadoutManagerTest::testLifPresetReferencesHardware()
 
     // An unrelated hwKey does not.
     QVERIFY(!lifPresetReferencesHardware(preset, u"LifLaser.other"_s));
+}
+
+// ── Deletion-time pruning fixture + tests ──────────────────────────────────────
+
+FtmwPreset LoadoutManagerTest::makeFtmwRef(const QString &digiHwKey, const QString &clockKey)
+{
+    FtmwPreset preset;
+    preset.digiHwKey = digiHwKey;
+    RfConfig::ClockFreq cf;
+    cf.hwKey = clockKey;
+    preset.rfConfig.clocks.insert(RfConfig::AwgRef, cf);
+    return preset;
+}
+
+LifPreset LoadoutManagerTest::makeLifRef(const QString &laserKey, const QString &stageKey)
+{
+    using namespace BC::LifConv;
+    LifConversionSnapshot snap;
+    snap.laserKey = laserKey;
+    StageWiring w;
+    w.stageKey = stageKey;
+    w.inputs = {InputRef{RefType::Laser, {}, 0.0}};
+    w.isFinal = true;
+    snap.wiring = {w};
+    LifPreset preset;
+    preset.conversion = snap;
+    return preset;
+}
+
+HardwareLoadout LoadoutManagerTest::makeLoA()
+{
+    using namespace Qt::StringLiterals;
+    HardwareLoadout lo;
+    lo.name = u"LoA"_s;
+    lo.hardwareMap = {
+        {u"FtmwDigitizer.main"_s, u"VirtualDigitizer"_s},
+        {u"Clock.ref"_s,          u"VirtualClock"_s},
+        {u"AWG.main"_s,           u"VirtualAwg"_s},
+        {u"LifLaser.default"_s,   u"VirtualLifLaser"_s},
+    };
+    lo.hardwareIdentity = {
+        {u"FtmwDigitizer.main"_s, u"id-fd-main"_s},
+        {u"Clock.ref"_s,          u"id-clk-ref"_s},
+        {u"AWG.main"_s,           u"id-awg"_s},
+        {u"LifLaser.default"_s,   u"id-laser"_s},
+    };
+
+    // F_digi references FtmwDigitizer.main; F_none references nothing targeted;
+    // __LastUsed__ is non-referencing (so a removed current can retarget to it).
+    lo.ftmwPresets[u"F_digi"_s] = makeFtmwRef(u"FtmwDigitizer.main"_s, u"Clock.x"_s);
+    lo.ftmwPresets[u"F_none"_s] = makeFtmwRef(u"FtmwDigitizer.safe"_s, u"Clock.x"_s);
+    lo.ftmwPresets[lastUsedFtmwPresetName.toString()] =
+        makeFtmwRef(u"FtmwDigitizer.safe"_s, u"Clock.x"_s);
+    lo.currentFtmwPresetName = u"F_digi"_s;
+
+    // L_laser references LifLaser.default; L_none and __LastUsed__ do not.
+    lo.lifPresets[u"L_laser"_s] = makeLifRef(u"LifLaser.default"_s, u"LifFreqConversionStage.doubler"_s);
+    lo.lifPresets[u"L_none"_s]  = makeLifRef(u"LifLaser.other"_s,   u"LifFreqConversionStage.otherstage"_s);
+    lo.lifPresets[lastUsedLifPresetName.toString()] =
+        makeLifRef(u"LifLaser.other"_s, u"LifFreqConversionStage.otherstage"_s);
+    lo.currentLifPresetName = u"L_laser"_s;
+
+    return lo;
+}
+
+HardwareLoadout LoadoutManagerTest::makeLoB()
+{
+    using namespace Qt::StringLiterals;
+    HardwareLoadout lo;
+    lo.name = u"LoB"_s;
+    lo.hardwareMap = {
+        {u"FtmwDigitizer.main"_s, u"VirtualDigitizer"_s},
+        {u"Clock.ref"_s,          u"VirtualClock"_s},
+        {u"Clock.luonly"_s,       u"VirtualClock"_s},
+        {u"AWG.main"_s,           u"VirtualAwg"_s},
+    };
+    lo.hardwareIdentity = {
+        {u"FtmwDigitizer.main"_s, u"id-fd-main"_s},
+        {u"Clock.ref"_s,          u"id-clk-ref"_s},
+        {u"Clock.luonly"_s,       u"id-clk-luonly"_s},
+        {u"AWG.main"_s,           u"id-awg"_s},
+    };
+
+    // F_clock references Clock.ref; F_none2 references nothing targeted;
+    // __LastUsed__ references BOTH FtmwDigitizer.main and Clock.luonly, and is
+    // the current pointer (so its removal must clear the pointer).
+    lo.ftmwPresets[u"F_clock"_s]  = makeFtmwRef(u"FtmwDigitizer.safe"_s, u"Clock.ref"_s);
+    lo.ftmwPresets[u"F_none2"_s]  = makeFtmwRef(u"FtmwDigitizer.safe"_s, u"Clock.x"_s);
+    lo.ftmwPresets[lastUsedFtmwPresetName.toString()] =
+        makeFtmwRef(u"FtmwDigitizer.main"_s, u"Clock.luonly"_s);
+    lo.currentFtmwPresetName = lastUsedFtmwPresetName.toString();
+
+    return lo;
+}
+
+void LoadoutManagerTest::seedPruneFixture(LoadoutManager *lm) const
+{
+    QVERIFY(lm->putLoadout(makeLoA()));
+    QVERIFY(lm->putLoadout(makeLoB()));
+}
+
+BC::Loadout::FallbackResolver LoadoutManagerTest::pruneResolver()
+{
+    using namespace Qt::StringLiterals;
+    return [](const QString &type) -> std::optional<BC::Loadout::FallbackMember> {
+        static const std::set<QString> required = {
+            u"FtmwDigitizer"_s, u"Clock"_s, u"LifLaser"_s, u"LifDigitizer"_s};
+        if (required.count(type))
+            return BC::Loadout::FallbackMember{
+                type + u".virtual"_s, u"Virtual"_s + type, u"id-virtual"_s};
+        return std::nullopt;
+    };
+}
+
+QStringList LoadoutManagerTest::lostPresetStrings(const BC::Loadout::PruneConsequences &pc)
+{
+    using namespace Qt::StringLiterals;
+    QStringList out;
+    for (const auto &[loadout, preset] : pc.lostPresets)
+        out << loadout + u"|"_s + preset;
+    return out;
+}
+
+QStringList LoadoutManagerTest::fallbackSubStrings(const BC::Loadout::PruneConsequences &pc)
+{
+    using namespace Qt::StringLiterals;
+    QStringList out;
+    for (const auto &s : pc.fallbackSubs)
+        out << s.loadout + u"|"_s + s.type + u"|"_s + s.fallbackHwKey;
+    return out;
+}
+
+void LoadoutManagerTest::testPreviewPruneReferencing()
+{
+    using namespace Qt::StringLiterals;
+
+    std::unique_ptr<LoadoutManager> lm(makeLm());
+    seedPruneFixture(lm.get());
+    const auto fb = pruneResolver();
+
+    // Optional-type member (AWG): both loadouts drop it; no presets lost.
+    {
+        const auto pc = lm->previewPruneReferencing(u"AWG.main"_s, fb);
+        QCOMPARE(lostPresetStrings(pc), QStringList{});
+        QCOMPARE(QStringList(pc.modifiedLoadouts.begin(), pc.modifiedLoadouts.end()),
+                 (QStringList{u"LoA"_s, u"LoB"_s}));
+        QCOMPARE(fallbackSubStrings(pc), QStringList{});
+    }
+
+    // Required-type member (Clock.ref): named F_clock lost in LoB; both
+    // loadouts substitute the Clock fallback.
+    {
+        const auto pc = lm->previewPruneReferencing(u"Clock.ref"_s, fb);
+        QCOMPARE(lostPresetStrings(pc), (QStringList{u"LoB|F_clock"_s}));
+        QCOMPARE(QStringList(pc.modifiedLoadouts.begin(), pc.modifiedLoadouts.end()),
+                 QStringList{});
+        QCOMPARE(fallbackSubStrings(pc),
+                 (QStringList{u"LoA|Clock|Clock.virtual"_s, u"LoB|Clock|Clock.virtual"_s}));
+    }
+
+    // Required-type member (FtmwDigitizer.main): named F_digi lost in LoA;
+    // LoB's __LastUsed__ also references it but is not surfaced. Both substitute.
+    {
+        const auto pc = lm->previewPruneReferencing(u"FtmwDigitizer.main"_s, fb);
+        QCOMPARE(lostPresetStrings(pc), (QStringList{u"LoA|F_digi"_s}));
+        QCOMPARE(QStringList(pc.modifiedLoadouts.begin(), pc.modifiedLoadouts.end()),
+                 QStringList{});
+        QCOMPARE(fallbackSubStrings(pc),
+                 (QStringList{u"LoA|FtmwDigitizer|FtmwDigitizer.virtual"_s,
+                              u"LoB|FtmwDigitizer|FtmwDigitizer.virtual"_s}));
+    }
+
+    // Member referenced only by LoB's __LastUsed__ (Clock.luonly): no named
+    // preset lost; LoB substitutes the Clock fallback.
+    {
+        const auto pc = lm->previewPruneReferencing(u"Clock.luonly"_s, fb);
+        QCOMPARE(lostPresetStrings(pc), QStringList{});
+        QCOMPARE(QStringList(pc.modifiedLoadouts.begin(), pc.modifiedLoadouts.end()),
+                 QStringList{});
+        QCOMPARE(fallbackSubStrings(pc), (QStringList{u"LoB|Clock|Clock.virtual"_s}));
+    }
+
+    // LIF required member (LifLaser.default): named L_laser lost in LoA; LoA
+    // substitutes the LifLaser fallback; LoB is untouched.
+    {
+        const auto pc = lm->previewPruneReferencing(u"LifLaser.default"_s, fb);
+        QCOMPARE(lostPresetStrings(pc), (QStringList{u"LoA|L_laser"_s}));
+        QCOMPARE(QStringList(pc.modifiedLoadouts.begin(), pc.modifiedLoadouts.end()),
+                 QStringList{});
+        QCOMPARE(fallbackSubStrings(pc),
+                 (QStringList{u"LoA|LifLaser|LifLaser.virtual"_s}));
+    }
+
+    // A member no loadout references at all: every output empty.
+    {
+        const auto pc = lm->previewPruneReferencing(u"Clock.ghost"_s, fb);
+        QCOMPARE(lostPresetStrings(pc), QStringList{});
+        QCOMPARE(QStringList(pc.modifiedLoadouts.begin(), pc.modifiedLoadouts.end()),
+                 QStringList{});
+        QCOMPARE(fallbackSubStrings(pc), QStringList{});
+    }
+}
+
+void LoadoutManagerTest::testPrunePreviewCancelLeavesStateIntact()
+{
+    using namespace Qt::StringLiterals;
+
+    std::unique_ptr<LoadoutManager> lm(makeLm());
+    seedPruneFixture(lm.get());
+    const auto fb = pruneResolver();
+
+    const HardwareLoadout beforeA = *lm->getLoadout(u"LoA"_s);
+    const HardwareLoadout beforeB = *lm->getLoadout(u"LoB"_s);
+
+    // Compute previews but never execute.
+    lm->previewPruneReferencing(u"FtmwDigitizer.main"_s, fb);
+    lm->previewPruneReferencing(u"LifLaser.default"_s, fb);
+    lm->previewPruneReferencing(u"AWG.main"_s, fb);
+
+    const HardwareLoadout afterA = *lm->getLoadout(u"LoA"_s);
+    const HardwareLoadout afterB = *lm->getLoadout(u"LoB"_s);
+
+    QCOMPARE(afterA.hardwareMap, beforeA.hardwareMap);
+    QCOMPARE(afterA.hardwareIdentity, beforeA.hardwareIdentity);
+    QCOMPARE(afterA.ftmwPresets.size(), beforeA.ftmwPresets.size());
+    QCOMPARE(afterA.lifPresets.size(), beforeA.lifPresets.size());
+    QCOMPARE(afterA.currentFtmwPresetName, beforeA.currentFtmwPresetName);
+    QCOMPARE(afterA.currentLifPresetName, beforeA.currentLifPresetName);
+
+    QCOMPARE(afterB.hardwareMap, beforeB.hardwareMap);
+    QCOMPARE(afterB.ftmwPresets.size(), beforeB.ftmwPresets.size());
+    QCOMPARE(afterB.currentFtmwPresetName, beforeB.currentFtmwPresetName);
+}
+
+void LoadoutManagerTest::testPrunePresetsReferencingOptionalDrop()
+{
+    using namespace Qt::StringLiterals;
+
+    std::unique_ptr<LoadoutManager> lm(makeLm());
+    seedPruneFixture(lm.get());
+    const auto fb = pruneResolver();
+
+    const int removed = lm->prunePresetsReferencing(u"AWG.main"_s, fb);
+    QCOMPARE(removed, 0);
+
+    // Optional member dropped from both loadouts, not replaced.
+    for (const auto &name : {u"LoA"_s, u"LoB"_s}) {
+        const auto lo = lm->getLoadout(name);
+        QVERIFY(lo.has_value());
+        QVERIFY(!lo->hardwareMap.count(u"AWG.main"_s));
+        QVERIFY(!lo->hardwareIdentity.count(u"AWG.main"_s));
+    }
+
+    // Presets and current pointers untouched.
+    const auto loA = lm->getLoadout(u"LoA"_s);
+    QCOMPARE(loA->ftmwPresets.size(), std::size_t(3));
+    QCOMPARE(loA->lifPresets.size(),  std::size_t(3));
+    QCOMPARE(loA->currentFtmwPresetName, u"F_digi"_s);
+    QCOMPARE(loA->currentLifPresetName,  u"L_laser"_s);
+}
+
+void LoadoutManagerTest::testPrunePresetsReferencingRequiredFallbackAndRetarget()
+{
+    using namespace Qt::StringLiterals;
+
+    std::unique_ptr<LoadoutManager> lm(makeLm());
+    seedPruneFixture(lm.get());
+    const auto fb = pruneResolver();
+
+    QSignalSpy ftmwRemovedSpy(lm.get(), &LoadoutManager::ftmwPresetRemoved);
+    QSignalSpy ftmwCurrentSpy(lm.get(), &LoadoutManager::currentFtmwPresetChanged);
+    QSignalSpy changedSpy(lm.get(), &LoadoutManager::loadoutChanged);
+
+    const int removed = lm->prunePresetsReferencing(u"FtmwDigitizer.main"_s, fb);
+    // LoA: F_digi (named); LoB: __LastUsed__.
+    QCOMPARE(removed, 2);
+
+    // LoA: F_digi gone; current retargeted to __LastUsed__ (which survived);
+    // required member replaced with the fallback (hwKey + impl + identity).
+    const auto loA = lm->getLoadout(u"LoA"_s);
+    QVERIFY(loA.has_value());
+    QVERIFY(!loA->ftmwPresets.count(u"F_digi"_s));
+    QVERIFY(loA->ftmwPresets.count(lastUsedFtmwPresetName.toString()));
+    QCOMPARE(loA->currentFtmwPresetName, lastUsedFtmwPresetName.toString());
+    QVERIFY(!loA->hardwareMap.count(u"FtmwDigitizer.main"_s));
+    QCOMPARE(loA->hardwareMap.at(u"FtmwDigitizer.virtual"_s), u"VirtualFtmwDigitizer"_s);
+    QCOMPARE(loA->hardwareIdentity.at(u"FtmwDigitizer.virtual"_s), u"id-virtual"_s);
+    QVERIFY(!loA->hardwareIdentity.count(u"FtmwDigitizer.main"_s));
+    // Unrelated members/presets intact.
+    QVERIFY(loA->hardwareMap.count(u"Clock.ref"_s));
+    QVERIFY(loA->ftmwPresets.count(u"F_none"_s));
+    QCOMPARE(loA->lifPresets.size(), std::size_t(3));
+
+    // LoB: __LastUsed__ gone; it was current, and no __LastUsed__ remains, so
+    // the pointer clears; required member replaced with the fallback.
+    const auto loB = lm->getLoadout(u"LoB"_s);
+    QVERIFY(loB.has_value());
+    QVERIFY(!loB->ftmwPresets.count(lastUsedFtmwPresetName.toString()));
+    QVERIFY(loB->currentFtmwPresetName.isEmpty());
+    QVERIFY(!loB->hardwareMap.count(u"FtmwDigitizer.main"_s));
+    QCOMPARE(loB->hardwareMap.at(u"FtmwDigitizer.virtual"_s), u"VirtualFtmwDigitizer"_s);
+    QVERIFY(loB->ftmwPresets.count(u"F_clock"_s));
+
+    // Signals: one named FTMW removal (LoA F_digi); two current-pointer changes.
+    QCOMPARE(ftmwRemovedSpy.count(), 1);
+    QCOMPARE(ftmwCurrentSpy.count(), 2);
+    QVERIFY(changedSpy.count() >= 2);
+
+    // Persistence: a freshly reconstructed manager sees the same post-state.
+    lm.reset();
+    std::unique_ptr<LoadoutManager> lm2(makeLm());
+    const auto loA2 = lm2->getLoadout(u"LoA"_s);
+    QVERIFY(!loA2->ftmwPresets.count(u"F_digi"_s));
+    QCOMPARE(loA2->currentFtmwPresetName, lastUsedFtmwPresetName.toString());
+    QCOMPARE(loA2->hardwareMap.at(u"FtmwDigitizer.virtual"_s), u"VirtualFtmwDigitizer"_s);
+    QCOMPARE(loA2->hardwareIdentity.at(u"FtmwDigitizer.virtual"_s), u"id-virtual"_s);
+    const auto loB2 = lm2->getLoadout(u"LoB"_s);
+    QVERIFY(loB2->currentFtmwPresetName.isEmpty());
+    QVERIFY(!loB2->ftmwPresets.count(lastUsedFtmwPresetName.toString()));
+}
+
+void LoadoutManagerTest::testPrunePresetsReferencingLastUsedOnly()
+{
+    using namespace Qt::StringLiterals;
+
+    std::unique_ptr<LoadoutManager> lm(makeLm());
+    seedPruneFixture(lm.get());
+    const auto fb = pruneResolver();
+
+    const int removed = lm->prunePresetsReferencing(u"Clock.luonly"_s, fb);
+    // Only LoB's __LastUsed__ references Clock.luonly.
+    QCOMPARE(removed, 1);
+
+    const auto loB = lm->getLoadout(u"LoB"_s);
+    QVERIFY(loB.has_value());
+    QVERIFY(!loB->ftmwPresets.count(lastUsedFtmwPresetName.toString()));
+    QVERIFY(loB->currentFtmwPresetName.isEmpty());
+    QVERIFY(!loB->hardwareMap.count(u"Clock.luonly"_s));
+    QCOMPARE(loB->hardwareMap.at(u"Clock.virtual"_s), u"VirtualClock"_s);
+    // Named presets not referencing Clock.luonly are intact.
+    QVERIFY(loB->ftmwPresets.count(u"F_clock"_s));
+    QVERIFY(loB->ftmwPresets.count(u"F_none2"_s));
+
+    // LoA never referenced Clock.luonly and is fully intact.
+    const auto loA = lm->getLoadout(u"LoA"_s);
+    QCOMPARE(loA->ftmwPresets.size(), std::size_t(3));
+    QCOMPARE(loA->currentFtmwPresetName, u"F_digi"_s);
+    QVERIFY(loA->hardwareMap.count(u"FtmwDigitizer.main"_s));
+}
+
+void LoadoutManagerTest::testPrunePresetsReferencingLif()
+{
+    using namespace Qt::StringLiterals;
+
+    std::unique_ptr<LoadoutManager> lm(makeLm());
+    seedPruneFixture(lm.get());
+    const auto fb = pruneResolver();
+
+    QSignalSpy lifRemovedSpy(lm.get(), &LoadoutManager::lifPresetRemoved);
+    QSignalSpy lifCurrentSpy(lm.get(), &LoadoutManager::currentLifPresetChanged);
+
+    const int removed = lm->prunePresetsReferencing(u"LifLaser.default"_s, fb);
+    QCOMPARE(removed, 1);
+
+    const auto loA = lm->getLoadout(u"LoA"_s);
+    QVERIFY(loA.has_value());
+    // L_laser removed; current retargeted to the surviving LIF __LastUsed__.
+    QVERIFY(!loA->lifPresets.count(u"L_laser"_s));
+    QVERIFY(loA->lifPresets.count(lastUsedLifPresetName.toString()));
+    QCOMPARE(loA->currentLifPresetName, lastUsedLifPresetName.toString());
+    // Required LifLaser member replaced with the fallback.
+    QVERIFY(!loA->hardwareMap.count(u"LifLaser.default"_s));
+    QCOMPARE(loA->hardwareMap.at(u"LifLaser.virtual"_s), u"VirtualLifLaser"_s);
+    QCOMPARE(loA->hardwareIdentity.at(u"LifLaser.virtual"_s), u"id-virtual"_s);
+    // FTMW side untouched.
+    QCOMPARE(loA->ftmwPresets.size(), std::size_t(3));
+    QCOMPARE(loA->currentFtmwPresetName, u"F_digi"_s);
+
+    QCOMPARE(lifRemovedSpy.count(), 1);
+    QCOMPARE(lifCurrentSpy.count(), 1);
+
+    // LoB has no LIF presets or LifLaser member and is untouched.
+    const auto loB = lm->getLoadout(u"LoB"_s);
+    QVERIFY(loB->lifPresets.empty());
+    QVERIFY(loB->hardwareMap.count(u"FtmwDigitizer.main"_s));
+}
+
+void LoadoutManagerTest::testPrunePresetsReferencingReturnCount()
+{
+    using namespace Qt::StringLiterals;
+
+    // Count includes named + __LastUsed__ across all affected loadouts.
+    {
+        std::unique_ptr<LoadoutManager> lm(makeLm());
+        seedPruneFixture(lm.get());
+        // Clock.ref: only LoB's named F_clock references it.
+        QCOMPARE(lm->prunePresetsReferencing(u"Clock.ref"_s, pruneResolver()), 1);
+    }
+    {
+        std::unique_ptr<LoadoutManager> lm(makeLm());
+        seedPruneFixture(lm.get());
+        // FtmwDigitizer.main: LoA F_digi (named) + LoB __LastUsed__.
+        QCOMPARE(lm->prunePresetsReferencing(u"FtmwDigitizer.main"_s, pruneResolver()), 2);
+    }
+}
+
+void LoadoutManagerTest::testPrunePresetsReferencingNoop()
+{
+    using namespace Qt::StringLiterals;
+
+    std::unique_ptr<LoadoutManager> lm(makeLm());
+    seedPruneFixture(lm.get());
+
+    const HardwareLoadout beforeA = *lm->getLoadout(u"LoA"_s);
+    const HardwareLoadout beforeB = *lm->getLoadout(u"LoB"_s);
+
+    const int removed = lm->prunePresetsReferencing(u"Clock.ghost"_s, pruneResolver());
+    QCOMPARE(removed, 0);
+
+    const auto afterA = lm->getLoadout(u"LoA"_s);
+    const auto afterB = lm->getLoadout(u"LoB"_s);
+    QCOMPARE(afterA->hardwareMap, beforeA.hardwareMap);
+    QCOMPARE(afterA->ftmwPresets.size(), beforeA.ftmwPresets.size());
+    QCOMPARE(afterA->currentFtmwPresetName, beforeA.currentFtmwPresetName);
+    QCOMPARE(afterA->currentLifPresetName, beforeA.currentLifPresetName);
+    QCOMPARE(afterB->hardwareMap, beforeB.hardwareMap);
+    QCOMPARE(afterB->ftmwPresets.size(), beforeB.ftmwPresets.size());
+    QCOMPARE(afterB->currentFtmwPresetName, beforeB.currentFtmwPresetName);
 }
 
 QTEST_GUILESS_MAIN(LoadoutManagerTest)
