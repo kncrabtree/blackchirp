@@ -31,31 +31,6 @@ Trigger: the first campaign where cross-band relative intensities
 matter, or when the companion `ftmwpipeline` timebase/deconvolution
 analysis is ready to consume `jitterphi.csv`.
 
-### Profile identity + preset lifecycle hardening
-
-A preset references hardware by hwKey (`"<Type>.<label>"`), which is not
-unique over time: deleting a profile and recreating one with the same label
-yields the same hwKey, so a preset silently re-binds to a different physical
-profile. Give profiles a stable identity — `hash(type + label +
-implementation + creation timestamp)`, all already persisted — carried
-alongside the implementation in each loadout's `hardwareMap` (the existing
-drift-detection field). This closes the recreate-same-label blind spot in the
-current `{ftmw,lif}RelevantHwKeys` drift dialog, which compares only hwKey
-sets. Add deletion-time pruning: when a profile is deleted, an informed
-confirmation enumerates the exact loadout→preset pairs that will be lost and
-the loadouts whose required-type member will be replaced with the system
-fallback, then presets referencing the hwKey are removed (current →
-`__LastUsed__`; a stale `__LastUsed__` removed). Covers both FTMW and LIF; the
-LIF at-load reject already on `feature/sirah-cobra-refresh` stays as a
-backstop. Full plan in
-[profile-identity-and-preset-pruning-plan.md](profile-identity-and-preset-pruning-plan.md).
-
-Trigger: after `feature/sirah-cobra-refresh` merges. Scope: profile-manager
-identity accessors, a loadout `hardwareMap` schema change (`impl` → `{impl,
-identity}`) with migration, the `RfConfigSnapshot` hardware-reference
-enumeration (the larger piece), and a preview/confirm/prune flow in the
-runtime-config dialog.
-
 ## Large
 
 ### RF configuration as a flexible frequency-conversion DAG
