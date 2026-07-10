@@ -618,3 +618,12 @@ Bug fixes
   multiplication mutated ``self.data`` and a second ``ft`` call
   on the same FID produced different output
   (:commit:`6fed7a0e`).
+- Fixed integer-coded enum cells failing to resolve when pandas
+  delivered them as numpy scalars. A ``fidparams`` row spanning
+  mixed-dtype columns is upcast to ``float64``, so an
+  integer-coded field such as ``sideband`` reached the enum
+  helper as ``numpy.float64`` and raised ``ValueError:
+  Unsupported enum value type``. Numpy integer and
+  integral-valued float scalars now resolve through the
+  integer-code path, so ``is_lower_sideband`` and other
+  enum-bearing accessors work on older integer-coded exports.

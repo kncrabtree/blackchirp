@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import numpy as np
 import pytest
 
 from blackchirp._enum_helpers import _resolve_enum
@@ -48,6 +49,25 @@ def test_int_without_int_map_raises():
 def test_int_string_without_int_map_raises():
     with pytest.raises(ValueError):
         _resolve_enum("1", _NAMES)
+
+
+def test_numpy_int_with_int_map():
+    assert _resolve_enum(np.int64(2), _NAMES, int_map=_INTS) == "Baz"
+
+
+def test_numpy_float_integral_with_int_map():
+    # pandas upcasts a mixed-dtype row to float64, delivering an
+    # integer-coded cell as numpy.float64(1.0).
+    assert _resolve_enum(np.float64(1.0), _NAMES, int_map=_INTS) == "Bar"
+
+
+def test_python_float_integral_with_int_map():
+    assert _resolve_enum(1.0, _NAMES, int_map=_INTS) == "Bar"
+
+
+def test_numpy_float_non_integral_raises():
+    with pytest.raises(ValueError):
+        _resolve_enum(np.float64(1.5), _NAMES, int_map=_INTS)
 
 
 def test_int_out_of_range_raises():
