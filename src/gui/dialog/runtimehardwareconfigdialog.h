@@ -14,6 +14,7 @@
 class QListWidgetItem;
 class LibraryStatusWidget;
 class PythonSettingsWidget;
+struct HardwareLoadout;
 
 namespace Ui {
 class RuntimeHardwareConfigDialog;
@@ -81,6 +82,9 @@ private:
 
     QString selectedLoadoutName() const;
     bool isPreviewDirty() const;
+
+    /// \brief Rebuild loadout.hardwareIdentity from scratch using the current profiles for every member in loadout.hardwareMap.
+    void stampMemberIdentities(HardwareLoadout &loadout) const;
 
     struct ProfileOverrides {
         std::optional<bool> threaded;

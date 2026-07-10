@@ -135,9 +135,35 @@ Deleting a Profile
 ------------------
 
 Select the profile in the Configuration panel and click **Remove Profile**.
-Blackchirp asks for confirmation before deleting. A profile that is the
-sole profile of its type in any loadout cannot be deleted until an
-alternative is added.
+Blackchirp asks for confirmation before deleting.
+
+Deleting a profile can affect saved loadouts and the presets stored in
+them. What happens to a
+:doc:`FTMW </user_guide/ftmw_configuration/presets>` or
+:doc:`LIF </user_guide/lif/presets>` preset that references the deleted
+profile depends on whether a replacement exists for that profile's
+hardware type:
+
+- **Required hardware types are rebound, not lost.** A required type
+  (FTMW digitizer, clock, LIF laser) always has a system (virtual)
+  fallback, so each affected loadout has its member replaced with that
+  fallback, and every preset that referenced the deleted profile — the
+  named presets *and* the current working configuration — is re-pointed
+  to the fallback device. The presets survive; only the bound device
+  changes.
+- **Hardware with no replacement is dropped.** An optional type with no
+  fallback (such as a LIF frequency-conversion stage) cannot be
+  substituted. Any preset whose topology depends on the deleted stage
+  becomes invalid and is removed, and the member is dropped from each
+  loadout that used it.
+
+Before you confirm, the dialog spells out the destructive consequences
+in full — the presets that will be removed, and any loadout whose
+current working configuration will be lost — and summarizes the
+non-destructive rebinds. Everything is applied together only when you
+confirm; canceling leaves every profile, loadout, and preset untouched.
+System profiles for a required hardware type cannot be removed (see
+:ref:`hardware-config-profiles-system`).
 
 .. seealso::
 

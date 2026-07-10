@@ -104,6 +104,19 @@ Hardware configuration
 - Added the FTMW preset bar with full create, copy, save-as, and
   delete operations. See
   :doc:`/user_guide/ftmw_configuration/presets`.
+- Added a stable per-profile identity so a profile deleted and
+  recreated under the same ``Type.label`` is recognized as a different
+  device: loadouts record each member's identity on save, and hardware
+  drift is detected on identity, not just on the profile key. See
+  :doc:`/user_guide/hardware_config/loadouts`.
+- Added a deletion-consequence preview: removing a profile shows how
+  each affected loadout and its FTMW and LIF presets are updated.
+  Members of a required hardware type are substituted with the system
+  fallback and their referencing presets are re-pointed to it; members
+  with no fallback are dropped, along with any preset whose topology
+  depends on them. The dialog spells out the destructive changes and
+  summarizes the rebinds before you confirm. See
+  :doc:`/user_guide/hardware_config/profiles`.
 - Added the consolidated *FTMW Configuration* menu entry and
   ``FtmwConfigDialog``, replacing the v1.x scattered FTMW pages.
   See :doc:`/user_guide/ftmw_configuration`.

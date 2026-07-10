@@ -8,6 +8,7 @@
 #include <QIODevice>
 #include <QDebug>
 #include <QRegularExpression>
+#include <QCryptographicHash>
 #include <data/loghandler.h>
 #include <QReadLocker>
 #include <QWriteLocker>
@@ -506,6 +507,30 @@ QDateTime HardwareProfileManager::getProfileLastModified(const QString& type, co
     }
     
     return labelIt->modified;
+}
+
+QString HardwareProfileManager::getProfileIdentity(const QString& type, const QString& label) const
+{
+    QReadLocker locker(&d_profilesLock);
+
+    auto typeIt = d_profiles.find(type);
+    if (typeIt == d_profiles.end()) {
+        return QString();
+    }
+
+    auto labelIt = typeIt->find(label);
+    if (labelIt == typeIt->end()) {
+        return QString();
+    }
+
+    // ASCII unit separator delimits the fields so their concatenation is unambiguous.
+    const QChar sep(QChar(0x1f));
+    const QString payload = type + sep + label + sep + labelIt->implementation + sep
+        + QString::number(labelIt->created.toMSecsSinceEpoch());
+
+    QCryptographicHash hash(QCryptographicHash::Sha1);
+    hash.addData(payload.toUtf8());
+    return QString::fromLatin1(hash.result().toHex());
 }
 
 bool HardwareProfileManager::setProfileDescription(const QString& type, const QString& label, const QString& description)
@@ -1039,8 +1064,10 @@ void HardwareProfileManager::saveProfilesToSettings()
             // Set all properties for this profile group
             setGroupValue(groupKey, BC::Key::HardwareProfiles::implementation, profile.implementation, false);
             setGroupValue(groupKey, BC::Key::HardwareProfiles::active, profile.active, false);
-            setGroupValue(groupKey, BC::Key::HardwareProfiles::created, profile.created.toString(Qt::ISODate), false);
-            setGroupValue(groupKey, BC::Key::HardwareProfiles::modified, profile.modified.toString(Qt::ISODate), false);
+            // Persist with millisecond precision so the profile identity token
+            // (which folds in the creation timestamp) survives a save/reload cycle.
+            setGroupValue(groupKey, BC::Key::HardwareProfiles::created, profile.created.toString(Qt::ISODateWithMs), false);
+            setGroupValue(groupKey, BC::Key::HardwareProfiles::modified, profile.modified.toString(Qt::ISODateWithMs), false);
             if (!profile.description.isEmpty()) {
                 setGroupValue(groupKey, BC::Key::HardwareProfiles::description, profile.description, false);
             }
