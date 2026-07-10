@@ -626,4 +626,5 @@ Bug fixes
   Unsupported enum value type``. Numpy integer and
   integral-valued float scalars now resolve through the
   integer-code path, so ``is_lower_sideband`` and other
-  enum-bearing accessors work on older integer-coded exports.
+  enum-bearing accessors work on older integer-coded exports
+  (:commit:`89ff0ba9`).
