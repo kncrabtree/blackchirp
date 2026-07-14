@@ -18,9 +18,10 @@ contract (numpy/scipy/pandas only; see `python/AGENTS.md`) is unaffected.
 - `fcu_calibration_math.py` — the Physical scheme's Sellmeier + phase-match
   + sine-bar math, ported line-for-line from `src/data/lif/fcucalibration.cpp`
   so fitted parameters reproduce exactly when typed into Blackchirp.
-- `sirah_protocol.py` — the Sirah binary wire protocol (command framing,
-  status parsing), ported from
-  `src/hardware/core/liflaser/sirahprotocol.h`/`.cpp`.
+- `autotracker_protocol.py` — the Sirah Autotracker (FCU) binary wire
+  protocol (command framing, response parsing, 24-bit position
+  pack/unpack, error codes), ported from
+  `src/hardware/core/liflaser/autotrackerprotocol.h`/`.cpp`.
 - `fcu_csv.py` — shared readers/writers for the three semicolon-delimited
   CSV shapes in play (measurements, spline import, polynomial import).
 

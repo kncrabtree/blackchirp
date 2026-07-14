@@ -9,9 +9,10 @@ FCU's current motor position over serial and appends
 ``wavelengthNm;positionSteps`` to the output CSV. The output feeds
 ``fcu_fit.py`` directly.
 
-Speaks the Sirah binary wire protocol (see :mod:`sirah_protocol`):
-sends the framed position-query command (``0x17``) and decodes the
-14-byte status reply's ``m1Pos`` field.
+Speaks the Sirah Autotracker binary wire protocol (see
+:mod:`autotracker_protocol`): sends the framed Get Position command
+(``0x17``, with the motor number as data byte 0) and decodes the
+24-bit big-endian position from the 12-byte reply.
 
 Example:
     python fcu_measure.py --port /dev/ttyUSB1 --output measurements.csv
@@ -26,11 +27,13 @@ import sys
 from typing import Callable, Optional, Sequence
 
 from fcu_csv import append_measurement_csv
-from sirah_protocol import (
+from autotracker_protocol import (
     CMD_POSITION_QUERY,
-    STATUS_LENGTH,
+    RESPONSE_ID_POSITION,
+    RESPONSE_LENGTH,
     build_command,
-    parse_status,
+    parse_response,
+    unpack_pos24,
 )
 
 try:
@@ -39,26 +42,41 @@ except ImportError:  # pragma: no cover - exercised only when pyserial is absent
     serial = None
 
 
-def read_position_hardware(ser: "serial.Serial") -> int:
-    """Query the FCU's current motor-1 position over an open serial port.
+def read_position_hardware(ser: "serial.Serial", motor: int = 1) -> int:
+    """Query the FCU's current motor position over an open serial port.
+
+    Sends Get Position (``0x17``) with the motor number as data byte 0,
+    reads the 12-byte reply, verifies the ID byte (``0x0b``) and the
+    echoed motor number, then decodes the 24-bit big-endian position
+    from reply bytes 4..6.
 
     Args:
         ser: An open ``pyserial`` ``Serial`` instance connected to the
             FCU's RS232 port.
+        motor: The Autotracker motor index (1..3) to query.
 
     Returns:
-        The current motor-1 position in steps.
+        The current motor position in steps.
 
     Raises:
-        RuntimeError: If the response is not a well-formed status frame.
+        RuntimeError: If the response is not a well-formed Get Position
+            frame, the ID byte is wrong, or the echoed motor number
+            does not match the request.
     """
     ser.reset_input_buffer()
-    ser.write(build_command(CMD_POSITION_QUERY))
-    resp = ser.read(STATUS_LENGTH)
-    status = parse_status(resp)
-    if status is None:
+    ser.write(build_command(CMD_POSITION_QUERY, bytes([motor & 0xFF])))
+    resp = ser.read(RESPONSE_LENGTH)
+    response = parse_response(resp)
+    if response is None or response.id != RESPONSE_ID_POSITION:
         raise RuntimeError(f"Unexpected response from FCU (hex: {resp.hex()})")
-    return status.m1_pos
+    if not response.payload or response.payload[0] != (motor & 0xFF):
+        echoed = response.payload[0] if response.payload else None
+        raise RuntimeError(
+            f"Get Position echoed motor {echoed}, expected {motor} (hex: {resp.hex()})"
+        )
+    # Payload byte 0 is the echoed motor number; the 24-bit position sits
+    # at payload bytes 1..3 (i.e. reply bytes 4..6).
+    return unpack_pos24(response.payload, 1)
 
 
 def simulated_position(wavelength_nm: float) -> int:
@@ -138,8 +156,15 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--baud",
         type=int,
-        default=57600,
-        help="Serial baud rate (default: 57600, the FCU's Rs232 comm default).",
+        default=19200,
+        help="Serial baud rate (default: 19200, the Autotracker's fixed serial rate).",
+    )
+    parser.add_argument(
+        "--motor",
+        type=int,
+        default=1,
+        choices=(1, 2, 3),
+        help="Autotracker motor index (1-3) driving the doubling crystal (default: 1).",
     )
     parser.add_argument(
         "--timeout-ms",
@@ -172,7 +197,7 @@ def _open_hardware_reader(
     ser = serial.Serial(args.port, args.baud, timeout=args.timeout_ms / 1000.0)
 
     def _read(_wavelength_nm: float) -> int:
-        return read_position_hardware(ser)
+        return read_position_hardware(ser, args.motor)
 
     return _read, ser
 

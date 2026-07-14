@@ -85,6 +85,7 @@ file(GLOB HARDWARE_IMPLEMENTATIONS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/fixed*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/opolette.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/sirah*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/autotrackerprotocol.cpp
 )
 
 # u3.cpp is the exodriver-only vendored helper; not compiled on Windows

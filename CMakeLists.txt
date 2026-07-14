@@ -612,6 +612,23 @@ if(BC_BUILD_TESTS)
     add_blackchirp_definitions(tst_fcucalibration)
     add_test(NAME FcuCalibrationTest COMMAND tst_fcucalibration)
 
+    # Autotracker (Sirah FCU) Protocol Test — the wire-format layer is pure
+    # and hardware-free (no HardwareObject dependency), so only its own
+    # source is compiled in rather than linking the full hardware library.
+    add_executable(tst_autotrackerprotocol
+        tests/tst_autotrackerprotocol.cpp
+        src/hardware/core/liflaser/autotrackerprotocol.cpp
+    )
+    target_include_directories(tst_autotrackerprotocol PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+    target_link_libraries(tst_autotrackerprotocol
+        Qt6::Test
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_autotrackerprotocol)
+    add_test(NAME AutotrackerProtocolTest COMMAND tst_autotrackerprotocol)
+
     # Hardware Communication Test
     # Disabled: HardwareObject carries HardwareManager dependencies that conflict
     # with the test hardware library; re-enable once that coupling is resolved.
@@ -639,6 +656,7 @@ if(BC_BUILD_TESTS)
         tst_spcatparser
         tst_lifconversion
         tst_fcucalibration
+        tst_autotrackerprotocol
         tst_xiamparser
         tst_hardwareregistrytest
         tst_runtimehardwareconfigtest

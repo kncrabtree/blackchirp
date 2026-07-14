@@ -2,10 +2,11 @@
 #define SIRAHFCU_H
 
 #include <hardware/core/liflaser/liffreqconversionstage.h>
-#include <hardware/core/liflaser/sirahprotocol.h>
+#include <hardware/core/liflaser/autotrackerprotocol.h>
 #include <data/lif/fcucalibration.h>
 
 namespace BC::Key::SirahFcu {
+inline constexpr QLatin1StringView motorNumber{"motorNumber"};
 inline constexpr QLatin1StringView stages{"stages"};
 inline constexpr QLatin1StringView sStart{"stageStartFreqHz"};
 inline constexpr QLatin1StringView sHigh{"stageHighFreqHz"};
@@ -35,16 +36,18 @@ inline constexpr QLatin1StringView spPosition{"positionSteps"};
  * \brief Sirah Frequency Conversion Unit (FCU) driver: a doubling-crystal
  *        stage in the LIF conversion topology.
  *
- * A separate Sirah unit from the Cobra grating controller, on its own
- * RS232 port, but (to the best current knowledge, pending hardware
- * confirmation) sharing the Cobra's sine-bar tuning mechanism and binary
- * command/status protocol (BC::Sirah::buildCommand()/parseStatus()). The
- * comm-driving loops are duplicated from SirahCobra rather than shared,
- * since that hardware equivalence has not been bench-verified (see
- * sirahprotocol.h). Unlike the Cobra's grating, the doubling crystal's
- * angle <-> wavelength law is not diffraction: it is evaluated by a
+ * A Sirah Autotracker unit on its own RS232 port, entirely separate from
+ * the Cobra grating controller both physically and at the protocol level:
+ * it speaks the Autotracker binary command/response protocol
+ * (BC::Autotracker::buildCommand()/parseResponse(), see
+ * autotrackerprotocol.h) rather than the Cobra's (BC::Sirah, see
+ * sirahprotocol.h). The doubling crystal's angle <-> wavelength law is not
+ * diffraction, unlike the Cobra's grating: it is evaluated by a
  * FcuCalibration assembled in hwReadSettings() from the registered
  * calibration scheme (see data/lif/fcucalibration.h).
+ *
+ * The Autotracker addresses up to three motors per unit; \c motorNumber
+ * selects which one drives this doubling crystal (default 1).
  *
  * The registered harmonic-order default is overridden for the common
  * lone-doubler case: N defaults to 2 and is Required (set once at profile
@@ -72,12 +75,26 @@ private:
     void setPos(double localCm1) override;
     double readPos() override;
 
-    BC::Sirah::Status d_status;
+    //! Position (steps) last reported by the motor, per prompt()/readPos().
+    quint32 d_lastPos{0};
+    //! Direction (+1/-1, 0 = unknown) of the most recent backlash-compensation move; see setPos().
+    int d_lastMoveDir{0};
     FcuCalibration d_calibration;
 
+    //! Generous upper bound on the time a Wait=0 Goto Position ack can take to arrive (full-travel moves can take seconds).
+    static constexpr int moveAckTimeoutMs = 15000;
+
+    quint8 motor() const;
     bool prompt();
     void moveRelative(qint32 steps);
-    bool moveAbsolute(qint32 targetPos);
+    bool moveAbsolute(quint32 targetPos);
+
+    //! Reads a 12-byte Autotracker response frame, retrying on p_comm until \a totalTimeoutMs has elapsed or a full frame arrives.
+    QByteArray readResponse(int totalTimeoutMs);
+    //! Drains the Autotracker's startup error queue (Error command, 0x03), logging any stale codes found. \return false on a comm failure.
+    bool drainErrorQueue();
+    //! Issues an Error query and folds any nonzero codes into an hwError() report for \a context.
+    void reportCommError(const QString &context);
 };
 
 #endif // SIRAHFCU_H

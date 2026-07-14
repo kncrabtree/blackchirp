@@ -10,8 +10,16 @@ from __future__ import annotations
 
 from typing import Iterator, List
 
+import pytest
+
+from autotracker_protocol import CMD_POSITION_QUERY, build_command
 from fcu_csv import read_measurements_csv
-from fcu_measure import run_session, simulated_position
+from fcu_measure import (
+    build_arg_parser,
+    read_position_hardware,
+    run_session,
+    simulated_position,
+)
 
 
 def _fake_input(responses: Iterator[str]):
@@ -19,6 +27,61 @@ def _fake_input(responses: Iterator[str]):
         return next(responses)
 
     return _input
+
+
+class _FakeSerial:
+    """Minimal stand-in for a pyserial ``Serial`` for read/write assertions."""
+
+    def __init__(self, reply: bytes) -> None:
+        self._reply = reply
+        self.written = b""
+        self.reset_count = 0
+
+    def reset_input_buffer(self) -> None:
+        self.reset_count += 1
+
+    def write(self, data: bytes) -> int:
+        self.written = bytes(data)
+        return len(data)
+
+    def read(self, n: int) -> bytes:
+        return self._reply[:n]
+
+
+def test_read_position_hardware_decodes_bench_reply() -> None:
+    """The bench Get Position reply decodes to the golden 24-bit position."""
+    reply = bytes.fromhex("3C810B01FAE9BD0000000069")
+    ser = _FakeSerial(reply)
+
+    position = read_position_hardware(ser, motor=1)
+
+    assert position == 16443837
+    assert ser.reset_count == 1
+    # Command carries the motor number as data byte 0 (bench: 3E 00 17 01 ...).
+    assert ser.written == build_command(CMD_POSITION_QUERY, bytes([0x01]))
+
+
+def test_read_position_hardware_rejects_wrong_motor_echo() -> None:
+    """A reply echoing a different motor number is a hard error."""
+    # Same golden reply (motor 1) queried while asking for motor 2.
+    ser = _FakeSerial(bytes.fromhex("3C810B01FAE9BD0000000069"))
+    with pytest.raises(RuntimeError):
+        read_position_hardware(ser, motor=2)
+
+
+def test_read_position_hardware_rejects_bad_frame() -> None:
+    """A malformed frame (bad checksum) raises rather than returning garbage."""
+    ser = _FakeSerial(bytes.fromhex("3C810B01FAE9BD00000000FF"))
+    with pytest.raises(RuntimeError):
+        read_position_hardware(ser, motor=1)
+
+
+def test_cli_defaults_baud_and_motor() -> None:
+    """The CLI defaults to 19200 baud and motor 1."""
+    parser = build_arg_parser()
+    args = parser.parse_args(["--output", "out.csv", "--simulate"])
+    assert args.baud == 19200
+    assert args.motor == 1
 
 
 def test_simulated_position_is_monotone_and_deterministic() -> None:

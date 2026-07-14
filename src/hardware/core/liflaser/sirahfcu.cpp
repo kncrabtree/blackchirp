@@ -6,6 +6,7 @@
 
 #include <cmath>
 #include <math.h>
+#include <QElapsedTimer>
 #include <QThread>
 
 #ifndef M_PI
@@ -20,8 +21,13 @@ using namespace BC::FcuCal;
 // Register hardware implementation
 REGISTER_HARDWARE_META(SirahFcu, "Sirah Frequency Conversion Unit")
 REGISTER_HARDWARE_PROTOCOLS(SirahFcu, CommunicationProtocol::Rs232)
-// Same binary protocol, no text terminator, as SirahCobra; the FCU has its
-// own comm settings group via the normal comm-config dialog.
+// Binary protocol (BC::Autotracker, see autotrackerprotocol.h) with no text
+// terminator; the FCU has its own comm settings group via the normal
+// comm-config dialog. The 200 ms default timeout suits the short
+// query/response commands (Get Position, Identify, Error); a Goto Position
+// move with Wait=0 (see moveAbsolute()/moveRelative()) reads its
+// acknowledgment with a separately extended timeout instead of relying on
+// this default.
 REGISTER_COMM_DEFAULTS(SirahFcu, CommunicationProtocol::Rs232,
     {BC::Key::Comm::timeout, 200},
     {BC::Key::Comm::termChar, QString("")})
@@ -32,6 +38,8 @@ REGISTER_COMM_DEFAULTS(SirahFcu, CommunicationProtocol::Rs232,
 REGISTER_HARDWARE_SETTINGS(SirahFcu,
     {harmonic,   "Harmonic Order",       "Harmonic order N for this doubler; set once at profile creation",
      2,    1,          QVariant{}, HwSettingPriority::Required},
+    {motorNumber,"Motor Number",         "Autotracker motor index (1-3) driving this doubling crystal",
+     1,    1,          3,          HwSettingPriority::Important},
     {calScheme,  "Calibration Scheme",   "Tuning-curve model used to evaluate the doubling crystal's "
                                           "wavelength <-> motor position mapping",
      QVariant::fromValue(Scheme::Physical), QVariant{}, QVariant{}, HwSettingPriority::Important},
@@ -99,19 +107,70 @@ BC::LifConv::Op SirahFcu::conversionOp() const
 
 void SirahFcu::initialize()
 {
+    // Program the motor's start/high frequency and ramp length before the
+    // first move: the Autotracker will not have a defined move profile for
+    // this motor on power-up, and Set Command Move Parameters is the only
+    // way to establish one (there is no separate "acceleration undefined"
+    // Autotracker error code documented, but a move issued beforehand would
+    // have no defined ramp to run).
+    auto startHz = qBound(0.0, getArrayValue(stages,0,sStart,3000.0), 65535.0);
+    auto highHz = qBound(0.0, getArrayValue(stages,0,sHigh,12000.0), 65535.0);
+    auto ramp = qBound(0.0, static_cast<double>(getArrayValue(stages,0,sRamp,2400)), 65535.0);
+
+    auto startF = static_cast<quint16>(qRound(startHz));
+    auto highF = static_cast<quint16>(qRound(highHz));
+    auto rampSteps = static_cast<quint16>(qRound(ramp));
+
+    QByteArray dat;
+    dat.append(static_cast<char>(motor()));
+    dat.append(static_cast<char>((startF >> 8) & 0xFF));
+    dat.append(static_cast<char>(startF & 0xFF));
+    dat.append(static_cast<char>((highF >> 8) & 0xFF));
+    dat.append(static_cast<char>(highF & 0xFF));
+    dat.append(static_cast<char>((rampSteps >> 8) & 0xFF));
+    dat.append(static_cast<char>(rampSteps & 0xFF));
+
+    auto cmd = BC::Autotracker::buildCommand(0x1F, dat);
+    p_comm->writeBinary(cmd);
+    auto resp = p_comm->readBytes(12,true);
+
+    BC::Autotracker::Response r;
+    if(!BC::Autotracker::parseResponse(resp, r) || r.id != 0x00)
+        reportCommError(u"Could not set move parameters (start/high frequency, ramp length) for motor %1."_s.arg(motor()));
 }
 
 bool SirahFcu::testConnection()
 {
-    bool out = prompt();
-    if(out)
+    // The Autotracker has no auto-prompt stream to silence (unlike the
+    // Cobra's 1 Hz status broadcast); establish the connection with an
+    // Identify round-trip instead.
+    auto idCmd = BC::Autotracker::buildCommand(0x02);
+    p_comm->writeBinary(idCmd);
+    auto resp = p_comm->readBytes(12,true);
+
+    BC::Autotracker::Response r;
+    if(!BC::Autotracker::parseResponse(resp, r))
     {
-        //disable autoprompt
-        p_comm->writeBinary(BC::Sirah::buildCommand(0x10));
-        readPosition();
+        hwError(u"No response to Identify command (Hex: %1)."_s.arg(QString(resp.toHex())));
+        return false;
     }
 
-    return out;
+    if(r.id == 0x01 && r.payload.size() >= 3)
+        hwDebug(u"Autotracker ROM version %1, revision %2."_s
+                    .arg(static_cast<quint8>(r.payload.at(1)))
+                    .arg(static_cast<quint8>(r.payload.at(2))));
+
+    // Drain any error codes left queued from a previous session before
+    // trusting a subsequent reply's Adr/Status byte or Error query.
+    if(!drainErrorQueue())
+        return false;
+
+    return prompt();
+}
+
+quint8 SirahFcu::motor() const
+{
+    return static_cast<quint8>(qBound(1, get(motorNumber, 1), 3));
 }
 
 void SirahFcu::hwReadSettings()
@@ -218,9 +277,23 @@ void SirahFcu::setPos(double localCm1)
         return;
     }
 
-    auto targetPos = static_cast<qint32>(round(rawTargetPos));
-    auto currentPos = d_status.m1Pos;
-    auto delta = targetPos - currentPos;
+    // Positions are unsigned 24-bit on the Autotracker (0..0xFFFFFF); guard
+    // the cast below the same way the isfinite() check above guards against
+    // a Spline calibration's NaN sentinel -- a negative or over-range
+    // result cast to quint32 would otherwise wrap into a bogus in-range
+    // position and silently drive the motor to the wrong place (or into a
+    // hard-stop) rather than reporting a calibration/domain error.
+    if(rawTargetPos < 0.0 || rawTargetPos > 16777215.0)
+    {
+        hwError(u"Calculated motor position %1 for %2 nm (%3 cm-1) is outside the Autotracker's "
+                 "24-bit position range; refusing to move."_s
+                    .arg(rawTargetPos,0,'f',1).arg(wl,0,'f',4).arg(localCm1,0,'f',3));
+        return;
+    }
+
+    auto targetPos = static_cast<quint32>(qRound(rawTargetPos));
+    auto currentPos = d_lastPos;
+    auto delta = static_cast<qint32>(static_cast<qint64>(targetPos) - static_cast<qint64>(currentPos));
 
     // Skip a redundant move only when doing so cannot violate the verify
     // window. Rather than gating on a fixed step count (which a coarse
@@ -240,26 +313,42 @@ void SirahFcu::setPos(double localCm1)
     //Conditions: need last move to be in same direction as backlash correction,
     //and distance should be less than backlash correction.
     auto backlash = getArrayValue(stages,0,sbls,24000);
-    if(d_status.lastMoveDir != 0 && (d_status.lastMoveDir*delta) > 0 && qAbs(delta) < qAbs(backlash))
+    if(d_lastMoveDir != 0 && (d_lastMoveDir*delta) > 0 && qAbs(delta) < qAbs(backlash))
     {
         moveRelative(delta);
         if(backlash > 0)
-            d_status.lastMoveDir = 1;
+            d_lastMoveDir = 1;
         else
-            d_status.lastMoveDir = -1;
+            d_lastMoveDir = -1;
     }
     else
     {
-        if(moveAbsolute(targetPos - backlash))
+        // The two-move backlash approach (move to target-backlash, then a
+        // relative move by backlash) was written for the Cobra's signed
+        // 32-bit position space, where target-backlash simply going
+        // negative was harmless. Autotracker positions are unsigned
+        // 24-bit, so that intermediate can underflow below 0 (or, for a
+        // negative backlash setting, overflow past 0xFFFFFF). When the
+        // approach point would fall outside the valid range, skip the
+        // backlash pre-move entirely and go straight to the target; the
+        // backlash direction is simply unknown after a direct move, so the
+        // next call cannot use the single-relative-move shortcut above.
+        auto approach = static_cast<qint64>(targetPos) - backlash;
+        if(approach < 0 || approach > 0xFFFFFF)
+        {
+            moveAbsolute(targetPos);
+            d_lastMoveDir = 0;
+        }
+        else if(moveAbsolute(static_cast<quint32>(approach)))
         {
             moveRelative(backlash);
             if(backlash > 0)
-                d_status.lastMoveDir = 1;
+                d_lastMoveDir = 1;
             else
-                d_status.lastMoveDir = -1;
+                d_lastMoveDir = -1;
         }
         else
-            d_status.lastMoveDir = 0;
+            d_lastMoveDir = 0;
     }
 }
 
@@ -271,10 +360,10 @@ double SirahFcu::readPos()
         return -1.0;
     }
 
-    auto wl = d_calibration.posToWavelength(d_status.m1Pos);
+    auto wl = d_calibration.posToWavelength(d_lastPos);
     if(!std::isfinite(wl))
     {
-        hwError(u"Could not convert motor position %1 to a wavelength."_s.arg(d_status.m1Pos));
+        hwError(u"Could not convert motor position %1 to a wavelength."_s.arg(d_lastPos));
         return -1.0;
     }
 
@@ -283,126 +372,184 @@ double SirahFcu::readPos()
 
 bool SirahFcu::prompt()
 {
-    auto rp = BC::Sirah::buildCommand(0x17);
-    p_comm->writeBinary(rp);
-    auto resp = p_comm->readBytes(14,true);
+    auto m = motor();
+    QByteArray dat(1, static_cast<char>(m));
+    auto cmd = BC::Autotracker::buildCommand(0x17, dat);
+    p_comm->writeBinary(cmd);
+    auto resp = p_comm->readBytes(12,true);
 
-    if(!BC::Sirah::parseStatus(resp, d_status))
+    BC::Autotracker::Response r;
+    if(!BC::Autotracker::parseResponse(resp, r) || r.id != 0x0b)
     {
-        d_errorString = QString("Received unexpected response (Hex: %1)").arg(QString(resp.toHex()));
+        d_errorString = QString("Received unexpected response to Get Position (Hex: %1)").arg(QString(resp.toHex()));
+        return false;
+    }
+
+    if(r.payload.isEmpty() || static_cast<quint8>(r.payload.at(0)) != m)
+    {
+        d_errorString = QString("Get Position echoed motor %1, expected %2.")
+                             .arg(r.payload.isEmpty() ? -1 : static_cast<int>(static_cast<quint8>(r.payload.at(0))))
+                             .arg(m);
+        return false;
+    }
+
+    // Pos24 sits at payload bytes 1..3 (response bytes 4..6): payload byte 0
+    // is the echoed motor number checked above.
+    d_lastPos = BC::Autotracker::unpackPos24(r.payload, 1);
+    return true;
+}
+
+void SirahFcu::moveRelative(qint32 steps)
+{
+    // TODO (bench-verify): the Goto Position frame carries no separate
+    // direction byte for a relative move (unlike the Cobra's Move Relative,
+    // which has distinct Dev/Dir/magnitude fields) -- only the 24-bit Pos
+    // field itself. This encodes the signed delta as its 24-bit two's-
+    // complement truncation, on the assumption that the controller
+    // interprets Pos as signed when Rel=1. That assumption is not
+    // bench-confirmed; §4.6 of the protocol reference notes the only
+    // captured Goto exchange used Rel=0. If real hardware rejects this or
+    // moves the wrong direction, the sign convention here is the first
+    // thing to revisit.
+    quint32 encoded = static_cast<quint32>(steps) & 0x00FFFFFFu;
+
+    QByteArray dat;
+    dat.append(static_cast<char>(motor()));
+    dat.append(static_cast<char>(0x00)); // Wait = 0: ack only once the move completes
+    dat.append(static_cast<char>(0x01)); // Rel = 1: relative to current position
+    dat.append(BC::Autotracker::packPos24(encoded));
+
+    auto cmd = BC::Autotracker::buildCommand(0x22, dat);
+    p_comm->writeBinary(cmd);
+
+    auto resp = readResponse(moveAckTimeoutMs);
+    BC::Autotracker::Response r;
+    if(!BC::Autotracker::parseResponse(resp, r) || r.id != 0x00)
+    {
+        reportCommError(u"Relative move by %1 steps did not complete successfully."_s.arg(steps));
+        emit hardwareFailure();
+    }
+}
+
+bool SirahFcu::moveAbsolute(quint32 targetPos)
+{
+    QByteArray dat;
+    dat.append(static_cast<char>(motor()));
+    dat.append(static_cast<char>(0x00)); // Wait = 0: ack only once the move completes
+    dat.append(static_cast<char>(0x00)); // Rel = 0: absolute target
+    dat.append(BC::Autotracker::packPos24(targetPos));
+
+    auto cmd = BC::Autotracker::buildCommand(0x22, dat);
+    p_comm->writeBinary(cmd);
+
+    // Wait=0 means the controller withholds its acknowledgment until the
+    // move physically completes; a full-travel move can take several
+    // seconds, far longer than the short default comm timeout used for
+    // ordinary queries. readResponse() polls p_comm in a bounded loop
+    // rather than assuming a single read call can wait long enough, so a
+    // genuinely wedged reply still times out instead of blocking forever.
+    // There is no motor-running status bit to poll and no documented stop
+    // command, so a move that does not ack within the timeout is simply
+    // reported as failed -- the ack's payload is not a position field
+    // (see autotrackerprotocol.h) and is not inspected.
+    auto resp = readResponse(moveAckTimeoutMs);
+    BC::Autotracker::Response r;
+    if(!BC::Autotracker::parseResponse(resp, r) || r.id != 0x00)
+    {
+        reportCommError(u"Move to position %1 did not complete successfully."_s.arg(targetPos));
+        emit hardwareFailure();
         return false;
     }
 
     return true;
 }
 
-void SirahFcu::moveRelative(qint32 steps)
+QByteArray SirahFcu::readResponse(int totalTimeoutMs)
 {
-    quint8 dir = 0x01;
-    if(steps < 0)
-        dir = 0x02;
+    QElapsedTimer timer;
+    timer.start();
 
-    auto s = qAbs(steps);
-    QByteArray dat;
-    dat.append(0x01);
-    dat.append(dir);
-    dat.append(static_cast<quint8>(s & 0x000000ff));
-    dat.append(static_cast<quint8>((s & 0x0000ff00) >> 8));
-    dat.append(static_cast<quint8>((s & 0x00ff0000) >> 16));
-    dat.append(static_cast<quint8>((s & 0xff000000) >> 24));
-
-    auto cmd = BC::Sirah::buildCommand(0x06,dat);
-
-    p_comm->writeBinary(cmd);
-
-    int waiting = 0;
-    bool done = false;
-
-    while(!done && waiting < 100)
+    QByteArray resp;
+    do
     {
-        thread()->msleep(50);
+        resp = p_comm->readBytes(12,true);
+        if(resp.size() == 12)
+            return resp;
+    } while(timer.elapsed() < totalTimeoutMs);
 
-        if(!prompt())
-            break;
-
-        //bit 0 tells whether the motor is running
-        if(d_status.m1Status % 2)
-        {
-            //motor is running; sleep thread and try again
-            waiting++;
-        }
-        else
-        {
-            done = true;
-            break;
-        }
-    }
-
-    if(!done)
-    {
-        //stop motor
-        p_comm->writeBinary(BC::Sirah::buildCommand(0x04));
-        hwError("Did not set position successfully; stopped motor motion."_L1);
-        emit hardwareFailure();
-    }
-
+    return resp;
 }
 
-bool SirahFcu::moveAbsolute(qint32 targetPos)
+bool SirahFcu::drainErrorQueue()
 {
-    QByteArray dat;
-    dat.append(0x01);
-    dat.append(static_cast<quint8>(targetPos & 0x000000ff));
-    dat.append(static_cast<quint8>((targetPos & 0x0000ff00) >> 8));
-    dat.append(static_cast<quint8>((targetPos & 0x00ff0000) >> 16));
-    dat.append(static_cast<quint8>((targetPos & 0xff000000) >> 24));
-
-    auto cmd = BC::Sirah::buildCommand(0x07,dat);
-
-    p_comm->writeBinary(cmd);
-
-    int waiting = 0;
-    bool done = false;
-    qint32 lastDiff = qAbs(targetPos - d_status.m1Pos);
-
-    while(!done)
+    // The Error command reads a queue of stacked error codes that persists
+    // across sessions until read; drain it once at connection time so a
+    // stale queued error left over from an earlier session cannot later be
+    // mistaken for a live fault (see autotrackerprotocol.h -- the Adr/Status
+    // byte's error-flag bit is unreliable for exactly this reason). A
+    // well-drained queue reports either an all-zero payload or a Stack
+    // Underflow code (7, "no more entries"); the loop is bounded rather
+    // than open-ended in case a malfunctioning unit never reports either.
+    for(int i=0; i<8; i++)
     {
-        thread()->msleep(50);
+        auto cmd = BC::Autotracker::buildCommand(0x03);
+        p_comm->writeBinary(cmd);
+        auto resp = p_comm->readBytes(12,true);
 
-        if(!prompt())
-            break;
-
-        if(waiting > 0)
+        BC::Autotracker::Response r;
+        if(!BC::Autotracker::parseResponse(resp, r))
         {
-            auto d = qAbs(targetPos - d_status.m1Pos);
-            if(d > lastDiff && d > 10)
+            hwError(u"No response to Error command while draining the startup error queue (Hex: %1)."_s
+                        .arg(QString(resp.toHex())));
+            return false;
+        }
+
+        bool anyNonzero = false;
+        bool underflow = false;
+        for(auto b : r.payload)
+        {
+            auto code = static_cast<quint8>(b);
+            if(code == 0)
+                continue;
+            if(code == 7)
             {
-                hwDebug("Diff increased."_L1);
-                break;
+                underflow = true;
+                continue;
             }
-            lastDiff = d;
+            anyNonzero = true;
+            hwDebug(u"Drained queued Autotracker error: %1"_s.arg(BC::Autotracker::errorString(code)));
         }
 
-        //bit 0 tells whether the motor is running
-        if(d_status.m1Status % 2)
-        {
-            //motor is running; sleep thread and try again
-            waiting++;
-        }
-        else
-        {
-            done = true;
+        if(!anyNonzero || underflow)
             break;
+    }
+
+    return true;
+}
+
+void SirahFcu::reportCommError(const QString &context)
+{
+    auto cmd = BC::Autotracker::buildCommand(0x03);
+    p_comm->writeBinary(cmd);
+    auto resp = p_comm->readBytes(12,true);
+
+    BC::Autotracker::Response r;
+    if(BC::Autotracker::parseResponse(resp, r))
+    {
+        QStringList codes;
+        for(auto b : r.payload)
+        {
+            auto code = static_cast<quint8>(b);
+            if(code != 0)
+                codes << BC::Autotracker::errorString(code);
+        }
+
+        if(!codes.isEmpty())
+        {
+            hwError(u"%1 (%2)"_s.arg(context, codes.join(u"; "_s)));
+            return;
         }
     }
 
-    if(!done)
-    {
-        //stop motor
-        p_comm->writeBinary(BC::Sirah::buildCommand(0x04));
-        hwError("Did not set position successfully; stopped motor motion."_L1);
-        emit hardwareFailure();
-    }
-
-    return done;
+    hwError(context);
 }
