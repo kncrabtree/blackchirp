@@ -1,4 +1,4 @@
-#include <hardware/core/liflaser/sirahfcu.h>
+#include <hardware/optional/laserfreqconversion/sirahfcu.h>
 
 #include <hardware/core/hardwareregistration.h>
 #include <data/storage/enumcsvconvert.h>
@@ -14,7 +14,7 @@
 #endif
 
 using namespace BC::Key::SirahFcu;
-using namespace BC::Key::LifConvStage;
+using namespace BC::Key::LaserConvStage;
 using namespace BC::LifConv;
 using namespace BC::FcuCal;
 
@@ -32,7 +32,7 @@ REGISTER_COMM_DEFAULTS(SirahFcu, CommunicationProtocol::Rs232,
     {BC::Key::Comm::timeout, 200},
     {BC::Key::Comm::termChar, QString("")})
 
-// Override the base LifFreqConversionStage harmonic-order default for the
+// Override the base LaserFreqConversionStage harmonic-order default for the
 // common lone-doubler case. The registered op setting stays the inherited
 // base default (NHG), matching conversionOp()'s pinned override below.
 REGISTER_HARDWARE_SETTINGS(SirahFcu,
@@ -94,7 +94,7 @@ REGISTER_HARDWARE_ARRAY(SirahFcu, splinePoints,
 REGISTER_HARDWARE_ARRAY_SCHEMA(SirahFcu, splinePoints, spWavelength, spPosition)
 
 SirahFcu::SirahFcu(const QString& label, QObject *parent) :
-    LifFreqConversionStage(QString(SirahFcu::staticMetaObject.className()), label, parent)
+    LaserFreqConversionStage(QString(SirahFcu::staticMetaObject.className()), label, parent)
 {
 }
 

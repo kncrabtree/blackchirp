@@ -14,7 +14,7 @@ class LifConfig;
 /*!
  * \brief Table model for the per-experiment LIF frequency-conversion DAG.
  *
- * Rows are the active \c LifFreqConversionStage hardware keys (from
+ * Rows are the active \c LaserFreqConversionStage hardware keys (from
  * \c RuntimeHardwareConfig). Each row's \c op/harmonic order are read from
  * that stage's \c SettingsStorage hardware snapshot — the model never talks
  * to a live threaded device — while the input wiring and FINAL marker are
@@ -80,7 +80,7 @@ public:
      * \brief Request a gated harmonic-order change for \a stageKey.
      *
      * Emits applyHarmonic() for a later stage to route to
-     * \c LifFreqConversionStage::setHarmonicOrder() via \c HardwareManager;
+     * \c LaserFreqConversionStage::setHarmonicOrder() via \c HardwareManager;
      * does **not** modify the model. Returns \c false without emitting when
      * \a stageKey does not name an active row or \a n is not a valid
      * harmonic order (< 1).

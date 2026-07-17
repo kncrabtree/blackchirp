@@ -1,13 +1,13 @@
-#include <hardware/core/liflaser/liffreqconversionstage.h>
+#include <hardware/optional/laserfreqconversion/laserfreqconversionstage.h>
 
 #include <hardware/core/hardwareregistration.h>
 #include <data/storage/enumcsvconvert.h>
 #include <data/loadout/loadoutmanager.h>
 
-using namespace BC::Key::LifConvStage;
+using namespace BC::Key::LaserConvStage;
 using namespace BC::LifConv;
 
-REGISTER_HARDWARE_BASE(LifFreqConversionStage,
+REGISTER_HARDWARE_BASE(LaserFreqConversionStage,
     {op,       "Conversion Operation", "Node operation: NHG (N-th harmonic), SFG, or DFG",
      QVariant::fromValue(Op::NHG), QVariant{}, QVariant{}, HwSettingPriority::Important},
     {harmonic, "Harmonic Order",      "Harmonic order N for an NHG node (ignored for SFG/DFG)",
@@ -20,35 +20,35 @@ REGISTER_HARDWARE_BASE(LifFreqConversionStage,
      1.0, 0.0, QVariant{}, HwSettingPriority::Optional}
 )
 
-LifFreqConversionStage::LifFreqConversionStage(const QString& impl, const QString& label, QObject *parent) :
-    HardwareObject(QString(LifFreqConversionStage::staticMetaObject.className()), impl, label, parent)
+LaserFreqConversionStage::LaserFreqConversionStage(const QString& impl, const QString& label, QObject *parent) :
+    HardwareObject(QString(LaserFreqConversionStage::staticMetaObject.className()), impl, label, parent)
 {
     d_threaded = true;
 }
 
-LifFreqConversionStage::~LifFreqConversionStage()
+LaserFreqConversionStage::~LaserFreqConversionStage()
 {
 
 }
 
-BC::LifConv::Op LifFreqConversionStage::conversionOp() const
+BC::LifConv::Op LaserFreqConversionStage::conversionOp() const
 {
     return BC::CSV::enumFromVariant<Op>(get(op, QVariant::fromValue(Op::NHG)), Op::NHG);
 }
 
-bool LifFreqConversionStage::setHarmonicOrder(int n)
+bool LaserFreqConversionStage::setHarmonicOrder(int n)
 {
     set(harmonic, n);
     save();
     return true;
 }
 
-double LifFreqConversionStage::readPosition()
+double LaserFreqConversionStage::readPosition()
 {
     return readPos();
 }
 
-bool LifFreqConversionStage::setPosition(double localCm1)
+bool LaserFreqConversionStage::setPosition(double localCm1)
 {
     setPos(localCm1);
     double achieved = readPos();

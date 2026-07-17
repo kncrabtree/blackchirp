@@ -14,7 +14,7 @@ namespace BC::LifConv {
 ///
 /// The input references and FINAL marker for one conversion node, keyed by
 /// the stage's hwKey. Excludes \c op/\c n: those are hardware identity /
-/// registered settings (see LifFreqConversionStage::conversionOp() and
+/// registered settings (see LaserFreqConversionStage::conversionOp() and
 /// harmonicOrder()), not per-experiment wiring.
 struct StageWiring {
     QString stageKey;

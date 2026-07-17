@@ -1,12 +1,12 @@
-#ifndef LIFFREQCONVERSIONSTAGE_H
-#define LIFFREQCONVERSIONSTAGE_H
+#ifndef LASERFREQCONVERSIONSTAGE_H
+#define LASERFREQCONVERSIONSTAGE_H
 
 #include <hardware/core/hardwareobject.h>
 #include <data/storage/settingsstorage.h>
 #include <data/lif/lifconversion.h>
 #include <data/loadout/lifconversionsnapshot.h>
 
-namespace BC::Key::LifConvStage {
+namespace BC::Key::LaserConvStage {
 inline constexpr QLatin1StringView op{"conversionOp"};          ///< BC::LifConv::Op key name.
 inline constexpr QLatin1StringView harmonic{"harmonicOrder"};   ///< int N, NHG only.
 inline constexpr QLatin1StringView verify{"verifyMove"};        ///< bool, default true.
@@ -33,12 +33,12 @@ inline constexpr QLatin1StringView tolerance{"verifyToleranceCm1"}; ///< double 
  * A stage emits no output-position update to the display; only
  * LifLaser::laserPosUpdate drives the axis.
  */
-class LifFreqConversionStage : public HardwareObject
+class LaserFreqConversionStage : public HardwareObject
 {
     Q_OBJECT
 public:
-    LifFreqConversionStage(const QString& impl, const QString& label, QObject *parent = nullptr);
-    ~LifFreqConversionStage() override;
+    LaserFreqConversionStage(const QString& impl, const QString& label, QObject *parent = nullptr);
+    ~LaserFreqConversionStage() override;
 
     /*!
      * \brief This stage's conversion operation (NHG/SFG/DFG).
@@ -55,7 +55,7 @@ public:
     virtual BC::LifConv::Op conversionOp() const;
 
     //! Harmonic order N for an NHG stage (the registered \c harmonic setting; ignored for SFG/DFG).
-    int harmonicOrder() const { return get(BC::Key::LifConvStage::harmonic, 2); }
+    int harmonicOrder() const { return get(BC::Key::LaserConvStage::harmonic, 2); }
 
     /*!
      * \brief Driver hook for a gated harmonic-order change.
@@ -83,7 +83,7 @@ public slots:
      * sentinel, not a value the stage actually reported, so it always
      * emits hardwareFailure() and returns false regardless of the verify
      * flag. For an in-range readback that simply misses the requested
-     * wavenumber, the verify flag (BC::Key::LifConvStage::verify) decides
+     * wavenumber, the verify flag (BC::Key::LaserConvStage::verify) decides
      * the outcome: off logs a warning and returns true (best-effort); on
      * emits hardwareFailure() and returns false.
      *
@@ -147,4 +147,4 @@ LifConversion::AssemblyResult assembleLifConversion(const LifConversionSnapshot 
  */
 LifConversion::AssemblyResult assembleCurrentLifConversion();
 
-#endif // LIFFREQCONVERSIONSTAGE_H
+#endif // LASERFREQCONVERSIONSTAGE_H

@@ -10,7 +10,7 @@
 #include <data/storage/settingsstorage.h>
 #include <data/storage/enumcsvconvert.h>
 #include <hardware/core/liflaser/liflaser.h>
-#include <hardware/core/liflaser/liffreqconversionstage.h>
+#include <hardware/optional/laserfreqconversion/laserfreqconversionstage.h>
 
 LifLaserWidget::LifLaserWidget(const QString& lifLaserKey, QWidget *parent)
     : QWidget{parent}

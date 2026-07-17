@@ -12,7 +12,7 @@
 #include <hardware/core/hardwareobject.h>
 #include <hardware/python/pythonhardwarebase.h>
 #include <hardware/core/clock/clockmanager.h>
-#include <hardware/core/liflaser/liffreqconversionstage.h>
+#include <hardware/optional/laserfreqconversion/laserfreqconversionstage.h>
 #include <data/lif/lifconfig.h>
 #include <hardware/core/hw_h.h> // Generated at build time
 
@@ -774,7 +774,7 @@ void HardwareManager::updateLifConversion()
 
 bool HardwareManager::setLifConversionStages(double outputCm1)
 {
-    auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifFreqConversionStage>();
+    auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LaserFreqConversionStage>();
     if(activeKeys.isEmpty())
         return true;
 
@@ -792,7 +792,7 @@ bool HardwareManager::setLifConversionStages(double outputCm1)
 
     for(const auto &key : activeKeys)
     {
-        auto stage = findHardware<LifFreqConversionStage>(key);
+        auto stage = findHardware<LaserFreqConversionStage>(key);
         if(!stage)
             continue;
 
@@ -858,7 +858,7 @@ bool HardwareManager::setLifConversionStages(double outputCm1)
 
 void HardwareManager::configureLifHarmonic(const QString &stageKey, int n)
 {
-    auto stage = findHardware<LifFreqConversionStage>(stageKey);
+    auto stage = findHardware<LaserFreqConversionStage>(stageKey);
     if(!stage)
     {
         bcError(u"Could not change harmonic order for %1 because it is not an active LIF frequency-conversion stage."_s.arg(stageKey));
@@ -1237,7 +1237,7 @@ void HardwareManager::setupHardwareSpecificConnectionsWithTracking(HardwareObjec
         storeConnection(hwKey, connect(lifLaser, &LifLaser::laserPosUpdate, this, &HardwareManager::lifLaserPosUpdate));
         storeConnection(hwKey, connect(lifLaser, &LifLaser::laserFlashlampUpdate, this, &HardwareManager::lifLaserFlashlampUpdate));
     }
-    else if (qobject_cast<LifFreqConversionStage*>(obj)) {
+    else if (qobject_cast<LaserFreqConversionStage*>(obj)) {
         // A conversion stage forwards no type-specific signal: it reports no
         // output-position update of its own (only LifLaser::laserPosUpdate
         // drives the display axis), and its failure/lifecycle notifications

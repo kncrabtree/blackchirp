@@ -617,7 +617,7 @@ if(BC_BUILD_TESTS)
     # source is compiled in rather than linking the full hardware library.
     add_executable(tst_autotrackerprotocol
         tests/tst_autotrackerprotocol.cpp
-        src/hardware/core/liflaser/autotrackerprotocol.cpp
+        src/hardware/optional/laserfreqconversion/autotrackerprotocol.cpp
     )
     target_include_directories(tst_autotrackerprotocol PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src

@@ -319,7 +319,7 @@ signals:
     /// stage's harmonic order on hardware.
     ///
     /// Intended for the LIF conversion table model to re-read
-    /// LifFreqConversionStage::harmonicOrder() and re-join its node list;
+    /// LaserFreqConversionStage::harmonicOrder() and re-join its node list;
     /// never emitted on failure (see configureLifHarmonic()).
     /// \param stageKey Hardware key of the stage whose harmonic order changed.
     void lifHarmonicApplied(QString stageKey);
@@ -593,13 +593,13 @@ public slots:
     /// manager thread via \c QMetaObject::invokeMethod at the connection
     /// site (see \c MainWindow::connectRfConfigWidget for the pattern), and
     /// this slot drives the change. Dispatches
-    /// \c LifFreqConversionStage::setHarmonicOrder() onto the stage's own
+    /// \c LaserFreqConversionStage::setHarmonicOrder() onto the stage's own
     /// thread (stages are \c d_threaded), the same way setLifLaserPos()
     /// dispatches to the laser. Emits lifHarmonicApplied() on success; logs
     /// via bcError() and emits nothing on failure or if \a stageKey does not
     /// name an active stage.
     ///
-    /// \param stageKey Hardware key of the target LifFreqConversionStage.
+    /// \param stageKey Hardware key of the target LaserFreqConversionStage.
     /// \param n Requested harmonic order.
     void configureLifHarmonic(const QString &stageKey, int n);
 
@@ -827,7 +827,7 @@ private:
     std::unique_ptr<ClockManager> pu_clockManager;
 
     /// \brief Cached LIF frequency-conversion topology, assembled from the
-    /// active LifLaser and every active LifFreqConversionStage's node
+    /// active LifLaser and every active LaserFreqConversionStage's node
     /// descriptor and pushed to the laser via LifLaser::setConversion().
     /// Refreshed whenever hardware connection completes (updateLifConversion(),
     /// so live control reflects the topology) and re-validated at experiment

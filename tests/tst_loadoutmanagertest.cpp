@@ -294,13 +294,13 @@ LifPreset LoadoutManagerTest::makeLifPreset(const QString &laserKey)
     using namespace BC::LifConv;
 
     StageWiring doubler;
-    doubler.stageKey = u"LifFreqConversionStage.doubler"_s;
+    doubler.stageKey = u"LaserFreqConversionStage.doubler"_s;
     doubler.inputs = {InputRef{RefType::Laser, {}, 0.0}};
     doubler.isFinal = false;
 
     StageWiring tripler;
-    tripler.stageKey = u"LifFreqConversionStage.tripler"_s;
-    tripler.inputs = {InputRef{RefType::Stage, u"LifFreqConversionStage.doubler"_s, 0.0},
+    tripler.stageKey = u"LaserFreqConversionStage.tripler"_s;
+    tripler.inputs = {InputRef{RefType::Stage, u"LaserFreqConversionStage.doubler"_s, 0.0},
                       InputRef{RefType::Fixed, {}, 50.0}};
     tripler.isFinal = true;
 
@@ -321,8 +321,8 @@ HardwareLoadout LoadoutManagerTest::makeWithLifPresets()
     lo.name = u"LifAlpha"_s;
     lo.hardwareMap = {
         {u"LifLaser.default"_s,                    u"VirtualLifLaser"_s},
-        {u"LifFreqConversionStage.doubler"_s,       u"VirtualLifFreqConversionStage"_s},
-        {u"LifFreqConversionStage.tripler"_s,       u"VirtualLifFreqConversionStage"_s},
+        {u"LaserFreqConversionStage.doubler"_s,       u"VirtualLaserFreqConversionStage"_s},
+        {u"LaserFreqConversionStage.tripler"_s,       u"VirtualLaserFreqConversionStage"_s},
     };
 
     lo.lifPresets[u"Primary"_s]   = makeLifPreset(u"LifLaser.default"_s);
@@ -1171,8 +1171,8 @@ void LoadoutManagerTest::testLifPresetReferencesHardware()
     const LifPreset preset = makeLifPreset(u"LifLaser.default"_s);
 
     // A wired stageKey and the captured laser match.
-    QVERIFY(lifPresetReferencesHardware(preset, u"LifFreqConversionStage.doubler"_s));
-    QVERIFY(lifPresetReferencesHardware(preset, u"LifFreqConversionStage.tripler"_s));
+    QVERIFY(lifPresetReferencesHardware(preset, u"LaserFreqConversionStage.doubler"_s));
+    QVERIFY(lifPresetReferencesHardware(preset, u"LaserFreqConversionStage.tripler"_s));
     QVERIFY(lifPresetReferencesHardware(preset, u"LifLaser.default"_s));
 
     // An unrelated hwKey does not.
@@ -1233,10 +1233,10 @@ HardwareLoadout LoadoutManagerTest::makeLoA()
     lo.currentFtmwPresetName = u"F_digi"_s;
 
     // L_laser references LifLaser.default; L_none and __LastUsed__ do not.
-    lo.lifPresets[u"L_laser"_s] = makeLifRef(u"LifLaser.default"_s, u"LifFreqConversionStage.doubler"_s);
-    lo.lifPresets[u"L_none"_s]  = makeLifRef(u"LifLaser.other"_s,   u"LifFreqConversionStage.otherstage"_s);
+    lo.lifPresets[u"L_laser"_s] = makeLifRef(u"LifLaser.default"_s, u"LaserFreqConversionStage.doubler"_s);
+    lo.lifPresets[u"L_none"_s]  = makeLifRef(u"LifLaser.other"_s,   u"LaserFreqConversionStage.otherstage"_s);
     lo.lifPresets[lastUsedLifPresetName.toString()] =
-        makeLifRef(u"LifLaser.other"_s, u"LifFreqConversionStage.otherstage"_s);
+        makeLifRef(u"LifLaser.other"_s, u"LaserFreqConversionStage.otherstage"_s);
     lo.currentLifPresetName = u"L_laser"_s;
 
     return lo;
@@ -1381,12 +1381,12 @@ void LoadoutManagerTest::testPreviewPruneReferencing()
                  (QStringList{u"LoA|LifLaser|LifLaser.virtual"_s}));
     }
 
-    // Optional-type member with NO fallback (LifFreqConversionStage.doubler):
+    // Optional-type member with NO fallback (LaserFreqConversionStage.doubler):
     // LoA's named L_laser references it and is dropped; __LastUsed__ references
     // a different stage, so no working-config loss. No hardwareMap member holds
     // the stage key, so nothing is substituted.
     {
-        const auto pc = lm->previewPruneReferencing(u"LifFreqConversionStage.doubler"_s, fb);
+        const auto pc = lm->previewPruneReferencing(u"LaserFreqConversionStage.doubler"_s, fb);
         QCOMPARE(lostPresetStrings(pc), (QStringList{u"LoA|L_laser"_s}));
         QCOMPARE(reboundPresetStrings(pc), QStringList{});
         QCOMPARE(QStringList(pc.lostWorkingConfigLoadouts.begin(),
@@ -1396,11 +1396,11 @@ void LoadoutManagerTest::testPreviewPruneReferencing()
                  QStringList{});
     }
 
-    // Optional-type member with NO fallback (LifFreqConversionStage.otherstage):
+    // Optional-type member with NO fallback (LaserFreqConversionStage.otherstage):
     // LoA's named L_none is dropped AND its LIF __LastUsed__ references it, so
     // the working configuration is reported lost.
     {
-        const auto pc = lm->previewPruneReferencing(u"LifFreqConversionStage.otherstage"_s, fb);
+        const auto pc = lm->previewPruneReferencing(u"LaserFreqConversionStage.otherstage"_s, fb);
         QCOMPARE(lostPresetStrings(pc), (QStringList{u"LoA|L_none"_s}));
         QCOMPARE(reboundPresetStrings(pc), QStringList{});
         QCOMPARE(QStringList(pc.lostWorkingConfigLoadouts.begin(),
@@ -1622,7 +1622,7 @@ void LoadoutManagerTest::testPrunePresetsReferencingConversionStageDrop()
 
     // A conversion stage is optional and has no fallback, so a referencing
     // preset is dropped. Only LoA's L_laser wires the "doubler" stage.
-    const int removed = lm->prunePresetsReferencing(u"LifFreqConversionStage.doubler"_s, fb);
+    const int removed = lm->prunePresetsReferencing(u"LaserFreqConversionStage.doubler"_s, fb);
     QCOMPARE(removed, 1);
 
     const auto loA = lm->getLoadout(u"LoA"_s);
@@ -1654,7 +1654,7 @@ void LoadoutManagerTest::testPrunePresetsReferencingWorkingConfigDrop()
         seedPruneFixture(lm.get());
 
         const int removed =
-            lm->prunePresetsReferencing(u"LifFreqConversionStage.otherstage"_s, pruneResolver());
+            lm->prunePresetsReferencing(u"LaserFreqConversionStage.otherstage"_s, pruneResolver());
         QCOMPARE(removed, 2);
 
         const auto loA = lm->getLoadout(u"LoA"_s);
@@ -1678,7 +1678,7 @@ void LoadoutManagerTest::testPrunePresetsReferencingWorkingConfigDrop()
         QVERIFY(lm->putLoadout(*lo));
 
         QSignalSpy lifCurrentSpy(lm.get(), &LoadoutManager::currentLifPresetChanged);
-        lm->prunePresetsReferencing(u"LifFreqConversionStage.otherstage"_s, pruneResolver());
+        lm->prunePresetsReferencing(u"LaserFreqConversionStage.otherstage"_s, pruneResolver());
 
         const auto loA = lm->getLoadout(u"LoA"_s);
         QVERIFY(!loA->lifPresets.count(lastUsedLifPresetName.toString()));
@@ -1708,13 +1708,13 @@ void LoadoutManagerTest::testPrunePresetsReferencingReturnCount()
         std::unique_ptr<LoadoutManager> lm(makeLm());
         seedPruneFixture(lm.get());
         // doubler: only LoA's named L_laser.
-        QCOMPARE(lm->prunePresetsReferencing(u"LifFreqConversionStage.doubler"_s, pruneResolver()), 1);
+        QCOMPARE(lm->prunePresetsReferencing(u"LaserFreqConversionStage.doubler"_s, pruneResolver()), 1);
     }
     {
         std::unique_ptr<LoadoutManager> lm(makeLm());
         seedPruneFixture(lm.get());
         // otherstage: LoA's named L_none + LIF __LastUsed__.
-        QCOMPARE(lm->prunePresetsReferencing(u"LifFreqConversionStage.otherstage"_s, pruneResolver()), 2);
+        QCOMPARE(lm->prunePresetsReferencing(u"LaserFreqConversionStage.otherstage"_s, pruneResolver()), 2);
     }
 }
 

@@ -1,8 +1,8 @@
 #ifndef SIRAHFCU_H
 #define SIRAHFCU_H
 
-#include <hardware/core/liflaser/liffreqconversionstage.h>
-#include <hardware/core/liflaser/autotrackerprotocol.h>
+#include <hardware/optional/laserfreqconversion/laserfreqconversionstage.h>
+#include <hardware/optional/laserfreqconversion/autotrackerprotocol.h>
 #include <data/lif/fcucalibration.h>
 
 namespace BC::Key::SirahFcu {
@@ -55,13 +55,13 @@ inline constexpr QLatin1StringView spPosition{"positionSteps"};
  * to Op::NHG — though the base op setting (already defaulting to NHG)
  * stays registered so it remains snapshot-visible.
  */
-class SirahFcu : public LifFreqConversionStage
+class SirahFcu : public LaserFreqConversionStage
 {
     Q_OBJECT
 public:
     explicit SirahFcu(const QString& label, QObject *parent = nullptr);
 
-    // LifFreqConversionStage interface
+    // LaserFreqConversionStage interface
     BC::LifConv::Op conversionOp() const override;
 
     // HardwareObject interface
@@ -70,7 +70,7 @@ protected:
     bool testConnection() override;
     void hwReadSettings() override;
 
-    // LifFreqConversionStage interface
+    // LaserFreqConversionStage interface
 private:
     void setPos(double localCm1) override;
     double readPos() override;

@@ -1,4 +1,4 @@
-#include <hardware/core/liflaser/autotrackerprotocol.h>
+#include <hardware/optional/laserfreqconversion/autotrackerprotocol.h>
 
 namespace BC::Autotracker {
 

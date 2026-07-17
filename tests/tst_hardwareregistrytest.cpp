@@ -8,8 +8,8 @@
 #include <src/hardware/core/hardwareobject.h>
 #include <hardware/core/liflaser/liflaser.h>
 #include <hardware/core/liflaser/virtualliflaser.h>
-#include <hardware/core/liflaser/liffreqconversionstage.h>
-#include <hardware/core/liflaser/virtualliffreqconversionstage.h>
+#include <hardware/optional/laserfreqconversion/laserfreqconversionstage.h>
+#include <hardware/optional/laserfreqconversion/virtuallaserfreqconversionstage.h>
 #include <data/lif/lifunits.h>
 #include <data/lif/lifconversion.h>
 #include <data/storage/enumcsvconvert.h>
@@ -231,12 +231,12 @@ void HardwareRegistryTest::testFreqConversionStageConstructionPath()
     using namespace BC::LifConv;
 
     // Same construction-path guarantee as testEnumSettingDefaultSeededAsKeyName,
-    // for the LifFreqConversionStage base's enum-valued conversionOp setting,
+    // for the LaserFreqConversionStage base's enum-valued conversionOp setting,
     // plus a check that conversionOp()/harmonicOrder() read the registered
     // op/harmonic settings back for the stage.
-    VirtualLifFreqConversionStage stage("enumSeedTest");
+    VirtualLaserFreqConversionStage stage("enumSeedTest");
 
-    auto stored = stage.get(BC::Key::LifConvStage::op, QVariant{});
+    auto stored = stage.get(BC::Key::LaserConvStage::op, QVariant{});
     QCOMPARE(stored.typeId(), QMetaType::QString);
     QCOMPARE(stored.toString(), QStringLiteral("NHG"));
     QCOMPARE(BC::CSV::enumFromVariant<Op>(stored, Op::SFG), Op::NHG);
@@ -399,8 +399,8 @@ void HardwareRegistryTest::testAllExpectedImplementationsRegistered()
         {"TemperatureController", "VirtualTemperatureController"},
         {"LifDigitizer",          "VirtualLifDigitizer"},
         {"LifLaser",              "VirtualLifLaser"},
-        {"LifFreqConversionStage", "VirtualLifFreqConversionStage"},
-        {"LifFreqConversionStage", "FixedLifFreqConversionStage"},
+        {"LaserFreqConversionStage", "VirtualLaserFreqConversionStage"},
+        {"LaserFreqConversionStage", "FixedLaserFreqConversionStage"},
     };
 
     const QStringList types = d_registry->getHardwareTypes();

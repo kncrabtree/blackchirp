@@ -1,6 +1,6 @@
 #include <QtTest>
 
-#include <hardware/core/liflaser/autotrackerprotocol.h>
+#include <hardware/optional/laserfreqconversion/autotrackerprotocol.h>
 
 using namespace Qt::Literals::StringLiterals;
 using namespace BC::Autotracker;

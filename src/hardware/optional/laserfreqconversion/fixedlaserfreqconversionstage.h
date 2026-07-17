@@ -1,10 +1,10 @@
-#ifndef FIXEDLIFFREQCONVERSIONSTAGE_H
-#define FIXEDLIFFREQCONVERSIONSTAGE_H
+#ifndef FIXEDLASERFREQCONVERSIONSTAGE_H
+#define FIXEDLASERFREQCONVERSIONSTAGE_H
 
-#include <hardware/core/liflaser/liffreqconversionstage.h>
+#include <hardware/optional/laserfreqconversion/laserfreqconversionstage.h>
 
 /*!
- * \brief Logical LifFreqConversionStage for a conversion-topology node not
+ * \brief Logical LaserFreqConversionStage for a conversion-topology node not
  *        under Blackchirp's control.
  *
  * Follows the FixedClock motif (hardware/core/clock/fixedclock.h): a real,
@@ -13,17 +13,17 @@
  * uncontrolled crystal or compensator still participates in the conversion
  * topology (and therefore the axis math) with no second authoring location.
  */
-class FixedLifFreqConversionStage : public LifFreqConversionStage
+class FixedLaserFreqConversionStage : public LaserFreqConversionStage
 {
     Q_OBJECT
 public:
-    FixedLifFreqConversionStage(const QString& label, QObject *parent = nullptr);
+    FixedLaserFreqConversionStage(const QString& label, QObject *parent = nullptr);
 
 protected:
     void initialize() override;
     bool testConnection() override;
 
-    // LifFreqConversionStage interface
+    // LaserFreqConversionStage interface
 private:
     void setPos(double localCm1) override;
     double readPos() override;
@@ -31,4 +31,4 @@ private:
     double d_pos{0.0};
 };
 
-#endif // FIXEDLIFFREQCONVERSIONSTAGE_H
+#endif // FIXEDLASERFREQCONVERSIONSTAGE_H

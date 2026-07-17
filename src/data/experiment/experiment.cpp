@@ -17,14 +17,14 @@
 
 #include <hardware/core/lifdigitizer/lifdigitizer.h>
 #include <hardware/core/liflaser/liflaser.h>
-// Included only for the header-only BC::Key::LifConvStage::{op,harmonic}
+// Included only for the header-only BC::Key::LaserConvStage::{op,harmonic}
 // setting-name constants (mirrors the BC::Key::LifLaser usage above); never
-// call LifFreqConversionStage member functions or the free assembly helpers
+// call LaserFreqConversionStage member functions or the free assembly helpers
 // declared alongside them from this translation unit. Experiment is part of
 // blackchirp-data, which blackchirp-viewer and several data-only test
 // targets link without blackchirp-hardware, so a data-layer TU must not
 // depend on symbols whose bodies are compiled into the hardware library.
-#include <hardware/core/liflaser/liffreqconversionstage.h>
+#include <hardware/optional/laserfreqconversion/laserfreqconversionstage.h>
 
 #include <QFile>
 #include <QSaveFile>
@@ -556,7 +556,7 @@ LifConfig *Experiment::enableLif()
     // been shown. The preset's wiring (inputs/FINAL) is joined with
     // op/harmonic order read live from each stage's own hardware settings
     // snapshot, exactly as
-    // hardware/core/liflaser/liffreqconversionstage.cpp's
+    // hardware/optional/laserfreqconversion/laserfreqconversionstage.cpp's
     // lifConversionNodesFromSnapshot() does -- replicated here via
     // LifConversionSnapshot::toNodes() directly (a blackchirp-data type)
     // rather than calling that hardware-library free function, per the
@@ -570,12 +570,12 @@ LifConfig *Experiment::enableLif()
             auto opOf = [](const QString &stageKey) -> BC::LifConv::Op {
                 SettingsStorage s(stageKey, SettingsStorage::Hardware);
                 return BC::CSV::enumFromVariant<BC::LifConv::Op>(
-                    s.get(BC::Key::LifConvStage::op, QVariant::fromValue(BC::LifConv::Op::NHG)),
+                    s.get(BC::Key::LaserConvStage::op, QVariant::fromValue(BC::LifConv::Op::NHG)),
                     BC::LifConv::Op::NHG);
             };
             auto harmonicOf = [](const QString &stageKey) -> int {
                 SettingsStorage s(stageKey, SettingsStorage::Hardware);
-                return s.get(BC::Key::LifConvStage::harmonic, 2);
+                return s.get(BC::Key::LaserConvStage::harmonic, 2);
             };
             ps_lifCfg->setConversionNodes(preset->conversion.toNodes(opOf, harmonicOf), laserHwKey);
         }

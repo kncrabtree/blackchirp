@@ -20,7 +20,7 @@
 #include <data/loadout/loadoutmanager.h>
 #include <hardware/core/hardwareregistry.h>
 #include <hardware/core/hardwareprofilemanager.h>
-#include <hardware/core/liflaser/liffreqconversionstage.h>
+#include <hardware/optional/laserfreqconversion/laserfreqconversionstage.h>
 #include <gui/style/themecolors.h>
 #include <gui/widget/pythonsettingswidget.h>
 #include <gui/widget/librarystatuswidget.h>
@@ -47,12 +47,12 @@ static const QSet<QString> &ftmwRelevantTypes()
     return types;
 }
 
-// The hardware types whose members a LIF preset depends on (LifLaser, LifFreqConversionStage).
+// The hardware types whose members a LIF preset depends on (LifLaser, LaserFreqConversionStage).
 static const QSet<QString> &lifRelevantTypes()
 {
     static const QSet<QString> types {
         LifLaser::staticMetaObject.className(),
-        LifFreqConversionStage::staticMetaObject.className()
+        LaserFreqConversionStage::staticMetaObject.className()
     };
     return types;
 }

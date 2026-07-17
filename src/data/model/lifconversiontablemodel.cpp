@@ -10,7 +10,7 @@
 #include <data/lif/lifconfig.h>
 #include <data/storage/enumcsvconvert.h>
 #include <data/storage/settingsstorage.h>
-#include <hardware/core/liflaser/liffreqconversionstage.h>
+#include <hardware/optional/laserfreqconversion/laserfreqconversionstage.h>
 #include <hardware/core/liflaser/liflaser.h>
 #include <hardware/core/runtimehardwareconfig.h>
 
@@ -111,7 +111,7 @@ void LifConversionTableModel::rebuildFromWiring(const std::vector<BC::LifConv::S
 {
     beginResetModel();
 
-    auto stageKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifFreqConversionStage>();
+    auto stageKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LaserFreqConversionStage>();
 
     // Read each active stage's live op/harmonic once (they share a settings
     // group). op — and thus the input arity a stage requires — is hardware
@@ -123,8 +123,8 @@ void LifConversionTableModel::rebuildFromWiring(const std::vector<BC::LifConv::S
     {
         SettingsStorage s(key,SettingsStorage::Hardware);
         liveOp[key] = BC::CSV::enumFromVariant<Op>(
-                    s.get(BC::Key::LifConvStage::op,QVariant::fromValue(Op::NHG)), Op::NHG);
-        liveHarmonic[key] = s.get(BC::Key::LifConvStage::harmonic,2);
+                    s.get(BC::Key::LaserConvStage::op,QVariant::fromValue(Op::NHG)), Op::NHG);
+        liveHarmonic[key] = s.get(BC::Key::LaserConvStage::harmonic,2);
     }
 
     // A preset is tied to the conversion-stage hardware it was captured
@@ -197,7 +197,7 @@ std::vector<BC::LifConv::InputRef> LifConversionTableModel::defaultInputs(BC::Li
 int LifConversionTableModel::readHarmonic(const QString &stageKey)
 {
     SettingsStorage s(stageKey,SettingsStorage::Hardware);
-    return s.get(BC::Key::LifConvStage::harmonic,2);
+    return s.get(BC::Key::LaserConvStage::harmonic,2);
 }
 
 QVariant LifConversionTableModel::inputEditVariant(const BC::LifConv::InputRef &ref)
