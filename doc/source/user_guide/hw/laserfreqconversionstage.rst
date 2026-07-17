@@ -1,5 +1,5 @@
-LIF Conversion Stage
-=====================
+Laser Frequency Conversion Stage
+================================
 
 * Overview_
 * Settings_
@@ -9,12 +9,12 @@ LIF Conversion Stage
 Overview
 --------
 
-A LIF Conversion Stage represents one physical optical element — a doubling crystal, a mixing crystal — in the LIF frequency-conversion chain between the tunable laser and the sample. Each configured stage appears as a row in the Conversion tab's table (see :doc:`/user_guide/lif/conversion`), where its inputs are wired and, for at most one stage, its output is marked as the excitation beam. The device itself only moves to and reports a local input-beam position (in cm⁻¹); the chain's topology — which stage feeds which, and which stage is the excitation beam — is per-experiment state configured on the Conversion tab, not part of the device profile.
+A Laser Frequency Conversion Stage represents one physical optical element — a doubling crystal, a mixing crystal — in the LIF frequency-conversion chain between the tunable laser and the sample. Each configured stage appears as a row in the Conversion tab's table (see :doc:`/user_guide/lif/conversion`), where its inputs are wired and, for at most one stage, its output is marked as the excitation beam. The device itself only moves to and reports a local input-beam position (in cm⁻¹); the chain's topology — which stage feeds which, and which stage is the excitation beam — is per-experiment state configured on the Conversion tab, not part of the device profile.
 
 Settings
 --------
 
-Most LIF Conversion Stage settings are exposed in the :doc:`hardware dialog </user_guide/hwdialog>` with inline labels and tooltips, so they need no additional explanation here. A few items are worth highlighting:
+Most Laser Frequency Conversion Stage settings are exposed in the :doc:`hardware dialog </user_guide/hwdialog>` with inline labels and tooltips, so they need no additional explanation here. A few items are worth highlighting:
 
 * ``Conversion Operation`` sets the stage's operation — NHG (N-th harmonic), SFG, or DFG. Concrete drivers usually pin this to a fixed value that matches the physical device (a doubler is always NHG, for example), so it is not normally something you choose yourself.
 * ``Harmonic Order`` sets the harmonic order N for an NHG stage; it is ignored for SFG/DFG stages. Some drivers fix this at profile creation rather than leaving it freely editable (see Sirah FCU below).

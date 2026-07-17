@@ -13,7 +13,7 @@ stored preset — the per-stage input wiring and FINAL marker — without
 the hardware-owned state a live topology also carries. Deliberately
 excluded are each stage's conversion operation and harmonic order:
 those are device-identity settings, always read from the owning
-:cpp:class:`LifFreqConversionStage`'s own :cpp:class:`SettingsStorage`
+:cpp:class:`LaserFreqConversionStage`'s own :cpp:class:`SettingsStorage`
 snapshot, never persisted inside a preset. See *Key invariants* on
 :doc:`/developer_guide/lif_acquisition` for why that split is load-bearing.
 The snapshot is value-typed and freely copied between the conversion
@@ -29,7 +29,7 @@ hardware is swapped. ``fromNodes`` builds a snapshot from the
 inverse, rejoining a snapshot's wiring with op/harmonic values supplied
 through caller callbacks (in practice backed by per-stage
 :cpp:class:`SettingsStorage` hardware snapshots — see
-``lifConversionNodesFromSnapshot`` on :doc:`liffreqconversionstage` for
+``lifConversionNodesFromSnapshot`` on :doc:`laserfreqconversionstage` for
 the non-callback equivalent used outside the ``data/`` → ``hardware/``
 layering boundary).
 

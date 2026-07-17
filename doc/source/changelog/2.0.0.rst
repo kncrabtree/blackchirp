@@ -281,13 +281,13 @@ User interface
 LIF
 ---
 
-- Added the LIF Conversion Stage hardware type, representing one
+- Added the Laser Frequency Conversion Stage hardware type, representing one
   physical stage — a doubling crystal, a sum-frequency mixing crystal,
   a difference-frequency mixing crystal — in a LIF setup's
   frequency-conversion chain, plus the Sirah FCU driver for Sirah's
   doubling-stage hardware. The Sirah Cobra driver no longer handles
   frequency conversion itself; that responsibility moved to the new
-  hardware type. See :doc:`/user_guide/hw/liffreqconversionstage`.
+  hardware type. See :doc:`/user_guide/hw/laserfreqconversionstage`.
 - Added LIF presets: a named, saved wiring of the frequency-conversion
   chain, scoped to the active hardware loadout and managed from an
   Apply / Save / Save As... / Rename... bar mirroring the FTMW preset
@@ -307,7 +307,7 @@ LIF
   phase-matching model, or an imported polynomial or spline curve fit
   offline, replacing the placeholder grating math. Fitting is done
   outside Blackchirp with the ``python/tools/`` scripts in the source
-  repository. See :doc:`/user_guide/hw/liffreqconversionstage`.
+  repository. See :doc:`/user_guide/hw/laserfreqconversionstage`.
 - Added a standalone LIF Configuration dialog carrying both the
   acquisition and frequency-conversion editors, with a prompt to save
   conversion changes as a preset, and a LIF Preset menu that switches

@@ -17,7 +17,7 @@
    single: LifSlicePlot
    single: LifTracePlot
    single: LifConversion; frequency-conversion topology
-   single: LifFreqConversionStage
+   single: LaserFreqConversionStage
    single: LifConversionSnapshot
    single: LifPreset
    single: liftopology.csv
@@ -179,22 +179,22 @@ exactly one crossing point, :cpp:func:`LifConfig::currentLaserPos`
 Architecture layers
 ~~~~~~~~~~~~~~~~~~~~
 
-1. **Hardware stage** — :cpp:class:`LifFreqConversionStage`
-   (``hardware/core/liflaser/liffreqconversionstage.{h,cpp}``) is a
+1. **Hardware stage** — :cpp:class:`LaserFreqConversionStage`
+   (``hardware/optional/laserfreqconversion/laserfreqconversionstage.{h,cpp}``) is a
    :cpp:class:`HardwareObject` sibling of :cpp:class:`LifLaser`,
    registered like any other hardware type. It owns only
    device-identity state: the conversion operation
-   (:cpp:func:`LifFreqConversionStage::conversionOp`, NHG/SFG/DFG), the
+   (:cpp:func:`LaserFreqConversionStage::conversionOp`, NHG/SFG/DFG), the
    harmonic order for an NHG stage
-   (:cpp:func:`LifFreqConversionStage::harmonicOrder`), and a verify
+   (:cpp:func:`LaserFreqConversionStage::harmonicOrder`), and a verify
    flag/tolerance pair used by
-   :cpp:func:`LifFreqConversionStage::setPosition` to confirm a move.
+   :cpp:func:`LaserFreqConversionStage::setPosition` to confirm a move.
    A doubler or mixer *is* its operation by hardware identity, not a
    free choice, so a concrete driver such as :cpp:class:`SirahFcu`
-   overrides :cpp:func:`LifFreqConversionStage::conversionOp` to a
+   overrides :cpp:func:`LaserFreqConversionStage::conversionOp` to a
    constant while leaving the registered setting itself in place, so
    it stays snapshot-visible (see *Key invariants* below).
-   ``VirtualLifFreqConversionStage`` and ``FixedLifFreqConversionStage``
+   ``VirtualLaserFreqConversionStage`` and ``FixedLaserFreqConversionStage``
    are the uncontrolled/CI implementations.
 2. **DAG value type and assembly** — :cpp:class:`LifConversion`
    (``data/lif/lifconversion.{h,cpp}``) is a pure value type with no
@@ -204,7 +204,7 @@ Architecture layers
    inputs, an ``isFinal`` marker); :cpp:func:`LifConversion::assemble`
    validates a node list and resolves it into an affine
    (``output = a·fundamental + b``) model per stage. Free helpers
-   declared alongside :cpp:class:`LifFreqConversionStage` join a node
+   declared alongside :cpp:class:`LaserFreqConversionStage` join a node
    list from a settings snapshot without ever touching a live threaded
    device: ``lifConversionNodesFromSnapshot`` builds a fresh
    :cpp:class:`SettingsStorage` on each stage's hardware key to read
@@ -296,7 +296,7 @@ Data flow by moment
   :cpp:func:`LifConversion::outputToLaser`, computes each active
   stage's local input wavenumber via
   :cpp:func:`LifConversion::stageInput`, and dispatches every stage's
-  :cpp:func:`LifFreqConversionStage::setPosition` concurrently
+  :cpp:func:`LaserFreqConversionStage::setPosition` concurrently
   (``Qt::QueuedConnection`` plus a per-stage
   ``std::promise``/``std::future`` pair, not
   ``Qt::BlockingQueuedConnection``) so stages with independent motors
@@ -394,7 +394,7 @@ Key invariants
   ``MainWindow::connectLifConversionWidget`` hops that signal onto the
   :cpp:class:`HardwareManager` thread into
   ``HardwareManager::configureLifHarmonic``, which calls
-  :cpp:func:`LifFreqConversionStage::setHarmonicOrder` on the device
+  :cpp:func:`LaserFreqConversionStage::setHarmonicOrder` on the device
   and only then emits ``lifHarmonicApplied(stageKey)``; the table
   model's own state updates only once that confirmation reaches
   :cpp:func:`LifConversionTableModel::harmonicApplied`. The Harmonic
@@ -469,7 +469,7 @@ two LIF hardware objects (each on its own ``"<hwKey>Thread"``).
        AM["AcquisitionManager<br/>(AM thread)"]
        HM["HardwareManager<br/>(HM thread)"]
        LL["LifLaser<br/>(hw thread)"]
-       CS["LifFreqConversionStage(s)<br/>(hw thread each)"]
+       CS["LaserFreqConversionStage(s)<br/>(hw thread each)"]
        PG["PulseGenerator<br/>(hw thread)"]
        LS["LifDigitizer<br/>(hw thread)"]
        AM -- "nextLifPoint" --> HM
@@ -509,7 +509,7 @@ The handshake at each grid point runs in five steps:
    in-flight waveform, then issues a blocking-queued
    :cpp:func:`LifLaser::setPosition` call, dispatches
    ``HardwareManager::setLifConversionStages`` to move every active
-   :cpp:class:`LifFreqConversionStage` in parallel (see *Frequency
+   :cpp:class:`LaserFreqConversionStage` in parallel (see *Frequency
    conversion* above), and issues blocking-queued
    :cpp:func:`PulseGenerator::setLifDelay` calls (one per active pulse
    generator) — each step runs only after the previous one succeeds.
@@ -899,7 +899,7 @@ this page only.
 
 **Frequency-conversion API contracts and user-facing workflow.**
 :doc:`/classes/lifconversion`, :doc:`/classes/lifconversionsnapshot`,
-:doc:`/classes/liffreqconversionstage`, :doc:`/classes/loadoutmanager`,
+:doc:`/classes/laserfreqconversionstage`, :doc:`/classes/loadoutmanager`,
 :doc:`/classes/hardwareloadout`. The *gated setting* pattern shared
 with FTMW clock configuration is on
 :doc:`/developer_guide/hardware_configuration`. The user-facing

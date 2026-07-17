@@ -32,7 +32,7 @@ particular evaluation succeeded.
 and caches a ``FcuCalibration`` from the driver's registered
 ``calibrationScheme`` setting and the active scheme's settings, and
 ``setPos()``/``readPos()`` delegate to it. See
-:doc:`/user_guide/hw/liffreqconversionstage` for the schemes from a
+:doc:`/user_guide/hw/laserfreqconversionstage` for the schemes from a
 user's point of view — when to choose each, their user-visible
 settings, and the offline ``python/tools/`` workflow (``fcu_measure.py``
 / ``fcu_fit.py``) that fits the parameters or curves Blackchirp then

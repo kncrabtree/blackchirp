@@ -22,7 +22,7 @@
    single: __LastUsed__
    single: drift detection
    single: gated setting
-   single: LifFreqConversionStage; setHarmonicOrder
+   single: LaserFreqConversionStage; setHarmonicOrder
    single: HardwareManager; configureLifHarmonic
 
 Hardware Configuration
@@ -614,7 +614,7 @@ in?", which is the question a contributor opening
    a raw :cpp:class:`SettingsStorage` write. A setting that a running
    device must confirm before Blackchirp's own state can be considered
    current has to route through the device instead, on whatever thread
-   the device lives on. :cpp:func:`LifFreqConversionStage::setHarmonicOrder`
+   the device lives on. :cpp:func:`LaserFreqConversionStage::setHarmonicOrder`
    / :cpp:func:`HardwareManager::configureLifHarmonic` is the canonical
    example: :cpp:class:`LifConversionTableModel` never edits its
    Harmonic column directly — it emits ``applyHarmonic(stageKey, n)``,

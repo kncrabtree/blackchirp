@@ -47,7 +47,7 @@ The Stage Table
 ----------------
 
 One row appears for every **conversion stage** — a
-:doc:`LIF Conversion Stage </user_guide/hw/liffreqconversionstage>`
+:doc:`Laser Frequency Conversion Stage </user_guide/hw/laserfreqconversionstage>`
 device — present in the active hardware loadout. Rows are not added or
 removed from this page; if you need another stage, add its driver
 profile through the :doc:`hardware configuration
@@ -187,7 +187,7 @@ causes:
    :doc:`presets` — saving and restoring named conversion-chain
    configurations
 
-   :doc:`/user_guide/hw/liffreqconversionstage` — the conversion-stage
+   :doc:`/user_guide/hw/laserfreqconversionstage` — the conversion-stage
    hardware type and its drivers
 
    :doc:`/user_guide/data_storage/lif` — the on-disk ``liftopology.csv``

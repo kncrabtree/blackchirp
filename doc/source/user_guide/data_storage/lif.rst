@@ -127,7 +127,7 @@ the excitation beam, fed directly from a laser with hardware key
 ``LifLaser.cobra``, writes::
 
    Index;StageKey;Op;Harmonic;IsFinal;Input0;Input1;OutCoeffA;OutCoeffB
-   0;LifFreqConversionStage.doubler;NHG;2;true;LifLaser.cobra;;2;0
+   0;LaserFreqConversionStage.doubler;NHG;2;true;LifLaser.cobra;;2;0
 
 lif/lifparams.csv
 -----------------

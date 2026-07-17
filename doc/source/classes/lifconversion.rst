@@ -36,7 +36,7 @@ dependence on the tunable source. Nothing outside ``assemble`` performs
 this validation; callers that need a joined node list build one via
 ``lifConversionNodesFromSnapshot``, :cpp:func:`LifConversionSnapshot::toNodes`,
 or their own caller-supplied list, documented on
-:doc:`liffreqconversionstage` and :doc:`lifconversionsnapshot`.
+:doc:`laserfreqconversionstage` and :doc:`lifconversionsnapshot`.
 
 Once assembled, ``laserToOutput``/``outputToLaser`` convert between the
 fundamental and the FINAL beam (exact, since the topology is affine —

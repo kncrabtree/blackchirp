@@ -13,6 +13,7 @@
    single: LifDigitizerDriver
    single: GpibControllerDriver
    single: LifLaserDriver
+   single: LaserFreqConversionStageDriver
 
 .. _python-hardware-per-type-capabilities:
 
@@ -110,6 +111,9 @@ Trampoline Overview
      - B
      - :meth:`read_pos`, :meth:`set_pos`,
        :meth:`read_fl`, :meth:`set_fl`
+   * - LaserFreqConversionStage
+     - B
+     - :meth:`read_pos`, :meth:`set_pos`
    * - PressureController
      - B
      - 7 ``hw_*`` pressure / valve methods
@@ -417,6 +421,34 @@ result. ``set_fl`` returns ``True`` if the flashlamp command was
 accepted (not the new state — the base class re-reads with
 ``read_fl``). Position units, range, and the auto-disable behavior at
 end-of-experiment are configured through the profile's settings.
+
+.. _python-hardware-laserfreqconversionstage:
+
+Laser Frequency Conversion Stage (``LaserFreqConversionStageDriver``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The base class dispatches a move to a local input-beam wavenumber and
+then verifies it, so the driver implements two granular methods:
+
+.. code-block:: python
+
+   def read_pos(self) -> float: ...
+   def set_pos(self, local_cm1: float) -> None: ...
+
+``set_pos`` moves the stage's phase-match actuator so the node is
+phase-matched for ``local_cm1`` — the local input-beam wavenumber (in
+cm⁻¹) the caller has already computed from the assembled conversion
+topology, so the driver needs no knowledge of the topology itself.
+``read_pos`` returns the achieved local input-beam wavenumber. After
+``set_pos`` the base class calls ``read_pos`` and compares the readback
+against the request within the ``Verify Tolerance`` window: with
+``Verify Move`` enabled a mismatch fails the move; with it disabled the
+mismatch is only logged. A **negative** ``read_pos`` return is a hard
+communication-error sentinel — it always fails the move regardless of
+the verify flag, so return it only when the actuator genuinely cannot
+be read. The conversion operation and harmonic order are registered
+settings the C++ base reads directly for topology assembly, not methods
+the driver implements.
 
 .. _python-hardware-pattern-c:
 

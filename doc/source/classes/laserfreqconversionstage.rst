@@ -1,12 +1,12 @@
 .. index::
-   single: LifFreqConversionStage
-   single: LIF Conversion Stage; hardware type
+   single: LaserFreqConversionStage
+   single: Laser Frequency Conversion Stage; hardware type
    single: SirahFcu
 
-LifFreqConversionStage
-=======================
+LaserFreqConversionStage
+========================
 
-``LifFreqConversionStage`` is the hardware-type base class for one
+``LaserFreqConversionStage`` is the hardware-type base class for one
 crystal or compensator node in the LIF frequency-conversion topology —
 a doubler, a sum-frequency mixer, a difference-frequency mixer. It is a
 direct :cpp:class:`HardwareObject` child, a sibling of
@@ -34,7 +34,7 @@ place, and overrides :cpp:func:`setHarmonicOrder` to route a harmonic
 change through the device before persisting it — the canonical example
 of the *gated setting* pattern described on
 :doc:`/developer_guide/hardware_configuration`.
-``VirtualLifFreqConversionStage`` and ``FixedLifFreqConversionStage``
+``VirtualLaserFreqConversionStage`` and ``FixedLaserFreqConversionStage``
 are the uncontrolled/CI implementations.
 
 Three free functions declared alongside the class join a
@@ -55,7 +55,7 @@ assembly paths described on :doc:`/developer_guide/lif_acquisition`
 API Reference
 -------------
 
-.. doxygenclass:: LifFreqConversionStage
+.. doxygenclass:: LaserFreqConversionStage
    :members:
    :undoc-members:
 

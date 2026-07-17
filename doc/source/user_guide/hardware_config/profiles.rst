@@ -152,7 +152,7 @@ hardware type:
   to the fallback device. The presets survive; only the bound device
   changes.
 - **Hardware with no replacement is dropped.** An optional type with no
-  fallback (such as a LIF frequency-conversion stage) cannot be
+  fallback (such as a laser frequency-conversion stage) cannot be
   substituted. Any preset whose topology depends on the deleted stage
   becomes invalid and is removed, and the member is dropped from each
   loadout that used it.
