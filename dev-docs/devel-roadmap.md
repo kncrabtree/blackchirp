@@ -121,6 +121,51 @@ work, or a new "remote hardware proxy" driver type that genuinely
 needs async), or evidence in production that the QPointer guard in
 `sendRequest` is being hit.
 
+### Web frontend — server/client split with an HTML/JS UI
+
+Full design in `dev-docs/web-frontend-separation.md`. Explore replacing
+the QWidget/Qwt UI with a headless core engine (embedded HTTP/WebSocket
+server) plus a web (HTML/JS) client. Motivation is UI development
+velocity and polish, not performance — the current stack is already fast
+for the right reason (server-side min/max decimation), and a web client
+relying on the same decimation renders the same points. Exact
+reproduction of the current UI is a non-goal; the appeal is redesigning
+the experience and escaping edit–compile–relaunch UI work.
+
+Feasibility: the architecture is already producer/consumer. Background
+worker threads (`AcquisitionManager` on its own `QThread`,
+`HardwareManager`, `LogHandler`) own live state and the UI stays in sync
+via queued signals/slots; `blackchirp-viewer` already links the
+hardware-free `BlackchirpData` + a lightweight GUI and reconstructs the
+full FTMW view from disk — an existing read-only client. The three
+couplings to re-cut are shared `std::shared_ptr<Experiment>`/storage
+(→ serialized snapshots + decimated deltas), cross-thread signals/slots
+(→ an event/command protocol; the signals are already typed metatypes),
+and timer-polled shared storage + client-side decimation (→ server-side
+width-parameterized decimation, pushed). Server-side settings vs.
+client-side UI preferences re-draws the old `QSettings`
+SystemScope/UserScope line.
+
+Suggested sequencing: (1) cut the Qwt/data seam first (Appendix A of the
+design doc) — extract the data model + min/max decimation into a
+Qwt-free `data/presentation/` module behind neutral types; valuable on
+its own and behavior-preserving. (2) Use `blackchirp-viewer` as the
+client–server spike: static on-disk data, no hardware/acquisition, yet
+it exercises the whole transport + the pan/zoom refresh loop (the
+harder, pointer-rate real-time path) and answers the one question
+analysis cannot — interactive-drag latency across a socket. (3) Expand
+panel by panel, with the live acquisition view (the live-push path) as
+the follow-on.
+
+Rough scope: very large and open-ended — a from-scratch frontend, a wire
+protocol, and an embedded server. Deliberately staged so it can be
+abandoned after any phase; the seam cut (phase 1) stands alone. Biggest
+non-code risk is offline/self-contained packaging for lab instruments (a
+single native binary today). Trigger to pick it up: appetite for a UI
+overhaul, or the seam cut becoming worthwhile independently (it de-leaks
+Qwt from ~24 files' public signatures). Not release-blocking; no near-term
+commitment.
+
 ### Cross-experiment memory budget
 
 In-memory data caches in the viewer (and the acquisition app) are
