@@ -80,7 +80,10 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
         add_compile_options(-O3 -g)
     endif()
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    add_compile_options(/W4)
+    # /Zc:preprocessor selects the C++-conforming preprocessor. The legacy
+    # MSVC preprocessor does not implement __VA_OPT__, which the hardware
+    # registration macros in hardwareregistration.h rely on.
+    add_compile_options(/W4 /Zc:preprocessor)
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
         add_compile_options(/O2 /Zi)
         add_link_options(/DEBUG)
