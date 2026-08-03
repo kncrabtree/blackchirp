@@ -107,36 +107,6 @@ BC::LifConv::Op SirahFcu::conversionOp() const
 
 void SirahFcu::initialize()
 {
-    // Program the motor's start/high frequency and ramp length before the
-    // first move: the Autotracker will not have a defined move profile for
-    // this motor on power-up, and Set Command Move Parameters is the only
-    // way to establish one (there is no separate "acceleration undefined"
-    // Autotracker error code documented, but a move issued beforehand would
-    // have no defined ramp to run).
-    auto startHz = qBound(0.0, getArrayValue(stages,0,sStart,3000.0), 65535.0);
-    auto highHz = qBound(0.0, getArrayValue(stages,0,sHigh,12000.0), 65535.0);
-    auto ramp = qBound(0.0, static_cast<double>(getArrayValue(stages,0,sRamp,2400)), 65535.0);
-
-    auto startF = static_cast<quint16>(qRound(startHz));
-    auto highF = static_cast<quint16>(qRound(highHz));
-    auto rampSteps = static_cast<quint16>(qRound(ramp));
-
-    QByteArray dat;
-    dat.append(static_cast<char>(motor()));
-    dat.append(static_cast<char>((startF >> 8) & 0xFF));
-    dat.append(static_cast<char>(startF & 0xFF));
-    dat.append(static_cast<char>((highF >> 8) & 0xFF));
-    dat.append(static_cast<char>(highF & 0xFF));
-    dat.append(static_cast<char>((rampSteps >> 8) & 0xFF));
-    dat.append(static_cast<char>(rampSteps & 0xFF));
-
-    auto cmd = BC::Autotracker::buildCommand(0x1F, dat);
-    p_comm->writeBinary(cmd);
-    auto resp = p_comm->readBytes(12,true);
-
-    BC::Autotracker::Response r;
-    if(!BC::Autotracker::parseResponse(resp, r) || r.id != 0x00)
-        reportCommError(u"Could not set move parameters (start/high frequency, ramp length) for motor %1."_s.arg(motor()));
 }
 
 bool SirahFcu::testConnection()
@@ -165,7 +135,50 @@ bool SirahFcu::testConnection()
     if(!drainErrorQueue())
         return false;
 
+    // Reprogram the motor's move profile: the Autotracker holds it in
+    // volatile state and has no defined profile for this motor after a power
+    // cycle, so a move issued without one has no ramp to run.
+    if(!setMoveParameters())
+        return false;
+
     return prompt();
+}
+
+bool SirahFcu::setMoveParameters()
+{
+    // Set Command Move Parameters (0x1F) is the only way to establish the
+    // motor's start/high frequency and ramp length; there is no documented
+    // "acceleration undefined" Autotracker error code, so an unset profile
+    // would surface only as a botched move rather than a clean fault.
+    auto startHz = qBound(0.0, getArrayValue(stages,0,sStart,3000.0), 65535.0);
+    auto highHz = qBound(0.0, getArrayValue(stages,0,sHigh,12000.0), 65535.0);
+    auto ramp = qBound(0.0, static_cast<double>(getArrayValue(stages,0,sRamp,2400)), 65535.0);
+
+    auto startF = static_cast<quint16>(qRound(startHz));
+    auto highF = static_cast<quint16>(qRound(highHz));
+    auto rampSteps = static_cast<quint16>(qRound(ramp));
+
+    QByteArray dat;
+    dat.append(static_cast<char>(motor()));
+    dat.append(static_cast<char>((startF >> 8) & 0xFF));
+    dat.append(static_cast<char>(startF & 0xFF));
+    dat.append(static_cast<char>((highF >> 8) & 0xFF));
+    dat.append(static_cast<char>(highF & 0xFF));
+    dat.append(static_cast<char>((rampSteps >> 8) & 0xFF));
+    dat.append(static_cast<char>(rampSteps & 0xFF));
+
+    auto cmd = BC::Autotracker::buildCommand(0x1F, dat);
+    p_comm->writeBinary(cmd);
+    auto resp = p_comm->readBytes(12,true);
+
+    BC::Autotracker::Response r;
+    if(!BC::Autotracker::parseResponse(resp, r) || r.id != 0x00)
+    {
+        reportCommError(u"Could not set move parameters (start/high frequency, ramp length) for motor %1."_s.arg(motor()));
+        return false;
+    }
+
+    return true;
 }
 
 quint8 SirahFcu::motor() const

@@ -85,6 +85,8 @@ private:
     static constexpr int moveAckTimeoutMs = 15000;
 
     quint8 motor() const;
+    //! Programs the motor's move profile (start/high frequency, ramp length) into the Autotracker's volatile state; must be reissued on every connection. \return false on a comm failure.
+    bool setMoveParameters();
     bool prompt();
     void moveRelative(qint32 steps);
     bool moveAbsolute(quint32 targetPos);
