@@ -1198,15 +1198,24 @@ void ZoomPanPlot::zoom(QWheelEvent *we)
 
 void ZoomPanPlot::zoom(const QRectF &rect, Axis xAx, Axis yAx)
 {
+    // A degenerate selection, or one that falls entirely outside the data,
+    // would collapse an axis onto a single point. Leave the scales and the
+    // autoscale flags untouched in that case.
+    const auto z = rect.normalized();
+    if(z.width() <= 0.0 || z.height() <= 0.0)
+        return;
+
+    const auto r = getLimitRect(xAx,yAx).normalized() & z;
+    if(r.width() <= 0.0 || r.height() <= 0.0)
+        return;
+
     p_mutex->lock();
     d_config.axisMap[xAx].autoScale = false;
     d_config.axisMap[yAx].autoScale = false;
     p_mutex->unlock();
 
-    auto r = getLimitRect(xAx,yAx) & rect;
-
-    setAxisScale(xAx,qMin(r.left(), r.right()),qMax(r.left(), r.right()));
-    setAxisScale(yAx,qMin(r.bottom(), r.top()),qMax(r.bottom(), r.top()));
+    setAxisScale(xAx,r.left(),r.right());
+    setAxisScale(yAx,r.top(),r.bottom());
 
     replot();
 }
