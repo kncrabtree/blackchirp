@@ -249,6 +249,35 @@ The same Ubuntu-noble apt-Qt 6.4.2 ceiling that forces the
 Qt rolls forward to >= 6.5, drop the `.toString()` call and remove
 the inline comment.
 
+### Watch for the `ubuntu-latest` runner image roll-forward
+
+The two Qt workarounds above share one trigger, and it is worth
+tracking on its own because it also governs the Qt version the
+project can deploy against.
+
+The deb job's floor is apt's `qt6-base-dev` on the GitHub-hosted
+`ubuntu-latest` image — `6.4.2+dfsg-21.1build5` on noble. That floor
+is what the two workarounds are written against. It is not set by the
+workflow's `QT_VERSION`: only the AppImage, macOS, and Windows jobs
+take their Qt from `install-qt-action` and follow that variable. The
+deb job (apt) and the rpm job (openSUSE Leap container, zypper) both
+take the distro's Qt regardless. Raising `QT_VERSION` therefore
+widens the tested span rather than raising the floor, and on its own
+unlocks neither workaround.
+
+An earlier attempt to build against a newer Qt ran aground on package
+availability for Ubuntu 24.04. When the hosted `ubuntu-latest` image
+rolls forward to a release carrying a newer `qt6-base-dev`, check
+what that version is and whether the project can deploy against
+6.11+. Qt 6.9 has reached end of life (6.9.3 was its final release),
+so the pinned `QT_VERSION` is on a branch that receives no further
+fixes — a consideration independent of the apt floor, since toolchain
+bugs surfacing on the runner images have to be worked around locally
+rather than waiting on a 6.9 patch.
+
+If the roll-forward lands apt Qt >= 6.5, the two workaround entries
+above become actionable at the same time.
+
 ### Long-tail symbol storage
 
 GitHub workflow artifacts cap at ~90 days. Crashes against older
