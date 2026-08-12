@@ -481,6 +481,28 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Resolve version from CMakeLists
+        # Single source of truth for the AppImage file names, which are
+        # assembled by linuxdeploy rather than CPack and so do not inherit
+        # CPACK_PACKAGE_FILE_NAME. Parses the numeric version out of the
+        # project() block (the first VERSION token after `project(`, so
+        # cmake_minimum_required's VERSION is not matched) and appends the
+        # release-stage tag; an empty tag denotes a stable release and
+        # contributes no suffix, matching the CPack naming.
+        run: |
+          set -euo pipefail
+          ver=$(awk '/^project\(/{p=1}
+                     p && match($0, /VERSION[ \t]+[0-9]+\.[0-9]+\.[0-9]+/) {
+                       s=substr($0, RSTART, RLENGTH); sub(/^VERSION[ \t]+/, "", s);
+                       print s; exit }' CMakeLists.txt)
+          test -n "$ver"
+          tag=$(awk 'match($0, /^[ \t]*set\(BC_RELEASE_VERSION[ \t]+"[^"]*"\)/) {
+                       s=$0; sub(/^[^"]*"/, "", s); sub(/".*$/, "", s);
+                       print s; exit }' CMakeLists.txt)
+          label="$ver${tag:+-$tag}"
+          echo "BC_VERSION_LABEL=$label" >> "$GITHUB_ENV"
+          echo "Resolved BC_VERSION_LABEL=$label"
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -595,29 +617,32 @@ jobs:
           set -euxo pipefail
           mkdir -p dist
 
-          # Main AppImage — entry point: blackchirp. linuxdeploy reads the
-          # desktop's Name= for the output filename; "Blackchirp" yields
-          # Blackchirp-x86_64.AppImage cleanly.
-          ./tools/linuxdeploy-x86_64.AppImage \
-            --appdir AppDir \
-            --plugin qt \
-            --desktop-file AppDir/usr/share/applications/blackchirp.desktop \
-            --icon-file AppDir/usr/share/icons/hicolor/256x256/apps/blackchirp.png \
-            --output appimage
-          mv Blackchirp-x86_64.AppImage dist/
+          # Both AppImages pin their filename through OUTPUT rather than
+          # letting appimagetool derive it from the desktop entry's Name=.
+          # Deriving it drops the version entirely, and for the viewer it
+          # also mangles the space in "Blackchirp Viewer" to an underscore.
+          # Naming them explicitly keeps the AppImages consistent with the
+          # CPack artifacts, which carry version and release stage.
+          #
+          # Main AppImage — entry point: blackchirp.
+          OUTPUT="Blackchirp-${BC_VERSION_LABEL}-x86_64.AppImage" \
+            ./tools/linuxdeploy-x86_64.AppImage \
+              --appdir AppDir \
+              --plugin qt \
+              --desktop-file AppDir/usr/share/applications/blackchirp.desktop \
+              --icon-file AppDir/usr/share/icons/hicolor/256x256/apps/blackchirp.png \
+              --output appimage
+          mv "Blackchirp-${BC_VERSION_LABEL}-x86_64.AppImage" dist/
 
-          # Viewer AppImage — entry point: blackchirp-viewer. Without OUTPUT,
-          # appimagetool would produce `Blackchirp_Viewer-x86_64.AppImage`
-          # (Name=Blackchirp Viewer with the space mangled to _); pin the
-          # filename explicitly so docs and signing globs stay deterministic.
-          OUTPUT=Blackchirp-Viewer-x86_64.AppImage \
+          # Viewer AppImage — entry point: blackchirp-viewer.
+          OUTPUT="Blackchirp-Viewer-${BC_VERSION_LABEL}-x86_64.AppImage" \
             ./tools/linuxdeploy-x86_64.AppImage \
               --appdir AppDir-viewer \
               --plugin qt \
               --desktop-file AppDir-viewer/usr/share/applications/blackchirp-viewer.desktop \
               --icon-file AppDir-viewer/usr/share/icons/hicolor/256x256/apps/blackchirp-viewer.png \
               --output appimage
-          mv Blackchirp-Viewer-x86_64.AppImage dist/
+          mv "Blackchirp-Viewer-${BC_VERSION_LABEL}-x86_64.AppImage" dist/
 
       - name: Import GPG signing key
         env:

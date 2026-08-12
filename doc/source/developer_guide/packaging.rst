@@ -162,8 +162,11 @@ AppImage specifics
 Two AppImages per release
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Linux AppImage job emits both ``Blackchirp-x86_64.AppImage`` and
-``Blackchirp-Viewer-x86_64.AppImage``. Each is fully self-contained
+The Linux AppImage job emits both
+``Blackchirp-<version>-x86_64.AppImage`` and
+``Blackchirp-Viewer-<version>-x86_64.AppImage``, where ``<version>``
+carries the release-stage suffix on a pre-release. Each is
+fully self-contained
 — bundled Qt/Qwt/GSL is the size driver and is duplicated across the
 two — but the duplication is deliberate: AppImage users are exactly
 the audience without a system package manager that pulls in both
@@ -177,11 +180,18 @@ The build runs ``linuxdeploy`` twice against two AppDir copies. The
 plugin mutates the AppDir in place (RPATH patches, AppRun injection,
 libdir cleanup), so a single tree cannot be reused for two outputs —
 the Stage AppDir step does ``cp -a AppDir AppDir-viewer`` before
-linuxdeploy runs. ``OUTPUT=`` is set explicitly for the viewer
-build; without it, appimagetool would mangle
-``Name=Blackchirp Viewer`` (with a space) to
-``Blackchirp_Viewer-x86_64.AppImage`` (with an underscore), breaking
-the docs' ``Blackchirp-Viewer-*`` glob.
+linuxdeploy runs.
+
+``OUTPUT=`` is set explicitly for both builds. AppImages are named by
+linuxdeploy rather than by CPack, so they do not inherit
+``CPACK_PACKAGE_FILE_NAME``; deriving the name from the desktop
+entry's ``Name=`` would drop the version entirely, and for the viewer
+would additionally mangle ``Name=Blackchirp Viewer`` (with a space)
+to ``Blackchirp_Viewer-x86_64.AppImage`` (with an underscore),
+breaking the docs' ``Blackchirp-Viewer-*`` glob. The version label
+is resolved from ``CMakeLists.txt`` by the job's Resolve version
+step, which reads the ``project()`` version and the
+``BC_RELEASE_VERSION`` tag.
 
 glibc floor
 ~~~~~~~~~~~
