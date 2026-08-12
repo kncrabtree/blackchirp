@@ -19,10 +19,12 @@
 ---
 
 > [!NOTE]
-> **Blackchirp 2.0 is in pre-release.** Documentation for the current
-> v1.1.0 release is at
+> **Blackchirp 2.0 is in beta.** Pre-release binaries for Windows,
+> macOS, and Linux are attached to the
+> [latest release](https://github.com/kncrabtree/blackchirp/releases).
+> Documentation for the stable v1.1.0 release is at
 > [https://blackchirp.readthedocs.io/1.1.x/](https://blackchirp.readthedocs.io/1.1.x/).
-> For information about accessing the 2.0 pre-release, join the
+> For questions and feedback, join the
 > [Discord server](https://discord.gg/88CkbAKUZY).
 
 Blackchirp drives a CP-FTMW spectrometer end-to-end: it controls the
@@ -52,7 +54,7 @@ the live application.
 - **Binary packages (recommended):** Windows, macOS, and Linux installers (DEB, RPM, AppImage, DMG, NSIS) are built by CPack and attached to each [GitHub release](https://github.com/kncrabtree/blackchirp/releases). Linux artifacts are GPG-signed with the project's release key (`898734DF7EDBDE45`, [`packaging/blackchirp.asc`](packaging/blackchirp.asc)) and every artifact carries a GitHub build-provenance attestation; see [Verifying releases](https://blackchirp.readthedocs.io/page/user_guide/installation.html#verifying-releases).
 - **Supported on:** Windows 10 1809+ / Windows 11; macOS 13.3+ (Apple Silicon and Intel); Ubuntu 24.04+ / Debian 13+ (`.deb`); openSUSE Leap 16+ / Tumbleweed / Fedora 41+ / RHEL 9+ (`.rpm`); any Linux with glibc 2.35+ (AppImage). Per-artifact details: [Supported Platforms](https://blackchirp.readthedocs.io/page/user_guide/installation.html#supported-platforms).
 - **Build from source:** see [Installation](https://blackchirp.readthedocs.io/page/user_guide/installation.html) in the user guide.
-- **Python analysis module:** `pip install blackchirp` ([PyPI](https://pypi.org/project/blackchirp/)).
+- **Python analysis module:** `pip install --pre blackchirp` ([PyPI](https://pypi.org/project/blackchirp/)). The `--pre` flag is required while the module is itself at a release candidate.
 
 For upgrade notes from Blackchirp 1.x, see the
 [migration guide](https://blackchirp.readthedocs.io/page/migration.html).

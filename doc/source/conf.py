@@ -77,7 +77,7 @@ _short_version, _full_version = _read_version_from_cmake()
 # Sphinx convention: `version` is the short X.Y string used in the sidebar
 # title; `release` is the full version including any pre-release suffix.
 version = _short_version or '2.0.0'
-release = _full_version or '2.0.0-alpha'
+release = _full_version or '2.0.0-beta1'
 
 
 # -- General configuration --------------------------------------------------

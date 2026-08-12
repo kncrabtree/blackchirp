@@ -91,7 +91,7 @@ Unix tools:
 
 .. code-block:: text
 
-   Blackchirp 2.0.0-alpha (build 5c8837ede6aa82e4cece830dfe7d59a1bfafe799)
+   Blackchirp 2.0.0-beta1 (build 5c8837ede6aa82e4cece830dfe7d59a1bfafe799)
    Qt 6.11.0
    Crashed at 2026-05-08T02:59:14Z
    Signal: SIGSEGV (11) at address 0x0

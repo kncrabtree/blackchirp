@@ -208,7 +208,7 @@ With the reference channel enabled, the file is::
    ``lifparams.csv``. This convention matches the FTMW FID files and lets
    Blackchirp resume averaging when an experiment is reopened.
 
-The ``blackchirp`` Python package (``pip install blackchirp``) provides
+The ``blackchirp`` Python package (``pip install --pre blackchirp``) provides
 loader functions that perform the base-36 decoding and per-shot voltage
 conversion for both LIF and FTMW data, returning numpy arrays.
 

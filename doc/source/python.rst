@@ -18,7 +18,7 @@ integration) without depending on any of Blackchirp's C++ runtime. It
 is published on the `Python Package Index
 <https://pypi.org/project/blackchirp/>`_ and installs with::
 
-    pip install blackchirp
+    pip install --pre blackchirp
 
 The package depends only on numpy, scipy, and pandas and bundles no
 plotting library, leaving visualization to the downstream pipeline.
