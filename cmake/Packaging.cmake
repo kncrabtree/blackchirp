@@ -36,8 +36,25 @@ if(APPLE)
 else()
     set(_bc_system_label "${CMAKE_SYSTEM_NAME}")
 endif()
+# The release-stage tag rides in the file name so a downloaded package
+# identifies its stage without being opened, matching the semver
+# prerelease spelling used everywhere else (2.0.0-beta1). An empty tag
+# means a final release and contributes no suffix.
+#
+# Only the file name carries it. CPACK_PACKAGE_VERSION stays purely
+# numeric because it becomes the deb/rpm Version field, where a '-'
+# separates the upstream version from the package revision: a literal
+# "2.0.0-beta1" would parse as upstream 2.0.0 revision beta1 and sort
+# *after* the final 2.0.0, inverting the upgrade order. Encoding the
+# stage properly in those fields needs the "2.0.0~beta1" form, which
+# is a separate concern from what users see in the download.
+if(BC_RELEASE_VERSION STREQUAL "")
+    set(_bc_version_label "${CPACK_PACKAGE_VERSION}")
+else()
+    set(_bc_version_label "${CPACK_PACKAGE_VERSION}-${BC_RELEASE_VERSION}")
+endif()
 set(CPACK_PACKAGE_FILE_NAME
-    "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${_bc_system_label}-${CMAKE_SYSTEM_PROCESSOR}")
+    "${CPACK_PACKAGE_NAME}-${_bc_version_label}-${_bc_system_label}-${CMAKE_SYSTEM_PROCESSOR}")
 
 # License and readme
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
