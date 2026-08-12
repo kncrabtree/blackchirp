@@ -770,12 +770,41 @@ jobs:
           modules: 'qtserialport'
           cache: true
 
+      - name: Drop AGL from the Qt mkspecs
+        # Apple withdrew the AGL framework in the macOS 26 SDK, but Qt's
+        # mkspecs still name it in QMAKE_LIBS_OPENGL, so qmake puts
+        # `-framework AGL` on every link line it generates. On a runner
+        # whose SDK still carries AGL this silently records a load
+        # command against a framework that no longer ships, producing a
+        # library that cannot be loaded on macOS 26; on a runner whose
+        # SDK has dropped it, the link fails outright.
+        #
+        # This affects qmake only, so it reaches Qwt but not Blackchirp,
+        # which builds with CMake. The pinned Qt is end-of-life and will
+        # not receive the upstream mkspec fix, so strip the flag wherever
+        # the mkspecs mention it — matching on content rather than on a
+        # file name that varies between Qt versions.
+        run: |
+          set -euxo pipefail
+          files=$(grep -rlE -- '-framework[[:space:]]+AGL' "$QT_ROOT_DIR/mkspecs" || true)
+          if [ -z "$files" ]; then
+            echo "No AGL references in the mkspecs; nothing to patch."
+            exit 0
+          fi
+          printf '%s\n' "$files" | while IFS= read -r f; do
+            sed -i '' -E 's/[[:space:]]*-framework[[:space:]]+AGL//g' "$f"
+          done
+          # Fail loudly rather than leaving a half-applied patch behind.
+          ! grep -rqE -- '-framework[[:space:]]+AGL' "$QT_ROOT_DIR/mkspecs"
+
       - name: Restore Qwt cache
         id: qwt-cache
         uses: actions/cache/restore@v5
         with:
+          # v5: v4 and earlier hold a libqwt linked against AGL, which
+          # cannot load on macOS 26.
           path: ${{ github.workspace }}/qwt-install
-          key: qwt-${{ env.QWT_VERSION }}-macos-${{ matrix.arch }}-qt${{ env.QT_VERSION }}-v4
+          key: qwt-${{ env.QWT_VERSION }}-macos-${{ matrix.arch }}-qt${{ env.QT_VERSION }}-v5
 
       - name: Build Qwt from source
         if: steps.qwt-cache.outputs.cache-hit != 'true'
@@ -789,12 +818,12 @@ jobs:
           sed -i '' "s|^[[:space:]]*QWT_INSTALL_PREFIX[[:space:]]*=.*|QWT_INSTALL_PREFIX = ${{ github.workspace }}/qwt-install|" qwtconfig.pri
           sed -i '' 's|^[[:space:]]*QWT_INSTALL_HEADERS[[:space:]]*=.*|QWT_INSTALL_HEADERS = $${QWT_INSTALL_PREFIX}/include/qwt6|' qwtconfig.pri
           # QwtOpenGL is stripped here but not on the other platforms.
-          # It makes Qwt's src.pri add `QT += opengl`, and qmake's macx
-          # mkspec resolves that to `-framework OpenGL -framework AGL`.
-          # AGL was withdrawn from the macOS SDK, so linking libqwt fails
-          # on a runner whose SDK no longer carries it. The setting only
-          # governs QwtPlotOpenGLCanvas, which Blackchirp never
-          # instantiates, so dropping it costs nothing.
+          # It governs QwtPlotOpenGLCanvas, which Blackchirp never
+          # instantiates, and enabling it makes Qwt's src.pri add
+          # `QT += opengl`, linking the whole QtOpenGL module into
+          # libqwt for nothing. Dropping it keeps that module out of the
+          # bundle. It does not affect the AGL flag, which comes from the
+          # mkspecs and is dealt with above.
           sed -i '' -E "/^[[:space:]]*QWT_CONFIG[[:space:]]*\+=[[:space:]]+Qwt(Examples|Playground|Designer|Tests|Framework|OpenGL)[[:space:]]*$/d" qwtconfig.pri
           # QtCore's qyieldcpu.h calls the ARM ACLE intrinsic __yield() without
           # including <arm_acle.h>. Current clang neither declares it
@@ -812,7 +841,7 @@ jobs:
         uses: actions/cache/save@v5
         with:
           path: ${{ github.workspace }}/qwt-install
-          key: qwt-${{ env.QWT_VERSION }}-macos-${{ matrix.arch }}-qt${{ env.QT_VERSION }}-v4
+          key: qwt-${{ env.QWT_VERSION }}-macos-${{ matrix.arch }}-qt${{ env.QT_VERSION }}-v5
 
       - name: Configure
         run: |
