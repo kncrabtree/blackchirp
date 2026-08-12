@@ -220,9 +220,11 @@ void ViewerMainWindow::setupMenuBar()
     connect(aboutAction, &QAction::triggered, this, [this]() {
         AboutDialog::AppInfo info;
         info.name = QString("Blackchirp Viewer");
-        info.version = QString("%1.%2.%3-%4")
-            .arg(BCV_MAJOR_VERSION).arg(BCV_MINOR_VERSION)
-            .arg(BCV_PATCH_VERSION).arg(STRINGIFY(BCV_RELEASE_VERSION));
+        // The viewer versions in lockstep with the acquisition app, so the
+        // shared UpdateChecker formatter is the same string the viewer
+        // would build from its BCV_* aliases — without the dangling
+        // separator an empty release tag would leave.
+        info.version = UpdateChecker::localVersion().toString();
         info.build = QLatin1StringView(BCV_BUILD_VERSION);
         info.description = QString("Data visualization application for Blackchirp experiments.");
         AboutDialog dlg(info, this);

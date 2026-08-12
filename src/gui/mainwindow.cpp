@@ -374,9 +374,11 @@ MainWindow::MainWindow(QWidget *parent) :
             using namespace Qt::Literals::StringLiterals;
             AboutDialog::AppInfo info;
             info.name = "Blackchirp"_L1;
-            info.version = u"%1.%2.%3-%4"_s
-                .arg(BC_MAJOR_VERSION).arg(BC_MINOR_VERSION)
-                .arg(BC_PATCH_VERSION).arg(BC_STRINGIFY(BC_RELEASE_VERSION));
+            // Formatted through UpdateChecker so the About dialog and the
+            // update comparison agree on the version string, and so a
+            // stable release with an empty release tag renders without a
+            // dangling separator.
+            info.version = UpdateChecker::localVersion().toString();
             info.build = QLatin1StringView(BC_BUILD_VERSION);
             info.description = "CP-FTMW spectroscopy data acquisition and visualization software."_L1;
             info.features = {
