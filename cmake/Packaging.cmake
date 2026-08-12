@@ -257,6 +257,70 @@ else()
 endif()
 
 # ============================================================================
+# License texts
+# ============================================================================
+
+# CPACK_RESOURCE_FILE_LICENSE (above) surfaces COPYING in the installer UI —
+# the deb copyright file, the NSIS license page — but puts nothing on disk for
+# the dependencies that travel inside the binary. The packages bundle Qwt
+# (BC_BUNDLE_QWT on deb/rpm, qwt.dll on Windows) and ship Heroicons, whose
+# terms are meant to accompany the binary, so the texts in licenses/ are
+# installed as part of the payload rather than left as standalone GitHub
+# release assets that only reach users who read the release page.
+#
+# The destination differs by generator because the packages have no layout in
+# common: Linux packages own a share/doc tree, the macOS unit of distribution
+# is a self-contained .app, and the Windows zip/NSIS root has no doc
+# convention at all.
+#
+# licenses/README.md is excluded: it is a contributor-facing index of which
+# text covers which dependency, not a license text.
+set(_bc_license_readme_filter PATTERN "README.md" EXCLUDE)
+
+if(WIN32)
+    # Install root, alongside bin/. Both the zip and the NSIS install
+    # directory are browsed directly by the user.
+    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/COPYING"
+        DESTINATION .
+        COMPONENT Applications)
+    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/licenses/"
+        DESTINATION "licenses"
+        COMPONENT Applications
+        ${_bc_license_readme_filter})
+
+elseif(APPLE)
+    # Each bundle carries its own copy. The DMG ships two .app bundles and a
+    # user drags them out individually, so anything outside a bundle is lost.
+    foreach(_bc_app blackchirp blackchirp-viewer)
+        install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/COPYING"
+            DESTINATION "${_bc_app}.app/Contents/Resources"
+            COMPONENT Applications)
+        install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/licenses/"
+            DESTINATION "${_bc_app}.app/Contents/Resources/licenses"
+            COMPONENT Applications
+            ${_bc_license_readme_filter})
+    endforeach()
+    unset(_bc_app)
+
+else()
+    # Spelled out rather than taken from CMAKE_INSTALL_DOCDIR, which derives
+    # from PROJECT_NAME and would give share/doc/Blackchirp — a second
+    # directory differing from the deb's own share/doc/blackchirp only by
+    # case.
+    set(_bc_license_docdir "${CMAKE_INSTALL_DATAROOTDIR}/doc/blackchirp")
+    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/COPYING"
+        DESTINATION "${_bc_license_docdir}"
+        COMPONENT Applications)
+    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/licenses/"
+        DESTINATION "${_bc_license_docdir}/licenses"
+        COMPONENT Applications
+        ${_bc_license_readme_filter})
+    unset(_bc_license_docdir)
+endif()
+
+unset(_bc_license_readme_filter)
+
+# ============================================================================
 # Component-based packaging
 # ============================================================================
 

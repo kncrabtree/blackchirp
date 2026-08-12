@@ -1222,10 +1222,10 @@ jobs:
   # ============================================================================
   # Release assets independent of any platform build: the project public key
   # and the license texts. Deliberately has no `needs:` so a failure in any
-  # platform build cannot strip these from the release. The license texts are
-  # not yet bundled inside the packages (tracked in the devel roadmap for the
-  # beta); until then this job is the only path that gets them to users who
-  # download a binary artifact.
+  # platform build cannot strip these from the release. The packages install
+  # the same texts as part of their payload (see cmake/Packaging.cmake); this
+  # job additionally offers them as standalone downloads for users comparing
+  # terms before installing anything.
   # ============================================================================
   release-assets:
     name: Release assets (key + licenses)

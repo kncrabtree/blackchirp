@@ -335,27 +335,22 @@ Categories of cosmetic warnings:
   Either remove the dead store or `[[maybe_unused]]` if the
   side-effecting RHS is intentional.
 
-### Bundle license texts inside the packages (beta prep)
+### Bundle license texts inside the packages (beta prep) — done
 
-The `release-assets` job in `.github/workflows/release.yml` attaches
-`COPYING` and a `blackchirp-licenses.zip` (the `licenses/` directory:
-Qwt, LGPL-3.0, GPL-3.0, MPL-2.0, Heroicons) as standalone GitHub
-release assets. That covers users who land on the release page, but a
-user who installs only the `.deb`/`.rpm`/`.dmg`/`.zip` still does not
-get the third-party texts on disk — and the binary packages bundle Qwt
-(`BC_BUNDLE_QWT=ON` on deb/rpm) and ship Heroicons, whose terms
-(LGPL/Qwt license) are meant to travel with the binary.
+`cmake/Packaging.cmake` installs `COPYING` and the `licenses/`
+directory (Qwt, LGPL-3.0, GPL-3.0, MPL-2.0, Heroicons) into the
+`Applications` component, so the texts ship inside every artifact
+rather than only as standalone GitHub release assets. Layout is
+`share/doc/blackchirp/` on deb/rpm/tgz, `Contents/Resources/` in each
+`.app` on macOS, and the install root on Windows.
 
-As part of beta preparation, add an `install(DIRECTORY licenses/ ...)`
-rule (and `COPYING`) into the package payload — e.g. under
-`share/doc/blackchirp/` for deb/rpm, the `.app` `Resources` for macOS,
-and the install root for the Windows zip/NSIS — so the texts ship
-inside every artifact. `CPACK_RESOURCE_FILE_LICENSE` already places
-`COPYING` as the deb copyright / NSIS license page / DMG SLA; this is
-specifically about the bundled-dependency texts in `licenses/`. Touches
-every CPack generator in `cmake/Packaging.cmake`, so verify each
-package layout before the beta tag. Once bundled, the standalone
-`release-assets` upload can stay as a convenience or be retired.
+The deb, rpm, and tgz layouts were verified against generated
+packages. **The macOS and Windows layouts have not been verified
+against a real package** — no local generator for either — so confirm
+the `.dmg` and the zip/NSIS payload on a CI run before the beta tag.
+
+The `release-assets` upload is retained as a convenience for users
+comparing terms before installing.
 
 ### Windows linker: `ignoring duplicate libraries`
 
