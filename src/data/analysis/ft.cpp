@@ -63,6 +63,11 @@ void Ft::setPoint(int i, double y, double ignoreRange)
 void Ft::resize(int n, double ignoreRange)
 {
     data->ftData.resize(n);
+    recomputeExtrema(ignoreRange);
+}
+
+void Ft::recomputeExtrema(double ignoreRange)
+{
     data->yMin = 0.0;
     data->yMax = 0.0;
     for(int i=0; i<data->ftData.size(); i++)

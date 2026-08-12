@@ -78,6 +78,17 @@ public:
     void resize(int n, double ignoreRange = 0.0);
 
     /*!
+     \brief Recomputes the cached min/max from the current contents.
+
+     Needed whenever the magnitudes are replaced wholesale (\c setData) or the
+     frequency axis moves, since neither updates the extrema. \a ignoreRange
+     applies the same LO exclusion as \c setPoint().
+
+     \param ignoreRange Frequency half-width (MHz) around the LO to exclude from min/max tracking.
+    */
+    void recomputeExtrema(double ignoreRange = 0.0);
+
+    /*!
      \brief Returns a writable reference to the magnitude at bin \a i (no min/max update).
      \param i Bin index.
      \return Reference to the magnitude value.

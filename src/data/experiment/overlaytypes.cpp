@@ -24,12 +24,79 @@ QVector<QPointF> BCExpOverlay::_xyData() const
 void BCExpOverlay::setFtData(const Ft &ftData)
 {
     d_ft = ftData;
+
+    // Restate the extrema under this overlay's ignore band so they agree with
+    // yMax() regardless of the band the incoming Ft was processed under.
+    d_ft.recomputeExtrema(d_autoScaleIgnoreMHz);
     setModified(true);
 }
 
 Ft BCExpOverlay::getFtData() const
 {
     return d_ft;
+}
+
+void BCExpOverlay::setAutoScaleIgnoreMHz(double mhz)
+{
+    d_autoScaleIgnoreMHz = qMax(mhz,0.0);
+    d_ft.recomputeExtrema(d_autoScaleIgnoreMHz);
+    setModified(true);
+}
+
+double BCExpOverlay::yMax() const
+{
+    const auto lo = d_ft.loFreqMHz();
+    double out = 0.0;
+
+    for(int i=0; i<d_ft.size(); i++)
+    {
+        if(qAbs(d_ft.xAt(i) - lo) > d_autoScaleIgnoreMHz)
+            out = qMax(out,qAbs(d_ft.at(i)));
+    }
+
+    // An ignore band wider than the data leaves nothing to scale against; the
+    // full extent is a more useful answer than zero, which suppresses
+    // autoscaling entirely.
+    if(out <= 0.0)
+        return OverlayBase::yMax();
+
+    return out;
+}
+
+std::pair<double,double> BCExpOverlay::displayYRange() const
+{
+    if(d_autoScaleIgnoreMHz <= 0.0)
+        return OverlayBase::displayYRange();
+
+    // xyData() carries the X offset, so shift the band by the same amount to
+    // compare it against the LO the FT was recorded with.
+    const auto lo = d_ft.loFreqMHz() + getXOffset();
+    const auto d = xyData();
+
+    bool found = false;
+    double yLo = 0.0, yHi = 0.0;
+
+    for(const QPointF &p : d)
+    {
+        if(qAbs(p.x() - lo) <= d_autoScaleIgnoreMHz)
+            continue;
+
+        if(!found)
+        {
+            yLo = yHi = p.y();
+            found = true;
+        }
+        else
+        {
+            yLo = qMin(yLo,p.y());
+            yHi = qMax(yHi,p.y());
+        }
+    }
+
+    if(!found)
+        return OverlayBase::displayYRange();
+
+    return {yLo,yHi};
 }
 
 void BCExpOverlay::readFromDest()
@@ -62,20 +129,11 @@ void BCExpOverlay::readFromDest()
 
     f.close();
 
-    // Calculate yMin and yMax from the loaded data
-    double yMin = 0.0, yMax = 0.0;
-    if(!ftData.isEmpty())
-    {
-        yMin = yMax = ftData.constFirst();
-        for(const auto &val : ftData)
-        {
-            yMin = qMin(yMin, val);
-            yMax = qMax(yMax, val);
-        }
-    }
-
-    // Set the data in the Ft object (this also sets yMin/yMax)
-    d_ft.setData(ftData, yMin, yMax);
+    // The frequency axis and the ignore band arrive via _retrieveMetadata(),
+    // which runs first, so the extrema can be recomputed here with the same
+    // LO exclusion the FT was originally processed under.
+    d_ft.setData(ftData, 0.0, 0.0);
+    d_ft.recomputeExtrema(d_autoScaleIgnoreMHz);
 }
 
 void BCExpOverlay::writeToDest()
@@ -103,22 +161,19 @@ void BCExpOverlay::_storeMetadata(std::map<QString, QVariant, std::less<>> &m)
     m.emplace(ftSpacingMHz, d_ft.xSpacing());
     m.emplace(ftLoFreqMHz, d_ft.loFreqMHz());
     m.emplace(ftShots, static_cast<qulonglong>(d_ft.shots()));
+    m.emplace(ftAutoScaleIgnoreMHz, d_autoScaleIgnoreMHz);
 }
 
 void BCExpOverlay::_retrieveMetadata(const std::map<QString, QVariant, std::less<>> &m)
 {
     using namespace BC::Key::Overlay;
 
-    auto it = m.find(ftYMin);
-    if(it != m.end()) {
-        // Note: yMin/yMax are typically set via setData() or during FT processing
-        // They may need to be reconstructed from the actual data when loaded
-    }
-
-    it = m.find(ftYMax);
-    if(it != m.end()) {
-        // Note: yMin/yMax are typically set via setData() or during FT processing
-    }
+    // ftYMin/ftYMax are written for the benefit of external readers but are not
+    // consumed here: readFromDest() runs after this and recomputes them from
+    // the magnitudes using the ignore band restored below.
+    auto it = m.find(ftAutoScaleIgnoreMHz);
+    if(it != m.end())
+        d_autoScaleIgnoreMHz = qMax(it->second.toDouble(),0.0);
 
     it = m.find(ftX0MHz);
     if(it != m.end())
@@ -789,12 +844,12 @@ double GenericXYOverlay::xMax() const
     return d_xMax;
 }
 
-double GenericXYOverlay::yMin() const
+double GenericXYOverlay::dataYMin() const
 {
     return d_yMin;
 }
 
-double GenericXYOverlay::yMax() const
+double GenericXYOverlay::dataYMax() const
 {
     return d_yMax;
 }

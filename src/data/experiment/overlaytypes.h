@@ -15,6 +15,7 @@ inline constexpr QLatin1StringView ftX0MHz{"ftX0MHz"};         ///< FT frequency
 inline constexpr QLatin1StringView ftSpacingMHz{"ftSpacingMHz"};///< FT frequency bin spacing in MHz.
 inline constexpr QLatin1StringView ftLoFreqMHz{"ftLoFreqMHz"}; ///< LO frequency associated with the FT in MHz.
 inline constexpr QLatin1StringView ftShots{"ftShots"};         ///< Number of shots accumulated in the FT.
+inline constexpr QLatin1StringView ftAutoScaleIgnoreMHz{"ftAutoScaleIgnoreMHz"}; ///< Half-width around the LO (MHz) excluded from the FT's autoscale extrema.
 
 /// \brief Sub-namespace for metadata keys specific to CatalogOverlay.
 namespace Catalog {
@@ -81,6 +82,45 @@ public:
      */
     Ft getFtData() const;
 
+    /*!
+     * \brief Set the half-width around the LO excluded from the autoscale extrema.
+     *
+     * Mirrors the VScale ignore setting the FT was processed under, so the
+     * overlay scales the same way the plot it came from did.
+     *
+     * \param mhz Half-width in MHz; zero or less excludes nothing.
+     */
+    void setAutoScaleIgnoreMHz(double mhz);
+
+    /*!
+     * \brief Return the half-width around the LO excluded from the autoscale extrema.
+     */
+    double getAutoScaleIgnoreMHz() const { return d_autoScaleIgnoreMHz; }
+
+    /*!
+     * \brief Return the maximum magnitude outside the ignored band around the LO.
+     *
+     * The band is the region the FT's VScale ignore setting suppressed, which
+     * is where the DC spike lives. Scanning every point (as the base class
+     * does) would report that spike instead of the largest real feature, and
+     * autoscaling against it collapses the overlay to a sliver.
+     *
+     * Computed from the data on each call rather than read from a cached
+     * scalar: the magnitudes survive a round trip through the destination
+     * file, but extrema recorded alongside them do not survive every path
+     * that rebuilds the Ft.
+     */
+    double yMax() const override;
+
+    /*!
+     * \brief Return the plotted Y range outside the ignored band around the LO.
+     *
+     * Keeps the plot axis from stretching to the DC spike once the overlay is
+     * scaled up: the spike is the very feature the FT's VScale ignore setting
+     * exists to disregard.
+     */
+    std::pair<double,double> displayYRange() const override;
+
 protected:
     /// \brief Load Ft data from the destination file.
     void readFromDest() override;
@@ -94,6 +134,11 @@ protected:
 
 private:
     Ft d_ft; ///< The stored FT spectrum.
+
+    /// Half-width around the LO (MHz) excluded from the autoscale extrema. The
+    /// destination file holds only the magnitude column, so this rides along in
+    /// the settings metadata and is reapplied whenever the data is read back.
+    double d_autoScaleIgnoreMHz{0.0};
 
 };
 
@@ -405,10 +450,15 @@ public:
     double xMin() const;
     /// \brief Return the maximum X value in the loaded data.
     double xMax() const;
-    /// \brief Return the minimum Y value in the loaded data.
-    double yMin() const;
+    /*!
+     * \brief Return the minimum Y value in the loaded data.
+     *
+     * Named to distinguish it from OverlayBase::yMax(), which reports the
+     * maximum magnitude used for autoscaling rather than a signed extremum.
+     */
+    double dataYMin() const;
     /// \brief Return the maximum Y value in the loaded data.
-    double yMax() const;
+    double dataYMax() const;
 
     /*!
      * \brief Return the (min, max) X range of the loaded data.

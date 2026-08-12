@@ -82,7 +82,11 @@ void OverlayBaseOptionsWidget::setupUI()
     p_invertButton = new QPushButton("Invert", this);
     p_invertButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrows-up-down.svg", ThemeColors::IconSecondary, this));
     p_invertButton->setMaximumWidth(60);
-    connect(p_invertButton, &QPushButton::clicked, this, &OverlayBaseOptionsWidget::onInvertClicked);
+    // Checkable so inversion is a state the overlay keeps rather than a
+    // one-shot sign flip that the next autoscale would undo.
+    p_invertButton->setCheckable(true);
+    p_invertButton->setToolTip("Plot the overlay below the baseline. Stays applied through autoscaling.");
+    connect(p_invertButton, &QPushButton::toggled, this, &OverlayBaseOptionsWidget::onInvertToggled);
     table->addSettingRow("Y Scale", p_yScaleInputWidget, p_invertButton);
 
     p_autoscalePercentageSpinBox = new QDoubleSpinBox(this);
@@ -149,6 +153,9 @@ void OverlayBaseOptionsWidget::setupUI()
     
     connect(p_yScaleInputWidget, QOverload<double>::of(&ScientificInputWidget::valueChanged),
             this, &OverlayBaseOptionsWidget::settingsChanged);
+    // A sign typed straight into the field is an inversion too.
+    connect(p_yScaleInputWidget, QOverload<double>::of(&ScientificInputWidget::valueChanged),
+            this, &OverlayBaseOptionsWidget::syncInvertToggle);
     connect(p_yOffsetSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
             this, &OverlayBaseOptionsWidget::settingsChanged);
     connect(p_xOffsetSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
@@ -174,6 +181,7 @@ void OverlayBaseOptionsWidget::initializeDefaults()
     p_labelLineEdit->clear(); // Empty label
     p_commentLineEdit->clear(); // Empty comment
     p_yScaleInputWidget->setValue(1.0);
+    syncInvertToggle(1.0);
     p_yOffsetSpinBox->setValue(0.0);
     p_xOffsetSpinBox->setValue(0.0);
     
@@ -273,6 +281,16 @@ void OverlayBaseOptionsWidget::setComment(const QString &comment)
 void OverlayBaseOptionsWidget::setYScale(double yScale)
 {
     p_yScaleInputWidget->setValue(yScale);
+    syncInvertToggle(yScale);
+}
+
+void OverlayBaseOptionsWidget::syncInvertToggle(double yScale)
+{
+    // The scale factor's sign is the inversion state, so the toggle follows it
+    // however it was set: loaded from an existing overlay, autoscaled, or typed
+    // in directly. Blocked so this does not feed back into onInvertToggled().
+    QSignalBlocker b(p_invertButton);
+    p_invertButton->setChecked(yScale < 0.0);
 }
 
 void OverlayBaseOptionsWidget::setYOffset(double yOffset)
@@ -456,7 +474,7 @@ void OverlayBaseOptionsWidget::onAutoscaleClicked()
     // Get the maximum Y values
     double overlayYMax = d_overlayRef->yMax();
     double ftYMax = d_currentFt.yMax();
-    
+
     // Check for valid values
     if (overlayYMax <= 0.0 || ftYMax <= 0.0) {
         return; // Can't calculate with zero or negative max values
@@ -466,14 +484,21 @@ void OverlayBaseOptionsWidget::onAutoscaleClicked()
     double percentage = getAutoscalePercentage();
     double targetHeight = ftYMax * (percentage / 100.0);
     double newYScale = targetHeight / overlayYMax;
-    
+
+    // Autoscaling sets the magnitude of the scale factor; inversion owns its
+    // sign, so a scaled overlay stays flipped.
+    if (p_invertButton->isChecked())
+        newYScale = -newYScale;
+
     // Set the new value (this will trigger settingsChanged signal)
     setYScale(newYScale);
 }
 
-void OverlayBaseOptionsWidget::onInvertClicked()
+void OverlayBaseOptionsWidget::onInvertToggled(bool inverted)
 {
-    // Simply multiply current Y scale by -1
     double currentYScale = getYScale();
-    setYScale(-currentYScale);
+    double newYScale = inverted ? -qAbs(currentYScale) : qAbs(currentYScale);
+
+    if (newYScale != currentYScale)
+        setYScale(newYScale);
 }

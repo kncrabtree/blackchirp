@@ -128,8 +128,25 @@ public:
      * \brief Return the maximum absolute raw Y value (before scale/offset are applied).
      *
      * Triggers a cache refresh if the cache is stale.
+     *
+     * The base implementation scans every raw point.  Subclasses whose data
+     * source defines its own autoscale extrema (for instance an FT that
+     * excludes a band around the LO) may override this to report the value
+     * their source considers meaningful for scaling.
      */
-    double yMax() const;
+    virtual double yMax() const;
+
+    /*!
+     * \brief Return the (min, max) Y range of xyData() that a plot should fit.
+     *
+     * Separate from the bare extent of the curve: a subclass whose source
+     * suppresses part of the spectrum (an FT ignoring a band around the LO)
+     * narrows this so the axis is not stretched by a feature the source itself
+     * disregards. The base implementation reports the full extent.
+     *
+     * Values are in plotted coordinates, with scale and offset applied.
+     */
+    virtual std::pair<double,double> displayYRange() const;
 
     /// \brief Return the OverlayType discriminator for this instance.
     OverlayType type() const { return d_type; }

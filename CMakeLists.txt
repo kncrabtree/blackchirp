@@ -388,6 +388,16 @@ if(BC_BUILD_TESTS)
     add_blackchirp_definitions(tst_overlayoperations_simple)
     add_test(NAME OverlayOperationsSimpleTest COMMAND tst_overlayoperations_simple)
 
+    # BCExpOverlay VScale Ignore Band Test
+    add_executable(tst_bcexpoverlay tests/tst_bcexpoverlay.cpp)
+    target_link_libraries(tst_bcexpoverlay
+        blackchirp-data
+        Qt6::Test
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_bcexpoverlay)
+    add_test(NAME BCExpOverlayTest COMMAND tst_bcexpoverlay)
+
     # ZoomPanPlot Thread Safety Test
     # blackchirp-gui has unresolved references into application sources that
     # the main blackchirp executable provides directly (AcquisitionManager,
@@ -655,6 +665,7 @@ if(BC_BUILD_TESTS)
         tst_genericxyparser
         tst_operation_capability_only
         tst_overlayoperations_simple
+        tst_bcexpoverlay
         tst_zoompanplotthreadsafety
         tst_spcatparser
         tst_lifconversion

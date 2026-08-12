@@ -77,7 +77,9 @@ signals:
 private slots:
     void onLabelChanged();
     void onAutoscaleClicked();
-    void onInvertClicked();
+    void onInvertToggled(bool inverted);
+    /// \brief Point the Invert toggle at the sign of \a yScale without re-entering onInvertToggled().
+    void syncInvertToggle(double yScale);
 
 private:
     // UI elements

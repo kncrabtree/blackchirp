@@ -171,8 +171,11 @@ void FtPlot::addOverlay(std::shared_ptr<OverlayBase> overlay)
     QString curveKey = QString("overlay_%1").arg(overlay->getLabel());
     auto curve = CurveFactory::createOverlayCurve<BlackchirpPlotCurve>(curveKey, overlay);
     
-    // Set curve data from overlay
-    curve->setCurveData(overlay->xyData());
+    // Set curve data from overlay. The Y range is taken from the overlay
+    // rather than measured off the points so that a region the overlay's
+    // source suppresses does not stretch the axis.
+    const auto [yMin,yMax] = overlay->displayYRange();
+    curve->setCurveData(overlay->xyData(),yMin,yMax);
     curve->setTitle(overlay->getLabel());
     
     // Synchronize initial visibility with overlay enabled state
@@ -218,7 +221,8 @@ void FtPlot::updateOverlay(std::shared_ptr<OverlayBase> overlay)
     for (auto& pair : d_overlayCurves) {
         if (pair.first->getLabel() == overlay->getLabel()) {
             // Update curve data (applies scaling and offsets)
-            pair.second->setCurveData(overlay->xyData());
+            const auto [yMin,yMax] = overlay->displayYRange();
+            pair.second->setCurveData(overlay->xyData(),yMin,yMax);
             pair.second->setTitle(overlay->getLabel());
             
             // Update curve appearance from overlay metadata first
