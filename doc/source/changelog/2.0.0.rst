@@ -85,6 +85,20 @@ Build and distribution
   dynamic FID simulation generator, so the Virtual digitizer
   produces synthetic data without bundling sample CSVs. See
   :doc:`/user_guide/first_run`.
+- Installed the license texts into the packages themselves.
+  ``COPYING`` and the bundled-component licenses land under
+  ``share/doc/blackchirp/`` on Linux, in each ``.app``'s
+  ``Resources`` on macOS, and in the install root on Windows,
+  so the terms travel with the binary rather than only as
+  standalone release assets (:commit:`9a3435b2`).
+- Added the release-stage suffix to the package file names, so a
+  downloaded artifact identifies its stage without being opened
+  (``Blackchirp-2.0.0-beta1-Linux-x86_64.rpm``). The AppImages are
+  named to match. A stable release carries no suffix. See
+  :doc:`/user_guide/installation` (:commit:`c7d0b7bf`).
+- Enabled the MSVC C++-conforming preprocessor (``/Zc:preprocessor``)
+  so the Windows build accepts the ``__VA_OPT__`` usage in the
+  hardware registration macros (:commit:`c02f1ea5`).
 
 Hardware configuration
 ----------------------
@@ -500,6 +514,9 @@ Bug fixes
   ``lifLaserReadSettings``, ``lifDigitizerReadSettings``) — so a
   derived driver that forgets to chain becomes a compile error
   rather than a silent runtime omission (:commit:`d512ee5e`).
+- Fixed the Sirah FCU leaving its move parameters uninitialized
+  until the first move was commanded, so a connection test ran
+  against unset values (:commit:`ebd1a4da`).
 
 **Hardware configuration.**
 
@@ -608,6 +625,33 @@ Bug fixes
   always handed to the Generic XY parser, and the failure message
   states the cause, such as a file containing only one column
   (:commit:`3341b0ad`).
+- Fixed a middle-click pan on any plot ending in a zoom-out that
+  applied a stale zoom-stack rectangle to the axes. Box zoom is
+  restricted to the left mouse button, leaving the middle button
+  to panning and the right button to the context menu
+  (:commit:`51e870c4`).
+- Fixed overlay source paths longer than 50 characters being
+  stored in their abbreviated ``"..."`` display form. *Configure
+  FT…* opened an empty dialog for a BCExperiment overlay selected
+  by a custom path, and a Generic XY path was overwritten with
+  its own ellipsis form on edit. The path fields hold the full
+  path, scrolled to the tail (:commit:`abf05f39`).
+- Fixed an FT imported as an overlay being autoscaled against its
+  DC spike, collapsing the real features unless the import was
+  trimmed by hand. The overlay carries the source FT's VScale
+  ignore half-width around the LO and excludes that band from
+  both its scale factor and the plot's axis range. See
+  :doc:`/user_guide/overlays` (:commit:`9c2d89e8`).
+
+**Build and distribution.**
+
+- Fixed the published RPMs carrying no build identifier. The
+  openSUSE container job builds as a different user than the one
+  owning the checkout, so git declined to read the workspace and
+  the commit sha silently fell back to ``unknown``, leaving crash
+  reports and the About dialog untraceable to a commit. The build
+  also warns at configure time when no sha resolves
+  (:commit:`6d6fd4bd`).
 
 **Python companion module.**
 
