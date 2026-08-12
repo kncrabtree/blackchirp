@@ -755,7 +755,14 @@ jobs:
           sed -i '' "s|^[[:space:]]*QWT_INSTALL_PREFIX[[:space:]]*=.*|QWT_INSTALL_PREFIX = ${{ github.workspace }}/qwt-install|" qwtconfig.pri
           sed -i '' 's|^[[:space:]]*QWT_INSTALL_HEADERS[[:space:]]*=.*|QWT_INSTALL_HEADERS = $${QWT_INSTALL_PREFIX}/include/qwt6|' qwtconfig.pri
           sed -i '' -E "/^[[:space:]]*QWT_CONFIG[[:space:]]*\+=[[:space:]]+Qwt(Examples|Playground|Designer|Tests|Framework)[[:space:]]*$/d" qwtconfig.pri
-          qmake qwt.pro
+          # QtCore's qyieldcpu.h calls the ARM ACLE intrinsic __yield() without
+          # including <arm_acle.h>. Current clang neither declares it
+          # implicitly nor tolerates the omission, so compiling anything that
+          # pulls in that header fails on arm64 (QTBUG-145239). The header is
+          # corrected in Qt 6.11.1; QT_VERSION above predates that, so the
+          # diagnostic is demoted here. Scoped to Qwt: Blackchirp's own compile
+          # keeps the default behavior.
+          qmake qwt.pro QMAKE_CXXFLAGS+=-Wno-error=implicit-function-declaration
           make -j"$(sysctl -n hw.ncpu)"
           make install
 
