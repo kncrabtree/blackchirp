@@ -28,6 +28,16 @@ execute_process(
 
 if(NOT BC_BUILD_VERSION)
     set(BC_BUILD_VERSION "unknown")
+    # Legitimate when building from an unpacked source archive, but in a
+    # packaging build it means crash reports and the About dialog cannot
+    # be tied back to a commit. Warn rather than fail: the sha is
+    # diagnostic metadata, not a build requirement. ERROR_QUIET above
+    # hides git's own explanation, and the usual cause is a workspace
+    # git declines to read (ownership differing from the build user)
+    # rather than a missing repository.
+    message(WARNING "No git commit sha resolved; stamping build version "
+                    "as \"unknown\". Packages built from this tree cannot "
+                    "be traced to a commit.")
 endif()
 
 # Version definitions. The numeric version has a single source of
