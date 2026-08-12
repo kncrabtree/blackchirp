@@ -219,7 +219,7 @@ QHash<QString, QVariant> BCExpOverlayWidget::getSettingsHash() const
     // Experiment selection settings
     settings["experimentNumber"] = p_experimentNumberSpinBox->value();
     settings["useCustomPath"] = p_usePathCheckBox->isChecked();
-    settings["customPath"] = p_pathLineEdit->text();
+    settings["customPath"] = getStoredFullSourceFilePath();
     
     // FT configuration settings
     settings["hasFtData"] = d_hasFtData;
@@ -296,6 +296,11 @@ void BCExpOverlayWidget::onBrowseButtonClicked()
 
 void BCExpOverlayWidget::onPathChanged()
 {
+    // A path typed or pasted directly into the line edit has to be adopted as
+    // the stored path, since only the browse dialog goes through
+    // updatePathDisplayAndTooltip().
+    d_fullSourceFilePath = p_pathLineEdit->text();
+
     resetFtConfiguration(); // Reset FT config when path changes
     updateAutomaticLabel(); // Update label to directory name if using custom path
     validateExperiment();
@@ -313,10 +318,13 @@ void BCExpOverlayWidget::onConfigureFtClicked()
     
     emit progressOperationStarted("Loading experiment data...");
     
-    // Create ExperimentViewWidget with overlays disabled
+    // Create ExperimentViewWidget with overlays disabled.
+    // The custom-path branch must use experimentPath, not the line edit's
+    // display text: the display is abbreviated for long paths, and handing
+    // the abbreviation to Experiment yields a directory that does not exist.
     ExperimentViewWidget *experimentWidget;
     if (p_usePathCheckBox->isChecked()) {
-        experimentWidget = new ExperimentViewWidget(0, p_pathLineEdit->text(), false);
+        experimentWidget = new ExperimentViewWidget(0, experimentPath, false);
     } else {
         experimentWidget = new ExperimentViewWidget(p_experimentNumberSpinBox->value(), QString(""), false);
     }

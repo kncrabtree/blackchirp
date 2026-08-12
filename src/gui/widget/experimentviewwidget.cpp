@@ -35,7 +35,15 @@ ExperimentViewWidget::ExperimentViewWidget(int num, const QString &path, bool ov
 
     if(pu_experiment->d_number < 1)
     {
-        QLabel *errLabel = new QLabel(pu_experiment->d_errorString);
+        // A load failure that set no error string would otherwise render as an
+        // empty widget, leaving the user with nothing to act on.
+        auto err = pu_experiment->d_errorString;
+        if(err.isEmpty())
+            err = path.isEmpty() ?
+                        QString("Experiment %1 could not be loaded.").arg(num) :
+                        QString("No experiment could be loaded from %1.").arg(path);
+
+        QLabel *errLabel = new QLabel(err);
         errLabel->setAlignment(Qt::AlignCenter);
         errLabel->setWordWrap(true);
         vbl->addWidget(errLabel);

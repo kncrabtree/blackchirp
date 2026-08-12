@@ -49,7 +49,12 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
 
     QDir d(BlackchirpCSV::exptDir(num,exptPath));
     if(!d.exists())
+    {
+        d_errorString = exptPath.isEmpty() ?
+                    QString("No experiment numbered %1 was found in the active data path.").arg(num) :
+                    QString("Experiment directory does not exist: %1").arg(exptPath);
         return;
+    }
 
     // When loading by number, BlackchirpCSV::exptDir silently leaves QDir
     // pointing at a parent if any cd() step fails, so d.exists() alone is

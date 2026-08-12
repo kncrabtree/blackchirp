@@ -48,6 +48,10 @@ private slots:
     void loadExperiment27_header();
     void loadExperiment27_lifConfig();
 
+    // Loading by path alone, with no experiment number supplied
+    void loadByPathWithoutNumber();
+    void loadByPathNonExistentReportsError();
+
     // Legacy LIF experiment captured pre-rename (digitizer key
     // recovered via the FtmwScope/LifScope alias map; laser units +
     // decimals plumbed through the on-disk LaserStart row rather than
@@ -457,6 +461,28 @@ void ExperimentLoadingTest::loadExperiment27_lifConfig()
     QCOMPARE(lif->d_laserPosStart, 250.0);
     QCOMPARE(lif->d_laserPosStep, 1.0);
     QCOMPARE(lif->d_shotsPerPoint, 10);
+}
+
+void ExperimentLoadingTest::loadByPathWithoutNumber()
+{
+    // The overlay "Configure FT" workflow identifies an experiment by
+    // directory alone and has no number to supply. The number must come from
+    // the header, since callers use it to decide whether the load succeeded.
+    Experiment exp(0, testDataDir() + "/2638", true);
+
+    QVERIFY(exp.d_errorString.isEmpty());
+    QCOMPARE(exp.d_number, 2638);
+    QVERIFY(exp.ftmwEnabled());
+}
+
+void ExperimentLoadingTest::loadByPathNonExistentReportsError()
+{
+    // A path that does not resolve must leave an explanation behind: callers
+    // display d_errorString, and an empty one renders as a blank widget.
+    Experiment exp(0, testDataDir() + "/no_such_experiment_directory", true);
+
+    QVERIFY(!exp.d_errorString.isEmpty());
+    QCOMPARE(exp.d_number, 0);
 }
 
 void ExperimentLoadingTest::loadLegacyLif883_digitizerAndGates()
