@@ -308,6 +308,13 @@ if(WIN32)
 elseif(APPLE)
     # Each bundle carries its own copy. The DMG ships two .app bundles and a
     # user drags them out individually, so anything outside a bundle is lost.
+    #
+    # A bundle's signature seals its resources, and these files land after
+    # blackchirp_deploy_qt has already signed it — this module is included
+    # last, so its install rules run last. Left there, the added files make
+    # the signature invalid ("a sealed resource is missing or invalid") and
+    # the bundle will not launch. Re-seal each bundle once its licenses are
+    # in place, matching the ad-hoc identity used by the deployment pass.
     foreach(_bc_app blackchirp blackchirp-viewer)
         install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/COPYING"
             DESTINATION "${_bc_app}.app/Contents/Resources"
@@ -316,6 +323,16 @@ elseif(APPLE)
             DESTINATION "${_bc_app}.app/Contents/Resources/licenses"
             COMPONENT Applications
             ${_bc_license_readme_filter})
+        install(CODE "
+            set(_bundle \"\${CMAKE_INSTALL_PREFIX}/${_bc_app}.app\")
+            if(IS_DIRECTORY \"\${_bundle}\")
+                message(STATUS \"Re-signing \${_bundle} after adding license texts\")
+                execute_process(
+                    COMMAND codesign --force --deep --sign - \"\${_bundle}\"
+                    COMMAND_ERROR_IS_FATAL ANY
+                )
+            endif()
+        " COMPONENT Applications)
     endforeach()
     unset(_bc_app)
 
