@@ -319,7 +319,13 @@ if(BC_BUILD_TESTS)
     
     # Create test executables
     find_package(Qt6 REQUIRED COMPONENTS Test)
-    
+
+    # blackchirp_add_gui_test() for tests that link the full GUI stack
+    include(cmake/BlackchirpTesting.cmake)
+
+    # GUI Linkage Test — smoke test for blackchirp_add_gui_test() itself
+    blackchirp_add_gui_test(tst_guilinkage NAME GuiLinkageTest)
+
     # Settings Storage Test
     add_executable(tst_settingsstoragetest tests/tst_settingsstoragetest.cpp)
     target_link_libraries(tst_settingsstoragetest 
@@ -710,8 +716,11 @@ if(BC_BUILD_TESTS)
     # add_blackchirp_definitions(tst_hardwarecommunication)
     # add_test(NAME HardwareCommunicationTest COMMAND tst_hardwarecommunication)
     
-    # Create a custom target to build all tests
+    # Create a custom target to build all tests. GUI tests declared via
+    # blackchirp_add_gui_test() are collected automatically.
+    blackchirp_get_gui_tests(BLACKCHIRP_GUI_TESTS)
     add_custom_target(tests DEPENDS
+        ${BLACKCHIRP_GUI_TESTS}
         tst_settingsstoragetest
         tst_headerstoragetest
         tst_blackchirpcsvtest
