@@ -770,32 +770,39 @@ jobs:
           modules: 'qtserialport'
           cache: true
 
-      - name: Drop AGL from the Qt mkspecs
-        # Apple withdrew the AGL framework in the macOS 26 SDK, but Qt's
-        # mkspecs still name it in QMAKE_LIBS_OPENGL, so qmake puts
-        # `-framework AGL` on every link line it generates. On a runner
-        # whose SDK still carries AGL this silently records a load
+      - name: Drop AGL from the Qt build metadata
+        # Apple withdrew the AGL framework in the macOS 26 SDK, but Qt
+        # still names it in the link flags it hands to qmake, so qmake
+        # puts `-framework AGL` on every link line it generates. On a
+        # runner whose SDK still carries AGL this silently records a load
         # command against a framework that no longer ships, producing a
         # library that cannot be loaded on macOS 26; on a runner whose
         # SDK has dropped it, the link fails outright.
         #
+        # The flag is not confined to the mkspecs: the .prl files beside
+        # the frameworks carry their own copy, which qmake pulls in as a
+        # transitive dependency of QtGui, so patching the mkspecs alone
+        # leaves the link line unchanged. Sweep the whole Qt tree rather
+        # than enumerating the files that happen to mention it today,
+        # skipping binaries so only build metadata is rewritten.
+        #
         # This affects qmake only, so it reaches Qwt but not Blackchirp,
         # which builds with CMake. The pinned Qt is end-of-life and will
-        # not receive the upstream mkspec fix, so strip the flag wherever
-        # the mkspecs mention it — matching on content rather than on a
-        # file name that varies between Qt versions.
+        # not receive the upstream fix.
         run: |
-          set -euxo pipefail
-          files=$(grep -rlE -- '-framework[[:space:]]+AGL' "$QT_ROOT_DIR/mkspecs" || true)
+          set -euo pipefail
+          files=$(grep -rlIE -- '-framework[[:space:]]+AGL' "$QT_ROOT_DIR" || true)
           if [ -z "$files" ]; then
-            echo "No AGL references in the mkspecs; nothing to patch."
+            echo "No AGL link flags found under $QT_ROOT_DIR; nothing to patch."
             exit 0
           fi
+          echo "Patching:"
+          printf '  %s\n' $files
           printf '%s\n' "$files" | while IFS= read -r f; do
             sed -i '' -E 's/[[:space:]]*-framework[[:space:]]+AGL//g' "$f"
           done
           # Fail loudly rather than leaving a half-applied patch behind.
-          ! grep -rqE -- '-framework[[:space:]]+AGL' "$QT_ROOT_DIR/mkspecs"
+          ! grep -rqIE -- '-framework[[:space:]]+AGL' "$QT_ROOT_DIR"
 
       - name: Restore Qwt cache
         id: qwt-cache
@@ -804,7 +811,7 @@ jobs:
           # v5: v4 and earlier hold a libqwt linked against AGL, which
           # cannot load on macOS 26.
           path: ${{ github.workspace }}/qwt-install
-          key: qwt-${{ env.QWT_VERSION }}-macos-${{ matrix.arch }}-qt${{ env.QT_VERSION }}-v5
+          key: qwt-${{ env.QWT_VERSION }}-macos-${{ matrix.arch }}-qt${{ env.QT_VERSION }}-v6
 
       - name: Build Qwt from source
         if: steps.qwt-cache.outputs.cache-hit != 'true'
@@ -833,6 +840,15 @@ jobs:
           # diagnostic is demoted here. Scoped to Qwt: Blackchirp's own compile
           # keeps the default behavior.
           qmake qwt.pro QMAKE_CXXFLAGS+=-Wno-error=implicit-function-declaration
+          # The generated makefiles are the last point at which a stray
+          # `-framework AGL` can still be seen by name; past here it is
+          # buried in a silent `linking ...` rule and surfaces only as a
+          # bare "framework not found" from ld. Report it here so a
+          # recurrence identifies its own source.
+          if grep -rn -- '-framework AGL' src/Makefile* 2>/dev/null; then
+            echo "::error::AGL survived into the generated makefiles (see above)"
+            exit 1
+          fi
           make -j"$(sysctl -n hw.ncpu)"
           make install
 
@@ -841,7 +857,7 @@ jobs:
         uses: actions/cache/save@v5
         with:
           path: ${{ github.workspace }}/qwt-install
-          key: qwt-${{ env.QWT_VERSION }}-macos-${{ matrix.arch }}-qt${{ env.QT_VERSION }}-v5
+          key: qwt-${{ env.QWT_VERSION }}-macos-${{ matrix.arch }}-qt${{ env.QT_VERSION }}-v6
 
       - name: Configure
         run: |
