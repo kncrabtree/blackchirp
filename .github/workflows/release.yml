@@ -791,6 +791,28 @@ jobs:
         # not receive the upstream fix.
         run: |
           set -euo pipefail
+          # Qt's WrapOpenGL module attaches AGL unconditionally: it probes
+          # for the framework and falls back to a literal `-framework AGL`
+          # when the probe fails, so neither outcome avoids it. The probe
+          # searches system paths and still finds the withdrawn
+          # framework's leftover directory, while ld searches the SDK,
+          # where it is gone. Blank both branches so the resulting
+          # target_link_libraries call contributes nothing. OpenGL proper
+          # is left alone — that framework still ships.
+          fw="$QT_ROOT_DIR/lib/cmake/Qt6/FindWrapOpenGL.cmake"
+          if [ -f "$fw" ]; then
+            sed -i '' -E \
+              -e 's/find_library\(WrapOpenGL_AGL[[:space:]]+NAMES[[:space:]]+AGL\)/set(WrapOpenGL_AGL "")/' \
+              -e 's/set\(__opengl_agl_fw_path[[:space:]]+"-framework AGL"\)/set(__opengl_agl_fw_path "")/' \
+              "$fw"
+            # A Qt version that renames this must not silently no-op.
+            if grep -qE 'find_library\(WrapOpenGL_AGL' "$fw"; then
+              echo "::error::FindWrapOpenGL.cmake still probes for AGL after patching"
+              exit 1
+            fi
+            echo "Neutralized the AGL probe in $fw"
+          fi
+
           # The flag is spelled two ways: qmake metadata separates the
           # framework from its name with a space, while CMake stores link
           # interfaces as semicolon-separated lists. Match either, then
