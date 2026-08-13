@@ -9,6 +9,10 @@
    single: AUTOMOC
    single: CPack
    single: blackchirp_deploy_qt
+   single: BlackchirpAcquisition.cmake
+   single: blackchirp-acquisition
+   single: BlackchirpTesting.cmake
+   single: blackchirp_add_gui_test
    single: tests; cmake target
    single: documentation; cmake target
    single: documentation; pipeline
@@ -68,6 +72,22 @@ one library or executable target.
    ``FidStorageBase``), and logging. Linked into both the main app and
    the viewer.
 
+``BlackchirpAcquisition.cmake`` → ``blackchirp-acquisition`` (STATIC)
+   :cpp:class:`AcquisitionManager`, which drives a running experiment,
+   and the batch managers that sequence multiple experiments
+   (:cpp:class:`BatchManager` and its ``BatchSequence``/``BatchSingle``
+   subclasses). The layer is a library of its own rather than part of
+   the ``blackchirp`` executable because ``AUTOMOC`` emits a
+   single ``mocs_compilation.cpp`` per target, so any test that links
+   ``blackchirp-gui`` for one GUI class's moc pulls in the moc for all
+   of them — including :cpp:class:`MainWindow`, which needs both
+   :cpp:class:`AcquisitionManager` and :cpp:class:`BatchManager`. As
+   long as those classes lived only in the executable, no test could
+   link ``blackchirp-gui``; see *The blackchirp_add_gui_test() helper*
+   below. Linked publicly by ``blackchirp-gui`` and directly by the
+   executable. Skipped when ``BC_BUILD_VIEWER_ONLY=ON``; the viewer
+   never links it.
+
 ``BlackchirpHardware.cmake`` → ``blackchirp-hardware`` (STATIC)
    All hardware base classes, every concrete driver,
    communication protocols (``rs232``, ``tcp``, ``virtual``, ``gpib``,
@@ -79,17 +99,21 @@ one library or executable target.
 
 ``BlackchirpGui.cmake`` → ``blackchirp-gui`` (STATIC)
    Full Qt Widgets layer: main window, dialogs, experiment-setup wizard
-   pages, plots, overlay widgets, theme code. Main app only.
+   pages, plots, overlay widgets, theme code. Links
+   ``Blackchirp::Acquisition`` publicly, since :cpp:class:`MainWindow`
+   owns an :cpp:class:`AcquisitionManager` and the batch managers. Main
+   app only.
 
 ``BlackchirpViewerGui.cmake`` → ``blackchirp-viewer-gui`` (STATIC)
    Lighter GUI subset for the viewer — plotting and experiment
    inspection without any hardware dependency. Always built.
 
 ``BlackchirpApplication.cmake`` → ``blackchirp`` (executable)
-   Glues data + GUI + hardware together, compiles ``main.cpp`` and the
-   acquisition layer (``AcquisitionManager``, ``BatchManager`` and
-   friends), wires Qt resources, and registers
-   ``blackchirp_deploy_qt(blackchirp)``. Skipped when
+   Glues data + acquisition + GUI + hardware together. Compiles only
+   ``main.cpp``, the compiled Qt resources, and — when
+   ``BC_ENABLE_CUDA=ON`` — the CUDA sources under ``src/modules/cuda/``;
+   everything else reaches the executable through the libraries it
+   links. Registers ``blackchirp_deploy_qt(blackchirp)``. Skipped when
    ``BC_BUILD_VIEWER_ONLY=ON``.
 
 ``BlackchirpViewerApplication.cmake`` → ``blackchirp-viewer`` (executable)
@@ -185,11 +209,11 @@ edits to ``BuildConfig.cmake`` are yours to keep.
 The four user-facing options are:
 
 ``BC_BUILD_VIEWER_ONLY`` (default ``OFF``)
-   Build only ``blackchirp-viewer``: skip the hardware library, skip the
-   main GUI library, and skip the main application executable. Useful on
-   analysis machines without lab hardware attached. The main GUI library
-   pulls in ``Qt6::SerialPort`` transitively, which is the reason for
-   the hard split.
+   Build only ``blackchirp-viewer``: skip the acquisition library, skip
+   the hardware library, skip the main GUI library, and skip the main
+   application executable. Useful on analysis machines without lab
+   hardware attached. The main GUI library pulls in ``Qt6::SerialPort``
+   transitively, which is the reason for the hard split.
 
 ``BC_BUILD_TESTS`` (default ``ON``)
    Build the unit-test executables and the ``tests`` aggregate custom
@@ -371,6 +395,9 @@ Test executables and what each covers:
 
    * - Executable
      - Coverage
+   * - ``tst_guilinkage``
+     - Smoke test for ``blackchirp_add_gui_test()`` itself: links the
+       full GUI stack and instantiates a widget.
    * - ``tst_settingsstoragetest``
      - :cpp:class:`SettingsStorage` round-trip and key-namespace rules.
    * - ``tst_headerstoragetest``
@@ -433,7 +460,43 @@ the hardware base classes, the communication protocols, and just the
 link against this instead so they can exercise the registration
 machinery without dragging in the manager.
 
-Adding a new test follows a four-step recipe:
+The ``blackchirp_add_gui_test()`` helper
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Tests that need the GUI stack — a widget, a plot, anything that links
+``blackchirp-gui`` — use ``blackchirp_add_gui_test()`` from
+``cmake/BlackchirpTesting.cmake`` instead of hand-rolling the
+``add_executable``/``target_link_libraries``/``add_test`` triple:
+
+.. code-block:: cmake
+
+   blackchirp_add_gui_test(<target>
+       NAME         <ctest-name>
+       [SOURCES     <file> ...]     # defaults to tests/<target>.cpp
+       [LIBRARIES   <lib> ...]      # extra libraries beyond the GUI stack
+       [DEFINITIONS <def> ...]      # extra PRIVATE compile definitions
+       [TESTDATA]                   # define TESTDATA_DIR
+   )
+
+The helper links ``blackchirp-gui``, ``blackchirp-acquisition``,
+``blackchirp-hardware``, ``blackchirp-data``, and the Qt/QWT modules
+those export; registers the executable with CTest under
+``QT_QPA_PLATFORM=offscreen``; and appends the target to the list
+``blackchirp_get_gui_tests()`` returns, which is how the ``tests``
+aggregate target picks it up. Qt resources are deliberately left
+uncompiled: GUI classes request icons through
+``ThemeColors::createThemedIcon()``, which returns a null ``QIcon``
+when the resource cannot be opened, and nothing downstream treats that
+as an error.
+
+``tst_guilinkage``, ``tst_zoompanplotthreadsafety``, and
+``tst_scientificspinboxtest`` use it. Linking ``blackchirp-gui`` into a
+test target at all depends on the acquisition layer being a library of
+its own — see the ``BlackchirpAcquisition.cmake`` entry in the *CMake
+module map* above.
+
+Adding a new test that does not need the GUI stack follows a
+four-step recipe:
 
 1. Add ``add_executable(tst_yourthing tests/tst_yourthing.cpp)``.
 2. ``target_link_libraries(tst_yourthing blackchirp-data Qt6::Test
