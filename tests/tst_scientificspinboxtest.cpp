@@ -6,7 +6,7 @@
 #include <QWheelEvent>
 #include <limits>
 
-#include <src/gui/widget/scientificspinbox.h>
+#include <gui/widget/scientificspinbox.h>
 
 using namespace Qt::Literals::StringLiterals;
 

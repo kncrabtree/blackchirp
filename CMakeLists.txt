@@ -459,43 +459,8 @@ if(BC_BUILD_TESTS)
     add_test(NAME OverlayStoragePreviewIdentityTest COMMAND tst_overlaystoragepreviewidentity)
 
     # ZoomPanPlot Thread Safety Test
-    # blackchirp-gui has unresolved references into application sources that
-    # the main blackchirp executable provides directly (AcquisitionManager,
-    # BatchManager, mainwindow). Rather than dragging those in, the test
-    # compiles only the plot-layer translation units it needs.
-    add_executable(tst_zoompanplotthreadsafety
-        tests/tst_zoompanplotthreadsafety.cpp
-        src/gui/plot/zoompanplot.cpp
-        src/gui/plot/ftplot.cpp
-        src/gui/plot/blackchirpplotcurve.cpp
-        src/gui/plot/curvefactory.cpp
-        src/gui/plot/customtracker.cpp
-        src/gui/plot/customzoomer.cpp
-        src/gui/plot/curveappearancewidget.cpp
-        src/gui/plot/curveappearancepresetmanager.cpp
-        src/gui/plot/presetsavedialog.cpp
-        src/gui/widget/settingstable.cpp
-        src/gui/style/themecolors.cpp
-        src/gui/util/numericformat.cpp
-    )
-    target_include_directories(tst_zoompanplotthreadsafety PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-    )
-    target_link_libraries(tst_zoompanplotthreadsafety
-        blackchirp-data
-        Qt6::Test
-        Qt6::Core
-        Qt6::Gui
-        Qt6::Widgets
-        Qt6::Concurrent
-        QWT::QWT
-    )
-    add_blackchirp_definitions(tst_zoompanplotthreadsafety)
-    add_test(NAME ZoomPanPlotThreadSafetyTest COMMAND tst_zoompanplotthreadsafety)
-    set_tests_properties(ZoomPanPlotThreadSafetyTest PROPERTIES
-        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
-    )
+    blackchirp_add_gui_test(tst_zoompanplotthreadsafety
+        NAME ZoomPanPlotThreadSafetyTest)
 
     # SPCAT Parser Test
     add_executable(tst_spcatparser tests/tst_spcatparser.cpp)
@@ -623,28 +588,8 @@ if(BC_BUILD_TESTS)
     
     # No hardware-specific compile definitions needed - all hardware available at runtime
 
-    # ScientificSpinBox Test — compile only the required sources to avoid pulling
-    # in the full blackchirp-gui library (which has hardware/singleton dependencies)
-    add_executable(tst_scientificspinboxtest
-        tests/tst_scientificspinboxtest.cpp
-        src/gui/widget/scientificspinbox.cpp
-        src/gui/util/numericformat.cpp
-        src/gui/style/themecolors.cpp
-    )
-    target_include_directories(tst_scientificspinboxtest PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}
-    )
-    target_link_libraries(tst_scientificspinboxtest
-        Qt6::Test
-        Qt6::Core
-        Qt6::Gui
-        Qt6::Widgets
-    )
-    add_blackchirp_definitions(tst_scientificspinboxtest)
-    add_test(NAME ScientificSpinBoxTest COMMAND tst_scientificspinboxtest)
-    set_tests_properties(ScientificSpinBoxTest PROPERTIES
-        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
-    )
+    # ScientificSpinBox Test
+    blackchirp_add_gui_test(tst_scientificspinboxtest NAME ScientificSpinBoxTest)
 
     # Waveform Buffer Test
     add_executable(tst_waveformbuffertest tests/tst_waveformbuffertest.cpp)
@@ -733,7 +678,6 @@ if(BC_BUILD_TESTS)
         tst_bcexpoverlay
         tst_catalogoverlaythreadsafety
         tst_overlaystoragepreviewidentity
-        tst_zoompanplotthreadsafety
         tst_spcatparser
         tst_lifconversion
         tst_fcucalibration
@@ -744,7 +688,6 @@ if(BC_BUILD_TESTS)
         tst_hardwareprofilemanagertest
         tst_hardwarekeys
         tst_experimentloading
-        tst_scientificspinboxtest
         tst_waveformbuffertest
         tst_loadoutmanagertest
         # tst_hardwarecommunication  # Disabled (see comment above)

@@ -5,9 +5,9 @@
 #include <vector>
 #include <memory>
 
-#include <src/gui/plot/ftplot.h>
-#include <src/gui/plot/blackchirpplotcurve.h>
-#include <src/gui/plot/curvefactory.h>
+#include <gui/plot/ftplot.h>
+#include <gui/plot/blackchirpplotcurve.h>
+#include <gui/plot/curvefactory.h>
 
 /// Thin wrapper that promotes waitForFilterComplete() to public so the test
 /// body can synchronize with the worker without touching production code.
