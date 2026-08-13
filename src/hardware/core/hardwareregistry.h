@@ -73,6 +73,25 @@ struct CustomCommDef {
 };
 
 /*!
+ * \brief Default value for one communication setting within a protocol group
+ *
+ * Registered statically at program startup via REGISTER_COMM_DEFAULTS (per
+ * driver), scoped to a CommunicationProtocol::CommType. Seeded into a hardware object's
+ * per-protocol settings group the first time the object is constructed, so a
+ * driver that needs a non-default timeout or termination character (e.g. a
+ * 20 s timeout, or a ";FF" terminator) gets sensible values without the user
+ * having to configure them. User-configured values are never overwritten.
+ *
+ * The value's QVariant type must match what the protocol widget and
+ * CommunicationProtocol expect for \c key (e.g. int for BC::Key::Comm::timeout,
+ * QString for BC::Key::Comm::termChar).
+ */
+struct CommDefault {
+    QString key;     ///< Sub-key within the protocol group (e.g. BC::Key::Comm::timeout)
+    QVariant value;  ///< Default value to seed
+};
+
+/*!
  * \brief Scalar setting definition with metadata
  *
  * Registered statically at program startup. The defaultValue's QVariant
@@ -87,6 +106,9 @@ struct HwSettingDef {
     QVariant minimum;         ///< Optional min for numeric types (invalid = no limit)
     QVariant maximum;         ///< Optional max for numeric types (invalid = no limit)
     HwSettingPriority priority = HwSettingPriority::Optional;
+    QString displayUnitKey{}; ///< If set, this (canonical-cm⁻¹) double is entered/displayed in the unit given by the named sibling LaserUnit enum setting.
+    QString gateKey{};        ///< If set, names a sibling Q_ENUM/Q_ENUM_NS scalar setting; this setting's row is shown in HwSettingsWidget only while that sibling's current value equals gateValue. Empty = always visible.
+    QVariant gateValue{};     ///< Enum value (as a Q_ENUM/Q_ENUM_NS-typed QVariant) that gateKey must currently hold for this setting to be visible. Ignored when gateKey is empty.
 };
 
 /*!
@@ -101,6 +123,8 @@ struct HwArraySettingDef {
     QString description;      ///< Explanatory tooltip/help text
     std::vector<SettingsStorage::SettingsMap> entries;  ///< Default entries
     HwSettingPriority priority = HwSettingPriority::Optional;
+    QString gateKey{};        ///< See HwSettingDef::gateKey; applies to this array's whole table row.
+    QVariant gateValue{};     ///< See HwSettingDef::gateValue.
 };
 
 /*!
@@ -117,6 +141,7 @@ struct HardwareRegistration {
     QVector<HwSettingDef> settingDefs;                         /*!< Registered setting definitions with metadata */
     QMap<QString, HwArraySettingDef> arraySettingDefs;          /*!< Registered array setting definitions */
     QVector<CustomCommDef> customCommDefs;                      /*!< Registered custom communication parameter definitions */
+    QMap<CommunicationProtocol::CommType, QVector<CommDefault>> commDefaults; /*!< Per-protocol communication-setting defaults */
 
     /*! \brief Construct an empty registration with all fields at their default values */
     HardwareRegistration() = default;
@@ -308,11 +333,14 @@ public:
      * \param label User-facing display label
      * \param description Explanatory tooltip/help text
      * \param priority Visibility priority level
+     * \param gateKey Optional sibling enum setting key gating this array's visibility (see HwSettingDef::gateKey); empty = always visible
+     * \param gateValue Enum value gateKey must hold for this array to be visible; ignored when gateKey is empty
      * \return True if array setting definition was added successfully
      */
     bool addArraySettingDef(const QString& key, const QString& subKey,
                             const QString& arrayKey, const QString& label,
-                            const QString& description, HwSettingPriority priority);
+                            const QString& description, HwSettingPriority priority,
+                            const QString& gateKey = {}, const QVariant& gateValue = {});
 
     /*!
      * \brief Add one entry to an array setting
@@ -354,11 +382,14 @@ public:
      * \param label User-facing display label
      * \param description Explanatory tooltip/help text
      * \param priority Visibility priority level
+     * \param gateKey Optional sibling enum setting key gating this array's visibility (see HwSettingDef::gateKey); empty = always visible
+     * \param gateValue Enum value gateKey must hold for this array to be visible; ignored when gateKey is empty
      * \return True if successfully stored
      */
     bool addBaseArraySettingDef(const QString& className, const QString& arrayKey,
                                 const QString& label, const QString& description,
-                                HwSettingPriority priority);
+                                HwSettingPriority priority,
+                                const QString& gateKey = {}, const QVariant& gateValue = {});
 
     /*!
      * \brief Add one entry to a base class array setting
@@ -400,6 +431,35 @@ public:
      * \return True if successfully stored
      */
     bool addBaseCustomCommDefs(const QString& className, const QVector<CustomCommDef>& defs);
+
+    /*!
+     * \brief Add communication-setting defaults to an existing hardware registration
+     * \param key Hardware type key
+     * \param subKey Implementation key
+     * \param protocol Communication protocol the defaults apply to
+     * \param defaults List of communication-setting defaults
+     * \return True if defaults were added successfully
+     */
+    bool addCommDefaults(const QString& key, const QString& subKey,
+                         CommunicationProtocol::CommType protocol,
+                         const QVector<CommDefault>& defaults);
+
+    /*!
+     * \brief Get communication-setting defaults for a hardware implementation
+     *
+     * Comm defaults are deliberately per-implementation only — they are not
+     * inherited from base classes. Communication framing (timeout, terminator)
+     * is a property of a specific instrument's firmware, not of a hardware
+     * category, so a driver that needs a non-default value declares it
+     * explicitly. Anything not declared falls back to the single global
+     * literal.
+     *
+     * \param key Hardware type key
+     * \param subKey Implementation key
+     * \return Per-protocol communication-setting defaults, or empty if none registered
+     */
+    QMap<CommunicationProtocol::CommType, QVector<CommDefault>> getCommDefaults(
+        const QString& key, const QString& subKey) const;
 
     /*!
      * \brief Add library dependency to existing hardware registration

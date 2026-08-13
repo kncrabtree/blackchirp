@@ -27,28 +27,31 @@ Choose a package
 ----------------
 
 Pick the artifact that matches your operating system from the latest
-release.
+release. ``<version>`` below stands for the release it was built
+from, including the release-stage suffix on a pre-release — for
+example ``2.0.0-beta1``.
 
 Linux — Debian / Ubuntu
-   ``Blackchirp-<version>-Linux.deb``. Installs on Ubuntu 24.04
-   (Noble) or newer, Debian 13 (Trixie) or newer, and downstream
-   derivatives.
+   ``Blackchirp-<version>-Linux-x86_64.deb``. Installs on Ubuntu
+   24.04 (Noble) or newer, Debian 13 (Trixie) or newer, and
+   downstream derivatives.
 
 Linux — openSUSE / Fedora / RHEL
-   ``Blackchirp-<version>-Linux.rpm``. Installs on openSUSE Leap
-   16.0 or newer, openSUSE Tumbleweed, Fedora 41 or newer, RHEL 9
-   (incl. AlmaLinux 9, Rocky Linux 9), and similar.
+   ``Blackchirp-<version>-Linux-x86_64.rpm``. Installs on openSUSE
+   Leap 16.0 or newer, openSUSE Tumbleweed, Fedora 41 or newer,
+   RHEL 9 (incl. AlmaLinux 9, Rocky Linux 9), and similar.
 
 Linux — any other distribution
-   ``Blackchirp-x86_64.AppImage`` (main acquisition app) and
-   ``Blackchirp-Viewer-x86_64.AppImage`` (standalone viewer).
-   Self-contained — runs on Arch, NixOS, and any glibc 2.35-or-newer
-   Linux system without installing system dependencies.
+   ``Blackchirp-<version>-x86_64.AppImage`` (main acquisition app)
+   and ``Blackchirp-Viewer-<version>-x86_64.AppImage`` (standalone
+   viewer). Self-contained — runs on Arch, NixOS, and any glibc
+   2.35-or-newer Linux system without installing system
+   dependencies.
 
 macOS
-   ``Blackchirp-<version>-Darwin-arm64.dmg`` for Apple Silicon
+   ``Blackchirp-<version>-macOS-arm64.dmg`` for Apple Silicon
    (M1/M2/M3/M4) and
-   ``Blackchirp-<version>-Darwin-x86_64.dmg`` for pre-2022 Intel
+   ``Blackchirp-<version>-macOS-x86_64.dmg`` for pre-2022 Intel
    Macs. Requires macOS 13.3 (Ventura) or newer.
 
 Windows
@@ -70,7 +73,7 @@ Linux DEB
 
 .. code-block:: console
 
-    $ sudo apt install ./Blackchirp-<version>-Linux.deb
+    $ sudo apt install ./Blackchirp-<version>-Linux-x86_64.deb
 
 The package declares its Qt6 and GSL dependencies and ``apt`` pulls
 them from your distribution's repositories.
@@ -80,8 +83,10 @@ Linux RPM
 
 .. code-block:: console
 
-    $ sudo zypper install ./Blackchirp-<version>-Linux.rpm   # openSUSE
-    $ sudo dnf install ./Blackchirp-<version>-Linux.rpm      # Fedora / RHEL
+    # openSUSE
+    $ sudo zypper install ./Blackchirp-<version>-Linux-x86_64.rpm
+    # Fedora / RHEL
+    $ sudo dnf install ./Blackchirp-<version>-Linux-x86_64.rpm
 
 Qt6 and GSL dependencies are resolved automatically from your
 distribution's repositories.
@@ -93,17 +98,17 @@ Mark the file executable and run it directly:
 
 .. code-block:: console
 
-    $ chmod +x Blackchirp-x86_64.AppImage
-    $ ./Blackchirp-x86_64.AppImage
+    $ chmod +x Blackchirp-<version>-x86_64.AppImage
+    $ ./Blackchirp-<version>-x86_64.AppImage
 
 Each AppImage is self-contained — Qt, Qwt, GSL, and every other
 runtime dependency is bundled inside.
 
-The main ``Blackchirp-x86_64.AppImage`` also bundles
+The main ``Blackchirp-<version>-x86_64.AppImage`` also bundles
 ``blackchirp-viewer`` internally, so the separate
-``Blackchirp-Viewer-x86_64.AppImage`` is needed only when the viewer
-is the *only* application you want to keep on disk. To run the bundled
-viewer from the main AppImage, see
+``Blackchirp-Viewer-<version>-x86_64.AppImage`` is needed only when
+the viewer is the *only* application you want to keep on disk. To run
+the bundled viewer from the main AppImage, see
 :ref:`installation-appimage-viewer-from-main`.
 
 macOS DMG
@@ -154,7 +159,7 @@ AppImage:
 
 .. code-block:: console
 
-    $ ./Blackchirp-x86_64.AppImage --appimage-mount
+    $ ./Blackchirp-<version>-x86_64.AppImage --appimage-mount
 
 The AppImage prints a mount path (similar to
 ``/tmp/.mount_BlackcXXXXXX``) and stays in the foreground to keep the
@@ -172,7 +177,7 @@ launchable:
 
 .. code-block:: console
 
-    $ ./Blackchirp-x86_64.AppImage --appimage-extract
+    $ ./Blackchirp-<version>-x86_64.AppImage --appimage-extract
     $ ./squashfs-root/usr/bin/blackchirp-viewer
 
 .. _installation-verify:
@@ -201,9 +206,9 @@ The release key ID is ``898734DF7EDBDE45``. It is published in three
 identical channels — pick whichever is convenient:
 
 * the ``keys.openpgp.org`` keyserver,
-* the ``blackchirp-release.asc`` file attached to every GitHub
+* the ``blackchirp.asc`` file attached to every GitHub
   release, or
-* ``packaging/blackchirp-release.asc`` in the source repository.
+* ``packaging/blackchirp.asc`` in the source repository.
 
 Import the key once per system. ``rpm`` and ``gpg`` keep separate
 keyrings, so import into both if you plan to verify both formats:
@@ -211,7 +216,8 @@ keyrings, so import into both if you plan to verify both formats:
 .. code-block:: console
 
     $ gpg --keyserver keys.openpgp.org --recv-keys 898734DF7EDBDE45
-    $ gpg --export --armor 898734DF7EDBDE45 | sudo rpm --import /dev/stdin
+    $ gpg --export --armor 898734DF7EDBDE45 > blackchirp.asc
+    $ sudo rpm --import blackchirp.asc
 
 For an RPM, the signature is embedded — ``zypper install`` and
 ``dnf install`` verify it automatically once the key is imported, and
@@ -222,8 +228,8 @@ artifact and verify the pair together:
 
 .. code-block:: console
 
-    $ gpg --verify Blackchirp-<version>-Linux.deb.asc \
-                   Blackchirp-<version>-Linux.deb
+    $ gpg --verify Blackchirp-<version>-Linux-x86_64.deb.asc \
+                   Blackchirp-<version>-Linux-x86_64.deb
 
 A successful check starts with ``Good signature from``.
 

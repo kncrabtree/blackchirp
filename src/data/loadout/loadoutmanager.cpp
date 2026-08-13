@@ -1,5 +1,8 @@
 #include <data/loadout/loadoutmanager.h>
 
+#include <algorithm>
+
+#include <data/bcglobals.h>
 #include <data/loadout/chirpconfigloadout.h>
 #include <data/loadout/ftmwdigitizerloadout.h>
 #include <data/settings/hardwarekeys.h>
@@ -171,6 +174,206 @@ QStringList LoadoutManager::loadoutsMatchingHwKey(const QString &hwKey) const
             result.append(it.key());
     }
     return result;
+}
+
+// ── Deletion-time preset pruning ─────────────────────────────────────────────
+
+PruneConsequences LoadoutManager::previewPruneReferencing(
+    const QString &hwKey, const FallbackResolver &fallbackFor) const
+{
+    PruneConsequences out;
+
+    const auto [type, label] = BC::Key::parseKey(hwKey);
+    const auto fb = fallbackFor(type);
+
+    const bool haveFb = fb.has_value();
+
+    {
+        QMutexLocker lk(&d_mutex);
+        for (auto it = d_loadouts.constBegin(); it != d_loadouts.constEnd(); ++it) {
+            const QString &loadoutName = it.key();
+            const HardwareLoadout &loadout = it.value();
+
+            // A referencing preset is rebound to the fallback (non-destructive)
+            // when one exists, or dropped (destructive) when none does. Named
+            // presets are surfaced by name; the __LastUsed__ sentinel is
+            // surfaced only when it is dropped (its working configuration is
+            // lost) — a silent rebind of the sentinel needs no warning.
+            bool workingConfigLost = false;
+            auto classify = [&](const QString &name, bool sentinel, bool references) {
+                if (!references)
+                    return;
+                if (haveFb) {
+                    if (!sentinel)
+                        out.reboundPresets.emplace_back(loadoutName, name);
+                } else if (sentinel) {
+                    workingConfigLost = true;
+                } else {
+                    out.lostPresets.emplace_back(loadoutName, name);
+                }
+            };
+
+            for (const auto &[name, preset] : loadout.ftmwPresets)
+                classify(name, name == lastUsedFtmwPresetName,
+                         ftmwPresetReferencesHardware(preset, hwKey));
+            for (const auto &[name, preset] : loadout.lifPresets)
+                classify(name, name == lastUsedLifPresetName,
+                         lifPresetReferencesHardware(preset, hwKey));
+
+            if (workingConfigLost)
+                out.lostWorkingConfigLoadouts.push_back(loadoutName);
+
+            if (loadout.hardwareMap.count(hwKey)) {
+                if (haveFb)
+                    out.fallbackSubs.push_back({loadoutName, type, fb->hwKey});
+                else
+                    out.modifiedLoadouts.push_back(loadoutName);
+            }
+        }
+    }
+
+    // d_loadouts is an unordered QHash; sort so the preview is deterministic.
+    std::sort(out.lostPresets.begin(), out.lostPresets.end());
+    std::sort(out.lostWorkingConfigLoadouts.begin(), out.lostWorkingConfigLoadouts.end());
+    std::sort(out.reboundPresets.begin(), out.reboundPresets.end());
+    std::sort(out.modifiedLoadouts.begin(), out.modifiedLoadouts.end());
+    std::sort(out.fallbackSubs.begin(), out.fallbackSubs.end(),
+              [](const PruneConsequences::FallbackSub &a,
+                 const PruneConsequences::FallbackSub &b) { return a.loadout < b.loadout; });
+
+    return out;
+}
+
+int LoadoutManager::prunePresetsReferencing(const QString &hwKey, const FallbackResolver &fallbackFor)
+{
+    const auto [type, label] = BC::Key::parseKey(hwKey);
+    const auto fb = fallbackFor(type);
+
+    // Erase every preset in `presets` that references hwKey, returning the
+    // names of the non-sentinel presets removed (for fine-grained signals)
+    // and incrementing *removedCount once per erased preset (sentinel
+    // included). Generic over the FTMW/LIF preset map and reference
+    // predicate so both families share one erase loop.
+    auto erasePresetsReferencing = [&hwKey](auto &presets, auto referencesHardware,
+                                             QLatin1StringView sentinelName, int &removedCount) {
+        std::vector<QString> removedNamed;
+        for (auto pit = presets.begin(); pit != presets.end(); ) {
+            if (referencesHardware(pit->second, hwKey)) {
+                if (pit->first != sentinelName)
+                    removedNamed.push_back(pit->first);
+                pit = presets.erase(pit);
+                ++removedCount;
+            } else {
+                ++pit;
+            }
+        }
+        return removedNamed;
+    };
+
+    // Rewrite every reference to hwKey in `presets` to `toKey`, returning the
+    // names of the non-sentinel presets changed (for fine-grained signals).
+    // Generic over the FTMW/LIF preset map and rebind function so both
+    // families share one loop.
+    auto rebindPresets = [&hwKey](auto &presets, auto rebindHardware,
+                                  QLatin1StringView sentinelName, const QString &toKey) {
+        std::vector<QString> reboundNamed;
+        for (auto &[name, preset] : presets) {
+            if (rebindHardware(preset, hwKey, toKey) && name != sentinelName)
+                reboundNamed.push_back(name);
+        }
+        return reboundNamed;
+    };
+
+    // Current-pointer retarget: a removed current named preset falls back to
+    // the sentinel if it survives; a sentinel that was itself removed clears
+    // the pointer. Returns whether currentName was changed.
+    auto retargetCurrent = [](QString &currentName, const auto &presets, QLatin1StringView sentinelName) {
+        if (currentName.isEmpty() || presets.count(currentName))
+            return false;
+        if (presets.count(sentinelName.toString()))
+            currentName = sentinelName.toString();
+        else
+            currentName = QString{};
+        return true;
+    };
+
+    const bool haveFb = fb.has_value();
+    int totalRemoved = 0;
+
+    // Single pass: fetch each loadout once (getLoadout/putLoadout lock
+    // d_mutex internally, so this does not hold it across the mutation), and
+    // for any loadout touched by hwKey — its hardwareMap contains hwKey, or
+    // any preset (including __LastUsed__) references it — mutate and persist
+    // it immediately rather than re-fetching in a second pass.
+    for (const QString &loadoutName : loadoutNames()) {
+        auto loOpt = getLoadout(loadoutName);
+        if (!loOpt.has_value())
+            continue;
+        HardwareLoadout copy = *loOpt;
+
+        bool touched = copy.hardwareMap.count(hwKey) > 0;
+        for (auto pit = copy.ftmwPresets.cbegin(); !touched && pit != copy.ftmwPresets.cend(); ++pit)
+            touched = ftmwPresetReferencesHardware(pit->second, hwKey);
+        for (auto pit = copy.lifPresets.cbegin(); !touched && pit != copy.lifPresets.cend(); ++pit)
+            touched = lifPresetReferencesHardware(pit->second, hwKey);
+
+        if (!touched)
+            continue;
+
+        // A fallback exists (required type): rebind referencing presets to it,
+        // preserving them (and the current-preset pointers, which stay valid).
+        // No fallback (optional type, or a required type with no system
+        // profile): drop referencing presets and retarget the pointers.
+        std::vector<QString> reboundFtmwNamed, reboundLifNamed;
+        std::vector<QString> removedFtmwNamed, removedLifNamed;
+        bool ftmwCurrentChanged = false, lifCurrentChanged = false;
+
+        if (haveFb) {
+            reboundFtmwNamed = rebindPresets(
+                copy.ftmwPresets, ftmwPresetRebindHardware, lastUsedFtmwPresetName, fb->hwKey);
+            reboundLifNamed = rebindPresets(
+                copy.lifPresets, lifPresetRebindHardware, lastUsedLifPresetName, fb->hwKey);
+        } else {
+            removedFtmwNamed = erasePresetsReferencing(
+                copy.ftmwPresets, ftmwPresetReferencesHardware, lastUsedFtmwPresetName, totalRemoved);
+            removedLifNamed = erasePresetsReferencing(
+                copy.lifPresets, lifPresetReferencesHardware, lastUsedLifPresetName, totalRemoved);
+
+            ftmwCurrentChanged = retargetCurrent(
+                copy.currentFtmwPresetName, copy.ftmwPresets, lastUsedFtmwPresetName);
+            lifCurrentChanged = retargetCurrent(
+                copy.currentLifPresetName, copy.lifPresets, lastUsedLifPresetName);
+        }
+
+        // hardwareMap fallback (required type) or drop (optional type).
+        if (copy.hardwareMap.count(hwKey)) {
+            copy.hardwareMap.erase(hwKey);
+            copy.hardwareIdentity.erase(hwKey);
+            if (haveFb) {
+                copy.hardwareMap[fb->hwKey] = fb->impl;
+                if (!fb->identity.isEmpty())
+                    copy.hardwareIdentity[fb->hwKey] = fb->identity;
+            }
+        }
+
+        putLoadout(copy);
+
+        // Fine-grained signals so open preset widgets refresh.
+        for (const QString &name : reboundFtmwNamed)
+            emit ftmwPresetChanged(loadoutName, name);
+        for (const QString &name : reboundLifNamed)
+            emit lifPresetChanged(loadoutName, name);
+        for (const QString &name : removedFtmwNamed)
+            emit ftmwPresetRemoved(loadoutName, name);
+        for (const QString &name : removedLifNamed)
+            emit lifPresetRemoved(loadoutName, name);
+        if (ftmwCurrentChanged)
+            emit currentFtmwPresetChanged(loadoutName, copy.currentFtmwPresetName);
+        if (lifCurrentChanged)
+            emit currentLifPresetChanged(loadoutName, copy.currentLifPresetName);
+    }
+
+    return totalRemoved;
 }
 
 // ── FTMW preset CRUD ─────────────────────────────────────────────────────────
@@ -385,6 +588,218 @@ std::optional<FtmwPreset> LoadoutManager::currentFtmwPreset(const QString &loado
     return std::nullopt;
 }
 
+// ── LIF preset CRUD ──────────────────────────────────────────────────────────
+
+std::optional<LifPreset> LoadoutManager::getLifPreset(const QString &loadoutName, const QString &presetName) const
+{
+    QMutexLocker lk(&d_mutex);
+    auto it = d_loadouts.find(loadoutName);
+    if (it == d_loadouts.end())
+        return std::nullopt;
+    auto pit = it->lifPresets.find(presetName);
+    if (pit == it->lifPresets.end())
+        return std::nullopt;
+    return pit->second;
+}
+
+bool LoadoutManager::putLifPreset(const QString &loadoutName, const QString &presetName, const LifPreset &preset)
+{
+    if (loadoutName.isEmpty() || presetName.isEmpty())
+        return false;
+
+    LifPreset stamped = preset;
+    stamped.lastModified = QDateTime::currentDateTimeUtc();
+
+    bool isNew = false;
+    {
+        QMutexLocker lk(&d_mutex);
+        auto it = d_loadouts.find(loadoutName);
+        if (it == d_loadouts.end())
+            return false;
+        isNew = !it->lifPresets.count(presetName);
+        it->lifPresets[presetName] = stamped;
+    }
+
+    p_writeLifPreset(loadoutName, presetName, stamped);
+    p_syncLifPresetIndex(loadoutName);
+
+    if (isNew)
+        emit lifPresetAdded(loadoutName, presetName);
+    else
+        emit lifPresetChanged(loadoutName, presetName);
+
+    return true;
+}
+
+bool LoadoutManager::removeLifPreset(const QString &loadoutName, const QString &presetName)
+{
+    if (loadoutName.isEmpty() || presetName.isEmpty())
+        return false;
+
+    {
+        QMutexLocker lk(&d_mutex);
+        auto it = d_loadouts.find(loadoutName);
+        if (it == d_loadouts.end())
+            return false;
+        if (!it->lifPresets.count(presetName))
+            return false;
+        if (it->currentLifPresetName == presetName)
+            return false;  // active preset cannot be removed
+
+        it->lifPresets.erase(presetName);
+    }
+
+    p_removeLifPresetFromSettings(loadoutName, presetName);
+    p_writeLifPresetPointers(loadoutName);
+    p_syncLifPresetIndex(loadoutName);
+
+    emit lifPresetRemoved(loadoutName, presetName);
+    return true;
+}
+
+bool LoadoutManager::renameLifPreset(const QString &loadoutName, const QString &oldName, const QString &newName)
+{
+    if (loadoutName.isEmpty() || oldName.isEmpty() || newName.isEmpty())
+        return false;
+    if (oldName == lastUsedLifPresetName || newName == lastUsedLifPresetName)
+        return false;
+    if (oldName == newName)
+        return true;
+
+    LifPreset movedPreset;
+    bool currentChanged = false;
+
+    {
+        QMutexLocker lk(&d_mutex);
+        auto it = d_loadouts.find(loadoutName);
+        if (it == d_loadouts.end())
+            return false;
+        auto pit = it->lifPresets.find(oldName);
+        if (pit == it->lifPresets.end())
+            return false;
+        if (it->lifPresets.count(newName))
+            return false;  // duplicate
+
+        movedPreset = std::move(pit->second);
+        it->lifPresets.erase(pit);
+        it->lifPresets[newName] = movedPreset;
+
+        if (it->currentLifPresetName == oldName) {
+            it->currentLifPresetName = newName;
+            currentChanged = true;
+        }
+    }
+
+    p_removeLifPresetFromSettings(loadoutName, oldName);
+    p_writeLifPreset(loadoutName, newName, movedPreset);
+    p_writeLifPresetPointers(loadoutName);
+    p_syncLifPresetIndex(loadoutName);
+
+    emit lifPresetRemoved(loadoutName, oldName);
+    emit lifPresetAdded(loadoutName, newName);
+    if (currentChanged)
+        emit currentLifPresetChanged(loadoutName, newName);
+
+    return true;
+}
+
+bool LoadoutManager::lifPresetExists(const QString &loadoutName, const QString &presetName) const
+{
+    QMutexLocker lk(&d_mutex);
+    auto it = d_loadouts.find(loadoutName);
+    if (it == d_loadouts.end())
+        return false;
+    return it->lifPresets.count(presetName) > 0;
+}
+
+QStringList LoadoutManager::lifPresetNames(const QString &loadoutName, bool includeLastUsed) const
+{
+    QMutexLocker lk(&d_mutex);
+    auto it = d_loadouts.find(loadoutName);
+    if (it == d_loadouts.end())
+        return {};
+
+    QStringList names;
+    for (const auto &[name, preset] : it->lifPresets) {
+        if (!includeLastUsed && name == lastUsedLifPresetName)
+            continue;
+        names.append(name);
+    }
+    return names;
+}
+
+bool LoadoutManager::clearLifPresets(const QString &loadoutName)
+{
+    {
+        QMutexLocker lk(&d_mutex);
+        auto it = d_loadouts.find(loadoutName);
+        if (it == d_loadouts.end())
+            return false;
+        it->lifPresets.clear();
+        it->currentLifPresetName.clear();
+    }
+
+    SettingsStorage::purgeGroup({key.toString(), loadoutName, lifPresetsKey.toString()});
+    p_writeLifPresetPointers(loadoutName);
+    p_syncLifPresetIndex(loadoutName);
+
+    emit loadoutChanged(loadoutName);
+    return true;
+}
+
+// ── LIF preset current/default ────────────────────────────────────────────────
+
+QString LoadoutManager::currentLifPresetName(const QString &loadoutName) const
+{
+    QMutexLocker lk(&d_mutex);
+    auto it = d_loadouts.find(loadoutName);
+    if (it == d_loadouts.end())
+        return {};
+    return it->currentLifPresetName;
+}
+
+bool LoadoutManager::setCurrentLifPresetName(const QString &loadoutName, const QString &presetName)
+{
+    {
+        QMutexLocker lk(&d_mutex);
+        auto it = d_loadouts.find(loadoutName);
+        if (it == d_loadouts.end())
+            return false;
+
+        // Allow empty, __LastUsed__, or an existing named preset
+        if (!presetName.isEmpty() &&
+            presetName != lastUsedLifPresetName &&
+            !it->lifPresets.count(presetName))
+            return false;
+
+        if (it->currentLifPresetName == presetName)
+            return true;
+
+        it->currentLifPresetName = presetName;
+    }
+
+    p_writeLifPresetPointers(loadoutName);
+    emit currentLifPresetChanged(loadoutName, presetName);
+    return true;
+}
+
+
+std::optional<LifPreset> LoadoutManager::currentLifPreset(const QString &loadoutName) const
+{
+    QMutexLocker lk(&d_mutex);
+    auto it = d_loadouts.find(loadoutName);
+    if (it == d_loadouts.end())
+        return std::nullopt;
+
+    if (!it->currentLifPresetName.isEmpty()) {
+        auto pit = it->lifPresets.find(it->currentLifPresetName);
+        if (pit != it->lifPresets.end())
+            return pit->second;
+    }
+
+    return std::nullopt;
+}
+
 // ── private helpers ───────────────────────────────────────────────────────────
 
 void LoadoutManager::p_loadAll()
@@ -423,7 +838,7 @@ HardwareLoadout LoadoutManager::p_readLoadout(const QString &name) const
 
     HardwareLoadout loadout;
     loadout.name = name;
-    loadout.hardwareMap = hardwareMapFromArray(sub.getArray(hwMapKey));
+    hardwareMapFromArray(sub.getArray(hwMapKey), loadout.hardwareMap, loadout.hardwareIdentity);
     loadout.currentFtmwPresetName = sub.get<QString>(currentFtmwPresetKey);
 
     const auto lastModStr = sub.get<QString>(lastModifiedKey);
@@ -440,6 +855,18 @@ HardwareLoadout LoadoutManager::p_readLoadout(const QString &name) const
             loadout.ftmwPresets[pName] = p_readFtmwPreset(name, pName);
     }
 
+    loadout.currentLifPresetName = sub.get<QString>(currentLifPresetKey);
+
+    const auto lifPresetNamesMaps = sub.getArray(lifPresetNamesKey);
+    for (const auto &m : lifPresetNamesMaps) {
+        auto it = m.find(nameField);
+        if (it == m.end())
+            continue;
+        const QString pName = it->second.value<QString>();
+        if (!pName.isEmpty())
+            loadout.lifPresets[pName] = p_readLifPreset(name, pName);
+    }
+
     return loadout;
 }
 
@@ -448,7 +875,7 @@ void LoadoutManager::p_writeLoadout(const HardwareLoadout &loadout)
     LoadoutHelper sub({key.toString(), loadout.name});
     sub.discardChanges(true);
 
-    sub.setArray(hwMapKey, hardwareMapArray(loadout.hardwareMap));
+    sub.setArray(hwMapKey, hardwareMapArray(loadout.hardwareMap, loadout.hardwareIdentity));
     sub.set(currentFtmwPresetKey, loadout.currentFtmwPresetName);
     sub.set(lastModifiedKey, loadout.lastModified.isValid()
             ? loadout.lastModified.toString(Qt::ISODate)
@@ -462,11 +889,35 @@ void LoadoutManager::p_writeLoadout(const HardwareLoadout &loadout)
     }
     sub.setArray(ftmwPresetNamesKey, names);
 
+    sub.set(currentLifPresetKey, loadout.currentLifPresetName);
+
+    Maps lifNames;
+    for (const auto &[pName, preset] : loadout.lifPresets) {
+        Map m;
+        m[nameField] = pName;
+        lifNames.push_back(std::move(m));
+    }
+    sub.setArray(lifPresetNamesKey, lifNames);
+
     sub.discardChanges(false);
     sub.save();
 
+    // putLoadout is a wholesale insert-or-replace of a HardwareLoadout,
+    // including its full preset maps: the incoming loadout may own fewer or
+    // differently-named presets than whatever was previously persisted
+    // under this name. Purge both preset-owning subgroups before rewriting
+    // them from the incoming maps, so a preset dropped from the map does
+    // not leave its old subgroup behind. The name-index arrays written
+    // above are authoritative for iteration, but a stale subgroup can
+    // resurrect if that index is ever rebuilt from raw QSettings contents.
+    SettingsStorage::purgeGroup({key.toString(), loadout.name, ftmwPresetsKey.toString()});
+    SettingsStorage::purgeGroup({key.toString(), loadout.name, lifPresetsKey.toString()});
+
     for (const auto &[pName, preset] : loadout.ftmwPresets)
         p_writeFtmwPreset(loadout.name, pName, preset);
+
+    for (const auto &[pName, preset] : loadout.lifPresets)
+        p_writeLifPreset(loadout.name, pName, preset);
 }
 
 void LoadoutManager::p_removeFromSettings(const QString &name)
@@ -583,6 +1034,85 @@ void LoadoutManager::p_writeFtmwPresetPointers(const QString &loadoutName)
     LoadoutHelper sub({key.toString(), loadoutName});
     sub.discardChanges(true);
     sub.set(currentFtmwPresetKey, cur);
+    sub.discardChanges(false);
+    sub.save();
+}
+
+LifPreset LoadoutManager::p_readLifPreset(const QString &loadoutName, const QString &presetName) const
+{
+    LoadoutHelper sub({key.toString(), loadoutName, lifPresetsKey.toString(), presetName});
+    sub.discardChanges(true);
+
+    LifPreset preset;
+
+    const auto lastModStr = sub.get<QString>(lastModifiedKey);
+    if (!lastModStr.isEmpty())
+        preset.lastModified = QDateTime::fromString(lastModStr, Qt::ISODate);
+
+    preset.conversion = lifConversionSnapshotFromMaps(
+        sub.getGroup(lifConversionScalarsKey),
+        sub.getArray(lifConversionWiringKey));
+
+    return preset;
+}
+
+void LoadoutManager::p_writeLifPreset(const QString &loadoutName, const QString &presetName, const LifPreset &preset)
+{
+    LoadoutHelper sub({key.toString(), loadoutName, lifPresetsKey.toString(), presetName});
+    sub.discardChanges(true);
+
+    sub.set(lastModifiedKey, preset.lastModified.isValid()
+            ? preset.lastModified.toString(Qt::ISODate)
+            : QString{});
+
+    sub.setGroupValues(lifConversionScalarsKey, lifConversionScalarsMap(preset.conversion));
+    sub.setArray(lifConversionWiringKey, lifConversionWiringArray(preset.conversion));
+
+    sub.discardChanges(false);
+    sub.save();
+}
+
+void LoadoutManager::p_removeLifPresetFromSettings(const QString &loadoutName, const QString &presetName)
+{
+    SettingsStorage::purgeGroup({key.toString(), loadoutName, lifPresetsKey.toString(), presetName});
+}
+
+void LoadoutManager::p_syncLifPresetIndex(const QString &loadoutName)
+{
+    Maps names;
+    {
+        QMutexLocker lk(&d_mutex);
+        auto it = d_loadouts.find(loadoutName);
+        if (it == d_loadouts.end())
+            return;
+        for (const auto &[pName, preset] : it->lifPresets) {
+            Map m;
+            m[nameField] = pName;
+            names.push_back(std::move(m));
+        }
+    }
+
+    LoadoutHelper sub({key.toString(), loadoutName});
+    sub.discardChanges(true);
+    sub.setArray(lifPresetNamesKey, names);
+    sub.discardChanges(false);
+    sub.save();
+}
+
+void LoadoutManager::p_writeLifPresetPointers(const QString &loadoutName)
+{
+    QString cur;
+    {
+        QMutexLocker lk(&d_mutex);
+        auto it = d_loadouts.find(loadoutName);
+        if (it == d_loadouts.end())
+            return;
+        cur = it->currentLifPresetName;
+    }
+
+    LoadoutHelper sub({key.toString(), loadoutName});
+    sub.discardChanges(true);
+    sub.set(currentLifPresetKey, cur);
     sub.discardChanges(false);
     sub.save();
 }

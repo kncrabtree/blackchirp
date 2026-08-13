@@ -264,7 +264,8 @@ QVector<HwSettingDef> HardwareRegistry::getSettingDefs(const QString& key, const
 
 bool HardwareRegistry::addArraySettingDef(const QString& key, const QString& subKey,
                                           const QString& arrayKey, const QString& label,
-                                          const QString& description, HwSettingPriority priority)
+                                          const QString& description, HwSettingPriority priority,
+                                          const QString& gateKey, const QVariant& gateValue)
 {
     QMutexLocker locker(&d_registryMutex);
 
@@ -276,7 +277,8 @@ bool HardwareRegistry::addArraySettingDef(const QString& key, const QString& sub
         return false;
     }
 
-    it.value().arraySettingDefs[arrayKey] = HwArraySettingDef{arrayKey, label, description, {}, priority};
+    it.value().arraySettingDefs[arrayKey] =
+        HwArraySettingDef{arrayKey, label, description, {}, priority, gateKey, gateValue};
     return true;
 }
 
@@ -344,10 +346,12 @@ bool HardwareRegistry::addBaseSettingDefs(const QString& className,
 
 bool HardwareRegistry::addBaseArraySettingDef(const QString& className, const QString& arrayKey,
                                               const QString& label, const QString& description,
-                                              HwSettingPriority priority)
+                                              HwSettingPriority priority,
+                                              const QString& gateKey, const QVariant& gateValue)
 {
     QMutexLocker locker(&d_registryMutex);
-    d_baseArrayDefs[className][arrayKey] = HwArraySettingDef{arrayKey, label, description, {}, priority};
+    d_baseArrayDefs[className][arrayKey] =
+        HwArraySettingDef{arrayKey, label, description, {}, priority, gateKey, gateValue};
     return true;
 }
 
@@ -426,6 +430,38 @@ bool HardwareRegistry::addBaseCustomCommDefs(const QString& className,
     QMutexLocker locker(&d_registryMutex);
     d_baseCustomCommDefs[className].append(defs);
     return true;
+}
+
+bool HardwareRegistry::addCommDefaults(const QString& key, const QString& subKey,
+                                       CommunicationProtocol::CommType protocol,
+                                       const QVector<CommDefault>& defaults)
+{
+    QMutexLocker locker(&d_registryMutex);
+
+    QString registryKey = makeRegistryKey(key, subKey);
+    auto it = d_registrations.find(registryKey);
+
+    if (it == d_registrations.end()) {
+        qWarning() << "Cannot add comm defaults - hardware not registered:" << key << subKey;
+        return false;
+    }
+
+    it.value().commDefaults[protocol].append(defaults);
+    return true;
+}
+
+QMap<CommunicationProtocol::CommType, QVector<CommDefault>> HardwareRegistry::getCommDefaults(
+    const QString& key, const QString& subKey) const
+{
+    QMutexLocker locker(&d_registryMutex);
+
+    QString registryKey = makeRegistryKey(key, subKey);
+    auto it = d_registrations.find(registryKey);
+
+    if (it == d_registrations.end())
+        return {};
+
+    return it.value().commDefaults;
 }
 
 bool HardwareRegistry::addLibraryDependency(const QString& key, const QString& subKey, const QString& libraryName,

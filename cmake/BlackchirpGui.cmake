@@ -38,6 +38,7 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/quickexptdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/ftmwconfigdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/ftmwconfigwidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/lifconfigdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/runtimehardwareconfigdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/updateavailabledialog.cpp
 
@@ -136,6 +137,7 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/chirptablemodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/clocktablemodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/exptsummarymodel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/lifconversiontablemodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/markertablemodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/overlaytablemodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/peaklistmodel.cpp
@@ -161,6 +163,7 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/hwdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/peaklistexportdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/ftmwconfigdialog.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/lifconfigdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/quickexptdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/dialog/updateavailabledialog.h
 
@@ -261,6 +264,7 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/chirptablemodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/clocktablemodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/exptsummarymodel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/lifconversiontablemodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/markertablemodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/overlaytablemodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/model/peaklistmodel.h
@@ -284,10 +288,12 @@ set(BLACKCHIRP_GUI_FORMS
 list(APPEND BLACKCHIRP_GUI_SOURCES
     # LIF-specific GUI components
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/experimentlifconfigpage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifconfigwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifcontrolwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifdisplaywidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/liflaserstatusbox.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/liflaserwidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifconversionwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifprocessingwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifsliceplot.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifspectrogramplot.cpp
@@ -297,10 +303,12 @@ list(APPEND BLACKCHIRP_GUI_SOURCES
 list(APPEND BLACKCHIRP_GUI_HEADERS
     # LIF-specific GUI headers
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/experimentlifconfigpage.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifconfigwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifcontrolwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifdisplaywidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/liflaserstatusbox.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/liflaserwidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifconversionwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifprocessingwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifsliceplot.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifspectrogramplot.h

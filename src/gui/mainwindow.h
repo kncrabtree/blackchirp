@@ -31,6 +31,7 @@ class QComboBox;
 class HWDialog;
 class QuickExptDialog;
 class LifControlWidget;
+class LifConversionWidget;
 class RfConfigWidget;
 class ExperimentViewWidget;
 class CommunicationDialog;
@@ -96,9 +97,12 @@ public slots:
     void onLoadoutActionTriggered(QAction *act);
     void rebuildFtmwPresetMenu();
     void onFtmwPresetActionTriggered(QAction *act);
+    void rebuildLifPresetMenu();
+    void onLifPresetActionTriggered(QAction *act);
     void launchLifConfigDialog();
     void launchRuntimeHardwareConfigDialog();
     void configureLifWidget(LifControlWidget *w);
+    void connectLifConversionWidget(LifConversionWidget *w);
     void connectRfConfigWidget(RfConfigWidget *w);
     void setLogIcon(LogHandler::MessageCode c);
     void sleep(bool s);
@@ -160,6 +164,7 @@ private:
     QAction *p_checkForUpdatesAction{nullptr};
     QActionGroup *p_loadoutActionGroup{nullptr};
     QActionGroup *p_ftmwPresetActionGroup{nullptr};
+    QActionGroup *p_lifPresetActionGroup{nullptr};
     ProgramState d_state{Idle};
     bool d_initialHardwareTestComplete{false};
     int d_logCount{0};

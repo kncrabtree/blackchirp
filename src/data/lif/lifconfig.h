@@ -11,6 +11,10 @@
 #include <data/experiment/experimentobjective.h>
 #include <data/lif/lifstorage.h>
 #include <data/lif/lifdigitizerconfig.h>
+#include <data/lif/lifunits.h>
+#include <data/lif/lifconversion.h>
+
+#include <vector>
 
 /// \brief Storage keys used to persist LifConfig fields via HeaderStorage.
 namespace BC::Store::LIF {
@@ -87,8 +91,8 @@ public:
     QVector<int> d_delayIndices;    ///< Permuted index array for randomized delay scanning.
     int d_delayScanIndex{0};        ///< Current position within d_delayIndices.
 
-    double d_laserPosStart{-1.0};   ///< Laser scan start position (units determined by hardware).
-    double d_laserPosStep{0.0};     ///< Laser scan step size.
+    double d_laserPosStart{-1.0};   ///< Laser scan start position, in the display LaserUnit.
+    double d_laserPosStep{0.0};     ///< Laser scan step size, in the display LaserUnit.
     int d_laserPosPoints{0};        ///< Number of laser scan points.
 
     LifTrace::LifProcSettings d_procSettings; ///< Gate positions and processing parameters for LIF traces.
@@ -116,7 +120,9 @@ public:
     double currentDelay() const;
 
     /*!
-     * \brief Return the current laser position.
+     * \brief Return the current laser position as an output-beam
+     *        wavenumber (cm⁻¹), converted from the display-unit scan
+     *        grid at this dispatch boundary.
      */
     double currentLaserPos() const;
 
@@ -126,7 +132,8 @@ public:
     QPair<double,double> delayRange() const;
 
     /*!
-     * \brief Return the (start, end) laser position range.
+     * \brief Return the (start, end) laser position range, in the
+     *        display LaserUnit.
      */
     QPair<double,double> laserRange() const;
 
@@ -170,29 +177,34 @@ public:
     void loadLifData();
 
     /*!
-     * \brief Set the units string used when persisting the laser position axis.
-     * \param units Unit label (e.g. "nm").
+     * \brief Set the display unit used for the laser position axis.
+     * \param units Display unit (BC::LifConv::LaserUnit).
      */
-    void setLaserUnits(const QString& units);
+    void setLaserUnits(BC::LifConv::LaserUnit units);
 
     /*!
-     * \brief Set the decimal-precision hint used when serializing the laser position axis.
+     * \brief Set the decimal precision used when serializing the laser
+     *        position axis.
      *
-     * Controls how LaserStart/LaserStep are formatted in header.csv so the
-     * column-width of fractional digits is preserved on disk. Callers
-     * normally seed this from the LIF laser hardware's display-decimals
-     * setting at acquisition time; on load it is inferred from the
-     * on-disk formatting of LaserStart/LaserStep.
+     * LaserStart/LaserStep are formatted in header.csv with this many
+     * fractional digits. Callers seed it from the LIF laser hardware's
+     * display-decimals setting at acquisition time — the same setting that
+     * quantizes the start/step entry spin boxes the axis is built from, so a
+     * value from that path round-trips exactly at this width. On load it is
+     * inferred from the on-disk formatting of LaserStart/LaserStep.
      */
     void setLaserDecimals(int decimals);
 
     /*!
-     * \brief Return the laser position units (e.g. "nm").
+     * \brief Return the laser position display unit.
      *
      * Populated from the column-6 unit cell of the LaserStart header
      * row on load, or from the laser hardware setting at acquisition.
+     * The laser scan axis (d_laserPosStart/Step) is uniform in this
+     * unit; see currentLaserPos() for the display->output-cm⁻¹
+     * conversion at the hardware-dispatch boundary.
      */
-    QString laserUnits() const { return d_laserUnits; }
+    BC::LifConv::LaserUnit laserUnits() const { return d_laserUnits; }
 
     /*!
      * \brief Return the laser-position display precision in fractional digits.
@@ -204,13 +216,80 @@ public:
      */
     int laserDecimals() const { return d_laserDecimals; }
 
+    /*!
+     * \brief Record the per-experiment conversion-topology node list and
+     *        rebuild the cached assembled conversion from it.
+     *
+     * \a nodes is the authoritative, already-joined node-descriptor list
+     * (op/n from each stage's hardware, inputs/isFinal from the
+     * per-experiment wiring); empty for the identity / bare-laser case,
+     * where the output beam is the grating fundamental and no topology
+     * file is written. \a laserKey is the active LifLaser's hwKey, used to
+     * serialize a tunable-source (RefType::Laser) input by its real hwKey
+     * rather than a sentinel.
+     *
+     * Rebuilds the cached conversion() via LifConversion::assemble(); on
+     * assembly failure the cache falls back to the identity conversion
+     * (mirroring the tolerant fallback used elsewhere when a topology
+     * cannot yet be assembled, e.g. mid-edit).
+     */
+    void setConversionNodes(std::vector<BC::LifConv::Node> nodes, const QString &laserKey);
 
+    /*!
+     * \brief Return the current conversion-topology node list (empty =
+     *        identity/no stages).
+     */
+    const std::vector<BC::LifConv::Node> &conversionNodes() const { return d_conversionNodes; }
+
+    /*!
+     * \brief Return the conversion assembled from conversionNodes() by the
+     *        most recent setConversionNodes() call (identity if never set,
+     *        or if assembly failed).
+     */
+    const LifConversion &conversion() const { return d_conversion; }
+
+    /*!
+     * \brief Return \c true when conversionNodes() is non-empty.
+     */
+    bool hasConversion() const { return !d_conversionNodes.empty(); }
+
+    /*!
+     * \brief Write liftopology.csv — one row per conversion node — into the
+     *        experiment directory.
+     *
+     * Records the raw DAG (op, harmonic order, input wiring, FINAL marker)
+     * alongside each node's resolved output-beam affine mapping
+     * (\c output = A·fundamental + B, cm⁻¹). The FINAL row's coefficients are
+     * the output-axis ↔ fundamental relation. Does nothing and returns
+     * \c true for the identity case (no conversion stages): header.csv
+     * already carries the full display-unit axis. Returns \c false only on a
+     * file-write failure.
+     */
+    bool writeTopologyFile() const;
+
+    /*!
+     * \brief Read liftopology.csv, if present, and reconstruct the
+     *        conversion-topology node list via setConversionNodes().
+     *
+     * Mirrors RfConfig::loadClockSteps(): resolves the file from this
+     * config's own d_number/d_path. A missing file means the identity case
+     * (writeTopologyFile() skips writing one) and is not an error. Input
+     * tokens are classified as \c Fixed:<cm1> -> Fixed, a token matching
+     * another row's StageKey -> Stage, and anything else -> Laser (that
+     * token is the laser hwKey, captured as the config's conversion laser
+     * key). OutCoeffA/B are derived data recomputed via assembly, not read.
+     * Returns \c false only when the file exists but cannot be opened.
+     */
+    bool readTopologyFile();
 
 private:
     std::shared_ptr<LifStorage> ps_storage;
     std::shared_ptr<LifDigitizerConfig> ps_digitizerConfig;
-    QString d_laserUnits{"nm"};
+    BC::LifConv::LaserUnit d_laserUnits{BC::LifConv::LaserUnit::Nm};
     int d_laserDecimals{2};
+    std::vector<BC::LifConv::Node> d_conversionNodes; ///< Conversion-topology node descriptors (empty = identity/no stages).
+    LifConversion d_conversion;                       ///< Assembled conversion, for resolved per-node output coefficients.
+    QString d_conversionLaserKey;                     ///< Active LifLaser hwKey, for serializing tunable-source inputs.
     int d_currentDelayIndex{0};
     int d_currentLaserIndex{0};
     int d_completedSweeps{0};

@@ -43,6 +43,36 @@ public:
     Q_ENUM(CommType)
 
     /*!
+     * \brief Fallback read timeout in ms
+     *
+     * Used when neither a user-configured nor a driver-registered per-protocol
+     * timeout is available. \sa loadCommReadOptions()
+     */
+    static constexpr int defaultReadTimeout = 200;
+
+    /*!
+     * \brief Fallback read termination character(s)
+     *
+     * Used when neither a user-configured nor a driver-registered per-protocol
+     * termination character is available. "\n" is the most common terminator
+     * and tolerates "\r\n" framing. \sa loadCommReadOptions()
+     */
+    static constexpr QLatin1StringView defaultReadTermChar{"\n"};
+
+    /*!
+     * \brief Returns the settings group key for a communication protocol
+     *
+     * Per-protocol communication settings (timeout, termination character, and
+     * transport-specific parameters) are stored in a settings group named for
+     * the protocol. This maps a CommType to that group key.
+     *
+     * \param type Communication protocol type
+     * \return Group key (e.g. BC::Key::Comm::rs232), or an empty string for
+     *         None or any unrecognized type
+     */
+    static QString protocolGroupKey(CommType type);
+
+    /*!
      * \brief Constructor
      * \param key Key assigned to ::d_key
      * \param parent QObject parent

@@ -1,19 +1,19 @@
 #include "opolette.h"
 #include <hardware/core/hardwareregistration.h>
+#include <data/lif/lifunits.h>
 
 // Register hardware implementation
 REGISTER_HARDWARE_META(Opolette, "Opolette LIF Laser")
 REGISTER_HARDWARE_PROTOCOLS(Opolette, CommunicationProtocol::Tcp)
+REGISTER_COMM_DEFAULTS(Opolette, CommunicationProtocol::Tcp,
+    {BC::Key::Comm::timeout, 20000},
+    {BC::Key::Comm::termChar, QString("\n")})
 
 
 
 Opolette::Opolette(const QString& label, QObject *parent)
     : LifLaser(QString(Opolette::staticMetaObject.className()), label, parent)
 {
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 20000);
-    setDefault(BC::Key::Comm::termChar, QString("\n"));
-
     save();
 }
 
@@ -35,6 +35,8 @@ bool Opolette::testConnection()
 
 double Opolette::readPos()
 {
+    // Protocol boundary: the LP?/LP commands speak nm; everything above
+    // this driver hook operates on the grating fundamental in cm^-1.
     auto resp = p_comm->queryCmd("LP?\n");
     if(resp.startsWith("ERROR:"))
     {
@@ -43,19 +45,20 @@ double Opolette::readPos()
     }
 
     bool ok = false;
-    auto out = QString(resp.trimmed()).toDouble(&ok);
+    auto nm = QString(resp.trimmed()).toDouble(&ok);
     if(!ok)
     {
         hwError("Could not parse wavelength response."_L1);
         hwDebug(u"Could not parse wavelength response. Response = %1 (Hex: %2)"_s.arg(QString(resp), QString(resp.toHex())));
                 return -1.0;
     }
-    return out;
+    return BC::LifConv::toCm1(nm, BC::LifConv::LaserUnit::Nm);
 }
 
-void Opolette::setPos(double pos)
+void Opolette::setPos(double fundamentalCm1)
 {
-    auto resp = p_comm->queryCmd(QString("LP %1\n").arg(pos,0,'f',2));
+    auto nm = BC::LifConv::fromCm1(fundamentalCm1, BC::LifConv::LaserUnit::Nm);
+    auto resp = p_comm->queryCmd(QString("LP %1\n").arg(nm,0,'f',2));
     if(resp.startsWith("ERROR:"))
         hwError(u"Could not set laser position. %1"_s.arg(QString(resp.mid(7))));
 }

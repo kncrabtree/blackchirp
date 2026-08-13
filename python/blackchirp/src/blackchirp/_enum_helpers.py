@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from typing import Mapping, Optional
 
+import numpy as np
+
 
 def _resolve_enum(
     value,
@@ -23,12 +25,14 @@ def _resolve_enum(
 
     The cell may already be the canonical name (``"BlackmanHarris"``),
     a string that parses as an integer (``"3"``), or an actual integer.
+    Integer codes delivered as numpy scalars (as happens when pandas
+    upcasts a mixed-dtype row to ``float64``) are also accepted.
     ``name_map`` is the canonical name → payload mapping the caller
     cares about; ``_resolve_enum`` only inspects its keys.
 
     Args:
-        value: Raw CSV cell value (``str``, ``int``, or already an enum
-            name).
+        value: Raw CSV cell value (``str``, ``int``, a numpy integer or
+            integral-valued float scalar, or already an enum name).
         name_map: Mapping whose keys are the canonical enum names.
             The values are unused by this helper but typically carry
             payload (e.g. a scipy window spec) the caller will look
@@ -51,6 +55,16 @@ def _resolve_enum(
         if default is not None:
             return default
         raise ValueError("Empty enum value with no default supplied")
+
+    # A pandas row spanning mixed-dtype columns is upcast to a single
+    # float64 Series, so an integer-coded enum cell arrives here as a
+    # numpy scalar (e.g. numpy.float64(1.0)) rather than a Python int.
+    # Coerce to the underlying Python scalar, then fold an integral
+    # float back to int so it flows through the integer-code path.
+    if isinstance(value, np.generic):
+        value = value.item()
+    if isinstance(value, float) and value.is_integer():
+        value = int(value)
 
     if isinstance(value, str):
         s = value.strip()

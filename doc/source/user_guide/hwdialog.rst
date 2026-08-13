@@ -8,6 +8,7 @@
    single: Advanced settings
    single: Test Connection; Hardware Dialog
    single: Communication Settings; Hardware Dialog link
+   single: Import CSV; array settings
 
 Hardware Dialog
 ===============
@@ -95,6 +96,12 @@ The screenshot above shows the Advanced sub-tab for the PulseGenerator;
 the Settings sub-tab would render the Required and Important groups
 described below.
 
+Each row's tooltip shows the registered description followed by the
+native settings key on its own line (``Key: <key>``). The key is the
+string passed to ``self.settings.get`` / ``self.settings.set`` from a
+:doc:`Python hardware driver <python_hardware/writing_a_driver>` and
+to ``SettingsStorage::get`` / ``set`` from C++.
+
 **Required**
    Parameters that must be set correctly at profile creation time (for
    example, the number of digitizer input channels or the AWG output
@@ -108,14 +115,21 @@ described below.
    confirmed. They appear in an *Important Settings* group on the
    **Settings** sub-tab as a two-column table (Setting | Value) with
    editable widgets. Typical examples include communication-level
-   defaults, calibration constants, and operating limits.
+   defaults, calibration constants, and operating limits. Array-type
+   settings placed here (for example, a device's motion-stage geometry)
+   behave the same as those on the **Advanced** sub-tab, described next.
 
 **Advanced**
    Settings that rarely need to change. They appear on the **Advanced**
    sub-tab as a Setting/Value table. Array-type settings (for example,
    a list of available sample rates) appear as a row with an **Edit**
    button that opens a sub-dialog for adding, removing, or reordering
-   entries; the edits are staged until the parent dialog is accepted.
+   entries, plus an **Import CSV…** button that populates the table
+   from a semicolon-delimited file whose header row names the array's
+   fields (columns are matched to fields by name, order-independent,
+   and any header column with no matching field is ignored); the edits
+   — typed or imported — are staged until the parent dialog is
+   accepted.
 
 .. important::
    Settings-tab changes are written to persistent storage **only** when

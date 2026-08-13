@@ -250,19 +250,13 @@ void OverlayTypeSpecificWidget::updatePathDisplayAndTooltip(QLineEdit* lineEdit,
         return;
     }
     
-    // Store the full path for validation purposes (separate from display)
     d_fullSourceFilePath = fullPath;
-    
-    // Set tooltip to show full path
+
     lineEdit->setToolTip(fullPath);
-    
-    // Display abbreviated path if too long (show end of path)
-    const int maxDisplayChars = 50;
-    if (fullPath.length() <= maxDisplayChars) {
-        lineEdit->setText(fullPath);
-    } else {
-        // Show "...end_of_path" format
-        QString abbreviated = "..." + fullPath.right(maxDisplayChars - 3);
-        lineEdit->setText(abbreviated);
-    }
+    lineEdit->setText(fullPath);
+
+    // A path longer than the field scrolls rather than wrapping, and Qt leaves
+    // it scrolled to the head. The tail carries the identifying part, so park
+    // the cursor at the end to bring that into view.
+    lineEdit->setCursorPosition(fullPath.length());
 }

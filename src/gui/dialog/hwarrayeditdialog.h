@@ -16,6 +16,12 @@ class QPushButton;
  * edited as text and round-trip through QVariant on save.
  *
  * Opened from the Edit button in HwSettingsWidget array rows.
+ *
+ * The "Import CSV..." button appends rows parsed from a semicolon-delimited
+ * file whose header row names columns matching this array's sub-keys — a
+ * generic bulk-entry path usable by any array setting (e.g. the Sirah FCU's
+ * imported polynomial-coefficient and spline-point tables), not something
+ * wired up per array.
  */
 class HwArrayEditDialog : public QDialog
 {
@@ -46,6 +52,7 @@ private slots:
     void moveUp();
     void moveDown();
     void updateButtonStates();
+    void importCsv();
 
 private:
     QTableWidget *p_table;

@@ -81,6 +81,7 @@ void BCExpOverlayWidget::setupForSettings(std::shared_ptr<OverlayBase> overlay)
             
             // Load FT configuration if available
             d_configuredFt = bcexpOverlay->getFtData();
+            d_configuredIgnoreMHz = bcexpOverlay->getAutoScaleIgnoreMHz();
             d_hasFtData = !d_configuredFt.isEmpty();
             updateFtStatus();
         }
@@ -104,8 +105,10 @@ std::shared_ptr<OverlayBase> BCExpOverlayWidget::createOverlay()
     
     // Set the source file path
     overlay->setSourceFile(getExperimentPath());
-    
-    // Set the configured FT data
+
+    // Set the configured FT data. The ignore band goes first so the Ft's
+    // extrema are computed under it.
+    overlay->setAutoScaleIgnoreMHz(d_configuredIgnoreMHz);
     overlay->setFtData(d_configuredFt);
     
     // Store the created overlay for operations in creation context
@@ -127,6 +130,7 @@ void BCExpOverlayWidget::applyToOverlay(std::shared_ptr<OverlayBase> overlay) co
     
     // Apply current settings to the overlay
     bcexpOverlay->setSourceFile(getExperimentPath());
+    bcexpOverlay->setAutoScaleIgnoreMHz(d_configuredIgnoreMHz);
     bcexpOverlay->setFtData(d_configuredFt);
 }
 
@@ -219,7 +223,7 @@ QHash<QString, QVariant> BCExpOverlayWidget::getSettingsHash() const
     // Experiment selection settings
     settings["experimentNumber"] = p_experimentNumberSpinBox->value();
     settings["useCustomPath"] = p_usePathCheckBox->isChecked();
-    settings["customPath"] = p_pathLineEdit->text();
+    settings["customPath"] = getStoredFullSourceFilePath();
     
     // FT configuration settings
     settings["hasFtData"] = d_hasFtData;
@@ -296,6 +300,11 @@ void BCExpOverlayWidget::onBrowseButtonClicked()
 
 void BCExpOverlayWidget::onPathChanged()
 {
+    // A path typed or pasted directly into the line edit has to be adopted as
+    // the stored path, since only the browse dialog goes through
+    // updatePathDisplayAndTooltip().
+    d_fullSourceFilePath = p_pathLineEdit->text();
+
     resetFtConfiguration(); // Reset FT config when path changes
     updateAutomaticLabel(); // Update label to directory name if using custom path
     validateExperiment();
@@ -313,10 +322,13 @@ void BCExpOverlayWidget::onConfigureFtClicked()
     
     emit progressOperationStarted("Loading experiment data...");
     
-    // Create ExperimentViewWidget with overlays disabled
+    // Create ExperimentViewWidget with overlays disabled.
+    // The custom-path branch must use experimentPath, not the line edit's
+    // display text: the display is abbreviated for long paths, and handing
+    // the abbreviation to Experiment yields a directory that does not exist.
     ExperimentViewWidget *experimentWidget;
     if (p_usePathCheckBox->isChecked()) {
-        experimentWidget = new ExperimentViewWidget(0, p_pathLineEdit->text(), false);
+        experimentWidget = new ExperimentViewWidget(0, experimentPath, false);
     } else {
         experimentWidget = new ExperimentViewWidget(p_experimentNumberSpinBox->value(), QString(""), false);
     }
@@ -345,8 +357,10 @@ void BCExpOverlayWidget::onConfigureFtClicked()
     if (ftDialog->exec() == QDialog::Accepted) {
         emit progressOperationStarted("Extracting FT data...");
         
-        // Extract Ft object from the main plot
+        // Extract Ft object from the main plot, along with the VScale ignore
+        // band it was processed under so the overlay autoscales the same way.
         d_configuredFt = experimentWidget->getMainPlotFt();
+        d_configuredIgnoreMHz = experimentWidget->getFtmwProcessingSettings().autoScaleIgnoreMHz;
         d_hasFtData = !d_configuredFt.isEmpty();
         
         updateFtStatus();
@@ -422,6 +436,7 @@ void BCExpOverlayWidget::saveSettings()
 void BCExpOverlayWidget::resetFtConfiguration()
 {
     d_configuredFt = Ft(); // Reset to empty FT
+    d_configuredIgnoreMHz = 0.0;
     d_hasFtData = false;
     updateFtStatus();
 }

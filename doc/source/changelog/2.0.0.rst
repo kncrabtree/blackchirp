@@ -85,6 +85,20 @@ Build and distribution
   dynamic FID simulation generator, so the Virtual digitizer
   produces synthetic data without bundling sample CSVs. See
   :doc:`/user_guide/first_run`.
+- Installed the license texts into the packages themselves.
+  ``COPYING`` and the bundled-component licenses land under
+  ``share/doc/blackchirp/`` on Linux, in each ``.app``'s
+  ``Resources`` on macOS, and in the install root on Windows,
+  so the terms travel with the binary rather than only as
+  standalone release assets (:commit:`9a3435b2`).
+- Added the release-stage suffix to the package file names, so a
+  downloaded artifact identifies its stage without being opened
+  (``Blackchirp-2.0.0-beta1-Linux-x86_64.rpm``). The AppImages are
+  named to match. A stable release carries no suffix. See
+  :doc:`/user_guide/installation` (:commit:`c7d0b7bf`).
+- Enabled the MSVC C++-conforming preprocessor (``/Zc:preprocessor``)
+  so the Windows build accepts the ``__VA_OPT__`` usage in the
+  hardware registration macros (:commit:`c02f1ea5`).
 
 Hardware configuration
 ----------------------
@@ -104,6 +118,19 @@ Hardware configuration
 - Added the FTMW preset bar with full create, copy, save-as, and
   delete operations. See
   :doc:`/user_guide/ftmw_configuration/presets`.
+- Added a stable per-profile identity so a profile deleted and
+  recreated under the same ``Type.label`` is recognized as a different
+  device: loadouts record each member's identity on save, and hardware
+  drift is detected on identity, not just on the profile key. See
+  :doc:`/user_guide/hardware_config/loadouts`.
+- Added a deletion-consequence preview: removing a profile shows how
+  each affected loadout and its FTMW and LIF presets are updated.
+  Members of a required hardware type are substituted with the system
+  fallback and their referencing presets are re-pointed to it; members
+  with no fallback are dropped, along with any preset whose topology
+  depends on them. The dialog spells out the destructive changes and
+  summarizes the rebinds before you confirm. See
+  :doc:`/user_guide/hardware_config/profiles`.
 - Added the consolidated *FTMW Configuration* menu entry and
   ``FtmwConfigDialog``, replacing the v1.x scattered FTMW pages.
   See :doc:`/user_guide/ftmw_configuration`.
@@ -124,6 +151,11 @@ Hardware configuration
   digitizers, FTMW digitizers, clocks, chirp sources, and pulse
   generators) were migrated onto the registry. See
   :doc:`/user_guide/hwdialog`.
+- Added value-gated visibility to the hardware settings dialog: a
+  setting can be shown only when a sibling enumerated setting holds a
+  given value, and an array-valued setting can be populated from a
+  semicolon-delimited file through a new **Import CSV…** action in the
+  array editor. See :doc:`/user_guide/hwdialog`.
 - Added per-object hardware threading configuration to the
   hardware profile. See
   :doc:`/user_guide/hardware_config/profiles`.
@@ -150,6 +182,18 @@ Hardware drivers
   object via the per-device dialog, with protocol-specific
   widgets backed by group-based settings storage. See
   :doc:`/user_guide/hwdialog`.
+- Communication read settings — timeout and termination character —
+  are now per-protocol. v1.x stored ``timeout`` and ``termChar`` at
+  the top of each hardware group; 2.0 stores them under a
+  per-protocol sub-group (``rs232``, ``tcp``, ``gpib``, ``custom``,
+  ``virtual``) so a single device can carry different communication
+  parameters for each protocol it supports. Drivers register
+  known-good per-protocol defaults, seeded when a device is first
+  configured and overridable in the Communication Settings dialog;
+  anything unregistered falls back to 200 ms timeout and ``\n``
+  termination character. See :ref:`hardware-menu-communication`;
+  users migrating from v1.x can recover their previous values from
+  the :ref:`v1.x settings file <v1tov2-comm-defaults>`.
 - Modernized the GPIB controller architecture so multiple GPIB
   controllers (mixed LAN and RS232) cohabitate in one
   installation. See :doc:`/user_guide/hardware_details`.
@@ -247,6 +291,43 @@ User interface
   flattened the nested group boxes into aligned settings tables and
   moved the validity and progress indicators into the dialog button
   bar. See :doc:`/user_guide/overlays`.
+
+LIF
+---
+
+- Added the Laser Frequency Conversion Stage hardware type, representing one
+  physical stage — a doubling crystal, a sum-frequency mixing crystal,
+  a difference-frequency mixing crystal — in a LIF setup's
+  frequency-conversion chain, plus the Sirah FCU driver for Sirah's
+  doubling-stage hardware. The Sirah Cobra driver no longer handles
+  frequency conversion itself; that responsibility moved to the new
+  hardware type. See :doc:`/user_guide/hw/laserfreqconversionstage`.
+- Added LIF presets: a named, saved wiring of the frequency-conversion
+  chain, scoped to the active hardware loadout and managed from an
+  Apply / Save / Save As... / Rename... bar mirroring the FTMW preset
+  bar. See :doc:`/user_guide/lif/presets`.
+- Added a Conversion tab to the LIF experiment-setup page for building
+  and previewing a LIF setup's frequency-conversion chain: a table of
+  conversion stages and how they are wired together, a live preview of
+  the assembled chain and the resulting excitation-beam range, and
+  inline validation of the wiring. See :doc:`/user_guide/lif/conversion`.
+- Added ``liftopology.csv``, a file written at the root of each
+  experiment recording the frequency-conversion chain used for the
+  acquisition (omitted when no conversion chain is configured), read
+  automatically by ``blackchirp-viewer`` and by the ``blackchirp``
+  Python module. See :doc:`/user_guide/data_storage/lif`.
+- Added selectable calibration schemes for the Sirah FCU
+  doubling-crystal tuning: a best-effort BBO/KDP second-harmonic
+  phase-matching model, or an imported polynomial or spline curve fit
+  offline, replacing the placeholder grating math. Fitting is done
+  outside Blackchirp with the ``python/tools/`` scripts in the source
+  repository. See :doc:`/user_guide/hw/laserfreqconversionstage`.
+- Added a standalone LIF Configuration dialog carrying both the
+  acquisition and frequency-conversion editors, with a prompt to save
+  conversion changes as a preset, and a LIF Preset menu that switches
+  the active conversion preset from the menu bar — mirroring the FTMW
+  configuration dialog and preset menu. See
+  :doc:`/user_guide/lif/conversion`.
 
 Logging and diagnostics
 -----------------------
@@ -350,6 +431,16 @@ Python companion module
   helpers with configurable ``fill=np.nan|0.0`` for missing scan
   points. See :doc:`/python/bclif` and :doc:`/python/bcliftrace`
   (:commit:`dc7e7640`).
+- Added frequency-conversion topology support to ``BCLIF``: a
+  ``has_topology`` flag plus ``stages``, ``final_stage``, and
+  ``laser_key`` attributes describing a LIF setup's recorded
+  conversion chain, and ``fundamental`` / ``at_stage`` /
+  ``stage_frequencies`` methods that translate between the laser's
+  tuning value and any beam in the chain, in ``cm-1`` / ``nm`` /
+  ``GHz`` / ``eV``. ``BCExperiment`` reads the new ``liftopology.csv``
+  file into a ``liftopology`` DataFrame attribute and hands it to
+  ``BCLIF`` automatically. See :doc:`/python/bclif` and
+  :doc:`/python/bcexperiment`.
 - Restructured the Sphinx documentation into per-class pages
   matching the C++ API reference layout, refreshed
   ``single-fid.ipynb`` against the v2 schema, and added a fully
@@ -423,6 +514,9 @@ Bug fixes
   ``lifLaserReadSettings``, ``lifDigitizerReadSettings``) — so a
   derived driver that forgets to chain becomes a compile error
   rather than a silent runtime omission (:commit:`d512ee5e`).
+- Fixed the Sirah FCU leaving its move parameters uninitialized
+  until the first move was commanded, so a connection test ran
+  against unset values (:commit:`ebd1a4da`).
 
 **Hardware configuration.**
 
@@ -449,6 +543,11 @@ Bug fixes
   messages when switching protocols (:commit:`f7e3d6f7`).
 - Fixed optional-hardware configuration init and wizard page
   population (:commit:`be8a82e2`).
+- Fixed the hardware settings editor silently discarding an
+  enum-valued setting when its metaobject lookup failed: the field
+  rendered as an empty selector and, on save, wrote an invalid value
+  over the previously stored one. It now falls back to a text field
+  that preserves the current value (:commit:`615787a6`).
 
 **Acquisition.**
 
@@ -526,6 +625,33 @@ Bug fixes
   always handed to the Generic XY parser, and the failure message
   states the cause, such as a file containing only one column
   (:commit:`3341b0ad`).
+- Fixed a middle-click pan on any plot ending in a zoom-out that
+  applied a stale zoom-stack rectangle to the axes. Box zoom is
+  restricted to the left mouse button, leaving the middle button
+  to panning and the right button to the context menu
+  (:commit:`51e870c4`).
+- Fixed overlay source paths longer than 50 characters being
+  stored in their abbreviated ``"..."`` display form. *Configure
+  FT…* opened an empty dialog for a BCExperiment overlay selected
+  by a custom path, and a Generic XY path was overwritten with
+  its own ellipsis form on edit. The path fields hold the full
+  path, scrolled to the tail (:commit:`abf05f39`).
+- Fixed an FT imported as an overlay being autoscaled against its
+  DC spike, collapsing the real features unless the import was
+  trimmed by hand. The overlay carries the source FT's VScale
+  ignore half-width around the LO and excludes that band from
+  both its scale factor and the plot's axis range. See
+  :doc:`/user_guide/overlays` (:commit:`9c2d89e8`).
+
+**Build and distribution.**
+
+- Fixed the published RPMs carrying no build identifier. The
+  openSUSE container job builds as a different user than the one
+  owning the checkout, so git declined to read the workspace and
+  the commit sha silently fell back to ``unknown``, leaving crash
+  reports and the About dialog untraceable to a commit. The build
+  also warns at configure time when no sha resolves
+  (:commit:`6d6fd4bd`).
 
 **Python companion module.**
 
@@ -536,3 +662,13 @@ Bug fixes
   multiplication mutated ``self.data`` and a second ``ft`` call
   on the same FID produced different output
   (:commit:`6fed7a0e`).
+- Fixed integer-coded enum cells failing to resolve when pandas
+  delivered them as numpy scalars. A ``fidparams`` row spanning
+  mixed-dtype columns is upcast to ``float64``, so an
+  integer-coded field such as ``sideband`` reached the enum
+  helper as ``numpy.float64`` and raised ``ValueError:
+  Unsupported enum value type``. Numpy integer and
+  integral-valued float scalars now resolve through the
+  integer-code path, so ``is_lower_sideband`` and other
+  enum-bearing accessors work on older integer-coded exports
+  (:commit:`89ff0ba9`).

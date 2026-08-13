@@ -5,6 +5,7 @@
    single: LIF Trace; on-disk format
    single: Processing Settings; LIF on-disk
    single: header.csv; LIF sections
+   single: liftopology.csv
 
 .. _lif-data-storage:
 
@@ -23,6 +24,7 @@ folder::
    ├── header.csv
    ├── hardware.csv
    ├── auxdata.csv
+   ├── liftopology.csv
    ├── ...
    └── lif/
        ├── lifparams.csv
@@ -86,6 +88,46 @@ configuration that produced the trace files::
 Together these sections fully describe how the trace files in ``lif/``
 were acquired. ``ShotsPerPoint`` is needed to convert the on-disk
 accumulated values to per-shot voltages (see below).
+
+liftopology.csv
+----------------
+
+When the experiment's :doc:`frequency-conversion chain
+</user_guide/lif/conversion>` is not the identity case (at least one
+conversion stage is configured), Blackchirp writes ``liftopology.csv``
+at the **experiment-folder root** — a sibling of ``header.csv``, not
+inside ``lif/``. The file records the chain actually used for the
+experiment, one row per conversion stage. It is **absent** when no
+conversion stages were configured (the laser output was used directly
+as the excitation beam).
+
+The columns are::
+
+   Index;StageKey;Op;Harmonic;IsFinal;Input0;Input1;OutCoeffA;OutCoeffB
+
+- ``Index`` — row index (0-based).
+- ``StageKey`` — the stage's hardware key.
+- ``Op`` — the stage's conversion operation: ``NHG``, ``SFG``, or ``DFG``.
+- ``Harmonic`` — the harmonic order for an NHG stage; blank for SFG/DFG,
+  where it does not apply.
+- ``IsFinal`` — ``true`` for the one stage whose output is the
+  excitation beam that reaches the sample, ``false`` for every other
+  stage.
+- ``Input0`` / ``Input1`` — the stage's primary and secondary input
+  beams, each written as the laser's hardware key (the tunable
+  source), another stage's hardware key, or ``Fixed:<wavenumber>`` for
+  a constant mixing beam given in cm⁻¹. ``Input1`` is blank for NHG
+  stages.
+- ``OutCoeffA`` / ``OutCoeffB`` — the stage's output beam expressed as
+  an affine function of the laser's tuning value, in cm⁻¹:
+  ``output = OutCoeffA * laser_cm1 + OutCoeffB``.
+
+For example, an experiment with a single NHG doubling stage marked as
+the excitation beam, fed directly from a laser with hardware key
+``LifLaser.cobra``, writes::
+
+   Index;StageKey;Op;Harmonic;IsFinal;Input0;Input1;OutCoeffA;OutCoeffB
+   0;LaserFreqConversionStage.doubler;NHG;2;true;LifLaser.cobra;;2;0
 
 lif/lifparams.csv
 -----------------
@@ -166,7 +208,7 @@ With the reference channel enabled, the file is::
    ``lifparams.csv``. This convention matches the FTMW FID files and lets
    Blackchirp resume averaging when an experiment is reopened.
 
-The ``blackchirp`` Python package (``pip install blackchirp``) provides
+The ``blackchirp`` Python package (``pip install --pre blackchirp``) provides
 loader functions that perform the base-36 decoding and per-shot voltage
 conversion for both LIF and FTMW data, returning numpy arrays.
 

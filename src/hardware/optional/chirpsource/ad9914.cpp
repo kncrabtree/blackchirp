@@ -9,6 +9,9 @@
 // Register hardware implementation
 REGISTER_HARDWARE_META(AD9914, "Analog Devices AD9914 Direct Digital Synthesizer")
 REGISTER_HARDWARE_PROTOCOLS(AD9914, CommunicationProtocol::Rs232)
+REGISTER_COMM_DEFAULTS(AD9914, CommunicationProtocol::Rs232,
+    {BC::Key::Comm::timeout, 1000},
+    {BC::Key::Comm::termChar, QString("\n")})
 REGISTER_HARDWARE_SETTINGS(AD9914,
     {BC::Key::AWG::rate, "Sample Rate (Hz)", "DAC output sample rate",
      3.75e9, 1e6, 1000e9, HwSettingPriority::Important},

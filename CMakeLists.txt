@@ -15,7 +15,7 @@ project(Blackchirp
 # silently sticky across releases — a checkout that switched from
 # `release` back to `alpha` would still emit packages stamped `release`
 # until someone manually cleared the cache.
-set(BC_RELEASE_VERSION "alpha")
+set(BC_RELEASE_VERSION "beta1")
 
 # Get git build version
 execute_process(
@@ -28,18 +28,34 @@ execute_process(
 
 if(NOT BC_BUILD_VERSION)
     set(BC_BUILD_VERSION "unknown")
+    # Legitimate when building from an unpacked source archive, but in a
+    # packaging build it means crash reports and the About dialog cannot
+    # be tied back to a commit. Warn rather than fail: the sha is
+    # diagnostic metadata, not a build requirement. ERROR_QUIET above
+    # hides git's own explanation, and the usual cause is a workspace
+    # git declines to read (ownership differing from the build user)
+    # rather than a missing repository.
+    message(WARNING "No git commit sha resolved; stamping build version "
+                    "as \"unknown\". Packages built from this tree cannot "
+                    "be traced to a commit.")
 endif()
 
-# Version definitions
+# Version definitions. The numeric version has a single source of
+# truth — the project() VERSION above — and the release-stage tag has
+# a single source of truth — BC_RELEASE_VERSION above. Everything
+# else, including the viewer-specific (BCV_*) version, is derived so a
+# release bump touches exactly those two lines (and conf.py, the CI
+# workflow, and the on-disk schema all read back from project()).
 set(BC_MAJOR_VERSION ${PROJECT_VERSION_MAJOR})
 set(BC_MINOR_VERSION ${PROJECT_VERSION_MINOR})
 set(BC_PATCH_VERSION ${PROJECT_VERSION_PATCH})
 
-# Viewer-specific versioning
-set(BCV_MAJOR_VERSION 2)
-set(BCV_MINOR_VERSION 0)
-set(BCV_PATCH_VERSION 0)
-set(BCV_RELEASE_VERSION "alpha")
+# The viewer ships from this same tree and is versioned in lockstep
+# with the acquisition app; alias rather than duplicate.
+set(BCV_MAJOR_VERSION ${PROJECT_VERSION_MAJOR})
+set(BCV_MINOR_VERSION ${PROJECT_VERSION_MINOR})
+set(BCV_PATCH_VERSION ${PROJECT_VERSION_PATCH})
+set(BCV_RELEASE_VERSION ${BC_RELEASE_VERSION})
 
 # ============================================================================
 # Build Options and Configuration
@@ -74,7 +90,10 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
         add_compile_options(-O3 -g)
     endif()
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    add_compile_options(/W4)
+    # /Zc:preprocessor selects the C++-conforming preprocessor. The legacy
+    # MSVC preprocessor does not implement __VA_OPT__, which the hardware
+    # registration macros in hardwareregistration.h rely on.
+    add_compile_options(/W4 /Zc:preprocessor)
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
         add_compile_options(/O2 /Zi)
         add_link_options(/DEBUG)
@@ -379,6 +398,16 @@ if(BC_BUILD_TESTS)
     add_blackchirp_definitions(tst_overlayoperations_simple)
     add_test(NAME OverlayOperationsSimpleTest COMMAND tst_overlayoperations_simple)
 
+    # BCExpOverlay VScale Ignore Band Test
+    add_executable(tst_bcexpoverlay tests/tst_bcexpoverlay.cpp)
+    target_link_libraries(tst_bcexpoverlay
+        blackchirp-data
+        Qt6::Test
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_bcexpoverlay)
+    add_test(NAME BCExpOverlayTest COMMAND tst_bcexpoverlay)
+
     # ZoomPanPlot Thread Safety Test
     # blackchirp-gui has unresolved references into application sources that
     # the main blackchirp executable provides directly (AcquisitionManager,
@@ -586,6 +615,43 @@ if(BC_BUILD_TESTS)
     add_blackchirp_definitions(tst_loadoutmanagertest)
     add_test(NAME LoadoutManagerTest COMMAND tst_loadoutmanagertest)
 
+    # LIF Conversion Test
+    add_executable(tst_lifconversion tests/tst_lifconversion.cpp)
+    target_link_libraries(tst_lifconversion
+        blackchirp-data
+        Qt6::Test
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_lifconversion)
+    add_test(NAME LifConversionTest COMMAND tst_lifconversion)
+
+    # FCU Calibration Test
+    add_executable(tst_fcucalibration tests/tst_fcucalibration.cpp)
+    target_link_libraries(tst_fcucalibration
+        blackchirp-data
+        Qt6::Test
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_fcucalibration)
+    add_test(NAME FcuCalibrationTest COMMAND tst_fcucalibration)
+
+    # Autotracker (Sirah FCU) Protocol Test — the wire-format layer is pure
+    # and hardware-free (no HardwareObject dependency), so only its own
+    # source is compiled in rather than linking the full hardware library.
+    add_executable(tst_autotrackerprotocol
+        tests/tst_autotrackerprotocol.cpp
+        src/hardware/optional/laserfreqconversion/autotrackerprotocol.cpp
+    )
+    target_include_directories(tst_autotrackerprotocol PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+    target_link_libraries(tst_autotrackerprotocol
+        Qt6::Test
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_autotrackerprotocol)
+    add_test(NAME AutotrackerProtocolTest COMMAND tst_autotrackerprotocol)
+
     # Hardware Communication Test
     # Disabled: HardwareObject carries HardwareManager dependencies that conflict
     # with the test hardware library; re-enable once that coupling is resolved.
@@ -609,8 +675,12 @@ if(BC_BUILD_TESTS)
         tst_genericxyparser
         tst_operation_capability_only
         tst_overlayoperations_simple
+        tst_bcexpoverlay
         tst_zoompanplotthreadsafety
         tst_spcatparser
+        tst_lifconversion
+        tst_fcucalibration
+        tst_autotrackerprotocol
         tst_xiamparser
         tst_hardwareregistrytest
         tst_runtimehardwareconfigtest

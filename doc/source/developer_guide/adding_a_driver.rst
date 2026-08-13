@@ -188,6 +188,12 @@ scope in the ``.cpp``, plus a small constructor:
    REGISTER_HARDWARE_META(MyAwg, "Vendor Model 1234 high-performance AWG")
    REGISTER_HARDWARE_PROTOCOLS(MyAwg, CommunicationProtocol::Tcp,
                                        CommunicationProtocol::Rs232)
+   REGISTER_COMM_DEFAULTS(MyAwg, CommunicationProtocol::Tcp,
+       {BC::Key::Comm::timeout,  10000},
+       {BC::Key::Comm::termChar, QString("\n")})
+   REGISTER_COMM_DEFAULTS(MyAwg, CommunicationProtocol::Rs232,
+       {BC::Key::Comm::timeout,  10000},
+       {BC::Key::Comm::termChar, QString("\n")})
    REGISTER_HARDWARE_SETTINGS(MyAwg,
        {BC::Key::AWG::markerCount, "Marker Count",
         "Number of physical marker output channels",
@@ -197,8 +203,6 @@ scope in the ``.cpp``, plus a small constructor:
    MyAwg::MyAwg(const QString& label, QObject *parent) :
        AWG(QString(MyAwg::staticMetaObject.className()), label, parent)
    {
-       setDefault(BC::Key::Comm::timeout, 10000);
-       setDefault(BC::Key::Comm::termChar, QString("\n"));
        save();
    }
 
@@ -226,13 +230,16 @@ A few non-obvious points:
   parent errors at runtime. See
   :doc:`/developer_guide/hardware_runtime` for the move-to-thread
   sequence.
-- **Communication defaults.** Set per-protocol defaults
-  (``BC::Key::Comm::timeout``, ``BC::Key::Comm::termChar``,
-  per-protocol baud rates, and so on) in the constructor with
-  :cpp:func:`SettingsStorage::setDefault`, then call
-  :cpp:func:`SettingsStorage::save`. ``setDefault`` only writes a key
-  that does not already exist on disk, so a user-supplied override
-  survives subsequent constructions of the same profile.
+- **Communication defaults.** Declare per-protocol read defaults
+  (``BC::Key::Comm::timeout``, ``BC::Key::Comm::termChar``) with
+  ``REGISTER_COMM_DEFAULTS``, once per protocol the driver supports.
+  They are seeded into the device's per-protocol settings group when
+  the profile is first constructed and never overwrite a value the
+  user has set in the Communication Settings dialog. A protocol or key
+  with no registered default falls back to 200 ms / ``\n``. Do *not*
+  seed these from the constructor with ``setDefault`` — that writes an
+  incorrectly-scoped top-level key. See :ref:`comm-defaults` in the
+  hardware-configuration guide.
 - **Settings precedence.** ``REGISTER_HARDWARE_SETTINGS`` re-registers
   one key from the base class to override its default, bounds, or
   priority for this driver; you do *not* need to copy the

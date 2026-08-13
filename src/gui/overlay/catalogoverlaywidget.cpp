@@ -403,7 +403,12 @@ void CatalogOverlayWidget::onBrowseButtonClicked()
 
 void CatalogOverlayWidget::onFilePathChanged()
 {
-    d_filePath = getStoredFullSourceFilePath(); // Use stored full path instead of potentially abbreviated display text
+    // A path typed or pasted directly into the line edit has to be adopted,
+    // since only the browse dialog goes through updatePathDisplayAndTooltip().
+    // Without this the widget keeps parsing whichever file was browsed to
+    // last, while the display shows the one the user typed.
+    d_fullSourceFilePath = p_filePathLineEdit->text();
+    d_filePath = d_fullSourceFilePath;
 
     // Abandon any in-flight parse for a previously selected file.
     if (!d_parseOperationId.isEmpty()) {

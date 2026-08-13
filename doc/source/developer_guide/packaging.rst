@@ -16,7 +16,7 @@
    single: attestation; build provenance
    single: attestation; Sigstore
    single: GitHub Actions; release workflow
-   single: blackchirp-release.asc
+   single: blackchirp.asc
 
 Packaging and Release CI
 ========================
@@ -162,8 +162,11 @@ AppImage specifics
 Two AppImages per release
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Linux AppImage job emits both ``Blackchirp-x86_64.AppImage`` and
-``Blackchirp-Viewer-x86_64.AppImage``. Each is fully self-contained
+The Linux AppImage job emits both
+``Blackchirp-<version>-x86_64.AppImage`` and
+``Blackchirp-Viewer-<version>-x86_64.AppImage``, where ``<version>``
+carries the release-stage suffix on a pre-release. Each is
+fully self-contained
 — bundled Qt/Qwt/GSL is the size driver and is duplicated across the
 two — but the duplication is deliberate: AppImage users are exactly
 the audience without a system package manager that pulls in both
@@ -177,11 +180,18 @@ The build runs ``linuxdeploy`` twice against two AppDir copies. The
 plugin mutates the AppDir in place (RPATH patches, AppRun injection,
 libdir cleanup), so a single tree cannot be reused for two outputs —
 the Stage AppDir step does ``cp -a AppDir AppDir-viewer`` before
-linuxdeploy runs. ``OUTPUT=`` is set explicitly for the viewer
-build; without it, appimagetool would mangle
-``Name=Blackchirp Viewer`` (with a space) to
-``Blackchirp_Viewer-x86_64.AppImage`` (with an underscore), breaking
-the docs' ``Blackchirp-Viewer-*`` glob.
+linuxdeploy runs.
+
+``OUTPUT=`` is set explicitly for both builds. AppImages are named by
+linuxdeploy rather than by CPack, so they do not inherit
+``CPACK_PACKAGE_FILE_NAME``; deriving the name from the desktop
+entry's ``Name=`` would drop the version entirely, and for the viewer
+would additionally mangle ``Name=Blackchirp Viewer`` (with a space)
+to ``Blackchirp_Viewer-x86_64.AppImage`` (with an underscore),
+breaking the docs' ``Blackchirp-Viewer-*`` glob. The version label
+is resolved from ``CMakeLists.txt`` by the job's Resolve version
+step, which reads the ``project()`` version and the
+``BC_RELEASE_VERSION`` tag.
 
 glibc floor
 ~~~~~~~~~~~
@@ -260,11 +270,11 @@ attestations cover all five platforms.
      - How users verify
    * - ``.rpm``
      - embedded (``rpmsign --addsign``)
-     - ``rpm --import …blackchirp-release.asc`` → ``rpm --checksig``
+     - ``rpm --import …blackchirp.asc`` → ``rpm --checksig``
        / ``zypper install`` / ``dnf install``
    * - ``.deb``
      - detached ``.asc``
-     - ``gpg --import …blackchirp-release.asc`` →
+     - ``gpg --import …blackchirp.asc`` →
        ``gpg --verify Blackchirp-*.deb.asc``
    * - AppImage
      - detached ``.asc``
@@ -282,7 +292,7 @@ attestations cover all five platforms.
 
 The release key is a 4096-bit RSA GPG key, ID ``898734DF7EDBDE45``,
 dedicated to release signing. Public key:
-``packaging/blackchirp-release.asc``, also attached to every GitHub
+``packaging/blackchirp.asc``, also attached to every GitHub
 release by the deb job and published on ``keys.openpgp.org``. The
 private key and passphrase live in repository Actions secrets
 (``GPG_PRIVATE_KEY``, ``GPG_PASSPHRASE``, ``GPG_KEY_ID``). Offline
@@ -405,7 +415,7 @@ CMake modules and packaging files
           ``configure_file``)
       * - ``packaging/blackchirp-viewer.desktop.in``
         - XDG desktop file for the viewer
-      * - ``packaging/blackchirp-release.asc``
+      * - ``packaging/blackchirp.asc``
         - Public half of the GPG release signing key, attached to
           every GitHub release by the deb job
       * - ``icons/blackchirp.icns``

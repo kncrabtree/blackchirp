@@ -18,6 +18,11 @@ case is a lab that shares one computer between two spectrometers; each
 spectrometer has its own loadout, and switching reconfigures the
 application for the instrument currently in use.
 
+A loadout also owns a set of named presets used to seed configuration
+dialogs: :doc:`FTMW presets </user_guide/ftmw_configuration/presets>`,
+and, when the LIF module is enabled, :doc:`LIF presets
+</user_guide/lif/presets>` are stored per loadout alongside them.
+
 .. figure:: /_static/user_guide/hardware_config-loadouts_menu.png
    :alt: Hardware menu with the Loadout submenu open showing several saved loadouts
    :align: center
@@ -142,6 +147,14 @@ against its hardware map. When the active AWG, FTMW Digitizer, or
 Clock profiles in the preview differ from those of the last saved
 hardware map, the existing presets may no longer be compatible with
 the new hardware. This is called *hardware drift*.
+
+Drift also covers a subtler case. A profile that is deleted and
+recreated under the same ``Type.label`` is a *different* physical
+device even though its key is unchanged. Blackchirp records a stable
+identity for each member profile when a loadout is saved, so replacing
+a member with such a look-alike profile is detected as drift rather
+than silently rebinding the presets to the new hardware. (LIF presets
+drift on the corresponding LIF laser and conversion-stage members.)
 
 If the loadout has any named FTMW presets when drift is detected, Blackchirp
 shows a warning dialog with three choices:

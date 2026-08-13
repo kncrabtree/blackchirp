@@ -385,6 +385,15 @@ std::map<QString,bool,std::less<>> SettingsStorage::setGroupValues(QAnyStringVie
     return results;
 }
 
+void SettingsStorage::setGroupDefault(QAnyStringView groupKey, QAnyStringView key, const QVariant &defaultValue, bool write)
+{
+    auto groupIt = d_groupValues.find(groupKey);
+    if(groupIt != d_groupValues.end() && groupIt->second.find(key) != groupIt->second.end())
+        return;
+
+    setGroupValue(groupKey, key, defaultValue, write);
+}
+
 std::map<QString,bool,std::less<>> SettingsStorage::setMultiple(const std::map<QString, QVariant, std::less<>> m, bool write)
 {
     d_edited = true;

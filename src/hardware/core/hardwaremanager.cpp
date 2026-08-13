@@ -12,6 +12,8 @@
 #include <hardware/core/hardwareobject.h>
 #include <hardware/python/pythonhardwarebase.h>
 #include <hardware/core/clock/clockmanager.h>
+#include <hardware/optional/laserfreqconversion/laserfreqconversionstage.h>
+#include <data/lif/lifconfig.h>
 #include <hardware/core/hw_h.h> // Generated at build time
 
 #include <QThread>
@@ -19,6 +21,9 @@
 #include <QtConcurrent/QtConcurrent>
 #include <QFuture>
 #include <QFutureWatcher>
+#include <chrono>
+#include <future>
+#include <memory>
 #include <vector>
 
 // Static instance for const access
@@ -36,6 +41,14 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     pu_clockManager = std::make_unique<ClockManager>(this);
     connect(pu_clockManager.get(), &ClockManager::clockFrequencyUpdate, this, &HardwareManager::clockFrequencyUpdate);
     connect(pu_clockManager.get(), &ClockManager::clockHardwareUpdate, this, &HardwareManager::clockHardwareUpdate);
+
+    // Self-connections on the manager's own beginAcquisition()/endAcquisition()
+    // signals (already broadcast to every HardwareObject; see
+    // setupHardwareObject()) so d_experimentInProgress tracks exactly the
+    // window during which an experiment is running, without requiring any
+    // other class to call back into HardwareManager.
+    connect(this, &HardwareManager::beginAcquisition, this, [this](){ d_experimentInProgress = true; });
+    connect(this, &HardwareManager::endAcquisition, this, [this](){ d_experimentInProgress = false; });
 
     // Phase 3.3.6: Clean constructor - all hardware creation now goes through dynamic system
     // HardwareManager starts with empty d_hardwareMap and will be populated via syncWithRuntimeConfig()
@@ -149,7 +162,7 @@ void HardwareManager::handleConnectionResult(const QString& hwKey, bool success,
             code = LogHandler::Warning;
         bcLog(u"%1: Connection failed!"_s.arg(obj->d_key), code);
         if(!msg.isEmpty())
-            bcLog(msg, code);
+            bcLog(u"%1: %2"_s.arg(obj->d_key, msg), code);
     }
 
     // Emit unified connectionResult signal for both test results and connection changes
@@ -224,6 +237,33 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
                 bcError("Could not perform LIF experiment because no laser is available."_L1);
                 emit lifSettingsComplete(false);
                 exp->d_hardwareSuccess = false;
+            }
+            else
+            {
+                // The per-experiment LifConfig already owns the joined node
+                // list (op/n snapshotted from hardware, wiring from the
+                // table/preset, at config time) -- prep only re-validates
+                // and caches it for the live push, it does not collect
+                // nodes off the stages or write them back into the config.
+                // An empty node list (LIF enabled but no topology configured
+                // yet) is the identity conversion, not an error. A malformed
+                // topology is a prep-time error that aborts the experiment
+                // before acquisition rather than surfacing later; the
+                // topology-file write (Experiment::initialize(), gated on
+                // d_hardwareSuccess) reads the same nodes straight from the
+                // config.
+                auto result = LifConversion::assemble(exp->lifConfig()->conversionNodes());
+                if(!result.ok)
+                {
+                    bcError(u"Could not assemble LIF frequency-conversion topology: %1"_s.arg(result.errorString));
+                    emit lifSettingsComplete(false);
+                    exp->d_hardwareSuccess = false;
+                }
+                else
+                {
+                    d_lifConversion = result.conversion;
+                    pushLifConversionToLaser(ll);
+                }
             }
         }
     }
@@ -583,6 +623,15 @@ void HardwareManager::checkStatus()
         }
     }
 
+    // Refresh the cached LIF conversion so the live jog/status path reflects
+    // the active topology before any experiment is initialized. Skipped
+    // while an experiment is in progress: d_lifConversion currently holds
+    // the copy validated at prep, and a connection-result cycle mid-scan
+    // (e.g. a transient hardwareFailure()) must not silently replace it
+    // with whatever preset the GUI happens to have selected.
+    if(!d_experimentInProgress)
+        updateLifConversion();
+
     emit allHardwareConnected(success);
 }
 
@@ -608,7 +657,10 @@ void HardwareManager::finalizeConnectionTesting()
 void HardwareManager::setLifParameters(double delay, double pos)
 {
     auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifDigitizer>();
-    auto lsc = findHardware<LifDigitizer>(activeKeys.first());
+    // lsc is used only conditionally below (to gate/flush the digitizer), so
+    // an absent digitizer is not fatal here; just skip it, same as every
+    // sibling LIF accessor guards its own empty-key case.
+    auto lsc = activeKeys.isEmpty() ? nullptr : findHardware<LifDigitizer>(activeKeys.first());
 
     // Gate the digitizer so no waveforms are emitted while hardware parameters change
     if(lsc)
@@ -622,6 +674,8 @@ void HardwareManager::setLifParameters(double delay, double pos)
 
     bool success = true;
     success &= setLifLaserPos(pos);
+    if(success)
+        success &= setLifConversionStages(pos);
     if(success)
         success &= setPGenLifDelay(delay);
 
@@ -688,6 +742,139 @@ bool HardwareManager::setLifLaserPos(double pos)
         QMetaObject::invokeMethod(ll,[ll,pos](){ return ll->setPosition(pos); },Qt::BlockingQueuedConnection,&newPos);
 
     return newPos >= 0.0;
+}
+
+void HardwareManager::pushLifConversionToLaser(LifLaser *ll)
+{
+    if(!ll)
+        return;
+
+    if(ll->thread() == QThread::currentThread())
+        ll->setConversion(d_lifConversion);
+    else
+        QMetaObject::invokeMethod(ll,[ll,c=d_lifConversion](){ ll->setConversion(c); },
+                                  Qt::BlockingQueuedConnection);
+}
+
+void HardwareManager::updateLifConversion()
+{
+    // Assemble the current preset's topology (identity when no preset is
+    // selected) so the live jog/status path converts output<->fundamental
+    // correctly outside of an experiment. Experiment prep re-assembles with
+    // validation, hard-failing the experiment on a malformed topology
+    // instead of tolerating one.
+    d_lifConversion = assembleCurrentLifConversion().conversion;
+
+    auto laserKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifLaser>();
+    if(laserKeys.isEmpty())
+        return;
+
+    pushLifConversionToLaser(findHardware<LifLaser>(laserKeys.first()));
+}
+
+bool HardwareManager::setLifConversionStages(double outputCm1)
+{
+    auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LaserFreqConversionStage>();
+    if(activeKeys.isEmpty())
+        return true;
+
+    double fundamental = d_lifConversion.outputToLaser(outputCm1);
+
+    // Launch every stage's move non-blocking (Qt::QueuedConnection, not
+    // BlockingQueuedConnection) so the moves run concurrently on their own
+    // threads; this thread joins only once all have been posted, by waiting
+    // on each stage's future in turn. A per-stage std::promise, fulfilled
+    // inside the queued lambda once setPosition() returns, carries the
+    // result back across the thread boundary. Paired with its stage key so
+    // a wait timeout below can be reported against the specific stage.
+    std::vector<std::pair<QString,std::future<bool>>> futures;
+    futures.reserve(static_cast<std::size_t>(activeKeys.size()));
+
+    for(const auto &key : activeKeys)
+    {
+        auto stage = findHardware<LaserFreqConversionStage>(key);
+        if(!stage)
+            continue;
+
+        double localCm1 = d_lifConversion.stageInput(key, fundamental);
+
+        if(localCm1 < 0.0)
+        {
+            // stageInput() returns a negative sentinel when this active
+            // stage has no corresponding node in the assembled conversion
+            // -- an identity conversion with no topology configured, or a
+            // stage present in hardware but absent from the topology that
+            // was validated (at prep, or via updateLifConversion() for live
+            // control). Driving the motor to a negative wavenumber is
+            // meaningless; fail this stage's move instead of dispatching it.
+            bcError(u"LIF frequency-conversion stage %1 has no resolved input in the current conversion topology; not moving it."_s.arg(key));
+            std::promise<bool> pr;
+            pr.set_value(false);
+            futures.emplace_back(key, pr.get_future());
+            continue;
+        }
+
+        if(stage->thread() == QThread::currentThread())
+        {
+            // Safety net: stages are always d_threaded, so this should not
+            // normally be reached; handle it directly rather than queuing a
+            // call back onto the thread that is already blocked joining.
+            std::promise<bool> pr;
+            pr.set_value(stage->setPosition(localCm1));
+            futures.emplace_back(key, pr.get_future());
+            continue;
+        }
+
+        auto pr = std::make_shared<std::promise<bool>>();
+        futures.emplace_back(key, pr->get_future());
+        QMetaObject::invokeMethod(stage,[stage,localCm1,pr](){
+            pr->set_value(stage->setPosition(localCm1));
+        }, Qt::QueuedConnection);
+    }
+
+    // A queued move whose target thread never runs the event (e.g. the
+    // stage's thread is quiescing during shutdown) would otherwise leave
+    // f.get() blocking this thread forever. Bound the wait instead: 30 s is
+    // generous enough to cover a real full-range motor sweep (see the poll
+    // loop in SirahCobra::moveAbsolute(), which has no wait cap of its own)
+    // under normal operation, while still guaranteeing this thread cannot
+    // hang indefinitely on a stage that will never respond.
+    constexpr auto stageMoveTimeout = std::chrono::seconds(30);
+
+    bool success = true;
+    for(auto &[key,f] : futures)
+    {
+        if(f.wait_for(stageMoveTimeout) != std::future_status::ready)
+        {
+            bcError(u"Timed out waiting for LIF frequency-conversion stage %1 to report its move result."_s.arg(key));
+            success = false;
+            continue;
+        }
+        success &= f.get();
+    }
+
+    return success;
+}
+
+void HardwareManager::configureLifHarmonic(const QString &stageKey, int n)
+{
+    auto stage = findHardware<LaserFreqConversionStage>(stageKey);
+    if(!stage)
+    {
+        bcError(u"Could not change harmonic order for %1 because it is not an active LIF frequency-conversion stage."_s.arg(stageKey));
+        return;
+    }
+
+    bool success = false;
+    if(stage->thread() == QThread::currentThread())
+        success = stage->setHarmonicOrder(n);
+    else
+        QMetaObject::invokeMethod(stage,[stage,n](){ return stage->setHarmonicOrder(n); },Qt::BlockingQueuedConnection,&success);
+
+    if(success)
+        emit lifHarmonicApplied(stageKey);
+    else
+        bcError(u"Could not set harmonic order %1 on %2."_s.arg(n).arg(stageKey));
 }
 
 void HardwareManager::startLifConfigAcq(const LifConfig &c)
@@ -1049,6 +1236,14 @@ void HardwareManager::setupHardwareSpecificConnectionsWithTracking(HardwareObjec
     else if (auto lifLaser = qobject_cast<LifLaser*>(obj)) {
         storeConnection(hwKey, connect(lifLaser, &LifLaser::laserPosUpdate, this, &HardwareManager::lifLaserPosUpdate));
         storeConnection(hwKey, connect(lifLaser, &LifLaser::laserFlashlampUpdate, this, &HardwareManager::lifLaserFlashlampUpdate));
+    }
+    else if (qobject_cast<LaserFreqConversionStage*>(obj)) {
+        // A conversion stage forwards no type-specific signal: it reports no
+        // output-position update of its own (only LifLaser::laserPosUpdate
+        // drives the display axis), and its failure/lifecycle notifications
+        // are already covered by the generic connections set up for every
+        // hardware object in setupHardwareObjectWithTracking(). The branch
+        // exists so the type is explicitly accounted for in this ladder.
     }
 }
 

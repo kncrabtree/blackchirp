@@ -17,7 +17,7 @@ public:
     virtual ~FlowController();
 
     QStringList validationKeys() const override;
-    FlowConfig config() { readAll(); return d_config; }
+    FlowConfig config() { if(isConnected()) readAll(); return d_config; }
 
 signals:
     void flowUpdate(int,double,QPrivateSignal);

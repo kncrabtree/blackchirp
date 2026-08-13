@@ -4,6 +4,7 @@
 #include <QString>
 
 #include <gui/widget/hardwarestatusbox.h>
+#include <data/lif/lifunits.h>
 
 class QLabel;
 class Led;
@@ -15,6 +16,7 @@ public:
     LifLaserStatusBox(const QString &key, QWidget *parent = nullptr);
 
     void applySettings();
+    //! \a d is the output-beam wavenumber (cm⁻¹), per LifLaser::laserPosUpdate.
     void setPosition(double d);
     void setFlashlampEnabled(bool en);
 
@@ -23,7 +25,9 @@ private:
     Led *p_led;
     int d_decimals{2};
     QString d_suffix;
-    double d_position{0.0};
+    BC::LifConv::LaserUnit d_unit{BC::LifConv::LaserUnit::Nm};
+    double d_position{0.0}; ///< Raw output-beam wavenumber (cm⁻¹); converted to d_unit for display.
+    bool d_hasPosition{false}; ///< Set once setPosition() delivers a real laserPosUpdate reading.
 
 };
 

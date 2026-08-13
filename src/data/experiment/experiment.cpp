@@ -2,7 +2,10 @@
 
 #include <data/storage/blackchirpcsv.h>
 #include <data/storage/settingsstorage.h>
+#include <data/storage/enumcsvconvert.h>
 #include <data/experiment/ftmwconfigtypes.h>
+#include <data/lif/lifunits.h>
+#include <data/loadout/loadoutmanager.h>
 
 #include <hardware/optional/ioboard/ioboard.h>
 #include <hardware/optional/chirpsource/awg.h>
@@ -14,6 +17,14 @@
 
 #include <hardware/core/lifdigitizer/lifdigitizer.h>
 #include <hardware/core/liflaser/liflaser.h>
+// Included only for the header-only BC::Key::LaserConvStage::{op,harmonic}
+// setting-name constants (mirrors the BC::Key::LifLaser usage above); never
+// call LaserFreqConversionStage member functions or the free assembly helpers
+// declared alongside them from this translation unit. Experiment is part of
+// blackchirp-data, which blackchirp-viewer and several data-only test
+// targets link without blackchirp-hardware, so a data-layer TU must not
+// depend on symbols whose bodies are compiled into the hardware library.
+#include <hardware/optional/laserfreqconversion/laserfreqconversionstage.h>
 
 #include <QFile>
 #include <QSaveFile>
@@ -38,7 +49,12 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
 
     QDir d(BlackchirpCSV::exptDir(num,exptPath));
     if(!d.exists())
+    {
+        d_errorString = exptPath.isEmpty() ?
+                    QString("No experiment numbered %1 was found in the active data path.").arg(num) :
+                    QString("Experiment directory does not exist: %1").arg(exptPath);
         return;
+    }
 
     // When loading by number, BlackchirpCSV::exptDir silently leaves QDir
     // pointing at a parent if any cd() step fails, so d.exists() alone is
@@ -156,7 +172,10 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
     }
 
     if(lifEnabled())
+    {
         ps_lifCfg->loadLifData();
+        ps_lifCfg->readTopologyFile();
+    }
 
     //load aux data
     if(!headerOnly)
@@ -413,6 +432,17 @@ bool Experiment::initialize()
             ps_overlayStorage = std::make_shared<OverlayStorage>(num,"");
             ps_overlayStorage->save();
         }
+
+        //LIF frequency-conversion topology (skipped for a bare laser)
+        if(lifEnabled())
+        {
+            if(!ps_lifCfg->writeTopologyFile())
+            {
+                d_errorString = QString("Could not open the file %1 for writing.")
+                        .arg(BlackchirpCSV::exptDir(d_number).absoluteFilePath(BC::CSV::lifTopologyFile));
+                return false;
+            }
+        }
     }
 
     d_initSuccess = true;
@@ -512,15 +542,50 @@ LifConfig *Experiment::enableLif()
     // fields from the on-disk LaserStart row (units cell + inferred
     // fractional digits), so this read only takes effect for fresh
     // acquisitions whose header.csv has not been written yet.
+    QString laserHwKey;
     for (auto it = d_hardwareData.hardwareMap.cbegin(); it != d_hardwareData.hardwareMap.cend(); ++it) {
         if (it.value().type == BC::Data::HardwareType::LifLaser) {
+            laserHwKey = it.key();
             SettingsStorage s(it.key(), SettingsStorage::Hardware);
-            ps_lifCfg->setLaserUnits(s.get(BC::Key::LifLaser::units, QString("nm")));
+            ps_lifCfg->setLaserUnits(BC::CSV::enumFromVariant<BC::LifConv::LaserUnit>(
+                s.get(BC::Key::LifLaser::units, QVariant::fromValue(BC::LifConv::LaserUnit::Nm)),
+                BC::LifConv::LaserUnit::Nm));
             ps_lifCfg->setLaserDecimals(s.get(BC::Key::LifLaser::decimals, 2));
             break;
         }
     }
-    
+
+    // Seed the conversion topology from the current LIF preset of the
+    // current loadout, so the ExperimentType scan-axis page has real
+    // (non-identity) laser bounds before the LIF conversion table has ever
+    // been shown. The preset's wiring (inputs/FINAL) is joined with
+    // op/harmonic order read live from each stage's own hardware settings
+    // snapshot, exactly as
+    // hardware/optional/laserfreqconversion/laserfreqconversionstage.cpp's
+    // lifConversionNodesFromSnapshot() does -- replicated here via
+    // LifConversionSnapshot::toNodes() directly (a blackchirp-data type)
+    // rather than calling that hardware-library free function, per the
+    // layering note above. No preset selected leaves the nodes empty
+    // (identity). Substitutes the *current* active laser key rather than
+    // the one recorded in the preset, per LifConversionSnapshot::laserKey's
+    // provenance-only contract.
+    if (!laserHwKey.isEmpty()) {
+        const auto loadoutName = LoadoutManager::instance().currentLoadoutName();
+        if (auto preset = LoadoutManager::instance().currentLifPreset(loadoutName)) {
+            auto opOf = [](const QString &stageKey) -> BC::LifConv::Op {
+                SettingsStorage s(stageKey, SettingsStorage::Hardware);
+                return BC::CSV::enumFromVariant<BC::LifConv::Op>(
+                    s.get(BC::Key::LaserConvStage::op, QVariant::fromValue(BC::LifConv::Op::NHG)),
+                    BC::LifConv::Op::NHG);
+            };
+            auto harmonicOf = [](const QString &stageKey) -> int {
+                SettingsStorage s(stageKey, SettingsStorage::Hardware);
+                return s.get(BC::Key::LaserConvStage::harmonic, 2);
+            };
+            ps_lifCfg->setConversionNodes(preset->conversion.toNodes(opOf, harmonicOf), laserHwKey);
+        }
+    }
+
     d_objectives.insert(ps_lifCfg.get());
     return ps_lifCfg.get();
 }

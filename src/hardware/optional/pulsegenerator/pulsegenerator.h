@@ -18,7 +18,7 @@ public slots:
     bool prepareForExperiment(Experiment &exp) override final;
     void storeOptHwConfig(Experiment *exp) override { exp->addOptHwConfig(config()); }
 
-    PulseGenConfig config() { readAll(); return d_config; }
+    PulseGenConfig config() { if(isConnected()) readAll(); return d_config; }
     void readChannel(const int index);
     double readRepRate();
     PulseGenConfig::PGenMode readPulseMode();

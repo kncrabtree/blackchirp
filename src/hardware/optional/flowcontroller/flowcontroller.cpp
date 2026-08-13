@@ -274,6 +274,14 @@ void FlowController::readPressureControlMode()
 
 void FlowController::poll()
 {
+    // Defence-in-depth against the readTimer firing while the device is not
+    // responsive. The timer is stopped on testConnection failure and
+    // hardwareFailure, but a tick already queued when the failure signal
+    // arrives will still fire — guarding here keeps that tick from hitting
+    // the device. The d_nextRead round-robin state is preserved so polling
+    // resumes from the same channel when the device reconnects.
+    if(!isConnected())
+        return;
     if (d_nextRead < 0 || d_nextRead >= d_numChannels) {
         readPressure();
         d_nextRead = 0;

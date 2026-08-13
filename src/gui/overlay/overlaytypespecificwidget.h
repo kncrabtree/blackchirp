@@ -114,7 +114,7 @@ public:
     // Helper method for compact file path display with tooltips
     void updatePathDisplayAndTooltip(QLineEdit* lineEdit, const QString &fullPath);
 
-    // Access to full source file path (separate from potentially abbreviated display)
+    /// \brief Return the source path the widget is pointing at.
     QString getStoredFullSourceFilePath() const { return d_fullSourceFilePath; }
 
     // Validation state getters
@@ -217,7 +217,8 @@ protected:
     QString d_sourceFileErrorMessage;
     QString d_settingsErrorMessage;
     
-    // Full path storage (separate from potentially abbreviated display text)
+    // The source path the widget points at. Kept in step with the path line
+    // edit, whose text is the same string.
     QString d_fullSourceFilePath;
     
     friend class UnifiedOverlayWidget;

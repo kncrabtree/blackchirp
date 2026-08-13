@@ -4,60 +4,86 @@ Projects sorted by estimated complexity (smallest first). All are largely indepe
 
 ## Medium
 
-### Sirah Cobra integration refresh
+### Chirp jitter monitor (sub-sample trigger-timing diagnostics)
 
-A new Sirah Cobra dye laser is coming online in late May / early June
-2026. Use that hardware as the trigger for revisiting the
-`SirahCobra` driver: the existing TODO in
-`src/hardware/core/liflaser/sirahcobra.cpp:112` flags that the
-external-stage communication settings need a different solution
-(separate baud / read terminator from the laser comm port). Today the
-driver works around it by ad-hoc instantiating a second
-`Rs232Instrument` alongside the inherited `p_comm`; this is the only
-multi-port driver in the tree.
+The phase-correction hill-climb in `FtmwConfig::preprocessChirp`
+already evaluates the chirp-correlation FOM at three adjacent lags and
+discards the sub-sample information they contain. Parabolic
+interpolation of those three values gives each shot's trigger-timing
+offset at picosecond resolution — and the per-shot offsets `dt_k`
+determine, exactly, the filter `Phi(f) = (1/N) sum exp(-i 2 pi f dt_k)`
+that the averaging process applies to the stored spectrum. Recording
+them turns an invisible band-dependent intensity attenuation (10% at
+14.5 GHz baseband for 5 ps rms jitter, vs 2% at 5 GHz) into a
+deconvolvable, exactly-known correction, and answers per-acquisition
+whether deep averages are jitter-limited.
 
-**Direction (chosen 2026-05-06):** Approach A — single
-`HardwareObject` with multiple managed `CommunicationProtocol`
-objects, formalized into reusable infrastructure. Approach B (a
-composite manager over multiple `HardwareObject` subsystems) was
-rejected for this device because wavelength, doubling crystal, and
-compensator share calibration polynomials and move-direction state
-that don't survive a thread boundary cleanly. A genuinely independent
-device (the pump laser) should land as a sibling `HardwareObject` in
-the loadout rather than as a child subsystem.
+Plan: monitor-only mode decoupled from the correction (no shift
+applied, no shot rejection, clip-tolerant `sign()` FOM option), aux-data
+aggregates per tick (mean/rms of the offset), and an accumulated
+`Phi(f)` on a coarse frequency grid written as `jitterphi.csv` at
+experiment completion for the analysis pipeline to divide out. Full
+per-shot series deferred. ~150–300 LOC + tests (virtual digitizer
+gains a configurable per-shot delay). Details:
+[`chirp-jitter-monitor.md`](chirp-jitter-monitor.md).
 
-Implementation plan:
-
-1. **Driver-declared aux ports.** Add a `REGISTER_HARDWARE_AUX_PORT`
-   macro alongside `REGISTER_HARDWARE_PROTOCOLS`, declaring each
-   secondary port's name and supported communication protocols. Adds a
-   base-class hook (`auxPorts()` or similar) for the lifecycle to
-   iterate.
-2. **`HardwareObject` lifecycle plumbing.** Before the driver's
-   `initialize()` runs, the base class builds each declared port's
-   `CommunicationProtocol` from settings, wires its
-   `hardwareFailure()` into the device's, and exposes it as
-   `auxPort(name)`. Symmetric teardown on destruction.
-3. **Comm-config UI.** Extend the existing comm-config dialog so it
-   shows one tab per port (primary + each aux). The per-protocol
-   widgets are reused unchanged.
-4. **Settings hierarchy.** Aux-port settings nest under the device
-   key: e.g. `LifLaser.sirah/extStage/rs232/baud`. The existing
-   `BC::Key::Comm::*` constants stay; per-port nesting is one extra
-   level.
-5. **Sirah migration.** `p_extStagePort` becomes
-   `auxPort("extStage")`. The `hasExtStage`, `extStagePort`,
-   `extStageBaud` ad-hoc settings collapse into the auto-managed comm
-   subgroup. The line-112 TODO (read options on the secondary port)
-   becomes a property on the declared port descriptor.
-
-Rough scope: ~200–400 LOC in `HardwareObject` / `buildCommunication`
-/ comm-config dialog plus the macro, and a small Sirah migration on
-top. Plan the dev-doc draft (settings layout, dialog mockups, macro
-signature) when the new instrument is on the bench and after the
-2.0.0-alpha packaging work is finished.
+Trigger: the first campaign where cross-band relative intensities
+matter, or when the companion `ftmwpipeline` timebase/deconvolution
+analysis is ready to consume `jitterphi.csv`.
 
 ## Large
+
+### RF configuration as a flexible frequency-conversion DAG
+
+Generalize the RF signal-chain configuration from its current **fixed
+topology** to a flexible DAG, reusing the frequency-conversion topology
+model designed for the LIF laser. Today the chain is a
+single hardcoded 3-stage formula — `chirpFreq = (awgFreq × awgMult ±
+upLO) × chirpMult` in `RfConfig::calculateChirpFreq`/`calculateAwgFreq`
+(`rfconfig.cpp:204-228`) — over a closed six-value role enum
+(`RfConfig::ClockType`) used as `QHash` keys. A DAG would model nodes
+(sources, `Multiplier`, `Divider`, `Mixer`), let the user enter the
+final RF frequency, and back-solve the AWG/clock setpoints.
+
+Feasibility (from an architecture map): the deep, risky assumptions are
+just two — (1) the `ClockType` `Q_ENUM` consumed reflectively and as
+hash keys across ~4 layers, and (2) the linear 3-stage formula treated
+as a pure `double→double` at ~8 call sites. Everything around them is
+already node-shaped and generalizes cheaply: per-output ×/÷ exists
+(`Clock::d_multFactors` + `MultOperation`), logical/un-owned nodes exist
+(`FixedClock`), the `header.csv` RfConfig scalars are additive/default-
+tolerant, and — critically — the **Python analyzer is insulated**: it
+consumes only the collapsed per-FID `probefreq`+`sideband` from
+`fidparams.csv` (`bcfid.py:40-41,165-202`), never the upconversion
+topology.
+
+Why it can be robust: every RF element is **affine in frequency** and
+each acquisition point has **one tunable variable** (the AWG chirp; LO/DR
+scans re-parameterize fixed LOs between steps), so the solve is
+closed-form and unit-testable — the same complexity class as the LIF
+topology. Robustness levers: keep the collapsed per-FID `probeFreq`+
+`sideband` as the acquisition/analysis invariant (bounds blast radius,
+leaves `Fid` and Python untouched); model transmit and receive as two
+DAGs sharing source nodes (the one step beyond LIF, which has a single
+chain); and migrate the current fixed chain into a canonical graph so
+old experiments load losslessly.
+
+Suggested sequencing: (1) build the affine single-tunable-source solver
+as the shared `FreqConversion` abstraction while doing the LIF work — the
+lower-stakes proving ground; (2) drop the graph in *behind* the existing
+`RfConfig` API so `calculateChirpFreq` delegates to `graph.solve()` with
+byte-identical output — a pure refactor of the deepest spot, zero
+behavior change; (3) only then open the role enum, GUI
+(`RfConfigWidget` + `ClockTableModel`), scan builders, and the
+`clocks.csv` 7-column schema to arbitrary graphs.
+
+Rough scope: step 2 is a contained refactor; step 3 is a new DAG-editor
+GUI plus a `clocks.csv` schema version bump and generalized LO/DR scan
+builders — a multi-week effort. Trigger to pick it up: a real
+instrument whose RF topology the fixed 3-stage model cannot express
+(e.g. a second up-mixer stage, an IF divider, or a non-`UpLO`/`DownLO`
+mixing role), or the LIF conversion work landing and proving the shared
+abstraction. Not release-blocking.
 
 ### Async PythonProcess + hardware base contracts
 
@@ -94,6 +120,51 @@ the next major hardware-contract change (e.g., the Sirah aux-port
 work, or a new "remote hardware proxy" driver type that genuinely
 needs async), or evidence in production that the QPointer guard in
 `sendRequest` is being hit.
+
+### Web frontend — server/client split with an HTML/JS UI
+
+Full design in `dev-docs/web-frontend-separation.md`. Explore replacing
+the QWidget/Qwt UI with a headless core engine (embedded HTTP/WebSocket
+server) plus a web (HTML/JS) client. Motivation is UI development
+velocity and polish, not performance — the current stack is already fast
+for the right reason (server-side min/max decimation), and a web client
+relying on the same decimation renders the same points. Exact
+reproduction of the current UI is a non-goal; the appeal is redesigning
+the experience and escaping edit–compile–relaunch UI work.
+
+Feasibility: the architecture is already producer/consumer. Background
+worker threads (`AcquisitionManager` on its own `QThread`,
+`HardwareManager`, `LogHandler`) own live state and the UI stays in sync
+via queued signals/slots; `blackchirp-viewer` already links the
+hardware-free `BlackchirpData` + a lightweight GUI and reconstructs the
+full FTMW view from disk — an existing read-only client. The three
+couplings to re-cut are shared `std::shared_ptr<Experiment>`/storage
+(→ serialized snapshots + decimated deltas), cross-thread signals/slots
+(→ an event/command protocol; the signals are already typed metatypes),
+and timer-polled shared storage + client-side decimation (→ server-side
+width-parameterized decimation, pushed). Server-side settings vs.
+client-side UI preferences re-draws the old `QSettings`
+SystemScope/UserScope line.
+
+Suggested sequencing: (1) cut the Qwt/data seam first (Appendix A of the
+design doc) — extract the data model + min/max decimation into a
+Qwt-free `data/presentation/` module behind neutral types; valuable on
+its own and behavior-preserving. (2) Use `blackchirp-viewer` as the
+client–server spike: static on-disk data, no hardware/acquisition, yet
+it exercises the whole transport + the pan/zoom refresh loop (the
+harder, pointer-rate real-time path) and answers the one question
+analysis cannot — interactive-drag latency across a socket. (3) Expand
+panel by panel, with the live acquisition view (the live-push path) as
+the follow-on.
+
+Rough scope: very large and open-ended — a from-scratch frontend, a wire
+protocol, and an embedded server. Deliberately staged so it can be
+abandoned after any phase; the seam cut (phase 1) stands alone. Biggest
+non-code risk is offline/self-contained packaging for lab instruments (a
+single native binary today). Trigger to pick it up: appetite for a UI
+overhaul, or the seam cut becoming worthwhile independently (it de-leaks
+Qwt from ~24 files' public signatures). Not release-blocking; no near-term
+commitment.
 
 ### Cross-experiment memory budget
 
@@ -177,6 +248,35 @@ The same Ubuntu-noble apt-Qt 6.4.2 ceiling that forces the
 `hwLog`-family workaround is what forces this one. When the deb-job
 Qt rolls forward to >= 6.5, drop the `.toString()` call and remove
 the inline comment.
+
+### Watch for the `ubuntu-latest` runner image roll-forward
+
+The two Qt workarounds above share one trigger, and it is worth
+tracking on its own because it also governs the Qt version the
+project can deploy against.
+
+The deb job's floor is apt's `qt6-base-dev` on the GitHub-hosted
+`ubuntu-latest` image — `6.4.2+dfsg-21.1build5` on noble. That floor
+is what the two workarounds are written against. It is not set by the
+workflow's `QT_VERSION`: only the AppImage, macOS, and Windows jobs
+take their Qt from `install-qt-action` and follow that variable. The
+deb job (apt) and the rpm job (openSUSE Leap container, zypper) both
+take the distro's Qt regardless. Raising `QT_VERSION` therefore
+widens the tested span rather than raising the floor, and on its own
+unlocks neither workaround.
+
+An earlier attempt to build against a newer Qt ran aground on package
+availability for Ubuntu 24.04. When the hosted `ubuntu-latest` image
+rolls forward to a release carrying a newer `qt6-base-dev`, check
+what that version is and whether the project can deploy against
+6.11+. Qt 6.9 has reached end of life (6.9.3 was its final release),
+so the pinned `QT_VERSION` is on a branch that receives no further
+fixes — a consideration independent of the apt floor, since toolchain
+bugs surfacing on the runner images have to be worked around locally
+rather than waiting on a 6.9 patch.
+
+If the roll-forward lands apt Qt >= 6.5, the two workaround entries
+above become actionable at the same time.
 
 ### Long-tail symbol storage
 
@@ -264,27 +364,22 @@ Categories of cosmetic warnings:
   Either remove the dead store or `[[maybe_unused]]` if the
   side-effecting RHS is intentional.
 
-### Bundle license texts inside the packages (beta prep)
+### Bundle license texts inside the packages (beta prep) — done
 
-The `release-assets` job in `.github/workflows/release.yml` attaches
-`COPYING` and a `blackchirp-licenses.zip` (the `licenses/` directory:
-Qwt, LGPL-3.0, GPL-3.0, MPL-2.0, Heroicons) as standalone GitHub
-release assets. That covers users who land on the release page, but a
-user who installs only the `.deb`/`.rpm`/`.dmg`/`.zip` still does not
-get the third-party texts on disk — and the binary packages bundle Qwt
-(`BC_BUNDLE_QWT=ON` on deb/rpm) and ship Heroicons, whose terms
-(LGPL/Qwt license) are meant to travel with the binary.
+`cmake/Packaging.cmake` installs `COPYING` and the `licenses/`
+directory (Qwt, LGPL-3.0, GPL-3.0, MPL-2.0, Heroicons) into the
+`Applications` component, so the texts ship inside every artifact
+rather than only as standalone GitHub release assets. Layout is
+`share/doc/blackchirp/` on deb/rpm/tgz, `Contents/Resources/` in each
+`.app` on macOS, and the install root on Windows.
 
-As part of beta preparation, add an `install(DIRECTORY licenses/ ...)`
-rule (and `COPYING`) into the package payload — e.g. under
-`share/doc/blackchirp/` for deb/rpm, the `.app` `Resources` for macOS,
-and the install root for the Windows zip/NSIS — so the texts ship
-inside every artifact. `CPACK_RESOURCE_FILE_LICENSE` already places
-`COPYING` as the deb copyright / NSIS license page / DMG SLA; this is
-specifically about the bundled-dependency texts in `licenses/`. Touches
-every CPack generator in `cmake/Packaging.cmake`, so verify each
-package layout before the beta tag. Once bundled, the standalone
-`release-assets` upload can stay as a convenience or be retired.
+The deb, rpm, and tgz layouts were verified against generated
+packages. **The macOS and Windows layouts have not been verified
+against a real package** — no local generator for either — so confirm
+the `.dmg` and the zip/NSIS payload on a CI run before the beta tag.
+
+The `release-assets` upload is retained as a convenience for users
+comparing terms before installing.
 
 ### Windows linker: `ignoring duplicate libraries`
 

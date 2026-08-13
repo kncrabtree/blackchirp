@@ -48,6 +48,7 @@ set(BLACKCHIRP_DATA_SOURCES
 
     # Loadout system
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loadout/rfconfigsnapshot.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loadout/lifconversionsnapshot.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loadout/chirpconfigloadout.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loadout/ftmwdigitizerloadout.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loadout/hardwareloadout.cpp
@@ -123,6 +124,7 @@ set(BLACKCHIRP_DATA_HEADERS
 
     # Loadout system
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loadout/rfconfigsnapshot.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loadout/lifconversionsnapshot.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loadout/chirpconfigloadout.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loadout/ftmwdigitizerloadout.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/loadout/hardwareloadout.h
@@ -180,6 +182,9 @@ list(APPEND BLACKCHIRP_DATA_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/lifstorage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/liftrace.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/lifdigitizerconfig.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/lifunits.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/lifconversion.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/fcucalibration.cpp
 )
 
 list(APPEND BLACKCHIRP_DATA_HEADERS
@@ -188,6 +193,9 @@ list(APPEND BLACKCHIRP_DATA_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/lifstorage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/liftrace.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/lifdigitizerconfig.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/lifunits.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/lifconversion.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/fcucalibration.h
 )
 
 # ============================================================================

@@ -10,6 +10,9 @@ using namespace BC::Key::Digi;
 // Register this hardware implementation
 REGISTER_HARDWARE_META(DSOv204A, "Keysight DSOv204A FTMW Digitizer (20 GHz, 80 GS/s)")
 REGISTER_HARDWARE_PROTOCOLS(DSOv204A, CommunicationProtocol::Tcp)
+REGISTER_COMM_DEFAULTS(DSOv204A, CommunicationProtocol::Tcp,
+    {BC::Key::Comm::timeout, 1000},
+    {BC::Key::Comm::termChar, QString("\n")})
 REGISTER_HARDWARE_SETTINGS(DSOv204A,
     {maxFullScale,       "Max Full Scale (V)", "Maximum full scale voltage",
      4.0, QVariant{}, QVariant{}, HwSettingPriority::Optional},
@@ -41,11 +44,6 @@ REGISTER_HARDWARE_ARRAY_ENTRY(DSOv204A, sampleRates,
 DSOv204A::DSOv204A(const QString& label, QObject *parent)
     : FtmwDigitizer{QString(DSOv204A::staticMetaObject.className()), label, parent}
 {
-
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 1000);
-    setDefault(BC::Key::Comm::termChar, QString("\n"));
-
     save();
 }
 
@@ -411,7 +409,6 @@ bool DSOv204A::testConnection()
 
 void DSOv204A::readWaveform()
 {
-
     QByteArray resp = p_socket->readAll();
 //    hwDebug(u"%1: In readWaveform. Response: %2"_s.arg(d_key, QString(resp)));
 

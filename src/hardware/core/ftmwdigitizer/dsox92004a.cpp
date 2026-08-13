@@ -10,6 +10,9 @@ using namespace BC::Key::Digi;
 // Register this hardware implementation
 REGISTER_HARDWARE_META(DSOx92004A, "Keysight DSOx92004A FTMW Digitizer (20 GHz, 80 GS/s)")
 REGISTER_HARDWARE_PROTOCOLS(DSOx92004A, CommunicationProtocol::Tcp)
+REGISTER_COMM_DEFAULTS(DSOx92004A, CommunicationProtocol::Tcp,
+    {BC::Key::Comm::timeout, 1000},
+    {BC::Key::Comm::termChar, QString("\n")})
 REGISTER_HARDWARE_SETTINGS(DSOx92004A,
     {bandwidth,          "Bandwidth (MHz)",     "Analog bandwidth",
      20000.0, QVariant{}, QVariant{}, HwSettingPriority::Important}
@@ -39,17 +42,11 @@ REGISTER_HARDWARE_ARRAY_ENTRY(DSOx92004A, sampleRates,
 DSOx92004A::DSOx92004A(const QString& label, QObject *parent) :
     FtmwDigitizer(QString(DSOx92004A::staticMetaObject.className()), label, parent)
 {
-
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 1000);
-    setDefault(BC::Key::Comm::termChar, QString("\n"));
-
     save();
 }
 
 bool DSOx92004A::testConnection()
 {
-
     QByteArray resp = p_comm->queryCmd(QString("*IDN?\n"));
 
     if(resp.isEmpty())

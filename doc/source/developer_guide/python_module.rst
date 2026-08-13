@@ -11,6 +11,8 @@
    single: BCLIF; architecture
    single: BCLifTrace; architecture
    single: schema; v1 and v2 readers
+   single: liftopology; Python accessors
+   single: BCLIF; conversion-topology accessors
 
 Python Module
 =============
@@ -174,6 +176,57 @@ passed via the ``fill=`` argument) rather than silently zero-filled.
 integration operations that mirror the C++ ``LifTrace::processXY``
 and ``LifTrace::integrate`` semantics. The integrated yields match
 the GUI bit-for-bit; deviations are bugs.
+
+Conversion-topology accessors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:class:`~blackchirp.BCExperiment` reads a root-level
+``liftopology.csv`` (when present) into a ``liftopology`` pandas
+``DataFrame`` attribute — ``None`` for the bare-laser/identity case —
+and hands it to :class:`~blackchirp.BCLIF`'s constructor alongside the
+usual ``lif/`` files. ``BCLIF._build_conversion`` reimplements the C++
+affine-DAG solver documented in *Frequency conversion* on
+:doc:`/developer_guide/lif_acquisition`: it parses each row, classifies
+input tokens with the same ``Fixed:<cm-1>`` / stage-key / laser-key
+rules the C++ reader uses, fixed-point resolves every stage's
+``(A, B)`` output coefficients, and raises ``ValueError`` on a cycle
+rather than looping forever. The pass sets four attributes:
+``has_topology``, ``stages``, ``final_stage``, and ``laser_key``.
+
+Three accessors, all unit-aware (``cm-1`` / ``nm`` / ``GHz`` / ``eV``),
+read the resolved topology:
+
+* ``fundamental(value, at="final", side="output", unit="cm-1")`` — the
+  laser tuning value that produced a given beam value at stage ``at``.
+* ``at_stage(fundamental, at="final", side="output", unit="cm-1")`` —
+  the exact analytic inverse (the topology is affine, so no root
+  finding is involved).
+* ``stage_frequencies(value=None, *, fundamental=None, at="final",
+  side="output", unit="cm-1")`` — a single-frequency table (one row per
+  stage plus the laser) for one scan point. Takes ``value`` or
+  ``fundamental`` (mutually exclusive) and rejects array input.
+
+``side="input"`` means a stage's PRIMARY (``inputs[0]``, tunable-path)
+input, not a raw index — the same convention the C++
+``LifConversion::stageInput`` uses.
+
+**Unit-constant duplication.** ``bclif.py``'s ``_CM1_PER_EV``,
+``_EV_PER_CM1``, ``_GHZ_PER_CM1``, and ``_NM_CM1`` are literal
+duplicates of the conversion constants in ``src/data/lif/lifunits.cpp``.
+There is no shared source of truth between the two languages — a
+change to the C++ constants must be mirrored by hand in ``bclif.py``,
+and the module carries a comment at the constant declarations flagging
+this. This is the same shape of constraint that keeps
+``BCLIF._build_conversion`` a from-scratch reimplementation rather than
+a binding onto the C++ solver: the Python module's dependency policy
+restricts it to numpy, scipy, and pandas (see *Dependency policy* on
+:doc:`/developer_guide/conventions`), so it cannot link against
+``LifConversion`` even for a read-only computation. Correctness between
+the two implementations is verified only by the shared
+``liftopology.csv`` contract — the C++ writer and the Python reader
+agreeing on what a row means — exercised by
+``python/blackchirp/tests/test_lif_topology.py`` against the
+``v2-lif-ref`` fixture, not by any shared implementation.
 
 Coaverage helpers
 ~~~~~~~~~~~~~~~~~

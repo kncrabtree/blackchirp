@@ -7,6 +7,9 @@
 // Register hardware implementation
 REGISTER_HARDWARE_META(AWG70002a, "Tektronix AWG70002A high-performance AWG")
 REGISTER_HARDWARE_PROTOCOLS(AWG70002a, CommunicationProtocol::Tcp)
+REGISTER_COMM_DEFAULTS(AWG70002a, CommunicationProtocol::Tcp,
+    {BC::Key::Comm::timeout, 10000},
+    {BC::Key::Comm::termChar, QString("\n")})
 REGISTER_HARDWARE_SETTINGS(AWG70002a,
     {BC::Key::AWG::markerCount, "Marker Count", "Number of physical marker output channels",
      2, 0, QVariant{}, HwSettingPriority::Required}
@@ -15,11 +18,6 @@ REGISTER_HARDWARE_SETTINGS(AWG70002a,
 AWG70002a::AWG70002a(const QString& label, QObject *parent) :
     AWG(QString(AWG70002a::staticMetaObject.className()), label, parent)
 {
-
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 10000);
-    setDefault(BC::Key::Comm::termChar, QString("\n"));
-
     save();
 }
 

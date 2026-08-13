@@ -60,9 +60,12 @@ int main(int argc, char *argv[])
     for (int i = 1; i < argc; ++i) {
         const char *arg = argv[i];
         if (std::strcmp(arg, "--version") == 0 || std::strcmp(arg, "-v") == 0) {
-            std::printf("blackchirp-viewer %d.%d.%d-%s (build %s)\n",
+            // An empty release tag denotes a stable release and must not
+            // leave a dangling separator behind.
+            const char *tag = BC_STRINGIFY(BCV_RELEASE_VERSION);
+            std::printf("blackchirp-viewer %d.%d.%d%s%s (build %s)\n",
                         BCV_MAJOR_VERSION, BCV_MINOR_VERSION, BCV_PATCH_VERSION,
-                        BC_STRINGIFY(BCV_RELEASE_VERSION), BCV_BUILD_VERSION);
+                        tag[0] ? "-" : "", tag, BCV_BUILD_VERSION);
             return 0;
         }
         if (std::strcmp(arg, "--help") == 0 || std::strcmp(arg, "-h") == 0) {

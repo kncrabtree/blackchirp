@@ -3,8 +3,6 @@
 
 
 #include <QThread>
-#include <QDialogButtonBox>
-#include <QPushButton>
 #include <QCloseEvent>
 #include <QEvent>
 #include <QFontMetrics>
@@ -48,6 +46,7 @@
 #include <gui/dialog/quickexptdialog.h>
 #include <gui/dialog/batchsequencedialog.h>
 #include <gui/dialog/ftmwconfigdialog.h>
+#include <gui/dialog/lifconfigdialog.h>
 #include <gui/dialog/runtimehardwareconfigdialog.h>
 #include <gui/dialog/updateavailabledialog.h>
 #include <gui/dialog/experimentchooserdialog.h>
@@ -66,7 +65,9 @@
 #include <acquisition/batch/batchsequence.h>
 
 #include <gui/lif/gui/lifdisplaywidget.h>
+#include <gui/lif/gui/lifconfigwidget.h>
 #include <gui/lif/gui/lifcontrolwidget.h>
+#include <gui/lif/gui/lifconversionwidget.h>
 #include <gui/lif/gui/liflaserstatusbox.h>
 #include <hardware/core/liflaser/liflaser.h>
 #include <data/storage/applicationconfigmanager.h>
@@ -309,6 +310,20 @@ MainWindow::MainWindow(QWidget *parent) :
         connect(p_am,&AcquisitionManager::nextLifPoint,p_hwm,&HardwareManager::setLifParameters);
         connect(p_am,&AcquisitionManager::lifShotAcquired,ui->lifProgressBar,&QProgressBar::setValue);
         connect(p_am,&AcquisitionManager::lifPointUpdate,ui->lifDisplayWidget,&LifDisplayWidget::updatePoint);
+
+        if(ui->menuLifPreset)
+        {
+            p_lifPresetActionGroup = new QActionGroup(this);
+            p_lifPresetActionGroup->setExclusive(true);
+            connect(ui->menuLifPreset, &QMenu::triggered, this, &MainWindow::onLifPresetActionTriggered);
+            connect(&lm, &LoadoutManager::currentLoadoutChanged, this, &MainWindow::rebuildLifPresetMenu);
+            connect(&lm, &LoadoutManager::loadoutChanged, this, &MainWindow::rebuildLifPresetMenu);
+            connect(&lm, &LoadoutManager::lifPresetAdded, this, &MainWindow::rebuildLifPresetMenu);
+            connect(&lm, &LoadoutManager::lifPresetRemoved, this, &MainWindow::rebuildLifPresetMenu);
+            connect(&lm, &LoadoutManager::lifPresetChanged, this, &MainWindow::rebuildLifPresetMenu);
+            connect(&lm, &LoadoutManager::currentLifPresetChanged, this, &MainWindow::rebuildLifPresetMenu);
+            rebuildLifPresetMenu();
+        }
     }
 
     SettingsStorage bc;
@@ -359,9 +374,11 @@ MainWindow::MainWindow(QWidget *parent) :
             using namespace Qt::Literals::StringLiterals;
             AboutDialog::AppInfo info;
             info.name = "Blackchirp"_L1;
-            info.version = u"%1.%2.%3-%4"_s
-                .arg(BC_MAJOR_VERSION).arg(BC_MINOR_VERSION)
-                .arg(BC_PATCH_VERSION).arg(BC_STRINGIFY(BC_RELEASE_VERSION));
+            // Formatted through UpdateChecker so the About dialog and the
+            // update comparison agree on the version string, and so a
+            // stable release with an empty release tag renders without a
+            // dangling separator.
+            info.version = UpdateChecker::localVersion().toString();
             info.build = QLatin1StringView(BC_BUILD_VERSION);
             info.description = "CP-FTMW spectroscopy data acquisition and visualization software."_L1;
             info.features = {
@@ -792,6 +809,7 @@ bool MainWindow::runExperimentWizard(Experiment *exp, QuickExptDialog *qed)
 
     if(ApplicationConfigManager::instance().isLifEnabled()) {
         configureLifWidget(d.lifControlWidget());
+        connectLifConversionWidget(d.lifConversionWidget());
     }
 
     if(d.exec() != QDialog::Accepted)
@@ -1210,9 +1228,80 @@ void MainWindow::onFtmwPresetActionTriggered(QAction *act)
     }, Qt::BlockingQueuedConnection);
 }
 
+void MainWindow::rebuildLifPresetMenu()
+{
+    if(!ui->menuLifPreset)
+        return;
+
+    for(auto *act : p_lifPresetActionGroup->actions())
+        p_lifPresetActionGroup->removeAction(act);
+    ui->menuLifPreset->clear();
+
+    const auto &lm = LoadoutManager::instance();
+    const QString activeLoadout = lm.currentLoadoutName();
+    const QStringList names = lm.lifPresetNames(activeLoadout, false);
+    const QString current = lm.currentLifPresetName(activeLoadout);
+
+    for(const auto &name : names)
+    {
+        auto *act = ui->menuLifPreset->addAction(name);
+        act->setCheckable(true);
+        act->setChecked(name == current);
+        act->setData(name);
+        p_lifPresetActionGroup->addAction(act);
+    }
+
+    ui->menuLifPreset->menuAction()->setEnabled(!names.isEmpty());
+}
+
+void MainWindow::onLifPresetActionTriggered(QAction *act)
+{
+    using namespace Qt::StringLiterals;
+    const QString name = act->data().toString();
+    const auto &lm = LoadoutManager::instance();
+    const QString activeLoadout = lm.currentLoadoutName();
+    const QString current = lm.currentLifPresetName(activeLoadout);
+
+    if(name == current)
+    {
+        act->setChecked(true);
+        return;
+    }
+
+    auto result = QMessageBox::question(this, u"Switch LIF Preset"_s,
+        u"Switch to LIF preset \"%1\" of loadout \"%2\"?"_s
+            .arg(name, activeLoadout),
+        QMessageBox::Yes | QMessageBox::Cancel);
+
+    if(result != QMessageBox::Yes)
+    {
+        for(auto *a : p_lifPresetActionGroup->actions())
+        {
+            if(a->data().toString() == current)
+            {
+                a->setChecked(true);
+                break;
+            }
+        }
+        return;
+    }
+
+    auto preset = lm.getLifPreset(activeLoadout, name);
+    if(!preset.has_value())
+        return;
+
+    // Unlike the FTMW preset switch, there is no live hardware push here:
+    // the conversion topology is snapshot-only data joined at experiment
+    // prep and at connection-complete (HardwareManager::updateLifConversion),
+    // not something a menu-driven default-preset switch re-pushes. Any open
+    // LifConversionWidget self-seeds from the current preset the next time
+    // it (re)constructs its table.
+    LoadoutManager::instance().setCurrentLifPresetName(activeLoadout, name);
+}
+
 void MainWindow::launchLifConfigDialog()
 {
-    auto it = d_openDialogs.find("LifConfig");
+    auto it = d_openDialogs.find(BC::Key::Lif::lifDialogKey);
     if(it != d_openDialogs.end())
     {
         it->second->setWindowState(Qt::WindowActive);
@@ -1230,34 +1319,24 @@ void MainWindow::launchLifConfigDialog()
         return;
     }
 
-    auto d = new QDialog;
-    d->setWindowTitle("LIF Configuration");
-    d->setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg", ThemeColors::IconPrimary, d));
-
-    // Create LifControlWidget with hardware keys
     auto digitizerKeys = runtimeConfig.getActiveKeys<LifDigitizer>();
     auto laserKeys = runtimeConfig.getActiveKeys<LifLaser>();
 
-    auto w = new LifControlWidget(digitizerKeys.first(), laserKeys.first(), d);
-    configureLifWidget(w);
+    auto d = new LifConfigDialog(digitizerKeys.first(), laserKeys.first(), this);
+    d->setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg", ThemeColors::IconPrimary, d));
 
-    auto vbl = new QVBoxLayout;
-    vbl->addWidget(w);
+    configureLifWidget(d->lifConfigWidget()->lifControlWidget());
+    connectLifConversionWidget(d->lifConfigWidget()->lifConversionWidget());
 
-    auto bb = new QDialogButtonBox(QDialogButtonBox::Close,d);
-    connect(bb->button(QDialogButtonBox::Close),&QPushButton::clicked,d,&QDialog::reject);
-    vbl->addWidget(bb);
-
-    d->setLayout(vbl);
     connect(d,&QDialog::finished,p_hwm,&HardwareManager::stopLifConfigAcq);
     connect(d,&QDialog::finished,d,&QDialog::deleteLater);
     connect(d,&QDialog::destroyed,[this](){
-        auto it = d_openDialogs.find("LifConfig");
+        auto it = d_openDialogs.find(BC::Key::Lif::lifDialogKey);
         if(it != d_openDialogs.end())
             d_openDialogs.erase(it);
     });
 
-    d_openDialogs.insert({"LifConfig",d});
+    d_openDialogs.insert({BC::Key::Lif::lifDialogKey,d});
     d->show();
 }
 
@@ -1278,23 +1357,29 @@ void MainWindow::launchRuntimeHardwareConfigDialog()
 
     auto d = new RuntimeHardwareConfigDialog(this);
     
-    // Phase 3.4.3 - Dynamic UI integration with runtime hardware configuration
-    // Check if configuration changed when dialog closes (regardless of accept/reject)
-    // and rebuild UI before hardware synchronization
-    connect(d, &QDialog::finished, [this, initialHardware]() {
+    // Rebuild UI and resync hardware after the dialog closes, but only
+    // when something actually needs applying. The dialog's reject handler
+    // restores the original RuntimeHardwareConfig and reverts staged
+    // library changes, so a plain Cancel leaves currentHardware equal to
+    // initialHardware and must not trigger a redundant sync.
+    connect(d, &QDialog::finished, [this, initialHardware](int result) {
         const auto& config = RuntimeHardwareConfig::constInstance();
         auto currentHardware = config.getCurrentHardware();
-        
-        // Check if hardware configuration actually changed
-        if (initialHardware != currentHardware) {
+        const bool hardwareChanged = (initialHardware != currentHardware);
+
+        if (hardwareChanged) {
             // UI must be rebuilt BEFORE hardware synchronization so that
             // UI elements exist to receive connectionResult signals during testing
             clearHardwareUI();
             buildHardwareUI();
         }
-        
-        // Trigger hardware synchronization - UI elements ready to receive signals
-        QMetaObject::invokeMethod(p_hwm, &HardwareManager::syncWithRuntimeConfig, Qt::QueuedConnection);
+
+        // Sync on accept (library-only changes may not show in the hardware
+        // diff) or whenever the hardware set actually differs from what was
+        // captured before the dialog opened.
+        if (result == QDialog::Accepted || hardwareChanged) {
+            QMetaObject::invokeMethod(p_hwm, &HardwareManager::syncWithRuntimeConfig, Qt::QueuedConnection);
+        }
     });
     
     connect(d, &QDialog::finished, [this](int result) {
@@ -1328,6 +1413,22 @@ void MainWindow::connectRfConfigWidget(RfConfigWidget *w)
         connect(w,&RfConfigWidget::applyClocks,[this](QHash<RfConfig::ClockType, RfConfig::ClockFreq> c){
             QMetaObject::invokeMethod(p_hwm,[c,this](){ p_hwm->configureClocks(c); });
         });
+    }
+}
+
+void MainWindow::connectLifConversionWidget(LifConversionWidget *w)
+{
+    if(w)
+    {
+        // Mirrors connectRfConfigWidget's applyClocks -> configureClocks
+        // channel: the gated harmonic-order change is hopped onto the
+        // HardwareManager thread via QMetaObject::invokeMethod at this
+        // connection site rather than calling the manager slot directly
+        // cross-thread.
+        connect(w,&LifConversionWidget::applyHarmonic,[this](QString stageKey, int n){
+            QMetaObject::invokeMethod(p_hwm,[stageKey,n,this](){ p_hwm->configureLifHarmonic(stageKey,n); });
+        });
+        connect(p_hwm,&HardwareManager::lifHarmonicApplied,w,&LifConversionWidget::harmonicApplied);
     }
 }
 
@@ -1647,6 +1748,8 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
             act->setEnabled(true);
         if(ui->menuFtmwPreset->isEmpty())
             ui->menuFtmwPreset->menuAction()->setEnabled(false);
+        if(ui->menuLifPreset && ui->menuLifPreset->isEmpty())
+            ui->menuLifPreset->menuAction()->setEnabled(false);
         ui->appConfigAction->setEnabled(true);
         break;
     case Paused:
@@ -1675,6 +1778,8 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
                     continue;
                 if(act == ui->menuFtmwPreset->menuAction())
                     continue;
+                if(ui->menuLifPreset && act == ui->menuLifPreset->menuAction())
+                    continue;
                 act->setEnabled(true);
             }
         }
@@ -1685,6 +1790,8 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
             act->setEnabled(true);
         if(ui->menuFtmwPreset->isEmpty())
             ui->menuFtmwPreset->menuAction()->setEnabled(false);
+        if(ui->menuLifPreset && ui->menuLifPreset->isEmpty())
+            ui->menuLifPreset->menuAction()->setEnabled(false);
         for(auto act : acq)
             act->setEnabled(true);
         ui->sleepButton->setEnabled(true);

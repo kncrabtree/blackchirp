@@ -22,8 +22,8 @@ bool CommunicationProtocol::writeCmd(const QString &cmd)
     if(!_device()->isOpen())
     {
         emit hardwareFailure();
-        bcError("Could not write command. Serial port is not open."_L1);
-        bcDebug(u"%1 writeCmd: Could not write command. Serial port is not open. Command = %2"_s.arg(d_key, cmd));
+        bcError(u"%1: Could not write command. Device is not open."_s.arg(d_key));
+        bcDebug(u"%1 writeCmd: Could not write command. Device is not open. Command = %2"_s.arg(d_key, cmd));
         return false;
     }
 
@@ -32,7 +32,7 @@ bool CommunicationProtocol::writeCmd(const QString &cmd)
     if(ret == -1)
     {
         emit hardwareFailure();
-        bcError("Could not write command."_L1);
+        bcError(u"%1: Could not write command."_s.arg(d_key));
         bcDebug(u"%1 writeCmd: Could not write command. Command = %2"_s.arg(d_key, cmd));
         return false;
     }
@@ -47,8 +47,8 @@ bool CommunicationProtocol::writeBinary(const QByteArray &dat)
     if(!_device()->isOpen())
     {
         emit hardwareFailure();
-        bcError("Could not write binary data. Serial port is not open."_L1);
-        bcDebug(u"%1 writeBinary: Could not write binary data. Serial port is not open. Data hex = %2"_s.arg(d_key, QString(dat.toHex())));
+        bcError(u"%1: Could not write binary data. Device is not open."_s.arg(d_key));
+        bcDebug(u"%1 writeBinary: Could not write binary data. Device is not open. Data hex = %2"_s.arg(d_key, QString(dat.toHex())));
         return false;
     }
 
@@ -57,7 +57,7 @@ bool CommunicationProtocol::writeBinary(const QByteArray &dat)
     if(ret == -1)
     {
         emit hardwareFailure();
-        bcError("Could not write binary data."_L1);
+        bcError(u"%1: Could not write binary data."_s.arg(d_key));
         bcDebug(u"%1 writeBinary: Could not write binary data. Data hex = %2"_s.arg(d_key, QString(dat.toHex())));
         return false;
     }
@@ -69,6 +69,17 @@ QByteArray CommunicationProtocol::queryCmd(const QString &cmd, bool suppressErro
     if(_device() == nullptr)
         return QByteArray();
 
+    if(!_device()->isOpen())
+    {
+        if(!suppressError)
+        {
+            emit hardwareFailure();
+            bcError(u"%1: Could not query. Device is not open."_s.arg(d_key));
+            bcDebug(u"%1 queryCmd: Could not query. Device is not open. Query = %2"_s.arg(d_key, cmd));
+        }
+        return QByteArray();
+    }
+
     if(_device()->bytesAvailable())
         _device()->readAll();
 
@@ -79,7 +90,7 @@ QByteArray CommunicationProtocol::queryCmd(const QString &cmd, bool suppressErro
         if(!suppressError)
         {
             emit hardwareFailure();
-            bcError("Could not write query."_L1);
+            bcError(u"%1: Could not write query."_s.arg(d_key));
             bcDebug(u"%1 queryCmd: Could not write query. Query = %2"_s.arg(d_key, cmd));
         }
         return QByteArray();
@@ -91,7 +102,7 @@ QByteArray CommunicationProtocol::queryCmd(const QString &cmd, bool suppressErro
             if(!suppressError)
             {
                 emit hardwareFailure();
-                bcError("Timed out while waiting for query write."_L1);
+                bcError(u"%1: Timed out while waiting for query write."_s.arg(d_key));
                 bcDebug(u"%1 queryCmd: Timed out while waiting for query write. Query = %2"_s.arg(d_key, cmd));
             }
             return QByteArray();
@@ -106,7 +117,7 @@ QByteArray CommunicationProtocol::queryCmd(const QString &cmd, bool suppressErro
             if(!suppressError)
             {
                 emit hardwareFailure();
-                bcError("Did not respond to query."_L1);
+                bcError(u"%1: Did not respond to query."_s.arg(d_key));
                 bcDebug(u"%1 queryCmd: Did not respond to query. Query = %2"_s.arg(d_key, cmd));
             }
             return QByteArray();
@@ -140,7 +151,7 @@ QByteArray CommunicationProtocol::queryCmd(const QString &cmd, bool suppressErro
         if(!suppressError)
         {
             emit hardwareFailure();
-            bcError("Timed out while waiting for termination character."_L1);
+            bcError(u"%1: Timed out while waiting for termination character."_s.arg(d_key));
             bcDebug(u"%1 queryCmd: Query = %2, partial response = %3, hex = %4"_s.arg(d_key, cmd, QString(out), QString(out.toHex())));
         }
         return out;
@@ -155,6 +166,16 @@ QByteArray CommunicationProtocol::readBytes(qint64 n, bool suppressError)
     if(n<1)
         return QByteArray();
 
+    if(!_device()->isOpen())
+    {
+        if(!suppressError)
+        {
+            emit hardwareFailure();
+            bcError(u"%1: Could not read %2 bytes. Device is not open."_s.arg(d_key).arg(n));
+        }
+        return QByteArray();
+    }
+
     auto ba = _device()->bytesAvailable();
 
 
@@ -165,7 +186,7 @@ QByteArray CommunicationProtocol::readBytes(qint64 n, bool suppressError)
             if(!suppressError)
             {
                 emit hardwareFailure();
-                bcError(u"Could not read %1 bytes; timeout error."_s.arg(n));
+                bcError(u"%1: Could not read %2 bytes; timeout error."_s.arg(d_key).arg(n));
             }
             return {};
         }
@@ -203,47 +224,39 @@ bool CommunicationProtocol::bcTestConnection()
     return success;
 }
 
+QString CommunicationProtocol::protocolGroupKey(CommType type)
+{
+    switch(type) {
+    case Rs232:   return BC::Key::Comm::rs232;
+    case Tcp:     return BC::Key::Comm::tcp;
+    case Gpib:    return BC::Key::Comm::gpib;
+    case Custom:  return BC::Key::Comm::custom;
+    case Virtual: return BC::Key::Comm::hwVirtual;
+    case None:    break;
+    }
+    return {};
+}
+
 void CommunicationProtocol::loadCommReadOptions()
 {
     SettingsStorage s(d_key, SettingsStorage::Hardware);
-    
+
     // Get current communication type to determine which protocol settings to load
     auto commType = static_cast<CommunicationProtocol::CommType>(
         s.get(BC::Key::HW::commType, static_cast<int>(CommunicationProtocol::Virtual))
     );
-    
-    // Get the protocol key name for settings lookup
-    QString protocolKey;
-    switch(commType) {
-    case CommunicationProtocol::Rs232:
-        protocolKey = BC::Key::Comm::rs232;
-        break;
-    case CommunicationProtocol::Tcp:
-        protocolKey = BC::Key::Comm::tcp;
-        break;
-    case CommunicationProtocol::Gpib:
-        protocolKey = BC::Key::Comm::gpib;
-        break;
-    case CommunicationProtocol::Custom:
-        protocolKey = BC::Key::Comm::custom;
-        break;
-    case CommunicationProtocol::Virtual:
-        protocolKey = BC::Key::Comm::hwVirtual;
-        break;
-    default:
-        // No read options for None or unknown protocols, use defaults
-        setReadOptions(1000, "");
+
+    const QString protocolKey = protocolGroupKey(commType);
+    if(protocolKey.isEmpty()) {
+        // No read options for None or unrecognized protocols, use fallbacks
+        setReadOptions(defaultReadTimeout, QString(defaultReadTermChar));
         return;
     }
-    
-    // Load read options using native SettingsStorage group support
-    // Use hardware-specific defaults if user hasn't configured protocol settings
-    int defaultTimeout = s.get<int>(BC::Key::Comm::timeout, 1000);
-    QString defaultTermChar = s.get<QString>(BC::Key::Comm::termChar, QString(""));
-    
-    int timeout = s.getGroupValue<int>(protocolKey, BC::Key::Comm::timeout, defaultTimeout);
-    QString termChar = s.getGroupValue<QString>(protocolKey, BC::Key::Comm::termChar, defaultTermChar);
-    
+
+    int timeout = s.getGroupValue<int>(protocolKey, BC::Key::Comm::timeout, defaultReadTimeout);
+    QString termChar = s.getGroupValue<QString>(protocolKey, BC::Key::Comm::termChar,
+                                                QString(defaultReadTermChar));
+
     setReadOptions(timeout, termChar);
 }
 

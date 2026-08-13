@@ -27,6 +27,7 @@
 #include "experimentsummarypage.h"
 
 #include <gui/lif/gui/experimentlifconfigpage.h>
+#include <gui/lif/gui/lifconversionwidget.h>
 #include <data/storage/applicationconfigmanager.h>
 
 ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList, std::less<>> &valKeys, QWidget *parent)
@@ -111,8 +112,8 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const QHash<RfConf
         en = sp->lifEnabled();
 
         auto [lifp,lifpItem] = addConfigPage<ExperimentLifConfigPage>(BC::Key::WizLif::key,expTypeItem,en);
-        Q_UNUSED(lifp)
         Q_UNUSED(lifpItem)
+        connect(lifp,&ExperimentLifConfigPage::presetChanged,[this](){validateAll();});
     }
 
     addOptHwPages<ExperimentPulseGenConfigPage>(QString(PulseGenerator::staticMetaObject.className()),expTypeItem);
@@ -199,6 +200,21 @@ LifControlWidget *ExperimentSetupDialog::lifControlWidget()
     
     auto p = dynamic_cast<ExperimentLifConfigPage*>(it->second.page);
     return p == nullptr ? nullptr : p->lifControlWidget();
+}
+
+LifConversionWidget *ExperimentSetupDialog::lifConversionWidget()
+{
+    if(!ApplicationConfigManager::instance().isLifEnabled()) {
+        return nullptr;
+    }
+
+    auto it = d_pages.find(BC::Key::WizLif::key);
+    if(it == d_pages.end()) {
+        return nullptr;
+    }
+
+    auto p = dynamic_cast<ExperimentLifConfigPage*>(it->second.page);
+    return p == nullptr ? nullptr : p->lifConversionWidget();
 }
 
 void ExperimentSetupDialog::pageChanged(QTreeWidgetItem *newItem, QTreeWidgetItem *prevItem)
@@ -352,6 +368,16 @@ void ExperimentSetupDialog::accept()
     {
         if (auto *ftmwPage = dynamic_cast<ExperimentFtmwConfigPage*>(it->second.page))
             ftmwPage->commitFtmwPreset();
+    }
+
+    if(ApplicationConfigManager::instance().isLifEnabled())
+    {
+        auto lifIt = d_pages.find(BC::Key::WizLif::key);
+        if (lifIt != d_pages.end() && lifIt->second.page->isEnabled())
+        {
+            if (auto *lifPage = dynamic_cast<ExperimentLifConfigPage*>(lifIt->second.page))
+                lifPage->commitLifPreset();
+        }
     }
 
     if(validateAll(true))

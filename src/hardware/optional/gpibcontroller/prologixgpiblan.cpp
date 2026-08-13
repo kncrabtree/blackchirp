@@ -4,6 +4,9 @@
 // Register hardware implementation
 REGISTER_HARDWARE_META(PrologixGpibLan, "Prologix GPIB-LAN Controller")
 REGISTER_HARDWARE_PROTOCOLS(PrologixGpibLan, CommunicationProtocol::Tcp)
+REGISTER_COMM_DEFAULTS(PrologixGpibLan, CommunicationProtocol::Tcp,
+    {BC::Key::Comm::timeout, 1000},
+    {BC::Key::Comm::termChar, QString("\n")})
 REGISTER_HARDWARE_SETTINGS(PrologixGpibLan)
 
 PrologixGpibLan::PrologixGpibLan(const QString& label, QObject *parent) :

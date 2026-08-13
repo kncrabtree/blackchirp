@@ -26,9 +26,35 @@ set(CPACK_PACKAGE_VERSION_MINOR ${BC_MINOR_VERSION})
 set(CPACK_PACKAGE_VERSION_PATCH ${BC_PATCH_VERSION})
 set(CPACK_PACKAGE_VERSION "${BC_MAJOR_VERSION}.${BC_MINOR_VERSION}.${BC_PATCH_VERSION}")
 
-# Package file name
-set(CPACK_PACKAGE_FILE_NAME 
-    "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+# Package file name. CMAKE_SYSTEM_NAME reports the kernel identifier,
+# which is "Darwin" on macOS — useful to a developer but opaque to a
+# user downloading a .dmg. Override the macOS label to the
+# distribution-facing "macOS"; "Linux" and "Windows" already match
+# what users expect.
+if(APPLE)
+    set(_bc_system_label "macOS")
+else()
+    set(_bc_system_label "${CMAKE_SYSTEM_NAME}")
+endif()
+# The release-stage tag rides in the file name so a downloaded package
+# identifies its stage without being opened, matching the semver
+# prerelease spelling used everywhere else (2.0.0-beta1). An empty tag
+# means a final release and contributes no suffix.
+#
+# Only the file name carries it. CPACK_PACKAGE_VERSION stays purely
+# numeric because it becomes the deb/rpm Version field, where a '-'
+# separates the upstream version from the package revision: a literal
+# "2.0.0-beta1" would parse as upstream 2.0.0 revision beta1 and sort
+# *after* the final 2.0.0, inverting the upgrade order. Encoding the
+# stage properly in those fields needs the "2.0.0~beta1" form, which
+# is a separate concern from what users see in the download.
+if(BC_RELEASE_VERSION STREQUAL "")
+    set(_bc_version_label "${CPACK_PACKAGE_VERSION}")
+else()
+    set(_bc_version_label "${CPACK_PACKAGE_VERSION}-${BC_RELEASE_VERSION}")
+endif()
+set(CPACK_PACKAGE_FILE_NAME
+    "${CPACK_PACKAGE_NAME}-${_bc_version_label}-${_bc_system_label}-${CMAKE_SYSTEM_PROCESSOR}")
 
 # License and readme
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
@@ -246,6 +272,87 @@ else()
     endif()
     
 endif()
+
+# ============================================================================
+# License texts
+# ============================================================================
+
+# CPACK_RESOURCE_FILE_LICENSE (above) surfaces COPYING in the installer UI —
+# the deb copyright file, the NSIS license page — but puts nothing on disk for
+# the dependencies that travel inside the binary. The packages bundle Qwt
+# (BC_BUNDLE_QWT on deb/rpm, qwt.dll on Windows) and ship Heroicons, whose
+# terms are meant to accompany the binary, so the texts in licenses/ are
+# installed as part of the payload rather than left as standalone GitHub
+# release assets that only reach users who read the release page.
+#
+# The destination differs by generator because the packages have no layout in
+# common: Linux packages own a share/doc tree, the macOS unit of distribution
+# is a self-contained .app, and the Windows zip/NSIS root has no doc
+# convention at all.
+#
+# licenses/README.md is excluded: it is a contributor-facing index of which
+# text covers which dependency, not a license text.
+set(_bc_license_readme_filter PATTERN "README.md" EXCLUDE)
+
+if(WIN32)
+    # Install root, alongside bin/. Both the zip and the NSIS install
+    # directory are browsed directly by the user.
+    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/COPYING"
+        DESTINATION .
+        COMPONENT Applications)
+    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/licenses/"
+        DESTINATION "licenses"
+        COMPONENT Applications
+        ${_bc_license_readme_filter})
+
+elseif(APPLE)
+    # Each bundle carries its own copy. The DMG ships two .app bundles and a
+    # user drags them out individually, so anything outside a bundle is lost.
+    #
+    # A bundle's signature seals its resources, and these files land after
+    # blackchirp_deploy_qt has already signed it — this module is included
+    # last, so its install rules run last. Left there, the added files make
+    # the signature invalid ("a sealed resource is missing or invalid") and
+    # the bundle will not launch. Re-seal each bundle once its licenses are
+    # in place, matching the ad-hoc identity used by the deployment pass.
+    foreach(_bc_app blackchirp blackchirp-viewer)
+        install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/COPYING"
+            DESTINATION "${_bc_app}.app/Contents/Resources"
+            COMPONENT Applications)
+        install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/licenses/"
+            DESTINATION "${_bc_app}.app/Contents/Resources/licenses"
+            COMPONENT Applications
+            ${_bc_license_readme_filter})
+        install(CODE "
+            set(_bundle \"\${CMAKE_INSTALL_PREFIX}/${_bc_app}.app\")
+            if(IS_DIRECTORY \"\${_bundle}\")
+                message(STATUS \"Re-signing \${_bundle} after adding license texts\")
+                execute_process(
+                    COMMAND codesign --force --deep --sign - \"\${_bundle}\"
+                    COMMAND_ERROR_IS_FATAL ANY
+                )
+            endif()
+        " COMPONENT Applications)
+    endforeach()
+    unset(_bc_app)
+
+else()
+    # Spelled out rather than taken from CMAKE_INSTALL_DOCDIR, which derives
+    # from PROJECT_NAME and would give share/doc/Blackchirp — a second
+    # directory differing from the deb's own share/doc/blackchirp only by
+    # case.
+    set(_bc_license_docdir "${CMAKE_INSTALL_DATAROOTDIR}/doc/blackchirp")
+    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/COPYING"
+        DESTINATION "${_bc_license_docdir}"
+        COMPONENT Applications)
+    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/licenses/"
+        DESTINATION "${_bc_license_docdir}/licenses"
+        COMPONENT Applications
+        ${_bc_license_readme_filter})
+    unset(_bc_license_docdir)
+endif()
+
+unset(_bc_license_readme_filter)
 
 # ============================================================================
 # Component-based packaging

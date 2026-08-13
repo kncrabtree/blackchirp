@@ -7,6 +7,15 @@ REGISTER_HARDWARE_PROTOCOLS(Qc9210Series,
     CommunicationProtocol::Rs232,
     CommunicationProtocol::Tcp,
     CommunicationProtocol::Gpib)
+REGISTER_COMM_DEFAULTS(Qc9210Series, CommunicationProtocol::Rs232,
+    {BC::Key::Comm::timeout, 200},
+    {BC::Key::Comm::termChar, QString("\r\n")})
+REGISTER_COMM_DEFAULTS(Qc9210Series, CommunicationProtocol::Tcp,
+    {BC::Key::Comm::timeout, 200},
+    {BC::Key::Comm::termChar, QString("\r\n")})
+REGISTER_COMM_DEFAULTS(Qc9210Series, CommunicationProtocol::Gpib,
+    {BC::Key::Comm::timeout, 200},
+    {BC::Key::Comm::termChar, QString("\r\n")})
 REGISTER_HARDWARE_SETTINGS(Qc9210Series,
     {BC::Key::PGen::numChannels, "Number of Channels",
      "Number of pulse output channels",
@@ -25,8 +34,6 @@ Qc9210Series::~Qc9210Series()
 
 void Qc9210Series::initializePGen()
 {
-    setDefault(BC::Key::Comm::timeout, 200);
-    setDefault(BC::Key::Comm::termChar, QString("\r\n"));
 }
 
 void Qc9210Series::beginAcquisition()

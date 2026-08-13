@@ -7,6 +7,9 @@ using namespace BC::Key::PController;
 // Register hardware implementation
 REGISTER_HARDWARE_META(IntellisysIQPlus, "Intellisys IQ+ Pressure Controller")
 REGISTER_HARDWARE_PROTOCOLS(IntellisysIQPlus, CommunicationProtocol::Rs232)
+REGISTER_COMM_DEFAULTS(IntellisysIQPlus, CommunicationProtocol::Rs232,
+    {BC::Key::Comm::timeout, 1000},
+    {BC::Key::Comm::termChar, QString("\r\n")})
 REGISTER_HARDWARE_SETTINGS(IntellisysIQPlus,
     {BC::Key::PController::min, "Min Pressure",
      "Minimum pressure reading (display range lower bound).",
@@ -16,17 +19,12 @@ REGISTER_HARDWARE_SETTINGS(IntellisysIQPlus,
 IntellisysIQPlus::IntellisysIQPlus(const QString& label, QObject *parent) :
     PressureController(QString(IntellisysIQPlus::staticMetaObject.className()), label, false, parent)
 {
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 1000);
-    setDefault(BC::Key::Comm::termChar, QString("\r\n"));
-
     save();
 }
 
 
 bool IntellisysIQPlus::pcTestConnection()
 {
-
     QByteArray resp = p_comm->queryCmd(QString("R38\n"));
     if(resp.isEmpty())
     {

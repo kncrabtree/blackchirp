@@ -1,0 +1,2 @@
+Index;StageKey;Op;Harmonic;IsFinal;Input0;Input1;OutCoeffA;OutCoeffB
+0;LifFreqConversionStage.doubler;NHG;2;true;LifLaser.virtual;;2;0

@@ -29,11 +29,42 @@
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 #include <hardware/core/liflaser/liflaser.h>
 #include <data/storage/applicationconfigmanager.h>
+#include <data/storage/enumcsvconvert.h>
+#include <data/lif/lifunits.h>
 #include <hardware/core/runtimehardwareconfig.h>
 #include <gui/widget/settingstable.h>
 
 using namespace BC::Key::WizStart;
 using namespace Qt::StringLiterals;
+
+namespace {
+//! Native display decimals/range/unit for the active LifLaser, read from its
+//! hardware settings snapshot (never a live device). Falls back to sane
+//! defaults when no LifLaser is configured.
+struct LifLaserHwInfo {
+    int decimals{2};
+    double minPos{5000.0};
+    double maxPos{40000.0};
+    BC::LifConv::LaserUnit unit{BC::LifConv::LaserUnit::Nm};
+};
+
+LifLaserHwInfo readLifLaserHwInfo(Experiment *exp)
+{
+    LifLaserHwInfo info;
+    for (auto it = exp->d_hardwareData.hardwareMap.cbegin(); it != exp->d_hardwareData.hardwareMap.cend(); ++it) {
+        if (it.value().type == BC::Data::HardwareType::LifLaser) {
+            SettingsStorage lset(it.key(), SettingsStorage::Hardware);
+            info.decimals = lset.get(BC::Key::LifLaser::decimals, info.decimals);
+            info.minPos = lset.get(BC::Key::LifLaser::minPos, info.minPos);
+            info.maxPos = lset.get(BC::Key::LifLaser::maxPos, info.maxPos);
+            info.unit = BC::CSV::enumFromVariant<BC::LifConv::LaserUnit>(
+                lset.get(BC::Key::LifLaser::units, QVariant::fromValue(info.unit)), info.unit);
+            break;
+        }
+    }
+    return info;
+}
+}
 
 ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     ExperimentConfigPage(key,title,exp,parent)
@@ -239,20 +270,23 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
 
         // Look up LifLaser settings before constructing widgets so the
         // laser column has the correct decimals, range, and units.
-        int decimals = 2;
-        double minPos = 250.0;
-        double maxPos = 2000.0;
-        QString units = "nm";
-        for (auto it = p_exp->d_hardwareData.hardwareMap.cbegin(); it != p_exp->d_hardwareData.hardwareMap.cend(); ++it) {
-            if (it.value().type == BC::Data::HardwareType::LifLaser) {
-                SettingsStorage lset(it.key(), SettingsStorage::Hardware);
-                decimals = lset.get(BC::Key::LifLaser::decimals, decimals);
-                minPos = lset.get(BC::Key::LifLaser::minPos, minPos);
-                maxPos = lset.get(BC::Key::LifLaser::maxPos, maxPos);
-                units = lset.get(BC::Key::LifLaser::units, units);
-                break;
-            }
-        }
+        // decimals/unit are inherent hardware properties of the laser,
+        // independent of the conversion topology. minPos/maxPos are the
+        // grating fundamental's native range (cm⁻¹); construction seeds the
+        // box range from these directly (the identity-conversion bounds) as
+        // a placeholder -- the DAG-derived FINAL-beam output range is
+        // re-derived from the experiment's LifConfig in initialize(), once
+        // its conversion topology may have been seeded from the current LIF
+        // preset (see updateLifLaserBounds()).
+        auto hwInfo = readLifLaserHwInfo(p_exp);
+        int decimals = hwInfo.decimals;
+        auto unit = hwInfo.unit;
+        auto dlo = BC::LifConv::fromCm1(hwInfo.minPos, unit);
+        auto dhi = BC::LifConv::fromCm1(hwInfo.maxPos, unit);
+        // A reciprocal unit (e.g. nm) reverses the min/max order.
+        double displayMin = qMin(dlo, dhi);
+        double displayMax = qMax(dlo, dhi);
+        QString units = BC::LifConv::unitLabel(unit);
 
         // Delay column (microseconds)
         p_dStartBox = new QDoubleSpinBox(this);
@@ -290,11 +324,11 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
         p_dEndBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
         p_dEndBox->setAlignment(Qt::AlignCenter);
 
-        // Laser column (configured units)
+        // Laser column (display units)
         p_lStartBox = new QDoubleSpinBox(this);
         p_lStartBox->setDecimals(decimals);
         p_lStartBox->setKeyboardTracking(false);
-        p_lStartBox->setRange(minPos, maxPos);
+        p_lStartBox->setRange(displayMin, displayMax);
         p_lStartBox->setSuffix(QString(" ").append(units));
         p_lStartBox->setValue(get(lifLaserStart,p_lStartBox->minimum()));
         p_lStartBox->setAlignment(Qt::AlignCenter);
@@ -320,7 +354,7 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
 
         p_lEndBox = new QDoubleSpinBox(this);
         p_lEndBox->setDecimals(decimals);
-        p_lEndBox->setRange(minPos, maxPos);
+        p_lEndBox->setRange(displayMin, displayMax);
         p_lEndBox->setSuffix(QString(" ").append(units));
         p_lEndBox->setReadOnly(true);
         p_lEndBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
@@ -487,6 +521,7 @@ bool ExperimentTypePage::lifEnabled() const
 void ExperimentTypePage::initialize()
 {
     configureUI();
+    updateLifLaserBounds();
     p_loScanConfigWidget->initialize();
     p_drScanConfigWidget->initialize();
 }
@@ -705,6 +740,39 @@ void ExperimentTypePage::updateLifRanges()
     if(p_orderBox && p_lNumStepsBox && p_dNumStepsBox) {
         p_orderBox->setDisabled(p_lNumStepsBox->value() == 1 || p_dNumStepsBox->value() == 1);
     }
+}
+
+void ExperimentTypePage::updateLifLaserBounds()
+{
+    if(!ApplicationConfigManager::instance().isLifEnabled() || !p_lStartBox)
+        return;
+
+    auto hwInfo = readLifLaserHwInfo(p_exp);
+
+    // The per-experiment LifConfig owns the joined conversion topology
+    // (seeded from the current LIF preset when enableLif() ran for this
+    // experiment); its conversion() is the identity conversion before that
+    // seeding has happened (e.g. LIF not yet enabled on this experiment),
+    // which still yields correct native-laser bounds.
+    LifConversion identity;
+    const LifConversion &conv = p_exp->lifConfig() ? p_exp->lifConfig()->conversion() : identity;
+
+    auto [outLoCm1, outHiCm1] = conv.outputRange(hwInfo.minPos, hwInfo.maxPos);
+    auto dlo = BC::LifConv::fromCm1(outLoCm1, hwInfo.unit);
+    auto dhi = BC::LifConv::fromCm1(outHiCm1, hwInfo.unit);
+    // A reciprocal unit (e.g. nm) reverses the min/max order.
+    double displayMin = qMin(dlo, dhi);
+    double displayMax = qMax(dlo, dhi);
+
+    p_lStartBox->setRange(displayMin, displayMax);
+    p_lEndBox->setRange(displayMin, displayMax);
+    auto laserRange = displayMax - displayMin;
+    p_lStepBox->setRange(-laserRange, laserRange);
+
+    // p_lEndBox and the Points bounds depend on Start/Step, which setRange()
+    // above may have clamped; recompute them for the (possibly narrowed)
+    // bounds.
+    updateLifRanges();
 }
 
 void ExperimentTypePage::updateLabel()

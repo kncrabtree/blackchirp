@@ -45,6 +45,7 @@ set(HARDWARE_TYPES_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/tempcontroller/temperaturecontroller.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/lifdigitizer/lifdigitizer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/liflaser.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/laserfreqconversion/laserfreqconversionstage.cpp
 )
 
 # Hardware implementations
@@ -83,6 +84,10 @@ file(GLOB HARDWARE_IMPLEMENTATIONS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/virtual*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/opolette.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/sirah*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/laserfreqconversion/virtual*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/laserfreqconversion/fixed*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/laserfreqconversion/sirahfcu.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/laserfreqconversion/autotrackerprotocol.cpp
 )
 
 # u3.cpp is the exodriver-only vendored helper; not compiled on Windows
@@ -138,6 +143,7 @@ set(HARDWARE_TYPE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/tempcontroller/temperaturecontroller.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/lifdigitizer/lifdigitizer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/liflaser.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/laserfreqconversion/laserfreqconversionstage.h
 )
 
 file(GLOB HARDWARE_IMPLEMENTATION_HEADERS
@@ -174,6 +180,10 @@ file(GLOB HARDWARE_IMPLEMENTATION_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/virtual*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/opolette.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/sirah*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/laserfreqconversion/virtual*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/laserfreqconversion/fixed*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/laserfreqconversion/sirahfcu.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/optional/laserfreqconversion/autotrackerprotocol.h
 )
 
 # Append Python hardware headers so hw_impl.h includes them.

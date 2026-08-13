@@ -662,6 +662,37 @@ protected:
     std::map<QString,bool,std::less<>> setGroupValues(QAnyStringView groupKey, const SettingsMap &values, bool write = false);
 
     /*!
+     * \brief Sets a default value within a group if none exists
+     *
+     * Group-aware counterpart to setDefault(): if the group already contains
+     * the key, no action is taken; otherwise the value is stored via
+     * setGroupValue(). A value the user has already configured is never
+     * overwritten, which makes this safe to call on every construction (e.g.
+     * to seed registry-provided communication defaults).
+     *
+     * \param groupKey The group identifier
+     * \param key The key within the group
+     * \param defaultValue Value to set if the group key is not found
+     * \param write If true, write to persistent storage immediately
+     */
+    void setGroupDefault(QAnyStringView groupKey, QAnyStringView key, const QVariant &defaultValue, bool write = false);
+
+    /*!
+     * \brief Sets a default value within a group if none exists. Overloaded function
+     *
+     * Template version for type safety.
+     *
+     * \param groupKey The group identifier
+     * \param key The key within the group
+     * \param defaultValue Value to set if the group key is not found
+     * \param write If true, write to persistent storage immediately
+     */
+    template<typename T>
+    void setGroupDefault(QAnyStringView groupKey, QAnyStringView key, const T &defaultValue, bool write = false) {
+        setGroupDefault(groupKey, key, QVariant::fromValue(defaultValue), write);
+    }
+
+    /*!
      * \brief Clears all data associated with a key and removes it from QSettings
      *
      * This clears all forms of data associated with the given key: regular values,

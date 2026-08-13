@@ -1,6 +1,7 @@
 .. index::
    single: HardwareLoadout
    single: FtmwPreset
+   single: LifPreset
    single: loadouts; data model
    single: BC::Loadout
 
@@ -58,6 +59,23 @@ on read rather than being stored in the preset. The user-facing model
 for naming, switching, and editing presets is described in the
 :doc:`/user_guide/ftmw_configuration/presets` chapter.
 
+LifPreset
+---------
+
+:cpp:struct:`LifPreset` is the LIF counterpart to :cpp:struct:`FtmwPreset`:
+a named LIF operating point owned by a loadout. It carries a single
+:cpp:struct:`LifConversionSnapshot` — the frequency-conversion wiring
+(each stage's input references and the excitation-beam marker) captured
+against the active LIF laser — together with a ``lastModified``
+timestamp. Unlike ``FtmwPreset``, it deliberately holds conversion
+wiring only; the per-stage operation and harmonic order are hardware
+identity read from each stage's settings snapshot at assembly time, not
+persisted in the preset. The ``lifPresets`` collection and
+``currentLifPresetName`` field on ``HardwareLoadout`` mirror their FTMW
+equivalents, and are managed by the same :cpp:class:`LoadoutManager`
+CRUD. The user-facing model is described in the
+:doc:`/user_guide/lif/presets` chapter.
+
 Persistence helpers
 -------------------
 
@@ -74,6 +92,11 @@ read. Two groups are exposed:
 - *Hardware-map conversions* — ``hardwareMapArray`` and
   ``hardwareMapFromArray`` translate between a loadout's ``hardwareMap``
   and the array record persisted under its ``hardwareMap`` sub-group.
+- *LifConversionSnapshot conversions* — ``lifConversionScalarsMap``,
+  ``lifConversionWiringArray``, and ``lifConversionSnapshotFromMaps``
+  translate between a :cpp:struct:`LifConversionSnapshot` and the
+  scalar/array records persisted under each LIF preset's conversion
+  sub-groups, mirroring the RfConfigSnapshot helpers above.
 
 ``copyClocksMatching`` and ``copyRfScalars`` support the per-component
 copy operations exposed by the FTMW configuration dialog tabs: they
@@ -98,6 +121,10 @@ API Reference
    :undoc-members:
 
 .. doxygenstruct:: FtmwPreset
+   :members:
+   :undoc-members:
+
+.. doxygenstruct:: LifPreset
    :members:
    :undoc-members:
 

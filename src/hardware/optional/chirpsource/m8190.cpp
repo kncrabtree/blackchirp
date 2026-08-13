@@ -6,6 +6,9 @@
 // Register hardware implementation
 REGISTER_HARDWARE_META(M8190, "Keysight M8190 AWG")
 REGISTER_HARDWARE_PROTOCOLS(M8190, CommunicationProtocol::Tcp)
+REGISTER_COMM_DEFAULTS(M8190, CommunicationProtocol::Tcp,
+    {BC::Key::Comm::timeout, 10000},
+    {BC::Key::Comm::termChar, QString("\n")})
 REGISTER_HARDWARE_SETTINGS(M8190,
     {BC::Key::AWG::rate, "Sample Rate (Hz)", "DAC output sample rate",
      9.375e9, 1e6, 1000e9, HwSettingPriority::Important},
@@ -19,18 +22,12 @@ REGISTER_HARDWARE_SETTINGS(M8190,
 
 M8190::M8190(const QString& label, QObject *parent) : AWG(QString(M8190::staticMetaObject.className()), label, parent)
 {
-
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 10000);
-    setDefault(BC::Key::Comm::termChar, QString("\n"));
-
     save();
 }
 
 
 bool M8190::testConnection()
 {
-
     QByteArray resp = p_comm->queryCmd(QString("*IDN?\n"));
 
     if(resp.isEmpty())
@@ -58,7 +55,6 @@ void M8190::initialize()
 
 bool M8190::prepareForExperiment(Experiment &exp)
 {
-
     bool triggered = get<bool>(BC::Key::AWG::triggered);
     double samplerate = get<double>(BC::Key::AWG::rate);
     Q_UNUSED(samplerate)

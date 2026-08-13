@@ -141,8 +141,12 @@ private:
     bool d_experimentValid;
     bool d_hasFtData;
     Ft d_configuredFt;
-    QString d_fullCustomPath; // Store full path separately from abbreviated display
-    
+
+    /// VScale ignore half-width (MHz) the configured FT was processed under.
+    /// Carried onto the overlay so its autoscaling excludes the same band the
+    /// source plot did.
+    double d_configuredIgnoreMHz{0.0};
+
     // Helper methods
     void resetFtConfiguration();
     QString getExperimentPath() const;

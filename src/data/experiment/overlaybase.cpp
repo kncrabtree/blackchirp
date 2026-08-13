@@ -119,6 +119,22 @@ double OverlayBase::yMax() const
     return d_cachedYMax;
 }
 
+std::pair<double,double> OverlayBase::displayYRange() const
+{
+    const auto d = xyData();
+    if (d.isEmpty())
+        return {0.0,0.0};
+
+    double lo = d.constFirst().y();
+    double hi = lo;
+    for (const QPointF &p : d) {
+        lo = qMin(lo,p.y());
+        hi = qMax(hi,p.y());
+    }
+
+    return {lo,hi};
+}
+
 QVariant OverlayBase::getCurveMetadata(const QString &key) const
 {
     auto it = d_curveMetadata.find(key);

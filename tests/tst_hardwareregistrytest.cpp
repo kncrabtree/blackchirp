@@ -6,6 +6,13 @@
 
 #include <src/hardware/core/hardwareregistry.h>
 #include <src/hardware/core/hardwareobject.h>
+#include <hardware/core/liflaser/liflaser.h>
+#include <hardware/core/liflaser/virtualliflaser.h>
+#include <hardware/optional/laserfreqconversion/laserfreqconversionstage.h>
+#include <hardware/optional/laserfreqconversion/virtuallaserfreqconversionstage.h>
+#include <data/lif/lifunits.h>
+#include <data/lif/lifconversion.h>
+#include <data/storage/enumcsvconvert.h>
 
 // Mock hardware classes for testing
 class MockHardware : public HardwareObject
@@ -54,6 +61,9 @@ private slots:
     void testSingletonAccess();
     void testHardwareRegistration();
     void testHardwareCreation();
+    void testEnumSettingDefaultSeededAsKeyName();
+    void testLifLaserPositionDisplayUnitKey();
+    void testFreqConversionStageConstructionPath();
     void testDuplicateRegistration();
     void testInvalidRegistration();
     
@@ -63,6 +73,8 @@ private slots:
     void testGetRegistration();
     void testIsRegistered();
     void testAllExpectedImplementationsRegistered();
+    void testCommDefaults();
+    void testCommDefaultsUnregistered();
     
     // Thread safety tests
     void testConcurrentRegistration();
@@ -166,6 +178,71 @@ void HardwareRegistryTest::testHardwareCreation()
     
     // Clean up
     delete hw;
+}
+
+void HardwareRegistryTest::testEnumSettingDefaultSeededAsKeyName()
+{
+    using namespace BC::LifConv;
+
+    // Construct a real driver whose LifLaser base registers an enum-valued
+    // setting (units, a LaserUnit). HardwareObject::applyRegisteredSettings
+    // seeds every registered default at construction; an enum default must
+    // land in storage as its Q_ENUM key-name string, never as a raw
+    // enum-typed QVariant (which QSettings serializes as an opaque blob).
+    VirtualLifLaser laser("enumSeedTest");
+
+    auto stored = laser.get(BC::Key::LifLaser::units, QVariant{});
+    QCOMPARE(stored.typeId(), QMetaType::QString);
+    QCOMPARE(stored.toString(), QStringLiteral("Nm"));
+    QCOMPARE(BC::CSV::enumFromVariant<LaserUnit>(stored, LaserUnit::Cm1), LaserUnit::Nm);
+}
+
+void HardwareRegistryTest::testLifLaserPositionDisplayUnitKey()
+{
+    // minPos/maxPos are internally cm⁻¹ but entered/displayed in the unit
+    // named by HwSettingDef::displayUnitKey (HwSettingsWidget converts on
+    // that basis). Confirm the field survives both the base-class merge
+    // path (VirtualLifLaser inherits minPos/maxPos from LifLaser without
+    // overriding them) and the per-driver override path (SirahCobra
+    // re-registers minPos/maxPos with its own range).
+    auto &reg = HardwareRegistry::instance();
+
+    auto checkPositionDefs = [](const QVector<HwSettingDef> &defs) {
+        bool sawMinPos = false, sawMaxPos = false;
+        for (const auto &def : defs) {
+            if (def.key == BC::Key::LifLaser::minPos) {
+                sawMinPos = true;
+                QCOMPARE(def.displayUnitKey, BC::Key::LifLaser::units);
+            } else if (def.key == BC::Key::LifLaser::maxPos) {
+                sawMaxPos = true;
+                QCOMPARE(def.displayUnitKey, BC::Key::LifLaser::units);
+            }
+        }
+        QVERIFY(sawMinPos);
+        QVERIFY(sawMaxPos);
+    };
+
+    checkPositionDefs(reg.getSettingDefs("LifLaser", "VirtualLifLaser"));
+    checkPositionDefs(reg.getSettingDefs("LifLaser", "SirahCobra"));
+}
+
+void HardwareRegistryTest::testFreqConversionStageConstructionPath()
+{
+    using namespace BC::LifConv;
+
+    // Same construction-path guarantee as testEnumSettingDefaultSeededAsKeyName,
+    // for the LaserFreqConversionStage base's enum-valued conversionOp setting,
+    // plus a check that conversionOp()/harmonicOrder() read the registered
+    // op/harmonic settings back for the stage.
+    VirtualLaserFreqConversionStage stage("enumSeedTest");
+
+    auto stored = stage.get(BC::Key::LaserConvStage::op, QVariant{});
+    QCOMPARE(stored.typeId(), QMetaType::QString);
+    QCOMPARE(stored.toString(), QStringLiteral("NHG"));
+    QCOMPARE(BC::CSV::enumFromVariant<Op>(stored, Op::SFG), Op::NHG);
+
+    QCOMPARE(stage.conversionOp(), Op::NHG);
+    QCOMPARE(stage.harmonicOrder(), 2);
 }
 
 void HardwareRegistryTest::testDuplicateRegistration()
@@ -322,6 +399,8 @@ void HardwareRegistryTest::testAllExpectedImplementationsRegistered()
         {"TemperatureController", "VirtualTemperatureController"},
         {"LifDigitizer",          "VirtualLifDigitizer"},
         {"LifLaser",              "VirtualLifLaser"},
+        {"LaserFreqConversionStage", "VirtualLaserFreqConversionStage"},
+        {"LaserFreqConversionStage", "FixedLaserFreqConversionStage"},
     };
 
     const QStringList types = d_registry->getHardwareTypes();
@@ -346,6 +425,62 @@ void HardwareRegistryTest::testAllExpectedImplementationsRegistered()
                      "\"Windows hardware-registry truncation\".")
                      .arg(type, impl)));
     }
+}
+
+namespace {
+// Look up a CommDefault by key within a protocol's default list.
+QVariant commDefaultValue(const QMap<CommunicationProtocol::CommType, QVector<CommDefault>>& defs,
+                          CommunicationProtocol::CommType protocol, const QString& key)
+{
+    auto it = defs.find(protocol);
+    if (it == defs.end())
+        return {};
+    for (const auto& d : it.value()) {
+        if (d.key == key)
+            return d.value;
+    }
+    return {};
+}
+}
+
+void HardwareRegistryTest::testCommDefaults()
+{
+    QString testKey = QString("TestType_%1").arg(d_testCounter);
+    QString testSubKey = "commdefaults_test";
+    registerTestHardware(testKey, testSubKey, "Comm Defaults Test Hardware");
+
+    // Register per-protocol defaults
+    QVERIFY(d_registry->addCommDefaults(testKey, testSubKey, CommunicationProtocol::Rs232,
+        {{"timeout", 100}, {"termChar", QString(";FF")}}));
+    QVERIFY(d_registry->addCommDefaults(testKey, testSubKey, CommunicationProtocol::Tcp,
+        {{"timeout", 20000}}));
+
+    auto defs = d_registry->getCommDefaults(testKey, testSubKey);
+
+    QCOMPARE(defs.value(CommunicationProtocol::Rs232).size(), 2);
+    QCOMPARE(commDefaultValue(defs, CommunicationProtocol::Rs232, "timeout").toInt(), 100);
+    QCOMPARE(commDefaultValue(defs, CommunicationProtocol::Rs232, "termChar").toString(), QString(";FF"));
+    QCOMPARE(commDefaultValue(defs, CommunicationProtocol::Tcp, "timeout").toInt(), 20000);
+
+    // Protocols with no registered defaults are simply absent
+    QVERIFY(!defs.contains(CommunicationProtocol::Gpib));
+
+    // A second call for the same protocol appends rather than replaces
+    QVERIFY(d_registry->addCommDefaults(testKey, testSubKey, CommunicationProtocol::Tcp,
+        {{"termChar", QString("\n")}}));
+    defs = d_registry->getCommDefaults(testKey, testSubKey);
+    QCOMPARE(defs.value(CommunicationProtocol::Tcp).size(), 2);
+    QCOMPARE(commDefaultValue(defs, CommunicationProtocol::Tcp, "termChar").toString(), QString("\n"));
+}
+
+void HardwareRegistryTest::testCommDefaultsUnregistered()
+{
+    // Adding defaults to hardware that was never registered fails.
+    QVERIFY(!d_registry->addCommDefaults("NonExistentType", "none",
+        CommunicationProtocol::Rs232, {{"timeout", 100}}));
+
+    // Querying unregistered hardware yields an empty map.
+    QVERIFY(d_registry->getCommDefaults("NonExistentType", "none").isEmpty());
 }
 
 void HardwareRegistryTest::testConcurrentRegistration()

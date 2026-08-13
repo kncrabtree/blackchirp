@@ -12,6 +12,16 @@ RfConfigSnapshot RfConfigSnapshot::fromRfConfig(const RfConfig &c)
     return snap;
 }
 
+std::set<QString> RfConfigSnapshot::referencedHwKeys() const
+{
+    std::set<QString> keys;
+    for (auto it = clocks.constBegin(); it != clocks.constEnd(); ++it) {
+        if (!it.value().hwKey.isEmpty())
+            keys.insert(it.value().hwKey);
+    }
+    return keys;
+}
+
 void RfConfigSnapshot::applyTo(RfConfig &c) const
 {
     c.d_commonUpDownLO = commonUpDownLO;

@@ -6,6 +6,9 @@
 // Register hardware implementation
 REGISTER_HARDWARE_META(M8195A, "Keysight M8195A high-speed AWG")
 REGISTER_HARDWARE_PROTOCOLS(M8195A, CommunicationProtocol::Tcp)
+REGISTER_COMM_DEFAULTS(M8195A, CommunicationProtocol::Tcp,
+    {BC::Key::Comm::timeout, 10000},
+    {BC::Key::Comm::termChar, QString("\n")})
 REGISTER_HARDWARE_SETTINGS(M8195A,
     {BC::Key::AWG::rate, "Sample Rate (Hz)", "DAC output sample rate",
      65e9, 1e6, 1000e9, HwSettingPriority::Important},
@@ -19,11 +22,6 @@ REGISTER_HARDWARE_SETTINGS(M8195A,
 
 M8195A::M8195A(const QString& label, QObject *parent) : AWG(QString(M8195A::staticMetaObject.className()), label, parent)
 {
-
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 10000);
-    setDefault(BC::Key::Comm::termChar, QString("\n"));
-
     save();
 }
 
@@ -31,7 +29,6 @@ M8195A::M8195A(const QString& label, QObject *parent) : AWG(QString(M8195A::stat
 
 bool M8195A::testConnection()
 {
-
     QByteArray resp = p_comm->queryCmd(QString("*IDN?\n"));
 
     if(resp.isEmpty())

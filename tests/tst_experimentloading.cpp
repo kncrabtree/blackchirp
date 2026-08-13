@@ -1,8 +1,12 @@
 #include <QtTest>
 #include <QCoreApplication>
+#include <QTemporaryDir>
 
 #include "src/data/experiment/hardwaredatacontainer.h"
 #include "src/data/experiment/experiment.h"
+#include "src/data/lif/lifunits.h"
+#include "src/data/lif/lifconversion.h"
+#include "src/data/storage/blackchirpcsv.h"
 
 using namespace BC::Data;
 
@@ -44,12 +48,25 @@ private slots:
     void loadExperiment27_header();
     void loadExperiment27_lifConfig();
 
+    // Loading by path alone, with no experiment number supplied
+    void loadByPathWithoutNumber();
+    void loadByPathNonExistentReportsError();
+
     // Legacy LIF experiment captured pre-rename (digitizer key
     // recovered via the FtmwScope/LifScope alias map; laser units +
     // decimals plumbed through the on-disk LaserStart row rather than
     // the loading machine's local hardware settings).
     void loadLegacyLif883_digitizerAndGates();
     void loadLegacyLif883_laserAxisMetadata();
+
+    // LifConfig header store/retrieve round trip for a non-Nm display
+    // unit (contract §F: the scan axis is stored in the display unit).
+    void lifConfigLaserAxisRoundTrip();
+
+    // liftopology.csv write -> read round trip for LifConfig (C-5):
+    // no on-disk fixture exists yet, so the topology is generated in-test.
+    void lifTopologyFileRoundTrip();
+    void lifTopologyFileMissingIsIdentity();
 
 private:
     QString testDataDir() const;
@@ -446,6 +463,28 @@ void ExperimentLoadingTest::loadExperiment27_lifConfig()
     QCOMPARE(lif->d_shotsPerPoint, 10);
 }
 
+void ExperimentLoadingTest::loadByPathWithoutNumber()
+{
+    // The overlay "Configure FT" workflow identifies an experiment by
+    // directory alone and has no number to supply. The number must come from
+    // the header, since callers use it to decide whether the load succeeded.
+    Experiment exp(0, testDataDir() + "/2638", true);
+
+    QVERIFY(exp.d_errorString.isEmpty());
+    QCOMPARE(exp.d_number, 2638);
+    QVERIFY(exp.ftmwEnabled());
+}
+
+void ExperimentLoadingTest::loadByPathNonExistentReportsError()
+{
+    // A path that does not resolve must leave an explanation behind: callers
+    // display d_errorString, and an empty one renders as a blank widget.
+    Experiment exp(0, testDataDir() + "/no_such_experiment_directory", true);
+
+    QVERIFY(!exp.d_errorString.isEmpty());
+    QCOMPARE(exp.d_number, 0);
+}
+
 void ExperimentLoadingTest::loadLegacyLif883_digitizerAndGates()
 {
     // Guards the pre-rename LIF load path documented in
@@ -496,10 +535,139 @@ void ExperimentLoadingTest::loadLegacyLif883_laserAxisMetadata()
     auto *lif = exp.lifConfig();
     QVERIFY(lif != nullptr);
 
-    QCOMPARE(lif->laserUnits(), QString("nm"));
+    QCOMPARE(lif->laserUnits(), BC::LifConv::LaserUnit::Nm);
     // LaserStep is "0.01" → 2 fractional digits; LaserStart is "280"
     // → 0 digits; max(0, 2) = 2.
     QCOMPARE(lif->laserDecimals(), 2);
+}
+
+void ExperimentLoadingTest::lifConfigLaserAxisRoundTrip()
+{
+    // LifConfig::storeValues()/retrieveValues() write/parse the laser
+    // axis unit cell via BC::LifConv::unitLabel()/comparison rather than
+    // a raw string (contract §F). Cm1's label is the non-ASCII "cm⁻¹",
+    // so this exercises that the peekUnit() cell comparison round-trips
+    // a non-ASCII unit label, not just the legacy "nm" case covered by
+    // loadLegacyLif883_laserAxisMetadata().
+    LifConfig src("LifDigitizer.default");
+    src.setLaserUnits(BC::LifConv::LaserUnit::Cm1);
+    src.setLaserDecimals(2);
+    src.d_laserPosStart = 20000.50;
+    src.d_laserPosStep = -10.25;
+    src.d_laserPosPoints = 5;
+
+    // Drive a write pass then feed the resulting rows into a fresh
+    // LifConfig's read pass, mirroring the CSV round trip without
+    // touching disk.
+    auto strings = src.getStrings();
+
+    LifConfig dst("LifDigitizer.default");
+    dst.prepareToStore();
+    for(auto it = strings.cbegin(); it != strings.cend(); ++it)
+    {
+        auto [arrayKey,arrayIndex,key,value,unit] = it->second;
+        QVariantList line{it->first,arrayKey,arrayIndex,key,value,unit};
+        QVERIFY(dst.storeLine(line));
+    }
+    dst.readComplete();
+
+    QCOMPARE(dst.laserUnits(), BC::LifConv::LaserUnit::Cm1);
+    QCOMPARE(dst.laserDecimals(), 2);
+    QCOMPARE(dst.d_laserPosStart, 20000.50);
+    QCOMPARE(dst.d_laserPosStep, -10.25);
+    QCOMPARE(dst.d_laserPosPoints, 5);
+}
+
+void ExperimentLoadingTest::lifTopologyFileRoundTrip()
+{
+    using namespace BC::LifConv;
+
+    QTemporaryDir srcDir, dstDir;
+    QVERIFY(srcDir.isValid());
+    QVERIFY(dstDir.isValid());
+
+    // NHG doubler (not final) feeding an SFG (final) with a Fixed second
+    // input, exercising all three input-token classifications (Laser,
+    // Stage, Fixed) in a single topology.
+    Node doubler;
+    doubler.stageKey = QStringLiteral("doubler");
+    doubler.op = Op::NHG;
+    doubler.n = 2;
+    doubler.inputs = {InputRef{RefType::Laser, {}, 0.0}};
+    doubler.isFinal = false;
+
+    Node tripler;
+    tripler.stageKey = QStringLiteral("tripler");
+    tripler.op = Op::SFG;
+    tripler.inputs = {InputRef{RefType::Stage, QStringLiteral("doubler"), 0.0},
+                      InputRef{RefType::Fixed, {}, 50.0}};
+    tripler.isFinal = true;
+
+    LifConfig src(QStringLiteral("LifDigitizer.default"));
+    src.d_number = 1;
+    src.d_path = srcDir.path();
+    src.setConversionNodes({doubler, tripler}, QStringLiteral("LifLaser.default"));
+    QVERIFY(src.hasConversion());
+    QVERIFY(!src.conversion().isIdentity());
+    QVERIFY(src.writeTopologyFile());
+
+    LifConfig dst(QStringLiteral("LifDigitizer.default"));
+    dst.d_number = 1;
+    dst.d_path = srcDir.path();
+    QVERIFY(dst.readTopologyFile());
+
+    QVERIFY(dst.hasConversion());
+    const auto &nodes = dst.conversionNodes();
+    QCOMPARE(nodes.size(), std::size_t(2));
+
+    QCOMPARE(nodes[0].stageKey, QStringLiteral("doubler"));
+    QCOMPARE(nodes[0].op, Op::NHG);
+    QCOMPARE(nodes[0].n, 2);
+    QVERIFY(!nodes[0].isFinal);
+    QCOMPARE(nodes[0].inputs.size(), std::size_t(1));
+    QCOMPARE(nodes[0].inputs[0].type, RefType::Laser);
+
+    QCOMPARE(nodes[1].stageKey, QStringLiteral("tripler"));
+    QCOMPARE(nodes[1].op, Op::SFG);
+    QVERIFY(nodes[1].isFinal);
+    QCOMPARE(nodes[1].inputs.size(), std::size_t(2));
+    QCOMPARE(nodes[1].inputs[0].type, RefType::Stage);
+    QCOMPARE(nodes[1].inputs[0].stageKey, QStringLiteral("doubler"));
+    QCOMPARE(nodes[1].inputs[1].type, RefType::Fixed);
+    QCOMPARE(nodes[1].inputs[1].fixedCm1, 50.0);
+
+    // The re-assembled conversion behaves identically to the source.
+    QCOMPARE(dst.conversion().laserToOutput(100.0), src.conversion().laserToOutput(100.0));
+    QCOMPARE(dst.conversion().outputToLaser(250.0), src.conversion().outputToLaser(250.0));
+
+    // Re-writing the read-back config reproduces byte-identical output,
+    // which also exercises that the Laser input's captured hwKey
+    // ("LifLaser.default", not observable via a public accessor) survived
+    // the read.
+    dst.d_path = dstDir.path();
+    QVERIFY(dst.writeTopologyFile());
+
+    QFile f1(QDir(srcDir.path()).absoluteFilePath(BC::CSV::lifTopologyFile));
+    QFile f2(QDir(dstDir.path()).absoluteFilePath(BC::CSV::lifTopologyFile));
+    QVERIFY(f1.open(QIODevice::ReadOnly | QIODevice::Text));
+    QVERIFY(f2.open(QIODevice::ReadOnly | QIODevice::Text));
+    QCOMPARE(QString(f1.readAll()), QString(f2.readAll()));
+}
+
+void ExperimentLoadingTest::lifTopologyFileMissingIsIdentity()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+
+    LifConfig cfg(QStringLiteral("LifDigitizer.default"));
+    cfg.d_number = 1;
+    cfg.d_path = dir.path();
+
+    // No liftopology.csv on disk: identity, not an error (mirrors
+    // writeTopologyFile()'s "skip for the identity case" contract).
+    QVERIFY(cfg.readTopologyFile());
+    QVERIFY(!cfg.hasConversion());
+    QVERIFY(cfg.conversion().isIdentity());
 }
 
 QTEST_MAIN(ExperimentLoadingTest)

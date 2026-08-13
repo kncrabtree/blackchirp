@@ -53,6 +53,16 @@ bool CustomZoomer::mouseMatch(const MousePattern &pattern, const QMouseEvent *ev
     if (ev == nullptr)
         return false;
 
+    // Rubber-band zooming is a left-button gesture only. ZoomPanPlot claims
+    // the middle button for panning and the right button for the context
+    // menu, and Qwt's default patterns would otherwise map those onto
+    // zoom-stack navigation, which applies a stale stack rect to the axes.
+    if (ev->button() != Qt::LeftButton)
+        return false;
+
+    // Modifiers are dropped so a modifier held for an unrelated purpose does
+    // not suppress the zoom; this also keeps the shift/alt variants of the
+    // left-button patterns from matching.
     const MousePattern mousePattern( ev->button(), Qt::NoModifier );
     return mousePattern == pattern;
 }

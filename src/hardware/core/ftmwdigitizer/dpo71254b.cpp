@@ -12,6 +12,9 @@ using namespace BC::Key::Digi;
 // Register this hardware implementation
 REGISTER_HARDWARE_META(Dpo71254b, "Tektronix DPO71254B FTMW Digitizer (12.5 GHz, 50 GS/s)")
 REGISTER_HARDWARE_PROTOCOLS(Dpo71254b, CommunicationProtocol::Tcp)
+REGISTER_COMM_DEFAULTS(Dpo71254b, CommunicationProtocol::Tcp,
+    {BC::Key::Comm::timeout, 1000},
+    {BC::Key::Comm::termChar, QString("\n")})
 REGISTER_HARDWARE_SETTINGS(Dpo71254b,
     {multiBlock,         "Multi Block",         "Can block average and multi-record simultaneously",
      true, QVariant{}, QVariant{}, HwSettingPriority::Optional},
@@ -37,22 +40,15 @@ Dpo71254b::Dpo71254b(const QString& label, QObject *parent) :
     d_waitingForReply(false), d_foundHeader(false),
     d_headerNumBytes(0), d_waveformBytes(0)
 {
-
-    // Communication defaults
-    setDefault(BC::Key::Comm::timeout, 1000);
-    setDefault(BC::Key::Comm::termChar, QString("\n"));
-
     save();
 }
 
 Dpo71254b::~Dpo71254b()
 {
-
 }
 
 bool Dpo71254b::testConnection()
 {
-
     p_comm->writeCmd(QString("*CLS\n"));
     p_comm->writeCmd(QString("*CLS\n"));
     QByteArray resp = scopeQueryCmd(QString("*IDN?\n"));
@@ -612,7 +608,6 @@ void Dpo71254b::beginAcquisition()
 
 void Dpo71254b::endAcquisition()
 {
-
     if(d_enabledForExperiment)
     {
         //stop parsing waveforms

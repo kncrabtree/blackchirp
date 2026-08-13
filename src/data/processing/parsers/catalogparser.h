@@ -7,17 +7,23 @@
 #include "fileparser.h"
 #include <data/experiment/catalogdata.h>
 
+// Monospace spans in this class comment use \c rather than the ``...``
+// form used elsewhere. Doxygen 1.14 drops the entire class from its
+// output — silently, with no warning of its own — when the class
+// comment body and a member comment both carry ``...`` spans, leaving
+// the doxygenclass directive in classes/catalogparser.rst with nothing
+// to render.
 /// \brief Abstract base for spectroscopic catalog parsers.
 ///
 /// Adds a single hook on top of :cpp:class:`FileParser` — the
-/// ``parse()`` method that converts a recognized catalog file into a
-/// :cpp:class:`CatalogData` value. ``CatalogData`` contains the
+/// \c parse() method that converts a recognized catalog file into a
+/// :cpp:class:`CatalogData` value. \c CatalogData contains the
 /// ordered list of transitions (frequency, intensity, error, lower
 /// energy, quantum numbers, ...) plus source-program metadata. The
 /// concrete subclasses ship with Blackchirp are :cpp:class:`SPCATParser`
 /// and :cpp:class:`XIAMParser`; a new format that exposes the same
 /// transition shape (frequency + intensity + quantum numbers) should
-/// derive from this class so that ``CatalogOverlay`` can consume it
+/// derive from this class so that \c CatalogOverlay can consume it
 /// without further code changes.
 ///
 /// \sa SPCATParser, XIAMParser, CatalogData, FileParserRegistry
