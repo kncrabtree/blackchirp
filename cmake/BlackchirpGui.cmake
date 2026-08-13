@@ -363,6 +363,7 @@ target_link_libraries(blackchirp-gui
         Qt6::Network
         QWT::QWT
         Blackchirp::Data
+        Blackchirp::Acquisition
     PRIVATE
         GSL::gsl
         GSL::gslcblas

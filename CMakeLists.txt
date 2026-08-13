@@ -262,6 +262,17 @@ endfunction()
 include(cmake/BlackchirpData.cmake)
 
 # ============================================================================
+# Acquisition Layer
+# ============================================================================
+
+# Create acquisition layer library (experiment and batch management). Must
+# precede the GUI layer, which links it. The viewer does not acquire data
+# and never links it.
+if(NOT BC_BUILD_VIEWER_ONLY)
+    include(cmake/BlackchirpAcquisition.cmake)
+endif()
+
+# ============================================================================
 # GUI Layer
 # ============================================================================
 

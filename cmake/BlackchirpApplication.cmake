@@ -24,25 +24,6 @@ set(BLACKCHIRP_APP_HEADERS
 )
 
 # ============================================================================
-# Acquisition Layer Source Files
-# ============================================================================
-
-# The acquisition layer contains experiment management and batch processing
-set(BLACKCHIRP_ACQUISITION_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/acquisition/acquisitionmanager.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/acquisition/batch/batchmanager.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/acquisition/batch/batchsequence.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/acquisition/batch/batchsingle.cpp
-)
-
-set(BLACKCHIRP_ACQUISITION_HEADERS
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/acquisition/acquisitionmanager.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/acquisition/batch/batchmanager.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/acquisition/batch/batchsequence.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/acquisition/batch/batchsingle.h
-)
-
-# ============================================================================
 # Optional Module Source Files
 # ============================================================================
 
@@ -82,16 +63,17 @@ qt6_add_resources(BLACKCHIRP_COMPILED_RESOURCES ${BLACKCHIRP_QRC_FILES})
 # Create Application Executable Target
 # ============================================================================
 
-# Combine all application sources
+# Combine all application sources. The acquisition layer lives in its own
+# library (cmake/BlackchirpAcquisition.cmake) and reaches the executable
+# through blackchirp-gui. The CUDA sources stay here: the GPU code
+# predates the CMake migration and is not built by any library target.
 set(BLACKCHIRP_APP_ALL_SOURCES
     ${BLACKCHIRP_APP_SOURCES}
-    ${BLACKCHIRP_ACQUISITION_SOURCES}
     ${BLACKCHIRP_CUDA_SOURCES}
 )
 
 set(BLACKCHIRP_APP_ALL_HEADERS
     ${BLACKCHIRP_APP_HEADERS}
-    ${BLACKCHIRP_ACQUISITION_HEADERS}
     ${BLACKCHIRP_CUDA_HEADERS}
 )
 
@@ -159,6 +141,7 @@ target_include_directories(blackchirp
 # Link all Blackchirp libraries
 target_link_libraries(blackchirp
     PRIVATE
+        Blackchirp::Acquisition
         Blackchirp::Data
         Blackchirp::Gui
         Blackchirp::Hardware
@@ -294,7 +277,7 @@ endif()
 
 message(STATUS "Blackchirp Application Configuration:")
 message(STATUS "  Main executable: blackchirp")
-message(STATUS "  Dependencies: Data, GUI, Hardware libraries")
+message(STATUS "  Dependencies: Acquisition, Data, GUI, Hardware libraries")
 message(STATUS "  LIF module: runtime")
 message(STATUS "  CUDA module: ${BC_CUDA}")
 message(STATUS "  Version: ${PROJECT_VERSION}")
