@@ -64,21 +64,48 @@ public:
     std::shared_ptr<OverlayBase> getPreviewOverlay() const { return d_previewOverlay; }
     void clearPreviewOverlay() { d_previewOverlay.reset(); }
     void cleanupPreviewOverlay(); // Safe cleanup with signal blocking
-    bool isBeingDestroyed() const; // Check if widget is being destroyed
-    
+    bool isBeingDestroyed() const { return d_destroying; } // True from the first statement of ~UnifiedOverlayWidget() onward
+
     // State management interface (settings context only)
     void backupOverlayState();
     void restoreOverlayState();
     QString getOriginalLabel() const; // Get original label from backup metadata
-    
+
+    /*!
+     * \brief Cancel any background operation the type-specific widget owns.
+     *
+     * Forwards to OverlayTypeSpecificWidget::cancelPendingOperations().
+     * Called by UnifiedOverlayDialog::reject() so a single Cancel click
+     * both stops in-flight work (e.g. a live-preview convolution) and
+     * closes the dialog, and so settings-mode cancellation cannot restore
+     * the overlay's pre-dialog state out from under a convolution that is
+     * still writing to it.
+     */
+    void cancelPendingOperations();
 
 signals:
     void overlayDataChanged(std::shared_ptr<OverlayBase> overlay); // Real-time overlay updates (settings context)
     void validationStatusChanged(bool isValid, const QString &message);
-    
+
     // Auto-preview signals (creation context only)
     void previewRequested();
-    void previewCancelled();
+
+    /*!
+     * \brief Emitted when the auto-preview overlay is cancelled or
+     * cleaned up.
+     *
+     * Carries the overlay that was cancelled: by the time this is
+     * emitted from cleanupPreviewOverlay(), d_previewOverlay has already
+     * been reset, so a listener that tried to recover the overlay via
+     * getPreviewOverlay() instead of this parameter would always find
+     * nothing.
+     */
+    void previewCancelled(std::shared_ptr<OverlayBase> overlay);
+
+    // Forwarded from the type-specific widget: a background
+    // OverlayProcessManager operation that widget just queued and
+    // therefore owns.
+    void operationQueued(const QString &operationId);
 
 public slots:
     // Three-tier control moved to OverlayTypeSpecificWidget base class
@@ -147,6 +174,15 @@ private:
     // Backup state for cancel functionality (settings context only)
     bool d_hasBackupState;
     std::map<QString, QVariant, std::less<>> d_backupMetadata; // Complete overlay metadata backup
+
+    // Set as the first statement of ~UnifiedOverlayWidget(), before any
+    // member teardown. Replaces a prior heuristic
+    // (signalsBlocked() || !parent() || parent()->signalsBlocked()) that
+    // did not actually measure destruction -- it was false during real
+    // destruction (nothing blocks signals there) and true whenever
+    // accept() blocked signals for an unrelated reason, so it neither
+    // caught the case it existed for nor left normal operation alone.
+    bool d_destroying{false};
 };
 
 #endif // UNIFIEDOVERLAYWIDGET_H

@@ -1305,8 +1305,11 @@ void OverlayManagerWidget::onPreviewOverlayRequested(std::shared_ptr<OverlayBase
 void OverlayManagerWidget::onPreviewOverlayCancelled(std::shared_ptr<OverlayBase> overlay)
 {
     if (overlay && p_overlayStorage) {
-        // Remove preview overlay from storage - this will automatically trigger removal from plots
-        p_overlayStorage->removePreviewOverlay(overlay->getLabel());
+        // Remove preview overlay from storage by object identity - this will
+        // automatically trigger removal from plots. Identity, not label:
+        // the preview may have been renamed after registration, or its
+        // label may collide with an unrelated overlay's.
+        p_overlayStorage->removePreviewOverlay(overlay);
     }
 }
 

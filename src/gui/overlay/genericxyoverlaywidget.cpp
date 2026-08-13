@@ -12,6 +12,7 @@
 #include <QApplication>
 #include <QStandardPaths>
 #include <QRegularExpression>
+#include <QSignalBlocker>
 
 #include <data/experiment/overlaytypes.h>
 #include <data/storage/settingsstorage.h>
@@ -67,11 +68,33 @@ GenericXYOverlayWidget::GenericXYOverlayWidget(const Ft &currentFt, QWidget *par
 
 GenericXYOverlayWidget::~GenericXYOverlayWidget()
 {
+    // Disconnect from OverlayProcessManager *before* cancelling. The
+    // manager emits operationCancelled() synchronously, by direct
+    // connection, on the calling thread; cancelling first would call
+    // back into onParseOperationCancelled() while this destructor is
+    // running, which re-emits progressOperationFinished(),
+    // dataValidityChanged() and settingsChanged() into ancestor
+    // widgets that may themselves be mid-destruction. Qt's own
+    // connection teardown (in ~QObject()) has not run yet at this
+    // point in the destructor, so it does not protect against this.
+    auto &manager = OverlayProcessManager::instance();
+    disconnect(&manager, nullptr, this, nullptr);
+
+    // Block this object's own signals for the rest of destruction too,
+    // so nothing emitted below (now or after a future change) can
+    // reach a parent mid-teardown.
+    QSignalBlocker blocker(this);
+
     // Abandon any in-flight parse so the worker is not left running
-    // after the dialog closes. Qt auto-disconnects the manager signals
-    // on destruction, so no result will be delivered regardless.
+    // after the dialog closes.
+    cancelPendingOperations();
+}
+
+void GenericXYOverlayWidget::cancelPendingOperations()
+{
     if (!d_parseOperationId.isEmpty()) {
         OverlayProcessManager::instance().cancelOperation(d_parseOperationId);
+        d_parseOperationId.clear();
     }
 }
 
@@ -784,6 +807,7 @@ void GenericXYOverlayWidget::analyzeAndParseFile(bool autodetect)
     auto &manager = OverlayProcessManager::instance();
     d_parseOperationId = manager.queueOperation(parseOp,
                                                 OverlayProcessManager::Priority::High);
+    emit operationQueued(d_parseOperationId);
 
     p_fileStatusLabel->setText("Parsing data file…");
     styleStatusLabel(p_fileStatusLabel, ThemeColors::SubtleText);

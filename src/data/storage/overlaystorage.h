@@ -41,6 +41,10 @@ inline constexpr QLatin1StringView bcBuildVersion{"BCBuildVersion"}; ///< Blackc
  * addPreviewOverlay(), removePreviewOverlay(), detachPreviewOverlay(), and
  * clearAllPreviews().  Detaching converts a preview overlay to a persistent
  * one by clearing its preview flag and adding it to the persistent map.
+ * Unlike the persistent map, the preview collection is keyed by object
+ * identity rather than label: a preview's label can be edited after it is
+ * registered, and previews are not required to have labels that are unique
+ * against each other or against the persistent collection.
  *
  * OverlayStorage inherits DataStorageBase for interface compatibility with the
  * experiment data pipeline; only save() has a non-trivial implementation —
@@ -137,30 +141,34 @@ public:
     bool addPreviewOverlay(std::shared_ptr<OverlayBase> overlay);
 
     /*!
-     * \brief Remove a preview overlay by label.
-     * \param label Label of the preview overlay to remove.
+     * \brief Remove a preview overlay identified by object identity.
+     *
+     * Matches by shared_ptr rather than label: a preview's label can change
+     * after it was registered (e.g. CatalogOverlayWidget setting the label
+     * from the parsed molecule name after the preview was already added),
+     * and it can collide with an unrelated persistent overlay's label. A
+     * label-keyed lookup would then miss the intended entry, or worse,
+     * remove the wrong overlay's curve from the plot.
+     * \param overlay The preview overlay instance to remove.
      * \return \c true if the overlay was found and removed.
      */
-    bool removePreviewOverlay(const QString& label);
+    bool removePreviewOverlay(const std::shared_ptr<OverlayBase>& overlay);
 
     /*!
-     * \brief Convert a preview overlay to a persistent overlay.
+     * \brief Detach a preview overlay identified by object identity,
+     * converting it to a persistent overlay.
      *
-     * Clears the preview flag on the overlay and moves it from the preview
-     * collection to the persistent collection, scheduling a background write.
-     * \param label Label of the preview overlay to detach.
-     * \return \c true if the overlay was found and detached successfully.
-     */
-    bool detachPreviewOverlay(const QString& label);
-
-    /*!
-     * \brief Detach a preview overlay identified by object identity.
-     *
-     * Equivalent to detachPreviewOverlay(const QString&) but matches the
-     * preview entry by shared_ptr rather than label. The label-keyed form
-     * misses when the overlay's label changed after it was registered as a
-     * preview, which then lets clearAllPreviews() emit overlayRemoved for the
-     * just-promoted overlay and tear its curve back off the plot.
+     * Clears the preview flag on the overlay and removes it from the
+     * preview collection without emitting overlayRemoved(), so the curve
+     * already on the plot survives the transition instead of being torn
+     * down and re-added; the caller adds it to the persistent collection
+     * separately. Matches by shared_ptr rather than label because a
+     * preview's label can change after it was registered (e.g.
+     * CatalogOverlayWidget setting the label from the parsed molecule
+     * name only after the preview already exists) -- a label-keyed
+     * lookup would miss the entry, and the trailing clearAllPreviews()
+     * would then emit overlayRemoved() for the just-promoted overlay and
+     * tear its curve back off the plot.
      * \param overlay The preview overlay instance to detach.
      * \return \c true if a matching preview entry was found and removed.
      */
@@ -202,8 +210,9 @@ private:
     std::map<QString, std::shared_ptr<OverlayBase>, std::less<>> d_overlays;
     std::map<QString, QFuture<void>, std::less<>> d_pendingWrites;
 
-    // Preview overlays (temporary, not persisted)
-    std::map<QString, std::shared_ptr<OverlayBase>, std::less<>> d_previewOverlays;
+    // Preview overlays (temporary, not persisted). Identity-keyed -- see the
+    // class comment above for why a label-keyed map is unsafe here.
+    QVector<std::shared_ptr<OverlayBase>> d_previewOverlays;
 
     // Factory method for creating overlay objects
     std::shared_ptr<OverlayBase> createOverlayObject(OverlayBase::OverlayType type);

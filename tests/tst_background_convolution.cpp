@@ -62,31 +62,21 @@ private:
 
 void BackgroundConvolutionTest::initTestCase()
 {
-    // Get test data directory path - look for src directory
-    QDir currentDir = QDir::current();
+    // Use the testdata directory path configured by CMake (see the
+    // sibling parser tests, e.g. tst_spcatparser.cpp, for the same
+    // pattern). A prior directory-search heuristic based on QDir::current()
+    // walking up until it found a directory named "tests" broke under
+    // ctest specifically: ctest's working directory for this executable
+    // is build/tests, so walking up one level lands back on build/, whose
+    // own tests/ subdirectory (the build output directory for this
+    // executable, not the source tree) satisfied the search and pointed
+    // at a testdata directory that does not exist there.
+#ifdef TESTDATA_DIR
+    m_testDataDir = QString(TESTDATA_DIR);
+#else
+    m_testDataDir = QDir::current().absoluteFilePath("tests/testdata");
+#endif
 
-    // If we're in a build directory, go up and find src
-    if (currentDir.dirName().startsWith("build-")) {
-        currentDir.cdUp();
-    }
-
-    // Always use tests/testdata since that's where test data is actually located
-    // Look for tests directory in current or parent directories, but stop at filesystem root
-    QDir searchDir = currentDir;
-    while (!searchDir.exists("tests") && searchDir.cdUp()) {
-        // Prevent going to filesystem root
-        if (searchDir.isRoot()) {
-            break;
-        }
-    }
-    
-    if (searchDir.exists("tests")) {
-        m_testDataDir = searchDir.absoluteFilePath("tests/testdata");
-    } else {
-        // Fallback: assume we're in src directory and go relative
-        m_testDataDir = currentDir.absoluteFilePath("../tests/testdata");
-    }
-    
     m_spcatTestPath = getTestDataPath("c047527_sample.cat");
     m_xiamTestPath = getTestDataPath("test_aprint32_small.xo");
     
@@ -129,7 +119,7 @@ void BackgroundConvolutionTest::testSPCATConvolutionExecution()
         50.0,  // 50 kHz linewidth
         26000.0,  // freq min (MHz)
         28000.0,  // freq max (MHz)
-        0.01   // point spacing (MHz)
+        2000   // convolution grid points (1 MHz spacing over the 2000 MHz range)
     );
     
     // Submit to background processor
@@ -180,8 +170,8 @@ void BackgroundConvolutionTest::testXIAMConvolutionExecution()
         CatalogOverlay::Gaussian,  // lineshape
         100.0,  // 100 kHz linewidth
         28000.0,  // freq min (MHz)
-        32000.0,  // freq max (MHz) 
-        0.005   // point spacing (MHz)
+        32000.0,  // freq max (MHz)
+        2000   // convolution grid points (2 MHz spacing over the 4000 MHz range)
     );
     
     // Submit and wait for completion
@@ -204,7 +194,7 @@ void BackgroundConvolutionTest::testConvolutionProgress()
     QVERIFY(overlay != nullptr);
     
     auto operation = std::make_shared<ConvolutionOperation>(
-        overlay, true, CatalogOverlay::Lorentzian, 75.0, 26500.0, 27500.0, 0.01
+        overlay, true, CatalogOverlay::Lorentzian, 75.0, 26500.0, 27500.0, 1000
     );
     
     auto& manager = OverlayProcessManager::instance();
@@ -242,8 +232,8 @@ void BackgroundConvolutionTest::testOperationQueuing()
     auto overlay1 = createSPCATOverlay();
     auto overlay2 = createXIAMOverlay();
     
-    auto op1 = std::make_shared<ConvolutionOperation>(overlay1, true, CatalogOverlay::Lorentzian, 50.0, 26000.0, 27000.0, 0.01);
-    auto op2 = std::make_shared<ConvolutionOperation>(overlay2, true, CatalogOverlay::Gaussian, 75.0, 28000.0, 29000.0, 0.01);
+    auto op1 = std::make_shared<ConvolutionOperation>(overlay1, true, CatalogOverlay::Lorentzian, 50.0, 26000.0, 27000.0, 1000);
+    auto op2 = std::make_shared<ConvolutionOperation>(overlay2, true, CatalogOverlay::Gaussian, 75.0, 28000.0, 29000.0, 1000);
     
     // Queue multiple operations
     QString id1 = manager.queueOperation(op1, OverlayProcessManager::Priority::Low);
@@ -266,7 +256,7 @@ void BackgroundConvolutionTest::testOperationCompletion()
 {
     auto overlay = createSPCATOverlay();
     auto operation = std::make_shared<ConvolutionOperation>(
-        overlay, true, CatalogOverlay::Lorentzian, 50.0, 26000.0, 27000.0, 0.02
+        overlay, true, CatalogOverlay::Lorentzian, 50.0, 26000.0, 27000.0, 500
     );
     
     auto& manager = OverlayProcessManager::instance();
@@ -293,7 +283,7 @@ void BackgroundConvolutionTest::testOperationErrorHandling()
     auto overlay = createSPCATOverlay();
     auto operation = std::make_shared<ConvolutionOperation>(
         overlay, true, CatalogOverlay::Lorentzian, -50.0,  // Invalid negative linewidth
-        26000.0, 27000.0, 0.01
+        26000.0, 27000.0, 100
     );
     
     auto& manager = OverlayProcessManager::instance();
@@ -327,8 +317,8 @@ void BackgroundConvolutionTest::testFrequencyRangeFiltering()
     
     // Test with very narrow frequency range
     auto operation = std::make_shared<ConvolutionOperation>(
-        overlay, true, CatalogOverlay::Lorentzian, 50.0, 
-        26500.0, 26500.1, 0.001  // Only 0.1 MHz range
+        overlay, true, CatalogOverlay::Lorentzian, 50.0,
+        26500.0, 26500.1, 50  // Only 0.1 MHz range
     );
     
     auto& manager = OverlayProcessManager::instance();
@@ -359,8 +349,12 @@ std::shared_ptr<CatalogOverlay> BackgroundConvolutionTest::createSPCATOverlay() 
 {
     auto overlay = std::make_shared<CatalogOverlay>();
     auto registry = FileParserRegistry::instance();
-    auto parser = registry->findParser(m_spcatTestPath);
-    
+    // findParser() returns the generic FileParser interface, which has no
+    // parse(); CatalogParser::parse() is declared one level down, hence
+    // the type-safe lookup (the same one ParseCatalogOperation::execute()
+    // uses in production).
+    auto parser = registry->findParserOfType<CatalogParser>(m_spcatTestPath);
+
     if (parser) {
         CatalogData catalogData = parser->parse(m_spcatTestPath);
         overlay->setCatalogData(catalogData);
@@ -374,8 +368,8 @@ std::shared_ptr<CatalogOverlay> BackgroundConvolutionTest::createXIAMOverlay() c
 {
     auto overlay = std::make_shared<CatalogOverlay>();
     auto registry = FileParserRegistry::instance();
-    auto parser = registry->findParser(m_xiamTestPath);
-    
+    auto parser = registry->findParserOfType<CatalogParser>(m_xiamTestPath);
+
     if (parser) {
         CatalogData catalogData = parser->parse(m_xiamTestPath);
         overlay->setCatalogData(catalogData);

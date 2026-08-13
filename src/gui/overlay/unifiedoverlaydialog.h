@@ -9,6 +9,7 @@
 #include <QPushButton>
 #include <QTimer>
 #include <memory>
+#include <set>
 
 #include <data/experiment/overlaybase.h>
 #include <data/storage/overlaystorage.h>
@@ -78,10 +79,11 @@ private slots:
     // Widget signal handlers
     void onValidationStatusChanged(bool isValid, const QString &message);
     void onPreviewRequested();
-    void onPreviewCancelled();
+    void onPreviewCancelled(std::shared_ptr<OverlayBase> overlay);
     void onOverlayDataChanged(std::shared_ptr<OverlayBase> overlay);
     
     // Background operation handlers
+    void onOperationQueued(const QString &operationId);
     void onOperationStarted(const QString &operationId);
     void onOperationProgress(const QString &operationId, int percentage, const QString &message);
     void onOperationCompleted(const QString &operationId, std::shared_ptr<OverlayBase> result);
@@ -125,9 +127,6 @@ private:
                          std::shared_ptr<OverlayBase> overlay,
                          std::shared_ptr<OverlayStorage> overlayStorage);
     
-    // Preview management
-    void handlePreviewChange(bool isRequested);
-    
     // Core UI components
     UnifiedOverlayWidget *p_widget;
     QDialogButtonBox *p_buttonBox;
@@ -153,6 +152,13 @@ private:
     DialogState d_dialogState;
     bool d_busyCursorActive = false; // Balances setOverrideCursor/restore
     QString d_currentOperationId;
+    // Every operation id this dialog's type-specific widget has queued
+    // (via OverlayTypeSpecificWidget::operationQueued), pruned as each
+    // one reaches a terminal state. OverlayProcessManager is a
+    // process-wide singleton whose operationStarted() fires for every
+    // operation from every open overlay dialog; this set is what lets
+    // onOperationStarted() tell "mine" from "someone else's".
+    std::set<QString, std::less<>> d_ownedOperationIds;
     QString d_operationError;
     int d_operationProgress;
     QString d_operationMessage;

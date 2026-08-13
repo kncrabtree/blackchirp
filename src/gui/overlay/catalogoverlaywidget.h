@@ -93,7 +93,11 @@ public:
     
     // Settings state capture for preview sync tracking
     QHash<QString, QVariant> getSettingsHash() const override;
-    
+
+    // Cancels both the tracked convolution and the tracked catalog parse
+    // (see cancelPendingConvolution() and d_parseOperationId below).
+    void cancelPendingOperations() override;
+
     // Operation declaration interface
     QVector<OperationCapability> getSupportedOperations() const override
     {

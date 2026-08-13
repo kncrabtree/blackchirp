@@ -1,18 +1,23 @@
 #include "overlaybase.h"
 
+#include <QMutexLocker>
 
 OverlayBase::OverlayBase(OverlayType type) : d_type{type}
 {
-    
+
 }
 
 QVector<QPointF> OverlayBase::xyData() const
 {
+    QMutexLocker locker(&d_mutex);
+
     // Return cached data if valid
     if (d_cacheValid) {
         return d_cachedFilteredData;
     }
-    
+
+    // _xyData() is virtual; CatalogOverlay::_xyData() re-locks d_mutex
+    // (the same recursive mutex), which is safe on this thread.
     QVector<QPointF> rawData = _xyData();
     QVector<QPointF> transformedData;
     transformedData.reserve(rawData.size());
@@ -112,7 +117,10 @@ QString OverlayBase::getComment() const
 
 double OverlayBase::yMax() const
 {
-    // Ensure cache is up to date
+    QMutexLocker locker(&d_mutex);
+
+    // Ensure cache is up to date. xyData() re-locks d_mutex, which is
+    // safe here since d_mutex is recursive.
     if (!d_cacheValid) {
         xyData(); // This will populate the cache and calculate yMax
     }
@@ -121,6 +129,9 @@ double OverlayBase::yMax() const
 
 std::pair<double,double> OverlayBase::displayYRange() const
 {
+    QMutexLocker locker(&d_mutex);
+
+    // xyData() re-locks d_mutex; safe since d_mutex is recursive.
     const auto d = xyData();
     if (d.isEmpty())
         return {0.0,0.0};
@@ -341,6 +352,7 @@ void OverlayBase::retrieveMetadata(const std::map<QString,QVariant,std::less<>> 
 
 void OverlayBase::invalidateCache()
 {
+    QMutexLocker locker(&d_mutex);
     d_cacheValid = false;
     d_cachedYMax = 0.0;
 }

@@ -5,6 +5,7 @@
 #include <QString>
 #include <QPointF>
 #include <QVariant>
+#include <QRecursiveMutex>
 #include <data/presentation/curveappearance.h>
 
 class OverlayMetadataStorage;
@@ -94,6 +95,9 @@ public:
      * Applies d_xOffset, d_yScale, d_yOffset, and the optional frequency clip
      * limits to the raw data from _xyData().  The result is cached until any
      * transformation parameter changes.
+     *
+     * Thread-safe: acquires d_mutex for the duration of the call, including
+     * the transform/filter loop over the raw points from _xyData().
      */
     QVector<QPointF> xyData() const;
 
@@ -133,6 +137,8 @@ public:
      * source defines its own autoscale extrema (for instance an FT that
      * excludes a band around the LO) may override this to report the value
      * their source considers meaningful for scaling.
+     *
+     * Thread-safe: acquires d_mutex.
      */
     virtual double yMax() const;
 
@@ -145,6 +151,8 @@ public:
      * disregards. The base implementation reports the full extent.
      *
      * Values are in plotted coordinates, with scale and offset applied.
+     *
+     * Thread-safe: acquires d_mutex.
      */
     virtual std::pair<double,double> displayYRange() const;
 
@@ -280,9 +288,32 @@ protected:
      * \brief Invalidate the filtered XY data cache.
      *
      * Must be called by any setter that changes a parameter affecting
-     * the output of xyData() (offsets, frequency limits).
+     * the output of xyData() (offsets, frequency limits). Thread-safe;
+     * acquires d_mutex.
      */
     void invalidateCache();
+
+    /*!
+     * \brief Mutex guarding the cache/data state shared between the GUI
+     * thread and a QtConcurrent worker (e.g. ConvolutionOperation).
+     *
+     * A single \c QRecursiveMutex is used deliberately, rather than one
+     * mutex per class in the hierarchy: xyData() locks and then calls the
+     * virtual _xyData(), which in CatalogOverlay needs the same
+     * protection, and CatalogOverlay's cache setters conversely call this
+     * class's invalidateCache(). Both directions re-enter the lock on the
+     * same thread. Two separate mutexes would nest in both directions
+     * (base-then-derived here, derived-then-base there) and deadlock the
+     * first time both call paths were exercised; one recursive mutex
+     * makes every such call chain safe regardless of call direction.
+     *
+     * Subclasses must never hold this lock across an expensive
+     * computation (e.g. CatalogOverlay's convolution) — only across the
+     * short reads/writes of the guarded members themselves. Holding it
+     * longer would stall every other overlay access, including plot
+     * repaints on the GUI thread, for the duration of the computation.
+     */
+    mutable QRecursiveMutex d_mutex;
 
     QString d_errorString; ///< Most recent error description; empty when no error.
 

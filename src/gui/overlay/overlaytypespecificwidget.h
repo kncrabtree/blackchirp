@@ -80,7 +80,20 @@ public:
     
     // Accept functionality
     virtual void onAccept() { saveSettings(); }
-    
+
+    /*!
+     * \brief Cancel any background OverlayProcessManager operation this
+     * widget currently owns (a queued/running parse, convolution, etc).
+     *
+     * Called by this widget's own destructor and by
+     * UnifiedOverlayDialog::reject() when the user cancels the dialog:
+     * closing the dialog must not leave a worker thread still mutating
+     * the overlay afterward. Default is a no-op for widgets with nothing
+     * to cancel; override where a subclass tracks a background operation
+     * id.
+     */
+    virtual void cancelPendingOperations() {}
+
     // Settings state capture for preview sync tracking
     virtual QHash<QString, QVariant> getSettingsHash() const = 0;
     
@@ -157,6 +170,14 @@ signals:
     void progressOperationFinished();
     void progressValueChanged(int value);
     void labelUpdateRequested(const QString &newLabel);
+
+    // Emitted immediately after this widget queues a background
+    // OverlayProcessManager operation, carrying the id the manager
+    // returned. Lets an owning dialog record which operations are
+    // actually its own, rather than inferring ownership from
+    // OverlayProcessManager::operationStarted() -- a process-wide
+    // signal that fires for every operation from every open dialog.
+    void operationQueued(const QString &operationId);
 
 protected:
     // Row-population interface — pure virtual. Every tier shares the

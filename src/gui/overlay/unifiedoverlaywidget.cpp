@@ -58,8 +58,13 @@ UnifiedOverlayWidget::UnifiedOverlayWidget(const QString &settingsKey,
 
 UnifiedOverlayWidget::~UnifiedOverlayWidget()
 {
+    // First statement, before any member teardown: cleanupPreviewOverlay()
+    // below checks this to suppress previewCancelled() during destruction
+    // (see the member comment on d_destroying).
+    d_destroying = true;
+
     // Cleanup moved to type-specific widgets
-    
+
     // Ensure preview overlay is properly cleaned up to avoid dangling references
     cleanupPreviewOverlay();
 }
@@ -527,7 +532,9 @@ void UnifiedOverlayWidget::setupTypeSpecificWidgetConnections()
             });
     connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::labelUpdateRequested,
             this, &UnifiedOverlayWidget::onLabelUpdateRequested);
-    
+    connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::operationQueued,
+            this, &UnifiedOverlayWidget::operationQueued);
+
     // Real-time update and progress indication connections for both contexts
     connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::settingsChanged,
             this, &UnifiedOverlayWidget::onRealTimeUpdate);
@@ -577,7 +584,7 @@ void UnifiedOverlayWidget::removeAutoPreview()
     if (d_previewOverlay) {
         // SAFETY: Don't destroy the overlay - just disable it to hide from plot
         d_previewOverlay->setEnabled(false);
-        emit previewCancelled();
+        emit previewCancelled(d_previewOverlay);
         // Keep the overlay object alive but disabled
     }
 }
@@ -585,28 +592,41 @@ void UnifiedOverlayWidget::removeAutoPreview()
 void UnifiedOverlayWidget::cleanupPreviewOverlay()
 {
     if (d_previewOverlay) {
+        // Capture the overlay before resetting the member below, so it
+        // can still be carried on previewCancelled() -- the dialog's
+        // handler needs the actual overlay to forward
+        // previewOverlayCancelled(overlay) and get it removed from
+        // storage; getPreviewOverlay() would return null by the time a
+        // listener reacted to the signal.
+        auto cancelledOverlay = d_previewOverlay;
+
         // Block signals during cleanup to prevent race conditions during destruction
         QSignalBlocker blocker(this);
-        
+
         // Disable the overlay safely
         d_previewOverlay->setEnabled(false);
-        
+
         // Clear the reference
         d_previewOverlay.reset();
-        
-        // Re-enable signals and emit cleanup signal if not being destroyed
+
+        // Re-enable signals and emit cleanup signal, unless this widget
+        // is itself being torn down. During teardown an ancestor's own
+        // members may already be destroyed while its connections are
+        // still live, so a signal emitted here would run slots against
+        // freed state; teardown-time preview cleanup belongs to
+        // OverlayStorage::clearAllPreviews() instead.
         blocker.unblock();
-        if (!isBeingDestroyed()) {
-            emit previewCancelled();
+        if (!d_destroying) {
+            emit previewCancelled(cancelledOverlay);
         }
     }
 }
 
-bool UnifiedOverlayWidget::isBeingDestroyed() const
+void UnifiedOverlayWidget::cancelPendingOperations()
 {
-    // Check if this widget is in the process of being destroyed
-    // This prevents signal emission during destruction
-    return signalsBlocked() || !parent() || parent()->signalsBlocked();
+    if (p_typeSpecificWidget) {
+        p_typeSpecificWidget->cancelPendingOperations();
+    }
 }
 
 std::shared_ptr<OverlayBase> UnifiedOverlayWidget::getCurrentTargetOverlay() const

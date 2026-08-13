@@ -159,10 +159,16 @@ void FtPlot::addOverlay(std::shared_ptr<OverlayBase> overlay)
     if (!overlay) {
         return;
     }
-    
-    // Check if overlay already exists (compare by label since it's unique)
+
+    // Check if this exact overlay object is already tracked. Identity
+    // (not label) comparison matters here: a preview overlay can be
+    // renamed after it was added to the plot (e.g. CatalogOverlayWidget
+    // setting the label from the parsed molecule name), and the promotion
+    // path in OverlayManagerWidget deliberately relies on this call
+    // recognizing the just-promoted overlay as the same object already on
+    // the plot rather than adding a second curve for it.
     for (const auto& pair : d_overlayCurves) {
-        if (pair.first->getLabel() == overlay->getLabel()) {
+        if (pair.first == overlay) {
             return;
         }
     }
@@ -195,9 +201,10 @@ void FtPlot::removeOverlay(std::shared_ptr<OverlayBase> overlay)
         return;
     }
     
-    // Find and remove the overlay curve (compare by label since it's unique)
+    // Find and remove the overlay curve, matching by object identity (see
+    // addOverlay() for why label matching is unsafe here).
     for (auto it = d_overlayCurves.begin(); it != d_overlayCurves.end(); ++it) {
-        if (it->first->getLabel() == overlay->getLabel()) {
+        if (it->first == overlay) {
             // Drain any in-flight filter pass and unregister the curve while
             // it is still fully-typed. Relying on ~BlackchirpPlotCurveBase to
             // do this is too late: the derived destructor (and its _filter
@@ -217,9 +224,10 @@ void FtPlot::updateOverlay(std::shared_ptr<OverlayBase> overlay)
         return;
     }
     
-    // Find the existing overlay curve and update its data (compare by label since it's unique)
+    // Find the existing overlay curve and update its data, matching by
+    // object identity (see addOverlay() for why label matching is unsafe here).
     for (auto& pair : d_overlayCurves) {
-        if (pair.first->getLabel() == overlay->getLabel()) {
+        if (pair.first == overlay) {
             // Update curve data (applies scaling and offsets)
             const auto [yMin,yMax] = overlay->displayYRange();
             pair.second->setCurveData(overlay->xyData(),yMin,yMax);
@@ -245,9 +253,10 @@ bool FtPlot::hasOverlay(std::shared_ptr<OverlayBase> overlay) const
         return false;
     }
     
-    // Check if overlay exists by comparing labels
+    // Check if overlay exists by object identity (see addOverlay() for why
+    // label matching is unsafe here).
     for (const auto& pair : d_overlayCurves) {
-        if (pair.first->getLabel() == overlay->getLabel()) {
+        if (pair.first == overlay) {
             return true;
         }
     }

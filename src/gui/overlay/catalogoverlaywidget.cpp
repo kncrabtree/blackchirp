@@ -8,6 +8,7 @@
 #include <QMessageBox>
 #include <QStandardPaths>
 #include <QDebug>
+#include <QSignalBlocker>
 
 #include <gui/widget/ftmwviewwidget.h>
 #include <gui/widget/settingstable.h>
@@ -44,12 +45,45 @@ CatalogOverlayWidget::CatalogOverlayWidget(const Ft &currentFt, QWidget *parent)
 
 CatalogOverlayWidget::~CatalogOverlayWidget()
 {
-    // Cancel any pending convolution operations
-    cancelPendingConvolution();
-    
-    // Explicitly disconnect from OverlayProcessManager to avoid signals to destroyed objects
+    // Disconnect from OverlayProcessManager *before* cancelling
+    // anything. OverlayProcessManager::cancelOperation() emits
+    // operationCancelled()/queueSizeChanged() synchronously, by direct
+    // connection, on the calling thread. Cancelling first would call
+    // back into this object's own slots (onConvolutionOperationCancelled,
+    // onParseOperationCancelled) while this destructor is running; those
+    // slots emit settingsChanged()/dataValidityChanged() in turn, which
+    // reach ancestor widgets (UnifiedOverlayWidget, UnifiedOverlayDialog)
+    // that may themselves be mid-destruction. Qt's own connection
+    // teardown (in ~QObject()) has not run yet at this point in the
+    // destructor, so it does not protect against this.
     auto& manager = OverlayProcessManager::instance();
     disconnect(&manager, nullptr, this, nullptr);
+
+    // Neither cancellation below emits settingsChanged()/
+    // dataValidityChanged() directly, so the manager-disconnect above
+    // already closes off every path back to the parent. Block this
+    // object's own signals for the rest of destruction anyway: it costs
+    // nothing and removes the whole class of reentrant-emit-during-
+    // teardown bug regardless of how this destructor grows later.
+    QSignalBlocker blocker(this);
+
+    // Cancel any pending convolution and any in-flight catalog parse so
+    // neither worker is left running after the dialog closes.
+    cancelPendingOperations();
+}
+
+void CatalogOverlayWidget::cancelPendingOperations()
+{
+    // Cancel any pending convolution operation.
+    cancelPendingConvolution();
+
+    // Cancel any in-flight catalog parse so the worker is not left
+    // running after the dialog closes (or, outside destruction, after
+    // UnifiedOverlayDialog::reject() cancels the dialog).
+    if (!d_parseOperationId.isEmpty()) {
+        OverlayProcessManager::instance().cancelOperation(d_parseOperationId);
+        d_parseOperationId.clear();
+    }
 }
 
 bool CatalogOverlayWidget::isConvolutionEnabled() const
@@ -590,6 +624,7 @@ void CatalogOverlayWidget::startCatalogParse(const QString &filePath)
     auto &manager = OverlayProcessManager::instance();
     d_parseOperationId = manager.queueOperation(parseOp,
                                                 OverlayProcessManager::Priority::High);
+    emit operationQueued(d_parseOperationId);
 
     updateFileInfo();
     validateSourceFile();
@@ -892,6 +927,7 @@ void CatalogOverlayWidget::triggerBackgroundConvolution()
     // Queue the operation with high priority for real-time updates
     auto& manager = OverlayProcessManager::instance();
     d_currentConvolutionId = manager.queueOperation(convolutionOp, OverlayProcessManager::Priority::High);
+    emit operationQueued(d_currentConvolutionId);
     d_convolutionInProgress = true;
     
     // Update button state to show "Cancel"

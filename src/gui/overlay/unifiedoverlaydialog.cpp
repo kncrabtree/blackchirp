@@ -46,6 +46,21 @@ UnifiedOverlayDialog::UnifiedOverlayDialog(std::shared_ptr<OverlayBase> overlay,
 
 UnifiedOverlayDialog::~UnifiedOverlayDialog()
 {
+    // Sever every incoming connection before anything below it runs.
+    // Child widgets (p_widget, and the type-specific widget beneath
+    // it) are destroyed during this object's base-class teardown —
+    // after this body has run and after this object's own members are
+    // gone, but while its signal/slot connections are still live. A
+    // slot invoked in that window reads destroyed members, so any
+    // sender that can emit during child teardown must be disconnected
+    // here, first. Two can: OverlayProcessManager, whose
+    // cancelOperation() emits synchronously and is called from the
+    // type-specific widget destructors, and p_widget, which emits
+    // previewCancelled() from UnifiedOverlayWidget's own destructor.
+    disconnect(&OverlayProcessManager::instance(), nullptr, this, nullptr);
+    if (p_widget)
+        disconnect(p_widget, nullptr, this, nullptr);
+
     // Don't leak a busy override cursor if the dialog is torn down
     // while an operation is still in flight.
     if (d_busyCursorActive) {
@@ -193,48 +208,60 @@ void UnifiedOverlayDialog::reject()
     // Handle cancellation based on current state
     switch (d_dialogState) {
     case DialogState::Processing:
-        // Cancel the background operation
+        // Cancel the in-flight background operation, then fall through
+        // to the shared cancellation path below instead of returning, so
+        // one click on Cancel both stops the work and closes the dialog.
+        // This is safe: the QtConcurrent task itself cannot be
+        // interrupted, but it holds shared_ptrs to everything it
+        // touches, the overlay is thread-safe (every read/write takes
+        // its own lock; see OverlayBase::d_mutex), and ~UnifiedOverlayDialog()
+        // disconnects from OverlayProcessManager before any member is
+        // torn down -- so a result the operation delivers after this
+        // dialog is gone finds no live slot to invoke.
         if (!d_currentOperationId.isEmpty()) {
-            setDialogState(DialogState::Cancelling);
             auto& manager = OverlayProcessManager::instance();
-            if (manager.cancelOperation(d_currentOperationId)) {
-                // Operation cancelled successfully
-                resetDialogState();
-            } else {
-                // Force reset if cancellation failed
-                resetDialogState();
-            }
+            manager.cancelOperation(d_currentOperationId);
         }
-        return; // Don't close dialog immediately
-        
+        resetDialogState();
+        break;
+
     case DialogState::Cancelling:
         // Still cancelling - ignore reject
         return;
-        
+
     case DialogState::Ready:
     case DialogState::Error:
     default:
         // Normal cancellation
         break;
     }
-    
+
+    // Cancel anything the type-specific widget still owns -- e.g. a
+    // live-preview convolution or catalog parse queued from a real-time
+    // settings edit -- before touching the overlay below. This can be a
+    // different operation than d_currentOperationId above: this dialog
+    // only adopts an id into d_currentOperationId once
+    // OverlayProcessManager reports it as *started*
+    // (onOperationStarted()), so a just-queued-but-not-yet-started
+    // operation would otherwise survive the cancellation above and could
+    // still apply its result to the overlay after restoreOverlayState()
+    // below -- the "cancelled dialog ends up with convolved data applied
+    // anyway" failure mode this call closes off.
+    if (p_widget) {
+        p_widget->cancelPendingOperations();
+    }
+
     // Clean up preview overlay explicitly before widget destruction to avoid race conditions
     if (isCreationMode() && p_widget) {
         p_widget->cleanupPreviewOverlay();
     }
-    
+
     // In settings mode, restore the original overlay state before cancelling
     if (!isCreationMode() && p_widget && d_overlay) {
         p_widget->restoreOverlayState();
-        
+
         // Emit signal to update plot display with restored values
         emit overlayDataChanged(d_overlay);
-    }
-    
-    // Clean up any pending operations
-    if (!d_currentOperationId.isEmpty()) {
-        auto& manager = OverlayProcessManager::instance();
-        manager.cancelOperation(d_currentOperationId);
     }
 
     // Ensure signals are unblocked before closing
@@ -266,34 +293,32 @@ void UnifiedOverlayDialog::onValidationStatusChanged(bool isValid, const QString
 
 void UnifiedOverlayDialog::onPreviewRequested()
 {
-    handlePreviewChange(true);
-}
-
-void UnifiedOverlayDialog::onPreviewCancelled()
-{
-    handlePreviewChange(false);
-}
-
-void UnifiedOverlayDialog::handlePreviewChange(bool isRequested)
-{
-    // Get the preview overlay from the widget
+    // Get the preview overlay from the widget -- still valid here,
+    // unlike the cancellation path below, since nothing has reset it yet.
     auto previewOverlay = p_widget->getPreviewOverlay();
     if (previewOverlay) {
-        // Emit appropriate signal for overlay manager
-        if (isRequested) {
-            emit previewOverlayRequested(previewOverlay);
-        } else {
-            emit previewOverlayCancelled(previewOverlay);
-        }
+        emit previewOverlayRequested(previewOverlay);
     }
-    
-    // Forward appropriate signal and update UI
-    if (isRequested) {
-        emit previewRequested();
-    } else {
-        emit previewCancelled();
+
+    emit previewRequested();
+    updateButtonState();
+    updateWindowTitle();
+}
+
+void UnifiedOverlayDialog::onPreviewCancelled(std::shared_ptr<OverlayBase> overlay)
+{
+    // The overlay arrives as a signal parameter, not via
+    // p_widget->getPreviewOverlay(): the most common source of this
+    // signal, UnifiedOverlayWidget::cleanupPreviewOverlay(), has already
+    // reset the widget's own reference by the time it emits, so
+    // re-fetching it here would find nothing and previewOverlayCancelled()
+    // would never reach OverlayManagerWidget -- leaving the preview
+    // stuck in storage until the trailing clearAllPreviews() on teardown.
+    if (overlay) {
+        emit previewOverlayCancelled(overlay);
     }
-    
+
+    emit previewCancelled();
     updateButtonState();
     updateWindowTitle();
 }
@@ -381,7 +406,11 @@ void UnifiedOverlayDialog::setupConnections()
     // Real-time overlay updates
     connect(p_widget, &UnifiedOverlayWidget::overlayDataChanged,
                 this, &UnifiedOverlayDialog::onOverlayDataChanged);
-    
+
+    // Ownership tracking for background operations (see d_ownedOperationIds)
+    connect(p_widget, &UnifiedOverlayWidget::operationQueued,
+            this, &UnifiedOverlayDialog::onOperationQueued);
+
     // Connect to OverlayProcessManager for background operation progress
     auto& manager = OverlayProcessManager::instance();
     connect(&manager, &OverlayProcessManager::operationStarted,
@@ -570,8 +599,25 @@ void UnifiedOverlayDialog::resetDialogState()
 }
 
 // Background operation handlers (stubs for now)
+void UnifiedOverlayDialog::onOperationQueued(const QString &operationId)
+{
+    if (!operationId.isEmpty())
+        d_ownedOperationIds.insert(operationId);
+}
+
 void UnifiedOverlayDialog::onOperationStarted(const QString &operationId)
 {
+    // OverlayProcessManager is a process-wide singleton: operationStarted()
+    // fires for every operation queued by every open overlay dialog, not
+    // just this one. Only adopt an id this dialog's own widget actually
+    // queued (recorded in d_ownedOperationIds via onOperationQueued()) --
+    // otherwise, with more than one overlay dialog open, this dialog's
+    // Cancel button could cancel an unrelated background job, and an
+    // unowned id could still be sitting in d_currentOperationId when this
+    // dialog's widgets are destroyed.
+    if (!d_ownedOperationIds.count(operationId))
+        return;
+
     d_currentOperationId = operationId;
     setDialogState(DialogState::Processing);
 }
@@ -590,7 +636,12 @@ void UnifiedOverlayDialog::onOperationProgress(const QString &operationId, int p
 void UnifiedOverlayDialog::onOperationCompleted(const QString &operationId, std::shared_ptr<OverlayBase> result)
 {
     Q_UNUSED(result); // Background operations update widgets directly, not via dialog
-    
+
+    // A terminal signal means this id will never start again, whether or
+    // not it was ever adopted as d_currentOperationId; drop it so
+    // d_ownedOperationIds does not grow across a long dialog session.
+    d_ownedOperationIds.erase(operationId);
+
     if (operationId != d_currentOperationId) {
         return;
     }
@@ -613,16 +664,20 @@ void UnifiedOverlayDialog::onOperationCompleted(const QString &operationId, std:
 
 void UnifiedOverlayDialog::onOperationFailed(const QString &operationId, const QString &error)
 {
+    d_ownedOperationIds.erase(operationId);
+
     if (operationId != d_currentOperationId) {
         return;
     }
-    
+
     d_operationError = error;
     setDialogState(DialogState::Error);
 }
 
 void UnifiedOverlayDialog::onOperationCancelled(const QString &operationId)
 {
+    d_ownedOperationIds.erase(operationId);
+
     if (operationId != d_currentOperationId) {
         return;
     }

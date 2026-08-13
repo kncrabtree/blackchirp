@@ -350,17 +350,20 @@ if(BC_BUILD_TESTS)
     add_blackchirp_definitions(tst_ftworkertest)
     add_test(NAME FTWorkerTest COMMAND tst_ftworkertest)
     
-    # Background Convolution Test - temporarily disabled due to API updates needed
-    # add_executable(tst_background_convolution tests/tst_background_convolution.cpp)
-    # target_link_libraries(tst_background_convolution 
-    #     blackchirp-data 
-    #     Qt6::Test 
-    #     Qt6::Core
-    #     GSL::gsl
-    # )
-    # add_blackchirp_definitions(tst_background_convolution)
-    # add_test(NAME BackgroundConvolutionTest COMMAND tst_background_convolution)
-    
+    # Background Convolution Test
+    add_executable(tst_background_convolution tests/tst_background_convolution.cpp)
+    target_link_libraries(tst_background_convolution
+        blackchirp-data
+        Qt6::Test
+        Qt6::Core
+        GSL::gsl
+    )
+    add_blackchirp_definitions(tst_background_convolution)
+    target_compile_definitions(tst_background_convolution PRIVATE
+        TESTDATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/testdata"
+    )
+    add_test(NAME BackgroundConvolutionTest COMMAND tst_background_convolution)
+
     # Generic XY Parser Test
     add_executable(tst_genericxyparser tests/tst_genericxyparser.cpp)
     target_link_libraries(tst_genericxyparser 
@@ -373,7 +376,17 @@ if(BC_BUILD_TESTS)
         TESTDATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/testdata"
     )
     add_test(NAME GenericXYParserTest COMMAND tst_genericxyparser)
-    
+
+    # OverlayProcessManager Reentrancy Test
+    add_executable(tst_overlayprocessmanager_reentrancy tests/tst_overlayprocessmanager_reentrancy.cpp)
+    target_link_libraries(tst_overlayprocessmanager_reentrancy
+        blackchirp-data
+        Qt6::Test
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_overlayprocessmanager_reentrancy)
+    add_test(NAME OverlayProcessManagerReentrancyTest COMMAND tst_overlayprocessmanager_reentrancy)
+
     # Operation Capability Test
     add_executable(tst_operation_capability_only tests/tst_operation_capability_only.cpp)
     target_link_libraries(tst_operation_capability_only 
@@ -407,6 +420,26 @@ if(BC_BUILD_TESTS)
     )
     add_blackchirp_definitions(tst_bcexpoverlay)
     add_test(NAME BCExpOverlayTest COMMAND tst_bcexpoverlay)
+
+    # CatalogOverlay Thread Safety Test
+    add_executable(tst_catalogoverlaythreadsafety tests/tst_catalogoverlaythreadsafety.cpp)
+    target_link_libraries(tst_catalogoverlaythreadsafety
+        blackchirp-data
+        Qt6::Test
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_catalogoverlaythreadsafety)
+    add_test(NAME CatalogOverlayThreadSafetyTest COMMAND tst_catalogoverlaythreadsafety)
+
+    # OverlayStorage Preview Identity Test
+    add_executable(tst_overlaystoragepreviewidentity tests/tst_overlaystoragepreviewidentity.cpp)
+    target_link_libraries(tst_overlaystoragepreviewidentity
+        blackchirp-data
+        Qt6::Test
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_overlaystoragepreviewidentity)
+    add_test(NAME OverlayStoragePreviewIdentityTest COMMAND tst_overlaystoragepreviewidentity)
 
     # ZoomPanPlot Thread Safety Test
     # blackchirp-gui has unresolved references into application sources that
@@ -672,10 +705,14 @@ if(BC_BUILD_TESTS)
         tst_headerstoragetest
         tst_blackchirpcsvtest
         tst_ftworkertest
+        tst_background_convolution
         tst_genericxyparser
+        tst_overlayprocessmanager_reentrancy
         tst_operation_capability_only
         tst_overlayoperations_simple
         tst_bcexpoverlay
+        tst_catalogoverlaythreadsafety
+        tst_overlaystoragepreviewidentity
         tst_zoompanplotthreadsafety
         tst_spcatparser
         tst_lifconversion

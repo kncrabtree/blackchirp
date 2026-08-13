@@ -73,12 +73,18 @@ private:
 public:
     /*!
      * \brief Set the Ft data for this overlay.
+     *
+     * Thread-safe; acquires d_mutex. writeToDest() (which can run on a
+     * QtConcurrent worker via OverlayStorage::addOverlay()) reads d_ft
+     * under the same lock.
      * \param ftData Ft object to store.
      */
     void setFtData(const Ft &ftData);
 
     /*!
      * \brief Return the stored Ft object.
+     *
+     * Thread-safe; acquires d_mutex.
      */
     Ft getFtData() const;
 
@@ -88,14 +94,17 @@ public:
      * Mirrors the VScale ignore setting the FT was processed under, so the
      * overlay scales the same way the plot it came from did.
      *
+     * Thread-safe; acquires d_mutex.
      * \param mhz Half-width in MHz; zero or less excludes nothing.
      */
     void setAutoScaleIgnoreMHz(double mhz);
 
     /*!
      * \brief Return the half-width around the LO excluded from the autoscale extrema.
+     *
+     * Thread-safe; acquires d_mutex.
      */
-    double getAutoScaleIgnoreMHz() const { return d_autoScaleIgnoreMHz; }
+    double getAutoScaleIgnoreMHz() const;
 
     /*!
      * \brief Return the maximum magnitude outside the ignored band around the LO.
@@ -122,9 +131,22 @@ public:
     std::pair<double,double> displayYRange() const override;
 
 protected:
-    /// \brief Load Ft data from the destination file.
+    /*!
+     * \brief Load Ft data from the destination file.
+     *
+     * Parses the file into a local buffer with no lock held, then
+     * publishes it into d_ft under d_mutex. File I/O never runs while
+     * the lock is held.
+     */
     void readFromDest() override;
-    /// \brief Write Ft data to the destination file.
+    /*!
+     * \brief Write Ft data to the destination file.
+     *
+     * Snapshots d_ft under d_mutex, releases the lock, then performs the
+     * file I/O against the snapshot. This can run on a QtConcurrent
+     * worker (OverlayStorage::addOverlay()) concurrently with the GUI
+     * thread calling setFtData(); the lock is never held across the I/O.
+     */
     void writeToDest() override;
     /// \brief Store FT-specific metadata fields into the settings map.
     void _storeMetadata(std::map<QString, QVariant, std::less<>> &m) override;
@@ -154,6 +176,13 @@ private:
  * Convolution is computationally intensive; the class provides a
  * background-operation cache (Invalid → Pending → Valid) and a
  * ProgressCallback mechanism so callers can monitor and cancel long runs.
+ * A convolution normally runs on a QtConcurrent worker thread (via
+ * ConvolutionOperation) while the catalog data, convolution settings, and
+ * cache are simultaneously read and written from the GUI thread (plot
+ * repaints, live settings edits). Every member documented as thread-safe
+ * below acquires OverlayBase::d_mutex for the duration of the call; the
+ * convolution computation itself never runs with the lock held (see
+ * generateConvolvedSpectrum()).
  *
  * \sa OverlayBase, CatalogData
  */
@@ -175,55 +204,73 @@ public:
 
     /*!
      * \brief Return the loaded catalog data.
+     *
+     * Thread-safe; acquires d_mutex.
      */
     CatalogData catalogData() const;
 
     /*!
      * \brief Replace the catalog data and mark the overlay modified.
+     *
+     * Thread-safe; acquires d_mutex.
      * \param data New catalog data.
      */
     void setCatalogData(const CatalogData &data);
 
     /*!
      * \brief Return \c true if lineshape convolution is active.
+     *
+     * Thread-safe; acquires d_mutex.
      */
     bool convolutionEnabled() const;
 
     /*!
      * \brief Enable or disable lineshape convolution and mark modified.
+     *
+     * Thread-safe; acquires d_mutex.
      * \param enabled \c true to enable convolution.
      */
     void setConvolutionEnabled(bool enabled);
 
     /*!
      * \brief Return the active lineshape type.
+     *
+     * Thread-safe; acquires d_mutex.
      */
     LineshapeType lineshapeType() const;
 
     /*!
      * \brief Set the lineshape type and mark modified.
+     *
+     * Thread-safe; acquires d_mutex.
      * \param type Lorentzian or Gaussian.
      */
     void setLineshapeType(LineshapeType type);
 
     /*!
      * \brief Return the convolution linewidth FWHM in kHz.
+     *
+     * Thread-safe; acquires d_mutex.
      */
     double linewidth() const;
 
     /*!
      * \brief Set the convolution linewidth FWHM in kHz and mark modified.
+     *
+     * Thread-safe; acquires d_mutex.
      * \param width FWHM in kHz.
      */
     void setLinewidth(double width);
 
-    /// \brief Return the lower bound of the convolution frequency range in MHz.
+    /// \brief Return the lower bound of the convolution frequency range in MHz. Thread-safe; acquires d_mutex.
     double convolutionMinFreq() const;
-    /// \brief Return the upper bound of the convolution frequency range in MHz.
+    /// \brief Return the upper bound of the convolution frequency range in MHz. Thread-safe; acquires d_mutex.
     double convolutionMaxFreq() const;
 
     /*!
      * \brief Set the convolution frequency range and mark modified.
+     *
+     * Thread-safe; acquires d_mutex.
      * \param minFreq Lower bound in MHz.
      * \param maxFreq Upper bound in MHz.
      */
@@ -231,23 +278,34 @@ public:
 
     /*!
      * \brief Return the number of points in the convolution frequency grid.
+     *
+     * Thread-safe; acquires d_mutex.
      */
     int numConvolutionPoints() const;
 
     /*!
      * \brief Set the number of convolution grid points and mark modified.
+     *
+     * Thread-safe; acquires d_mutex.
      * \param numPoints Desired grid size.
      */
     void setNumConvolutionPoints(int numPoints);
 
     /*!
      * \brief Return the spacing between convolution grid points in MHz.
+     *
+     * Thread-safe; acquires d_mutex.
      */
     double calculatePointSpacing() const;
 
-    /// \brief Return the lower bound of the display filter range in MHz.
+    /*!
+     * \brief Return the lower bound of the display filter range in MHz.
+     *
+     * Not lock-protected: unlike the convolution settings above, the
+     * display filter range is read and written only from the GUI thread.
+     */
     double filterMinFreq() const;
-    /// \brief Return the upper bound of the display filter range in MHz.
+    /// \brief Return the upper bound of the display filter range in MHz. See filterMinFreq() for why this is not lock-protected.
     double filterMaxFreq() const;
 
     /*!
@@ -259,6 +317,9 @@ public:
 
     /*!
      * \brief Set all convolution parameters in a single call and mark modified.
+     *
+     * Thread-safe; acquires d_mutex. Called from the GUI thread with live
+     * settings and from ConvolutionOperation on a worker thread.
      * \param enabled    Enable convolution.
      * \param lineshape  Lineshape type.
      * \param linewidth  FWHM in kHz.
@@ -280,37 +341,66 @@ public:
 
     /*!
      * \brief Generate the convolved spectrum from the loaded catalog data.
+     *
+     * Runs on whichever thread calls it (typically a QtConcurrent worker via
+     * ConvolutionOperation, which is why this may take a long time). Takes a
+     * snapshot of the catalog data and convolution parameters under d_mutex,
+     * releases the lock, and does the O(points * transitions) arithmetic
+     * against the snapshot only -- d_mutex is never held across the
+     * computation, so concurrent GUI-thread reads/writes of this overlay are
+     * never blocked by an in-flight convolution.
      * \return Vector of (frequency MHz, intensity) points.
      */
     QVector<QPointF> generateConvolvedSpectrum() const;
 
     /*!
      * \brief Generate the convolved spectrum with progress reporting.
+     *
+     * Same snapshot-then-unlock discipline as the no-argument overload; see
+     * its documentation.
      * \param progressCallback Callback invoked after each chunk; return \c false to cancel.
      * \return Vector of (frequency MHz, intensity) points, or empty if cancelled.
      */
     QVector<QPointF> generateConvolvedSpectrum(ProgressCallback progressCallback) const;
 
-    /// \brief Invalidate the convolution cache, forcing recomputation on next access.
+    /// \brief Invalidate the convolution cache, forcing recomputation on next access. Thread-safe; acquires d_mutex.
     void invalidateConvolutionCache();
-    /// \brief Mark the convolution cache as pending (background operation in progress).
+    /// \brief Mark the convolution cache as pending (background operation in progress). Thread-safe; acquires d_mutex.
     void setCachePending();
 
     /*!
      * \brief Mark the convolution cache as valid and store the result.
+     *
+     * Thread-safe; acquires d_mutex. Called from the QtConcurrent worker
+     * thread by ConvolutionOperation on completion.
      * \param convolvedData Computed convolution result to cache.
      */
     void setCacheValid(const QVector<QPointF> &convolvedData);
 
-    /// \brief Return \c true if the convolution cache holds a valid result.
+    /// \brief Return \c true if the convolution cache holds a valid result. Thread-safe; acquires d_mutex.
     bool isCacheValid() const;
-    /// \brief Return \c true if the cache is in the Valid state and contains data.
+    /// \brief Return \c true if the cache is in the Valid state and contains data. Thread-safe; acquires d_mutex.
     bool hasConvolvedData() const;
 
 protected:
-    /// \brief Load catalog data from the destination file.
+    /*!
+     * \brief Load catalog data from the destination file.
+     *
+     * Parses the file into a local buffer with no lock held, then
+     * publishes it via setCatalogData() (itself lock-protected). File I/O
+     * never runs while d_mutex is held.
+     */
     void readFromDest() override;
-    /// \brief Write catalog data to the destination file.
+    /*!
+     * \brief Write catalog data to the destination file.
+     *
+     * Snapshots d_catalogData under d_mutex, releases the lock, then
+     * performs the file I/O against the snapshot -- the same discipline
+     * as generateConvolvedSpectrum(). This can run on a QtConcurrent
+     * worker (OverlayStorage::addOverlay()) concurrently with the GUI
+     * thread calling setCatalogData() or a convolution updating the cache;
+     * the lock is never held across the I/O.
+     */
     void writeToDest() override;
     /// \brief Store catalog-specific metadata fields into the settings map.
     void _storeMetadata(std::map<QString, QVariant, std::less<>> &m) override;
@@ -390,11 +480,17 @@ public:
 
     /*!
      * \brief Return the raw parsed data points before base-class transformations.
+     *
+     * Thread-safe; acquires d_mutex.
      */
     QVector<QPointF> rawData() const;
 
     /*!
      * \brief Replace the raw data and update cached statistics.
+     *
+     * Thread-safe; acquires d_mutex. writeToDest() (which can run on a
+     * QtConcurrent worker via OverlayStorage::addOverlay()) reads
+     * d_rawData under the same lock.
      * \param data New XY data points.
      */
     void setRawData(const QVector<QPointF> &data);
@@ -483,9 +579,22 @@ public:
     void setFilterRange(double minX, double maxX);
 
 protected:
-    /// \brief Load XY data from the destination file.
+    /*!
+     * \brief Load XY data from the destination file.
+     *
+     * Parses the file into a local buffer with no lock held, then
+     * publishes it via setRawData() (itself lock-protected). File I/O
+     * never runs while d_mutex is held.
+     */
     void readFromDest() override;
-    /// \brief Write XY data to the destination file.
+    /*!
+     * \brief Write XY data to the destination file.
+     *
+     * Snapshots d_rawData under d_mutex, releases the lock, then performs
+     * the file I/O against the snapshot. This can run on a QtConcurrent
+     * worker (OverlayStorage::addOverlay()) concurrently with the GUI
+     * thread calling setRawData(); the lock is never held across the I/O.
+     */
     void writeToDest() override;
     /// \brief Store GenericXY-specific metadata fields into the settings map.
     void _storeMetadata(std::map<QString, QVariant, std::less<>> &m) override;

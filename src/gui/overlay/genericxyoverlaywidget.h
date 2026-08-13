@@ -62,7 +62,10 @@ public:
     
     // Settings state capture for preview sync tracking
     QHash<QString, QVariant> getSettingsHash() const override;
-    
+
+    // Cancels the tracked catalog/data parse (see d_parseOperationId below).
+    void cancelPendingOperations() override;
+
     // Operation declaration interface
     QVector<OperationCapability> getSupportedOperations() const override;
     bool supportsBackgroundOperation(OperationCapability::Type type) const override;

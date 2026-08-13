@@ -7,6 +7,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
+#include <QMutexLocker>
 
 
 BCExpOverlay::BCExpOverlay() :
@@ -23,6 +24,7 @@ QVector<QPointF> BCExpOverlay::_xyData() const
 
 void BCExpOverlay::setFtData(const Ft &ftData)
 {
+    QMutexLocker locker(&d_mutex);
     d_ft = ftData;
 
     // Restate the extrema under this overlay's ignore band so they agree with
@@ -33,14 +35,22 @@ void BCExpOverlay::setFtData(const Ft &ftData)
 
 Ft BCExpOverlay::getFtData() const
 {
+    QMutexLocker locker(&d_mutex);
     return d_ft;
 }
 
 void BCExpOverlay::setAutoScaleIgnoreMHz(double mhz)
 {
+    QMutexLocker locker(&d_mutex);
     d_autoScaleIgnoreMHz = qMax(mhz,0.0);
     d_ft.recomputeExtrema(d_autoScaleIgnoreMHz);
     setModified(true);
+}
+
+double BCExpOverlay::getAutoScaleIgnoreMHz() const
+{
+    QMutexLocker locker(&d_mutex);
+    return d_autoScaleIgnoreMHz;
 }
 
 double BCExpOverlay::yMax() const
@@ -131,7 +141,9 @@ void BCExpOverlay::readFromDest()
 
     // The frequency axis and the ignore band arrive via _retrieveMetadata(),
     // which runs first, so the extrema can be recomputed here with the same
-    // LO exclusion the FT was originally processed under.
+    // LO exclusion the FT was originally processed under. Publish under the
+    // lock only; the file I/O above ran with no lock held.
+    QMutexLocker locker(&d_mutex);
     d_ft.setData(ftData, 0.0, 0.0);
     d_ft.recomputeExtrema(d_autoScaleIgnoreMHz);
 }
@@ -142,10 +154,20 @@ void BCExpOverlay::writeToDest()
     if(destFile.isEmpty())
         return;
 
+    // Snapshot the FT data under the lock, then release it before doing
+    // any file I/O -- this can run on a QtConcurrent worker
+    // (OverlayStorage::addOverlay()) while the GUI thread calls
+    // setFtData() on the same overlay.
+    Ft ftSnapshot;
+    {
+        QMutexLocker locker(&d_mutex);
+        ftSnapshot = d_ft;
+    }
+
     QFile f(destFile);
 
     // Use BlackchirpCSV::writeY template function to write the Y data
-    if(!BlackchirpCSV::writeY(f, d_ft.yData(), QString("FT Magnitude")))
+    if(!BlackchirpCSV::writeY(f, ftSnapshot.yData(), QString("FT Magnitude")))
     {
         // Handle error if needed - file writing failed
         return;
@@ -208,11 +230,13 @@ CatalogOverlay::CatalogOverlay() : OverlayBase(Catalog)
 
 CatalogData CatalogOverlay::catalogData() const
 {
+    QMutexLocker locker(&d_mutex);
     return d_catalogData;
 }
 
 void CatalogOverlay::setCatalogData(const CatalogData &data)
 {
+    QMutexLocker locker(&d_mutex);
     if (d_catalogData != data) {
         d_catalogData = data;
         invalidateConvolutionCache();
@@ -222,30 +246,34 @@ void CatalogOverlay::setCatalogData(const CatalogData &data)
 
 bool CatalogOverlay::convolutionEnabled() const
 {
+    QMutexLocker locker(&d_mutex);
     return d_convolutionEnabled;
 }
 
 void CatalogOverlay::setConvolutionEnabled(bool enabled)
 {
+    QMutexLocker locker(&d_mutex);
     if (d_convolutionEnabled != enabled) {
         d_convolutionEnabled = enabled;
-        
+
         // Only invalidate cache if enabling convolution and no cached data exists
         if (enabled && !hasConvolvedData()) {
             invalidateConvolutionCache();
         }
-        
+
         setModified(true);
     }
 }
 
 CatalogOverlay::LineshapeType CatalogOverlay::lineshapeType() const
 {
+    QMutexLocker locker(&d_mutex);
     return d_lineshapeType;
 }
 
 void CatalogOverlay::setLineshapeType(LineshapeType type)
 {
+    QMutexLocker locker(&d_mutex);
     if (d_lineshapeType != type) {
         d_lineshapeType = type;
         invalidateConvolutionCache();
@@ -255,11 +283,13 @@ void CatalogOverlay::setLineshapeType(LineshapeType type)
 
 double CatalogOverlay::linewidth() const
 {
+    QMutexLocker locker(&d_mutex);
     return d_linewidth;
 }
 
 void CatalogOverlay::setLinewidth(double width)
 {
+    QMutexLocker locker(&d_mutex);
     if (qAbs(d_linewidth - width) > 1e-6) {
         d_linewidth = width;
         invalidateConvolutionCache();
@@ -269,17 +299,20 @@ void CatalogOverlay::setLinewidth(double width)
 
 double CatalogOverlay::convolutionMinFreq() const
 {
+    QMutexLocker locker(&d_mutex);
     return d_convolutionMinFreq;
 }
 
 double CatalogOverlay::convolutionMaxFreq() const
 {
+    QMutexLocker locker(&d_mutex);
     return d_convolutionMaxFreq;
 }
 
 void CatalogOverlay::setConvolutionFreqRange(double minFreq, double maxFreq)
 {
-    if (qAbs(d_convolutionMinFreq - minFreq) > 1e-6 || 
+    QMutexLocker locker(&d_mutex);
+    if (qAbs(d_convolutionMinFreq - minFreq) > 1e-6 ||
         qAbs(d_convolutionMaxFreq - maxFreq) > 1e-6) {
         d_convolutionMinFreq = minFreq;
         d_convolutionMaxFreq = maxFreq;
@@ -290,11 +323,13 @@ void CatalogOverlay::setConvolutionFreqRange(double minFreq, double maxFreq)
 
 int CatalogOverlay::numConvolutionPoints() const
 {
+    QMutexLocker locker(&d_mutex);
     return d_numConvolutionPoints;
 }
 
 void CatalogOverlay::setNumConvolutionPoints(int numPoints)
 {
+    QMutexLocker locker(&d_mutex);
     if (d_numConvolutionPoints != numPoints) {
         d_numConvolutionPoints = numPoints;
         invalidateConvolutionCache();
@@ -304,6 +339,7 @@ void CatalogOverlay::setNumConvolutionPoints(int numPoints)
 
 double CatalogOverlay::calculatePointSpacing() const
 {
+    QMutexLocker locker(&d_mutex);
     if (d_numConvolutionPoints <= 1) {
         return d_convolutionMaxFreq - d_convolutionMinFreq;
     }
@@ -331,10 +367,11 @@ void CatalogOverlay::setFilterRange(double minFreq, double maxFreq)
     }
 }
 
-void CatalogOverlay::setConvolutionSettings(bool enabled, LineshapeType lineshape, 
-                                           double linewidth, double minFreq, double maxFreq, 
+void CatalogOverlay::setConvolutionSettings(bool enabled, LineshapeType lineshape,
+                                           double linewidth, double minFreq, double maxFreq,
                                            int numPoints)
 {
+    QMutexLocker locker(&d_mutex);
     d_convolutionEnabled = enabled;
     d_lineshapeType = lineshape;
     d_linewidth = linewidth;
@@ -347,133 +384,196 @@ void CatalogOverlay::setConvolutionSettings(bool enabled, LineshapeType lineshap
 
 QVector<QPointF> CatalogOverlay::_xyData() const
 {
+    QMutexLocker locker(&d_mutex);
+
     if (d_convolutionEnabled) {
         switch (d_cacheState) {
         case CacheState::Valid:
             return d_convolvedCache;
-            
+
         case CacheState::Pending:
             // Background operation in progress - return previous cache or fall through to raw data
             if (!d_convolvedCache.isEmpty()) {
                 return d_convolvedCache; // Return stale data while updating
             }
             // Fall through to return raw data as placeholder
-            
+
         case CacheState::Invalid:
             // Cache invalid - fall through to return raw data as placeholder
             break;
         }
     }
-    
+
     // Return raw transition data as stick spectrum (used for non-convolved mode and as placeholder)
     QVector<QPointF> transitions;
     transitions.reserve(d_catalogData.size());
-    
+
     for (int i = 0; i < d_catalogData.size(); ++i) {
         const TransitionData &trans = d_catalogData.at(i);
         transitions.append(QPointF(trans.frequency, trans.intensity));
     }
-    
+
     return transitions;
 }
 
 QVector<QPointF> CatalogOverlay::generateConvolvedSpectrum() const
 {
-    if (d_catalogData.isEmpty()) {
-        return QVector<QPointF>();
+    // Snapshot the catalog and convolution parameters under the lock, then
+    // release it before doing any arithmetic. The convolution below is
+    // O(numConvolutionPoints * transitions) and can run for a long time;
+    // holding d_mutex across it would block every other access to this
+    // overlay -- including GUI-thread plot reads -- for the duration. The
+    // snapshot means a concurrent settings change (e.g. from a spinbox
+    // edit while this runs on a worker thread) does not corrupt the
+    // computation; it simply is not reflected in this particular result.
+    CatalogData catalogSnapshot;
+    LineshapeType lineshape;
+    double linewidth, convMinFreq, convMaxFreq;
+    int numPoints;
+    {
+        QMutexLocker locker(&d_mutex);
+        if (d_catalogData.isEmpty())
+            return QVector<QPointF>();
+
+        catalogSnapshot = d_catalogData;
+        lineshape = d_lineshapeType;
+        linewidth = d_linewidth;
+        convMinFreq = d_convolutionMinFreq;
+        convMaxFreq = d_convolutionMaxFreq;
+        numPoints = d_numConvolutionPoints;
     }
+
+    // A non-positive point count has nothing to compute, and would
+    // otherwise reach calculateChunkSize()/the chunked overload's
+    // numChunks division with a zero-or-negative divisor. Not reachable
+    // from the UI today (the spinbox floors at 100, and
+    // ConvolutionOperation validates before calling in), but this is a
+    // public method and must not crash on a degenerate input.
+    if (numPoints <= 0)
+        return QVector<QPointF>();
+
+    // Everything below reads only local snapshots -- no lock held.
 
     //pre-filter transitions outside range; place into lightweight structures
     QVector<double> x0, y0;
-    x0.reserve(d_catalogData.size());
-    y0.reserve(d_catalogData.size());
-    for(const auto &trans : d_catalogData.transitions())
+    x0.reserve(catalogSnapshot.size());
+    y0.reserve(catalogSnapshot.size());
+    for(const auto &trans : catalogSnapshot.transitions())
     {
-        if (trans.frequency >= d_convolutionMinFreq && trans.frequency <= d_convolutionMaxFreq)
+        if (trans.frequency >= convMinFreq && trans.frequency <= convMaxFreq)
         {
             x0.append(trans.frequency);
             y0.append(trans.intensity);
         }
     }
-    
+
     // Generate frequency grid using number of points
-    double pointSpacing = calculatePointSpacing();
+    double pointSpacing = (numPoints <= 1) ? (convMaxFreq - convMinFreq)
+                                            : (convMaxFreq - convMinFreq) / (numPoints - 1);
     QVector<QPointF> spectrum;
-    spectrum.reserve(d_numConvolutionPoints);
+    spectrum.reserve(numPoints);
 
     //Store lineshape function pointer
     auto f = &CatalogOverlay::lorentzianProfile;
-    if(d_lineshapeType == Gaussian)
+    if(lineshape == Gaussian)
         f = &CatalogOverlay::gaussianProfile;
-    
-    
+
+
     // Add contribution to each grid point
-    for (int i = 0; i < d_numConvolutionPoints; ++i) {
+    for (int i = 0; i < numPoints; ++i) {
         double yy = 0.0;
-        double gridFreq = d_convolutionMinFreq + i * pointSpacing;
+        double gridFreq = convMinFreq + i * pointSpacing;
         for (int j = 0; (j < x0.size()) && (j < y0.size()); ++j) {
-            yy += y0.at(j) * (this->*f)(gridFreq, x0.at(j), d_linewidth);
+            yy += y0.at(j) * (this->*f)(gridFreq, x0.at(j), linewidth);
         }
         spectrum.append({gridFreq,yy});
     }
-    
+
     return spectrum;
 }
 
 QVector<QPointF> CatalogOverlay::generateConvolvedSpectrum(ProgressCallback progressCallback) const
 {
-    if (d_catalogData.isEmpty()) {
-        return QVector<QPointF>();
+    // Same snapshot-then-unlock discipline as the no-callback overload
+    // above: see the comment there for why the lock cannot span this
+    // computation. The chunked loop below additionally invokes
+    // progressCallback, which may call back into other overlay code
+    // (e.g. checking cancellation) -- another reason the lock must not
+    // be held here.
+    CatalogData catalogSnapshot;
+    LineshapeType lineshape;
+    double linewidth, convMinFreq, convMaxFreq;
+    int numPoints;
+    {
+        QMutexLocker locker(&d_mutex);
+        if (d_catalogData.isEmpty())
+            return QVector<QPointF>();
+
+        catalogSnapshot = d_catalogData;
+        lineshape = d_lineshapeType;
+        linewidth = d_linewidth;
+        convMinFreq = d_convolutionMinFreq;
+        convMaxFreq = d_convolutionMaxFreq;
+        numPoints = d_numConvolutionPoints;
     }
+
+    // See the no-callback overload above: a non-positive point count
+    // would otherwise reach calculateChunkSize()/the numChunks division
+    // below with a zero-or-negative divisor.
+    if (numPoints <= 0)
+        return QVector<QPointF>();
+
+    // Everything below reads only local snapshots -- no lock held.
 
     // Pre-filter transitions outside range; place into lightweight structures
     QVector<double> x0, y0;
-    x0.reserve(d_catalogData.size());
-    y0.reserve(d_catalogData.size());
-    for(const auto &trans : d_catalogData.transitions())
+    x0.reserve(catalogSnapshot.size());
+    y0.reserve(catalogSnapshot.size());
+    for(const auto &trans : catalogSnapshot.transitions())
     {
-        if (trans.frequency >= d_convolutionMinFreq && trans.frequency <= d_convolutionMaxFreq)
+        if (trans.frequency >= convMinFreq && trans.frequency <= convMaxFreq)
         {
             x0.append(trans.frequency);
             y0.append(trans.intensity);
         }
     }
-    
-    // If no progress callback provided, fall back to original implementation
+
+    // If no progress callback provided, fall back to the unchunked implementation.
     if (!progressCallback) {
         return generateConvolvedSpectrum();
     }
-    
+
     // Calculate chunking parameters
-    int chunkSize = calculateChunkSize(d_numConvolutionPoints, x0.size());
-    int numChunks = (d_numConvolutionPoints + chunkSize - 1) / chunkSize;
-    
+    int chunkSize = calculateChunkSize(numPoints, x0.size());
+    int numChunks = (numPoints + chunkSize - 1) / chunkSize;
+
     // Generate frequency grid using number of points
-    double pointSpacing = calculatePointSpacing();
+    double pointSpacing = (numPoints <= 1) ? (convMaxFreq - convMinFreq)
+                                            : (convMaxFreq - convMinFreq) / (numPoints - 1);
     QVector<QPointF> spectrum;
-    spectrum.reserve(d_numConvolutionPoints);
+    spectrum.reserve(numPoints);
 
     // Store lineshape function pointer
     auto f = &CatalogOverlay::lorentzianProfile;
-    if(d_lineshapeType == Gaussian)
+    if(lineshape == Gaussian)
         f = &CatalogOverlay::gaussianProfile;
-    
+
     // Process in chunks
     for (int chunkIdx = 0; chunkIdx < numChunks; ++chunkIdx) {
         // Calculate chunk boundaries
         int startIdx = chunkIdx * chunkSize;
-        int endIdx = std::min(startIdx + chunkSize, d_numConvolutionPoints);
-        
+        int endIdx = std::min(startIdx + chunkSize, numPoints);
+
         // Process chunk
         for (int i = startIdx; i < endIdx; ++i) {
             double yy = 0.0;
-            double gridFreq = d_convolutionMinFreq + i * pointSpacing;
+            double gridFreq = convMinFreq + i * pointSpacing;
             for (int j = 0; (j < x0.size()) && (j < y0.size()); ++j) {
-                yy += y0.at(j) * (this->*f)(gridFreq, x0.at(j), d_linewidth);
+                yy += y0.at(j) * (this->*f)(gridFreq, x0.at(j), linewidth);
             }
             spectrum.append({gridFreq, yy});
         }
-        
+
         // Report progress and check for cancellation
         if (progressCallback) {
             int progressPercent = (chunkIdx + 1) * 100 / numChunks;
@@ -485,7 +585,7 @@ QVector<QPointF> CatalogOverlay::generateConvolvedSpectrum(ProgressCallback prog
             }
         }
     }
-    
+
     return spectrum;
 }
 
@@ -530,6 +630,7 @@ double CatalogOverlay::gaussianProfile(double x, double x0, double fwhmKHz) cons
 
 void CatalogOverlay::invalidateConvolutionCache()
 {
+    QMutexLocker locker(&d_mutex);
     d_cacheState = CacheState::Invalid;
     // Invalidate base class cache to force refresh from _xyData()
     invalidateCache();
@@ -537,6 +638,7 @@ void CatalogOverlay::invalidateConvolutionCache()
 
 void CatalogOverlay::setCachePending()
 {
+    QMutexLocker locker(&d_mutex);
     d_cacheState = CacheState::Pending;
     // Invalidate base class cache to force refresh from _xyData()
     invalidateCache();
@@ -544,6 +646,7 @@ void CatalogOverlay::setCachePending()
 
 void CatalogOverlay::setCacheValid(const QVector<QPointF> &convolvedData)
 {
+    QMutexLocker locker(&d_mutex);
     d_convolvedCache = convolvedData;
     d_cacheState = CacheState::Valid;
     // Invalidate base class cache to force refresh from _xyData()
@@ -552,11 +655,13 @@ void CatalogOverlay::setCacheValid(const QVector<QPointF> &convolvedData)
 
 bool CatalogOverlay::isCacheValid() const
 {
+    QMutexLocker locker(&d_mutex);
     return d_cacheState == CacheState::Valid;
 }
 
 bool CatalogOverlay::hasConvolvedData() const
 {
+    QMutexLocker locker(&d_mutex);
     return d_cacheState == CacheState::Valid && !d_convolvedCache.isEmpty();
 }
 
@@ -624,25 +729,39 @@ void CatalogOverlay::readFromDest()
 void CatalogOverlay::writeToDest()
 {
     QString destFile = getDestFile();
-    if(destFile.isEmpty() || d_catalogData.isEmpty())
+    if(destFile.isEmpty())
         return;
 
+    // Snapshot the catalog data under the lock, then release it before
+    // doing any serialization or file I/O -- the same discipline as
+    // generateConvolvedSpectrum(). This can run on a QtConcurrent worker
+    // (OverlayStorage::addOverlay()) while the GUI thread calls
+    // setCatalogData() or a convolution updates the cache on the same
+    // overlay.
+    CatalogData catalogSnapshot;
+    {
+        QMutexLocker locker(&d_mutex);
+        if(d_catalogData.isEmpty())
+            return;
+        catalogSnapshot = d_catalogData;
+    }
+
     QFile f(destFile);
-    
+
     // Prepare data vectors for BlackchirpCSV using QVariant for automatic formatting
     QVector<QVariant> frequencies, intensities, quantumNumbers, additionalData;
-    
-    frequencies.reserve(d_catalogData.size());
-    intensities.reserve(d_catalogData.size());
-    quantumNumbers.reserve(d_catalogData.size());
-    additionalData.reserve(d_catalogData.size());
-    
-    for(int i = 0; i < d_catalogData.size(); ++i) {
-        const TransitionData &trans = d_catalogData.at(i);
+
+    frequencies.reserve(catalogSnapshot.size());
+    intensities.reserve(catalogSnapshot.size());
+    quantumNumbers.reserve(catalogSnapshot.size());
+    additionalData.reserve(catalogSnapshot.size());
+
+    for(int i = 0; i < catalogSnapshot.size(); ++i) {
+        const TransitionData &trans = catalogSnapshot.at(i);
         frequencies.append(trans.frequency);
         intensities.append(trans.intensity);
         quantumNumbers.append(trans.quantumNumbers);
-        
+
         // Convert additional data to JSON string (semicolons already removed by parser)
         if(!trans.additionalData.isEmpty()) {
             QJsonObject obj;
@@ -655,9 +774,9 @@ void CatalogOverlay::writeToDest()
             additionalData.append(QString());
         }
     }
-    
+
     // Use BlackchirpCSV to write the data
-    if(!BlackchirpCSV::writeYMultiple(f, 
+    if(!BlackchirpCSV::writeYMultiple(f,
                                      {"Frequency(MHz)", "Intensity", "QuantumNumbers", "AdditionalData"},
                                      {frequencies, intensities, quantumNumbers, additionalData})) {
         // Handle error if needed
@@ -759,11 +878,13 @@ GenericXYOverlay::GenericXYOverlay() : OverlayBase(GenericXY)
 
 QVector<QPointF> GenericXYOverlay::rawData() const
 {
+    QMutexLocker locker(&d_mutex);
     return d_rawData;
 }
 
 void GenericXYOverlay::setRawData(const QVector<QPointF> &data)
 {
+    QMutexLocker locker(&d_mutex);
     if (d_rawData != data) {
         d_rawData = data;
         updateStatistics();
@@ -980,23 +1101,35 @@ void GenericXYOverlay::readFromDest()
 void GenericXYOverlay::writeToDest()
 {
     QString destFile = getDestFile();
-    if (destFile.isEmpty() || d_rawData.isEmpty())
+    if (destFile.isEmpty())
         return;
 
+    // Snapshot the raw data under the lock, then release it before doing
+    // any file I/O -- this can run on a QtConcurrent worker
+    // (OverlayStorage::addOverlay()) while the GUI thread calls
+    // setRawData() on the same overlay.
+    QVector<QPointF> dataSnapshot;
+    {
+        QMutexLocker locker(&d_mutex);
+        if (d_rawData.isEmpty())
+            return;
+        dataSnapshot = d_rawData;
+    }
+
     QFile f(destFile);
-    
+
     // Prepare data vectors for BlackchirpCSV
     QVector<QVariant> xData, yData;
-    xData.reserve(d_rawData.size());
-    yData.reserve(d_rawData.size());
-    
-    for (const QPointF &point : d_rawData) {
+    xData.reserve(dataSnapshot.size());
+    yData.reserve(dataSnapshot.size());
+
+    for (const QPointF &point : dataSnapshot) {
         xData.append(point.x());
         yData.append(point.y());
     }
-    
+
     // Use BlackchirpCSV to write the XY data
-    if (!BlackchirpCSV::writeYMultiple(f, 
+    if (!BlackchirpCSV::writeYMultiple(f,
                                       {"X", "Y"},
                                       {xData, yData})) {
         // Handle error if needed

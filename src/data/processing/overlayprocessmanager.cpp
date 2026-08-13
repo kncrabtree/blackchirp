@@ -71,93 +71,132 @@ QString OverlayProcessManager::queueOperation(std::shared_ptr<OverlayOperation> 
 
 bool OverlayProcessManager::cancelOperation(const QString& operationId)
 {
-    QMutexLocker locker(&d_mutex);
-    
-    auto it = d_allOperations.find(operationId);
-    if (it == d_allOperations.end()) {
-        qWarning() << "Attempted to cancel unknown operation:" << operationId;
-        return false;
-    }
-    
-    auto operationInfo = it->second;
-    
-    if (operationInfo->state == OperationState::Completed ||
-        operationInfo->state == OperationState::Failed ||
-        operationInfo->state == OperationState::Cancelled) {
-        // Operation already finished
-        return false;
-    }
-    
-    if (operationInfo->state == OperationState::Queued) {
-        // Remove from queue
-        for (int i = 0; i < d_queuedOperations.size(); ++i) {
-            if (d_queuedOperations.at(i)->id == operationId) {
-                d_queuedOperations.removeAt(i);
-                break;
-            }
-        }
-        
-        operationInfo->state = OperationState::Cancelled;
-        d_cancelledOperations++;
-        
-        emit queueSizeChanged(d_queuedOperations.size());
-        emit operationCancelled(operationId);
-        
-        return true;
-    }
-    
-    if (operationInfo->state == OperationState::Running) {
-        // Cancel running operation
-        if (operationInfo->operation->canCancel()) {
-            operationInfo->operation->cancel();
-            operationInfo->state = OperationState::Cancelled;
-            d_cancelledOperations++;
-            
-            // Cancel the future if possible
-            if (operationInfo->watcher) {
-                operationInfo->watcher->cancel();
-            }
-            
-            emit operationCancelled(operationId);
-            return true;
-        } else {
+    // All shared-state mutation happens under the lock; the resulting
+    // signals are emitted *after* the lock is released -- mirrors
+    // onOperationFinished(). A slot on operationCancelled()/
+    // queueSizeChanged() may call back into the manager (e.g.
+    // queueSize(), operation(), cancelOperation()) synchronously
+    // through a direct connection, and d_mutex is non-recursive;
+    // emitting while still holding it would deadlock that re-entry.
+    enum class Outcome { None, Queued, Running };
+    Outcome outcome = Outcome::None;
+    int queueSizeAfter = 0;
+    bool result = false;
+
+    {
+        QMutexLocker locker(&d_mutex);
+
+        auto it = d_allOperations.find(operationId);
+        if (it == d_allOperations.end()) {
+            qWarning() << "Attempted to cancel unknown operation:" << operationId;
             return false;
         }
+
+        auto operationInfo = it->second;
+
+        if (operationInfo->state == OperationState::Completed ||
+            operationInfo->state == OperationState::Failed ||
+            operationInfo->state == OperationState::Cancelled) {
+            // Operation already finished
+            return false;
+        }
+
+        if (operationInfo->state == OperationState::Queued) {
+            // Remove from queue
+            for (int i = 0; i < d_queuedOperations.size(); ++i) {
+                if (d_queuedOperations.at(i)->id == operationId) {
+                    d_queuedOperations.removeAt(i);
+                    break;
+                }
+            }
+
+            operationInfo->state = OperationState::Cancelled;
+            d_cancelledOperations++;
+
+            queueSizeAfter = d_queuedOperations.size();
+            outcome = Outcome::Queued;
+            result = true;
+        } else if (operationInfo->state == OperationState::Running) {
+            // Cancel running operation
+            if (operationInfo->operation->canCancel()) {
+                operationInfo->operation->cancel();
+                operationInfo->state = OperationState::Cancelled;
+                d_cancelledOperations++;
+
+                // Cancel the future if possible
+                if (operationInfo->watcher) {
+                    operationInfo->watcher->cancel();
+                }
+
+                outcome = Outcome::Running;
+                result = true;
+            }
+        }
     }
-    
-    return false;
+
+    // Lock released -- safe for slots to re-enter the manager.
+    switch (outcome) {
+    case Outcome::Queued:
+        emit queueSizeChanged(queueSizeAfter);
+        emit operationCancelled(operationId);
+        break;
+    case Outcome::Running:
+        emit operationCancelled(operationId);
+        break;
+    case Outcome::None:
+        break;
+    }
+
+    return result;
 }
 
 void OverlayProcessManager::cancelAllOperations()
 {
-    QMutexLocker locker(&d_mutex);
-    
-    // Cancel queued operations
-    while (!d_queuedOperations.isEmpty()) {
-        auto operationInfo = d_queuedOperations.dequeue();
-        operationInfo->state = OperationState::Cancelled;
-        d_cancelledOperations++;
-        emit operationCancelled(operationInfo->id);
-    }
-    
-    // Cancel current operation
-    if (d_currentOperation && d_currentOperation->state == OperationState::Running) {
-        if (d_currentOperation->operation->canCancel()) {
-            d_currentOperation->operation->cancel();
-            d_currentOperation->state = OperationState::Cancelled;
+    // Same lock-then-emit split as cancelOperation() / onOperationFinished():
+    // all state mutation happens under the lock, and every emission
+    // happens after it is released so a reentrant slot cannot deadlock
+    // against this thread's own (non-recursive) mutex.
+    QVector<QString> cancelledQueuedIds;
+    QString cancelledCurrentId;
+    bool currentCancelled = false;
+
+    {
+        QMutexLocker locker(&d_mutex);
+
+        // Cancel queued operations
+        while (!d_queuedOperations.isEmpty()) {
+            auto operationInfo = d_queuedOperations.dequeue();
+            operationInfo->state = OperationState::Cancelled;
             d_cancelledOperations++;
-            
-            if (d_currentOperation->watcher) {
-                d_currentOperation->watcher->cancel();
+            cancelledQueuedIds.append(operationInfo->id);
+        }
+
+        // Cancel current operation
+        if (d_currentOperation && d_currentOperation->state == OperationState::Running) {
+            if (d_currentOperation->operation->canCancel()) {
+                d_currentOperation->operation->cancel();
+                d_currentOperation->state = OperationState::Cancelled;
+                d_cancelledOperations++;
+
+                if (d_currentOperation->watcher) {
+                    d_currentOperation->watcher->cancel();
+                }
+
+                cancelledCurrentId = d_currentOperation->id;
+                currentCancelled = true;
             }
-            
-            emit operationCancelled(d_currentOperation->id);
         }
     }
-    
+
+    // Lock released -- safe for slots to re-enter the manager.
+    for (const QString &id : cancelledQueuedIds)
+        emit operationCancelled(id);
+
+    if (currentCancelled)
+        emit operationCancelled(cancelledCurrentId);
+
     emit queueSizeChanged(0);
     emit processingStateChanged(false);
-    
 }
 
 bool OverlayProcessManager::isProcessing() const

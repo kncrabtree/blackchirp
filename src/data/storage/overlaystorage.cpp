@@ -1,6 +1,7 @@
 #include "overlaystorage.h"
 #include <data/experiment/overlaytypes.h>
 #include <data/storage/blackchirpcsv.h>
+#include <algorithm>
 #include <QDir>
 #include <QRegularExpression>
 #include <QtConcurrent/QtConcurrent>
@@ -240,9 +241,14 @@ bool OverlayStorage::addOverlay(std::shared_ptr<OverlayBase> overlay)
                     onWriteCompleted(sanitizedLabel, true);
                 }, Qt::QueuedConnection);
             } catch (const std::exception& e) {
-                // Signal failure on main thread
-                QMetaObject::invokeMethod(this, [this, sanitizedLabel, e]() {
-                    onWriteCompleted(sanitizedLabel, false, e.what());
+                // Capture the message as a QString now, on this thread.
+                // Capturing `e` itself by value into the lambda would copy
+                // through its static type (std::exception&), slicing away
+                // any derived what() override before the lambda runs on
+                // the main thread -- e.what() must be read here instead.
+                QString errorMessage = QString::fromUtf8(e.what());
+                QMetaObject::invokeMethod(this, [this, sanitizedLabel, errorMessage]() {
+                    onWriteCompleted(sanitizedLabel, false, errorMessage);
                 }, Qt::QueuedConnection);
             } catch (...) {
                 // Signal failure on main thread
@@ -478,7 +484,17 @@ void OverlayStorage::onWriteCompleted(const QString& label, bool success, const 
     } else {
         // Remove failed overlay from storage
         d_overlays.erase(overlayIt);
+
+        // Emit overlayWriteFailed() before overlayRemoved(): the former
+        // drives OverlayManagerWidget::onOverlayWriteFailed(), which puts
+        // up a modal error explaining *why* before the latter drives
+        // FtmwViewWidget::onOverlayRemoved(), which pulls the curve off
+        // the plot. Explain first, then act -- the reverse order would
+        // have the overlay vanish from the plot an instant before the
+        // dialog explaining why appears, which reads as data loss rather
+        // than a reported failure.
         emit overlayWriteFailed(overlay, error);
+        emit overlayRemoved(overlay);
     }
 }
 
@@ -487,44 +503,37 @@ bool OverlayStorage::addPreviewOverlay(std::shared_ptr<OverlayBase> overlay)
     if (!overlay) {
         return false;
     }
-    
-    QString label = overlay->getLabel();
-    
-    // Add to preview storage (no validation/sanitization needed for temporary overlays)
-    d_previewOverlays[label] = overlay;
-    
+
+    // Identity-keyed (see the class comment for why): appending the same
+    // object twice would otherwise leave two entries which trip over each
+    // other on removal.
+    if (!d_previewOverlays.contains(overlay)) {
+        d_previewOverlays.append(overlay);
+    }
+
     // Emit signal so plots will display the preview overlay
     emit overlayAdded(overlay);
-    
+
     return true;
 }
 
-bool OverlayStorage::removePreviewOverlay(const QString& label)
+bool OverlayStorage::removePreviewOverlay(const std::shared_ptr<OverlayBase>& overlay)
 {
-    auto it = d_previewOverlays.find(label);
+    if (!overlay) {
+        return false;
+    }
+
+    auto it = std::find(d_previewOverlays.begin(), d_previewOverlays.end(), overlay);
     if (it == d_previewOverlays.end()) {
         return false;
     }
 
-    auto overlay = it->second;
+    auto removed = *it;
     d_previewOverlays.erase(it);
 
     // Emit signal so plots will remove the preview overlay
-    emit overlayRemoved(overlay);
+    emit overlayRemoved(removed);
 
-    return true;
-}
-
-bool OverlayStorage::detachPreviewOverlay(const QString& label)
-{
-    auto it = d_previewOverlays.find(label);
-    if (it == d_previewOverlays.end()) {
-        return false;
-    }
-
-    // Remove from preview map without emitting overlayRemoved,
-    // so the curve stays on the plot during promotion to permanent storage.
-    d_previewOverlays.erase(it);
     return true;
 }
 
@@ -533,13 +542,12 @@ bool OverlayStorage::detachPreviewOverlay(const std::shared_ptr<OverlayBase>& ov
     if (!overlay)
         return false;
 
-    for (auto it = d_previewOverlays.begin(); it != d_previewOverlays.end(); ++it) {
-        if (it->second == overlay) {
-            // Same rationale as the label-keyed overload: no overlayRemoved
-            // signal, so the curve survives promotion to permanent storage.
-            d_previewOverlays.erase(it);
-            return true;
-        }
+    auto it = std::find(d_previewOverlays.begin(), d_previewOverlays.end(), overlay);
+    if (it != d_previewOverlays.end()) {
+        // No overlayRemoved signal, so the curve survives promotion to
+        // permanent storage.
+        d_previewOverlays.erase(it);
+        return true;
     }
     return false;
 }
@@ -547,19 +555,15 @@ bool OverlayStorage::detachPreviewOverlay(const std::shared_ptr<OverlayBase>& ov
 void OverlayStorage::clearAllPreviews()
 {
     // Emit removal signals for all preview overlays
-    for (const auto& [label, overlay] : d_previewOverlays) {
+    for (const auto& overlay : d_previewOverlays) {
         emit overlayRemoved(overlay);
     }
-    
+
     // Clear the preview storage
     d_previewOverlays.clear();
 }
 
 QVector<std::shared_ptr<OverlayBase>> OverlayStorage::getAllPreviewOverlays() const
 {
-    QVector<std::shared_ptr<OverlayBase>> previews;
-    for (const auto& [label, overlay] : d_previewOverlays) {
-        previews.append(overlay);
-    }
-    return previews;
+    return d_previewOverlays;
 }
