@@ -791,18 +791,34 @@ jobs:
         # not receive the upstream fix.
         run: |
           set -euo pipefail
-          files=$(grep -rlIE -- '-framework[[:space:]]+AGL' "$QT_ROOT_DIR" || true)
+          # The flag is spelled two ways: qmake metadata separates the
+          # framework from its name with a space, while CMake stores link
+          # interfaces as semicolon-separated lists. Match either, then
+          # tidy the empty list slot the removal can leave behind.
+          pat='-framework[[:space:];]+AGL'
+          files=$(grep -rlIE -- "$pat" "$QT_ROOT_DIR" || true)
           if [ -z "$files" ]; then
             echo "No AGL link flags found under $QT_ROOT_DIR; nothing to patch."
-            exit 0
+          else
+            echo "Patching:"
+            printf '  %s\n' $files
+            printf '%s\n' "$files" | while IFS= read -r f; do
+              sed -i '' -E -e 's/[[:space:];]*-framework[[:space:];]+AGL//g' \
+                           -e 's/;;+/;/g' -e 's/"[[:space:];]+/"/g' "$f"
+            done
           fi
-          echo "Patching:"
-          printf '  %s\n' $files
-          printf '%s\n' "$files" | while IFS= read -r f; do
-            sed -i '' -E 's/[[:space:]]*-framework[[:space:]]+AGL//g' "$f"
-          done
           # Fail loudly rather than leaving a half-applied patch behind.
-          ! grep -rqIE -- '-framework[[:space:]]+AGL' "$QT_ROOT_DIR"
+          if grep -rqIE -- "$pat" "$QT_ROOT_DIR"; then
+            echo "::error::AGL link flags survived the sweep"
+            grep -rnIE -- "$pat" "$QT_ROOT_DIR" | head -20
+            exit 1
+          fi
+          # Anything else naming AGL is reported but tolerated: an include
+          # path pointing into the withdrawn framework is inert, and only
+          # a link flag breaks the build. Listing them keeps the next
+          # spelling from costing a run to discover.
+          echo "Residual AGL mentions (not link flags):"
+          grep -rnI -- 'AGL' "$QT_ROOT_DIR" | head -20 || echo "  none"
 
       - name: Restore Qwt cache
         id: qwt-cache
@@ -866,6 +882,15 @@ jobs:
             -DCMAKE_BUILD_TYPE=${{ env.CMAKE_BUILD_TYPE }} \
             -DQWT_ROOT="${{ github.workspace }}/qwt-install" \
             -DCMAKE_PREFIX_PATH="${{ github.workspace }}/qwt-install"
+          # The generated ninja file is the last point at which a stray
+          # `-framework AGL` is visible by name; past here it reaches ld
+          # as a bare "framework not found" that says nothing about where
+          # it came from. Checking here also fails in seconds rather than
+          # after a full compile.
+          if grep -n -- '-framework AGL' build/build.ninja; then
+            echo "::error::AGL reached the link line (see above)"
+            exit 1
+          fi
 
       - name: Build
         run: cmake --build build -j"$(sysctl -n hw.ncpu)"
