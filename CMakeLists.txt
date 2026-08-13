@@ -404,6 +404,9 @@ if(BC_BUILD_TESTS)
     add_blackchirp_definitions(tst_overlayprocessmanager_reentrancy)
     add_test(NAME OverlayProcessManagerReentrancyTest COMMAND tst_overlayprocessmanager_reentrancy)
 
+    # Overlay Dialog Teardown Test
+    blackchirp_add_gui_test(tst_overlaydialogteardown NAME OverlayDialogTeardownTest)
+
     # Operation Capability Test
     add_executable(tst_operation_capability_only tests/tst_operation_capability_only.cpp)
     target_link_libraries(tst_operation_capability_only 
