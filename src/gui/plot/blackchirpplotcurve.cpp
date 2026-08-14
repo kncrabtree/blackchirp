@@ -332,7 +332,15 @@ QVector<QPointF> BlackchirpPlotCurve::_filter(int w, const QwtScaleMap map)
 
     if(size < 2.5*w)
     {
-        d_boundingRect = boundingRect();
+        // This runs on the filter-pass worker thread, so caching the
+        // computed rect is a write the UI thread can be reading under
+        // p_dataMutex at the same moment (ZoomPanPlot::replot() and
+        // _recomputeBoundingRects() both call boundingRect()). Compute
+        // first — boundingRect() takes the lock itself, and QMutex is
+        // not recursive — then take the lock to publish it.
+        auto br = boundingRect();
+        QMutexLocker l(p_dataMutex);
+        d_boundingRect = br;
         return d;
     }
 
