@@ -561,6 +561,14 @@ Bug fixes
   LIF data is segment-flushed at acquisition time, so backup
   is now skipped for non-FTMW experiments
   (:commit:`f335b11d`).
+- Fixed FT plots occasionally showing a spectrum computed from a
+  mix of old and new processing settings. Changing a setting in
+  the FTMW view reprocesses every plot, and the background
+  workers read the shared settings struct while the interface
+  thread was rewriting it; each worker now computes from a
+  snapshot of the settings in effect when it was dispatched. The
+  result was wrong rather than absent — no crash, no log entry
+  (:commit:`6ad5a06c`, :commit:`bfd672b5`).
 
 **Tooling.**
 
@@ -572,6 +580,11 @@ Bug fixes
   (:commit:`af4aab85`).
 - Fixed additional ``ZoomPanPlot`` defects surfaced during the
   API-reference work (:commit:`feb21753`).
+- Fixed a plot autoscaling to a range its data never occupied.
+  The background downsampling pass cached a curve's bounding
+  rectangle outside the data lock, so the interface thread could
+  read it mid-write and size an axis from a mix of two different
+  extents (:commit:`496cf447`, :commit:`de9c177d`).
 
 **User interface.**
 
@@ -642,6 +655,27 @@ Bug fixes
   ignore half-width around the LO and excludes that band from
   both its scale factor and the plot's axis range. See
   :doc:`/user_guide/overlays` (:commit:`9c2d89e8`).
+- Fixed crashes and corrupted overlay data around catalog parsing
+  and convolution. Closing or cancelling an overlay dialog while
+  a parse or convolution was queued or running could crash;
+  cancelling a settings dialog could still leave the convolved
+  data applied; a convolution running in the background mutated
+  the same overlay the plot was reading; and an overlay renamed
+  after registration, or a preview sharing a name with an
+  existing overlay, could tear the wrong curve off the plot.
+  Cancel also takes a single click now. See
+  :doc:`/user_guide/overlays` (:commit:`e0f766ac`,
+  :commit:`fa82a2cd`, :commit:`4d544b94`).
+
+**LIF.**
+
+- Fixed the LIF display racing the acquisition thread for the
+  scan in progress. The current-trace accessor returned its copy
+  without taking the storage lock, so a repaint during
+  accumulation copied implicitly-shared data mid-update rather
+  than merely reading a stale shot count. See
+  :doc:`/user_guide/lif/lif_tab` (:commit:`795d1203`,
+  :commit:`ea748c6a`).
 
 **Build and distribution.**
 
@@ -652,6 +686,21 @@ Bug fixes
   reports and the About dialog untraceable to a commit. The build
   also warns at configure time when no sha resolves
   (:commit:`6d6fd4bd`).
+- Fixed the macOS packages linking against the AGL framework,
+  which Apple withdrew in the macOS 26 SDK. Qt names the
+  framework unconditionally in its OpenGL support, so the Apple
+  silicon package failed to build at all and the Intel package
+  shipped a load command for a framework macOS 26 does not carry
+  — a bundle that could not launch under Rosetta on Tahoe. The
+  build now strips the reference from the Qt installation and
+  fails the packaging job if it reappears. See
+  :doc:`/user_guide/installation` (:commit:`a4bde561`,
+  :commit:`652ba66b`, :commit:`c40074d1`, :commit:`616e2359`).
+- Fixed the installed macOS bundles refusing to launch with a
+  "sealed resource is missing or invalid" error. The bundled
+  license texts were installed after the code signature was
+  applied, invalidating it; each bundle is re-signed once its
+  licenses are in place (:commit:`e656d4c7`).
 
 **Python companion module.**
 
