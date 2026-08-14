@@ -845,8 +845,15 @@ void FtmwViewWidget::process(int id, const FidList fl, int frame)
         d_plotStatus[id].ftPlot->setCursor(Qt::BusyCursor);
         ws.busy = true;
         ws.reprocessWhenDone = false;
-        ws.p_watcher->setFuture(QtConcurrent::run([fl,frame,id,this](){
-            p_worker->doFT(fl,d_currentProcessingSettings,frame,id);
+        // Snapshot the settings for the worker. ws.busy only serializes
+        // workers sharing this id; updateProcessingSettings() assigns
+        // d_currentProcessingSettings on the UI thread and immediately
+        // reprocesses the other ids, so a worker reading the member
+        // directly can see a half-updated struct and return an FT that
+        // matches no setting the user ever chose.
+        const auto ps = d_currentProcessingSettings;
+        ws.p_watcher->setFuture(QtConcurrent::run([fl,ps,frame,id,this](){
+            p_worker->doFT(fl,ps,frame,id);
         }));
     }
 }
@@ -864,8 +871,9 @@ void FtmwViewWidget::processDiff(const FidList fl1, const FidList fl2, int frame
         p_mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
         ws.busy = true;
         ws.reprocessWhenDone = false;
-        ws.p_watcher->setFuture(QtConcurrent::run([fl1,fl2,frame1,frame2,this](){
-            p_worker->doFtDiff(fl1,fl2,frame1,frame2,d_currentProcessingSettings);
+        const auto ps = d_currentProcessingSettings;
+        ws.p_watcher->setFuture(QtConcurrent::run([fl1,fl2,frame1,frame2,ps,this](){
+            p_worker->doFtDiff(fl1,fl2,frame1,frame2,ps);
         }));
     }
 }
@@ -967,8 +975,9 @@ void FtmwViewWidget::processNextSidebandFid()
     ws.reprocessWhenDone = true;
     d_sbStatus.sbData.fl= fl;
     auto sbd = d_sbStatus.sbData;
-    ws.p_watcher->setFuture(QtConcurrent::run([this,sbd]{
-        p_worker->processSideband(sbd,d_currentProcessingSettings);
+    const auto ps = d_currentProcessingSettings;
+    ws.p_watcher->setFuture(QtConcurrent::run([this,sbd,ps]{
+        p_worker->processSideband(sbd,ps);
     }));
     d_sbStatus.sbData.currentIndex++;
     p_mainFtPlot->setMessageText(QString("Processing %1/%2")
