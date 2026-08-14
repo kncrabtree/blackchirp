@@ -4,6 +4,8 @@
 #include <QTimer>
 #include <QDir>
 
+#include <memory>
+
 // Core classes for background convolution testing
 #include <src/data/processing/overlayprocessmanager.h>
 #include <src/data/processing/overlayoperation.h>
@@ -11,6 +13,13 @@
 #include <src/data/processing/parsers/fileparserregistry.h>
 #include <src/data/processing/parsers/spcatparser.h>
 #include <src/data/processing/parsers/xiamparser.h>
+
+// The Convolve/Cancel button lifecycle (triggerBackgroundConvolution(),
+// cancelPendingConvolution()) lives on the widget, not on
+// OverlayProcessManager/ConvolutionOperation; testConvolutionCancellation
+// below drives it directly. This is why the target is declared with
+// blackchirp_add_gui_test() rather than linking blackchirp-data alone.
+#include <src/gui/overlay/catalogoverlaywidget.h>
 
 /**
  * @brief Test suite for end-to-end background convolution execution
@@ -44,7 +53,6 @@ private slots:
     
     // Performance and edge case tests
     void testLargeDatasetConvolution();
-    void testZeroIntensityHandling();
     void testFrequencyRangeFiltering();
 
 private:
@@ -219,7 +227,92 @@ void BackgroundConvolutionTest::testConvolutionProgress()
 
 void BackgroundConvolutionTest::testConvolutionCancellation()
 {
-    QSKIP("Cancellation test disabled due to timing issues");
+    // Cancel a convolution that is still Queued -- never dequeued,
+    // because this test never pumps the event loop -- rather than one
+    // that is Running. That is the only way to make cancellation
+    // deterministic here: OverlayProcessManager::processQueue() only
+    // runs via a QueuedConnection, so without an event loop the
+    // operation provably cannot have started, and there is no race to
+    // arbitrate between "cancel wins" and "the QtConcurrent worker
+    // finished first". tst_overlaydialogteardown.cpp and
+    // tst_overlayprocessmanager_reentrancy.cpp rely on the same
+    // guarantee.
+    //
+    // This drives the real CatalogOverlayWidget Convolve/Cancel button
+    // slot (onConvolveButtonClicked(), invoked twice below -- once to
+    // queue, once to cancel) instead of calling
+    // OverlayProcessManager::cancelOperation() directly. That widget
+    // code -- d_currentConvolutionId/d_convolutionInProgress
+    // bookkeeping and the convolution cache-state reset -- is what
+    // distinguishes convolution cancellation as a user operation from
+    // cancelling an arbitrary OverlayOperation, which
+    // tst_overlayprocessmanager_reentrancy.cpp covers at the manager
+    // level.
+    auto &manager = OverlayProcessManager::instance();
+    manager.cancelAllOperations();
+
+    auto overlay = createSPCATOverlay();
+    QVERIFY(overlay != nullptr);
+    auto catalogOverlay = std::dynamic_pointer_cast<CatalogOverlay>(overlay);
+    QVERIFY(catalogOverlay != nullptr);
+    const int originalSize = catalogOverlay->catalogData().size();
+    QVERIFY(originalSize > 0);
+
+    auto widget = std::make_unique<CatalogOverlayWidget>(Ft());
+    widget->setupUI();
+
+    QSignalSpy queuedSpy(widget.get(), &OverlayTypeSpecificWidget::operationQueued);
+
+    // setupForSettings() adopts the overlay's source path into the file
+    // path line edit; that line edit's textChanged signal fires
+    // onFilePathChanged(), which queues a background catalog parse (the
+    // same startCatalogParse() path a user's own path edit takes) --
+    // independent of anything cancellation-related this test checks.
+    // Let that parse run to completion (a real read of a 10-line file,
+    // so this is fast, and its own success is not in question -- it is
+    // exercised end-to-end by testSPCATConvolutionExecution() above)
+    // so the widget reaches the same data-valid state setupForSettings()
+    // leaves a real dialog in. Only the convolution queue/cancel pair
+    // below needs the event loop left unpumped for determinism.
+    widget->setupForSettings(overlay);
+    QCOMPARE(queuedSpy.count(), 1);
+    const QString parseOperationId = queuedSpy.constFirst().at(0).toString();
+    QVERIFY(waitForOperationCompletion(parseOperationId));
+    QVERIFY(widget->isDataValid());
+    queuedSpy.clear();
+
+    widget->setConvolutionEnabled(true);
+
+    // First "click": queues a convolution operation with high priority.
+    QVERIFY(QMetaObject::invokeMethod(widget.get(), "onConvolveButtonClicked",
+                                       Qt::DirectConnection));
+    QCOMPARE(queuedSpy.count(), 1);
+    const QString operationId = queuedSpy.constFirst().at(0).toString();
+    QVERIFY(!operationId.isEmpty());
+
+    QCOMPARE(manager.getOperationState(operationId), OverlayProcessManager::OperationState::Queued);
+    QCOMPARE(manager.queueSize(), 1);
+    QVERIFY(!catalogOverlay->hasConvolvedData());
+
+    // Second "click": onConvolveButtonClicked() sees
+    // d_convolutionInProgress still set from the first click and takes
+    // the cancellation branch (cancelPendingConvolution()) instead of
+    // queuing a second operation -- the "Cancel now closes in one
+    // click" behavior.
+    QVERIFY(QMetaObject::invokeMethod(widget.get(), "onConvolveButtonClicked",
+                                       Qt::DirectConnection));
+
+    QCOMPARE(manager.getOperationState(operationId), OverlayProcessManager::OperationState::Cancelled);
+    QCOMPARE(manager.queueSize(), 0);
+
+    // The cancelled operation never ran, so the overlay must still be
+    // showing the original stick spectrum, not a partially-applied or
+    // stale convolution result. hasConvolvedData() alone would not
+    // catch a regression that left the queue bookkeeping correct but
+    // dropped the cache-state reset (or vice versa), so both are
+    // checked, along with the actual data callers would see.
+    QVERIFY(!catalogOverlay->hasConvolvedData());
+    QCOMPARE(overlay->xyData().size(), originalSize);
 }
 
 void BackgroundConvolutionTest::testOperationQueuing()
@@ -303,12 +396,58 @@ void BackgroundConvolutionTest::testOperationErrorHandling()
 
 void BackgroundConvolutionTest::testLargeDatasetConvolution()
 {
-    QSKIP("Large dataset test skipped");
-}
+    // Every other convolution test in this file uses a few hundred to a
+    // few thousand grid points, which CatalogOverlay::calculateChunkSize()
+    // (targeting ~50M elementary operations per chunk, clamped to at
+    // most 100000 points) always fits into a single chunk -- so none of
+    // them exercise the chunk-boundary bookkeeping
+    // (generateConvolvedSpectrum(ProgressCallback)'s startIdx/endIdx and
+    // chunk count) at all. This test's "large dataset" is large enough
+    // to force multiple chunks, and checks the chunked result against
+    // the unchunked overload point-for-point: the two overloads compute
+    // the same grid with the same per-point summation order, so any
+    // divergence -- a missing, duplicated, or shifted point at a chunk
+    // seam -- is a genuine chunking bug, not a numerical-tolerance
+    // question.
+    auto overlay = createSPCATOverlay();
+    QVERIFY(overlay != nullptr);
+    auto catalogOverlay = std::dynamic_pointer_cast<CatalogOverlay>(overlay);
+    QVERIFY(catalogOverlay != nullptr);
 
-void BackgroundConvolutionTest::testZeroIntensityHandling()
-{
-    QSKIP("Zero intensity test skipped");
+    // Covers every transition in c047527_sample.cat (all under 2000 MHz)
+    // so the inner per-point summation loop does real work, not just
+    // scan an empty transition list.
+    const int numPoints = 150000;
+    catalogOverlay->setConvolutionSettings(true, CatalogOverlay::Lorentzian, 50.0,
+                                            1300.0, 2000.0, numPoints);
+
+    auto reference = catalogOverlay->generateConvolvedSpectrum();
+    QCOMPARE(reference.size(), numPoints);
+
+    int callbackInvocations = 0;
+    int lastPercent = 0;
+    bool progressMonotonic = true;
+    auto chunked = catalogOverlay->generateConvolvedSpectrum(
+        [&](int percent, const QString &) {
+            ++callbackInvocations;
+            if (percent < lastPercent)
+                progressMonotonic = false;
+            lastPercent = percent;
+            return true;
+        });
+
+    // More than one callback invocation is the actual proof that this
+    // run spanned multiple chunks rather than silently taking the
+    // single-chunk path every other test in this file takes.
+    QVERIFY(callbackInvocations > 1);
+    QVERIFY(progressMonotonic);
+    QCOMPARE(lastPercent, 100);
+
+    QCOMPARE(chunked.size(), reference.size());
+    for (int i = 0; i < reference.size(); ++i) {
+        QCOMPARE(chunked.at(i).x(), reference.at(i).x());
+        QCOMPARE(chunked.at(i).y(), reference.at(i).y());
+    }
 }
 
 void BackgroundConvolutionTest::testFrequencyRangeFiltering()

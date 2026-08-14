@@ -367,19 +367,14 @@ if(BC_BUILD_TESTS)
     add_blackchirp_definitions(tst_ftworkertest)
     add_test(NAME FTWorkerTest COMMAND tst_ftworkertest)
     
-    # Background Convolution Test
-    add_executable(tst_background_convolution tests/tst_background_convolution.cpp)
-    target_link_libraries(tst_background_convolution
-        blackchirp-data
-        Qt6::Test
-        Qt6::Core
-        GSL::gsl
+    # Background Convolution Test -- a GUI test rather than a plain
+    # blackchirp-data link because testConvolutionCancellation() drives
+    # CatalogOverlayWidget's Convolve/Cancel button slot directly.
+    blackchirp_add_gui_test(tst_background_convolution
+        NAME BackgroundConvolutionTest
+        TESTDATA
+        LIBRARIES GSL::gsl
     )
-    add_blackchirp_definitions(tst_background_convolution)
-    target_compile_definitions(tst_background_convolution PRIVATE
-        TESTDATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/testdata"
-    )
-    add_test(NAME BackgroundConvolutionTest COMMAND tst_background_convolution)
 
     # Generic XY Parser Test
     add_executable(tst_genericxyparser tests/tst_genericxyparser.cpp)
@@ -673,7 +668,6 @@ if(BC_BUILD_TESTS)
         tst_headerstoragetest
         tst_blackchirpcsvtest
         tst_ftworkertest
-        tst_background_convolution
         tst_genericxyparser
         tst_overlayprocessmanager_reentrancy
         tst_operation_capability_only
