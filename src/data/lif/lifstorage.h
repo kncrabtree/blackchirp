@@ -98,10 +98,20 @@ public:
     LifTrace getLifTrace(int di, int li);
 
     /*!
-     \brief Return the trace being accumulated in the current cell (no locking).
+     \brief Return the trace being accumulated in the current cell.
+
+     Takes the storage mutex: addTrace() mutates \c d_currentTrace from
+     the acquisition path while the display widgets read it, and a
+     LifTrace holds implicitly-shared containers whose copy cannot race
+     a concurrent mutation.
+
      \return Copy of \c d_currentTrace.
     */
-    LifTrace currentLifTrace() const { return d_currentTrace; }
+    LifTrace currentLifTrace() const
+    {
+        QMutexLocker l(pu_mutex.get());
+        return d_currentTrace;
+    }
 
     /*!
      \brief Read the trace for cell (\a di, \a li) from disk.
