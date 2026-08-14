@@ -460,6 +460,14 @@ if(BC_BUILD_TESTS)
     blackchirp_add_gui_test(tst_zoompanplotthreadsafety
         NAME ZoomPanPlotThreadSafetyTest)
 
+    # ZoomPanPlot Filter Concurrency Test
+    blackchirp_add_gui_test(tst_zoompanplotfilterconcurrency
+        NAME ZoomPanPlotFilterConcurrencyTest)
+
+    # FtmwViewWidget Worker State Test
+    blackchirp_add_gui_test(tst_ftmwviewworkerstate
+        NAME FtmwViewWorkerStateTest)
+
     # SPCAT Parser Test
     add_executable(tst_spcatparser tests/tst_spcatparser.cpp)
     target_link_libraries(tst_spcatparser 
@@ -618,6 +626,16 @@ if(BC_BUILD_TESTS)
     add_blackchirp_definitions(tst_lifconversion)
     add_test(NAME LifConversionTest COMMAND tst_lifconversion)
 
+    # LIF Storage Concurrency Test
+    add_executable(tst_lifstorageconcurrency tests/tst_lifstorageconcurrency.cpp)
+    target_link_libraries(tst_lifstorageconcurrency
+        blackchirp-data
+        Qt6::Test
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_lifstorageconcurrency)
+    add_test(NAME LifStorageConcurrencyTest COMMAND tst_lifstorageconcurrency)
+
     # FCU Calibration Test
     add_executable(tst_fcucalibration tests/tst_fcucalibration.cpp)
     target_link_libraries(tst_fcucalibration
@@ -677,6 +695,7 @@ if(BC_BUILD_TESTS)
         tst_overlaystoragepreviewidentity
         tst_spcatparser
         tst_lifconversion
+        tst_lifstorageconcurrency
         tst_fcucalibration
         tst_autotrackerprotocol
         tst_xiamparser
