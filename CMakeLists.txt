@@ -646,6 +646,26 @@ if(BC_BUILD_TESTS)
     add_blackchirp_definitions(tst_fcucalibration)
     add_test(NAME FcuCalibrationTest COMMAND tst_fcucalibration)
 
+    # FCU Tune Sweep Test
+    add_executable(tst_fcutunesweep tests/tst_fcutunesweep.cpp)
+    target_link_libraries(tst_fcutunesweep
+        blackchirp-data
+        Qt6::Test
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_fcutunesweep)
+    add_test(NAME FcuTuneSweepTest COMMAND tst_fcutunesweep)
+
+    # FCU Tune Controller Test
+    add_executable(tst_fcutunecontroller tests/tst_fcutunecontroller.cpp)
+    target_link_libraries(tst_fcutunecontroller
+        blackchirp-data
+        Qt6::Test
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_fcutunecontroller)
+    add_test(NAME FcuTuneControllerTest COMMAND tst_fcutunecontroller)
+
     # Autotracker (Sirah FCU) Protocol Test — the wire-format layer is pure
     # and hardware-free (no HardwareObject dependency), so only its own
     # source is compiled in rather than linking the full hardware library.
@@ -697,6 +717,8 @@ if(BC_BUILD_TESTS)
         tst_lifconversion
         tst_lifstorageconcurrency
         tst_fcucalibration
+        tst_fcutunesweep
+        tst_fcutunecontroller
         tst_autotrackerprotocol
         tst_xiamparser
         tst_hardwareregistrytest
