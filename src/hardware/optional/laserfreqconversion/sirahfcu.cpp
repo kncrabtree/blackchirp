@@ -308,18 +308,15 @@ void SirahFcu::setPos(double localCm1)
     auto currentPos = d_lastPos;
     auto delta = static_cast<qint32>(static_cast<qint64>(targetPos) - static_cast<qint64>(currentPos));
 
-    // Skip a redundant move only when doing so cannot violate the verify
-    // window. Rather than gating on a fixed step count (which a coarse
-    // sine-bar pitch could translate to more than the verify tolerance),
-    // convert the unmoved current position back to a wavenumber via the
-    // same calibration used above and compare it directly to the request;
-    // half the tolerance leaves headroom for the verify readback's own
-    // rounding. A non-finite currentWl (e.g. current position outside the
-    // calibration's domain) falls through to an actual move rather than
-    // risking an unsafe skip.
-    auto verifyToleranceCm1 = get(tolerance, 1.0);
-    auto currentWl = d_calibration.posToWavelength(currentPos);
-    if(std::isfinite(currentWl) && qAbs(toCm1(currentWl, LaserUnit::Nm) - localCm1) < 0.5*verifyToleranceCm1)
+    // Skip a redundant move only when the motor already sits within a
+    // couple of steps of the target. The comparison is deliberately in
+    // steps rather than wavenumber: a doubling crystal's phase-match
+    // acceptance spans only a few hundred steps, so a wavenumber window
+    // that looks tight (a fraction of a cm-1) can still leave the crystal
+    // far enough off peak to cost conversion efficiency, and successive
+    // small scan steps would accumulate that error until a move finally
+    // exceeded the window.
+    if(qAbs(delta) <= redundantMoveSteps)
         return;
 
     //can we just move relative?

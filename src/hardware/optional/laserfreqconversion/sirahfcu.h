@@ -83,6 +83,8 @@ private:
 
     //! Generous upper bound on the time a Wait=0 Goto Position ack can take to arrive (full-travel moves can take seconds).
     static constexpr int moveAckTimeoutMs = 15000;
+    //! A target within this many steps of the current position is treated as already reached; see setPos().
+    static constexpr qint32 redundantMoveSteps = 2;
 
     quint8 motor() const;
     //! Programs the motor's move profile (start/high frequency, ramp length) into the Autotracker's volatile state; must be reissued on every connection. \return false on a comm failure.
