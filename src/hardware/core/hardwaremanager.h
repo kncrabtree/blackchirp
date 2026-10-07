@@ -324,6 +324,17 @@ signals:
     /// \param stageKey Hardware key of the stage whose harmonic order changed.
     void lifHarmonicApplied(QString stageKey);
 
+    /// \brief Reports a LIF frequency-conversion stage's runtime trim.
+    ///
+    /// Emitted by setLifStageTrim() after every attempt (with the trim the
+    /// stage holds afterwards) and by reportLifStageTrims() for each active
+    /// stage that supports a trim.
+    /// \param stageKey Hardware key of the stage.
+    /// \param trim Trim now held by the stage, in its native units.
+    /// \param direction The stage's preferred trim direction (+1 or -1).
+    /// \param success \c false if the requested trim could not be applied.
+    void lifStageTrimUpdate(QString stageKey, double trim, int direction, bool success);
+
     // Python hardware signal
 
     /// \brief Emitted after reloadPythonScript() completes for a Python-backed
@@ -618,6 +629,25 @@ public slots:
     /// \param stageKey Hardware key of the target LaserFreqConversionStage.
     /// \param n Requested harmonic order.
     void configureLifHarmonic(const QString &stageKey, int n);
+
+    /// \brief Sets the runtime trim of a LIF frequency-conversion stage and
+    /// moves the stage to apply it, gating the LIF digitizer during the move.
+    ///
+    /// The stage is moved to the local input wavenumber implied by the LIF
+    /// laser's present output position (read back from the laser) through
+    /// the cached LifConversion, with the new trim applied, via
+    /// LaserFreqConversionStage::setTrim() and setPosition() on the stage's
+    /// thread. The digitizer is gated and its buffer flushed around the move, as in
+    /// setLifParameters(), so waveforms acquired during the move are not
+    /// emitted. Emits lifStageTrimUpdate() with the outcome.
+    ///
+    /// \param stageKey Hardware key of the target LaserFreqConversionStage.
+    /// \param trim Requested trim, in the stage's native units.
+    void setLifStageTrim(const QString &stageKey, double trim);
+
+    /// \brief Emits lifStageTrimUpdate() for every active LIF
+    /// frequency-conversion stage that supports a trim.
+    void reportLifStageTrims();
 
     /// \brief Starts configuration-mode acquisition on the LIF digitizer.
     /// \param c LIF configuration describing the acquisition parameters.

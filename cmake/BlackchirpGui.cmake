@@ -288,6 +288,7 @@ set(BLACKCHIRP_GUI_FORMS
 list(APPEND BLACKCHIRP_GUI_SOURCES
     # LIF-specific GUI components
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/experimentlifconfigpage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/fcutunedialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifconfigwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifcontrolwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifdisplaywidget.cpp
@@ -303,6 +304,7 @@ list(APPEND BLACKCHIRP_GUI_SOURCES
 list(APPEND BLACKCHIRP_GUI_HEADERS
     # LIF-specific GUI headers
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/experimentlifconfigpage.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/fcutunedialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifconfigwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifcontrolwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifdisplaywidget.h

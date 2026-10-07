@@ -4,6 +4,7 @@
 #include <gui/lif/gui/liftraceplot.h>
 #include <gui/lif/gui/liflaserwidget.h>
 #include <gui/lif/gui/lifprocessingwidget.h>
+#include <gui/lif/gui/fcutunedialog.h>
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -19,7 +20,7 @@ using namespace Qt::StringLiterals;
 
 LifControlWidget::LifControlWidget(const QString& digitizerHwKey, const QString& laserHwKey, QWidget *parent) :
     QWidget(parent), SettingsStorage(BC::Key::LifControl::key),
-    ps_cfg(std::make_shared<LifConfig>(digitizerHwKey)), d_laserHwKey(laserHwKey)
+    ps_cfg(std::make_shared<LifConfig>(digitizerHwKey)), d_laserHwKey(laserHwKey), d_digitizerHwKey(digitizerHwKey)
 {
     initializeWidget();
 }
@@ -63,6 +64,12 @@ void LifControlWidget::initializeWidget()
     p_resetButton->setToolTip("Reset the averaged trace."_L1);
     connect(p_resetButton,&QToolButton::clicked,p_lifTracePlot,&LifTracePlot::reset);
     hbl2->addWidget(p_resetButton);
+
+    p_fcuTuneButton = new QToolButton(this);
+    p_fcuTuneButton->setIcon(ThemeColors::createThemedIcon(":/icons/adjustments-horizontal.svg",ThemeColors::IconSecondary,this));
+    p_fcuTuneButton->setToolTip("Tune the frequency-conversion stage trim against the reference signal."_L1);
+    connect(p_fcuTuneButton,&QToolButton::clicked,this,&LifControlWidget::showFcuTuneDialog);
+    hbl2->addWidget(p_fcuTuneButton);
 
     hbl2->addSpacerItem(new QSpacerItem(1,1));
 
@@ -163,6 +170,8 @@ void LifControlWidget::startAcquisition()
     p_stopAcqButton->setEnabled(true);
 
     d_acquiring = true;
+    if(p_fcuTuneDialog)
+        p_fcuTuneDialog->setAcquiring(true);
     emit startSignal(*ps_cfg);
 }
 
@@ -173,6 +182,8 @@ void LifControlWidget::stopAcquisition()
     p_startAcqButton->setEnabled(true);
     p_stopAcqButton->setEnabled(false);
     d_acquiring = false;
+    if(p_fcuTuneDialog)
+        p_fcuTuneDialog->setAcquiring(false);
 
     emit stopSignal();
 }
@@ -192,7 +203,32 @@ void LifControlWidget::newWaveform(const QVector<qint8> b)
         //set bitShift to 8 to provide extra bits for rolling average
         LifTrace l(ps_cfg->digitizerConfig(),b,0,0,8);
         p_lifTracePlot->processTrace(l);
+
+        if(p_fcuTuneDialog)
+            p_fcuTuneDialog->newWaveform(b);
     }
+}
+
+void LifControlWidget::stageTrimUpdate(const QString &stageKey, double trim, int direction, bool success)
+{
+    if(p_fcuTuneDialog)
+        p_fcuTuneDialog->stageTrimUpdate(stageKey,trim,direction,success);
+}
+
+void LifControlWidget::showFcuTuneDialog()
+{
+    if(!p_fcuTuneDialog)
+    {
+        p_fcuTuneDialog = new FcuTuneDialog(d_digitizerHwKey,
+                                            [this](LifConfig &cfg){ toConfig(cfg); },this);
+        connect(p_fcuTuneDialog,&FcuTuneDialog::requestTrim,this,&LifControlWidget::changeStageTrimSignal);
+        connect(p_fcuTuneDialog,&FcuTuneDialog::requestTrimReport,this,&LifControlWidget::requestStageTrimReport);
+        p_fcuTuneDialog->setAcquiring(d_acquiring);
+    }
+
+    p_fcuTuneDialog->show();
+    p_fcuTuneDialog->raise();
+    p_fcuTuneDialog->activateWindow();
 }
 
 void LifControlWidget::setLaserPosition(const double d)

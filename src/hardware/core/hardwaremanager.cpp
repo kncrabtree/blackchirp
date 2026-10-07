@@ -885,6 +885,80 @@ void HardwareManager::configureLifHarmonic(const QString &stageKey, int n)
         bcError(u"Could not set harmonic order %1 on %2."_s.arg(n).arg(stageKey));
 }
 
+void HardwareManager::setLifStageTrim(const QString &stageKey, double trim)
+{
+    auto stage = findHardware<LaserFreqConversionStage>(stageKey);
+    if(!stage)
+    {
+        bcError(u"Could not set trim for %1 because it is not an active LIF frequency-conversion stage."_s.arg(stageKey));
+        emit lifStageTrimUpdate(stageKey,0.0,1,false);
+        return;
+    }
+
+    // Anchor the move to the laser's present output wavelength rather than
+    // to the stage's last setpoint: outside an experiment the laser can be
+    // moved without the stages following it.
+    double localCm1 = -1.0;
+    auto outputCm1 = lifLaserPos();
+    if(outputCm1 >= 0.0)
+        localCm1 = d_lifConversion.stageInput(stageKey,d_lifConversion.outputToLaser(outputCm1));
+
+    if(localCm1 < 0.0)
+    {
+        bcError(u"Could not set trim for %1: no input wavenumber could be resolved from the laser position and conversion topology."_s.arg(stageKey));
+        emit lifStageTrimUpdate(stageKey,0.0,1,false);
+        return;
+    }
+
+    gateLifDigitizer(true);
+
+    bool success = false;
+    double achieved = 0.0;
+    int direction = 1;
+    auto apply = [stage,trim,localCm1,&success,&achieved,&direction](){
+        success = stage->setTrim(trim) && stage->setPosition(localCm1);
+        achieved = stage->trim();
+        direction = stage->preferredTrimDirection();
+    };
+    if(stage->thread() == QThread::currentThread())
+        apply();
+    else
+        QMetaObject::invokeMethod(stage,apply,Qt::BlockingQueuedConnection);
+
+    gateLifDigitizer(false);
+
+    if(!success)
+        bcError(u"Could not apply trim %1 to %2."_s.arg(trim).arg(stageKey));
+
+    emit lifStageTrimUpdate(stageKey,achieved,direction,success);
+}
+
+void HardwareManager::reportLifStageTrims()
+{
+    for(const auto &key : RuntimeHardwareConfig::constInstance().getActiveKeys<LaserFreqConversionStage>())
+    {
+        auto stage = findHardware<LaserFreqConversionStage>(key);
+        if(!stage)
+            continue;
+
+        bool supported = false;
+        double trim = 0.0;
+        int direction = 1;
+        auto read = [stage,&supported,&trim,&direction](){
+            supported = stage->supportsTrim();
+            trim = stage->trim();
+            direction = stage->preferredTrimDirection();
+        };
+        if(stage->thread() == QThread::currentThread())
+            read();
+        else
+            QMetaObject::invokeMethod(stage,read,Qt::BlockingQueuedConnection);
+
+        if(supported)
+            emit lifStageTrimUpdate(key,trim,direction,true);
+    }
+}
+
 void HardwareManager::startLifConfigAcq(const LifConfig &c)
 {
     auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifDigitizer>();

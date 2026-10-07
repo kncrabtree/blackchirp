@@ -17,6 +17,7 @@ class LifLaserWidget;
 class LifProcessingWidget;
 class QToolButton;
 class QSpinBox;
+class FcuTuneDialog;
 
 namespace BC::Key::LifControl {
 const QString key("lifControlWidget");
@@ -39,6 +40,7 @@ public:
 
     void setLaserPosition(const double d);
     void setFlashlamp(bool en);
+    void stageTrimUpdate(const QString &stageKey, double trim, int direction, bool success);
 
     void setFromConfig(const LifConfig &cfg);
     void toConfig(LifConfig &cfg);
@@ -48,9 +50,12 @@ signals:
     void stopSignal();
     void changeLaserPosSignal(double);
     void changeLaserFlashlampSignal(bool);
+    void changeStageTrimSignal(QString stageKey, double trim);
+    void requestStageTrimReport();
 
 private:
     void initializeWidget();
+    void showFcuTuneDialog();
     
     LifTracePlot *p_lifTracePlot;
     DigitizerConfigWidget *p_digWidget;
@@ -61,9 +66,12 @@ private:
     QToolButton *p_stopAcqButton;
     QSpinBox *p_avgBox;
     QToolButton *p_resetButton;
+    QToolButton *p_fcuTuneButton;
+    FcuTuneDialog *p_fcuTuneDialog{nullptr};
 
     std::shared_ptr<LifConfig> ps_cfg;
     QString d_laserHwKey;
+    QString d_digitizerHwKey;
     bool d_acquiring{ false };
 };
 

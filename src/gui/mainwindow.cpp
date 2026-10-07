@@ -1444,6 +1444,9 @@ void MainWindow::configureLifWidget(LifControlWidget *w)
         connect(p_hwm,&HardwareManager::lifLaserPosUpdate,w,&LifControlWidget::setLaserPosition);
         connect(w,&LifControlWidget::changeLaserFlashlampSignal,p_hwm,&HardwareManager::setLifLaserFlashlampEnabled);
         connect(p_hwm,&HardwareManager::lifLaserFlashlampUpdate,w,&LifControlWidget::setFlashlamp);
+        connect(w,&LifControlWidget::changeStageTrimSignal,p_hwm,&HardwareManager::setLifStageTrim);
+        connect(w,&LifControlWidget::requestStageTrimReport,p_hwm,&HardwareManager::reportLifStageTrims);
+        connect(p_hwm,&HardwareManager::lifStageTrimUpdate,w,&LifControlWidget::stageTrimUpdate);
 
         QMetaObject::invokeMethod(p_hwm,&HardwareManager::lifLaserPos,Qt::BlockingQueuedConnection);
         QMetaObject::invokeMethod(p_hwm,&HardwareManager::lifLaserFlashlampEnabled,Qt::BlockingQueuedConnection);
