@@ -110,8 +110,8 @@ Result FcuTuneSweep::result() const
     if(d_clipped)
     {
         out.status = Status::Clipped;
-        out.message = u"The reference signal saturated the digitizer during the sweep; "
-                       "reduce the reference channel gain or attenuate the photodiode."_s;
+        out.message = u"The reference signal saturated during the sweep (digitizer full scale or the "
+                       "saturation level); attenuate the light on the photodiode or reduce its gain."_s;
     }
 
     return out;

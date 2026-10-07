@@ -33,6 +33,10 @@ FcuTuneDialog::FcuTuneDialog(const QString &digitizerHwKey, std::function<void(L
     connect(p_controller,&FcuTuneController::requestTrim,this,&FcuTuneDialog::requestTrim);
     connect(p_controller,&FcuTuneController::pointComplete,this,&FcuTuneDialog::pointComplete);
     connect(p_controller,&FcuTuneController::finished,this,&FcuTuneDialog::sweepFinished);
+    connect(p_controller,&FcuTuneController::recentered,this,[this](double center, int attempt){
+        p_statusLabel->setText(u"Maximum at the window edge; re-centering on trim %1 (attempt %2)..."_s
+                                   .arg(center,0,'f',0).arg(attempt));
+    });
 
     auto vbl = new QVBoxLayout;
 
@@ -87,6 +91,27 @@ FcuTuneDialog::FcuTuneDialog(const QString &digitizerHwKey, std::function<void(L
                                "for the peak fit to be accepted."_s);
     registerGetter(minContrast,p_contrastBox,&QDoubleSpinBox::value);
     fl->addRow(u"Min contrast"_s,p_contrastBox);
+
+    p_saturationBox = new QDoubleSpinBox;
+    p_saturationBox->setRange(0.0,1000.0);
+    p_saturationBox->setDecimals(3);
+    p_saturationBox->setSingleStep(0.1);
+    p_saturationBox->setSuffix(u" V"_s);
+    p_saturationBox->setSpecialValueText(u"Off"_s);
+    p_saturationBox->setValue(get(saturation,0.0));
+    p_saturationBox->setToolTip(u"Reference level (either polarity) at which the photodiode saturates. "
+                                 "A sweep reaching it is rejected, since a flattened peak biases the fit. "
+                                 "Digitizer full scale is always checked."_s);
+    registerGetter(saturation,p_saturationBox,&QDoubleSpinBox::value);
+    fl->addRow(u"Saturation level"_s,p_saturationBox);
+
+    p_recentersBox = new QSpinBox;
+    p_recentersBox->setRange(0,10);
+    p_recentersBox->setValue(get(recenters,2));
+    p_recentersBox->setToolTip(u"When the maximum lies at the edge of the window, sweep again centered "
+                                "on that edge this many times before giving up."_s);
+    registerGetter(recenters,p_recentersBox,&QSpinBox::value);
+    fl->addRow(u"Re-center attempts"_s,p_recentersBox);
 
     sweepBox->setLayout(fl);
 
@@ -227,6 +252,8 @@ void FcuTuneDialog::startSweep()
     s.discardPerPoint = p_discardBox->value();
     s.minContrast = p_contrastBox->value()/100.0;
     s.direction = it->second.direction;
+    s.saturationVolts = p_saturationBox->value();
+    s.maxRecenters = p_recentersBox->value();
 
     d_points.clear();
     p_plot->setData(d_points);
@@ -280,6 +307,8 @@ void FcuTuneDialog::updateControls()
     p_waveformsBox->setEnabled(!running);
     p_discardBox->setEnabled(!running);
     p_contrastBox->setEnabled(!running);
+    p_saturationBox->setEnabled(!running);
+    p_recentersBox->setEnabled(!running);
 }
 
 void FcuTuneDialog::updateTrimLabel()

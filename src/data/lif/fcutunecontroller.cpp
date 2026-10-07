@@ -25,6 +25,7 @@ bool FcuTuneController::start(const QString &stageKey, double startTrim, const S
     pu_digiConfig = std::make_unique<LifDigitizerConfig>(digiConfig);
     d_procSettings = procSettings;
     d_result = Result{};
+    d_recenters = 0;
 
     d_state = State::Moving;
     emit progress(0);
@@ -52,13 +53,22 @@ void FcuTuneController::processWaveform(const QVector<qint8> b)
     if(!t.hasRefData())
         return;
 
-    // Saturation check on the raw reference samples within the gate.
-    auto full = (qint64{1} << (8*std::max(1,pu_digiConfig->d_bytesPerPoint) - 1)) - 1;
+    // Saturation check on the reference samples within the gate. Raw
+    // samples accumulate over the record's shots (LifTrace divides by the
+    // shot count to convert to volts), so compare per-shot values.
+    auto full = static_cast<double>((qint64{1} << (8*std::max(1,pu_digiConfig->d_bytesPerPoint) - 1)) - 1);
+    auto shots = static_cast<double>(std::max(1,t.shots()));
+    auto voltsPerCount = std::abs(t.refYMult());
+    auto satV = pu_sweep->settings().saturationVolts;
     auto raw = t.refRaw();
     auto start = std::clamp(d_procSettings.refGateStart,0,static_cast<int>(raw.size())-1);
     auto end = std::clamp(d_procSettings.refGateEnd,start,static_cast<int>(raw.size())-1);
-    bool clipped = std::any_of(raw.cbegin()+start,raw.cbegin()+end+1,
-                               [full](qint64 v){ return v >= full || v <= -full-1; });
+    bool clipped = std::any_of(raw.cbegin()+start,raw.cbegin()+end+1,[=](qint64 v){
+        auto perShot = static_cast<double>(v)/shots;
+        if(perShot >= full || perShot <= -full-1.0)
+            return true;
+        return satV > 0.0 && std::abs(perShot)*voltsPerCount >= satV;
+    });
 
     if(!pu_sweep->addWaveform(t.refIntegral(d_procSettings),clipped))
     {
@@ -78,6 +88,18 @@ void FcuTuneController::processWaveform(const QVector<qint8> b)
     }
 
     auto r = pu_sweep->result();
+    if(r.status == Status::PeakAtEdge && d_recenters < pu_sweep->settings().maxRecenters)
+    {
+        d_recenters++;
+        auto settings = pu_sweep->settings();
+        pu_sweep = std::make_unique<FcuTuneSweep>(settings,r.center);
+        emit recentered(r.center,d_recenters);
+        emit progress(0);
+        d_state = State::Moving;
+        request(pu_sweep->currentTrim());
+        return;
+    }
+
     if(r.success())
     {
         auto center = std::round(r.center);

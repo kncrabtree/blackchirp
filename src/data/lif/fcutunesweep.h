@@ -21,7 +21,7 @@ enum class Status {
     Success,          ///< Peak located inside the window; \c Result::center is usable.
     PeakAtEdge,       ///< Maximum at the first or last point; the true peak may lie outside the window.
     LowContrast,      ///< Signal varies too little across the window to locate a peak.
-    Clipped,          ///< At least one reference waveform saturated the digitizer.
+    Clipped,          ///< At least one reference waveform saturated (digitizer full scale or the detector's saturation level).
     InsufficientData, ///< Too few points, or a point with no accepted waveforms.
     FitFailed,        ///< The peak model could not be fit (e.g. no curvature).
     MoveFailed,       ///< The stage could not be moved to a sweep point.
@@ -39,6 +39,8 @@ struct Settings {
     int discardPerPoint{2};     ///< Waveforms ignored after each move before accepting any.
     double minContrast{0.2};    ///< Minimum (max - min)/max across the window for a valid peak.
     int direction{1};           ///< +1 visits trims in increasing order, -1 in decreasing order.
+    double saturationVolts{0.0};///< Reference level (V, either polarity) treated as detector saturation; 0 disables. Applied by FcuTuneController.
+    int maxRecenters{2};        ///< Times FcuTuneController re-centers the window on an edge maximum and sweeps again.
 };
 
 /*!

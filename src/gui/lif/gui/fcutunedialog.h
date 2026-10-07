@@ -27,6 +27,8 @@ inline constexpr QLatin1StringView points{"points"};
 inline constexpr QLatin1StringView waveforms{"waveformsPerPoint"};
 inline constexpr QLatin1StringView discard{"discardPerPoint"};
 inline constexpr QLatin1StringView minContrast{"minContrastPercent"};
+inline constexpr QLatin1StringView saturation{"saturationVolts"};
+inline constexpr QLatin1StringView recenters{"maxRecenters"};
 inline constexpr QLatin1StringView plot{"FcuTunePlot"};
 }
 
@@ -89,6 +91,8 @@ private:
     QSpinBox *p_waveformsBox;
     QSpinBox *p_discardBox;
     QDoubleSpinBox *p_contrastBox;
+    QDoubleSpinBox *p_saturationBox;
+    QSpinBox *p_recentersBox;
     QSpinBox *p_manualTrimBox;
     QPushButton *p_setTrimButton;
     QPushButton *p_zeroTrimButton;

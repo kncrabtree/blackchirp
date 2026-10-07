@@ -26,10 +26,16 @@ Q_DECLARE_METATYPE(BC::FcuTune::Result)
  * Sequence: start() requests the first sweep trim; once the stage confirms
  * it, waveforms are integrated over the reference gate and fed to the
  * sweep until the point is complete, then the next trim is requested.
- * After the last point the sweep is fit. A successful fit's center
+ * After the last point the sweep is fit. If the maximum lies at the edge
+ * of the window, a new sweep centered on that edge point is run, up to
+ * \c Settings::maxRecenters times. A successful fit's center
  * (rounded to a whole native unit) is requested as the final trim;
  * otherwise, or on abort() or a failed move, the trim held at start() is
  * restored. finished() is emitted once that final move is confirmed.
+ * A reference waveform counts as clipped when any sample within the
+ * reference gate reaches the digitizer's full scale or, when
+ * \c Settings::saturationVolts is positive, that level in either
+ * polarity (a photodiode can saturate well below the digitizer range).
  * Waveforms arriving while a move is pending are ignored, as is a
  * successful trim update that does not carry the pending trim (one
  * triggered by some other requester of the same stage).
@@ -68,6 +74,8 @@ signals:
     void requestTrim(QString stageKey, double trim);
     void pointComplete(double trim, double mean, double stdErr);
     void progress(int perMil);
+    //! The maximum fell at the window edge; a new sweep centered on \a newCenter is starting.
+    void recentered(double newCenter, int attempt);
     /*!
      * \brief The sweep is over and the final trim move has completed.
      * \param result Fit outcome (status Aborted or MoveFailed when the sweep did not finish).
@@ -86,6 +94,7 @@ private:
     QString d_stageKey;
     double d_startTrim{0.0};
     double d_pendingTrim{0.0};
+    int d_recenters{0};
     std::unique_ptr<FcuTuneSweep> pu_sweep;
     std::unique_ptr<LifDigitizerConfig> pu_digiConfig;
     LifTrace::LifProcSettings d_procSettings;
