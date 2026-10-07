@@ -656,21 +656,8 @@ void HardwareManager::finalizeConnectionTesting()
 
 void HardwareManager::setLifParameters(double delay, double pos)
 {
-    auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifDigitizer>();
-    // lsc is used only conditionally below (to gate/flush the digitizer), so
-    // an absent digitizer is not fatal here; just skip it, same as every
-    // sibling LIF accessor guards its own empty-key case.
-    auto lsc = activeKeys.isEmpty() ? nullptr : findHardware<LifDigitizer>(activeKeys.first());
-
     // Gate the digitizer so no waveforms are emitted while hardware parameters change
-    if(lsc)
-    {
-        if(lsc->thread() == QThread::currentThread())
-            lsc->setAcquisitionGated(true);
-        else
-            QMetaObject::invokeMethod(lsc,[lsc](){ lsc->setAcquisitionGated(true); },
-                                      Qt::BlockingQueuedConnection);
-    }
+    gateLifDigitizer(true);
 
     bool success = true;
     success &= setLifLaserPos(pos);
@@ -680,21 +667,42 @@ void HardwareManager::setLifParameters(double delay, double pos)
         success &= setPGenLifDelay(delay);
 
     // Flush any scope-internal buffered waveform from the old trigger, then ungate
-    if(lsc)
-    {
-        if(lsc->thread() == QThread::currentThread())
-        {
-            lsc->flushAcquisitionBuffer();
-            lsc->setAcquisitionGated(false);
-        }
-        else
-            QMetaObject::invokeMethod(lsc,[lsc](){
-                lsc->flushAcquisitionBuffer();
-                lsc->setAcquisitionGated(false);
-            }, Qt::BlockingQueuedConnection);
-    }
+    gateLifDigitizer(false);
 
     emit lifSettingsComplete(success);
+}
+
+bool HardwareManager::moveLifLaser(double pos)
+{
+    gateLifDigitizer(true);
+
+    bool success = setLifLaserPos(pos);
+    if(success)
+        success &= setLifConversionStages(pos);
+
+    gateLifDigitizer(false);
+
+    return success;
+}
+
+void HardwareManager::gateLifDigitizer(bool gate)
+{
+    auto activeKeys = RuntimeHardwareConfig::constInstance().getActiveKeys<LifDigitizer>();
+    // An absent digitizer is not fatal here; there is simply nothing to gate.
+    auto lsc = activeKeys.isEmpty() ? nullptr : findHardware<LifDigitizer>(activeKeys.first());
+    if(!lsc)
+        return;
+
+    auto apply = [lsc,gate](){
+        if(!gate)
+            lsc->flushAcquisitionBuffer();
+        lsc->setAcquisitionGated(gate);
+    };
+
+    if(lsc->thread() == QThread::currentThread())
+        apply();
+    else
+        QMetaObject::invokeMethod(lsc,apply,Qt::BlockingQueuedConnection);
 }
 
 bool HardwareManager::setPGenLifDelay(double d)

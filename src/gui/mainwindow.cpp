@@ -1440,7 +1440,7 @@ void MainWindow::configureLifWidget(LifControlWidget *w)
         connect(p_hwm,&HardwareManager::lifConfigAcqStarted,w,&LifControlWidget::acquisitionStarted);
         connect(w,&LifControlWidget::stopSignal,p_hwm,&HardwareManager::stopLifConfigAcq);
         connect(p_hwm,&HardwareManager::lifDigitizerShotAcquired,w,&LifControlWidget::newWaveform);
-        connect(w,&LifControlWidget::changeLaserPosSignal,p_hwm,&HardwareManager::setLifLaserPos);
+        connect(w,&LifControlWidget::changeLaserPosSignal,p_hwm,&HardwareManager::moveLifLaser);
         connect(p_hwm,&HardwareManager::lifLaserPosUpdate,w,&LifControlWidget::setLaserPosition);
         connect(w,&LifControlWidget::changeLaserFlashlampSignal,p_hwm,&HardwareManager::setLifLaserFlashlampEnabled);
         connect(p_hwm,&HardwareManager::lifLaserFlashlampUpdate,w,&LifControlWidget::setFlashlamp);

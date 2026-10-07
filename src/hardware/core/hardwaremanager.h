@@ -560,7 +560,23 @@ public slots:
     /// \return \c true if all pulse generators accepted the new delay.
     bool setPGenLifDelay(double d);
 
-    /// \brief Moves the LIF laser to the requested position.
+    /// \brief Moves the LIF laser and every active LIF frequency-conversion
+    /// stage to the requested output-beam position, gating the LIF digitizer
+    /// during the move.
+    ///
+    /// The live-control counterpart of setLifParameters(): the laser moves
+    /// via setLifLaserPos(), then the stages follow via
+    /// setLifConversionStages() using the cached LifConversion, so the whole
+    /// conversion chain tracks a manual position change. The pulse delay is
+    /// left unchanged.
+    /// \param pos Desired output-beam position (cm⁻¹).
+    /// \return \c true if the laser and every active stage moved successfully.
+    bool moveLifLaser(double pos);
+
+    /// \brief Moves the LIF laser alone to the requested position.
+    ///
+    /// Stages do not follow; use moveLifLaser() or setLifParameters() for a
+    /// move of the whole conversion chain.
     /// \param pos Target position.
     /// \return \c true if the laser reported a non-negative achieved position.
     bool setLifLaserPos(double pos);
@@ -843,6 +859,10 @@ private:
     /// \brief Push the cached d_lifConversion to \a ll, thread-aware (direct
     /// call when on the laser thread, else a blocking queued invocation).
     void pushLifConversionToLaser(LifLaser *ll);
+
+    /// \brief Gate (\a gate true) or flush and ungate (\a gate false) the
+    /// active LIF digitizer, if any, on its own thread.
+    void gateLifDigitizer(bool gate);
 
     /// \brief Re-assemble d_lifConversion from the active stage settings and
     /// push it to the active laser, so the live jog/status path uses the

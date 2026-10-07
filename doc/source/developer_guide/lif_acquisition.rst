@@ -302,6 +302,12 @@ Data flow by moment
   ``Qt::BlockingQueuedConnection``) so stages with independent motors
   move in parallel; the calling thread joins by waiting on every
   future and AND-combines the per-stage results.
+- **Live control.** A manual position change from the LIF control
+  widget reaches :cpp:func:`HardwareManager::moveLifLaser`, which
+  gates the digitizer and dispatches ``setLifLaserPos`` followed by
+  ``setLifConversionStages`` — the same laser-then-stages sequence as
+  acquisition, minus the pulse delay — so the whole chain follows a
+  manual move.
 
 The FTMW mirror
 ~~~~~~~~~~~~~~~~

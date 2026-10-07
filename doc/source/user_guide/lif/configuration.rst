@@ -45,7 +45,10 @@ The dialog is divided into three areas:
   that drive the live preview.
 - The bottom-right column stacks two groups: **Laser**, with manual
   laser position and flashlamp controls, and **Processing**, with the
-  integration gates and optional smoothing filters.
+  integration gates and optional smoothing filters. Setting the laser
+  position here also moves any motorized
+  :doc:`frequency-conversion stages <conversion>` to follow it, exactly
+  as during an experiment scan.
 
 LIF channel and reference channel
 ---------------------------------
