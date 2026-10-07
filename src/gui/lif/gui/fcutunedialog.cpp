@@ -52,20 +52,20 @@ FcuTuneDialog::FcuTuneDialog(const QString &digitizerHwKey, std::function<void(L
     p_halfWidthBox->setRange(1,1000000);
     p_halfWidthBox->setSingleStep(100);
     p_halfWidthBox->setSuffix(u" steps"_s);
-    p_halfWidthBox->setValue(get(halfWidth,2000));
+    p_halfWidthBox->setValue(get(halfWidth,600));
     p_halfWidthBox->setToolTip(u"The sweep spans this far either side of the current trim."_s);
     registerGetter(halfWidth,p_halfWidthBox,&QSpinBox::value);
     fl->addRow(u"Half width"_s,p_halfWidthBox);
 
     p_pointsBox = new QSpinBox;
     p_pointsBox->setRange(3,201);
-    p_pointsBox->setValue(get(points,11));
+    p_pointsBox->setValue(get(points,13));
     registerGetter(points,p_pointsBox,&QSpinBox::value);
     fl->addRow(u"Points"_s,p_pointsBox);
 
     p_waveformsBox = new QSpinBox;
     p_waveformsBox->setRange(1,100000);
-    p_waveformsBox->setValue(get(waveforms,20));
+    p_waveformsBox->setValue(get(waveforms,10));
     p_waveformsBox->setToolTip(u"Digitizer records averaged at each point. Each record may itself "
                                 "be an average of several shots (the digitizer averages setting)."_s);
     registerGetter(waveforms,p_waveformsBox,&QSpinBox::value);

@@ -33,9 +33,9 @@ Q_ENUM_NS(Status)
  * \brief Sweep parameters. Trims are in the stage's native units (e.g. motor steps).
  */
 struct Settings {
-    double halfWidth{2000.0};   ///< Window extends this far either side of the starting trim.
-    int points{11};             ///< Number of trim values visited (at least 3).
-    int waveformsPerPoint{20};  ///< Accepted waveforms averaged at each trim value.
+    double halfWidth{600.0};    ///< Window extends this far either side of the starting trim.
+    int points{13};             ///< Number of trim values visited (at least 3).
+    int waveformsPerPoint{10};  ///< Accepted waveforms averaged at each trim value.
     int discardPerPoint{2};     ///< Waveforms ignored after each move before accepting any.
     double minContrast{0.2};    ///< Minimum (max - min)/max across the window for a valid peak.
     int direction{1};           ///< +1 visits trims in increasing order, -1 in decreasing order.
