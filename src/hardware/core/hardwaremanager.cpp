@@ -896,8 +896,9 @@ void HardwareManager::setLifStageTrim(const QString &stageKey, double trim)
     }
 
     // Anchor the move to the laser's present output wavelength rather than
-    // to the stage's last setpoint: outside an experiment the laser can be
-    // moved without the stages following it.
+    // to the stage's last setpoint, so the trim is applied about the
+    // calibrated position for the wavelength actually in use even when the
+    // stage has not been positioned since connecting.
     double localCm1 = -1.0;
     auto outputCm1 = lifLaserPos();
     if(outputCm1 >= 0.0)
