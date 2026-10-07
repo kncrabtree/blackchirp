@@ -110,44 +110,44 @@ double LifTrace::integrate(const LifProcSettings &s) const
     if(p_data->lifData.size() < 2)
         return 0.0;
 
-    auto ls = qBound(0,s.lifGateStart,p_data->lifData.size()-2);
-    //lif end must be greater than start and in range of data
-    auto le = qBound(ls+1,s.lifGateEnd,p_data->lifData.size()-1);
-
-    //do trapezoidal integration in integer/point space.
-    //each segment has a width of 1 unit, and the area is (y_i + y_{i+1})/2
-    //(think of it as end points have weight of 1, middle points have weight 2)
-    //add up all y_i + y_{i+1}, then divide by 2 at the end
-
-    auto l = lifToY(s);
-
-
-    double sum = 0.0;
-    for(int i = ls; i<le-1; i++)
-        sum += l.at(i) + l.at(i+1);
-
-    auto lifInt = sum/2.0;
+    auto lifInt = gateIntegral(lifToY(s),s.lifGateStart,s.lifGateEnd);
 
     //if no reference; just return raw integral
     if(!hasRefData())
         return lifInt;
 
-    auto r = refToY(s);
-
-    auto rs = qBound(0,s.refGateStart,p_data->refData.size()-2);
-    auto re = qBound(rs+1,s.refGateEnd,p_data->refData.size()-1);
-
-    sum = 0.0;
-    for(int i = rs; i<re-1; i++)
-        sum += r.at(i) + r.at(i+1);
-
-    double refInt = sum/2.0;
+    double refInt = refIntegral(s);
 
     //don't divide by 0!
     if(qFuzzyCompare(1.0,1.0+refInt))
         return lifInt;
     else
         return lifInt/refInt;
+}
+
+double LifTrace::refIntegral(const LifProcSettings &s) const
+{
+    if(p_data->refData.size() < 2)
+        return 0.0;
+
+    return gateIntegral(refToY(s),s.refGateStart,s.refGateEnd);
+}
+
+double LifTrace::gateIntegral(const QVector<double> &y, int gateStart, int gateEnd)
+{
+    //start must be in range of data; end must be greater than start and in range
+    auto start = qBound(0,gateStart,y.size()-2);
+    auto end = qBound(start+1,gateEnd,y.size()-1);
+
+    //do trapezoidal integration in integer/point space.
+    //each segment has a width of 1 unit, and the area is (y_i + y_{i+1})/2
+    //(think of it as end points have weight of 1, middle points have weight 2)
+    //add up all y_i + y_{i+1}, then divide by 2 at the end
+    double sum = 0.0;
+    for(int i = start; i<end-1; i++)
+        sum += y.at(i) + y.at(i+1);
+
+    return sum/2.0;
 }
 
 int LifTrace::delayIndex() const

@@ -48,6 +48,29 @@ double LaserFreqConversionStage::readPosition()
     return readPos();
 }
 
+bool LaserFreqConversionStage::setTrim(double trim)
+{
+    if(!supportsTrim())
+    {
+        if(trim == 0.0)
+            return true;
+
+        hwError(u"This stage does not support a trim offset."_s);
+        return false;
+    }
+
+    d_trim = trim;
+    return true;
+}
+
+AuxDataStorage::AuxDataMap LaserFreqConversionStage::readAuxData()
+{
+    AuxDataStorage::AuxDataMap out;
+    if(supportsTrim())
+        out.insert({BC::Aux::LaserConvStage::trim, d_trim});
+    return out;
+}
+
 bool LaserFreqConversionStage::setPosition(double localCm1)
 {
     setPos(localCm1);

@@ -53,6 +53,11 @@ inline constexpr QLatin1StringView spPosition{"positionSteps"};
  * The Autotracker addresses up to three motors per unit; \c motorNumber
  * selects which one drives this doubling crystal (default 1).
  *
+ * Supports a runtime trim (LaserFreqConversionStage::setTrim()) in motor
+ * steps: the commanded position is the calibrated position plus the trim,
+ * and readPos() removes the trim before inverting the calibration, so move
+ * verification still compares against the calibrated wavenumber.
+ *
  * The registered harmonic-order default is overridden for the common
  * lone-doubler case: N defaults to 2 and is Required (set once at profile
  * creation). This is an NHG device by identity — conversionOp() is pinned
@@ -67,6 +72,8 @@ public:
 
     // LaserFreqConversionStage interface
     BC::LifConv::Op conversionOp() const override;
+    bool supportsTrim() const override { return true; }
+    int preferredTrimDirection() const override;
 
     // HardwareObject interface
 protected:

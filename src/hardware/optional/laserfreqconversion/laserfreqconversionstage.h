@@ -13,6 +13,10 @@ inline constexpr QLatin1StringView verify{"verifyMove"};        ///< bool, defau
 inline constexpr QLatin1StringView tolerance{"verifyToleranceCm1"}; ///< double cm⁻¹, move-verification window.
 }
 
+namespace BC::Aux::LaserConvStage {
+inline constexpr QLatin1StringView trim{"Trim"}; ///< Runtime trim offset, in driver-native units.
+}
+
 /*!
  * \brief Base class for a LIF frequency-conversion stage (FCU): a crystal or
  *        compensator node in the optical conversion topology between the
@@ -70,6 +74,31 @@ public:
      */
     virtual bool setHarmonicOrder(int n);
 
+    /*!
+     * \brief Whether this driver honors a runtime trim offset.
+     *
+     * A trim is an additive correction to the calibrated drive position,
+     * in the driver's native position units (e.g. motor steps), used to
+     * follow a slow drift of the optimal position without editing the
+     * stored calibration. Base implementation returns \c false; setTrim()
+     * then rejects any nonzero value.
+     */
+    virtual bool supportsTrim() const { return false; }
+
+    /*!
+     * \brief Direction (+1 or -1) in which successive trim values can be
+     *        visited with the cheapest moves.
+     *
+     * A trim sweep visits its points monotonically in this direction. For a
+     * backlash-compensated drive, this is the direction of the final
+     * approach, so every step after the first is a short move with no
+     * backlash pre-move.
+     */
+    virtual int preferredTrimDirection() const { return 1; }
+
+    //! Current runtime trim offset, in driver-native units (0 after connection).
+    double trim() const { return d_trim; }
+
 public slots:
     /*!
      * \brief Dispatch target: move to this stage's PRIMARY input-beam
@@ -94,7 +123,26 @@ public slots:
     //! Verify hook: this stage's achieved local input-beam wavenumber (cm⁻¹), or <0 on error.
     double readPosition();
 
+    /*!
+     * \brief Set the runtime trim offset applied by subsequent moves.
+     *
+     * Does not move the stage; the trim takes effect at the next
+     * setPosition().
+     *
+     * \return \c false (leaving the trim unchanged) if the driver does not
+     * support a trim and \a trim is nonzero.
+     */
+    bool setTrim(double trim);
+
+protected:
+    //! Clear the trim; drivers call this on (re)connection.
+    void resetTrim() { d_trim = 0.0; }
+
 private:
+    AuxDataStorage::AuxDataMap readAuxData() override;
+
+    double d_trim{0.0};
+
     //! Driver hook: move to the given local input-beam wavenumber (cm⁻¹).
     virtual void setPos(double localCm1) = 0;
     //! Driver hook: read the achieved local input-beam wavenumber (cm⁻¹), or a negative sentinel on error.

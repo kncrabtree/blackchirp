@@ -121,6 +121,14 @@ BC::LifConv::Op SirahFcu::conversionOp() const
     return Op::NHG;
 }
 
+int SirahFcu::preferredTrimDirection() const
+{
+    // setPos() finishes every non-shortcut move with a relative move of
+    // +backlash, so steps in the sign of the backlash setting take the
+    // single-relative-move path.
+    return getArrayValue(stages,0,sbls,24000) < 0 ? -1 : 1;
+}
+
 void SirahFcu::initialize()
 {
 }
@@ -145,6 +153,10 @@ bool SirahFcu::testConnection()
         hwDebug(u"Autotracker ROM version %1, revision %2."_s
                     .arg(static_cast<quint8>(r.payload.at(1)))
                     .arg(static_cast<quint8>(r.payload.at(2))));
+
+    // A trim tracks drift within one connection only; start from the
+    // calibration as stored.
+    resetTrim();
 
     // Drain any error codes left queued from a previous session before
     // trusting a subsequent reply's Adr/Status byte or Error query.
@@ -300,7 +312,7 @@ void SirahFcu::setPos(double localCm1)
     //out-of-domain NaN sentinel before the cast below, which would
     //otherwise be undefined behavior (typically INT_MIN, driving the motor
     //to a hard-stop with no error).
-    auto rawTargetPos = d_calibration.wavelengthToPos(wl);
+    auto rawTargetPos = d_calibration.wavelengthToPos(wl) + trim();
     if(!std::isfinite(rawTargetPos))
     {
         hwError(u"Wavelength %1 nm (%2 cm-1) is outside the calibration's valid range; refusing to move."_s
@@ -388,7 +400,7 @@ double SirahFcu::readPos()
         return -1.0;
     }
 
-    auto wl = d_calibration.posToWavelength(d_lastPos);
+    auto wl = d_calibration.posToWavelength(static_cast<double>(d_lastPos) - trim());
     if(!std::isfinite(wl))
     {
         hwError(u"Could not convert motor position %1 to a wavelength."_s.arg(d_lastPos));

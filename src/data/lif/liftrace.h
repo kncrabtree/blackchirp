@@ -31,6 +31,8 @@ public:
     };
 
     double integrate(const LifProcSettings &s) const;
+    //! Trapezoidal integral of the reference channel over its gate (0 if no reference data).
+    double refIntegral(const LifProcSettings &s) const;
     int delayIndex() const;
     int laserIndex() const;
     QVector<double> lifToY(const LifProcSettings &s) const;
@@ -53,6 +55,7 @@ public:
 private:
     QSharedDataPointer<LifTraceData> p_data;
     QVector<double> processY(const QVector<double> d, const LifProcSettings &s) const;
+    static double gateIntegral(const QVector<double> &y, int gateStart, int gateEnd);
 
 
 };

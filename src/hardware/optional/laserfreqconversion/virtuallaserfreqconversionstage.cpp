@@ -18,6 +18,7 @@ void VirtualLaserFreqConversionStage::initialize()
 bool VirtualLaserFreqConversionStage::testConnection()
 {
     d_pos = 10000.0;
+    resetTrim();
 
     return true;
 }

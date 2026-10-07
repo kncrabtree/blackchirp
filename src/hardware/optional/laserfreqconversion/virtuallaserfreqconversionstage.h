@@ -9,6 +9,9 @@ class VirtualLaserFreqConversionStage : public LaserFreqConversionStage
 public:
     VirtualLaserFreqConversionStage(const QString& label, QObject *parent = nullptr);
 
+    //! Accepts a trim so trim sweeps can be exercised without hardware; the trim has no simulated effect.
+    bool supportsTrim() const override { return true; }
+
 protected:
     void initialize() override;
     bool testConnection() override;
