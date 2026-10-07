@@ -13,8 +13,10 @@ tuning curve under Blackchirp's three ``FcuCalibration`` schemes:
   offset, screw pitch) for direct entry into Blackchirp's Physical
   scheme fields.
 - **Polynomial** — ``numpy.polyfit`` forward (wavelength -> position)
-  and inverse (position -> wavelength); exports an
-  ``order;forward;inverse`` CSV for Blackchirp's Polynomial scheme.
+  and inverse (position -> wavelength), each in a normalized input
+  variable (center and half-span of the measured range); exports an
+  ``order;forward;inverse`` CSV for Blackchirp's Polynomial scheme and
+  prints the four normalization values for entry alongside it.
 - **Spline** — passes the measurement points through as the spline
   table (a ``scipy.interpolate.PchipInterpolator`` gives a monotone
   preview curve only); exports a ``wavelengthNm;positionSteps`` CSV
@@ -33,6 +35,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from dataclasses import dataclass
 from typing import List, Sequence, Tuple
 
 import numpy as np
@@ -95,10 +98,84 @@ def fit_physical(
     return fitted, rms
 
 
+@dataclass
+class PolynomialFit:
+    """Forward and inverse polynomial fits in normalized input variables.
+
+    Blackchirp evaluates the forward list at
+    ``(wavelength - wavelength_center) / wavelength_scale`` and the
+    inverse list at ``(position - position_center) / position_scale``;
+    outputs are raw steps and nm. Coefficients are in ``numpy.polyfit``'s
+    native descending-power order; see :func:`ascending` to convert for
+    the CSV export / Horner-evaluation contract.
+
+    Attributes:
+        forward_desc: Wavelength -> position coefficients (descending).
+        inverse_desc: Position -> wavelength coefficients (descending).
+        forward_rms: Forward RMS residual (steps).
+        inverse_rms: Inverse RMS residual (nm).
+        wavelength_center: Forward input center (nm).
+        wavelength_scale: Forward input scale (nm).
+        position_center: Inverse input center (steps).
+        position_scale: Inverse input scale (steps).
+    """
+
+    forward_desc: np.ndarray
+    inverse_desc: np.ndarray
+    forward_rms: float
+    inverse_rms: float
+    wavelength_center: float
+    wavelength_scale: float
+    position_center: float
+    position_scale: float
+
+    def forward(self, wavelengths_nm) -> np.ndarray:
+        """Evaluate wavelength (nm) -> position (steps)."""
+        u = (np.asarray(wavelengths_nm, dtype=float) - self.wavelength_center) / (
+            self.wavelength_scale
+        )
+        return np.polyval(self.forward_desc, u)
+
+    def inverse(self, positions_steps) -> np.ndarray:
+        """Evaluate position (steps) -> wavelength (nm)."""
+        u = (np.asarray(positions_steps, dtype=float) - self.position_center) / (
+            self.position_scale
+        )
+        return np.polyval(self.inverse_desc, u)
+
+
+def normalization(values: Sequence[float], decimals: int) -> Tuple[float, float]:
+    """Center and half-span of ``values``, rounded to ``decimals`` places.
+
+    Rounding keeps the printed values exact when typed into Blackchirp's
+    settings; the fit uses the rounded values, so nothing is lost. A
+    zero span (a single distinct value) yields a scale of 1.
+
+    Args:
+        values: Sample values (wavelengths in nm or positions in steps).
+        decimals: Decimal places to round the center and scale to.
+
+    Returns:
+        ``(center, scale)``.
+    """
+    v = np.asarray(values, dtype=float)
+    center = round(float((v.max() + v.min()) / 2.0), decimals)
+    scale = round(float((v.max() - v.min()) / 2.0), decimals)
+    if scale == 0.0:
+        scale = 1.0
+    return center, scale
+
+
 def fit_polynomial(
     wavelengths_nm: Sequence[float], positions_steps: Sequence[float], degree: int
-) -> Tuple[np.ndarray, np.ndarray, float, float]:
+) -> PolynomialFit:
     """Forward and inverse polynomial fits via ``numpy.polyfit``.
+
+    Each direction is fit in a normalized input variable spanning roughly
+    [-1, 1]. Fitting in raw units (wavelengths near 500 nm, positions
+    near 10^7 steps) is badly conditioned beyond low order: the
+    coefficients become huge and cancel heavily, so even a
+    full-precision export evaluates with errors of many steps.
 
     Args:
         wavelengths_nm: Measured fundamental wavelengths (nm).
@@ -106,18 +183,27 @@ def fit_polynomial(
         degree: Polynomial degree.
 
     Returns:
-        ``(forward_coeffs_desc, inverse_coeffs_desc, forward_rms,
-        inverse_rms)``. Coefficients are in ``numpy.polyfit``'s native
-        descending-power order; see :func:`ascending` to convert for
-        the CSV export / Horner-evaluation contract.
+        The fit, with its normalization.
     """
     wl = np.asarray(wavelengths_nm, dtype=float)
     pos = np.asarray(positions_steps, dtype=float)
-    forward_desc = np.polyfit(wl, pos, degree)
-    inverse_desc = np.polyfit(pos, wl, degree)
-    forward_rms = float(np.sqrt(np.mean((np.polyval(forward_desc, wl) - pos) ** 2)))
-    inverse_rms = float(np.sqrt(np.mean((np.polyval(inverse_desc, pos) - wl) ** 2)))
-    return forward_desc, inverse_desc, forward_rms, inverse_rms
+    wl_center, wl_scale = normalization(wl, 3)
+    pos_center, pos_scale = normalization(pos, 0)
+    forward_desc = np.polyfit((wl - wl_center) / wl_scale, pos, degree)
+    inverse_desc = np.polyfit((pos - pos_center) / pos_scale, wl, degree)
+    fit = PolynomialFit(
+        forward_desc=forward_desc,
+        inverse_desc=inverse_desc,
+        forward_rms=0.0,
+        inverse_rms=0.0,
+        wavelength_center=wl_center,
+        wavelength_scale=wl_scale,
+        position_center=pos_center,
+        position_scale=pos_scale,
+    )
+    fit.forward_rms = float(np.sqrt(np.mean((fit.forward(wl) - pos) ** 2)))
+    fit.inverse_rms = float(np.sqrt(np.mean((fit.inverse(pos) - wl) ** 2)))
+    return fit
 
 
 def ascending(coeffs_desc: np.ndarray) -> List[float]:
@@ -215,7 +301,7 @@ def plot_calibration(
     wavelengths_nm: Sequence[float],
     positions_steps: Sequence[float],
     physical_fitted: PhysicalParams,
-    poly_forward_desc: np.ndarray,
+    poly_fit: PolynomialFit,
     spline_points: Sequence[Tuple[float, float]],
     save_path: str | None,
 ) -> None:
@@ -228,8 +314,7 @@ def plot_calibration(
         wavelengths_nm: Measured fundamental wavelengths (nm).
         positions_steps: Measured motor positions (steps), same order.
         physical_fitted: The fitted Physical parameters.
-        poly_forward_desc: Forward polynomial coefficients, descending
-            order (``numpy.polyfit`` native order).
+        poly_fit: The fitted Polynomial scheme.
         spline_points: Sorted, deduplicated ``(wavelength, position)``
             points for the Spline scheme.
         save_path: If given, save the figure here instead of showing
@@ -249,7 +334,7 @@ def plot_calibration(
     physical_grid = np.array(
         [physical_forward(physical_fitted, lam) for lam in lam_grid]
     )
-    poly_grid = np.polyval(poly_forward_desc, lam_grid)
+    poly_grid = poly_fit.forward(lam_grid)
 
     spline_wl = np.array([p[0] for p in spline_points])
     spline_pos = np.array([p[1] for p in spline_points])
@@ -258,7 +343,7 @@ def plot_calibration(
     physical_resid = (
         np.array([physical_forward(physical_fitted, lam) for lam in wl]) - pos
     )
-    poly_resid = np.polyval(poly_forward_desc, wl) - pos
+    poly_resid = poly_fit.forward(wl) - pos
 
     fig, (ax_top, ax_bottom) = plt.subplots(
         2, 1, sharex=True, figsize=(8, 7), gridspec_kw={"height_ratios": [3, 1]}
@@ -382,7 +467,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
     poly = parser.add_argument_group("Polynomial scheme")
     poly.add_argument(
-        "--poly-degree", type=int, default=5, help="Polynomial degree (default: 5)."
+        "--poly-degree",
+        type=int,
+        default=2,
+        help="Polynomial degree (default: 2). Over a narrow tuning band the "
+        "scatter between measurements usually limits the residual, so a "
+        "higher degree fits that scatter rather than the tuning curve.",
     )
     poly.add_argument(
         "--poly-output",
@@ -442,20 +532,27 @@ def main(argv: Sequence[str] | None = None) -> int:
         physical_fitted, physical_rms, args.fit_cut_angle, args.fit_screw_pitch
     )
 
-    forward_desc, inverse_desc, forward_rms, inverse_rms = fit_polynomial(
-        wavelengths_nm, positions_steps, args.poly_degree
-    )
+    poly_fit = fit_polynomial(wavelengths_nm, positions_steps, args.poly_degree)
     poly_output = args.poly_output or _default_sibling_path(args.measurements, "poly")
-    write_polynomial_csv(poly_output, ascending(forward_desc), ascending(inverse_desc))
+    write_polynomial_csv(
+        poly_output, ascending(poly_fit.forward_desc), ascending(poly_fit.inverse_desc)
+    )
     print()
     print(f"Polynomial scheme (degree={args.poly_degree}):")
     print(
-        f"  Forward (wavelength[nm] -> position[steps]) RMS residual = {forward_rms:.4f} steps"
+        "  Forward (wavelength[nm] -> position[steps]) RMS residual = "
+        f"{poly_fit.forward_rms:.4f} steps"
     )
     print(
-        f"  Inverse (position[steps] -> wavelength[nm]) RMS residual = {inverse_rms:.6f} nm"
+        "  Inverse (position[steps] -> wavelength[nm]) RMS residual = "
+        f"{poly_fit.inverse_rms:.6f} nm"
     )
     print(f"  Exported to {poly_output}")
+    print("  Normalization (enter in the Polynomial scheme fields):")
+    print(f"    Polynomial Wavelength Center (nm)  = {poly_fit.wavelength_center:.3f}")
+    print(f"    Polynomial Wavelength Scale (nm)   = {poly_fit.wavelength_scale:.3f}")
+    print(f"    Polynomial Position Center (steps) = {poly_fit.position_center:.0f}")
+    print(f"    Polynomial Position Scale (steps)  = {poly_fit.position_scale:.0f}")
 
     spline_points = build_spline_points(wavelengths_nm, positions_steps)
     spline_output = args.spline_output or _default_sibling_path(
@@ -474,7 +571,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             wavelengths_nm,
             positions_steps,
             physical_fitted,
-            forward_desc,
+            poly_fit,
             spline_points,
             args.save,
         )

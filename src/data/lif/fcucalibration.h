@@ -103,11 +103,25 @@ public:
      * \brief Assemble the \c Polynomial scheme from imported forward
      *        (wavelength (nm) -> position) and inverse (position ->
      *        wavelength (nm)) coefficient lists, ascending order
-     *        (\c c0 + c1*x + c2*x^2 + ...). Evaluated by Horner's method.
-     *        Invalid (either list empty) yields \c isValid()==false.
+     *        (\c c0 + c1*u + c2*u^2 + ...). Evaluated by Horner's method.
+     *
+     * Each direction's input is normalized before evaluation:
+     * \c u = (lamNm - \a wavelengthCenter)/\a wavelengthScale for the forward
+     * list and \c u = (pos - \a positionCenter)/\a positionScale for the
+     * inverse list; outputs are in raw steps and nm. A fit over a narrow
+     * band in raw units (wavelengths near 500 nm, positions near 10^7
+     * steps) is badly conditioned beyond low order: its coefficients are
+     * huge and cancel heavily, so evaluation loses most of its precision.
+     * Normalizing to a center and half-span keeps \c |u| near 1. The
+     * defaults (center 0, scale 1) evaluate in raw units.
+     *
+     * Invalid (either list empty, a non-finite center or scale, or a zero
+     * scale) yields \c isValid()==false.
      */
     static FcuCalibration polynomial(std::vector<double> forwardCoeffs,
-                                      std::vector<double> inverseCoeffs);
+                                      std::vector<double> inverseCoeffs,
+                                      double wavelengthCenter = 0.0, double wavelengthScale = 1.0,
+                                      double positionCenter = 0.0, double positionScale = 1.0);
 
     /*!
      * \brief Assemble the \c Spline scheme from an imported \c (wavelength
@@ -138,7 +152,7 @@ public:
      *
      * \c Physical inverts by a bracketed 1-D root find over the crystal's
      * phase-matchable fundamental band; \c Polynomial is Horner evaluation
-     * of the inverse coefficient list; \c Spline evaluates the
+     * of the inverse coefficient list at the normalized position; \c Spline evaluates the
      * position-keyed interpolating spline. Returns NaN if \a pos cannot be
      * inverted (no bracket found, or outside the spline's domain).
      */
@@ -215,6 +229,10 @@ private:
 
     std::vector<double> d_forwardCoeffs;  ///< \c Polynomial: wavelength (nm) -> position.
     std::vector<double> d_inverseCoeffs;  ///< \c Polynomial: position -> wavelength (nm).
+    double d_polyWavelengthCenter{0.0};   ///< \c Polynomial: forward input center (nm).
+    double d_polyWavelengthScale{1.0};    ///< \c Polynomial: forward input scale (nm).
+    double d_polyPositionCenter{0.0};     ///< \c Polynomial: inverse input center (steps).
+    double d_polyPositionScale{1.0};      ///< \c Polynomial: inverse input scale (steps).
 
     /// \c Spline: wavelength (nm) -> position, keyed by wavelength.
     /// \c shared_ptr (custom deleter \c gsl_spline_free) rather than

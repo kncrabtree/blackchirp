@@ -29,6 +29,9 @@ private slots:
     void testPolynomialHornerEvaluation();
     void testPolynomialRoundTrip();
     void testPolynomialRejectEmptyCoeffs();
+    void testPolynomialNormalizedEvaluation();
+    void testPolynomialNormalizedRoundTrip();
+    void testPolynomialRejectBadNormalization();
 
     // Spline scheme
     void testSplinePassesThroughPoints();
@@ -186,6 +189,85 @@ void FcuCalibrationTest::testPolynomialRejectEmptyCoeffs()
 
     auto cal3 = FcuCalibration::polynomial({}, {});
     QVERIFY(!cal3.isValid());
+}
+
+void FcuCalibrationTest::testPolynomialNormalizedEvaluation()
+{
+    // Forward evaluated at u = (lam - 560)/4: at lam = 568, u = 2 and
+    // 1 + 2u + 3u^2 = 17. Inverse at u = (pos - 1000)/10: at pos = 1030,
+    // u = 3 and 5 + 2u = 11.
+    auto cal = FcuCalibration::polynomial({1.0, 2.0, 3.0}, {5.0, 2.0}, 560.0, 4.0, 1000.0, 10.0);
+    QVERIFY2(cal.isValid(), qPrintable(cal.errorString()));
+    QCOMPARE(cal.wavelengthToPos(568.0), 17.0);
+    QCOMPARE(cal.posToWavelength(1030.0), 11.0);
+}
+
+void FcuCalibrationTest::testPolynomialNormalizedRoundTrip()
+{
+    // A quadratic tuning curve near 563 nm and 1.64e7 steps, the regime
+    // where raw-unit coefficients cancel heavily. Normalized, a quintic
+    // least-squares inverse of the forward map reproduces the wavelength
+    // to well under a step's worth.
+    const double lc = 563.0, ls = 3.0, pc = 16412000.0, ps = 15000.0;
+    const std::vector<double> fwd{16412000.0, 14300.0, 120.0};
+    auto forward = [&](double lam){
+        auto u = (lam - lc)/ls;
+        return fwd[0] + fwd[1]*u + fwd[2]*u*u;
+    };
+
+    // Inverse coefficients from a least-squares quintic in normalized
+    // position, sampled densely across the band.
+    const int n = 61, deg = 5;
+    std::vector<double> us, lams;
+    for(int i=0; i<n; i++)
+    {
+        auto lam = lc - ls + 2.0*ls*i/(n-1);
+        us.push_back((forward(lam) - pc)/ps);
+        lams.push_back(lam);
+    }
+    std::vector<std::vector<double>> ata(deg+1, std::vector<double>(deg+2, 0.0));
+    for(int k=0; k<n; k++)
+        for(int r=0; r<=deg; r++)
+        {
+            for(int c=0; c<=deg; c++)
+                ata[r][c] += std::pow(us[k],r+c);
+            ata[r][deg+1] += std::pow(us[k],r)*lams[k];
+        }
+    for(int c=0; c<=deg; c++)
+        for(int r=c+1; r<=deg; r++)
+        {
+            auto f = ata[r][c]/ata[c][c];
+            for(int j=c; j<=deg+1; j++)
+                ata[r][j] -= f*ata[c][j];
+        }
+    std::vector<double> inv(deg+1);
+    for(int r=deg; r>=0; r--)
+    {
+        auto v = ata[r][deg+1];
+        for(int j=r+1; j<=deg; j++)
+            v -= ata[r][j]*inv[j];
+        inv[r] = v/ata[r][r];
+    }
+
+    auto cal = FcuCalibration::polynomial(fwd, inv, lc, ls, pc, ps);
+    QVERIFY2(cal.isValid(), qPrintable(cal.errorString()));
+    for(double lam : {560.5, 562.36, 563.0, 565.9})
+    {
+        QCOMPARE(cal.wavelengthToPos(lam), forward(lam));
+        // 1e-4 nm is about half a step on this curve.
+        QVERIFY(close(cal.posToWavelength(cal.wavelengthToPos(lam)), lam, 1e-4));
+    }
+}
+
+void FcuCalibrationTest::testPolynomialRejectBadNormalization()
+{
+    const auto nan = std::numeric_limits<double>::quiet_NaN();
+    QVERIFY(!FcuCalibration::polynomial({1.0}, {1.0}, 560.0, 0.0, 0.0, 1.0).isValid());
+    QVERIFY(!FcuCalibration::polynomial({1.0}, {1.0}, 0.0, 1.0, 0.0, 0.0).isValid());
+    QVERIFY(!FcuCalibration::polynomial({1.0}, {1.0}, nan, 1.0, 0.0, 1.0).isValid());
+    auto cal = FcuCalibration::polynomial({1.0}, {1.0}, 0.0, 1.0, 0.0, nan);
+    QVERIFY(!cal.isValid());
+    QVERIFY(!cal.errorString().isEmpty());
 }
 
 void FcuCalibrationTest::testSplinePassesThroughPoints()

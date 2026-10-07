@@ -110,9 +110,25 @@ while it is not shown.
    low-order polynomial is also a poor proxy for a steep near-90°
    curve.
 
-   Its only setting is the *Polynomial Coefficients* table (columns
+   Its settings are the *Polynomial Coefficients* table (columns
    ``order`` / ``forward`` / ``inverse``), populated by importing the
-   CSV ``fcu_fit.py`` exports (see below) rather than typed in by hand.
+   CSV ``fcu_fit.py`` exports (see below) rather than typed in by hand,
+   and four normalization values. The forward coefficients are evaluated
+   at ``(wavelength − Polynomial Wavelength Center) / Polynomial
+   Wavelength Scale`` and the inverse coefficients at ``(position −
+   Polynomial Position Center) / Polynomial Position Scale``, so each
+   input spans roughly −1 to 1 across the calibrated range. Without
+   this, a fit over a band a few nanometers wide at motor positions
+   near 10\ :sup:`7` steps loses most of its precision beyond second
+   order: its coefficients become enormous and cancel against each
+   other. ``fcu_fit.py`` prints the four values next to the exported
+   CSV; the defaults (center 0, scale 1) evaluate in raw units, which
+   suits only coefficients fit that way.
+
+   Prefer a low degree. Over a narrow band, the scatter between
+   measurements — including drift of the optimal position while the
+   measurements are taken — usually limits the residual, and extra
+   orders fit that scatter rather than the tuning curve.
 
 **Spline**
    An imported table of ``(wavelength, position)`` points; Blackchirp
@@ -164,7 +180,9 @@ See that directory's ``README.md`` for the full command-line reference:
    or ``--fit-screw-pitch`` is passed), and writes an
    ``order;forward;inverse`` CSV for the Polynomial scheme and a
    ``wavelengthNm;positionSteps`` CSV for the Spline scheme alongside
-   the measurements file.
+   the measurements file. The Polynomial fit defaults to second order
+   (``--poly-degree`` changes it), and its four normalization values
+   are printed with it.
 
 #. **Bring the result into Blackchirp.** Open the Sirah FCU's hardware
    dialog, select the matching ``Calibration Scheme``, and either type
@@ -174,7 +192,11 @@ See that directory's ``README.md`` for the full command-line reference:
    the corresponding exported file (see :ref:`hwdialog-settings` for
    how array settings and CSV import work generally). The importer
    matches header columns to the table's fields by name, so either
-   exported CSV loads without further preparation.
+   exported CSV loads without further preparation. For the Polynomial
+   scheme, also type the four printed normalization values into the
+   *Polynomial Wavelength Center*, *Polynomial Wavelength Scale*,
+   *Polynomial Position Center*, and *Polynomial Position Scale*
+   fields.
 
 .. note::
    The Physical scheme is a best-effort BBO/KDP phase-matching model

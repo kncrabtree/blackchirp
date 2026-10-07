@@ -50,7 +50,23 @@ REGISTER_HARDWARE_SETTINGS(SirahFcu,
     {calInvert,  "Invert Phase Match",   "Select the alternate (-) branch of the Physical scheme's "
                                           "phase-match relation",
      false, QVariant{}, QVariant{}, HwSettingPriority::Optional,
-     {}, calScheme, QVariant::fromValue(Scheme::Physical)}
+     {}, calScheme, QVariant::fromValue(Scheme::Physical)},
+    {polyWlCenter, "Polynomial Wavelength Center (nm)", "Forward coefficients are evaluated at "
+                                          "(wavelength - center)/scale; 0 with scale 1 evaluates in raw nm",
+     0.0, QVariant{}, QVariant{}, HwSettingPriority::Important,
+     {}, calScheme, QVariant::fromValue(Scheme::Polynomial)},
+    {polyWlScale, "Polynomial Wavelength Scale (nm)", "Forward coefficients are evaluated at "
+                                          "(wavelength - center)/scale; must be non-zero",
+     1.0, QVariant{}, QVariant{}, HwSettingPriority::Important,
+     {}, calScheme, QVariant::fromValue(Scheme::Polynomial)},
+    {polyPosCenter, "Polynomial Position Center (steps)", "Inverse coefficients are evaluated at "
+                                          "(position - center)/scale; 0 with scale 1 evaluates in raw steps",
+     0.0, QVariant{}, QVariant{}, HwSettingPriority::Important,
+     {}, calScheme, QVariant::fromValue(Scheme::Polynomial)},
+    {polyPosScale, "Polynomial Position Scale (steps)", "Inverse coefficients are evaluated at "
+                                          "(position - center)/scale; must be non-zero",
+     1.0, QVariant{}, QVariant{}, HwSettingPriority::Important,
+     {}, calScheme, QVariant::fromValue(Scheme::Polynomial)}
 )
 
 // Sine-bar drive mechanics for the doubling-crystal motor stage. cutAngleDeg
@@ -229,7 +245,9 @@ void SirahFcu::hwReadSettings()
             inverseCoeffs[order] = inv;
         }
 
-        d_calibration = FcuCalibration::polynomial(forwardCoeffs, inverseCoeffs);
+        d_calibration = FcuCalibration::polynomial(forwardCoeffs, inverseCoeffs,
+                                                    get(polyWlCenter,0.0), get(polyWlScale,1.0),
+                                                    get(polyPosCenter,0.0), get(polyPosScale,1.0));
         break;
     }
     case Scheme::Spline:

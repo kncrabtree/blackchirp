@@ -12,6 +12,7 @@ from fcu_fit import (
     build_spline_points,
     fit_physical,
     fit_polynomial,
+    normalization,
 )
 
 
@@ -59,7 +60,7 @@ def test_fit_physical_recovers_synthetic_parameters() -> None:
 
 
 def test_fit_polynomial_reproduces_synthetic_cubic() -> None:
-    """A degree-3 polyfit of exact cubic data recovers the coefficients and hits zero RMS."""
+    """A degree-3 fit of exact cubic data reproduces it in both directions."""
     true_desc = [
         2.5,
         -100.0,
@@ -69,12 +70,58 @@ def test_fit_polynomial_reproduces_synthetic_cubic() -> None:
     wavelengths_nm = np.linspace(600.0, 900.0, 20)
     positions_steps = np.polyval(true_desc, wavelengths_nm)
 
-    forward_desc, _inverse_desc, forward_rms, _inverse_rms = fit_polynomial(
-        wavelengths_nm, positions_steps, degree=3
-    )
+    fit = fit_polynomial(wavelengths_nm, positions_steps, degree=3)
 
-    assert forward_rms == pytest.approx(0.0, abs=1e-4)
-    np.testing.assert_allclose(forward_desc, true_desc, atol=1e-3)
+    assert fit.forward_rms == pytest.approx(0.0, abs=1e-4)
+    np.testing.assert_allclose(fit.forward(wavelengths_nm), positions_steps, atol=1e-4)
+    assert fit.wavelength_center == pytest.approx(750.0)
+    assert fit.wavelength_scale == pytest.approx(150.0)
+
+
+def test_normalization_rounds_center_and_half_span() -> None:
+    assert normalization([560.0, 566.1234, 563.0], 3) == (563.062, 3.062)
+    assert normalization([16397800.0, 16426900.0], 0) == (16412350.0, 14550.0)
+    assert normalization([5.0, 5.0], 3) == (5.0, 1.0)
+
+
+def test_normalized_high_degree_fit_survives_csv_round_trip(tmp_path) -> None:
+    """A quintic over a narrow band near 1.64e7 steps evaluates accurately
+    from its exported coefficients, and forward and inverse agree.
+
+    In raw units this fit is badly conditioned and its two directions
+    disagree by hundreds of steps; normalized, both stay within a step.
+    """
+    wavelengths_nm = np.linspace(560.0, 566.1, 25)
+    positions_steps = (
+        16397800.0
+        + 4770.0 * (wavelengths_nm - 560.0)
+        + 15.0 * (wavelengths_nm - 560.0) ** 2
+    )
+    fit = fit_polynomial(wavelengths_nm, positions_steps, degree=5)
+
+    path = tmp_path / "poly.csv"
+    write_polynomial_csv(
+        str(path), ascending(fit.forward_desc), ascending(fit.inverse_desc)
+    )
+    rows = [
+        line.split(";") for line in path.read_text(encoding="utf-8").splitlines()[1:]
+    ]
+    fwd = [float(r[1]) for r in rows]
+    inv = [float(r[2]) for r in rows]
+
+    def horner(coeffs, x):
+        result = 0.0
+        for c in reversed(coeffs):
+            result = result * x + c
+        return result
+
+    for lam, pos in zip(wavelengths_nm, positions_steps):
+        u = (lam - fit.wavelength_center) / fit.wavelength_scale
+        p = horner(fwd, u)
+        assert p == pytest.approx(pos, abs=1.0)
+        v = (p - fit.position_center) / fit.position_scale
+        # 2e-4 nm is about one step on this curve.
+        assert horner(inv, v) == pytest.approx(lam, abs=2e-4)
 
 
 def test_ascending_reverses_polyfit_order() -> None:

@@ -14,7 +14,8 @@ contract (numpy/scipy/pandas only; see `python/AGENTS.md`) is unaffected.
 - `fcu_fit.py` — reads a measurements CSV and fits/visualizes the tuning
   curve under all three of Blackchirp's `FcuCalibration` schemes
   (Physical / Polynomial / Spline), printing the Physical scheme's five
-  parameters and exporting Polynomial/Spline import CSVs.
+  parameters and the Polynomial scheme's four normalization values, and
+  exporting Polynomial/Spline import CSVs.
 - `fcu_calibration_math.py` — the Physical scheme's Sellmeier + phase-match
   + sine-bar math, ported line-for-line from `src/data/lif/fcucalibration.cpp`
   so fitted parameters reproduce exactly when typed into Blackchirp.

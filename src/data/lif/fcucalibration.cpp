@@ -157,17 +157,32 @@ FcuCalibration FcuCalibration::physical(CrystalType crystal, double cutAngleDeg,
     return cal;
 }
 
-FcuCalibration FcuCalibration::polynomial(std::vector<double> forwardCoeffs, std::vector<double> inverseCoeffs)
+FcuCalibration FcuCalibration::polynomial(std::vector<double> forwardCoeffs, std::vector<double> inverseCoeffs,
+                                           double wavelengthCenter, double wavelengthScale,
+                                           double positionCenter, double positionScale)
 {
     FcuCalibration cal;
     cal.d_scheme = Scheme::Polynomial;
     cal.d_forwardCoeffs = std::move(forwardCoeffs);
     cal.d_inverseCoeffs = std::move(inverseCoeffs);
+    cal.d_polyWavelengthCenter = wavelengthCenter;
+    cal.d_polyWavelengthScale = wavelengthScale;
+    cal.d_polyPositionCenter = positionCenter;
+    cal.d_polyPositionScale = positionScale;
 
     if(cal.d_forwardCoeffs.empty() || cal.d_inverseCoeffs.empty())
     {
         cal.d_valid = false;
         cal.d_errorString = u"Polynomial calibration requires non-empty forward and inverse coefficient lists."_s;
+        return cal;
+    }
+
+    const bool finite = std::isfinite(wavelengthCenter) && std::isfinite(wavelengthScale)
+            && std::isfinite(positionCenter) && std::isfinite(positionScale);
+    if(!finite || wavelengthScale == 0.0 || positionScale == 0.0)
+    {
+        cal.d_valid = false;
+        cal.d_errorString = u"Polynomial calibration requires finite normalization centers and finite, non-zero scales."_s;
         return cal;
     }
 
@@ -272,7 +287,7 @@ double FcuCalibration::wavelengthToPos(double lamNm) const
         // Imported coefficient lists carry no fit-domain metadata, so unlike
         // Physical and Spline there is no band to bound against; Horner
         // evaluation extrapolates freely for any finite input.
-        return horner(d_forwardCoeffs, lamNm);
+        return horner(d_forwardCoeffs, (lamNm - d_polyWavelengthCenter)/d_polyWavelengthScale);
     case Scheme::Spline:
         return splineEval(ps_wavelengthToPosSpline, d_splineWavelengthMin, d_splineWavelengthMax, lamNm);
     }
@@ -287,7 +302,7 @@ double FcuCalibration::posToWavelength(double pos) const
         return physicalInverse(pos);
     case Scheme::Polynomial:
         // See wavelengthToPos(): no fit-domain metadata to bound against.
-        return horner(d_inverseCoeffs, pos);
+        return horner(d_inverseCoeffs, (pos - d_polyPositionCenter)/d_polyPositionScale);
     case Scheme::Spline:
         return splineEval(ps_posToWavelengthSpline, d_splinePosMin, d_splinePosMax, pos);
     }
