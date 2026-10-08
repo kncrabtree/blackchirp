@@ -194,6 +194,21 @@ void FtmwViewWorkerStateTest::dispatchSnapshotsProcessingSettingsAtCallTime()
     QVERIFY(!expected.isEmpty());
     QVERIFY(!wrongIfLeaked.isEmpty());
 
+    // The diff result is captured from the worker itself rather than read
+    // back from the main plot. updateProcessingSettings() below also
+    // reprocesses the live/plot1/plot2 ids, and in the default Live main
+    // plot mode each of their completions copies the (empty) live Ft into
+    // the main plot. Those completions and the diff's race on the thread
+    // pool, so the main plot may never hold the diff result at a moment
+    // the test observes it. The queued connection delivers the result on
+    // this thread, matching how the widget itself receives it.
+    auto *worker = widget.findChild<FtWorker*>();
+    QVERIFY(worker);
+    QList<Ft> diffResults;
+    QObject context;
+    connect(worker,&FtWorker::ftDiffDone,&context,
+            [&diffResults](Ft ft){ diffResults.append(ft); },Qt::QueuedConnection);
+
     widget.updateProcessingSettings(settingsA);
 
     // Dispatches under settingsA; process()/processDiff() snapshot
@@ -209,8 +224,8 @@ void FtmwViewWorkerStateTest::dispatchSnapshotsProcessingSettingsAtCallTime()
 
     QCOMPARE(widget.getProcessingSettings().units, FtWorker::FtuV);
 
-    QTRY_VERIFY_WITH_TIMEOUT(!widget.getMainPlotFt().isEmpty(),5000);
-    const Ft actual = widget.getMainPlotFt();
+    QTRY_COMPARE_WITH_TIMEOUT(diffResults.size(),1,5000);
+    const Ft actual = diffResults.constFirst();
 
     QVERIFY2(ftEquals(actual,expected),
              "diff result does not match the settings in effect at dispatch time");
