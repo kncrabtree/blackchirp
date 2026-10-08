@@ -14,9 +14,15 @@
 #include <QVBoxLayout>
 #include <QShowEvent>
 #include <QCloseEvent>
+#include <QFileDialog>
+#include <QSaveFile>
+#include <QMessageBox>
+#include <QTextStream>
+#include <QDateTime>
 
 #include <data/lif/fcutunecontroller.h>
 #include <data/lif/lifconfig.h>
+#include <data/storage/blackchirpcsv.h>
 #include <gui/lif/gui/lifsliceplot.h>
 
 using namespace Qt::StringLiterals;
@@ -144,6 +150,9 @@ FcuTuneDialog::FcuTuneDialog(const QString &digitizerHwKey, std::function<void(L
     runHbl->addWidget(p_startButton);
     runHbl->addWidget(p_abortButton);
     runHbl->addWidget(p_progressBar,1);
+    p_saveButton = new QPushButton(u"Save CSV"_s);
+    p_saveButton->setToolTip(u"Save the trim, mean reference signal, and standard error of each sweep point."_s);
+    runHbl->addWidget(p_saveButton);
     vbl->addLayout(runHbl);
 
     p_statusLabel = new QLabel;
@@ -161,6 +170,7 @@ FcuTuneDialog::FcuTuneDialog(const QString &digitizerHwKey, std::function<void(L
     connect(p_controller,&FcuTuneController::progress,p_progressBar,&QProgressBar::setValue);
     connect(p_startButton,&QPushButton::clicked,this,&FcuTuneDialog::startSweep);
     connect(p_abortButton,&QPushButton::clicked,p_controller,&FcuTuneController::abort);
+    connect(p_saveButton,&QPushButton::clicked,this,&FcuTuneDialog::saveCsv);
     connect(p_setTrimButton,&QPushButton::clicked,this,[this](){
         emit requestTrim(p_stageBox->currentText(),static_cast<double>(p_manualTrimBox->value()));
     });
@@ -256,6 +266,8 @@ void FcuTuneDialog::startSweep()
     s.maxRecenters = p_recentersBox->value();
 
     d_points.clear();
+    d_stdErrs.clear();
+    d_sweepStage = stage;
     p_plot->setData(d_points);
 
     if(p_controller->start(stage,it->second.trim,s,cfg.digitizerConfig(),cfg.d_procSettings))
@@ -267,8 +279,8 @@ void FcuTuneDialog::startSweep()
 
 void FcuTuneDialog::pointComplete(double trim, double mean, double stdErr)
 {
-    Q_UNUSED(stdErr)
     d_points.append({trim,mean});
+    d_stdErrs.append(stdErr);
     p_plot->setData(d_points);
     p_plot->autoScale();
 }
@@ -300,6 +312,7 @@ void FcuTuneDialog::updateControls()
     p_startButton->setEnabled(!running && haveStage && d_acquiring);
     p_startButton->setToolTip(d_acquiring ? QString() : u"Start the LIF acquisition first."_s);
     p_abortButton->setEnabled(running);
+    p_saveButton->setEnabled(!running && !d_points.isEmpty());
     p_setTrimButton->setEnabled(!running && haveStage);
     p_zeroTrimButton->setEnabled(!running && haveStage);
     p_halfWidthBox->setEnabled(!running);
@@ -321,4 +334,37 @@ void FcuTuneDialog::updateTrimLabel()
     }
 
     p_trimLabel->setText(u"Current trim: %1 steps"_s.arg(it->second.trim,0,'f',0));
+}
+
+void FcuTuneDialog::saveCsv()
+{
+    if(d_points.isEmpty())
+        return;
+
+    QDir d = BlackchirpCSV::textExportDir();
+    auto name = u"fcutune_%1_%2.csv"_s.arg(d_sweepStage,
+                                          QDateTime::currentDateTime().toString(u"yyyyMMdd_HHmmss"_s));
+    auto saveFile = QFileDialog::getSaveFileName(this,u"Save FCU Sweep"_s,d.absoluteFilePath(name),
+                                                 u"CSV files (*.csv)"_s);
+    if(saveFile.isEmpty())
+        return;
+
+    QSaveFile f(saveFile);
+    if(!f.open(QIODevice::WriteOnly|QIODevice::Text))
+    {
+        QMessageBox::critical(this,u"Save Error"_s,u"Could not open file %1 for writing."_s.arg(saveFile));
+        return;
+    }
+
+    using namespace BC::CSV;
+    QTextStream t(&f);
+    t << "trim" << del << "mean" << del << "stderr" << nl;
+    for(qsizetype i=0; i<d_points.size(); ++i)
+        t << QString::number(d_points.at(i).x(),'f',0) << del
+          << QString::number(d_points.at(i).y(),'g',12) << del
+          << QString::number(d_stdErrs.value(i),'g',12) << nl;
+    t.flush();
+
+    if(!f.commit())
+        QMessageBox::critical(this,u"Save Error"_s,u"Could not write file %1."_s.arg(saveFile));
 }

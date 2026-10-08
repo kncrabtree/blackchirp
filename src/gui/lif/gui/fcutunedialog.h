@@ -71,6 +71,7 @@ private:
     void sweepFinished(const BC::FcuTune::Result &r, double finalTrim, bool moveOk);
     void updateControls();
     void updateTrimLabel();
+    void saveCsv();
 
     QString d_digitizerHwKey;
     std::function<void(LifConfig&)> d_configProvider;
@@ -83,6 +84,8 @@ private:
     };
     std::map<QString,StageInfo> d_stages;
     QVector<QPointF> d_points;
+    QVector<double> d_stdErrs;
+    QString d_sweepStage;
 
     QComboBox *p_stageBox;
     QLabel *p_trimLabel;
@@ -98,6 +101,7 @@ private:
     QPushButton *p_zeroTrimButton;
     QPushButton *p_startButton;
     QPushButton *p_abortButton;
+    QPushButton *p_saveButton;
     QProgressBar *p_progressBar;
     QLabel *p_statusLabel;
     LifSlicePlot *p_plot;
